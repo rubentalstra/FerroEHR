@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Console configuration: one TOML file (`ferroehr-admin-ui.toml`) with
 //! `FERROEHR_ADMIN__…` environment overrides, mirroring the CDR's
 //! one-file/strict/env-grammar convention.

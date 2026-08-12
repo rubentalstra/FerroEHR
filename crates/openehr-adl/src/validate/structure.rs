@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Basic-integrity structural topic: the definition-tree walk and the rules that are
 //! decidable from the archetype's own constraint structure — node identity and
 //! uniqueness, sibling attribute uniqueness, differential-path placement,

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ODIN interval `_default` values, end to end: source → AOM2 → printed ADL →
 //! source again.
 //!

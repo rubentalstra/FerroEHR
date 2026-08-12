@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end composition-validation tests against a real PostgreSQL 18
 //! (shared testkit harness): a COMPOSITION committed via the ITS-REST create/update
 //! path is validated against its operational template *before* persistence.

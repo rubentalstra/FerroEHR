@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Integration tests for `openehr-rm`: the generated RM 1.2.0 type layer —
 //! the static RM attribute/type model the AQL planner reads, and the
 //! canonical-JSON `_type` dispatch of abstract/polymorphic RM slots.

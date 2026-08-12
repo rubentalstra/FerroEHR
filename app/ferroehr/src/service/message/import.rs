@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! EHR-Extract import (SM `I_EHR_EXTRACT_SERVICE.import_ehr` /
 //! `import_ehr_extract`) — the inverse of export: each received
 //! `X_VERSIONED_*`'s `ORIGINAL_VERSION`s are replayed into the local store as

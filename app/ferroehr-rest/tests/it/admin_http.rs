@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the ADMIN API group (physical EHR delete): the
 //! config gate (`AppConfig::admin.enabled`) and the `204`/`404` wire outcomes —
 //! driven through the assembled router over a **real** `AdminService` on a real

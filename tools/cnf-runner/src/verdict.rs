@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The verdict pipeline — a **pure** function of (statement, results,
 //! catalogue cases, capability matrix, ambiguity register).
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Which RM `_type`s become their own `node` row, and archetype-id part
 //! extraction for the promoted subsumption columns.
 //!

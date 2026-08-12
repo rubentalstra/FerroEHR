@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Unit tests for the AQL planner (path analysis + IR lowering). No DB.
 //!
 //! Queries are parsed by `openehr_query` and planned by [`ferroehr::aql::plan`]; each

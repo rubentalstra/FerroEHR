@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADMIN group's information classes (SM `I_ADMIN_SERVICE` +
 //! `I_ADMIN_DUMP_LOAD` parameter/report types).
 

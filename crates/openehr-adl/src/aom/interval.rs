@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Interval and multiplicity arithmetic shared by the AOM2 validity rules, the
 //! flattener, and the cADL domain lowering.
 //!

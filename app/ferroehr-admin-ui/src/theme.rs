@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The console's thaw widget theme.
 //!
 //! The design system's teal accent as the Fluent brand ramp, so thaw widgets

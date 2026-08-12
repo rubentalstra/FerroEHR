@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The **terminology-backed RM class invariants**.
 //!
 //! These are the RM invariants whose

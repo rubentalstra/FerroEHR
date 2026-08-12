@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The Query Builder core.
 //!
 //! The component-free state model the UI edits and its lowering into the

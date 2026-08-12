@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR Index information structures (`resource_status.adoc`,
 //! `resource_instance_type.adoc`, `location_desc.adoc`).
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Mutual TLS from the CDR to a terminology server, proven against a real TLS
 //! listener that demands (and inspects) the client certificate.
 //!

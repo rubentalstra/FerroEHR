@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Builder-capture + walk tests for the AOM 1.4 `C_ATTRIBUTE.existence`
 //! enforcement of a mandatory structural attribute whose node-identified child
 //! is dropped by master04 §"Level Removal" compaction (so it never becomes a

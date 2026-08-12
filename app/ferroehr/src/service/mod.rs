@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The application service layer.
 //!
 //! The SM Platform Service Model realized as concrete [`FerroEhrService`]

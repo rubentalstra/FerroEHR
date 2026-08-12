@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_DEFINITION_QUERY` (`i_definition_query.adoc`; `master04` §Registered
 //! Queries, §Query Formalism) + `QUERY_DESCRIPTOR` (`query_descriptor.adoc`),
 //! and the stored-query CRUD it owns (on the `stored_query` table).

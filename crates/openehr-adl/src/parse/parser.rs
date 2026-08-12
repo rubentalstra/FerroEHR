@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The cADL structure productions (`cadl2.g4`).
 //!
 //! The definition root, the type-headed object forms, attributes with their

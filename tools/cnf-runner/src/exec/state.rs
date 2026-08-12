@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Case-scoped execution state.
 //!
 //! Holds `requires` handles, captures (scalar and

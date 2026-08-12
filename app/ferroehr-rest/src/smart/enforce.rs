@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! SMART scope + launch-context enforcement
 //! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`
 //! §Scopes ¶2 + §Resource Scopes; master07 §Context Selection).

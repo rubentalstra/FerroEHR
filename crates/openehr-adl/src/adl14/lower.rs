@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4-only cADL productions — the 1.4→2 converter front end.
 //!
 //! NOTE: no openEHR spec governs the 1.4 → 2 conversion algorithm — these

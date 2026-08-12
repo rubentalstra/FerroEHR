@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AOM2 validity-code catalogue: [`Severity`] plus one [`ValidationCode`]
 //! variant per validity rule.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The FHIR R4B `AuditEvent` renderer of the ATNA audit trail.
 //!
 //! The platform's system log decides WHAT an audit record says — the IHE

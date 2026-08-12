@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Stored-query execution — `GET`/`POST /query/{qualified_query_name}` (latest)
 //! and `.../{version}` (explicit version).
 //!

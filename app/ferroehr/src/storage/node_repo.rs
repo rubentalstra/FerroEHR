@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `node`-table row I/O: bulk-write a decomposed version, and read one version
 //! back as canonical JSON.
 //!

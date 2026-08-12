@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Web-template node `id` generation and sibling de-duplication.
 //!
 //! Implements the node-id algorithm of the openEHR Simplified Formats

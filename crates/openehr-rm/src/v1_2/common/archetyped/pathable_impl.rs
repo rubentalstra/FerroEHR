@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/common/archetyped/pathable_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM spec functions for `PATHABLE`.
 //!
 //! `PATHABLE` is abstract, so the generated `Pathable` is the closed subtype

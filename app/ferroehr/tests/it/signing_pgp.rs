@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `OpenPGP`-mode integration tests: sign→verify round-trip with a
 //! generated key, tamper detection, armor-parse failures, and the fail-closed
 //! boot validation (missing path, garbled key, wrong passphrase).

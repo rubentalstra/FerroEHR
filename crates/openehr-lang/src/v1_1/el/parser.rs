@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The EL recursive-descent parser, generic over an [`ElBuilder`].
 //!
 //! Grammar: `crates/openehr-lang/vendor/grammar/v1_1/ElParser.g4` (the normative EL

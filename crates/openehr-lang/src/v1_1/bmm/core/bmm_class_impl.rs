@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `BMM_CLASS` (and its `BMM_GENERIC_CLASS`
 //! refinement) — the BMM v2 core class-level computed features.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Version-signature verification for the SIG-VERSION cases — a portable,
 //! deterministic capability (the reference interpreter of a language-agnostic
 //! rule).

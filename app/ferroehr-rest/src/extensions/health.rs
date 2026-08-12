@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The public health family at the process root: `/health`,
 //! `/health/liveness`, `/health/readiness`.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Management-surface configuration.
 //!
 //! The `[management]` section of the one server configuration tree; it carries **no loader of its own** — the

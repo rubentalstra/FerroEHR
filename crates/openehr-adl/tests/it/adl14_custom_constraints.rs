@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 custom constraint forms of
 //! `docs/specs/openehr/AM/docs/ADL1.4/master09-customising_adl.adoc`
 //! ("Customising ADL") — the two spellings openEHR profiled onto standard ADL,

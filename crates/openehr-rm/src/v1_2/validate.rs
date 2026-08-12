@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/validate.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! RM-level validation glue (hand-written spec behaviour).
 //!
 //! The module is preserved

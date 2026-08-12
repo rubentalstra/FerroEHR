@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 #![expect(
     clippy::expect_used,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \

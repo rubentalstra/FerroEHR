@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Health indicators + registry + the readiness-aggregation semantics.
 //!
 //! A [`HealthIndicator`] is a named, async, bounded check (e.g. "ping the DB").

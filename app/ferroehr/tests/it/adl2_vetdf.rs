@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ADL2 VETDF validation over the terminology-service resolver seam, end to
 //! end (AM ADL2 `master03-archetype_package.adoc` §Validity Rules).
 //!

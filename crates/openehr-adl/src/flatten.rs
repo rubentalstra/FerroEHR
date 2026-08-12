@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Specialisation flattening — overlay a differential child archetype onto its
 //! flat parent to produce the flat form.
 //!

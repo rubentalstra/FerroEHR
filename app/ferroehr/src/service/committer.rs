@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The authenticated-committer request context.
 //!
 //! Every CONTRIBUTION carries a committer (`AUDIT_DETAILS.committer` `1..1`,

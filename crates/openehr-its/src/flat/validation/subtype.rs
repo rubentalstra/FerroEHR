@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! RM subtype relation for type-conformance checks.
 //!
 //! Backed by the BMM-generated static RM model ([`openehr_rm::v1_2::model`]

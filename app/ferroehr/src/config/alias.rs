@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The reserved-namespace allowlist, the section registry, the two permanent
 //! conventional aliases, and the list-typed key registry. No openEHR spec governs
 //! configuration — our own design.

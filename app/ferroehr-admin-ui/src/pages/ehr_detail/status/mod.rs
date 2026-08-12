@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR-detail Status tabs: the EHR's `EHR_STATUS` resource, read, edited,
 //! and walked version by version.
 //!

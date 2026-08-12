@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared server state, provided to every server function via Leptos
 //! context (`leptos_routes_with_context`) and to the plain axum handlers
 //! via `Extension`.

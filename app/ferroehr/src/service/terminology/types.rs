@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The SM `I_TERMINOLOGY_SERVICE` extract data model.
 //!
 //! Spec (`docs/specs/openehr/SM/docs/openehr_platform/

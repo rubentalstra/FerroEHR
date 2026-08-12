@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written `Iso8601_date_time` spec behaviour.
 //!
 //! Covers the accessor functions, the computational functions (definite

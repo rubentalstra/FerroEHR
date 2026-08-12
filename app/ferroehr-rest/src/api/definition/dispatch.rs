@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP dispatch for the `definition` API group (templates + stored queries).
 //!
 //! This module is the operation-id `match` only: it decodes nothing and renders

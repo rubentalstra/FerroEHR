@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The 9 SM `I_TERMINOLOGY_SERVICE` calls on
 //! [`FerroEhrService`], routing between the two providers
 //! (`i_terminology_service.adoc`; the routing rule — see the module docs in

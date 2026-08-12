@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! An async cache of built [`WebTemplate`]s, keyed by template id.
 //!
 //! `WebTemplate` construction is deterministic and moderately expensive (a full

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The IXIT (`ixit.json`) — the SUT topology the runner drives: one or more
 //! named instances (base URL + auth + overrides) plus the environment block.
 //!

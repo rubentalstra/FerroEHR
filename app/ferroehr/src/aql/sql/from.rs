@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! FROM-clause + containment lowering (QUERY master03 §Class expressions,
 //! §Containment, §VERSION sources) and the population / scope gates.
 //!

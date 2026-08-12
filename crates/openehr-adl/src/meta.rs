@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Parsed-artefact identity summary.
 //!
 //! This is the small public accessor the REST/service layer reads after

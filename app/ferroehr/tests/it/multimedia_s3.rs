@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end tests for `DV_MULTIMEDIA` externalization against a real
 //! S3 backend — a `SeaweedFS` S3 gateway in a testcontainer — plus a real
 //! `PostgreSQL` 18.

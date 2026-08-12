@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions + invariants of `AUTHORED_RESOURCE`.
 //!
 //! Spec: `BASE/docs/UML/classes/org.openehr.base.resource.authored_resource.adoc`

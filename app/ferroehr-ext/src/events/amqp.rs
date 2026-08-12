@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AMQP 0.9.1 (`RabbitMQ`) [`EventPublisher`] via `lapin`.
 //!
 //! **No openEHR spec governs this — our own design/extension** (master14's

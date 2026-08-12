@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The Simplified-Formats payload adapter (ITS-REST
 //! `docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE).
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ADL 1.4 → ADL 2 conversion — the paired `upgrade_from_14` corpus is the
 //! oracle. Each 1.4 `.adl` source is converted and compared, structurally,
 //! against its expected ADL2 `.adls`.

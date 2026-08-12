@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The exhaustive **role × route** authorization matrix over the assembled
 //! router.
 //!

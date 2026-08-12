@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The parser's error contract: a caller branches on the failure, and reads
 //! the located diagnostic only to show it to a human.
 

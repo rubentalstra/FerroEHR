@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared UI components used by several screens — the design-system kit.
 //!
 //! Screens compose these instead of hand-rolling markup: `PageHeader` opens

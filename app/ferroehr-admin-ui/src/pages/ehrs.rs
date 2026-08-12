@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/ehrs` screen — the EHR finder.
 //!
 //! A lookup form (jump straight to an EHR by id) over a recent-EHRs table

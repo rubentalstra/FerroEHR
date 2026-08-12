@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The allocation-free fast path of the RM class-invariant check (hand-written),
 //! exposed via [`super::try_fast_validate`]. The authoritative tier it declines
 //! to is the sibling [`super::typed_dispatch`]; the wire-boundary entry point

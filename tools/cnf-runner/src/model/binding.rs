@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Operation bindings — the wire layer, one file per SM operation per ITS.
 //!
 //! A binding maps request construction, each outcome kind → wire

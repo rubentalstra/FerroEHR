@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The **Validity Checking** component of the platform crate: the SM
 //! `I_VALIDITY_CHECKER` interface realized on [`FerroEhrService`]'s existing
 //! validation choke points.

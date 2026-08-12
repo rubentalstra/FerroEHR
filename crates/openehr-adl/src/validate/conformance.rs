@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The validator's reading of the AOM2 conformance functions.
 //!
 //! The conformance functions themselves are AOM2 spec functions and live on the

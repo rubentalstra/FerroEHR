@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of the `P_BMM_TYPE` family.
 //!
 //! Covers the declared `as_type_string` rendering, the two persisted-form

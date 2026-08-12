@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! openEHR path machinery (hand-written spec behaviour; preserved
 //! across `openehr-codegen` regeneration like `validate.rs`).
 //!

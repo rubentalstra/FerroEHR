@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADMIN **dump/load** wire — **our own extension**.
 //!
 //! No openEHR ITS-REST operation governs either route here. The released Admin

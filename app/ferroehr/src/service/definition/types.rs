@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The DEFINITION data shapes shared with the REST adapter: the wire
 //! template-list filter and the SM stored-query descriptor.
 

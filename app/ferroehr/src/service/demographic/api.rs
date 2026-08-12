@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The public DEMOGRAPHIC seam on [`FerroEhrService`] — the SM
 //! `I_DEMOGRAPHIC_SERVICE` / `I_PARTY` / `I_PARTY_RELATIONSHIP` operations
 //! (`i_demographic_service.adoc`, `i_party.adoc`, `i_party_relationship.adoc`)

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Greenfield decomposed node storage.
 //!
 //! The codec between canonical openEHR JSON and the stored `node` rows, plus

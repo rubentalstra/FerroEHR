@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Native `utoipa-axum` routing for the Definition API group (ADL 1.4 / ADL 2
 //! templates + stored queries).
 //!

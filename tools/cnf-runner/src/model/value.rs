@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Templated values — the payload shapes of `flow[].with` and assertion
 //! operands.
 //!

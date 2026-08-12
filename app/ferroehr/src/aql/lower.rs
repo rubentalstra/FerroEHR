@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! AST → typed IR lowering (our own engine). Covers the full accepted feature
 //! envelope; every rejected
 //! construct maps to a precise [`AqlFeatureError`].

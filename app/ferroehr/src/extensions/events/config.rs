@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[events]` section — contribution-outbox eventing configuration.
 //!
 //! **No openEHR spec governs this — our own design/extension.** A field of the

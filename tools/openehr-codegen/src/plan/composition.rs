@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The **crate → generation table**: declarative data recording, per emitted
 //! spec crate, the BMM GENERATIONS it carries — vendored input file, emitted
 //! generation-module name, per-generation spec version, which generation is

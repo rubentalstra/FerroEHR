@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-1 identification / header topic: the archetype identifier, the
 //! definition root typename and concept code, the ADL/RM version metadata, the
 //! original language + description, the resource-description language

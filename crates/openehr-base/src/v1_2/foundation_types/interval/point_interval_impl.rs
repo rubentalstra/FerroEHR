@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-base/foundation_types/interval/point_interval_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM/BASE class invariants for `Point_interval`.
 //!
 //! Two invariant sources apply, both enforced here:

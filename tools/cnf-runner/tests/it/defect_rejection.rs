@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Every seeded-defect fixture is rejected with the expected gate — the
 //! validator's negative battery (one fixture per machine gate, schema-level
 //! through cross-artifact).

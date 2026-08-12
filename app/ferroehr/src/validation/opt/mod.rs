@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Surface A1 — OPT 1.4 artefact validity (`I_DEFINITION_ADL14` upload).
 //!
 //! openEHR formalizes the validity rules a CDR should apply to an *uploaded*

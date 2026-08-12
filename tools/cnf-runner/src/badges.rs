@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shields.io badge endpoints, derived from the verdict report.
 //!
 //! A badge is a pure function of `(VerdictReport, CapabilityMatrix, case

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The served wire builders: `ORIGINAL_VERSION` / `VERSIONED_OBJECT` /
 //! `REVISION_HISTORY` canonical-JSON value construction.
 //!

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The ODIN reclassification table of the LANG 1.0.0 generation.
 //!
 //! [`reclassify`] answers exactly one question: *given a token the shared DFA

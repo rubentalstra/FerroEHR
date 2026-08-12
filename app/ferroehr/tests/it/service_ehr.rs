@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end service tests against a real PostgreSQL 18 (shared testkit harness):
 //! the EHR / `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION lifecycle,
 //! including versioning, optimistic concurrency, time-travel, and logical

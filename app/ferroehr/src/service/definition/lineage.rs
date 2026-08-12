@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The archetype specialisation-lineage index over the ADL2/OPT2 artefact
 //! store — the read the AQL planner takes before lowering a query.
 //!

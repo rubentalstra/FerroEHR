@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Tests for the generated extension-surface `OpenAPI` document
 //! ([`extensions_document`]) and its consistency with the live router.
 //!

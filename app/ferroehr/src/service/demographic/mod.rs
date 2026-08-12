@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) service module.
 //!
 //! The platform-crate realization of the SM DEMOGRAPHIC group over the shared

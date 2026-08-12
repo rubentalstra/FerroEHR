@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `VERSIONED_COMPOSITION` container (the versioned-object view of a COMPOSITION).
 //!
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` +

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `model-query` report: for every class attribute the vendored BMM
 //! declares, what the BMM states about it beside the Rust field shape the
 //! emitter currently emits for it.

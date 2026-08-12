@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `ITEM_TAG` sub-resources — `operations/person_tags_get.yaml`,
 //! `person_tags_update.yaml`, `person_tags_delete.yaml` (and the field-identical
 //! `agent_*`/`group_*`/`organisation_*`/`role_*`), plus the kind-agnostic

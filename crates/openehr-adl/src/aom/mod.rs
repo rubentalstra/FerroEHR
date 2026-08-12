@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared AOM2 substrate: one home for reading, building, and doing
 //! interval arithmetic over the generated `openehr_am::v2_4::aom2` constraint
 //! model.

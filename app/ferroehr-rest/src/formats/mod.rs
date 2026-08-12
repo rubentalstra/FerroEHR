@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ITS-REST **Simplified Formats** wire adapter (STABLE).
 //!
 //! Serves FLAT + STRUCTURED data-instance JSON and their media types

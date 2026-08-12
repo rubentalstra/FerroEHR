@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The DICOM Audit Message model (DICOM PS3.15 §A.5) + a `quick-xml` serializer.
 //!
 //! This is the **DICOM audit schema**, not openEHR ITS-XML — it lives in its own

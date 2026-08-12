@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The application shell.
 //!
 //! The session guard plus the persistent chrome (static sidebar nav with

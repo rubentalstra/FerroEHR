@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The management surface: **ops introspection only** — info, Prometheus,
 //! metrics, env, loggers, and the on-demand CPU flamegraph.
 //!

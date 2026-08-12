@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ITS-REST **stored-query** resource (`tags: Query`).
 //!
 //! Operations (`docs/specs/openehr/ITS-REST/specifications/operations/`):

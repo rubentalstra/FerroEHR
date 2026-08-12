@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `sea-query` identifier vocabulary for the live schema
 //! (`migrations/ehr/0001_baseline.sql`).
 //!

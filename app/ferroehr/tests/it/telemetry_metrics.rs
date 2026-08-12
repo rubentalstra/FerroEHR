@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Service-layer metric emission against a real `PostgreSQL` 18 (shared testkit
 //! harness): the `compositions_committed_total` counter must move once per
 //! COMPOSITION version that a commit route actually committed — the direct

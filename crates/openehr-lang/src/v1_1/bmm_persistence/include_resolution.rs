@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Schema inclusion resolution: one `P_BMM_SCHEMA` plus the schemas it includes
 //! (transitively) merged into a single self-contained schema.
 //!

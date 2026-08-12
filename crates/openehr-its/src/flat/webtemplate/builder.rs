@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! OPT 1.4 → Web Template walk.
 //!
 //! Walks the OPT 1.4 constraint tree ([`crate::opt14`]) into the Web

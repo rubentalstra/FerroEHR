@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Read-only definition traversals shared by the 1.4→2 conversion stages.
 //!
 //! The collectors here feed [`crate::adl14::convert`]'s code planning; the

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared page header: breadcrumbs, title, subtitle, and an action
 //! slot — every routed screen opens with one so the page rhythm (header →
 //! toolbar → content) is identical across the console.

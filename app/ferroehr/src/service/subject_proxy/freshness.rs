@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Currency / freshness semantics (SM master10 §Samples: `effective_time` "is
 //! comparable to `currency` in order to determine the freshness of the data";
 //! `subject_variable.adoc` `currency`: "Required currency of this data item.

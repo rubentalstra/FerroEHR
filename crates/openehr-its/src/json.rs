@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! **ITS-JSON** — canonical JSON serialization: the named entry points.
 //!
 //! The canonical conventions (`_type` first on every object, snake_case keys,

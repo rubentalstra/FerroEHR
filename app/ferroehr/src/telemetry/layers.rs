@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Subscriber assembly: a reloadable `EnvFilter` + a stdout
 //! `fmt` layer (json/pretty/auto) + an optional `OTel` export layer + an
 //! optional span-flamegraph capture layer.

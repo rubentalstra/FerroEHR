@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Reference resolution.
 //!
 //! Turns the closed `${…}` grammar into concrete

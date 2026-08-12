@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! AQL abstract syntax tree, transcribed from `AqlParser.g4` (vendored at
 //! `vendor/grammar/`).
 //!

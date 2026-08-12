@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Shared corpus plumbing for the canonical-JSON gates (`fidelity.rs`,
 //! `canonical_contract.rs`): the corpus walker and the single documented
 //! exclusion list, so the gates can never drift apart on what counts as a

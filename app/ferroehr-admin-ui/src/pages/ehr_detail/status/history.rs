@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR-detail **Status history** tab: the `VERSIONED_EHR_STATUS` family.
 //!
 //! Four surfaces over the one versioned object, in the order an operator reads

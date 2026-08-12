@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Constructors for the generated AOM2 constraint model.
 //!
 //! The generated `openehr_am::v2_4::aom2` structs are plain records with every

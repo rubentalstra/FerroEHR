@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! `v2_4` OPT2 → Web Template walk (the ADL2 front end).
 //!
 //! The dialect-neutral seam is the Web Template layer: `ITS-REST

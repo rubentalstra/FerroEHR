@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The change-set unit: `Change`, the version-tree placement **decision**,
 //! and the shared commit engine `apply_change`.
 //!

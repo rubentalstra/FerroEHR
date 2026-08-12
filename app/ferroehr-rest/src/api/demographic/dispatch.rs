@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The demographic operation-id → handler match (the group dispatcher).
 //!
 //! `openehr_its::rest::generated::demographic::ROUTES` (from the vendored

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP dispatch for the `ehr` API group — the operation-id → resource-module
 //! router.
 //!

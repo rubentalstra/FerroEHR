@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The cADL reference productions (`cadl2.g4`).
 //!
 //! `allow_archetype` archetype slots and their include/exclude assertion

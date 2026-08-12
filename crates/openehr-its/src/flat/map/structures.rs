@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! `LINK`, `FEEDER_AUDIT`, `FEEDER_AUDIT_DETAILS`, `ISM_TRANSITION`,
 //! `INSTRUCTION_DETAILS`, and the `_`-prefixed optional RM-attribute families.
 //!

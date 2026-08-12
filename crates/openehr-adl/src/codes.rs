@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Specialisation-code utilities over the AOM2 `ADL_CODE_DEFINITIONS` class.
 //!
 //! The code space itself — the leaders, `codes_conformant`, `is_valid_code`,

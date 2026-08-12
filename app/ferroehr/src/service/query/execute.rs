@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_QUERY_SERVICE` (`i_query_service.adoc`) — ad-hoc + stored AQL execution,
 //! and the orchestration behind it: parse → plan → execute → assemble the
 //! ITS-REST 1.1.0 `RESULT_SET`, the paging composition, the `ehr_ids`

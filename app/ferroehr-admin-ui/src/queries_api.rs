@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The query surfaces' shared server API: ad-hoc AQL execution, BFF-local
 //! validation, and stored-query CRUD over the ITS-REST Definition/Query APIs.
 //!

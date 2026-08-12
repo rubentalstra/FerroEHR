@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-1 source-level topic: the two checks that read the RAW parsed source
 //! rather than the assembled AOM model.
 //!

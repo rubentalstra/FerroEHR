@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The public conversion entry points: canonical-JSON COMPOSITION ⇄ the
 //! FLAT and STRUCTURED wire forms, and the pure FLAT ⇄ STRUCTURED
 //! transforms.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Reference-model conformance for the OPT 1.4 pass (T5, T7 + the RM checks).
 //!
 //! The AOM2 RM-conformance rules (`AOM2/master08-validation.adoc` lines 70–75,

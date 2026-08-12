@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/overrides/v1_1/common/tags/item_tag_impl.rs (per-generation override) — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written validating construction + RM class invariants for `ITEM_TAG`.
 //!
 //! Spec: RM 1.1.0

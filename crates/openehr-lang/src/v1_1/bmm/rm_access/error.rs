@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The typed failures of the `rm_access` schema-loading facade.
 //!
 //! The `rm_access` package "provides an interface for the application to load

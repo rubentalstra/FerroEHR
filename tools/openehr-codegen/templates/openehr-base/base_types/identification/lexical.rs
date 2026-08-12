@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written lexical-form parsing shared by the BASE identification types
 //! (hand-written spec behaviour; auto-declared beside the `// @generated` files).
 //!
@@ -289,8 +293,16 @@ pub fn is_uid(s: &str) -> bool {
 /// (`…org.openehr.base.base_types.uid.adoc` §Inherit), so the lexical form is
 /// the only available discriminator.
 ///
-/// NOTE: no openEHR spec states the dispatch ORDER — our own design (the
-/// forms are mutually exclusive, so any order agrees).
+/// Dispatch follows the §Syntaxes alternation order itself —
+/// `uid = iso_oid | uuid | internet_id` — which is load-bearing only where two
+/// productions overlap, and both overlaps resolve the way the grammar lists
+/// them. An all-digit dotted string whose every group is ONE digit (`5`, `1.2`)
+/// satisfies `iso_oid` and `internet_id` alike, because a lone digit is a legal
+/// `label` via the `alphanum` alternative, and `iso_oid` wins; a canonical UUID
+/// whose first character is a letter (`abcdf3f0-…`) is also a legal single
+/// `label`, and `uuid` wins. `iso_oid` ∩ `uuid` is empty — a `uuid` requires
+/// `-`, an `iso_oid` admits only digits and `.` — so the UUID arm may come
+/// first.
 #[must_use]
 pub(crate) fn make_uid(value: &str) -> Uid {
     // The `uuid` arm goes through [`is_uuid`] rather than a bare
@@ -303,17 +315,9 @@ pub(crate) fn make_uid(value: &str) -> Uid {
     {
         return Uid::Uuid(Uuid { value: u });
     }
-    // NOTE: dispatch order is the §Syntaxes alternation order itself —
-    // `uid = iso_oid | uuid | internet_id`. It is load-bearing only where two
-    // productions overlap, and both overlaps resolve the same way the grammar
-    // lists them:
-    //   * `iso_oid` ∩ `internet_id` — an all-digit dotted string whose every
-    //     group is ONE digit (`5`, `1.2`) satisfies both (a lone digit is a
-    //     legal `label` via the `alphanum` alternative). `iso_oid` wins.
-    //   * `uuid` ∩ `internet_id` — a canonical UUID whose first character is a
-    //     letter (`abcdf3f0-…`) is also a legal single `label`. `uuid` wins.
-    // `iso_oid` ∩ `uuid` is empty (a `uuid` requires `-`, an `iso_oid` admits
-    // only digits and `.`), so the uuid arm above may precede this one.
+    // NOTE: the arms follow the §Syntaxes alternation order
+    // (`uid = iso_oid | uuid | internet_id`), which decides the two
+    // overlapping cases this function's doc comment enumerates.
     if is_iso_oid(value) {
         return Uid::IsoOid(IsoOid {
             value: value.to_owned(),

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end service tests for the SM-6 Subject Proxy Service
 //! (`I_SUBJECT_PROXY_SERVICE` + `I_DATA_BINDING`) against a real `PostgreSQL` 18
 //! (shared testkit harness).

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ADL 1.4 → ADL 2 conversion, exercised across the whole real-world corpus.
 //!
 //! `adl14_conversion.rs` is the DEEP gate: a handful of paired fixtures whose

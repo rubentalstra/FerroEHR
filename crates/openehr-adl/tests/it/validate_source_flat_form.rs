@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-3 reachability through the source-level entry point.
 //!
 //! `openehr_adl::validate::validate_source` runs the SAME phase schedule as

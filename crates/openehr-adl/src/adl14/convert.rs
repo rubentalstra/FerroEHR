@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 → ADL 2 converter core.
 //!
 //! NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` module is

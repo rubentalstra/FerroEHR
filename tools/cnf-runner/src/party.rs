@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The party artifacts — the two canonical JSON interchange documents a
 //! conformance submission carries, plus their supporting value types.
 //!

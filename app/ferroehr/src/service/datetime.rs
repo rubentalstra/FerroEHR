@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared decoder for the ITS-REST **datetime request parameters** —
 //! `version_at_time` and the contribution `time_range` bounds — used by every
 //! at-time read of the EHR and DEMOGRAPHIC groups.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Strict-validation helpers: the reserved-namespace env sweep, the
 //! did-you-mean suggester, and its Damerau-Levenshtein metric. No openEHR spec
 //! governs configuration — our own design.

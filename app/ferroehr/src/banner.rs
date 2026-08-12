@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The startup ASCII-art banner printed to stdout before the structured
 //! startup logs, in the spirit of the reference implementation's Spring banner.
 //!

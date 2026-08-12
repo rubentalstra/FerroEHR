@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[signing]` section — VERSION signing configuration.
 //!
 //! No openEHR spec governs the configuration surface — our own design. This is

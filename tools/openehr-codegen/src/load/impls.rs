@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The hand-written `*_impl.rs` siblings a generated crate already carries.
 //!
 //! A generated type file may declare in its banner that hand-written spec

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The per-kind party CRUD operations (`{kind}_{create,get,update,delete}`) —
 //! `operations/person_create.yaml`, `person_get.yaml`, `person_update.yaml`,
 //! `person_delete.yaml` (and the field-identical `agent_*`/`group_*`/

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `COMPOSITION.category` — the openEHR `composition_category` terminology
 //! group, as named constants.
 //!

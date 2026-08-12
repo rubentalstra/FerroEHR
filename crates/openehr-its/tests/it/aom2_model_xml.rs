@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! AOM2 **model-form** archetype XML codec gate — the `Archetype.xsd`
 //! counterpart of the persistent-form gate in `aom2_xml`.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Content negotiation core (ITS-REST `Resources.md §Data representation` +
 //! §Simplified Formats).
 //!

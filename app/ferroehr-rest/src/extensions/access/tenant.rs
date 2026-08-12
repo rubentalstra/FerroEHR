@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Tenant-resolution middleware.
 //!
 //! No openEHR spec governs multi-tenancy — it is our own deployment extension

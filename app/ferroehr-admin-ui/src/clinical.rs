@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Template-free rendering of a canonical openEHR JSON document into a
 //! human-readable tree.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Artefact-level views and the parent/supplier repository — the crate-wide
 //! access layer over an assembled `openehr_am::v2_4::aom2` [`Archetype`].
 //!

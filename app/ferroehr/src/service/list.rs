@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! List handling — the SM cursor convention (`master02-overview.adoc`
 //! §List Handling).
 

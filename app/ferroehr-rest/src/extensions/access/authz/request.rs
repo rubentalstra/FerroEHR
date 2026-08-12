@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The authorization request types the ABAC PDP seam consumes.
 //!
 //! Covers the resource kind, the access mode (the Cedar action axis), the

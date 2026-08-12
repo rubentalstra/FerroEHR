@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The `P_BMM_SCHEMA` → `BMM_MODEL` transform.
 //!
 //! The spec calls it "the in-memory model-to-model transform step required to

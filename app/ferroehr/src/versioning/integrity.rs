@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Digital-signature integrity at commit and read.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Digital Signature +

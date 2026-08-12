@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `GET /management/env` — the effective configuration, with secrets masked.
 //!
 //! The binary composes a snapshot of the effective configuration (REST, auth,

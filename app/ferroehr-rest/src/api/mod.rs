@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ITS-REST **API hub** — the assembly over the generated `ROUTES` tables.
 //!
 //! The crate is laid out per ITS-REST specification: one module per API group under

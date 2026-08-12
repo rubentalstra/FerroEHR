@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Spec-example vector suite for the Simplified Formats.
 //!
 //! Every JSON example block in the STABLE ITS-REST Simplified Formats

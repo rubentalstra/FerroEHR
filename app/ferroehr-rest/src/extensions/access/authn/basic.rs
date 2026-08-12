@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP Basic authentication against an Argon2 PHC password store.
 //!
 //! Basic is one of the two authentication mechanisms; the CNF security suites

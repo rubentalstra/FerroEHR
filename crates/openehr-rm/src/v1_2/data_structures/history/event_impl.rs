@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_structures/history/event_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM spec functions for the abstract `EVENT<T>` enum.
 //!
 //! Spec: RM 1.2.0

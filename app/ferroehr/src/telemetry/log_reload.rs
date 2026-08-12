@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `GET/POST/DELETE /management/loggers` — runtime log-filter control.
 //!
 //! The subscriber's `EnvFilter` sits behind a `tracing_subscriber::reload`

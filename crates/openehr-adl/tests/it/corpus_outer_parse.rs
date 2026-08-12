@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Corpus outer-parse gate: every well-formed ADL2 source (`*.adls`) in the
 //! vendored openEHR ADL2 reference library must outer-parse into a
 //! [`openehr_adl::source::SourceArtefact`] — the sections split, the HRID

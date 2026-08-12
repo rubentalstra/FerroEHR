@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The **v3** (`org.openehr.lang.bmm3`) behavioural surface, through its public
 //! API: the type lattice of `LANG/docs/bmm3/master06-core-types.adoc`, the
 //! class/feature functions of `master07-core-classes.adoc` +

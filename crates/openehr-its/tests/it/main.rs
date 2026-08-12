@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Integration tests for `openehr-its`: the openEHR Implementation
 //! Technology Specification surfaces — canonical JSON (fidelity, contract,
 //! codec parity, ITS-JSON schema validation), canonical XML (round-trip,

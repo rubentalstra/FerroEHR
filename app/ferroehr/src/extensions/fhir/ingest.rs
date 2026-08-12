@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The FHIR inbound-connector service glue: mapping store CRUD, inbound
 //! ingest onto the EHR index + commit seam, and the read facade — the
 //! platform-coupled half of the FHIR extension (the pure conversion core is

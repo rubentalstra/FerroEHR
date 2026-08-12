@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-base/foundation_types/time/time_definitions.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! `Time_Definitions` — the released validity functions, publicly.
 //!
 //! Spec: `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.time_definitions.adoc`

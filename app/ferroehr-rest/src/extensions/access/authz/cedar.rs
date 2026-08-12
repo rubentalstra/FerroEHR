@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! [`CedarEngine`] — the embedded, default ABAC engine, built on `cedar-policy` 4.x.
 //!
 //! A typed Cedar **schema** (shipped, built from the [`ResourceKind`] ×

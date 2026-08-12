@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `PLATFORM_SERVICE` (`master03-common_package.adoc` §Overview: "an
 //! enumeration of the available services, used in various interfaces";
 //! `platform_service.adoc`).

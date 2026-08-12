@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Namespace-derived stored-query grouping: the pure rules the `/queries`
 //! screen, the dashboard tiles, and both save flows share.
 //!

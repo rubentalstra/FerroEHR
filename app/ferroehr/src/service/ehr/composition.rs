@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`) — COMPOSITION
 //! commit/retrieve with implicit CONTRIBUTION creation. The commit-validation
 //! choke point and the `VERSIONED_COMPOSITION` cross-version invariant hook

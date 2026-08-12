@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end FHIR **outbound** emitter against a real broker (testcontainers
 //! `RabbitMQ`) + a real `PostgreSQL` 18
 //!

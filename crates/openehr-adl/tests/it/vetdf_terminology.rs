@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,

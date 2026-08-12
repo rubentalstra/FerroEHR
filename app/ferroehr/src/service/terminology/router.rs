@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! [`TerminologyRouter`] — every configured terminology server, materialised,
 //! with the terminology → provider routing that picks one per call.
 //!

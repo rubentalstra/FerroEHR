@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The scope previewer's presentation model: one pure function from a SMART
 //! scope string to the grant the console renders for it.
 //!

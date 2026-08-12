@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-lang/escape.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! The `master03` string-escape decoder — one home for this generation.
 //!
 //! `LANG/docs/odin/master03-basics.adoc` §File Encoding (verbatim twin:

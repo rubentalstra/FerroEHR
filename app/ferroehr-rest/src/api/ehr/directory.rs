@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `DIRECTORY` (FOLDER) resource.
 //!
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (DIRECTORY) +

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[events]` config section + the platform-coupled halves of the
 //! eventing extension: the outbox relay (`publisher`) and the subscription
 //! CRUD store (`subscription`).

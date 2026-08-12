@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/queries/stored` screen: run a STORED query server-side, with its
 //! parameters prompted and its version-resolution form chosen at run time.
 //!

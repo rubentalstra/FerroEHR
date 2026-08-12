@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `C_PRIMITIVE` leaves, temporal/duration pattern validity, and the
 //! `C_DOMAIN_TYPE` assumed-value rules for the OPT 1.4 pass
 //! (T9, T9b, T9c, T10, T12).

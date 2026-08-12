@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Assembles a parsed ADL artefact into the generated AOM2 object model.
 //!
 //! The ODIN sections, the cADL `definition`, and the `rules` of a

@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-base/foundation_types/time/iso8601_parse.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written ISO 8601 parsing, arithmetic and completion-range machinery
 //! shared by the four `Iso8601_*` `*_impl.rs` siblings.
 //!

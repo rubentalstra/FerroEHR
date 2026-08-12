@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The event-filter subscription store: CRUD over `event_subscription` as
 //! methods on `FerroEhrService`.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `FerroEHR` admin console — Leptos SSR web app + BFF over the ITS-REST API.
 //!
 //! No openEHR spec governs an

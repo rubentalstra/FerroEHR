@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `model-query` report, tested over the **real** vendored BMM inputs
 //! through `openehr_codegen::testsupport` — the same projection the CLI
 //! subcommand prints.

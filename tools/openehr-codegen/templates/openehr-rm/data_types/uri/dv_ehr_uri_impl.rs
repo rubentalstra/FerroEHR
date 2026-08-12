@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM class invariants for `DV_EHR_URI`.
 //!
 //! - `Scheme_valid` (`scheme.is_equal (Ehr_scheme)`) —

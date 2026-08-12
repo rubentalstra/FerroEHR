@@ -81,6 +81,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Every first-party Rust source file now states its licensing inside itself.**
+  All 2469 tracked `.rs` files carry an `SPDX-FileCopyrightText` and an
+  `SPDX-License-Identifier` header: the six published spec crates state
+  `MIT AND Apache-2.0` — the position their manifests already declared — and
+  everything else states `MIT`. Licensing was previously declared only by glob
+  in `REUSE.toml`, which is complete but does not travel with a file that is
+  copied out, and file-level redistribution is the expected case for a project
+  whose premise is that people build on it and ship it. The 1471 generated
+  files receive their header from the code generator, not from a hand edit, and
+  a new CI check fails the build if any first-party Rust file loses its header
+  or states a licence other than the one declared for its path. Vendored trees
+  are untouched and stay glob-declared, as they must be. The eight published
+  `openehr-*` crates are bumped to `0.0.26` in lockstep, since their packaged
+  sources changed.
+
 - **BREAKING — enumeration-constrained OPT and AOM2 fields are now typed
   enums, not strings.** `EXPR_OPERATOR.operator` becomes `OperatorKind`, and
   `C_DATE`/`C_DATE_TIME`/`C_TIME.timezone_validity` become

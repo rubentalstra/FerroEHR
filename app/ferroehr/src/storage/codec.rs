@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Canonical JSON ⇄ node rows — the pure content transform at the heart of the
 //! decomposed store.
 //!

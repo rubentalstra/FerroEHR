@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The destructive-confirmation modal.
 //!
 //! ONE dialog every delete affordance in the console opens, so "are you sure?"

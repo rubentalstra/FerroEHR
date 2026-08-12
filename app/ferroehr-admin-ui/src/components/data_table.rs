@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared table kit.
 //!
 //! One styled `<table>` used by every listing screen (EHRs, compositions,

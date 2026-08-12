@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! ODIN parser — a `chumsky` parser over the shared
 //! [`crate::v1_0::lexer`] token stream under its ODIN reading
 //! ([`crate::v1_0::lexer::lex_odin`]), transcribed from `odin.g4` /

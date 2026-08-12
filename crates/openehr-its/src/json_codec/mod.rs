@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! **Native canonical-JSON codec** (ITS-JSON, both directions).
 //!
 //! The per-type work is EMITTED (`openehr-codegen -- emit-json`) as manual

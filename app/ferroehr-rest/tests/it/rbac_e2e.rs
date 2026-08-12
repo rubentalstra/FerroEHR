@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end RBAC gate over the real axum app.
 //!
 //! Drives the assembled router (auth + RBAC + dispatch) with `tower`'s

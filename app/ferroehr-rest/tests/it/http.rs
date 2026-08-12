@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests: routing, authentication (401/403), and content
 //! negotiation, exercised through the assembled router over a **real**
 //! `FerroEhrService` on a real `PostgreSQL` (the `common` fixture).

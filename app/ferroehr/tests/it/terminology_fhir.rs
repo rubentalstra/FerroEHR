@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `FhirTerminologyProvider` wire-contract tests,
 //! driven by `wiremock` — a hermetic FHIR R4B terminology server: canned
 //! `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses + fault injection

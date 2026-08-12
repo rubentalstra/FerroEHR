@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Stage 2 — ANALYZE. Model analysis over the loaded BMM meta-model.
 //!
 //! Consumes the loaded [`crate::load::bmm`] schemas and produces the semantic

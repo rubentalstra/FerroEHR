@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written realization of the BASE `definitions` constant-holder classes
 //! — `BASIC_DEFINITIONS` and `OPENEHR_DEFINITIONS` (which inherits it, adding
 //! `Local_terminology_id`).

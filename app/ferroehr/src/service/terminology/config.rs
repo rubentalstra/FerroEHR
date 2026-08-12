@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[terminology]` section — extension-API toggle + external-server
 //! validation config.
 //!

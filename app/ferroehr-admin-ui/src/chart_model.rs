@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Grouped multi-series chart derivation for an AQL result set — the
 //! component-free half of the results pane's chart view (the view itself is
 //! [`crate::components::results_chart`]).

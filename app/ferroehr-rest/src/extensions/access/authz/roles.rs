@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The role model: JWT-claim role extraction and the RBAC gate decision.
 //!
 //! Roles are plain upper-cased strings (`USER`, `ADMIN`, …). They come from a

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end AQL engine tests against a real PostgreSQL 18 (shared testkit harness):
 //! seed EHRs + COMPOSITIONs through the service, then execute AQL through the
 //! `QueryService` seam and assert on the assembled ITS-REST 1.1.0 `RESULT_SET`.

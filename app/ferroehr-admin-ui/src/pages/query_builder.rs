@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/queries/builder` screen: the point-and-click Query Builder.
 //!
 //! A template-first, cascading builder over the console's AQL engine. The user

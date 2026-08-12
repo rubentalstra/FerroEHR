@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-1 overlay topic: the `annotations` and `rm_overlay` sections.
 //!
 //! Rule texts:

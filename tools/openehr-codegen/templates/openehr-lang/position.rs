@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Source-text position arithmetic — one home for this generation's parsers.
 //!
 //! Every reader in the LANG family reports defects at a byte offset in the

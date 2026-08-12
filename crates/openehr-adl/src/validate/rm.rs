@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Reference-model (RM) validation of ADL2 archetypes.
 //!
 //! The checks that require "a computational representation of the reference

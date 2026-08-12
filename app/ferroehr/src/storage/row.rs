@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Node-row shapes: the full write row produced by decomposition, and the lean
 //! read row the repository fetches back.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end contribution-outbox eventing against a **real broker**
 //! (testcontainers `RabbitMQ`) + a real `PostgreSQL` 18 — the broker half of
 //! Our own extension (task 3/5b).

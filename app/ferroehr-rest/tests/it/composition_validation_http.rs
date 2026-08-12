@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the COMPOSITION semantic-validation response —
 //! the `422` an RM class-invariant violation produces, driven through the
 //! assembled router over a **real** `FerroEhrService` on a real `PostgreSQL`.

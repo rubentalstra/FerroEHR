@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The binary's authorization construction seam
 //! ([`ferroehr_server::build_authz`]): the shipped run path builds the RBAC
 //! gate AND the ABAC engine, and an enabled-but-unbuildable ABAC block aborts

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Integration tests for `ferroehr-rest` — the ITS-REST protocol adapter: the
 //! assembled axum router end to end (routing, content negotiation, committal and
 //! versioning headers, the status/error table), every API group's wire behaviour

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Row I/O for the versioned-object spine: `vo_version`, `audit`,
 //! `contribution`, `vo_attestation`, plus the folder-membership and
 //! event-outbox writes that ride along inside the same commit transaction.

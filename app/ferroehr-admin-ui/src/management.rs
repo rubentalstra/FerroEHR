@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The CDR's **operational surfaces** the console consumes.
 //!
 //! The public health family (`/health/readiness`) and the CDR's management

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/operations` screen: the operator's panel over the CDR's operational
 //! surfaces — dependency health, build + spec provenance, the metric registry,
 //! and the live log-filter control.

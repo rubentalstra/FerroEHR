@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared test-database harness for every DB-backed test in the workspace.
 //!
 //! One `PostgreSQL` 18 server + one migrated **template database** per

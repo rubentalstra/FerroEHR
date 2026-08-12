@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! OPT-1.4 → ADL2 conversion front end.
 //!
 //! The in-CDR 1.4 → 2 converter (`openehr_adl::adl14::convert::convert`) takes an

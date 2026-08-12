@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The **wire-boundary RM class-invariant dispatcher** — the thin entry points
 //! that compose the validation tiers at the codec boundary.
 //!

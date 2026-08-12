@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! XML emitter: emits `impl ToXml` + `impl FromXml` for the generated
 //! RM/BASE spec types, into `openehr-its/src/xml/generated/`.
 //!

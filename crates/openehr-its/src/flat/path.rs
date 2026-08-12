@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The simplified-path (FLAT key) model.
 //!
 //! A FLAT key is a hierarchical field identifier (ITS-REST

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `EHR_ACCESS` policy gate — the **spec-grounded** access-decision layer.
 //!
 //! # Why this leads

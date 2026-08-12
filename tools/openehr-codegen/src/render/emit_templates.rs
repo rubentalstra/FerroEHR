@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Generation-twin templates: ONE hand-written source, stamped per generation.
 //!
 //! A hand-written spec-behaviour file that is byte-identical across a crate's
@@ -80,6 +83,10 @@ pub(crate) fn stamp_templates(
                     format!("templates/{}/{rel_str}", comp.crate_name),
                 )
             };
+            // The source carries its own SPDX header (it is a tracked
+            // first-party file); the stamped copy gets one at write time from
+            // the crate it lands in, so exactly one authority states licensing.
+            let text = crate::render::spdx::strip_leading_header(&text);
             out.push(GenFile {
                 path: format!("{}/{rel_str}", generation.module),
                 body: format!(

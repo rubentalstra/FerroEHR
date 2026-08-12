@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The normative AQL `RESULT_SET` equivalence comparator.
 //!
 //! The schedule's

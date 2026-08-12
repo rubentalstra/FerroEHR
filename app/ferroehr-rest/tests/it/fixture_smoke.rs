@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Smoke test for the shared real-PG fixture: the assembled router answers on
 //! a spec route over a real service + database.
 

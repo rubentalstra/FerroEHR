@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Demographic (ehr-less) CONTRIBUTION — commit + retrieval, per the
 //! Demographic API of ITS-REST Release-1.1.0 (DEVELOPMENT lifecycle within
 //! the released spec; the SM demographic service is abstract). A demographic

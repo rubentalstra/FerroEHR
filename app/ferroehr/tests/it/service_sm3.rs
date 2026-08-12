@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end SM-3 tests against a real PostgreSQL 18 (shared testkit harness): the
 //! `PARTY_RELATIONSHIP` CRUD + versioning + `VERSIONED_OBJECT` + revision
 //! history + error cases (driven through the `PartyRelationshipService` seam),

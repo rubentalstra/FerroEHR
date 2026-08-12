@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! E2 multi-tenancy isolation integration tests, against a real
 //! `PostgreSQL` 18 via the shared testkit harness.
 //!

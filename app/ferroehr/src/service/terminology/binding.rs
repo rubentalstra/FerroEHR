@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Commit-time resolution of archetype **constraint bindings** — the ac-code
 //! value sets a template binds to an external terminology query.
 //!

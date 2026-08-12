@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The shared token superset: one `logos` DFA, read in this generation under
 //! the single Release-1.0.0 ODIN lexical layer.
 //!

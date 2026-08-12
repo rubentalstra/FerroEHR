@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! [`RemotePdp`] — the external policy-decision-point client.
 //!
 //! The wire contract is deliberately minimal, in the NIST SP 800-162 sense of a

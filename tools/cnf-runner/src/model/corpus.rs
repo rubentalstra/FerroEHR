@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The governed corpus manifest (`corpus/MANIFEST.yaml`).
 //!
 //! Every fixture and generated set is a manifest entry: verdict + defect

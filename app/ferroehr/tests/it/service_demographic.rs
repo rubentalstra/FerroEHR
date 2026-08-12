@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end DEMOGRAPHIC service tests against a real PostgreSQL 18
 //! (shared testkit harness): the party CRUD + versioning + `VERSIONED_PARTY` +
 //! contribution + tags lifecycle, driven through the `DemographicService`

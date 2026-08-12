@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end service tests for the SM `I_TDD_SERVICE.import_tdd` /
 //! `import_tdds` TDD (Template Data Document) import path against a real
 //! `PostgreSQL` 18 (shared testkit harness).

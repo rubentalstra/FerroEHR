@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The reproducibility conversion log.
 //!
 //! NOTE: no openEHR spec governs 1.4→2 conversion — our own design (see the

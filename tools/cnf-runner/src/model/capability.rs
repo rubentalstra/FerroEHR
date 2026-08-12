@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The machine-readable capability→family→tier matrix
 //! (`vocab/capability_matrix.yaml`) — the Profiles book's capability×tier
 //! tables as data, the input the verdict machinery computes from.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Wire-facing EHR-service types.
 //!
 //! The SM `EHR_SUMMARY` return shape and the contribution-list time-range

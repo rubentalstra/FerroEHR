@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! [`TokenSource`] — `OAuth2` client-credentials authentication to a
 //! terminology server, over the pinned `oauth2` crate.
 //!

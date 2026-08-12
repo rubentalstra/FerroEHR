@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Bindings: `ENV_BINDING`, `DATA_FRAME`, and the `SYSTEM_CALL` retrieval
 //! methods (`env_binding.adoc`, `data_frame.adoc`; master10 §Bindings +
 //! §Specifying a Binding).

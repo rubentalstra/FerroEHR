@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Integration tests for the management surface: the access-level matrix, the
 //! Prometheus exposition + route-template label + cardinality guard,
 //! separate-port isolation, and the boundary that the surface carries no health

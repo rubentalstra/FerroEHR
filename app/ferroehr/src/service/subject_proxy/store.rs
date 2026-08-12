@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `sp_*` configuration + sample stores (SM master10 §Persistence:
 //! configuration survives for the life of the system; sample rows realize
 //! `SUBJECT_VARIABLE.history`/`last_frame` — persisting them is permitted,

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `RemotePdp` wire-contract tests,
 //! driven by `wiremock`: URL = base + policy name; a flat JSON body with exactly
 //! the configured keys; 200 → permit, non-200 → deny; connect/timeout →

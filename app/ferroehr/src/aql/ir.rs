@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The typed AQL query IR (our own engine).
 //!
 //! This is a relational-algebra-flavoured, fully typed intermediate

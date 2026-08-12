@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Build/spec provenance constants.
 //!
 //! The spec pins are **read from the `openehr-*` crates**, never hand-typed

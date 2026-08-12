@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `CONTRIBUTION` resource.
 //!
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (CONTRIBUTION) +

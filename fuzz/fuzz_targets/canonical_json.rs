@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The canonical-JSON reader: every write on the REST surface arrives here.
 //!
 //! A pure parse — the typed strict reader (`openehr_its::json`), then, once the

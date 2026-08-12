@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/system` screen.
 //!
 //! An operational panel over the CDR — server status, the openEHR System API

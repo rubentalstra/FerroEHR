@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Strongly-typed object identities.
 //!
 //! An EHR id and a versioned-object id are both UUIDs on the wire and in the
