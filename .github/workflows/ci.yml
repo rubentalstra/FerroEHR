@@ -307,18 +307,28 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
-        with:
-          tool: actionlint@1.7.12
       - name: Lint .github/workflows
+        # The OFFICIAL image, digest-pinned. actionlint is a Go binary, so
+        # `taiki-e/install-action` does not carry it and its cargo-binstall
+        # fallback cannot ("actionlint is not found" — it is not a crate). The
+        # upstream alternative is `curl | bash` off `main`, which is exactly the
+        # unpinned fetch this repository's pinning rule exists to forbid. The
+        # image is also the only distribution that BUNDLES shellcheck, which
+        # half of actionlint's value depends on: "The image contains actionlint
+        # executable and all dependencies (shellcheck and pyflakes)"
+        # (https://github.com/rhysd/actionlint/blob/main/docs/usage.md).
+        #
         # SC2016 ("expressions don't expand in single quotes") is excluded, and
         # only it: every occurrence in this repo is a `printf` format string or a
         # `jq` filter, where single quotes are the CORRECT idiom precisely
         # because the shell must not expand `%s` or `$`. Nothing else is
         # suppressed — the run is clean at actionlint's own default severity.
-        env:
-          SHELLCHECK_OPTS: "-e SC2016"
-        run: actionlint
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" --workdir /repo \
+            -e SHELLCHECK_OPTS='-e SC2016' \
+            rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
+            -color
 
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
