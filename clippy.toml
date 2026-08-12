@@ -13,8 +13,15 @@ allow-indexing-slicing-in-tests = true  # clippy::indexing_slicing
 check-incompatible-msrv-in-tests = true # clippy::incompatible_msrv reaches tests too
 # allow-dbg-in-tests stays false (default): dbg! is never committed, tests included
 
-# ── every crate is publish = false: there is no external semver surface, so the
-#    ~15 API-shape lints this option suppresses report real findings instead ──
+# ── the ~15 API-shape lints this option suppresses report real findings here ──
+#    The eight `openehr-*` crates DO publish to crates.io, so "no external API"
+#    is not the reason. The reason is the line they publish on: `0.0.x`, where
+#    cargo treats every patch as its own compatibility set
+#    (https://doc.rust-lang.org/cargo/reference/semver.html), so no consumer
+#    range spans a break — and any packaged-content change already bumps all
+#    eight in the same pull request. The `ferroehr-*` crates are unpublished.
+#    Nothing downstream is protected by hiding an API-shape finding, so they
+#    stay visible. Re-adjudicate if the line ever graduates past `0.x`.
 avoid-breaking-exported-api = false
 
 # ── clippy::doc_markdown domain vocabulary (".." appends to the defaults) ────
