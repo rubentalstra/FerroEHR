@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM class invariants for `ACTIVITY`.
 //!
 //! - `Action_archetype_id_valid` (`not action_archetype_id.is_empty`) —

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Public-API battery for the P_BMM schema pipeline
 //! (`openehr_lang::v1_1::bmm_persistence`) over every vendored `.bmm` schema under
 //! `tests/vendor/**`: ODIN text → `P_BMM_SCHEMA` → inclusion resolution →

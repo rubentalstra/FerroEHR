@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 / ADL 2 **archetype + artefact** wire — **our own extension**.
 //!
 //! No openEHR ITS-REST operation governs any route in this module. The released

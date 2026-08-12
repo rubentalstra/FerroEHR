@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR Index service (`service/ehr_index/`) — SM `I_EHR_INDEX`.
 //!
 //! Holds N:M subject↔EHR associations with duplicate-management metadata

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! EHR-Extract export (SM `I_EHR_EXTRACT_SERVICE.export_ehrs` /
 //! `export_ehr_extracts`) over the greenfield versioned store.
 //!

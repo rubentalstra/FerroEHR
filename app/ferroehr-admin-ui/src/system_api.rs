@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The openEHR **System API** surface: the CDR's conformance manifest.
 //!
 //! `OPTIONS {base_path}` with `Accept: application/json` is the spec's own

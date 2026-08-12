@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The live HTTP driver.
 //!
 //! A [`crate::exec::StepDriver`] realized PURELY

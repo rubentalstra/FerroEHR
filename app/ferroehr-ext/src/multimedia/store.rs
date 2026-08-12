@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Content-addressed blob store over `object_store`.
 //!
 //! **No openEHR spec governs this — our own design/extension.** Constructed

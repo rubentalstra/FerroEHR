@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-base/base_types/definitions/definitions_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written realization of the BASE `definitions` constant-holder classes
 //! — `BASIC_DEFINITIONS` and `OPENEHR_DEFINITIONS` (which inherits it, adding
 //! `Local_terminology_id`).

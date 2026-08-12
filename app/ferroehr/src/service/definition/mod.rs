@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The DEFINITION component of the platform crate — the openEHR **Definition**
 //! service seam (SM `master04-definition_package.adoc`).
 //!

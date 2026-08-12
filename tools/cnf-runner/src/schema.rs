@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Deterministic JSON-Schema emission for the five schedule-artifact
 //! families (the set the upstream U1 proposal ships).
 //!

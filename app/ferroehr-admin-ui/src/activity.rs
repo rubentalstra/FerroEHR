@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Activity timelines: the pure day-bucketing every activity chart in the
 //! console derives its points from.
 //!

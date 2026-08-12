@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 #![allow(
     clippy::doc_markdown,
     reason = "prose with proper nouns (openEHR, EHRbase, CNF, cabolabs)"

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The inline `C_PRIMITIVE` productions (`cadl2_primitives.g4`).
 //!
 //! The primitive-kind dispatch, one production per ADL primitive type, the

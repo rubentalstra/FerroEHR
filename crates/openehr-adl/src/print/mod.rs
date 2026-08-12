@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL2 serializer: render an assembled `openehr_am::v2_4::aom2`
 //! [`Archetype`] back to ADL2 source text.
 //!

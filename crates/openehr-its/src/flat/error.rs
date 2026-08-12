@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Errors for the Simplified Formats layer.
 //!
 //! Every MUST-level rejection in the Simplified Formats specification

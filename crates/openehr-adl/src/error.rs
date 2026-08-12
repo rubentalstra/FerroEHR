@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Typed ADL2 syntax errors.
 //!
 //! [`SyntaxErrorCode`] mirrors 1:1 the openEHR *Syntax Validity Rules* code

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Trace-shape test: drive a request through the root-span
 //! middleware with a capturing subscriber and assert the span is named/attributed
 //! by **route template** and carries **no PHI** (the `ehr_id` never appears in

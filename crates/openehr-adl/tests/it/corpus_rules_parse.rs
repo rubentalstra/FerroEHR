@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Corpus gate: every ADL2 corpus source with a `rules` section must parse that
 //! section cleanly into the AM-level statement set. Sources with no `rules`
 //! section yield `None`; a source that does not outer-parse is skipped here (the

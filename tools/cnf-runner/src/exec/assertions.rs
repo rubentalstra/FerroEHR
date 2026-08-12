@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The pure assertion evaluators — verdict logic over canonical-JSON
 //! values, shared by the live driver and the transcript player so any two
 //! conformant runners compute identical verdicts.

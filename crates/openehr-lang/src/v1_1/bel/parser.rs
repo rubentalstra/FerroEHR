@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The BEL recursive-descent parser, generic over a [`BelBuilder`].
 //!
 //! Grammar: `crates/openehr-lang/vendor/grammar/v1_1/base_expressions.g4` (the

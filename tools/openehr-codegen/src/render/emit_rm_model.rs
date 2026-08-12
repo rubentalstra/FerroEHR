@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `emit-rm-model`: emit a **static RM attribute/type model**
 //! into `openehr-rm` (`src/model/`), generated from the same BASE + RM BMM the
 //! `emit` target consumes. This is the AQL planner's oracle — attribute typing,

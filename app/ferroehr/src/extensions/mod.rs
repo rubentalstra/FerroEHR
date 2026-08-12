@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The spec-homeless surface — deliberate local extensions.
 //!
 //! **No openEHR specification governs anything in this module tree — every

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Live gate for the harness itself: server acquisition, template build,
 //! and per-test cloning against a real `PostgreSQL` 18.
 

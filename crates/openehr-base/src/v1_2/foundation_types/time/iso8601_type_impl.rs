@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-base/foundation_types/time/iso8601_type_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written `Iso8601_type` spec behaviour — the two abstract functions the
 //! class declares, dispatched over its descendants.
 //!

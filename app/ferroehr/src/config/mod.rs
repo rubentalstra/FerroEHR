@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The one server configuration tree — `ferroehr.toml` + `FERROEHR_*` env
 //! overrides.
 //!

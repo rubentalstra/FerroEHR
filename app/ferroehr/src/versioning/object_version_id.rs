@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding — the identification law of
 //! the versioning core.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The **MESSAGE** wire — **our own extension**, the whole group.
 //!
 //! ITS-REST 1.1.0 publishes seven API groups (overview, system, ehr,

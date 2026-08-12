@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The FHIR R4B integration core.
 //!
 //! The mapping model + FLAT builder, the outbound reverse-map, the

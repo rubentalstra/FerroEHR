@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM class invariants for `DV_DATE`.
 //!
 //! `Value_valid` (`valid_iso8601_date(value)`) —

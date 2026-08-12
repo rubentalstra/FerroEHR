@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! OPT 1.4 ingestion: canonical XML → [`OperationalTemplate`] parse.
 //!
 //! # Spec basis

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end service tests for the EHR Extract **import** path (SM
 //! `I_EHR_EXTRACT_SERVICE.import_ehr` / `import_ehr_extract`) against a real
 //! `PostgreSQL` 18 (shared testkit harness).

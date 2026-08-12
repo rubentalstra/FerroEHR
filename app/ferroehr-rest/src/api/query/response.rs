@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared request-decoding + response-rendering for the QUERY API
 //! (`docs/query/Request.md`, `docs/query/Response.md`).
 //!

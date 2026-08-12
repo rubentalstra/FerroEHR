@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Rust type text for a BMM type, plus the import set that must agree with it.
 //!
 //! A second `impl` block on [`crate::analyze::Model`]: the analysed model

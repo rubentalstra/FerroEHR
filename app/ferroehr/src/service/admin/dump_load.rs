@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Admin dump/load (SM `I_ADMIN_DUMP_LOAD.export_ehrs` / `load_ehrs`).
 //!
 //! Spec: `docs/specs/openehr/SM/docs/UML/classes/i_admin_dump_load.adoc`

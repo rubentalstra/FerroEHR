@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The runner-verification pack, part 1 (verdict conformance): replaying
 //! the committed transcript reproduces every adjudicated verdict — and a
 //! deliberately-broken runner (tampered adjudications) is REJECTED, which

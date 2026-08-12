@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! **RM-instance validation** — the template-independent passes over a
 //! canonical-JSON RM tree, plus the report shape every validation surface of
 //! this crate speaks.

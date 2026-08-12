@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP dispatch for the terminology extension API group over the
 //! `ferroehr::service::TerminologyService` seam.
 //!

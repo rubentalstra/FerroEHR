@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The printer's own documented invariant, asserted over every boolean shape:
 //! for any AST the parser produces, `parse(to_aql(ast)) == ast`.
 //!

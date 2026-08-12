@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Import: replaying received `ORIGINAL_VERSION`s into the local store as
 //! `IMPORTED_VERSION`s.
 //!

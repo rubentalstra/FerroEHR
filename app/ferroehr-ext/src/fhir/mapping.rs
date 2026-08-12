@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The FHIR-connector **mapping definition** schema + the pure FHIR→FLAT
 //! transform.
 //!

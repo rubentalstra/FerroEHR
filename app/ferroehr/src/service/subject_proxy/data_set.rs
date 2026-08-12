@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `SUBJECT_DATA_SET` and `DATA_SET_RESULT` (`subject_data_set.adoc`,
 //! `data_set_result.adoc`).
 

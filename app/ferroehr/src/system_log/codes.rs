@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! DICOM (DCM) / RFC-3881 code constants used in the DICOM Audit Message.
 //!
 //! Values are the well-known DICOM PS3.15 §A.5 and IETF RFC 3881 audit code

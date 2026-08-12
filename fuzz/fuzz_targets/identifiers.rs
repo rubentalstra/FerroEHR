@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 #![no_main]
 //! The identifier readers, which parse bytes taken straight from the URL.
 //!

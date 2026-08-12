@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! FHIR R4B `AuditEvent` rendering of the audit event model, following the
 //! IHE **BALP** (Basic Audit Log Patterns) content profiles.
 //!

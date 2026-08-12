@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Telemetry tests: the metric-name + bucket registry snapshot
 //! (renames become deliberate), the OTLP export smokes for traces AND metrics
 //! push (against in-memory exporters — the export pipeline is exercised without

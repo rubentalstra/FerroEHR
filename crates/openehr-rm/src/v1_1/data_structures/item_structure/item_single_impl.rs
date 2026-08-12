@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_structures/item_structure/item_single_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM spec functions for `ITEM_SINGLE`.
 //!
 //! Spec:

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Public-API tests for the pure-BEL parser (`openehr_lang::v1_1::bel`, the
 //! [`BeomBuilder`] path). Structural assertions over the generated `beom` tree;
 //! the AOM-extended path is exercised in `openehr-adl`.

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Leaf domain-constraint validation — the `C_DV_*` / `C_PRIMITIVE` leaf
 //! constraint checks (AOM 1.4 `master04-constraint_model_package.adoc`) applied
 //! to a `DATA_VALUE`, approximated from the WebTemplate `inputs`.

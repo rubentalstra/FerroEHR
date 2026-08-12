@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The import write path.
 //!
 //! Writes `vo_version` rows with an **explicit** `sys_period` — the EHR Extract

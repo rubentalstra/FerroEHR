@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Authorization for the `FerroEHR` CDR.
 //!
 //! Two composable layers inside the protocol adapter (authorization is an

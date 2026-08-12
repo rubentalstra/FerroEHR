@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The performance schedule machinery — conformance-by-MEASUREMENT.
 //!
 //! It carries the

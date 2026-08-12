@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! CONTRIBUTION classify + commit orchestration + retrieval.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Contributions,

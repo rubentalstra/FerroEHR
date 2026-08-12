@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The closed `${…}` variable-reference grammar and the case-level capture
 //! grammar.
 //!

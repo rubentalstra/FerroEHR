@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Design-filled advisory duplicate-detection read. `master07 §Overview`
 //! names two error states the index metadata exists "to detect and rectify":
 //! multiple EHRs recorded for one subject, and multiple subjects recorded for

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_DEMOGRAPHIC_SERVICE` (`i_demographic_service.adoc`: "Primary interface
 //! to `DEMOGRAPHIC_SERVICE`") and `I_PARTY` (`i_party.adoc`: "Interface for
 //! `PARTY` level operations").

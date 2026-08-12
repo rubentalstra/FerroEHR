@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Simplified tree → RM (canonical JSON) — the composition builder.
 //!
 //! The reverse of [`crate::flat::flatten`]: the [`WebTemplate`] tree is walked

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Stage 2 — ANALYZE: the **assertion-dialect** analyzer for BMM class
 //! invariants.
 //!

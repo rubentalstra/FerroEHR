@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Integration tests for `openehr-adl`: the ADL 2.4 engine — the ADL2/cADL/ODIN
 //! parser, AOM2 validation (basic integrity, parent + RM conformance, flat
 //! form), the flattener, OPT2 generation, ADL 1.4 reading and 1.4→2 conversion

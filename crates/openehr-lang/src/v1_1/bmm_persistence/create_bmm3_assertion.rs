@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The persisted assertion string → **v3** `BMM_ASSERTION` transform.
 //!
 //! P_BMM persists a class invariant and a routine pre-/post-condition as an

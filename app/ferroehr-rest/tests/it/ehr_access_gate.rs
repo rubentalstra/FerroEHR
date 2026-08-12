@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end `EHR_ACCESS` gate over the real axum app.
 //!
 //! `EHR_ACCESS` is the spec-grounded access-decision authority ("All access

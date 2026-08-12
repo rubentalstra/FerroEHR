@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AQL lexer and parser: any authenticated caller can post arbitrary query
 //! text to the query surface, so this is the widest attacker-controlled grammar
 //! in the system. `parse_str` is the entry the service layer calls.

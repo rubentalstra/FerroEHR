@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Assembly unit tests: hand-checked ODIN-section → AOM mappings
 //! and the `regression`-tag reader, driving the public
 //! [`openehr_adl::assemble::parse_artefact`] API.

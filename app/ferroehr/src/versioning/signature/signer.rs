@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The [`Signer`]: builds the two spec-blessed signature modes from
 //! [`SigningConfig`] and produces a signature over a `canonical_form` string.
 //!

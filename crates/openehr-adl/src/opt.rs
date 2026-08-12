@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! OPT2 — operational-template generation (raw + profiled).
 //!
 //! Oracle: `docs/specs/openehr/AM/docs/OPT2/master02-overview.adoc` (the OPT

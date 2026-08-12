@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The artefact header sections: the identification line (`ADL2/master07.04`),
 //! `language` (`master07.07`), `description` (`master07.08`), `annotations`
 //! (`master07.14`), `rm_overlay` (`master07.12`), and the OPT-only

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `GET /management/info` — the server's build + spec provenance.
 //!
 //! No openEHR spec governs this endpoint — it is our own operational surface

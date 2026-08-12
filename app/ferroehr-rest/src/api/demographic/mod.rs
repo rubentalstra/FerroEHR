@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP dispatch for the ITS-REST **demographic API** (Release-1.1.0,
 //! DEVELOPMENT status).
 //!

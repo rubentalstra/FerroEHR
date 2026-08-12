@@ -1,0 +1,193 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
+//! The SPDX licensing header every emitted file carries (REUSE Specification
+//! 3.3, <https://reuse.software/spec-3.3/>).
+//!
+//! The repository declares licensing in bulk by glob in `REUSE.toml`, which is
+//! complete but does not travel with a file that is copied out. The
+//! specification's stated purpose is that licensing "is preserved when the file
+//! is copied and reused by third parties", which only a header inside the file
+//! achieves — and a generated file can only get one from here, because a hand
+//! edit is overwritten by the next `emit`.
+//!
+//! Placement: the header follows the `// @generated … DO NOT EDIT.` banner
+//! rather than preceding it, because that banner's presence ON THE FIRST LINE is
+//! what the purge, the sibling-impl loader and the comment-style guard all key
+//! on. REUSE asks for the header "as close to the top of the file as possible",
+//! and line two is as close as it gets in a file whose first line must warn a
+//! human not to edit it.
+
+// Everything below WRITES SPDX tags rather than carrying them, and `reuse
+// lint` reads a tag wherever it appears — the specification's own remedy for a
+// file that quotes the syntax it produces.
+// REUSE-IgnoreStart
+
+/// This project's own copyright holder, spelled as the repository's
+/// `REUSE.toml` spells it.
+///
+/// A header that disagreed with the glob declaration covering the same file
+/// would make two different statements about one file, which is the drift this
+/// whole arrangement exists to prevent.
+pub(crate) const PROJECT_COPYRIGHT: &str = "FerroEHR contributors";
+
+/// The copyright holder of the openEHR material a published spec crate carries
+/// — the specification documentation text propagated into the emitted doc
+/// comments, the terminology assets and the schemas.
+pub(crate) const OPENEHR_COPYRIGHT: &str = "openEHR Foundation";
+
+/// The crates whose packaged content is offered under `MIT AND Apache-2.0`.
+///
+/// The list is the one their own manifests declare and `REUSE.toml` repeats:
+/// the emitted Rust is this project's, while the specification text carried
+/// inside it is openEHR's. Any other crate is plain MIT.
+pub(crate) const DUAL_LICENSED_CRATES: &[&str] = &[
+    "openehr-am",
+    "openehr-base",
+    "openehr-its",
+    "openehr-lang",
+    "openehr-rm",
+    "openehr-term",
+];
+
+/// The tag prefix a copyright line carries.
+const COPYRIGHT_TAG: &str = "// SPDX-FileCopyrightText: ";
+
+/// The tag prefix the licence expression carries.
+const LICENSE_TAG: &str = "// SPDX-License-Identifier: ";
+
+/// How far into a file a licence identifier still counts as its header — a
+/// generated banner plus a copyright line or two, never a mention in code.
+const HEAD_SCAN_LINES: usize = 6;
+
+/// Returns the SPDX comment header for a file belonging to `crate_name`.
+///
+/// The returned text is a whole number of lines, each newline-terminated.
+pub(crate) fn header(crate_name: &str) -> String {
+    if DUAL_LICENSED_CRATES.contains(&crate_name) {
+        format!(
+            "{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n\
+             {COPYRIGHT_TAG}{OPENEHR_COPYRIGHT}\n\
+             {LICENSE_TAG}MIT AND Apache-2.0\n"
+        )
+    } else {
+        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}MIT\n")
+    }
+}
+
+/// Returns `body` with the SPDX header of `crate_name` inserted below its
+/// generated banner.
+///
+/// A body whose first line is not a banner takes the header at the very top
+/// instead; a body that already carries a licence identifier is returned
+/// unchanged, so stamping is idempotent.
+pub(crate) fn stamp(crate_name: &str, body: &str) -> String {
+    if body
+        .lines()
+        .take(HEAD_SCAN_LINES)
+        .any(|l| l.starts_with(LICENSE_TAG))
+    {
+        return body.to_owned();
+    }
+    let head = header(crate_name);
+    match body.split_once('\n') {
+        Some((first, rest)) if first.contains("@generated") => format!("{first}\n{head}{rest}"),
+        _ => format!("{head}{body}"),
+    }
+}
+
+/// Returns `text` without a leading SPDX header block.
+///
+/// A generation-twin template source carries the header of the crate it is
+/// stamped INTO; the stamped copy gets its header from [`stamp`] at write time,
+/// so the source's copy is removed first and one authority remains.
+pub(crate) fn strip_leading_header(text: &str) -> &str {
+    let mut rest = text;
+    let mut stripped = false;
+    while rest.starts_with(COPYRIGHT_TAG) || rest.starts_with(LICENSE_TAG) {
+        rest = rest.split_once('\n').map_or("", |(_, tail)| tail);
+        stripped = true;
+    }
+    if stripped {
+        rest.strip_prefix('\n').unwrap_or(rest)
+    } else {
+        text
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DUAL_LICENSED_CRATES, header, stamp, strip_leading_header};
+
+    #[test]
+    fn dual_crates_state_both_positions() {
+        let h = header("openehr-rm");
+        assert!(h.contains("SPDX-FileCopyrightText: FerroEHR contributors"));
+        assert!(h.contains("SPDX-FileCopyrightText: openEHR Foundation"));
+        assert!(h.ends_with("SPDX-License-Identifier: MIT AND Apache-2.0\n"));
+    }
+
+    #[test]
+    fn other_crates_are_plain_mit() {
+        assert_eq!(
+            header("openehr-query"),
+            "// SPDX-FileCopyrightText: FerroEHR contributors\n\
+             // SPDX-License-Identifier: MIT\n"
+        );
+    }
+
+    #[test]
+    fn the_dual_list_is_sorted_and_unique() {
+        let mut sorted = DUAL_LICENSED_CRATES.to_vec();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted, DUAL_LICENSED_CRATES);
+    }
+
+    #[test]
+    fn the_header_lands_below_the_banner() {
+        let out = stamp(
+            "openehr-rm",
+            "// @generated x — DO NOT EDIT.\n\npub mod a;\n",
+        );
+        let lines: Vec<&str> = out.lines().collect();
+        assert_eq!(lines[0], "// @generated x — DO NOT EDIT.");
+        assert_eq!(lines[1], "// SPDX-FileCopyrightText: FerroEHR contributors");
+        assert_eq!(lines[3], "// SPDX-License-Identifier: MIT AND Apache-2.0");
+        assert_eq!(lines[4], "");
+        assert_eq!(lines[5], "pub mod a;");
+    }
+
+    #[test]
+    fn a_body_without_a_banner_takes_the_header_first() {
+        let out = stamp("openehr-query", "pub mod a;\n");
+        assert_eq!(
+            out,
+            "// SPDX-FileCopyrightText: FerroEHR contributors\n\
+             // SPDX-License-Identifier: MIT\n\
+             pub mod a;\n"
+        );
+    }
+
+    #[test]
+    fn stamping_twice_changes_nothing() {
+        let once = stamp("openehr-base", "// @generated x\n\npub mod a;\n");
+        assert_eq!(stamp("openehr-base", &once), once);
+    }
+
+    #[test]
+    fn a_leading_header_is_stripped_with_its_blank_line() {
+        let text = "// SPDX-FileCopyrightText: FerroEHR contributors\n\
+                    // SPDX-License-Identifier: MIT\n\
+                    \n\
+                    //! Docs.\n";
+        assert_eq!(strip_leading_header(text), "//! Docs.\n");
+    }
+
+    #[test]
+    fn stripping_leaves_a_headerless_body_alone() {
+        assert_eq!(strip_leading_header("//! Docs.\n"), "//! Docs.\n");
+    }
+}
+
+// REUSE-IgnoreEnd

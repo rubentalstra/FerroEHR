@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `P_BMM_ENUMERATION` — uniform access to the
 //! enumeration item lists, plus the underlying-type name each concrete
 //! `BMM_ENUMERATION_*` form is based on.

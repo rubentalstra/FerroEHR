@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Ingestion-side artefact-validity tests (surface A1).
 //!
 //! Each per-code test takes the vendored valid `minimal_evaluation.opt` and

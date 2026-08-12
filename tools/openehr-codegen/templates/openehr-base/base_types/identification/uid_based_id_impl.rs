@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written accessor functions for the `UID_BASED_ID` family
 //! (`HIER_OBJECT_ID`, `OBJECT_VERSION_ID`) and the abstract enum.
 //!

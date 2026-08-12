@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The non-blocking audit sender: a bounded `tokio::mpsc` drained by a
 //! background task that renders each record once and fans it out to the
 //! enabled sinks.

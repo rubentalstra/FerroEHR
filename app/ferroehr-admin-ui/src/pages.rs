@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The routed screens. One module
 //! per screen; components stay thin — data flows through the `#[server]`
 //! fns each module co-locates.

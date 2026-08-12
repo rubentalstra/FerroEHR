@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end AQL `TERMINOLOGY('expand', …)` tests (B4 stage (a)) against a real
 //! PostgreSQL 18 (shared testkit harness): seed COMPOSITIONs with a coded ELEMENT leaf,
 //! then run `matches TERMINOLOGY('expand', …)` / `matches {…, TERMINOLOGY(…)}`

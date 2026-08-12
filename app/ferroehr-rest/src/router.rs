@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Router assembly and the `tower-http` middleware stack.
 //!
 //! **Base-path rule** (ITS-REST overview `Resources.md` §Resource identification;

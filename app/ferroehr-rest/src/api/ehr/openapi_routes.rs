@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Native utoipa-axum routing for the EHR API group.
 //!
 //! No openEHR spec governs an OAS layout; the operation semantics are the

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `PARTY_RELATIONSHIP` wire — **our own extension**.
 //!
 //! No openEHR ITS-REST operation governs this: the vendored Demographic API

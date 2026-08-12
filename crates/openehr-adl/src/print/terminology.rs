@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `terminology` section (`ADL2/master07.13`): term definitions, term
 //! bindings, and value sets. The body printer is shared with the OPT-only
 //! `component_terminologies` block, which nests one body per component id.

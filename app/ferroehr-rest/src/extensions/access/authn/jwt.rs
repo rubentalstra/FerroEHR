@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! OAuth2/OIDC bearer-token validation (resource-server role).
 //!
 //! The CDR validates access tokens presented as `Authorization: Bearer <jwt>`:

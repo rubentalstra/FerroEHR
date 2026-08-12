@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Log-record integrity for the TEXT log formats: CR and LF inside a logged
 //! record are neutralised, so no value that reaches a field can forge a second
 //! log line.

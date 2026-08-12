@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `SUBJECT_VARIABLE` (`subject_variable.adoc`).
 
 use serde::{Deserialize, Serialize};

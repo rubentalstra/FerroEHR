@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The tenant registry: CRUD over the `tenant` table + claim/header →
 //! [`TenantContext`] resolution, as methods on `FerroEhrService`.
 //!

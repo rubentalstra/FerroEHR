@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Where the `TERMINOLOGY_SERVICE` spec functions are realized — and why none
 //! of them is realized HERE (documentation only, by design).
 //!

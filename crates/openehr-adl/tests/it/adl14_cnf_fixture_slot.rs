@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The #679 reproduction: the CNF corpus fixture uses the ANONYMOUS
 //! archetype-slot form ADL1.4 master05-cadl.adoc §Archetype Slots itself
 //! writes (`allow_archetype ITEM_TREE matches { include … }`), and must

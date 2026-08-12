@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Multi-tenancy request context.
 //!
 //! **No openEHR spec governs this — our own design/extension.** A tenant is one

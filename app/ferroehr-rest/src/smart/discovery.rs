@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The SMART service-discovery document
 //! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`).
 //!

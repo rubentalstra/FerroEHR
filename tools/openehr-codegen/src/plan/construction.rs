@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The **construction-door** decision map: which generated spec classes hide
 //! their fields behind a validating constructor, and which stay plain records.
 //!

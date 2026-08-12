@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `DV_MULTIMEDIA` externalization to S3-compatible object storage.
 //!
 //! **No openEHR spec governs this — our own design/extension.** Server-side

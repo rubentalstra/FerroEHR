@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP dispatch for the **FHIR R4B inbound connector** + mapping-store CRUD
 //! over the `ferroehr::service::FhirConnectorAdapter` seam.
 //!

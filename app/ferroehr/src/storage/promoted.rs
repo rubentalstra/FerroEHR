@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The promoted-leaf registry.
 //!
 //! The single source of truth for which canonical leaves are lifted onto a

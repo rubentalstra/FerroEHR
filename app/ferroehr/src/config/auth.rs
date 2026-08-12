@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Authentication configuration (Basic + OAuth2/OIDC bearer).
 //!
 //! No openEHR spec governs authentication mechanics (ITS-REST leaves the scheme

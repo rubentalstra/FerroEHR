@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the DEMOGRAPHIC group: the `demographic` routes
 //! served through the real [`DemographicService`] over a real `PostgreSQL`, with
 //! `ETag`/`Location`/`Prefer` and the deleted-read→`204` and precondition→`412`

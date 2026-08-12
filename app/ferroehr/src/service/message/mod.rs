@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The Message service (`service/message/`) — the openEHR **Message component**.
 //!
 //! The platform crate's realization of SM `I_MESSAGE_SERVICE` /

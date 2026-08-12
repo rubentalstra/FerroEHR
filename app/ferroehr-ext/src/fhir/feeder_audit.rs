@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `FEEDER_AUDIT` provenance builder for the FHIR connector.
 //!
 //! The FHIR connector as a whole is spec-silent (no openEHR spec governs the

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Corpus definition-parse gate: every `.adls` file that outer-parses must
 //! also have its `definition` section (and every template overlay's
 //! definition) cADL-parse into an AOM2 `CComplexObject` tree.

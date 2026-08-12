@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR-detail Contributions tab: the per-EHR activity timeline, the paged
 //! contribution list, and the by-uid CONTRIBUTION lookup box.
 

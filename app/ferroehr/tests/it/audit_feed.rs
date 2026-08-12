@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end test of the RESTful-ATNA feed (IHE ITI-20 **ATX: FHIR Feed**):
 //! events emitted through the sender land in the local store, and the outbox
 //! worker POSTs each stored FHIR R4B `AuditEvent` to the ARR

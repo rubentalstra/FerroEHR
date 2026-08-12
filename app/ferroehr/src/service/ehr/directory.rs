@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_EHR_DIRECTORY` (`i_ehr_directory.adoc`) — the DIRECTORY (FOLDER)
 //! surface, one hierarchy per EHR through the ITS-REST/SM `/directory`
 //! binding.

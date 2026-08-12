@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR-detail Directory tab.
 //!
 //! A complete directory experience over the ITS-REST DIRECTORY API — a

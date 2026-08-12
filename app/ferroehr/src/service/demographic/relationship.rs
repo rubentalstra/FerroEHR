@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_PARTY_RELATIONSHIP` (`i_party_relationship.adoc`) + the
 //! `I_DEMOGRAPHIC_SERVICE.create_party_relationship` factory
 //! (`i_demographic_service.adoc`) — the demographic `PARTY_RELATIONSHIP` domain

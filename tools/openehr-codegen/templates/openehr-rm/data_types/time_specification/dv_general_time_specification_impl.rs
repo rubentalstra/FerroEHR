@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Why the `DV_GENERAL_TIME_SPECIFICATION` extraction functions are NOT
 //! realized (documentation only, by design).
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The per-stage wire realization.
 //!
 //! Each [`crate::perf::PerfOp`] maps to

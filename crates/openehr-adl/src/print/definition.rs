@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `definition` section — cADL (`ADL2/master04`, grammar `cadl2.g4` +
 //! `cadl2_primitives.g4`): the object/attribute/tuple productions, archetype
 //! roots, internal-node proxies and archetype slots, plus every primitive,

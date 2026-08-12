@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Version-tree branching + merge provenance, end-to-end against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!

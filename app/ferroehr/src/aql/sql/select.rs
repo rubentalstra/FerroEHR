@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! SELECT-clause lowering (QUERY master03 §SELECT, §DISTINCT, §Aggregate
 //! functions): identified paths, literals, aggregates, and scalar functions;
 //! whole-object columns project four locator columns the executor reassembles

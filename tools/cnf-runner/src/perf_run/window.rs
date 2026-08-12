@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The measured-window core: dispatch the built schedule open-loop, collect
 //! per-operation HDR histograms, aggregate the re-checkable measurement
 //! record.

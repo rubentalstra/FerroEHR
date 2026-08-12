@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Persistence integration tests: the greenfield schema applies
 //! cleanly on a real `PostgreSQL` 18, the `ext` magnitude functions follow
 //! the spec formulas, the temporal versioning model behaves, and the node

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Request-rate limiting — the two tiers described by
 //! [`ferroehr::config::server::RateLimitConfig`].
 //!

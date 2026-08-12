@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL2 `rules` section + structured slot-assertion parser.
 //!
 //! The core BEL grammar is `openehr_lang::v1_1::bel` (a LANG spec — statements,

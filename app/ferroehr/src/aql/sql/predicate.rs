@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! WHERE-clause lowering (QUERY master03 §WHERE, §Operators, §Logical
 //! operators), the whitelisted scalar functions (§Functions), and the node/
 //! source predicate conditions (§Standard predicate, §Node predicate).

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `PostgreSQL` bootstrap: connection settings, pool construction, and the
 //! two-schema migration sequence.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! RM EHR-package cross-version + tag-scoping duties, end-to-end against a
 //! real `PostgreSQL` 18 (shared testkit harness) — A1 rm-ehr chapter.
 //!

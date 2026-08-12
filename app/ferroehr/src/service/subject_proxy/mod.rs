@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The Subject Proxy service (`service/subject_proxy/`).
 //!
 //! Realizes SM `I_SUBJECT_PROXY_SERVICE` / `I_DATA_BINDING`

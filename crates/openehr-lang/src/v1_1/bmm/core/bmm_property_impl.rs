@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `BMM_PROPERTY<T>` — the property definitions
 //! whose differential and flat sets `BMM_CLASS` exposes.
 //!

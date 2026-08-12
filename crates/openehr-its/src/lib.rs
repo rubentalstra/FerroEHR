@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! openEHR **ITS** — Implementation Technology Specifications. This crate
 #![allow(
     clippy::doc_markdown,

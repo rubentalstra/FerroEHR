@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Stage 1 — LOAD. Parse the vendored inputs into verbatim in-memory models,
 //! with no analysis or decisions: the BMM meta-model ([`bmm`]), the XSD reader
 //! ([`xsd`]) and the OAS reader ([`oas`]). Every later stage consumes these

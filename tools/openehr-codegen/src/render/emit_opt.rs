@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The XSD-driven constraint-model emitter: generates a typed Rust model +
 //! canonical-XML `ToXml`/`FromXml` impls for each vendored ARCHETYPE-family XSD
 //! closure. Three targets, one pipeline (see [`ModelTarget`]):

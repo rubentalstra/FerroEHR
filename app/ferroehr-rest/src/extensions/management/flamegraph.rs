@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The on-demand CPU flamegraph body: pprof sampling + inferno SVG render.
 //!
 //! NOTE: no openEHR spec governs this — our own operational surface (the

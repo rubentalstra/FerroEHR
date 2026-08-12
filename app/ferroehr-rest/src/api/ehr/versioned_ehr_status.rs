@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `VERSIONED_EHR_STATUS` container (the versioned-object view of `EHR_STATUS`).
 //!
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` +

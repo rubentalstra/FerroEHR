@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 #![allow(
     clippy::expect_used,
     reason = "test fixtures/diagnostics — a malformed fixture should fail loudly"

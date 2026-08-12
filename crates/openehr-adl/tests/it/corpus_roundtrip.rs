@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Corpus round-trip gate: for every corpus `.adls` that fully
 //! assembles, `parse_artefact → print → parse_artefact` must reconstruct a
 //! **structurally equal** [`openehr_adl::assemble`] `Archetype`.

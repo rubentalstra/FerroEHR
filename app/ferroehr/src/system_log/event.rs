@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The transport-agnostic audit **event model** for the SM System Log
 //! component (`I_SYSTEM_LOG`).
 //!

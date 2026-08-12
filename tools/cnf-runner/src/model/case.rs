@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The case core — one file per case, protocol-neutral
 //! (CNF 2.0 artifact-set design; shapes extracted from
 //! `CNF platform_test_schedule master03/04/06/07/08/09/15–17`).

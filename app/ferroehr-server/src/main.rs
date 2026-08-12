@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `FerroEHR` server binary — a thin shell over [`ferroehr_server::run`].
 //!
 //! All wiring logic lives in the crate's library half so it is reachable from

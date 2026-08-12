@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `OPTIONS /` — **System Options and Conformance** (ITS-REST System API, the
 //! single operation `operationId: options`).
 //!

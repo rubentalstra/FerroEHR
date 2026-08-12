@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of the BMM **v3** `BMM_CLASS` family.
 //!
 //! This is the class-side surface of the v3 (`org.openehr.lang.bmm3`)

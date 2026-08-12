@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Criterion benches over the AQL front half (parse → plan → SQL build), with
 //! per-bench CPU flamegraphs.
 //!

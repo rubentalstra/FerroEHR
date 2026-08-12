@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `spec_profile` key — which openEHR specification GENERATION SET the
 //! server runs.
 //!

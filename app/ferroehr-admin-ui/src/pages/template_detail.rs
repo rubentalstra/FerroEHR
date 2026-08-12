@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/templates/{template_id}` screen — template detail: OPT/WT/example tabs +
 //! path catalog.
 //!

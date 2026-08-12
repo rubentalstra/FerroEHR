@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Authorization configuration ([`AuthzConfig`]).
 //!
 //! The `[authz]` section of the one server configuration tree; it carries

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The cADL definition-section parser.
 //!
 //! A hand-written recursive-descent parser over the shared openEHR token

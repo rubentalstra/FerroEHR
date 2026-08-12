@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ITS-REST **ADL2 template** resource (`tags: ADL2`).
 //!
 //! Operations (`docs/specs/openehr/ITS-REST/specifications/operations/`):

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The policy-enforcement point (PEP) for the ITS-REST surface.
 //!
 //! Composes the enterprise **ABAC** gate with the **SMART** resource-scope +

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The version-commit envelope (`master03-common_package.adoc` §Version
 //! Update Semantics; `update_version.adoc`, `update_audit.adoc`).
 //!

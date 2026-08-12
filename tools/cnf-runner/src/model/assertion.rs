@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The typed assertion vocabulary (`flow[].assert` + `postconditions`).
 //!
 //! Ten assertion forms, closed by schedule release. Semantics per the

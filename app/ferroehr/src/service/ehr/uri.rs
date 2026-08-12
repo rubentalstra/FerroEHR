@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Local resolution of `ehr:` URIs (`DV_EHR_URI` / `LOCATABLE_REF`) to stored
 //! canonical-JSON content, over the versioned-object read surface.
 //!

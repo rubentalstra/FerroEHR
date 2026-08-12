@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Outbound TLS material for one terminology-server provider: the client
 //! certificate the CDR presents (mutual TLS) and the trust anchors it verifies
 //! the server with.

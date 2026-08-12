@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Authentication: HTTP Basic + OAuth2/OIDC bearer, plus the coarse **RBAC**
 //! gate.
 //!

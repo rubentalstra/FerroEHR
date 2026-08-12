@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `SCHEMA_DESCRIPTOR` — the descriptor
 //! lifecycle of the `rm_access` schema-loading facade.
 //!

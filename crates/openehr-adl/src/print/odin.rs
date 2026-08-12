@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Generic ODIN rendering shared by every ODIN-shaped section: optional string
 //! attributes, keyed string maps and lists, the `_default` pseudo-attribute
 //! carrying a canonical-JSON value, and the ODIN leaf literals (quoted strings,

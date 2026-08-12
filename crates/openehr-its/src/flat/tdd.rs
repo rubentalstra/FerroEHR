@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! TDD (Ocean/Marand **Template Data Document**) XML → canonical `COMPOSITION`
 //! JSON, guided by the operational template's [`WebTemplate`].
 //!

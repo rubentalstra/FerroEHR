@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Capture build-time provenance for `/management/info` and the
 //! `ferroehr_build_info` gauge: the git commit, the build timestamp, and the
 //! `rustc` version. All are best-effort — a checkout without git, or a build

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `P_BMM_CLASS` — the declared `is_generic`
 //! predicate plus uniform access to the attributes every concrete
 //! `P_BMM_CLASS` leaf carries.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Identifier newtypes for the schedule artifacts.
 //!
 //! Every identifier space in the CNF 2.0 artifact set is a distinct type so a

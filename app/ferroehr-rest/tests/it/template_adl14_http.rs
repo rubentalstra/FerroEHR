@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the ADL 1.4 **template definition** resource
 //! (`POST /definition/template/adl1.4`,
 //! `GET /definition/template/adl1.4/{template_id}`) — the negotiation contract

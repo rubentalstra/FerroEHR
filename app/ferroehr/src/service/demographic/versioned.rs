@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `VERSIONED_PARTY` read surface — the demographic analogue of the EHR
 //! `versioned_composition` reads (`VERSIONED_PARTY`, its `REVISION_HISTORY`, and
 //! its `ORIGINAL_VERSION`s). The wire is the Demographic API of ITS-REST

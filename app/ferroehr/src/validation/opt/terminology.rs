@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Terminology-side artefact validity for the OPT 1.4 pass: the codes,
 //! bindings and language-consistency rules of the AOM2 terminology package.
 //!

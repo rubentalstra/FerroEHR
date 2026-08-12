@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Tamper evidence on the local IHE ATNA Audit Record Repository, and the
 //! privilege posture that backs it, against a real `PostgreSQL` 18 (shared
 //! testkit harness).

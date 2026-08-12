@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `FerroEHR` application library — the platform crate.
 //!
 //! Modern idiomatic Rust on top of the generated `openehr-*` crates. Two

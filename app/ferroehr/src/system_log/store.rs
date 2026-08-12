@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The local IHE ATNA **Audit Record Repository**: the `audit.audit_event`
 //! table writer + retention reaper.
 //!

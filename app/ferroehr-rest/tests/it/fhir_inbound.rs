@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end inbound FHIR connector tests against a real `PostgreSQL` 18
 //! (the shared `testkit` harness), driven through the assembled `ferroehr-rest`
 //! router over the real DB-backed `FerroEhrService` (our own extension — no openEHR spec governs this; E3).

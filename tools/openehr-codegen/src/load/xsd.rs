@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! XSD reader for the XML codegen.
 //!
 //! Parses the vendored openEHR ITS-XML schemas into a small structural model

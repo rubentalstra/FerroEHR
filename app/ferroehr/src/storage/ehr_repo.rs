@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Row I/O for the `ehr` table and the `ehr_folder` membership index.
 //!
 //! Covers the per-EHR reads/writes the EHR service chapter needs that are not

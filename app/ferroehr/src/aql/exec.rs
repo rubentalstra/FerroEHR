@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! AQL execution + `RESULT_SET` assembly (our own engine).
 //!
 //! [`execute`] plans-to-SQL ([`super::sql::build`]), runs the one statement on

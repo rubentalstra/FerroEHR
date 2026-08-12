@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `EHR_STATUS` resource + its item tags.
 //!
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (`EHR_STATUS`) +

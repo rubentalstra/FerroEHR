@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Value-expression lowering: the design's **path split** for a data leaf, the
 //! typed coercions (QUERY master03 §Comparison operators + §ORDER BY), VERSION /
 //! EHR metadata fields, ORDER BY, and paging.

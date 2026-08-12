@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! openEHR **QUERY (AQL 1.1.0)**: a hand-written lexer, parser, and AST,
 //! reimplemented natively from the canonical ANTLR4 grammar (vendored at
 //! `vendor/grammar/`) — **no ANTLR runtime** is a dependency (see

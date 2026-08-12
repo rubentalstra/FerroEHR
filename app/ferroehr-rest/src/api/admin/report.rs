@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADMIN **activity-report** wire — **our own extension**.
 //!
 //! No openEHR ITS-REST operation governs any route here. The released Admin API

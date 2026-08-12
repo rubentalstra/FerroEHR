@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The wordmark: a small inline-SVG mark (a stylized node tree — the
 //! decomposed-document storage model) plus the product name. Pure SVG,
 //! no asset fetch, renders identically on both targets.

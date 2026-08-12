@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-base/base_types/identification/object_ref_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written BASE class check for `OBJECT_REF.namespace`.
 //!
 //! The rule is released text. BASE base_types

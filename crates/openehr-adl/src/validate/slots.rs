@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Slot-topic validity: `ARCHETYPE_SLOT` and its fillers.
 //!
 //! Covers redefining an inherited `ARCHETYPE_SLOT`, filling one with a

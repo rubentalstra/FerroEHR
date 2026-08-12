@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The production artifact tree (`artifacts/`) passes every machine gate —
 //! the eight pilot encodings plus their `verified_by` targets, validated
 //! against the vendored spec tree.

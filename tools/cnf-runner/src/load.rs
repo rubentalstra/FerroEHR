@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Artifact loading: YAML → JSON value (budgeted, duplicate-rejecting) →
 //! schema validation → typed model.
 //!

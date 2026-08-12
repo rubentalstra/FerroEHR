@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Whole-corpus coverage gate.
 //!
 //! Every ADL source file under `tests/corpus/**` (both `.adls` and `.adl`) must

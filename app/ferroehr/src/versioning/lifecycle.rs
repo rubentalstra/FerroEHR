@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Version lifecycle: the `version_lifecycle_state` codes and the state-machine
 //! that governs transitions between them.
 //!

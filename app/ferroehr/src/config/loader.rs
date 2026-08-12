@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The one configuration loader.
 //!
 //! Performs file discovery plus the pure `config`-crate assembly

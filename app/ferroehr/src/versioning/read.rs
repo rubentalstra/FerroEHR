@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Version reads: loading stored versions into the versioning value contract
 //! ([`VersionRead`]) — current, by tree id, by storage ordinal, and by instant.
 //!

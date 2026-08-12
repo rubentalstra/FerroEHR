@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/login` screen: dual Basic + OIDC authentication.
 //!
 //! The Basic path is an `<ActionForm>` bound to the [`crate::auth::LoginBasic`]

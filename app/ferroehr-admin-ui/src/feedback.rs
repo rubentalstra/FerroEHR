@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Mutation feedback: the console's one error-feedback rule and the
 //! actionable copy behind it.
 //!

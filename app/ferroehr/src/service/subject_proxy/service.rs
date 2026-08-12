@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `I_SUBJECT_PROXY_SERVICE` operations (`i_subject_proxy_service.adoc`;
 //! master10 `subject_proxy_service`) on [`FerroEhrService`], plus the
 //! sample-resolution glue shared by the variable/data-set reads.

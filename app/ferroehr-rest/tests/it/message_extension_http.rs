@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the **MESSAGE** extension group — the SM
 //! EHR-Extract service (`/message/export*`, `/message/import*`,
 //! `i_ehr_extract_service.adoc`) and the SM TDD service (`/message/tdd/*`,

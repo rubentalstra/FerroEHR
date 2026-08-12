@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL source parser (`openehr_adl::source`): archetype text arrives on the
 //! definition surface as an upload, so the cADL/ODIN lexer and the outer
 //! artefact parser both read attacker-controlled bytes.

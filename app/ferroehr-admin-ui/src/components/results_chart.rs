@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The results pane's chart view: a grouped multi-series line chart over one
 //! page of an AQL `RESULT_SET`, shared by the query builder and the raw AQL
 //! editor.

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The `553|incomplete|` presence relaxation, expressed as two pure
 //! model-driven predicates over a canonical-JSON node.
 //!

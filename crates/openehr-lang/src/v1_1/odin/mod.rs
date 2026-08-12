@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! ODIN — Object Data Instance Notation: a hand-written value-tree + parser.
 //!
 //! ODIN is the openEHR leaf-data notation used by BMM schema files and by the

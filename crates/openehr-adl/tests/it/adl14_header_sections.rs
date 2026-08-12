@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 **header sections** — `AM/docs/ADL1.4/master08-adl.adoc`
 //! §Header Sections, §Syntax Specification (the grammar + §Symbols lexical
 //! rules) and §Validity Rules.

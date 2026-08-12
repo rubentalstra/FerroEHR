@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The public status surface hanging off the REST root: the `/rest/status`
 //! product status document, mounted outside the authentication layer.
 //!

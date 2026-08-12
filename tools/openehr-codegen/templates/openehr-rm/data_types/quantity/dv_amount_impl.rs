@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written `DV_AMOUNT` spec behaviour, shared by its descendants.
 //!
 //! `DV_AMOUNT` is abstract, so the generated `DvAmount` is a subtype enum and

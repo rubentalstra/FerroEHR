@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The Rust emitter: walks a merged BMM [`Model`] and produces
 //! idiomatic, strongly-typed Rust for the openEHR spec crates.
 //!

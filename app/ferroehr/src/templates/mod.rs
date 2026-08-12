@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Operational-template ingestion, storage, and derived-runtime resolution.
 //!
 //! This module owns the platform crate's template surface: OPT 1.4 XML

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The demographic `ITEM_TAG` surface — the RM `common.item_tag` class applied
 //! to parties (ehr-less: `ehr_id IS NULL`). The wire contract is RELEASED:
 //! ITS-REST 1.1.0 publishes `demographic_tags_get` plus per-kind

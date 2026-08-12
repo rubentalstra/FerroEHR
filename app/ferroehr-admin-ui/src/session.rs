@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Server-side session state and the auth guard every `#[server]` fn calls
 //! (the Leptos book's `server/25` security rule.
 //!

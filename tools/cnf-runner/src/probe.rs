@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AQL optimization probe — the seeded-corpus troubleshooting loop.
 //!
 //! As an instrument it fires the measurement machinery's own AQL vocabulary

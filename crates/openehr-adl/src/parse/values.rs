@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The cADL value machinery every primitive production shares.
 //!
 //! Interval kind-classification, value lists with their `, ...` continuation

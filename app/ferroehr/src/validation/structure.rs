@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Surface A3 — OPT XML well-formedness (`upload_opt-invalid_opt`).
 //!
 //! FLAG: this is a **CNF-fixture / ingestion guard, not an AOM constraint

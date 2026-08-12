@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the event-subscription admin extension API group:
 //! the config gate (`AppConfig::events_admin_api`), the `200`/`201`/`204`/`404`/
 //! `400`/`409` wire outcomes for the CRUD verbs, and the JSON body shapes —

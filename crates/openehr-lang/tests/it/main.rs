@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Integration tests for `openehr-lang`: the shared lexical layer, the ODIN +
 //! `P_BMM` readers and the Basic Expression Language parser — the per-language
 //! lexer-surface battery, the vendored-fixture batteries (`tests/vendor/**`),

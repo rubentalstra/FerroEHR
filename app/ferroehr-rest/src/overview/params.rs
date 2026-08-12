@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Rebuild a generated `*Params` struct from the three HTTP sources.
 //!
 //! The ITS-REST contract combines an operation's path, query, and

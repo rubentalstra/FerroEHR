@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Operation classification: a generated ITS-REST operation id → its coarse
 //! [`OperationClass`].
 //!

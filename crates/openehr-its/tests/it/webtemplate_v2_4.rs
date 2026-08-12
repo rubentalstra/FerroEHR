@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The `v2_4` (ADL2 / OPT2) → Web Template front end
 //! ([`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]).
 //!

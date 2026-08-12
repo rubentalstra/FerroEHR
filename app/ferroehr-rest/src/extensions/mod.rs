@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Extension surface — **nothing in this module is governed by ITS-REST**.
 //!
 //! Every module here is re-audited against the vendored openEHR specs and kept

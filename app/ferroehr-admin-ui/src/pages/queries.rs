@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/queries` screen: the CDR's stored queries (left) and those same
 //! queries grouped by the namespace of their qualified name (right).
 //!

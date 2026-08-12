@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Admin statistics (SM `I_ADMIN_SERVICE.list_contributions` /
 //! `contribution_count` / `versioned_composition_count` /
 //! `composition_version_count`).

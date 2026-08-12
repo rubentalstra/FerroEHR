@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/audit` screen — the ATNA audit-log browser.
 //!
 //! Browses the CDR's local Audit Record Repository through the RESTful-ATNA

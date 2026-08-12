@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Mapping the contract's [`ApiError`] onto an HTTP response with an openEHR
 //! error body.
 //!

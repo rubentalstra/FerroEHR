@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Telemetry configuration: the `[log]` ([`LogConfig`]) and `[telemetry]`
 //! ([`OtelConfig`]) sections of the one config tree.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `RESULT_SET` assembly (`result_set.adoc`; ITS-REST 1.1.0
 //! `schemas/query/ResultSet`) and AQL parameter substitution
 //! (QUERY `master03-syntax.adoc` §Parameters).

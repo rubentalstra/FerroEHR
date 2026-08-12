@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR service (`service/ehr/`) — the openEHR **EHR component** of the
 //! platform crate, implementing the SM `I_EHR_*` interfaces as concrete
 //! `FerroEhrService` methods.

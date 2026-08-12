@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Breadth gate over the vendored real-world archetype packs — both dialects.
 //!
 //! Two packs, two sources, because the two dialects are published in

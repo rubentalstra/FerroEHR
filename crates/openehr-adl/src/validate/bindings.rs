@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Terminology-binding topic: the local binding KEYS (VTTBK / VTCBK) and the
 //! external terminology-service seam that answers VETDF.
 //!

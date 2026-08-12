@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Example-COMPOSITION generation from a [`WebTemplate`] (the `adl1.4/{id}/example`
 //! endpoint).
 //!

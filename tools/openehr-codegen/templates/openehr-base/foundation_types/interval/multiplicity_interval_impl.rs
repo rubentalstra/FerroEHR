@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written BASE `Multiplicity_interval` spec functions + invariants.
 //!
 //! `Multiplicity_interval` is an `Interval<Integer>` used to express

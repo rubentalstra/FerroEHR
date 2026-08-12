@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Syntax tokenizer for the shared document viewer — pure Rust, hand-rolled.
 //!
 //! The console ships ZERO authored JavaScript, so a browser highlighter is not

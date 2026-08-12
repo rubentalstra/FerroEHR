@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Flat-form topic: everything decidable only after flattening.
 //!
 //! Two groups, both run by [`super::run_flat_form_checks`] on the flat form

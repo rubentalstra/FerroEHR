@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Injects per-page search metadata into an assembled documentation site.
 //!
 //! mdBook emits ONE `<meta name="description">` for a whole book and no

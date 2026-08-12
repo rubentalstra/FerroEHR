@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Per-rule unit tests for the composition validator, built on hand-shaped
 //! `WebTemplate` nodes + minimal instances (no OPT parsing) so each rule is
 //! exercised in isolation. End-to-end corpus tests live in `tests/validation.rs`.

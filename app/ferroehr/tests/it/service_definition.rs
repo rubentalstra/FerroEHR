@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! SM-2 end-to-end tests for the Definitions native API against a real
 //! `PostgreSQL` 18 (shared testkit harness): ADL 1.4 source archetypes
 //! (`I_DEFINITION_ADL14`), OPTs (delegated to `template_store`), and registered

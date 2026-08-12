@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The Simplified Formats readers (`openehr_its::flat`): FLAT and STRUCTURED
 //! composition bodies, which the ITS-REST Formats sub-spec accepts on a
 //! composition write.

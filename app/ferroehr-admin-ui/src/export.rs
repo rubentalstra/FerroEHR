@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `RESULT_SET` export: a plain BFF axum route (NOT a `#[server]` fn) so a
 //! plain HTML `<form method="post">` downloads the file — the export works
 //! before WASM loads and without JavaScript entirely.

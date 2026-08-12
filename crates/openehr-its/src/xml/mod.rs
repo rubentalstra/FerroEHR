@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! **ITS-XML** — canonical XML serialization (openEHR ITS-XML).
 //!
 //! A document is written in either of

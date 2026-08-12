@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Party / reference / participation / identifier codecs.
 //!
 //! Covers the ITS-REST `simplified_formats/master05-rm_mapping.adoc` tables for

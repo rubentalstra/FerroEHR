@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The configured openEHR **system identifier** reaches every wire value that
 //! carries it, against a real `PostgreSQL` 18 (shared testkit harness).
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Ingress overload-shedding tests, driven through the fully assembled router
 //! over the **real** `FerroEhrService` (the scripted `Mock`/parking
 //! hook is gone).

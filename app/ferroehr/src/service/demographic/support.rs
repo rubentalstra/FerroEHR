@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The demographic chapter's shared seam onto the [`crate::versioning`]
 //! change-control machinery and the version spine in
 //! `crate::storage::version_repo`: [`PartyKind`]↔[`Kind`] mapping, the

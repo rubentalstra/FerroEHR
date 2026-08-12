@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Corpus lex gate: every ADL2 source (`*.adls`) in the vendored openEHR ADL2
 //! reference library must lex without producing an error token.
 //!

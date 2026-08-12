@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The optional-integration extensions of FerroEHR.
 //!
 //! FHIR, events, and multimedia are carved out of the platform library

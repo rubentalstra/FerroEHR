@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Native `utoipa-axum` routing for the **standard Demographic API group**:
 //! the party CRUD (`agent`/`group`/`organisation`/`person`/`role`), the
 //! `versioned_party` reads, `contribution` create/get, and the `ITEM_TAG`

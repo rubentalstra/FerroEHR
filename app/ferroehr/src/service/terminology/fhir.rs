@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! [`FhirTerminologyProvider`] — a FHIR R4B terminology-server client
 //! realizing the SM `I_TERMINOLOGY_SERVICE` calls against a remote server,
 //! over `reqwest` (rustls).

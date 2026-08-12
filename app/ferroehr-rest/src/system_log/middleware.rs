@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The IHE ATNA audit tower layer: request → resolved [`AuditEvent`] → emit.
 //!
 //! One middleware, installed **outermost** on the API router (wrapping the auth

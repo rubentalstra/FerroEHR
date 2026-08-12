@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/common/archetyped/feeder_audit_details_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM class invariant for `FEEDER_AUDIT_DETAILS`.
 //!
 //! `System_id_valid` (`not system_id.is_empty`) —
