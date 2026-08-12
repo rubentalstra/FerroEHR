@@ -330,6 +330,13 @@ jobs:
             rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
             -color
 
+      # actionlint validates each job in isolation and cannot know that this
+      # repository routes branch protection through a single `conclusion` check,
+      # which makes a job missing from its `needs` list run without gating
+      # anything.
+      - name: Every CI job gates the merge
+        run: bash scripts/checks/ci-conclusion-complete.sh
+
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
@@ -381,6 +388,44 @@ jobs:
           persist-credentials: false
       - name: No Python invocations or sources
         run: bash scripts/checks/no-python.sh
+
+  # This project's own code is MIT, so a GPL-family or SSPL grant inside a file
+  # we wrote is a licence conflict. It lives here rather than in `.fossa.yml`
+  # because FOSSA's customLicenseSearch could not upload on this org's plan and
+  # did not honour that file's path exclusions (measured 2026-08-12).
+  license-text:
+    name: license-text
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: No copyleft licence text in first-party source
+        run: bash scripts/checks/first-party-license-text.sh
+
+  # The compose hardening properties (cap_drop ALL, no-new-privileges, no
+  # privileged, no seccomp=unconfined, loopback-only publishing). This gate
+  # existed and ran nowhere, while `docker-compose.yml` and the operations
+  # chapter both told readers it "enforces that on every compose artifact" — a
+  # documented guard that does not fire is worse than none, because the docs and
+  # the reviewer both believe it did.
+  compose-hardening:
+    name: compose-hardening
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compose artifacts stay hardened
+        run: bash scripts/checks/compose-hardening.sh
 
   # RFC 0201: an error carries its cause. No clippy lint covers this, so the
   # gate is a per-tree ratchet — the flattened-site counts may only fall while
@@ -1701,6 +1746,11 @@ jobs:
       - docs-claims
       - sql-string-building
       - error-hygiene
+      - error-source-chain
+      - no-python
+      - license-text
+      - spec-citations
+      - compose-hardening
       - deny
       - clippy
       - doc
@@ -1722,6 +1772,7 @@ jobs:
       - crate-version
       - chart-version
       - chart-appversion
+      - chart-boot
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
