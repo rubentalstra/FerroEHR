@@ -1,0 +1,70 @@
+# Code owners — who is asked to review a change, per area.
+#
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Read this file honestly: FerroEHR has ONE maintainer, so every line below
+# names the same person. That is not review theatre, and it is not a claim of
+# capacity the project does not have — it does two real things.
+#
+#   1. It makes ownership EXPLICIT rather than assumed, which is what a
+#      procurement review asks for and what a second maintainer inherits on
+#      day one: the areas are already carved, so adding a person is a one-line
+#      change per area rather than a structural decision under time pressure.
+#   2. Combined with `require_code_owner_review` on the default-branch ruleset,
+#      it is what makes a pull request from an account WITHOUT write access
+#      unmergeable until an owner has looked at it. GitHub does not count a
+#      pull request author's own review, so this constrains outside
+#      contributions without pretending the maintainer reviews himself.
+#
+# A LATER PATTERN WINS. The catch-all comes first and every specific area
+# overrides it, so ordering here is load-bearing.
+#
+# MAINTAINERS.md is the roster and the access-continuity record; GOVERNANCE.md
+# is the decision process. This file is only the routing table.
+
+*                                   @rubentalstra
+
+# ── The generated openEHR specification layer ───────────────────────────────
+# Changes here are almost never hand-written: they come out of the code
+# generator, and a hand edit to a `// @generated` file is a defect by itself.
+/crates/                            @rubentalstra
+/tools/openehr-codegen/             @rubentalstra
+
+# The vendored specification text and the machine-readable artifacts are the
+# conformance oracle. They change only by re-running a vendoring script.
+/docs/specs/                        @rubentalstra
+
+# ── The application ─────────────────────────────────────────────────────────
+/app/                               @rubentalstra
+
+# ── The conformance instrument ──────────────────────────────────────────────
+# The catalogue and the runner decide what "conformant" means for this
+# project, so a change here changes the acceptance bar itself.
+/tools/cnf-runner/                  @rubentalstra
+/docs/conformance/                  @rubentalstra
+
+# ── Supply chain, CI and release ────────────────────────────────────────────
+# Everything that decides what gets built, signed and published.
+/.github/                           @rubentalstra
+/scripts/                           @rubentalstra
+/deny.toml                          @rubentalstra
+/security/                          @rubentalstra
+/REUSE.toml                         @rubentalstra
+/LICENSES/                          @rubentalstra
+
+# ── Deployment artifacts an operator actually runs ──────────────────────────
+/deploy/                            @rubentalstra
+/docker/                            @rubentalstra
+/docker-compose.yml                 @rubentalstra
+/docker-compose.keycloak.yml        @rubentalstra
+/docker-compose.observability.yml   @rubentalstra
+/docker-compose.override.yml        @rubentalstra
+
+# ── Policy and legal ────────────────────────────────────────────────────────
+/SECURITY.md                        @rubentalstra
+/GOVERNANCE.md                      @rubentalstra
+/MAINTAINERS.md                     @rubentalstra
+/SUPPORT.md                         @rubentalstra
+/CODE_OF_CONDUCT.md                 @rubentalstra
+/LICENSE                            @rubentalstra
+/.github/CODEOWNERS                 @rubentalstra

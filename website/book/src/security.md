@@ -8,6 +8,12 @@ security surfaces you configure when you deploy FerroEHR: **authentication**
 (recording what happened). Each is independently configurable, and each is
 described here in terms of the environment variables you actually set.
 
+This chapter tells you **how to configure each control**. The
+[Threat model](threat-model.md) is its companion and tells you **what remains
+true after each control has done its job** — the trust boundaries, the residual
+risk at each, and what this software explicitly does not defend against. Read
+that one before you decide a control is sufficient for your deployment.
+
 <!-- toc -->
 
 Configuration follows the same pattern throughout: the server reads defaults,
@@ -455,21 +461,28 @@ Two properties worth knowing because they are not obvious:
 
 ## Verifying what you pulled
 
-Artifacts published from `3.17.4` onward carry **signed** build provenance and an
-SBOM, so you can establish that a binary or image came from this repository's
-build and see what went into it. Provenance was already being generated before —
+Release artifacts carry **signed** build provenance, SBOMs and a checksum, so
+you can establish that a binary or image came from this repository's build and
+see what went into it. Provenance was already being generated before —
 BuildKit's SLSA statement on each image index — but unsigned, which means readable
-and not verifiable. It is signed through Sigstore from this release on.
+and not verifiable. It is signed through Sigstore.
 
 > [!IMPORTANT]
-> Signing landed in the publishing lanes during the `3.17.4` cycle, so **`3.17.3`
-> and every earlier tag carry no attestation**: the commands below answer
-> `HTTP 404: Not Found` for them. That is the honest state, not a verification
-> failure — there is nothing to verify, because those artifacts were built before
-> the lane signed anything. The development images
-> (`ghcr.io/rubentalstra/ferroehr:develop` and its two siblings) are signed and
-> verify now; the release-tag, release-binary and chart forms below start
-> answering at the `3.17.4` cut.
+> **No published release carries these assets yet.** The signing lane landed
+> after the `v3.17.3` cut (2026-08-05), which is the newest release at the time
+> of writing, so `v3.17.3` and every earlier tag have exactly two assets each
+> and the release-binary commands below answer `HTTP 404: Not Found` for them.
+> That is the honest state, not a verification failure — there is nothing to
+> verify, because those artifacts were built before the lane signed anything.
+> The development images (`ghcr.io/rubentalstra/ferroehr:develop` and its two
+> siblings) **are** signed and verify today; the release-binary and chart forms
+> below begin answering at the next cut, at which point this note is removed and
+> the commands are re-run against the real assets rather than assumed correct.
+>
+> Every command below writes `<tag>` where a release tag goes. Substitute the
+> tag you actually downloaded — the examples deliberately name no specific
+> version, so that this page cannot drift into quoting a release that does not
+> exist.
 
 **An image** — signed and verifying today on the development tag:
 
@@ -499,7 +512,7 @@ PGP `.prov`, so `helm install --verify` does not apply — deliberately, since a
 **A release binary:**
 
 ```bash
-gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz   -R rubentalstra/FerroEHR
+gh attestation verify ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz -R rubentalstra/FerroEHR
 ```
 
 **A release binary, without reaching GitHub.** Each release also carries its
@@ -508,8 +521,8 @@ the bundle — useful on an air-gapped host, and the only form in which the
 signature travels with the download:
 
 ```bash
-gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz \
-  --bundle ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz.sigstore.json \
+gh attestation verify ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz \
+  --bundle ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz.sigstore.json \
   --repo rubentalstra/FerroEHR
 ```
 
@@ -517,14 +530,35 @@ The `*.sbom.sigstore.json` asset beside it is the same thing for the SBOM
 attestation, so "which dependency graph was this binary built from" is
 verifiable offline too.
 
-Each release also attaches a **CycloneDX SBOM of the Rust dependency graph**
-(`*.cdx.json`), which is a different document from the SPDX SBOM on the image
-index and answers a different question. The image SBOM sees the OS layer — which
-is what matters for `ferroehr-postgres`, built on the upstream `postgres` image.
-The CycloneDX one enumerates the cargo graph: every component with a
-`pkg:cargo/…` purl and licence, most with checksums, and the **dependency edges**,
-so "is this crate a direct dependency or something four levels down" is a question
-the document can answer rather than a flat list you have to guess from.
+**With neither `gh` nor `cosign` installed.** Every release tarball ships a
+plain `.sha256sum` beside it, which is the only verification available in a
+locked-down environment — and a locked-down environment is what a clinical
+deployment tends to be:
+
+```bash
+sha256sum -c ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz.sha256sum
+```
+
+Be clear about what that buys: a checksum detects a **corrupt or truncated
+download**, not a substituted release, because an attacker who can replace the
+tarball can replace the checksum beside it. Only the Sigstore bundle answers
+"who built this". The checksum is a floor, not a substitute.
+
+### Three SBOMs, three questions
+
+A release involves three SBOM documents. They are not redundant — they describe
+different things for different readers, and both reviews genuinely happen for a
+clinical deployment:
+
+| Document | Where | Format | Answers |
+|---|---|---|---|
+| `ferroehr-<tag>-<target>.cdx.json` | a release asset, one per architecture | CycloneDX 1.5 | *what is inside the binary I am about to run?* Every cargo component with a `pkg:cargo/…` purl and licence, most with checksums, and the **dependency edges** — so "is this crate direct or four levels down" is answerable rather than guessed. This is what a vulnerability scanner consumes. |
+| `ferroehr-<tag>.spdx.json` | a release asset, one per release | SPDX | *what am I redistributing, and under what terms?* The attribution and licence-obligation view of the source tree at the release commit — the document a legal or procurement reviewer of a four-licence redistribution asks for. |
+| the image SBOM | attached to each container image index | SPDX | *what is in the image's OS layer?* Which is what matters for `ferroehr-postgres`, built on the upstream `postgres` image. |
+
+CycloneDX 1.5 is the highest version the generator emits (`cargo-cyclonedx`
+accepts 1.3, 1.4 or 1.5 and defaults to 1.3, so the release lane sets it
+explicitly); it carries everything 1.6 consumers read.
 
 ### What SLSA level each artifact reaches, and what is still not claimed
 
@@ -548,7 +582,7 @@ has no steps at all, which is what makes the property hard to lose by accident.
 The consumer-visible benefit is that you can **require** that signer:
 
 ```bash
-gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz \
+gh attestation verify ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz \
   -R rubentalstra/FerroEHR \
   --signer-workflow rubentalstra/FerroEHR/.github/workflows/release-build.yml
 ```
@@ -561,11 +595,35 @@ than ours, and nothing here asserts a reproducible or hermetic build — those a
 separate SLSA tracks this project does not address. Naming the boundary is worth
 more than rounding a level up.
 
-Where a scanner reports a finding in an inherited upstream layer that we have
-argued is not reachable, the argument is published as an
-[OpenVEX](https://openvex.dev) document under `security/vex/` — with the
-justification and an impact statement you can check, rather than an ignore entry
-that records only the verdict.
+### Findings a scanner will report, and why they are not what they look like
+
+Run a scanner over a FerroEHR artifact and it will report findings. Every one
+this project has assessed and accepted is published as an
+[OpenVEX](https://openvex.dev) document under
+[`security/vex/`](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex),
+carrying a controlled-vocabulary justification and an impact statement you can
+check — rather than an ignore entry that records only the verdict. Point your
+tooling at them (`trivy --vex`, and most SCA platforms take an OpenVEX feed).
+
+| Document | Covers |
+|---|---|
+| `rust-advisories.openvex.json` | the Rust dependency advisories: the five the advisory gate accepts, plus one that only a `Cargo.lock`-reading scanner reports |
+| `postgres-gosu.openvex.json` | Go standard-library findings in the `gosu` helper the upstream `postgres` image ships |
+
+The Rust document is **generated** from `deny.toml` — the gate that actually
+decides whether a build passes — joined with the published reasoning, and a CI
+job fails if the two disagree in either direction. So an advisory cannot be
+accepted without a justification reaching you, and a justification cannot claim
+something the gate does not do.
+
+One asymmetry worth knowing, because it produces findings that are real reports
+of nothing. `Cargo.lock` records the union of every dependency any feature
+combination *could* pull, so a scanner reading the lock file alone reports
+crates this project's feature set never compiles. `cargo deny` resolves
+features and does not. Where the two disagree in that direction the
+feature-resolving tool is the more precise instrument — and the VEX document
+carries that argument for the specific crate it currently applies to, so you do
+not have to take our word for it in prose.
 
 ## Multi-tenancy
 

@@ -17,6 +17,51 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A published threat model.** A new
+  [Threat model](https://ferroehr.eu/docs/latest/threat-model.html) chapter
+  names the actors, the protected assets and eight trust boundaries, and for
+  each boundary states the control that holds **and the residual risk that
+  survives it** — plus an explicit list of what FerroEHR does not defend
+  against, so silence is never read as coverage. It exists because the parts of
+  this system that protect patient data are precisely the parts no openEHR
+  specification governs: the five-stage authorization order, multi-tenancy
+  isolation, the audit trail and the archive tier are all this project's own
+  design, and until now every deployer had to reconstruct them from
+  configuration prose.
+- **Governance, maintainer and support documents.** `GOVERNANCE.md` (how
+  decisions are made and how to become a maintainer), `MAINTAINERS.md` (the
+  roster, every publishing identity, and what happens if the holder is
+  unavailable), `SUPPORT.md` (question versus defect versus vulnerability), and
+  a `CODEOWNERS` file routing review per area. All four state the current
+  single-maintainer reality plainly rather than describing a process that does
+  not exist.
+- **A published support and end-of-life policy.** `SECURITY.md` now states
+  which versions receive security fixes (only the newest), when a version stops
+  receiving them (the moment a newer release exists), and how a fix reaches
+  you — covering the server, the Helm chart and the published crates, which
+  follow separate version lines. The same policy is reachable from the
+  Operations chapter's upgrade guidance, where an operator planning change
+  control actually looks.
+- **Machine-readable licensing (REUSE 3.3).** A `LICENSES/` directory carries
+  the full text of every licence any file in this tree is offered under, named
+  by SPDX identifier, and a root `REUSE.toml` declares by glob which files are
+  offered under which — so licensing now survives a file being copied out of
+  the repository, which per-tree provenance files could not do. No vendored
+  file was modified. Two positions are represented rather than flattened: the
+  MPL 1.1 election under a tri-licensed corpus, and one upstream file whose own
+  header contradicts its repository's licence. `reuse lint` and a
+  declarations-versus-documentation check both gate the merge.
+- **A published VEX document for the Rust dependency advisories.** Every
+  advisory the `cargo deny` gate accepts now carries an
+  [OpenVEX](https://openvex.dev) statement with a controlled-vocabulary
+  justification and a checkable impact statement, at
+  `security/vex/rust-advisories.openvex.json`, so a downstream scanner ingests
+  the argument instead of reporting unexplained findings. It also covers the
+  advisory that only a `Cargo.lock`-reading scanner reports for a crate this
+  project's feature set never compiles. The document is generated from
+  `deny.toml` joined with the published reasoning, and CI fails if the two
+  disagree in either direction — an advisory cannot be accepted without its
+  justification reaching you.
 - **About 190 openEHR spec functions are now callable on the generated types.**
   The Reference Model, Archetype Model, BASE and LANG classes declare functions
   the specifications define — `ITEM_LIST.ith_item`, `DV_QUANTIFIED.magnitude`,
@@ -964,6 +1009,42 @@ workflow refuses a tag that has no matching section here.
 
 ### Security
 
+- **Release tags are now protected by a ruleset.** Three lanes publish off a
+  raw tag push — the release, the Helm chart, and the documentation version
+  cut — and until now the tags driving them could be created, moved or deleted
+  freely. A `release-tags` ruleset on `refs/tags/v*` blocks tag deletion and
+  non-fast-forward tag updates and requires signatures, codifying the signed-tag
+  practice the project already followed. Release immutability protects the
+  window *after* a release is published; this protects the window in which a tag
+  drives a build, an image push and a chart publish. `SECURITY.md` now records
+  the full expected repository security posture, with the two read-back commands
+  that detect a settings reset.
+- **Every release tarball now ships a `.sha256sum`.** It is the only
+  verification available to an operator with neither `gh` nor `cosign`
+  installed, which is what a locked-down clinical environment tends to be. The
+  documentation is explicit that a checksum detects a corrupt download and not a
+  substituted release — only the Sigstore bundle answers "who built this".
+- **A release now carries an SPDX SBOM of the repository**, generated from the
+  release commit, alongside the per-binary CycloneDX SBOM and the per-image
+  SPDX SBOM. The three answer different questions — what is inside the binary I
+  am about to run, what am I redistributing and under what terms, and what is in
+  the image's OS layer — and the security chapter now says which is which, so a
+  reader picks the right one instead of assuming they are redundant. The
+  CycloneDX specification version (1.5, the highest the generator emits) is
+  recorded with its reason.
+- **The release asset-completeness guard now matches asset names exactly.** It
+  compared by substring, so the check for the `.tar.gz` was satisfied by
+  `.tar.gz.sigstore.json` alone and a release missing its actual tarball would
+  have been published — unfixably, since publishing freezes a release. It now
+  requires a whole-line match, and additionally checks the checksum, the
+  repository SBOM and the quickstart compose files.
+- **Dependabot now covers the fuzz workspace and the container base images.**
+  The fuzz harnesses are a separate Cargo workspace with their own lock file
+  that a `cargo` entry at the repository root could never reach, so they were
+  receiving no security bumps. The three base images are digest-pinned, which
+  is correct for reproducibility and means they never receive a patch unless
+  something proposes one — so the weekly image scan kept finding CVEs in the
+  clinical images while nothing offered the fix.
 - The admin console's `Content-Security-Policy` no longer allows inline scripts.
   `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
   freshly generated for every response and stamped on the only inline script the

@@ -252,6 +252,29 @@ why they are written as your checklist rather than as our claim.
   API. The default 30-second termination grace period covers the server's
   short shutdown drain of the audit and event outboxes.
 
+### How long the version you pinned is supported
+
+Plan the upgrade cadence around this, because it is short and it is deliberate:
+
+- **Only the most recent release receives security fixes.** There are no
+  maintenance branches, no long-term-support line, and no backports. A version
+  stops receiving fixes the moment a newer release exists.
+- **A fix normally arrives as the next patch** on the current minor, so taking
+  it does not oblige you to take new behaviour — but that is the usual case,
+  not a promise. Where a fix is only correct alongside a behavioural change,
+  the release carrying it carries the change, and the changelog entry says so.
+- **A published release is never repaired in place.** Release immutability
+  means the assets and the tag of a published release cannot be modified at
+  all, so the remedy for any defect is a new version.
+- **The Helm chart and the published crates follow their own version lines**,
+  each supported at its newest published version only. A chart-only fix ships
+  as a new chart version between server releases.
+
+The consequence for change control: budget for taking every release, or budget
+for maintaining a fork. There is no third option, and the full policy — with
+the reasoning and what to do if you need something stronger — is
+[SECURITY.md](https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md#supported-versions).
+
 ## Observability
 
 `tracing` is the single instrumentation API. From it, three signal families

@@ -192,8 +192,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `From`/`TryFrom` over ad-hoc `to_x()` where the conversion is total/
   fallible, getters without `get_` prefixes. (Tier 3 via pedantic +
   review; `avoid-breaking-exported-api = false` in `clippy.toml` keeps the
-  API-shape lints live — every crate is `publish = false`, so there is no
-  external semver surface to protect.)
+  API-shape lints live. The justification is NOT "nothing publishes" — the
+  eight `openehr-*` crates publish to crates.io — it is the line they publish
+  on: `0.0.x`, where cargo treats every patch as its own compatibility set
+  (https://doc.rust-lang.org/cargo/reference/semver.html), so no consumer
+  version range spans a break, and any packaged-content change already bumps
+  all eight in the same PR. The `ferroehr-*` crates remain unpublished.
+  Re-adjudicate if the line graduates past `0.x` — the same trigger the
+  C-STABLE entry below carries.)
 - **Blocking never hides in async**: no `std::sync` locks held across
   `.await` (clippy `await_holding_lock`, tier 3 — active via `clippy::all`),
   no synchronous I/O on the runtime; `spawn_blocking` for the rare
@@ -299,10 +305,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   code is MIT-licensed; vendored third-party material keeps its upstream
   terms — Apache-2.0 for the openEHR machine-readable artifacts and the
   vendored test corpora (`LICENSE-APACHE-2.0`), CC-BY-SA 3.0 for the openEHR
-  spec docs text (`LICENSE-CC-BY-SA-3.0`), and CC-BY-SA **4.0** for the
-  CKM-derived clinical models (`LICENSE-CC-BY-SA-4.0`), which is what their
-  own per-file `licence` metadata declares — one version per corpus, never a
-  single version standing for both. The vendored ADL2 regression corpus
+  spec docs text (`LICENSE-CC-BY-SA-3.0`), and BOTH CC-BY-SA **4.0** and
+  CC-BY-SA **3.0** for the CKM-derived clinical models — corrected 2026-08-12
+  by a first-hand count over the vendored corpus, which finds 4.0 in the
+  majority and several hundred 3.0 files beside it, so the earlier "one
+  version per corpus" claim was false in the direction it warned about. Each
+  archetype's own `licence` metadata is the authority for that file;
+  `REUSE.toml` declares the trees as `CC-BY-SA-3.0 AND CC-BY-SA-4.0` because
+  neither version alone is a true statement about them. The vendored ADL2 regression corpus
   additionally carries three ISO 13606 BMM reference models offered under an
   MPL 1.1 / GPL 2.0 / LGPL 2.1 tri-license; **we take them under MPL 1.1**, so
   no GPL or LGPL obligation attaches (the election is recorded in that

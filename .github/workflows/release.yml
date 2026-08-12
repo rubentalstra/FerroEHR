@@ -105,6 +105,53 @@ jobs:
           fi
         env:
           TAG: ${{ steps.tag.outputs.tag }}
+
+      # An SPDX SBOM of the REPOSITORY, generated from the release commit.
+      #
+      # This is the third SBOM this project publishes and it is not redundant
+      # with the other two — they answer different questions for different
+      # readers, and both reviews happen for a clinical deployment:
+      #
+      #   * the CycloneDX `.cdx.json` per binary (release-build.yml) carries the
+      #     cargo dependency GRAPH with direct-versus-transitive edges and purls,
+      #     which is what a vulnerability tool consumes;
+      #   * the SPDX SBOM BuildKit attaches to each container image index
+      #     (containers.yml) describes the image's OS layer;
+      #   * this one is the ATTRIBUTION document for the source tree — the
+      #     licence-obligation view a legal or procurement reviewer of a
+      #     four-licence redistribution asks for.
+      #
+      # It existed nowhere a consumer could reach before: the licence-scanning
+      # lane deliberately generates no report (its token is push-only), so there
+      # was no repository SBOM at all.
+      #
+      # SPDX also satisfies the CISA/NTIA minimum-element data fields directly:
+      # supplier, component name, version, other unique identifiers (purl),
+      # dependency relationships, SBOM author and timestamp
+      # (https://www.cisa.gov/sbom).
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
+        with:
+          tool: syft@1.50.0
+      - name: Generate the repository SPDX SBOM
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # `dir:.` catalogues the checked-out release commit, so the document
+          # describes the tree the release was cut from rather than a graph
+          # resolved afterwards.
+          syft scan "dir:." --output "spdx-json=ferroehr-${TAG}.spdx.json"
+          # Refuse to attach a document that is not SPDX, rather than shipping a
+          # file that looks like an SBOM and is not.
+          version="$(jq -r '.spdxVersion' "ferroehr-${TAG}.spdx.json")"
+          case "$version" in
+            SPDX-*) ;;
+            *) echo "::error::generated SBOM is not SPDX (spdxVersion=${version})"; exit 1 ;;
+          esac
+          count="$(jq '.packages | length' "ferroehr-${TAG}.spdx.json")"
+          [ "$count" -gt 0 ] || { echo "::error::the SPDX SBOM lists no packages"; exit 1; }
+          echo "SPDX ${version}, ${count} packages"
+
       # Created as a DRAFT, and finalized only after every asset is attached.
       #
       # Release immutability is enabled on this repository: once a release is
@@ -129,6 +176,7 @@ jobs:
             docker-compose.yml
             docker-compose.keycloak.yml
             docker-compose.observability.yml
+            ferroehr-${{ steps.tag.outputs.tag }}.spdx.json
           # Releases publish as OFFICIAL releases (owner sign-off
           # 2026-07-31, superseding the 2026-07-11 always-prerelease rule);
           # only an explicitly suffixed tag (v3.16.0-rc1, ...) is a
@@ -204,18 +252,34 @@ jobs:
           # document and its attestation bundle are checked too: a release
           # publishing without them is unfixable (immutability), and the only
           # remedy would be another version.
+          #
+          # `grep -Fxq` — fixed string, whole line. A substring match passed as
+          # soon as any longer asset name contained the expected one, so
+          # ".tar.gz" was satisfied by ".tar.gz.sigstore.json" alone and a
+          # missing tarball would have shipped.
           missing=""
           for arch in x86_64 aarch64; do
             for suffix in \
               ".tar.gz" \
+              ".tar.gz.sha256sum" \
               ".tar.gz.sigstore.json" \
               ".tar.gz.sbom.sigstore.json" \
               ".tar.gz.intoto.jsonl" \
               ".cdx.json"; do
               printf '%s\n' "$assets" \
-                | grep -q "ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}" \
+                | grep -Fxq "ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}" \
                 || missing="$missing ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}"
             done
+          done
+          # The release-wide assets the draft job attached: the repository SPDX
+          # SBOM and the quickstart compose files a downloader runs without
+          # cloning.
+          for asset in \
+            "ferroehr-${TAG}.spdx.json" \
+            "docker-compose.yml" \
+            "docker-compose.keycloak.yml" \
+            "docker-compose.observability.yml"; do
+            printf '%s\n' "$assets" | grep -Fxq "$asset" || missing="$missing $asset"
           done
           [ -z "$missing" ] || {
             echo "::error::the draft is missing assets, so it will not be published:$missing"
