@@ -1,0 +1,221 @@
+# REUSE Specification 3.3 — https://reuse.software/spec-3.3/
+#
+# WHAT THIS ADDS that the existing arrangement did not. Licensing here has
+# always been recorded per vendored tree, by a `PROVENANCE.md` naming the
+# upstream source, the pinned revision and the licence, with the upstream
+# `LICENSE` vendored alongside. That is accurate and it stays. What it does not
+# do is SURVIVE A FILE LEAVING THIS REPOSITORY — the property REUSE exists for,
+# that licensing "is preserved when the file is copied and reused by third
+# parties". Someone who lifts one archetype out of a test corpus takes a
+# CC-BY-SA file; someone who vendors one generated crate source file takes a
+# file whose dual-licence position is stated only in a manifest they did not
+# copy. This repository redistributes material under six distinct licences and
+# its stated premise is that people build on it and ship it, so downstream
+# file-level redistribution is the expected case, not the edge case.
+#
+# WHY THE DECLARATIONS ARE HERE RATHER THAN IN THE FILES. `REUSE.toml`
+# expresses licensing in bulk by glob, which is what makes this tractable
+# without touching a single vendored file — and hand-editing vendored material
+# is forbidden by this project's own corpus discipline, so a header sweep over
+# the third-party trees was never an option.
+#
+# HOW THE TABLES COMPOSE, because the ordering below is load-bearing: "If a
+# Covered File is covered by multiple [[annotations]] tables in the same
+# REUSE.toml file, then exclusively the LAST matching table in the file is used"
+# (spec 3.3). So the first table is the catch-all and every later table narrows
+# it. Move one and you change what it declares.
+#
+# PRECEDENCE, likewise from the spec: `closest` associates licensing found
+# INSIDE the file (a comment header or a `.license` sidecar) and falls back to
+# the table only when the file carries none; `override` ignores anything closer.
+# First-party globs use `closest`, so adding a real SPDX header to a source file
+# is an improvement that takes effect immediately and never contradicts this
+# file. Vendored globs use `override` where the upstream tree's terms are
+# settled by its `PROVENANCE.md` rather than by any per-file marking.
+
+version = 1
+
+# ── Catch-all: everything in this repository is FerroEHR's own, MIT ──────────
+# Narrowed by every table below. `closest` means a file carrying its own SPDX
+# header wins over this declaration.
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "FerroEHR contributors"
+SPDX-License-Identifier = "MIT"
+
+# ── The published spec crates: MIT AND Apache-2.0 ───────────────────────────
+# Their own manifests already declare `MIT AND Apache-2.0` and ship both texts
+# in the package, because the emitted Rust is this project's while the
+# specification documentation text, terminology XML and JSON Schema carried
+# inside it are openEHR's. Declaring only MIT here would flatten exactly the
+# dual position the crates were careful to state. The vendored inputs and
+# assets INSIDE these crates are narrowed further below.
+[[annotations]]
+path = [
+  "crates/openehr-base/**",
+  "crates/openehr-rm/**",
+  "crates/openehr-am/**",
+  "crates/openehr-lang/**",
+  "crates/openehr-term/**",
+  "crates/openehr-its/**",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = ["FerroEHR contributors", "openEHR Foundation"]
+SPDX-License-Identifier = "MIT AND Apache-2.0"
+
+# ── openEHR machine-readable artifacts — Apache-2.0 ─────────────────────────
+# The BMM meta-models, XML Schemas, OpenAPI documents, JSON Schemas and ANTLR
+# grammars the code generator and the codecs consume. Vendored verbatim by a
+# committed script; each tree's PROVENANCE.md names the exact upstream commit.
+[[annotations]]
+path = [
+  "tools/openehr-codegen/vendor/**",
+  "crates/openehr-its/schemas/**",
+  "crates/openehr-its/vendor/**",
+  "crates/openehr-adl/vendor/**",
+  "crates/openehr-lang/vendor/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "openEHR Foundation"
+SPDX-License-Identifier = "Apache-2.0"
+
+# ── openEHR specification TEXT — CC-BY-SA-3.0 ───────────────────────────────
+# The conformance oracle: the normative documentation, redistributed verbatim
+# with attribution. Reference and test material, never part of the compiled
+# server.
+[[annotations]]
+path = "docs/specs/openehr/**"
+precedence = "override"
+SPDX-FileCopyrightText = "openEHR Foundation"
+SPDX-License-Identifier = "CC-BY-SA-3.0"
+
+# The AQL grammar and the TERM computable assets come from the same
+# specification repositories under the same terms.
+[[annotations]]
+path = [
+  "crates/openehr-query/vendor/**",
+  "crates/openehr-term/assets/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "openEHR Foundation"
+SPDX-License-Identifier = "CC-BY-SA-3.0"
+
+# One file inside that tree contradicts its own repository. `PropertyUnitData.xsd`
+# carries an ADL Designer / ADL2-tools header offering it under the GNU Affero
+# General Public License, inside an upstream repository whose LICENSE is
+# CC-BY-SA-3.0. The contradiction is upstream's and is not ours to resolve, so
+# it is declared here at the MORE RESTRICTIVE of the two readings — the one the
+# file's own text asserts — rather than quietly absorbed into the tree
+# declaration above. No obligation propagates to anything shipped: the file is
+# excluded from the published crate by that crate's `include`, so it reaches no
+# consumer.
+[[annotations]]
+path = "crates/openehr-term/assets/schema/PropertyUnitData.xsd"
+precedence = "override"
+SPDX-FileCopyrightText = "2013-2014 Marand d.o.o."
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# ── Third-party test corpora — Apache-2.0 ───────────────────────────────────
+# archie fixtures (Nedap), Better `web-template-tests`, EHRbase SDK
+# canonical-JSON data (vitasystems), and the openEHR reference-model BMM set
+# archie ships. Each tree's PROVENANCE.md names its upstream and licence.
+[[annotations]]
+path = [
+  "crates/openehr-its/tests/vendor/**",
+  "crates/openehr-its/tests/fixtures/**",
+  "crates/openehr-lang/tests/vendor/**",
+  "crates/openehr-adl/tests/corpus/rm/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["Nedap Healthcare", "Better Ltd", "vitasystems GmbH", "openEHR Foundation"]
+SPDX-License-Identifier = "Apache-2.0"
+
+# Three BMM reference models inside that set are offered by their authors under
+# a Mozilla Public License 1.1 / GPL 2.0 / LGPL 2.1 TRI-LICENCE. This project
+# TAKES THEM UNDER MPL-1.1 — the election is recorded in that corpus's
+# PROVENANCE.md — so no GPL or LGPL obligation attaches to anything here.
+# Declaring the tri-licence as a disjunction would misrepresent a choice that
+# has already been made and recorded.
+[[annotations]]
+path = [
+  "crates/openehr-adl/tests/corpus/rm/referencemodels/bmm/ISO_13606/2008/BMM/cen_EN13606_0.95.bmm",
+  "crates/openehr-adl/tests/corpus/rm/referencemodels/bmm/ISO_13606/2008/BMM/cen_ts14796_0.90.bmm",
+  "crates/openehr-adl/tests/corpus/rm/referencemodels/bmm/openEHR/components/RM/rejected/openehr_ehr_extract_999.bmm",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "the respective model authors"
+SPDX-License-Identifier = "MPL-1.1"
+
+# ── Clinical models (archetypes, templates) ─────────────────────────────────
+# The ADL2 archetype library and the CKM-derived clinical models. These carry
+# their licence INSIDE themselves — every archetype's own `description` block
+# has a `licence` field — so for this material licensing already survives
+# copying, and these declarations exist to make the same fact machine-readable
+# at the tree level.
+#
+# The corpora are MIXED at file level and the SPDX expression says so rather
+# than picking a winner: a first-hand count over the CKM corpus finds both
+# CC-BY-SA-4.0 (the majority) and CC-BY-SA-3.0 (several hundred files) — so
+# neither version alone is a true statement about the tree, and `AND` names
+# both sets of obligations a redistributor takes on. The per-file `licence`
+# metadata remains the authority for any individual file.
+[[annotations]]
+path = [
+  "tools/cnf-runner/artifacts/corpus/**",
+  "crates/openehr-adl/tests/corpus/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["openEHR Foundation", "the respective archetype authors"]
+SPDX-License-Identifier = "CC-BY-SA-3.0 AND CC-BY-SA-4.0"
+
+# The BMM reference-model subtree inside the ADL2 corpus is code-adjacent
+# material under different terms, so the two tables above are re-applied after
+# the broad clinical-model glob that would otherwise have swallowed them —
+# the last matching table wins, so these must come last.
+[[annotations]]
+path = "crates/openehr-adl/tests/corpus/rm/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["Nedap Healthcare", "openEHR Foundation"]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+  "crates/openehr-adl/tests/corpus/rm/referencemodels/bmm/ISO_13606/2008/BMM/cen_EN13606_0.95.bmm",
+  "crates/openehr-adl/tests/corpus/rm/referencemodels/bmm/ISO_13606/2008/BMM/cen_ts14796_0.90.bmm",
+  "crates/openehr-adl/tests/corpus/rm/referencemodels/bmm/openEHR/components/RM/rejected/openehr_ehr_extract_999.bmm",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "the respective model authors"
+SPDX-License-Identifier = "MPL-1.1"
+
+# ── Fuzzing seeds ───────────────────────────────────────────────────────────
+# Copies of the corpora above, kept so a recorded crash stays reproducible.
+# They inherit whatever their source carried; the union is declared because a
+# seed's origin is not recoverable from its filename.
+[[annotations]]
+path = "fuzz/seeds/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["openEHR Foundation", "the respective archetype authors", "FerroEHR contributors"]
+SPDX-License-Identifier = "Apache-2.0 AND CC-BY-SA-3.0 AND CC-BY-SA-4.0 AND MIT"
+
+# ── Self-hosted KaTeX assets — MIT ──────────────────────────────────────────
+# The documentation site pre-renders maths at build time and self-hosts the
+# stylesheet and fonts; provenance is in website/book/KATEX-PROVENANCE.md.
+[[annotations]]
+path = "website/book/src/katex/**"
+precedence = "override"
+SPDX-FileCopyrightText = "KaTeX contributors"
+SPDX-License-Identifier = "MIT"
+
+# ── One vendored file whose NAME contains a newline character ───────────────
+# `docs/specs/openehr/CNF/.../I_EHR_COMPOSITION.get_composition_version-bad_ehr\n.robot`
+# is tracked with a literal U+000A inside its filename — an upstream defect in
+# the vendored CNF suite, not something this repository may rename (hand-editing
+# a vendored tree is forbidden; the fix belongs upstream). Glob matching over a
+# newline-bearing path does not reach it, so it is named explicitly.
+[[annotations]]
+path = "docs/specs/openehr/CNF/tests/platform/robot/I_EHR_COMPOSITION/get_composition/I_EHR_COMPOSITION.get_composition_version-bad_ehr\n.robot"
+precedence = "override"
+SPDX-FileCopyrightText = "openEHR Foundation"
+SPDX-License-Identifier = "CC-BY-SA-3.0"
