@@ -5,7 +5,7 @@
 //! `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
 //! §Conformance Semantics). This module is what the phase-2 specialisation
 //! validator adds on top of them: the tri-state
-//! [`ValueConformance`]/[`TupleConformance`] verdicts its issue codes need, the
+//! `ValueConformance`/`TupleConformance` verdicts its issue codes need, the
 //! VSONCO collective-occurrences computation, the VSONT meta-type rule, and the
 //! ADL 1.4 effective-value accessors.
 //!

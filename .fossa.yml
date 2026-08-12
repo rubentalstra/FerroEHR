@@ -62,13 +62,16 @@ paths:
     # Fuzzing seeds: copies of the corpora above, kept for crash reproduction.
     - ./fuzz/seeds
 
-# A licence this project must never ship goes here rather than living only in a
-# reviewer's memory. These are the two copyleft families that would conflict
-# with the MIT licence of this project's own code; a match inside our own
-# sources is a finding worth stopping for, and the exclusions above mean a hit
-# can only come from code we wrote.
-customLicenseSearch:
-  - matchCriteria: "GNU (Affero )?General Public License"
-    name: "GPL-family licence text in first-party source"
-  - matchCriteria: "Server Side Public License"
-    name: "SSPL text in first-party source"
+# NO customLicenseSearch HERE, for two measured reasons (run 2026-08-12, CLI
+# 3.17.16). It uploaded nothing — `archiveAndLicenseUpload is not enabled in
+# this organization` failed the whole lane after a successful analysis — and,
+# more importantly, it did not honour the `paths.exclude` list above: every one
+# of its seven hits was inside a tree excluded on line 42ff, i.e. exactly the
+# third-party material this file exists to keep out of the results. The search
+# filters are a separate setting (`vendoredDependencies.licenseScanPathFilters`)
+# and the two lists do not compose the way the layout suggests.
+#
+# The forbidden-licence check therefore lives where it can be proven instead:
+# `scripts/checks/first-party-license-text.sh`, run by the `license-text` CI
+# job. It shares this file's exclusion list, needs no FOSSA plan, and fails the
+# build rather than filing a dashboard finding nobody is paged for.
