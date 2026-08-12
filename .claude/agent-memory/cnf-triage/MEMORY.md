@@ -41,3 +41,6 @@
 - [OAS `required:` ≠ non-empty array](oas-required-does-not-forbid-empty-arrays.md) — `Clstr.yaml required: [items]` is satisfied by `[]`; only the BMM cardinality grounds an empty-list refusal
 - [Authz class is EXPLICIT SM deferral](authz-class-is-explicit-sm-deferral.md) — a role 403 is never the app bin; SM master02 §Functional Style also grounds driving semantics cases as an authorized principal
 - [Definition-delete routes are Admin (#2071)](definition-delete-routes-are-admin-class.md) — the class move stands; 5 red rows = catalogue bin (`on: admin`), plus the readonly/uncased-branch fallout
+- [TERMINOLOGY_ID has no declared invariant](terminology-id-value-has-no-invariant.md) — BASE declares no Invariants row; master05's production is refuted by its own examples AND released QUERY `snomed_ct(3.1)`
+- [PGP subkey signature the runner cannot verify](pgp-subkey-signature-runner-cannot-verify.md) — RUNNER bin: rpgp 0.20 `SignedPublicKey::verify` is primary-only; the app signs with the `[S]` subkey since 7a8a8c9a3
+- [Baseline commit = where the run was RECORDED](baseline-commit-is-where-the-run-was-recorded.md) — diff the whole range since the previous results.json, never trust a handed-down "prime suspect"

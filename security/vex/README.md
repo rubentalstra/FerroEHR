@@ -26,6 +26,44 @@ re-evaluate.
 
 ## Documents
 
-| File | Subject |
-|---|---|
-| `postgres-gosu.openvex.json` | Go standard-library advisories in `/usr/local/bin/gosu`, the privilege-dropping helper the upstream `postgres` image ships. Not reachable: gosu sets uid/gid and execs, opening no socket and parsing no untrusted input. |
+| File | Subject | Authored |
+|---|---|---|
+| `postgres-gosu.openvex.json` | Go standard-library advisories in `/usr/local/bin/gosu`, the privilege-dropping helper the upstream `postgres` image ships. Not reachable: gosu sets uid/gid and execs, opening no socket and parsing no untrusted input. | by hand |
+| `rust-advisories.openvex.json` | The Rust dependency advisories: the five accepted by the advisory gate, plus the one a lock-file-reading scanner reports for a crate our feature set never compiles. | **generated** |
+
+## The generated document
+
+`rust-advisories.openvex.json` is produced by
+`scripts/security/vex-generate.sh` from two inputs, and must never be edited by
+hand:
+
+- **`deny.toml`** `[advisories].ignore` — the authoritative set of advisory
+  ids. It is the gate that actually decides whether a build passes, so it is
+  the only place the id list may live.
+- **`security/vex/rust-advisories.toml`** — the reasoning: the OpenVEX
+  `status`, the controlled-vocabulary `justification`, and the
+  `impact_statement` for each id.
+
+Two lists that must agree is exactly the shape this repository has already been
+bitten by (a second advisory ignore list at `.cargo/audit.toml` that nothing
+read and that had drifted to a different set of ids). So the generator refuses
+to emit anything unless the two sets match in **both** directions, and
+`scripts/checks/vex-advisories.sh` — the `vex` CI job — regenerates the
+document and fails on any difference. Adding an ignore to `deny.toml` without
+publishing its justification is a red build, not an oversight nobody notices.
+
+To change a statement: edit `rust-advisories.toml` (and `deny.toml` if the id
+set changes), bump the document's `version` and `timestamp`, then run
+`bash scripts/security/vex-generate.sh`.
+
+### Why lock-file-only findings are in there
+
+The last section of `rust-advisories.toml` carries advisories `cargo-deny`
+never raises — because it resolves cargo FEATURES — but which a scanner reading
+`Cargo.lock` alone does report. Those are precisely the findings that reach a
+downstream consumer with no explanation attached anywhere in this repository,
+which is the reason a published VEX document is worth more here than a comment.
+They are deliberately absent from `deny.toml`'s ignore list: an ignore for an
+advisory the gate never raises records nothing and would start applying
+silently if the tool ever became lock-file-based. The generator enforces that
+too.

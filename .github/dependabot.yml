@@ -32,6 +32,53 @@ updates:
         patterns: ["serde*"]
     commit-message:
       prefix: "deps"          # plain conventional prefix; no attribution
+  # The fuzz harnesses are their OWN Cargo workspace with their own lock file
+  # (`fuzz/Cargo.toml` opens with an empty `[workspace]` table precisely so the
+  # root workspace never sees them). A `cargo` entry at `/` therefore reaches
+  # none of it — Dependabot resolves the manifest at the directory it is given
+  # and nothing above or below. The harnesses compile on the pull-request path,
+  # so an unbumped dependency there breaks CI rather than rotting quietly, but
+  # it would still never receive a security bump.
+  #
+  # Separate entries for one ecosystem are supported as long as the directories
+  # do not overlap, which `/` and `/fuzz` do not:
+  # https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+  - package-ecosystem: "cargo"
+    directory: "/fuzz"
+    schedule:
+      interval: "weekly"
+    # The same window as the root cargo entry: these dependencies execute in a
+    # build, and the harnesses link the crates under test.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+  # The three container base images are pinned by digest, which is what earns
+  # the Scorecard `Pinned-Dependencies` score — and is also why they never
+  # receive a patch unless something proposes one. Without this entry the
+  # weekly published-image scan keeps FINDING base-layer CVEs in the clinical
+  # images while nothing offers the fix.
+  #
+  # `directories` (plural) takes a list and supports globbing; `directory`
+  # (singular) takes one path and does not. Each entry points at the directory
+  # holding a Dockerfile, per the options reference above.
+  - package-ecosystem: "docker"
+    directories:
+      - "/docker"
+      - "/docker/postgres"
+      - "/docker/admin-ui"
+    schedule:
+      interval: "weekly"
+    # Between the cargo and actions windows. A base image ships in the product,
+    # like a crate — but a base-image digest bump is reviewed against a build
+    # and a Trivy scan before it can merge, which a crate bump is not.
+    cooldown:
+      default-days: 5
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

@@ -92,8 +92,13 @@ exceptions = [
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
-# Internal path-only deps carry an implicit "*" version; all crates are
-# publish = false, so path-only is fine and stays denied for external deps.
+# Internal path-only deps carry an implicit "*" version. The `ferroehr-*`
+# application crates and the tools are unpublished and depend on the spec
+# crates by bare path, which is fine and never reaches a registry. The eight
+# PUBLISHED `openehr-*` crates do not rely on this: cargo refuses to package a
+# path dependency without a version requirement, so each of their internal deps
+# carries an explicit `version = "0.0.x"` bumped in lockstep. External wildcards
+# stay denied either way.
 allow-wildcard-paths = true
 # Deny known-unmaintained or footgun crates here as they surface.
 deny = []

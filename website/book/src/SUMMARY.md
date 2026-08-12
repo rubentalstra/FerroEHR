@@ -27,6 +27,7 @@
   - [FHIR connectors](beyond-core/fhir.md)
   - [S3 multimedia](beyond-core/s3-multimedia.md)
 - [Security & multi-tenancy](security.md)
+  - [Threat model](threat-model.md)
   - [Enterprise identity providers](identity-providers.md)
   - [SMART App Launch](smart-app-launch.md)
   - [Audit trail (IHE ATNA)](audit.md)

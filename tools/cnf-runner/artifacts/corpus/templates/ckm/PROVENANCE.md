@@ -27,10 +27,14 @@ under `full/` with its own provenance file.
 ## Licensing
 
 CKM publishes no repository-level license; each OPT embeds its source
-archetypes' `licence` metadata (predominantly CC-BY-SA 3.0 where
-stated — see the individual file). Vendored verbatim, so authorship
-and licence metadata ride along; root reference copy:
-`LICENSE-CC-BY-SA-3.0`.
+archetypes' `licence` metadata, and the corpus is **mixed**: a count
+over this directory on 2026-08-12 found **114 files carrying CC-BY-SA
+4.0 and 10 carrying CC-BY-SA 3.0**. The earlier wording here —
+"predominantly CC-BY-SA 3.0" — was the wrong way round. Read the
+individual file; its own metadata is the authority. Vendored verbatim,
+so authorship and licence metadata ride along; root reference copies:
+`LICENSE-CC-BY-SA-3.0` and `LICENSE-CC-BY-SA-4.0`, and `REUSE.toml`
+declares this tree as `CC-BY-SA-3.0 AND CC-BY-SA-4.0`.
 
 | cid | slug | display name | status | modified | journey role |
 |---|---|---|---|---|---|

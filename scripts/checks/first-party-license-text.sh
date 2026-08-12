@@ -50,6 +50,21 @@ readonly -a PROSE=(
   ':(exclude)LICENSE-APACHE-2.0'
   ':(exclude)LICENSE-CC-BY-SA-3.0'
   ':(exclude)LICENSE-CC-BY-SA-4.0'
+  # The REUSE 3.3 licence directory is the same category as the root licence
+  # texts above: quoted legal text this project REDISTRIBUTES so that a
+  # downstream copier can read the terms of the file they took, never a grant
+  # over anything written here. REUSE requires the full text of every licence
+  # any file in the tree is offered under, and one vendored file carries an
+  # upstream AGPL header — so an AGPL text has to be present for the tree to be
+  # compliant at all.
+  #
+  # This does not open a hole where the gate used to be: a licence text that
+  # belongs to no file now fails `scripts/checks/licensing-declarations.sh`,
+  # which refuses any text in LICENSES/ that REUSE.toml does not use. The
+  # control moved to the place that can judge it.
+  ':(exclude)LICENSES/**'
+  ':(exclude)REUSE.toml'
+  ':(exclude)website/book/src/licensing.md'
   ':(exclude).claude/**'
   ':(exclude)scripts/checks/first-party-license-text.sh'
   ':(exclude)deny.toml'

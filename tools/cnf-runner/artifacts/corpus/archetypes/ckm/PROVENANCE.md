@@ -32,10 +32,16 @@ a skip. Never delete a refused file: that drops the negative case
 ## Licensing
 
 CKM publishes no repository-level license; each archetype carries its
-own `description` > `licence` metadata (predominantly CC-BY-SA 3.0
-where stated — see the individual file). Vendored verbatim, so the
-authorship and licence metadata ride along in every file; root
-reference copy: `LICENSE-CC-BY-SA-3.0`.
+own `description` > `licence` metadata, and the corpus is **mixed**:
+a count over this directory on 2026-08-12 found **1266 files under
+CC-BY-SA 4.0 and 546 under CC-BY-SA 3.0**. The earlier wording here —
+"predominantly CC-BY-SA 3.0" — was the wrong way round, and no single
+version is a true statement about the tree. Read the individual file;
+its own metadata is the authority. Vendored verbatim, so the authorship
+and licence metadata ride along in every file; root reference copies:
+`LICENSE-CC-BY-SA-3.0` and `LICENSE-CC-BY-SA-4.0`
+(`LICENSES/CC-BY-SA-3.0.txt`, `LICENSES/CC-BY-SA-4.0.txt`), and
+`REUSE.toml` declares this tree as `CC-BY-SA-3.0 AND CC-BY-SA-4.0`.
 
 ## Inventory
 
