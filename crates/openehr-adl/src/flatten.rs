@@ -50,9 +50,9 @@ use crate::aom::access::{
     strip_sibling_order,
 };
 use crate::artefact::{ArchetypeRepository, view};
-use crate::codes::codes_conformant;
 use crate::paths::{PathSegment, parse_path};
 use crate::validate::conformance::tuple_member_names;
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 /// A failure while flattening a specialised archetype against its parent.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -407,7 +407,7 @@ fn resolve_anchor(work: &[CObject], anchor: &SiblingOrder) -> Option<InsertAt> {
 /// it (the anchor id may have been redefined away — `master09.04` L274-279:
 /// resolve to a currently-available conforming sibling).
 fn anchor_matches(node_id: &str, anchor_id: &str) -> bool {
-    node_id == anchor_id || codes_conformant(node_id, anchor_id)
+    node_id == anchor_id || AdlCodeDefinitionsData::codes_conformant(node_id, anchor_id)
 }
 
 fn insert_run(work: &mut Vec<CObject>, at: InsertAt, nodes: Vec<CObject>) {
@@ -807,6 +807,7 @@ fn find_congruent_idx(base: &[CObject], child_id: &str) -> Option<usize> {
         return Some(i);
     }
     base.iter().position(|b| {
-        !object_node_id(b).is_empty() && codes_conformant(child_id, object_node_id(b))
+        !object_node_id(b).is_empty()
+            && AdlCodeDefinitionsData::codes_conformant(child_id, object_node_id(b))
     })
 }

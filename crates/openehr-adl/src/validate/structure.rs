@@ -29,10 +29,10 @@ use super::{ValidationIssue, push_issue};
 use crate::aom::access::{aom_type, child_occurrences, complex_attributes, object_node_id};
 use crate::aom::interval::finite_upper;
 use crate::artefact::ArchetypeView;
-use crate::codes::{is_at_code, is_id_code, is_valid_code};
 use crate::hrid::is_archetype_id;
 use crate::parse::Dialect;
 use crate::paths::child_path;
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 /// raises issues; the terminology checks re-derive code usage in a second pass
 /// (`collect_usage`), so no code sets are accumulated here.
@@ -201,7 +201,8 @@ impl StructureScan<'_> {
                 for child in attr.children.iter().flatten() {
                     let cid = object_node_id(child);
                     if !cid.is_empty()
-                        && (is_id_code(cid) || is_at_code(cid))
+                        && (AdlCodeDefinitionsData::is_id_code(cid)
+                            || AdlCodeDefinitionsData::is_at_code(cid))
                         && !sibling_ids.insert(cid)
                     {
                         let cpath = child_path(&format!("{path}/{}", attr.rm_attribute_name), cid);
@@ -457,7 +458,7 @@ impl StructureScan<'_> {
     fn check_terminology_code_form(&mut self, path: &str, constraint: &str) {
         // Strip an optional operational `@terminology` binding suffix.
         let code = constraint.split('@').next().unwrap_or(constraint).trim();
-        if !code.is_empty() && !is_valid_code(code) {
+        if !code.is_empty() && !AdlCodeDefinitionsData::is_valid_code(code) {
             push_issue(
                 &mut self.issues,
                 ValidationCode::Vatcv,

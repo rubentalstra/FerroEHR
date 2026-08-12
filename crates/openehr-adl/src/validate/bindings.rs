@@ -34,8 +34,8 @@ use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
 use super::ValidationIssue;
 use super::catalogue::ValidationCode;
 use crate::artefact::{ArchetypeView, view};
-use crate::codes::{is_ac_code, is_at_code, is_id_code};
 use crate::paths::{Resolution, has_node_id_predicate, resolve};
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 // ── binding keys (VTTBK / VTCBK) ──────────────────────────────────────────
 
@@ -51,7 +51,7 @@ pub(super) fn check_bindings(
     };
     for terms in bindings.values() {
         for key in terms.keys() {
-            if is_ac_code(key) {
+            if AdlCodeDefinitionsData::is_value_set_code(key) {
                 // VTCBK: a constraint (ac) binding key must be a defined ac-code.
                 if !defined.contains(key.as_str()) {
                     issues.push(ValidationIssue::new(
@@ -59,7 +59,9 @@ pub(super) fn check_bindings(
                         format!("constraint binding key {key:?} is not a defined ac-code"),
                     ));
                 }
-            } else if is_at_code(key) || is_id_code(key) {
+            } else if AdlCodeDefinitionsData::is_at_code(key)
+                || AdlCodeDefinitionsData::is_id_code(key)
+            {
                 // VTTBK: a term binding key must be a defined at-code.
                 if !defined.contains(key.as_str()) {
                     issues.push(ValidationIssue::new(

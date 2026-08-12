@@ -43,10 +43,10 @@ use crate::aom::access::{
 };
 use crate::aom::interval::{Bounds, bounds, display_bounds, finite_upper, point_value_i32};
 use crate::artefact::{ArchetypeView, view};
-use crate::codes::{is_at_code, is_id_code};
 use crate::odin::is_delimited_regex_trimmed;
 use crate::parse::Dialect;
 use crate::paths::{child_path, locate};
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 /// One attribute of an RM type, as reported by a [`RmModel`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -655,7 +655,10 @@ impl RmScan<'_> {
             // terminology only.
             if rm_attr.is_multiple && !self.is_specialised {
                 let nid = object_node_id(child);
-                if (is_id_code(nid) || is_at_code(nid)) && !self.defined.contains(nid) {
+                if (AdlCodeDefinitionsData::is_id_code(nid)
+                    || AdlCodeDefinitionsData::is_at_code(nid))
+                    && !self.defined.contains(nid)
+                {
                     push_issue(
                         &mut self.issues,
                         ValidationCode::Vatid,

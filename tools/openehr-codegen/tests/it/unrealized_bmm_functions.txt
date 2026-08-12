@@ -34,55 +34,24 @@ am/v1_4/C_PRIMITIVE.default_value
 am/v1_4/C_PRIMITIVE.valid_value
 am/v1_4/C_PRIMITIVE_OBJECT.any_allowed
 am/v1_4/C_STRING.valid_value
+# `ADL_CODE_DEFINITIONS.code_exists_at_level` stays: the class page states it in
+# prose only ("remove its trailing specialised part ... and then any trailing '.0'
+# pieces, do we end up with a valid code?") with no Eiffel body anywhere in the
+# vendored AM text, and that literal reading contradicts the same sentence's
+# stated meaning ("the code corresponds to a real node from `a_level` or higher")
+# for a new-at-level code: `at0.0.1` truncated to level 1 gives `at0`, which
+# `Code_regex_pattern` admits while no node carries it.
+# `ARCHETYPE_CONSTRAINT.has_path` stays: resolving an ADL path against a
+# constraint tree is the ADL2 path grammar (`ADL2/master05-paths.adoc`), which
+# `openehr-adl` owns; AOM2 declares the function but defines no path syntax.
 am/v2_4/ADL_CODE_DEFINITIONS.code_exists_at_level
-am/v2_4/ADL_CODE_DEFINITIONS.codes_conformant
-am/v2_4/ADL_CODE_DEFINITIONS.is_adl_code
-am/v2_4/ADL_CODE_DEFINITIONS.is_at_code
-am/v2_4/ADL_CODE_DEFINITIONS.is_id_code
-am/v2_4/ADL_CODE_DEFINITIONS.is_redefined_code
-am/v2_4/ADL_CODE_DEFINITIONS.is_value_code
-am/v2_4/ADL_CODE_DEFINITIONS.is_value_set_code
-am/v2_4/ARCHETYPE_CONSTRAINT.c_conforms_to
-am/v2_4/ARCHETYPE_CONSTRAINT.c_congruent_to
 am/v2_4/ARCHETYPE_CONSTRAINT.has_path
-am/v2_4/C_ATTRIBUTE.c_conforms_to
-am/v2_4/C_ATTRIBUTE.c_congruent_to
-am/v2_4/C_ATTRIBUTE_TUPLE.c_conforms_to
-am/v2_4/C_ATTRIBUTE_TUPLE.c_congruent_to
-am/v2_4/C_BOOLEAN.c_value_conforms_to
-am/v2_4/C_BOOLEAN.c_value_congruent_to
 am/v2_4/C_BOOLEAN.prototype_value
-am/v2_4/C_COMPLEX_OBJECT.c_conforms_to
-am/v2_4/C_COMPLEX_OBJECT.c_congruent_to
-am/v2_4/C_COMPLEX_OBJECT_PROXY.occurrences_conforms_to
 am/v2_4/C_DATE_TIME.millisecond_validity
 am/v2_4/C_DEFINED_OBJECT.prototype_value
 am/v2_4/C_DEFINED_OBJECT.valid_value
-am/v2_4/C_OBJECT.c_conforms_to
-am/v2_4/C_OBJECT.c_congruent_to
-am/v2_4/C_OBJECT.effective_occurrences
-am/v2_4/C_OBJECT.node_id_conforms_to
-am/v2_4/C_OBJECT.occurrences_conforms_to
-am/v2_4/C_ORDERED.c_value_conforms_to
-am/v2_4/C_ORDERED.c_value_congruent_to
-am/v2_4/C_PRIMITIVE_OBJECT.c_conforms_to
-am/v2_4/C_PRIMITIVE_OBJECT.c_congruent_to
-am/v2_4/C_PRIMITIVE_OBJECT.c_value_conforms_to
-am/v2_4/C_PRIMITIVE_OBJECT.c_value_congruent_to
-am/v2_4/C_PRIMITIVE_TUPLE.c_conforms_to
-am/v2_4/C_PRIMITIVE_TUPLE.c_congruent_to
-am/v2_4/C_SECOND_ORDER.c_conforms_to
-am/v2_4/C_SECOND_ORDER.c_congruent_to
-am/v2_4/C_STRING.c_value_conforms_to
-am/v2_4/C_STRING.c_value_congruent_to
 am/v2_4/C_STRING.prototype_value
 am/v2_4/C_STRING.valid_value
-am/v2_4/C_TEMPORAL.c_value_conforms_to
-am/v2_4/C_TEMPORAL.c_value_congruent_to
-am/v2_4/C_TEMPORAL.valid_pattern_constraint
-am/v2_4/C_TEMPORAL.valid_pattern_constraint_replacement
-am/v2_4/C_TERMINOLOGY_CODE.c_value_conforms_to
-am/v2_4/C_TERMINOLOGY_CODE.c_value_congruent_to
 am/v2_4/C_TERMINOLOGY_CODE.prototype_value
 am/v2_4/C_TERMINOLOGY_CODE.valid_value
 am/v2_4/C_TERMINOLOGY_CODE.value_set_expanded

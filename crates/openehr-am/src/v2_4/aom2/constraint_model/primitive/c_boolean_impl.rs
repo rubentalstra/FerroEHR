@@ -1,7 +1,9 @@
 //! Hand-written AOM2 `C_BOOLEAN` spec functions.
 //!
-//! Spec source (vendored):
-//! `AM/docs/UML/classes/org.openehr.am.aom2.c_boolean.adoc` §Functions.
+//! Spec sources (vendored):
+//! `AM/docs/UML/classes/org.openehr.am.aom2.c_boolean.adoc` §Functions and
+//! `AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
+//! §Conformance semantics: C_BOOLEAN.
 
 use crate::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean;
 
@@ -14,6 +16,42 @@ impl CBoolean {
     #[must_use]
     pub fn any_allowed(&self) -> bool {
         self.constraint.as_deref().is_none_or(<[bool]>::is_empty)
+    }
+
+    /// Returns true if this node's value constraint is a strict subset of
+    /// `other`'s.
+    ///
+    /// `c_value_conforms_to` (`master04.5` §Conformance semantics: C_BOOLEAN):
+    /// `other.any_allowed or constraint.count < other.constraint.count and for
+    /// all c in constraint | other.constraint.has (c)`. An equal constraint is
+    /// deliberately not "conformant" here — that case is
+    /// [`CBoolean::c_value_congruent_to`].
+    #[must_use]
+    pub fn c_value_conforms_to(&self, other: &CBoolean) -> bool {
+        other.any_allowed()
+            || (self.values().len() < other.values().len() && self.values_are_subset_of(other))
+    }
+
+    /// Returns true if this node's value constraint is the same as `other`'s.
+    ///
+    /// `c_value_congruent_to` (`master04.5` §Conformance semantics: C_BOOLEAN):
+    /// `constraint.count = other.constraint.count and for all c in constraint |
+    /// other.constraint.has (c)`.
+    #[must_use]
+    pub fn c_value_congruent_to(&self, other: &CBoolean) -> bool {
+        self.values().len() == other.values().len() && self.values_are_subset_of(other)
+    }
+
+    /// The stated constraint values, empty when none is stated.
+    fn values(&self) -> &[bool] {
+        self.constraint.as_deref().unwrap_or_default()
+    }
+
+    /// Whether every value this node allows is also allowed by `other`.
+    fn values_are_subset_of(&self, other: &CBoolean) -> bool {
+        self.values()
+            .iter()
+            .all(|value| other.values().iter().any(|permitted| permitted == value))
     }
 }
 
@@ -48,5 +86,20 @@ mod tests {
     fn one_permitted_value_is_already_a_constraint() {
         assert!(!boolean(Some(vec![true])).any_allowed());
         assert!(!boolean(Some(vec![true, false])).any_allowed());
+    }
+
+    /// The `master04.5` body is a STRICT subset test, so an equal constraint is
+    /// congruent rather than conformant.
+    #[test]
+    fn conformance_is_a_strict_narrowing_and_equality_is_congruence() {
+        let both = boolean(Some(vec![true, false]));
+        let only_true = boolean(Some(vec![true]));
+        assert!(only_true.c_value_conforms_to(&both));
+        assert!(!both.c_value_conforms_to(&only_true));
+        assert!(!only_true.c_value_conforms_to(&only_true));
+        assert!(only_true.c_value_congruent_to(&only_true));
+        assert!(!only_true.c_value_congruent_to(&both));
+        // An unconstrained parent admits anything.
+        assert!(both.c_value_conforms_to(&boolean(None)));
     }
 }

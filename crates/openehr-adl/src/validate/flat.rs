@@ -60,8 +60,9 @@ use super::{ValidationIssue, push_issue};
 use crate::aom::access::{aom_type, child_occurrences, complex_attributes, object_node_id};
 use crate::aom::interval::finite_upper;
 use crate::artefact::view;
-use crate::codes::{is_at_code, is_id_code, is_redefined_code, specialisation_parent_from_code};
+use crate::codes::specialisation_parent_from_code;
 use crate::paths::{Resolution, child_path, is_ancestor_path, locate, resolve};
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 // ── the flat-form proxy + cardinality walk ────────────────────────────────
 
@@ -265,7 +266,7 @@ pub(super) fn validate_flat_form(flat: &Archetype) -> Vec<ValidationIssue> {
     let root = CObject::CComplexObject(v.definition.clone());
     collect_usage(&root, &mut usage);
     for code in &usage.value_codes {
-        if is_at_code(code) && !defined.contains(code.as_str()) {
+        if AdlCodeDefinitionsData::is_at_code(code) && !defined.contains(code.as_str()) {
             issues.push(ValidationIssue::new(
                 ValidationCode::Vatdf,
                 format!("value code {code:?} is not defined in the flattened terminology"),
@@ -345,7 +346,9 @@ fn check_node_id_unique(
     issues: &mut Vec<ValidationIssue>,
 ) {
     let nid = object_node_id(obj);
-    if nid.is_empty() || !(is_id_code(nid) || is_at_code(nid)) {
+    if nid.is_empty()
+        || !(AdlCodeDefinitionsData::is_id_code(nid) || AdlCodeDefinitionsData::is_at_code(nid))
+    {
         return;
     }
     if aom_type(obj).is_primitive() {
@@ -400,7 +403,7 @@ fn specialisation_root_path(path: &str) -> String {
 /// The level-0 code a redefined code specialises; the code itself otherwise.
 fn specialisation_root_code(code: &str) -> String {
     let mut current = code.to_owned();
-    while is_redefined_code(&current) {
+    while AdlCodeDefinitionsData::is_redefined_code(&current) {
         let Some(parent) = specialisation_parent_from_code(&current) else {
             break;
         };

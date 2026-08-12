@@ -14,6 +14,7 @@ use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
 };
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 /// The mutable `C_COMPLEX_OBJECT` data, if this is a plain complex object.
 ///
@@ -65,7 +66,7 @@ pub(super) fn collect_local_value_codes(def: &CComplexObject, f: &mut impl FnMut
             && term == "local"
         {
             for code in codes.split([',', ';']).map(str::trim) {
-                if crate::codes::is_at_code(code) {
+                if AdlCodeDefinitionsData::is_at_code(code) {
                     f(code);
                 }
             }
