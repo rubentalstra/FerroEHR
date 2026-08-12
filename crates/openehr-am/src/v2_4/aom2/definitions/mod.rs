@@ -3,3 +3,6 @@
 //! The openEHR spec package `v2_4/aom2/definitions` — generated module tree.
 
 pub mod adl_code_definitions;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod adl_code_definitions_impl;

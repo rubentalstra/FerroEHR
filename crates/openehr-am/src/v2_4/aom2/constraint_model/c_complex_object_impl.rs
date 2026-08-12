@@ -1,12 +1,16 @@
 //! Hand-written AOM2 `C_COMPLEX_OBJECT` spec functions.
 //!
-//! Spec source (vendored):
-//! `AM/docs/UML/classes/org.openehr.am.aom2.c_complex_object.adoc` §Functions.
+//! Spec sources (vendored):
+//! `AM/docs/UML/classes/org.openehr.am.aom2.c_complex_object.adoc` §Functions
+//! and `AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
+//! §Conformance Semantics: C_OBJECT, whose bodies `C_COMPLEX_OBJECT` inherits.
 
 use crate::v2_4::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::v2_4::aom2::constraint_model::c_attribute::CAttribute;
 use crate::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use crate::v2_4::aom2::constraint_model::c_object_impl::{NodeFacts, conforms, congruent};
 use crate::v2_4::aom2::constraint_model::c_second_order::CSecondOrder;
+use crate::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
 
 impl CComplexObject {
@@ -80,6 +84,66 @@ impl CComplexObject {
         let occurrences = self.occurrences();
         attributes.is_none_or(<[CAttribute]>::is_empty)
             && !occurrences.is_some_and(MultiplicityInterval::is_prohibited)
+    }
+
+    /// Returns the `rm_type_name` of this object node.
+    #[must_use]
+    pub fn rm_type_name(&self) -> &str {
+        match self {
+            Self::CArchetypeRoot(root) => &root.rm_type_name,
+            Self::CComplexObject(data) => &data.rm_type_name,
+        }
+    }
+
+    /// Returns the `sibling_order` of this object node.
+    #[must_use]
+    pub fn sibling_order(&self) -> Option<&SiblingOrder> {
+        match self {
+            Self::CArchetypeRoot(root) => root.sibling_order.as_ref(),
+            Self::CComplexObject(data) => data.sibling_order.as_ref(),
+        }
+    }
+
+    /// The node facts the `master04.5` conformance functions read.
+    fn facts(&self) -> NodeFacts<'_> {
+        NodeFacts {
+            node_id: self.node_id(),
+            rm_type_name: self.rm_type_name(),
+            occurrences: self.occurrences(),
+            sibling_order: self.sibling_order(),
+        }
+    }
+
+    /// Returns true if this node on its own expresses the same or narrower
+    /// constraints than `other`.
+    ///
+    /// `C_COMPLEX_OBJECT` declares `c_conforms_to` (BMM) but states no body of
+    /// its own, so the `C_OBJECT` body applies (`master04.5` §Conformance
+    /// Semantics: C_OBJECT). `rmcc` is the spec's reference-model conformance
+    /// lambda and `owning_attribute` carries the Eiffel `parent` — `None` means
+    /// `is_root`, which is the usual case for a definition root.
+    #[must_use]
+    pub fn c_conforms_to(
+        &self,
+        other: &CComplexObject,
+        rmcc: &dyn Fn(&str, &str) -> bool,
+        owning_attribute: Option<&CAttribute>,
+    ) -> bool {
+        conforms(&self.facts(), &other.facts(), rmcc, owning_attribute)
+    }
+
+    /// Returns true if this node expresses no constraints beyond `other`'s,
+    /// node-id redefinition aside.
+    ///
+    /// As with [`CComplexObject::c_conforms_to`], the body is `C_OBJECT`'s
+    /// `c_congruent_to` (`master04.5` §Conformance Semantics: C_OBJECT).
+    #[must_use]
+    pub fn c_congruent_to(
+        &self,
+        other: &CComplexObject,
+        owning_attribute: Option<&CAttribute>,
+    ) -> bool {
+        congruent(&self.facts(), &other.facts(), owning_attribute)
     }
 }
 

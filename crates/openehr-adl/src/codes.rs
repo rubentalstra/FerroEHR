@@ -1,34 +1,28 @@
-//! Specialisation-code utilities (AOM2 `ADL_CODE_DEFINITIONS`).
+//! Specialisation-code utilities over the AOM2 `ADL_CODE_DEFINITIONS` class.
 //!
-//! Parsing and specialisation math over the ADL local code space — id-codes
-//! (`id1`, `id1.1`), at/value-codes (`at0000`, `at0004.0.1`), and value-set
-//! ac-codes (`ac1`). These are the code primitives the phase-1 validation
-//! catalogue and the later specialisation phases build on.
+//! The code space itself — the leaders, `codes_conformant`, `is_valid_code`,
+//! `is_redefined_code` — is the spec class, realized on
+//! `openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData`
+//! and read through from here. This module carries only the ADL engine's own
+//! reading of a code: the parsed segment form, specialisation lineage, and the
+//! root-code tests the validity catalogue needs.
 //!
 //! Spec oracle:
-//! - `docs/specs/openehr/AM/docs/AOM2/master02-model_overview.adoc`
-//!   §Class Definitions → Utility Algorithms — the `codes_conformant` Eiffel
-//!   algorithm (verbatim implemented in [`codes_conformant`]).
 //! - `docs/specs/openehr/AM/docs/UML/classes/org.openehr.am.aom2.adl_code_definitions.adoc`
-//!   — the leader constants (`At_code_leader="at"`, `Id_code_leader="id"`,
-//!   `Value_set_code_leader="ac"`, `Specialisation_separator='.'`),
-//!   `Code_regex_pattern`, and `Root_code_regex_pattern = "^(id1|at0000)(\.1)*$"`.
+//!   — the leader constants, `Code_regex_pattern`, and
+//!   `Root_code_regex_pattern = "^(id1|at0000)(\.1)*$"`.
 //! - `docs/specs/openehr/AM/docs/AOM2/master07-terminology_package.adoc`
 //!   §Specialisation Depth — depth = dot-count for at/id codes; ac-codes
 //!   "exist in a flat code space instead" (no depth semantics).
 //!
-//! NOTE: `specialisation_depth_from_code`, `specialisation_parent_from_code`,
-//! and `is_valid_code` are referenced by the spec but carry no formal function
-//! body in the vendored AM text — they are derived here from the master07
-//! §Specialisation Depth prose (dot-count) and the `Code_regex_pattern` /
-//! leader constants respectively. openEHR at-codes are conventionally
-//! zero-padded (`at0004`, `at0000`), which the strict `Code_regex_pattern`
-//! (`(0|[1-9][0-9]*)…`) would reject; [`is_valid_code`] therefore relaxes each
-//! numeric segment to `[0-9]+` while keeping the leader + separator structure
-//! (`adl_code_definitions` §Constants).
+//! NOTE: `specialisation_depth_from_code` and `specialisation_parent_from_code`
+//! are referenced by the spec but carry no formal function body in the vendored
+//! AM text — they are derived here from the master07 §Specialisation Depth
+//! prose (dot-count).
 
 use std::sync::LazyLock;
 
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 use regex::Regex;
 
 /// The kind of ADL local code, distinguished by its alphabetic leader
@@ -50,9 +44,9 @@ impl CodePrefix {
     #[must_use]
     pub fn leader(self) -> &'static str {
         match self {
-            Self::Id => "id",
-            Self::At => "at",
-            Self::Ac => "ac",
+            Self::Id => AdlCodeDefinitionsData::ID_CODE_LEADER,
+            Self::At => AdlCodeDefinitionsData::AT_CODE_LEADER,
+            Self::Ac => AdlCodeDefinitionsData::VALUE_SET_CODE_LEADER,
         }
     }
 }
@@ -85,19 +79,6 @@ impl ParsedCode {
     }
 }
 
-/// The strict numeric-segment pattern from `Code_regex_pattern`
-/// (`org.openehr.am.aom2.adl_code_definitions`): `(0|[1-9][0-9]*)`.
-/// Retained for reference; [`is_valid_code`] uses the relaxed `[0-9]+` form to
-/// admit the zero-padded openEHR at-code convention (see the module NOTE).
-static VALID_CODE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    // leader + first numeric segment + `.`-separated further segments.
-    #[expect(
-        clippy::unwrap_used,
-        reason = "the pattern is a compile-time string constant proven to compile by this module's own tests, so an Err is unreachable"
-    )]
-    Regex::new(r"^(id|at|ac)[0-9]+(\.[0-9]+)*$").unwrap()
-});
-
 /// `Root_code_regex_pattern` verbatim: `^(id1|at0000)(\.1)*$`
 /// (`org.openehr.am.aom2.adl_code_definitions` §Constants).
 static ROOT_CODE_RE: LazyLock<Regex> = LazyLock::new(|| {
@@ -109,15 +90,17 @@ static ROOT_CODE_RE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// The [`CodePrefix`] of a raw code string, or `None` if it carries no
-/// recognised leader (`is_at_code`/`is_id_code`/`is_value_set_code`,
-/// `adl_code_definitions`).
+/// recognised leader.
+///
+/// A dispatch over the class's own leader predicates (`is_id_code` /
+/// `is_value_set_code` / `is_at_code`, `adl_code_definitions` §Functions).
 #[must_use]
 pub fn code_prefix(code: &str) -> Option<CodePrefix> {
-    if code.starts_with("id") {
+    if AdlCodeDefinitionsData::is_id_code(code) {
         Some(CodePrefix::Id)
-    } else if code.starts_with("ac") {
+    } else if AdlCodeDefinitionsData::is_value_set_code(code) {
         Some(CodePrefix::Ac)
-    } else if code.starts_with("at") {
+    } else if AdlCodeDefinitionsData::is_at_code(code) {
         Some(CodePrefix::At)
     } else {
         None
@@ -125,10 +108,10 @@ pub fn code_prefix(code: &str) -> Option<CodePrefix> {
 }
 
 /// Parse a raw local code into its [`ParsedCode`] form, or `None` if it is not
-/// a valid ADL code ([`is_valid_code`]).
+/// a valid ADL code.
 #[must_use]
 pub fn parse_code(code: &str) -> Option<ParsedCode> {
-    if !is_valid_code(code) {
+    if !AdlCodeDefinitionsData::is_valid_code(code) {
         return None;
     }
     let prefix = code_prefix(code)?;
@@ -137,66 +120,14 @@ pub fn parse_code(code: &str) -> Option<ParsedCode> {
     Some(ParsedCode { prefix, segments })
 }
 
-/// True if `code` is any kind of valid ADL local code — a recognised leader
-/// (`id`/`at`/`ac`) followed by `.`-separated numeric segments.
-///
-/// NOTE: relaxes `Code_regex_pattern`'s no-leading-zero rule to admit the
-/// zero-padded openEHR at-code convention (`at0000`, `at0004`); see the module
-/// NOTE.
-#[must_use]
-pub fn is_valid_code(code: &str) -> bool {
-    VALID_CODE_RE.is_match(code)
-}
-
-/// True if `code` is an at-code / value-code (`is_at_code`,
-/// `adl_code_definitions`).
-#[must_use]
-pub fn is_at_code(code: &str) -> bool {
-    code_prefix(code) == Some(CodePrefix::At)
-}
-
-/// True if `code` is an id-code (`is_id_code`, `adl_code_definitions`).
-#[must_use]
-pub fn is_id_code(code: &str) -> bool {
-    code_prefix(code) == Some(CodePrefix::Id)
-}
-
-/// True if `code` is a value-set (ac) code (`is_value_set_code`,
-/// `adl_code_definitions`).
-#[must_use]
-pub fn is_ac_code(code: &str) -> bool {
-    code_prefix(code) == Some(CodePrefix::Ac)
-}
-
 /// The specialisation depth of a code (= dot-count of its numeric part), or
 /// `None` for a non-code string (master07 §Specialisation Depth).
 ///
-/// ac-codes are flat (no depth); callers that care must gate on
-/// [`is_ac_code`].
+/// ac-codes are flat (no depth); callers that care must gate on the code's
+/// [`CodePrefix`].
 #[must_use]
 pub fn specialisation_depth(code: &str) -> Option<usize> {
     parse_code(code).map(|c| c.specialisation_depth())
-}
-
-/// True if `a_child_code` conforms to `a_parent_code` in the sense of
-/// specialisation — the same as, or more specialised than, the parent
-/// (master02 §Utility Algorithms, `codes_conformant`, verbatim):
-///
-/// ```eiffel
-/// Result := is_valid_code (a_child_code) and then
-///     a_child_code.starts_with (a_parent_code) and then
-///     (a_child_code.count = a_parent_code.count or else
-///      a_child_code.item (a_parent_code.count + 1) = Specialisation_separator)
-/// ```
-///
-/// The trailing-separator test prevents `at00040` from falsely conforming to
-/// `at0004`.
-#[must_use]
-pub fn codes_conformant(child: &str, parent: &str) -> bool {
-    is_valid_code(child)
-        && child.starts_with(parent)
-        && (child.len() == parent.len()
-            || child.as_bytes().get(parent.len()).copied() == Some(b'.'))
 }
 
 /// The immediate specialisation parent of a code — the code with its trailing
@@ -239,25 +170,6 @@ pub fn is_root_code_at_depth(code: &str, depth: usize) -> bool {
     is_root_code(code) && specialisation_depth(code) == Some(depth)
 }
 
-/// True if `code` has been redefined (specialised) from a parent code.
-///
-/// Redefinition means a non-zero numeric segment anywhere *above* the last
-/// segment (`is_redefined_code`, `adl_code_definitions`: `at0.0.1` → False,
-/// `at1.0.1` → True).
-#[must_use]
-pub fn is_redefined_code(code: &str) -> bool {
-    let Some(parsed) = parse_code(code) else {
-        return false;
-    };
-    if parsed.segments.len() <= 1 {
-        return false;
-    }
-    let Some((_, above_last)) = parsed.segments.split_last() else {
-        return false;
-    };
-    above_last.iter().any(|seg| seg.bytes().any(|b| b != b'0'))
-}
-
 /// True if `code` is a *new* node code introduced at its own specialisation
 /// level.
 ///
@@ -295,13 +207,13 @@ mod tests {
         assert_eq!(code_prefix("at0004"), Some(CodePrefix::At));
         assert_eq!(code_prefix("ac1"), Some(CodePrefix::Ac));
         assert_eq!(code_prefix("XYZ"), None);
-        assert!(is_valid_code("at0000"));
-        assert!(is_valid_code("at0004.0.1"));
-        assert!(is_valid_code("id1.1.1"));
-        assert!(is_valid_code("ac1"));
-        assert!(!is_valid_code("at"));
-        assert!(!is_valid_code("at.1"));
-        assert!(!is_valid_code("foo"));
+        assert!(AdlCodeDefinitionsData::is_valid_code("at0000"));
+        assert!(AdlCodeDefinitionsData::is_valid_code("at0004.0.1"));
+        assert!(AdlCodeDefinitionsData::is_valid_code("id1.1.1"));
+        assert!(AdlCodeDefinitionsData::is_valid_code("ac1"));
+        assert!(!AdlCodeDefinitionsData::is_valid_code("at"));
+        assert!(!AdlCodeDefinitionsData::is_valid_code("at.1"));
+        assert!(!AdlCodeDefinitionsData::is_valid_code("foo"));
     }
 
     #[test]
@@ -331,11 +243,21 @@ mod tests {
     #[test]
     fn conformance_and_parent() {
         // exact Eiffel algorithm: separator-boundary guard.
-        assert!(codes_conformant("at0004", "at0004"));
-        assert!(codes_conformant("at0004.1", "at0004"));
-        assert!(codes_conformant("at0004.1.2", "at0004.1"));
-        assert!(!codes_conformant("at00040", "at0004")); // no separator boundary
-        assert!(!codes_conformant("at0005", "at0004"));
+        assert!(AdlCodeDefinitionsData::codes_conformant("at0004", "at0004"));
+        assert!(AdlCodeDefinitionsData::codes_conformant(
+            "at0004.1", "at0004"
+        ));
+        assert!(AdlCodeDefinitionsData::codes_conformant(
+            "at0004.1.2",
+            "at0004.1"
+        ));
+        // no separator boundary.
+        assert!(!AdlCodeDefinitionsData::codes_conformant(
+            "at00040", "at0004"
+        ));
+        assert!(!AdlCodeDefinitionsData::codes_conformant(
+            "at0005", "at0004"
+        ));
         assert_eq!(
             specialisation_parent_from_code("at0025.1.1").as_deref(),
             Some("at0025.1")
@@ -349,10 +271,10 @@ mod tests {
 
     #[test]
     fn redefined_vs_new() {
-        assert!(!is_redefined_code("at0.0.1"));
-        assert!(is_redefined_code("at1.0.1"));
-        assert!(is_redefined_code("at0004.1"));
-        assert!(!is_redefined_code("at0004"));
+        assert!(!AdlCodeDefinitionsData::is_redefined_code("at0.0.1"));
+        assert!(AdlCodeDefinitionsData::is_redefined_code("at1.0.1"));
+        assert!(AdlCodeDefinitionsData::is_redefined_code("at0004.1"));
+        assert!(!AdlCodeDefinitionsData::is_redefined_code("at0004"));
         assert!(is_new_at_level("at0.0.1"));
         assert!(!is_new_at_level("at0004.1"));
         assert!(!is_new_at_level("id1"));
@@ -401,15 +323,18 @@ mod tests {
     fn prop_conformant_is_reflexive_and_prefix_monotone() {
         for seed in 0..500u64 {
             let base = format!("id{}", (seed % 30) + 1);
-            assert!(codes_conformant(&base, &base), "reflexive: {base}");
+            assert!(
+                AdlCodeDefinitionsData::codes_conformant(&base, &base),
+                "reflexive: {base}"
+            );
             let child = format!("{base}.1");
             // a `.1`-extended child always conforms to its parent.
             assert!(
-                codes_conformant(&child, &base),
+                AdlCodeDefinitionsData::codes_conformant(&child, &base),
                 "child {child} conforms to {base}"
             );
             // and the parent never conforms to the strictly-deeper child.
-            assert!(!codes_conformant(&base, &child));
+            assert!(!AdlCodeDefinitionsData::codes_conformant(&base, &child));
         }
     }
 
@@ -423,7 +348,7 @@ mod tests {
                     specialisation_parent_from_code(&code),
                 ) {
                     assert_eq!(specialisation_depth(&parent), Some(d - 1));
-                    assert!(codes_conformant(&code, &parent));
+                    assert!(AdlCodeDefinitionsData::codes_conformant(&code, &parent));
                 }
             }
         }

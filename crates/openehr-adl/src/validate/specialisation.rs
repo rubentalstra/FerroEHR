@@ -40,9 +40,8 @@ use openehr_base::prelude::MultiplicityInterval;
 
 use super::catalogue::ValidationCode;
 use super::conformance::{
-    self, TupleConformance, ValueConformance, cardinality_conforms_to, collective_occurrences_of,
-    effective_occurrences, existence_conforms_to, meta_type_conforms, node_id_conforms_to,
-    tuple_conforms_to, tuple_member_names,
+    self, TupleConformance, ValueConformance, collective_occurrences_of, effective_occurrences,
+    meta_type_conforms, tuple_conforms_to, tuple_member_names,
 };
 use super::identification::languages;
 use super::rm::RmModel;
@@ -54,9 +53,10 @@ use crate::aom::access::{
 };
 use crate::aom::interval::{Bounds, display_bounds_always_range, finite_cardinality_upper};
 use crate::artefact::{ArchetypeRepository, ArchetypeView, view};
-use crate::codes::{codes_conformant, is_ac_code, is_new_at_level, specialisation_depth};
+use crate::codes::{is_new_at_level, specialisation_depth};
 use crate::hrid::{hrid_lookup_key, raw_id_lookup_key};
 use crate::paths::{PathSegment, child_path, parse_path};
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 /// Validate the differential child `child` against its flat parent `flat_parent`
 /// (master08 "phase 2 — validate specialised definition" in the spec's guide
@@ -239,7 +239,7 @@ impl<'a> ParentScan<'a> {
 
         // VSANCE: existence conformance to the flat parent (`master04.5`
         // §`C_ATTRIBUTE`, VSANCE L142-143).
-        if !existence_conforms_to(attr.existence.as_ref(), parent_attr.existence.as_ref()) {
+        if !attr.existence_conforms_to(parent_attr) {
             push_issue(
                 &mut self.issues,
                 ValidationCode::Vsance,
@@ -249,7 +249,7 @@ impl<'a> ParentScan<'a> {
         }
         // VSANCC: cardinality conformance to the flat parent (`master04.5`
         // §`C_ATTRIBUTE`, VSANCC L171-172).
-        if !cardinality_conforms_to(attr.cardinality.as_ref(), parent_attr.cardinality.as_ref()) {
+        if !attr.cardinality_conforms_to(parent_attr) {
             push_issue(
                 &mut self.issues,
                 ValidationCode::Vsancc,
@@ -404,8 +404,7 @@ impl<'a> ParentScan<'a> {
         // Single-occurrence VSONCO (`master04.5` §`C_OBJECT`, occurrences_conforms_to
         // L287-299): a child redefining a single-occurrence (upper 1) parent node
         // must be wholly contained.
-        let parent_occ =
-            effective_occurrences(child_occurrences(parent), owning_attr, owner_rm, self.rm);
+        let parent_occ = effective_occurrences(parent, owning_attr, owner_rm, self.rm);
         if parent_occ.upper == Some(1)
             && let Some(child_occ) = child_occurrences(child)
             && !parent_occ.contains(crate::aom::interval::bounds(child_occ))
@@ -495,7 +494,7 @@ impl<'a> ParentScan<'a> {
             return;
         }
         // Both required: lexical code conformance first.
-        if !codes_conformant(child_code, parent_code) {
+        if !AdlCodeDefinitionsData::codes_conformant(child_code, parent_code) {
             push_issue(
                 &mut self.issues,
                 ValidationCode::Vpov,
@@ -507,7 +506,7 @@ impl<'a> ParentScan<'a> {
             return;
         }
         // Value-set expansion subset (only when the parent constrains a value-set).
-        if is_ac_code(parent_code)
+        if AdlCodeDefinitionsData::is_value_set_code(parent_code)
             && let Some(parent_members) = self.parent_value_sets.get(parent_code)
             && !parent_members.is_empty()
         {
@@ -530,7 +529,7 @@ impl<'a> ParentScan<'a> {
     /// non-value-set constraint) is its own singleton value set (`master04.5`
     /// §`C_TERMINOLOGY_NODE` `value_set_expanded`).
     fn expand_child_value_set(&self, code: &str) -> Vec<String> {
-        if is_ac_code(code)
+        if AdlCodeDefinitionsData::is_value_set_code(code)
             && let Some(members) = self.child_value_sets.get(code)
         {
             return members.clone();
@@ -602,22 +601,16 @@ impl<'a> ParentScan<'a> {
 
         for parent_obj in parent_attr.children.iter().flatten() {
             let parent_id = object_node_id(parent_obj);
-            let parent_occ = effective_occurrences(
-                child_occurrences(parent_obj),
-                parent_attr,
-                owner_rm,
-                self.rm,
-            );
+            let parent_occ = effective_occurrences(parent_obj, parent_attr, owner_rm, self.rm);
             // Multiple-occurrence parent node: upper is not exactly 1.
             if parent_occ.upper == Some(1) {
                 continue;
             }
             // Members = child nodes redefining this parent node.
-            let has_members = child_attr
-                .children
-                .iter()
-                .flatten()
-                .any(|c| node_id_conforms_to(object_node_id(c), parent_id));
+            let has_members =
+                child_attr.children.iter().flatten().any(|c| {
+                    AdlCodeDefinitionsData::codes_conformant(object_node_id(c), parent_id)
+                });
             if !has_members {
                 continue;
             }
@@ -653,7 +646,8 @@ impl<'a> ParentScan<'a> {
             };
             let anchor = &order.sibling_node_id;
             let in_parent = parent_attr.children.iter().flatten().any(|p| {
-                node_id_conforms_to(anchor, object_node_id(p)) || object_node_id(p) == anchor
+                AdlCodeDefinitionsData::codes_conformant(anchor, object_node_id(p))
+                    || object_node_id(p) == anchor
             });
             let redefined_locally = child_attr
                 .children
@@ -760,11 +754,10 @@ impl<'a> ParentScan<'a> {
 /// (congruent match), or the sole child if the segment carries no predicate.
 fn pick_child<'a>(attr: &'a CAttribute, seg: &PathSegment) -> Option<&'a CObject> {
     match &seg.node_id {
-        Some(nid) => attr
-            .children
-            .iter()
-            .flatten()
-            .find(|c| object_node_id(c) == nid || node_id_conforms_to(nid, object_node_id(c))),
+        Some(nid) => attr.children.iter().flatten().find(|c| {
+            object_node_id(c) == nid
+                || AdlCodeDefinitionsData::codes_conformant(nid, object_node_id(c))
+        }),
         None if attr.children.as_ref().map_or(0, Vec::len) == 1 => {
             attr.children.iter().flatten().next()
         }
@@ -784,7 +777,7 @@ fn find_congruent<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Option<&'
         .children
         .iter()
         .flatten()
-        .find(|p| node_id_conforms_to(cid, object_node_id(p)))
+        .find(|p| AdlCodeDefinitionsData::codes_conformant(cid, object_node_id(p)))
 }
 
 /// Pair a child primitive leaf (which carries only a synthetic node id) with the

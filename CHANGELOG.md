@@ -613,6 +613,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **An uploaded operational template no longer silently loses its slot
+  constraints.** A slot assertion was rendered into ADL by writing the raw
+  numeric operator code the OPT XML encodes — text the assertion parser cannot
+  read — so any slot whose template did not also carry a pre-rendered string
+  expression ended up with no constraint at all, and would admit archetypes it
+  was written to exclude. The operator is now rendered as its ADL symbol, and a
+  test reads the result back through the parser.
+
+- **Temporal constraint conformance answers where it used to give up.** A
+  child archetype narrowing a date, time or duration to a range under a parent
+  that constrains it by pattern reported "cannot tell" instead of judging it,
+  on the stated grounds that the generated date/time types offered no
+  ordering. They have offered ordering for some time, so the check now reaches
+  a verdict.
+
 - **An operational template whose archetype id carries an ADL 2 version is
   accepted again.** Uploading an OPT whose root id is
   `openEHR-EHR-COMPOSITION.minimal.v1.0.0` was refused as a malformed archetype
