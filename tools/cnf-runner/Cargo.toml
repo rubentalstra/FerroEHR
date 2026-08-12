@@ -65,6 +65,11 @@ jsonwebtoken = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }
+# NOT the workspace rand (0.10). `pgp 0.20`'s signing call takes an RNG from
+# rand 0.8's rand_core generation, so the types must come from that major or
+# they do not unify. `app/ferroehr` pins it identically and for the same
+# reason; this is a deliberate crate-level pin, not drift.
+rand = "0.8"
 
 [lints]
 workspace = true

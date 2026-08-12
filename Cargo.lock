@@ -1423,6 +1423,7 @@ dependencies = [
  "jsonwebtoken",
  "pgp",
  "quick-xml 0.41.0",
+ "rand 0.8.7",
  "regex",
  "reqwest 0.13.4",
  "semver",

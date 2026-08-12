@@ -123,7 +123,21 @@ fn verify_pgp(
         .map_err(|e| format!("pgp public key: {e}"))?;
     let (sig, _) = DetachedSignature::from_string(signature_armored)
         .map_err(|e| format!("pgp signature: {e}"))?;
-    Ok(sig.verify(&key, bytes).is_ok())
+
+    // A signature by a signing-flagged SUBKEY is a signature by the
+    // certificate: RFC 9580 §10.1 defines a transferable public key as a
+    // primary key plus its subkeys, and §5.2.3.29 key flag 0x02 marks a key as
+    // usable to sign data. `rpgp`'s `VerifyingKey for SignedPublicKey` consults
+    // `primary_key` alone, so verifying only against it refuses a signature the
+    // declared certificate legitimately covers — which is a verifier defect,
+    // never a finding about the system under test.
+    if sig.verify(&key, bytes).is_ok() {
+        return Ok(true);
+    }
+    Ok(key
+        .public_subkeys
+        .iter()
+        .any(|subkey| sig.verify(subkey, bytes).is_ok()))
 }
 
 #[cfg(test)]
@@ -162,6 +176,61 @@ mod tests {
         // A tampered envelope (different data) must fail against the old digest.
         let env2 = json!({ "_type": "ORIGINAL_VERSION", "data": { "b": 3, "a": 1 } });
         assert!(!verify(&env2, &good, &digest_mode()).unwrap());
+    }
+
+    // A signature made by the certificate's signing SUBKEY must verify.
+    //
+    // The corpus certificate carries one, the server signs with it by
+    // capability, and `rpgp` verifies against the primary key alone — so a
+    // verifier written the obvious way reports a conformant server as
+    // unverifiable. Three CNF rows failed exactly that way, unnoticed because
+    // nothing pinned which key component signs.
+    #[test]
+    #[expect(
+        clippy::panic_in_result_fn,
+        reason = "test assertions in the Book's Result-returning test shape"
+    )]
+    fn subkey_signature_verifies_against_the_certificate() -> Result<(), Box<dyn std::error::Error>>
+    {
+        use pgp::composed::{
+            ArmorOptions, Deserializable as _, DetachedSignature, SignedSecretKey,
+        };
+        use pgp::crypto::hash::HashAlgorithm;
+        use pgp::types::Password;
+        use rand::rngs::OsRng;
+
+        let keys = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("artifacts/corpus/keys");
+        let (secret, _) = SignedSecretKey::from_string(&std::fs::read_to_string(
+            keys.join("cnf-signing.sec.asc"),
+        )?)?;
+        let public_armored = std::fs::read_to_string(keys.join("cnf-signing.pub.asc"))?;
+
+        // Pick the subkey by CAPABILITY, the way the server does — an
+        // encryption subkey signing would be a key-usage violation.
+        let subkey = secret
+            .secret_subkeys
+            .iter()
+            .find(|sub| sub.signatures.iter().any(|sig| sig.key_flags().sign()))
+            .ok_or("the corpus certificate carries no signing subkey")?;
+
+        let data = b"ferroehr-cnf subkey verification";
+        let sig = DetachedSignature::sign_binary_data(
+            OsRng,
+            &subkey.key,
+            &Password::empty(),
+            HashAlgorithm::Sha256,
+            &data[..],
+        )?
+        .to_armored_string(ArmorOptions::default())?;
+
+        assert!(
+            verify_pgp(data, &sig, &public_armored)?,
+            "a signature by the certificate's signing subkey must verify"
+        );
+        // The negative direction: a different payload must still fail, so the
+        // subkey fallback cannot pass by accepting everything.
+        assert!(!verify_pgp(b"tampered", &sig, &public_armored)?);
+        Ok(())
     }
 
     #[test]
