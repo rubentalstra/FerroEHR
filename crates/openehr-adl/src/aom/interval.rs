@@ -33,8 +33,8 @@ impl Bounds {
         Self { lower, upper }
     }
 
-    /// The [`MultiplicityInterval`] this bound denotes, the inverse of
-    /// [`bounds`].
+    /// The [`MultiplicityInterval`] this bound denotes, the inverse of the
+    /// crate-internal `bounds` reader.
     #[must_use]
     pub fn to_multiplicity_interval(self) -> MultiplicityInterval {
         MultiplicityInterval {

@@ -374,8 +374,10 @@ fn check_node_id_unique(
 /// one parent node share a path and two distinct nodes do not.
 ///
 /// A code that is NEW at its level (`[id0.32]`) specialises nothing —
-/// [`crate::codes::is_redefined_code`] is false for it — so it is left alone and
-/// two independently-added nodes never collapse onto each other.
+/// [`AdlCodeDefinitionsData::is_redefined_code`] is false for it — so it is left
+/// alone and two independently-added nodes never collapse onto each other.
+///
+/// [`AdlCodeDefinitionsData::is_redefined_code`]: openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData::is_redefined_code
 fn specialisation_root_path(path: &str) -> String {
     let mut out = String::with_capacity(path.len());
     let mut rest = path;

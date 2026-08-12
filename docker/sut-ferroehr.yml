@@ -106,6 +106,10 @@ services:
       target: runtime-from-source
       args:
         REVISION: ${REVISION:-}
+        # Lower to 1 on a memory-constrained Docker VM: the release build of
+        # the generated spec crates is what exhausts it, and serializing
+        # compilation changes no shipped byte (docker/Dockerfile).
+        CARGO_BUILD_JOBS: ${CARGO_BUILD_JOBS:-2}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
