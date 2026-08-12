@@ -348,7 +348,7 @@ jobs:
       #
       #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:TAG -R rubentalstra/FerroEHR
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.APP_IMAGE }}
           subject-digest: ${{ steps.build.outputs.digest }}
@@ -538,7 +538,7 @@ jobs:
       #
       #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr-admin-ui:TAG -R rubentalstra/FerroEHR
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.ADMIN_UI_IMAGE }}
           subject-digest: ${{ steps.build_admin_ui.outputs.digest }}
@@ -617,7 +617,7 @@ jobs:
       #
       #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr-postgres:TAG -R rubentalstra/FerroEHR
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.POSTGRES_IMAGE }}
           subject-digest: ${{ steps.build_postgres.outputs.digest }}
