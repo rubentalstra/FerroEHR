@@ -47,17 +47,17 @@ text { fill: #c3c2b7; }
 <rect x="416" y="90" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="429" y="107" class="cell-label" text-anchor="middle">✓</text><text x="442" y="107" class="cell-label">EhrOperations</text>
 <rect x="612" y="90" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="625" y="107" class="cell-label" text-anchor="middle">✓</text><text x="638" y="107" class="cell-label">EhrStatus</text>
 <rect x="808" y="90" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="821" y="107" class="cell-label" text-anchor="middle">✓</text><text x="834" y="107" class="cell-label">CompositionOps</text>
-<rect x="24" y="122" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="37" y="139" class="cell-label" text-anchor="middle">✓</text><text x="50" y="139" class="cell-label">ChangeSets</text>
+<rect x="24" y="122" width="190" height="26" rx="5" class="ev-failed cell-required"/><text x="37" y="139" class="cell-label" text-anchor="middle">✕</text><text x="50" y="139" class="cell-label">ChangeSets</text>
 <rect x="220" y="122" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="233" y="139" class="cell-label" text-anchor="middle">✓</text><text x="246" y="139" class="cell-label">Versioning</text>
-<rect x="416" y="122" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="429" y="139" class="cell-label" text-anchor="middle">✓</text><text x="442" y="139" class="cell-label">ArchetypeValidation</text>
+<rect x="416" y="122" width="190" height="26" rx="5" class="ev-failed cell-required"/><text x="429" y="139" class="cell-label" text-anchor="middle">✕</text><text x="442" y="139" class="cell-label">ArchetypeValidation</text>
 <rect x="612" y="122" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="625" y="139" class="cell-label" text-anchor="middle">✓</text><text x="638" y="139" class="cell-label">DefinitionApi</text>
 <rect x="808" y="122" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="821" y="139" class="cell-label" text-anchor="middle">✓</text><text x="834" y="139" class="cell-label">EhrApi</text>
 <text x="24" y="182" class="title" font-size="12">STANDARD</text>
 <rect x="24" y="190" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="37" y="207" class="cell-label" text-anchor="middle">✓</text><text x="50" y="207" class="cell-label">QueryProvisioning</text>
 <rect x="220" y="190" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="233" y="207" class="cell-label" text-anchor="middle">✓</text><text x="246" y="207" class="cell-label">DirectoryOps</text>
-<rect x="416" y="190" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="429" y="207" class="cell-label" text-anchor="middle">✓</text><text x="442" y="207" class="cell-label">AqlBasic</text>
+<rect x="416" y="190" width="190" height="26" rx="5" class="ev-failed cell-required"/><text x="429" y="207" class="cell-label" text-anchor="middle">✕</text><text x="442" y="207" class="cell-label">AqlBasic</text>
 <rect x="612" y="190" width="190" height="26" rx="5" class="ev-passed cell-required"/><text x="625" y="207" class="cell-label" text-anchor="middle">✓</text><text x="638" y="207" class="cell-label">QueryApi</text>
-<rect x="808" y="190" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="821" y="207" class="cell-label" text-anchor="middle">✓</text><text x="834" y="207" class="cell-label">Signing</text>
+<rect x="808" y="190" width="190" height="26" rx="5" class="ev-failed cell-optional"/><text x="821" y="207" class="cell-label" text-anchor="middle">✕</text><text x="834" y="207" class="cell-label">Signing</text>
 <text x="24" y="250" class="title" font-size="12">OPTIONS</text>
 <rect x="24" y="258" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="37" y="275" class="cell-label" text-anchor="middle">✓</text><text x="50" y="275" class="cell-label sm">Adl2ArchetypeProvisioning</text>
 <rect x="220" y="258" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="233" y="275" class="cell-label" text-anchor="middle">✓</text><text x="246" y="275" class="cell-label">Adl2OptProvisioning</text>
@@ -66,7 +66,7 @@ text { fill: #c3c2b7; }
 <rect x="808" y="258" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="821" y="275" class="cell-label" text-anchor="middle">✓</text><text x="834" y="275" class="cell-label sm">PartyRelationshipOperations</text>
 <rect x="24" y="290" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="37" y="307" class="cell-label" text-anchor="middle">✓</text><text x="50" y="307" class="cell-label sm">DemographicArchetypeValidation</text>
 <rect x="220" y="290" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="233" y="307" class="cell-label" text-anchor="middle">✓</text><text x="246" y="307" class="cell-label">AqlAdvanced</text>
-<rect x="416" y="290" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="429" y="307" class="cell-label" text-anchor="middle">✓</text><text x="442" y="307" class="cell-label">AqlTerminology</text>
+<rect x="416" y="290" width="190" height="26" rx="5" class="ev-failed cell-optional"/><text x="429" y="307" class="cell-label" text-anchor="middle">✕</text><text x="442" y="307" class="cell-label">AqlTerminology</text>
 <rect x="612" y="290" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="625" y="307" class="cell-label" text-anchor="middle">✓</text><text x="638" y="307" class="cell-label">ActivityReport</text>
 <rect x="808" y="290" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="821" y="307" class="cell-label" text-anchor="middle">✓</text><text x="834" y="307" class="cell-label">PhysicalDeletion</text>
 <rect x="24" y="322" width="190" height="26" rx="5" class="ev-passed cell-optional"/><text x="37" y="339" class="cell-label" text-anchor="middle">✓</text><text x="50" y="339" class="cell-label">EhrDumpLoad</text>
