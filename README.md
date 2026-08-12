@@ -558,12 +558,25 @@ specification text this project treats as its oracle is vendored in-repo and
 pinned per component, so every conformance decision cites a file you can
 read.
 
-## Contributing and security
+## Contributing, governance and security
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
 [Code of Conduct](CODE_OF_CONDUCT.md). Please report suspected
 vulnerabilities privately per the [security policy](SECURITY.md), not in
 public issues.
+
+| Document | Answers |
+|---|---|
+| [SUPPORT.md](SUPPORT.md) | where to ask a question, report a defect, or report a vulnerability — they are not the same place |
+| [GOVERNANCE.md](GOVERNANCE.md) | who decides, how a change gets in, and how to become a maintainer |
+| [MAINTAINERS.md](MAINTAINERS.md) | who the maintainers are, which publishing identities exist, and what happens if they are unavailable |
+| [SECURITY.md](SECURITY.md) | how to report a vulnerability, what you can expect back, and **which versions receive security fixes** |
+| [Threat model](https://ferroehr.eu/docs/latest/threat-model.html) | the trust boundaries, the control at each, the residual risk that survives it, and what is explicitly not defended against |
+
+Two of those are worth reading before a procurement decision rather than
+after: the project has **one maintainer**, and **only the newest release
+receives security fixes**. Both are stated plainly in the documents above
+rather than left to be discovered.
 
 ## Acknowledgments and license
 
@@ -597,9 +610,16 @@ public issues.
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
 | **FerroEHR's own code** — the application, the tooling, and the generated crates                                                                                                                      | [MIT](LICENSE)                                                                          |
 | openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                        |
-| openEHR **specification text** (vendored for conformance work) and **CKM-derived clinical models**                                                                                                    | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0); clinical models carry per-file `licence` metadata |
+| openEHR **specification text** (vendored for conformance work)                                                                                                                                        | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0)                                                    |
+| **CKM-derived clinical models** (test corpora)                                                                                                                                                        | per-file `licence` metadata — a mix of [CC-BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) |
 
 Each vendored tree documents its exact origin and license in a
-`PROVENANCE.md`, with the upstream `LICENSE` vendored alongside. The full
-reckoning is on the documentation site's
+`PROVENANCE.md`, with the upstream `LICENSE` vendored alongside — and the
+whole tree is additionally declared in the machine-readable
+[REUSE 3.3](https://reuse.software/spec-3.3/) form
+([`REUSE.toml`](REUSE.toml) + [`LICENSES/`](LICENSES)), so licensing survives
+a file being copied out of the repository. Two positions the summary table
+above deliberately does not flatten — an MPL 1.1 election under a tri-licensed
+corpus, and one upstream file whose own header contradicts its repository's
+license — are set out with the rest on the documentation site's
 [Licensing & legal](https://ferroehr.eu/docs/latest/licensing.html) page.
