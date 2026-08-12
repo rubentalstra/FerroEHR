@@ -522,13 +522,20 @@ pub(crate) fn valid_percentage(v: f64) -> bool {
     (0.0..=100.0).contains(&v)
 }
 
-/// RM `valid_proportion_kind (k)`: `k` is one of the PROPORTION_KIND codes
-/// `0..=4` (ratio, unitary, percent, fraction, integer_fraction) — the
-/// DV_PROPORTION `Type_validity` predicate
+/// RM `valid_proportion_kind (k)`: `k` is one of the PROPORTION_KIND codes —
+/// the DV_PROPORTION `Type_validity` predicate
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.proportion_kind.adoc`).
+///
+/// The value space is read from the emitted constant set, whose
+/// `from_value` maps anything the `BMM_ENUMERATION` does not declare to
+/// `Other`, so a re-vendoring that adds a constant widens this predicate with
+/// it rather than leaving a hand-written range behind.
 #[must_use]
 pub(crate) fn valid_proportion_kind(k: i32) -> bool {
-    (0..=4).contains(&k)
+    !matches!(
+        crate::v1_1::data_types::quantity::proportion_kind::ProportionKind::from_value(k),
+        crate::v1_1::data_types::quantity::proportion_kind::ProportionKind::Other(_)
+    )
 }
 
 // ── ISO-8601 value validation ────────────────────────────────────────────────

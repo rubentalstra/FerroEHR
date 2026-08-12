@@ -7,6 +7,7 @@
 
 use crate::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use crate::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+use crate::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 impl CTerminologyCode {
     /// Returns true if any coded value would be allowed.
@@ -42,6 +43,45 @@ impl CTerminologyCode {
     #[must_use]
     pub fn effective_constraint_status(&self) -> i32 {
         self.constraint_status.map_or(0, ConstraintStatus::value)
+    }
+
+    /// Returns true if this node's value constraint conforms to `other`'s.
+    ///
+    /// `c_value_conforms_to` (`master04.5` §Conformance semantics:
+    /// C_TERMINOLOGY_NODE): an `any_allowed` parent admits anything; a child
+    /// `effective_constraint_status` above the parent's refuses (the ordering
+    /// `required (0) → extensible (1) → preferred (2) → example (3)`, child
+    /// numerically `<=` parent); a non-`required` parent "automatically
+    /// conforms"; otherwise the codes must be `codes_conformant`.
+    ///
+    /// NOTE: the value-set half of the both-`required` branch compares
+    /// `value_set_expanded` of the two nodes, which is resolved against the
+    /// owning archetype's terminology and so is applied by the caller holding
+    /// both flattened terminologies, not here.
+    #[must_use]
+    pub fn c_value_conforms_to(&self, other: &CTerminologyCode) -> bool {
+        if other.any_allowed() {
+            return true;
+        }
+        if self.effective_constraint_status() > other.effective_constraint_status() {
+            return false;
+        }
+        if other.effective_constraint_status() > 0 {
+            return true;
+        }
+        AdlCodeDefinitionsData::codes_conformant(&self.constraint, &other.constraint)
+    }
+
+    /// Returns true if this node's value constraint is the same as `other`'s.
+    ///
+    /// `c_value_congruent_to` (`master04.5` §Conformance semantics:
+    /// C_TERMINOLOGY_NODE): equal `constraint` and equal
+    /// `effective_constraint_status`, with the same value-set-expansion caveat
+    /// as [`CTerminologyCode::c_value_conforms_to`].
+    #[must_use]
+    pub fn c_value_congruent_to(&self, other: &CTerminologyCode) -> bool {
+        self.constraint == other.constraint
+            && self.effective_constraint_status() == other.effective_constraint_status()
     }
 }
 

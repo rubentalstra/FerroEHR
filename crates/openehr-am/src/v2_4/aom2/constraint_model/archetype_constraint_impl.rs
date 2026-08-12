@@ -6,7 +6,9 @@
 //! `org.openehr.am.aom2.c_object.adoc` and `org.openehr.am.aom2.c_attribute.adoc`.
 
 use crate::v2_4::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
+use crate::v2_4::aom2::constraint_model::c_attribute::CAttribute;
 use crate::v2_4::aom2::constraint_model::c_object::CObject;
+use crate::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use crate::v2_4::aom2::constraint_model::c_second_order::CSecondOrder;
 use openehr_base::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
 
@@ -147,6 +149,96 @@ impl ArchetypeConstraint {
         }
         segments.reverse();
         segments.concat()
+    }
+
+    /// Returns true if this node on its own expresses the same or narrower
+    /// constraints than `other`.
+    ///
+    /// `c_conforms_to` (`master04.5` §Conformance Semantics: C_ATTRIBUTE) is
+    /// deferred on `ARCHETYPE_CONSTRAINT`, so this dispatches to the effecting
+    /// subtype — `C_ATTRIBUTE`, `C_PRIMITIVE_OBJECT` (whose body adds the value
+    /// test) or `C_OBJECT`. Two different node kinds never conform.
+    /// `owning_attribute` carries the Eiffel `parent`, as on
+    /// [`crate::v2_4::aom2::constraint_model::c_object::CObject`].
+    #[must_use]
+    pub fn c_conforms_to(
+        &self,
+        other: &ArchetypeConstraint,
+        rmcc: &dyn Fn(&str, &str) -> bool,
+        owning_attribute: Option<&CAttribute>,
+    ) -> bool {
+        if let (Self::CAttribute(own), Self::CAttribute(theirs)) = (self, other) {
+            return own.c_conforms_to(theirs);
+        }
+        if let (Some(own), Some(theirs)) = (self.as_primitive(), other.as_primitive()) {
+            return own.c_conforms_to(&theirs, rmcc, owning_attribute);
+        }
+        match (self.as_object(), other.as_object()) {
+            (Some(own), Some(theirs)) => own.c_conforms_to(&theirs, rmcc, owning_attribute),
+            _ => false,
+        }
+    }
+
+    /// Returns true if this node expresses no constraints beyond `other`'s.
+    ///
+    /// `c_congruent_to` (`master04.5` §Conformance Semantics: C_ATTRIBUTE) is
+    /// deferred on `ARCHETYPE_CONSTRAINT` and dispatched exactly as
+    /// [`ArchetypeConstraint::c_conforms_to`].
+    #[must_use]
+    pub fn c_congruent_to(
+        &self,
+        other: &ArchetypeConstraint,
+        owning_attribute: Option<&CAttribute>,
+    ) -> bool {
+        if let (Self::CAttribute(own), Self::CAttribute(theirs)) = (self, other) {
+            return own.c_congruent_to(theirs);
+        }
+        if let (Some(own), Some(theirs)) = (self.as_primitive(), other.as_primitive()) {
+            return own.c_congruent_to(&theirs);
+        }
+        match (self.as_object(), other.as_object()) {
+            (Some(own), Some(theirs)) => own.c_congruent_to(&theirs, owning_attribute),
+            _ => false,
+        }
+    }
+
+    /// This node as a `C_OBJECT`, when it is one of that subtree's members.
+    fn as_object(&self) -> Option<CObject> {
+        match self {
+            Self::CAttribute(_) => None,
+            Self::ArchetypeSlot(n) => Some(CObject::ArchetypeSlot((**n).clone())),
+            Self::CComplexObject(n) => Some(CObject::CComplexObject((**n).clone())),
+            Self::CComplexObjectProxy(n) => Some(CObject::CComplexObjectProxy((**n).clone())),
+            Self::CBoolean(n) => Some(CObject::CBoolean((**n).clone())),
+            Self::CDate(n) => Some(CObject::CDate((**n).clone())),
+            Self::CDateTime(n) => Some(CObject::CDateTime((**n).clone())),
+            Self::CDuration(n) => Some(CObject::CDuration((**n).clone())),
+            Self::CInteger(n) => Some(CObject::CInteger((**n).clone())),
+            Self::CReal(n) => Some(CObject::CReal((**n).clone())),
+            Self::CString(n) => Some(CObject::CString((**n).clone())),
+            Self::CTerminologyCode(n) => Some(CObject::CTerminologyCode((**n).clone())),
+            Self::CTime(n) => Some(CObject::CTime((**n).clone())),
+        }
+    }
+
+    /// This node as a `C_PRIMITIVE_OBJECT`, when it is one of that subtree's
+    /// members.
+    fn as_primitive(&self) -> Option<CPrimitiveObject> {
+        match self {
+            Self::CBoolean(n) => Some(CPrimitiveObject::CBoolean((**n).clone())),
+            Self::CDate(n) => Some(CPrimitiveObject::CDate((**n).clone())),
+            Self::CDateTime(n) => Some(CPrimitiveObject::CDateTime((**n).clone())),
+            Self::CDuration(n) => Some(CPrimitiveObject::CDuration((**n).clone())),
+            Self::CInteger(n) => Some(CPrimitiveObject::CInteger((**n).clone())),
+            Self::CReal(n) => Some(CPrimitiveObject::CReal((**n).clone())),
+            Self::CString(n) => Some(CPrimitiveObject::CString((**n).clone())),
+            Self::CTerminologyCode(n) => Some(CPrimitiveObject::CTerminologyCode((**n).clone())),
+            Self::CTime(n) => Some(CPrimitiveObject::CTime((**n).clone())),
+            Self::ArchetypeSlot(_)
+            | Self::CAttribute(_)
+            | Self::CComplexObject(_)
+            | Self::CComplexObjectProxy(_) => None,
+        }
     }
 
     /// The `node_id` this node carries when it is a `C_OBJECT`.

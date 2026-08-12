@@ -48,9 +48,10 @@ use super::catalogue::ValidationCode;
 use super::specialisation::ParentScan;
 use super::{ValidationIssue, push_issue};
 use crate::artefact::{ArchetypeRepository, ArchetypeView, view};
-use crate::codes::{codes_conformant, specialisation_depth};
+use crate::codes::specialisation_depth;
 use crate::flatten::flat_form;
 use crate::source::ArtefactKind;
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 impl<'a> ParentScan<'a> {
     /// Checks for a child node that redefines an `ARCHETYPE_SLOT` in the flat
@@ -160,7 +161,7 @@ impl<'a> ParentScan<'a> {
         // VARXID: the filler node id must be a specialisation of the slot id —
         // conformant and strictly deeper (`master04.5` §`C_ARCHETYPE_ROOT`, VARXID
         // L427).
-        let id_ok = codes_conformant(&root.node_id, &parent_slot.node_id)
+        let id_ok = AdlCodeDefinitionsData::codes_conformant(&root.node_id, &parent_slot.node_id)
             && specialisation_depth(&root.node_id) > specialisation_depth(&parent_slot.node_id);
         if !id_ok {
             push_issue(

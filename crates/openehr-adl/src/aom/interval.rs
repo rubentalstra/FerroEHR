@@ -33,6 +33,20 @@ impl Bounds {
         Self { lower, upper }
     }
 
+    /// The [`MultiplicityInterval`] this bound denotes, the inverse of
+    /// [`bounds`].
+    #[must_use]
+    pub fn to_multiplicity_interval(self) -> MultiplicityInterval {
+        MultiplicityInterval {
+            lower: Some(self.lower),
+            upper: self.upper,
+            lower_unbounded: false,
+            upper_unbounded: self.upper.is_none(),
+            lower_included: true,
+            upper_included: self.upper.is_some(),
+        }
+    }
+
     /// True if `inner` is the same as, or narrower than (wholly contained
     /// within), `self` — the "conform, i.e. be the same or narrower" test the
     /// existence (VCAEX) and cardinality (VCACA) rules require (`master04.5`

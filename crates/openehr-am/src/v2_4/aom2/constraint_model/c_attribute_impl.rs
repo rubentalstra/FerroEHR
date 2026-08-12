@@ -1,11 +1,15 @@
 //! Hand-written AOM2 `C_ATTRIBUTE` spec functions.
 //!
-//! Spec source (vendored):
+//! Spec sources (vendored):
 //! `AM/docs/UML/classes/org.openehr.am.aom2.c_attribute.adoc` §Attributes +
-//! §Functions.
+//! §Functions and
+//! `AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
+//! §Conformance Semantics: C_ATTRIBUTE.
 
 use crate::v2_4::aom2::constraint_model::c_attribute::CAttribute;
 use crate::v2_4::aom2::constraint_model::c_object::CObject;
+use crate::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
+use openehr_base::v1_3::foundation_types::interval::cardinality::Cardinality;
 use openehr_base::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
 
 impl CAttribute {
@@ -71,6 +75,97 @@ impl CAttribute {
             }
             _ => self.rm_attribute_name.clone(),
         }
+    }
+
+    /// Returns true if the existence of this node conforms to `other`'s.
+    ///
+    /// `existence_conforms_to` (`master04.5` §Conformance Semantics:
+    /// C_ATTRIBUTE): `other.existence.contains (existence)` when both are set,
+    /// True otherwise. Stated in the spec text only, so it carries no BMM
+    /// declaration of its own.
+    #[must_use]
+    pub fn existence_conforms_to(&self, other: &CAttribute) -> bool {
+        existence_conforms(self.existence.as_ref(), other.existence.as_ref())
+    }
+
+    /// Returns true if the cardinality of this node conforms to `other`'s.
+    ///
+    /// `cardinality_conforms_to` (`master04.5` §Conformance Semantics:
+    /// C_ATTRIBUTE): `other.cardinality.contains (cardinality)` when both are
+    /// set, True otherwise. Stated in the spec text only, so it carries no BMM
+    /// declaration of its own.
+    #[must_use]
+    pub fn cardinality_conforms_to(&self, other: &CAttribute) -> bool {
+        cardinality_conforms(self.cardinality.as_ref(), other.cardinality.as_ref())
+    }
+
+    /// Returns the number of children of this attribute that re-use the flat
+    /// parent node `node_id`.
+    ///
+    /// `child_reuse_count`, read by `C_OBJECT.node_reuse_congruent`
+    /// (`master04.5` §Conformance Semantics: C_OBJECT): the children whose own
+    /// `node_id` is `codes_conformant` with the parent node's. Stated in the
+    /// spec text only, so it carries no BMM declaration of its own.
+    #[must_use]
+    pub fn child_reuse_count(&self, node_id: &str) -> usize {
+        self.children
+            .iter()
+            .flatten()
+            .filter(|child| AdlCodeDefinitionsData::codes_conformant(child.node_id(), node_id))
+            .count()
+    }
+
+    /// Returns true if this node on its own expresses the same or narrower
+    /// constraints than `other`.
+    ///
+    /// `c_conforms_to` (`master04.5` §Conformance Semantics: C_ATTRIBUTE):
+    /// `existence_conforms_to (other) and ((is_single and other.is_single) or
+    /// else (is_multiple and cardinality_conforms_to (other)))`.
+    ///
+    /// NOTE: the body consults neither the reference model nor the `rmcc`
+    /// lambda the inherited `ARCHETYPE_CONSTRAINT` signature carries, so no
+    /// conformance checker is taken here.
+    #[must_use]
+    pub fn c_conforms_to(&self, other: &CAttribute) -> bool {
+        self.existence_conforms_to(other)
+            && ((self.is_single() && other.is_single())
+                || (self.is_multiple && self.cardinality_conforms_to(other)))
+    }
+
+    /// Returns true if this node expresses no constraints beyond `other`'s.
+    ///
+    /// `c_congruent_to` (`master04.5` §Conformance Semantics: C_ATTRIBUTE):
+    /// `existence = Void and ((is_single and other.is_single) or (is_multiple
+    /// and other.is_multiple and cardinality = Void))`.
+    #[must_use]
+    pub fn c_congruent_to(&self, other: &CAttribute) -> bool {
+        self.existence.is_none()
+            && ((self.is_single() && other.is_single())
+                || (self.is_multiple && other.is_multiple && self.cardinality.is_none()))
+    }
+}
+
+/// `existence_conforms_to` over the two `0..1` existence constraints
+/// (`master04.5` §Conformance Semantics: C_ATTRIBUTE).
+pub(crate) fn existence_conforms(
+    child: Option<&MultiplicityInterval>,
+    other: Option<&MultiplicityInterval>,
+) -> bool {
+    match (child, other) {
+        (Some(own), Some(theirs)) => theirs.contains(own),
+        _ => true,
+    }
+}
+
+/// `cardinality_conforms_to` over the two `0..1` cardinality constraints
+/// (`master04.5` §Conformance Semantics: C_ATTRIBUTE).
+pub(crate) fn cardinality_conforms(
+    child: Option<&Cardinality>,
+    other: Option<&Cardinality>,
+) -> bool {
+    match (child, other) {
+        (Some(own), Some(theirs)) => theirs.interval.contains(&own.interval),
+        _ => true,
     }
 }
 

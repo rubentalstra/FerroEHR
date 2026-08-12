@@ -29,9 +29,10 @@ use super::identification::languages;
 use super::structure::complex_attribute_tuples;
 use crate::aom::access::{aom_type, complex_attributes, complex_node_id, object_node_id};
 use crate::artefact::ArchetypeView;
-use crate::codes::{self, is_ac_code, is_at_code, is_id_code, is_valid_code};
+use crate::codes;
 use crate::parse::Dialect;
 use crate::paths::child_path;
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 #[expect(
     clippy::too_many_lines,
@@ -66,7 +67,8 @@ pub(super) fn check_terminology(
     // single-valued attribute), so it runs in [`super::rm`].
     let root_id = complex_node_id(v.definition);
     if !root_id.is_empty()
-        && (is_id_code(root_id) || is_at_code(root_id))
+        && (AdlCodeDefinitionsData::is_id_code(root_id)
+            || AdlCodeDefinitionsData::is_at_code(root_id))
         && !defined.contains(root_id)
     {
         issues.push(ValidationIssue::new(
@@ -85,7 +87,7 @@ pub(super) fn check_terminology(
     // phase-1 subset closes VATDF's interior half for a 1.4 upload.
     if dialect == Dialect::Adl14 && !v.is_specialised() {
         for code in &usage.node_codes {
-            if is_at_code(code) && !defined.contains(code.as_str()) {
+            if AdlCodeDefinitionsData::is_at_code(code) && !defined.contains(code.as_str()) {
                 issues.push(ValidationIssue::new(
                     ValidationCode::Vatdf,
                     format!("node identifier code {code:?} is not defined in the terminology"),
@@ -103,21 +105,23 @@ pub(super) fn check_terminology(
     // not flattened; runs for all). VATCD: code level <= archetype level.
     let flat_self = !v.is_specialised();
     for code in &usage.value_codes {
-        if is_at_code(code) {
+        if AdlCodeDefinitionsData::is_at_code(code) {
             if flat_self && !defined.contains(code.as_str()) {
                 issues.push(ValidationIssue::new(
                     ValidationCode::Vatdf,
                     format!("value code {code:?} is not defined in the terminology"),
                 ));
             }
-        } else if is_ac_code(code) && !defined.contains(code.as_str()) {
+        } else if AdlCodeDefinitionsData::is_value_set_code(code)
+            && !defined.contains(code.as_str())
+        {
             issues.push(ValidationIssue::new(
                 ValidationCode::Vacdf,
                 format!("constraint code {code:?} is not defined in the terminology"),
             ));
         }
         // VATCD: at/id codes at a level greater than the archetype level.
-        if !is_ac_code(code)
+        if !AdlCodeDefinitionsData::is_value_set_code(code)
             && let Some(d) = codes::specialisation_depth(code)
             && d > level
         {
@@ -162,7 +166,7 @@ pub(super) fn check_terminology(
             // (`d <= level`), never the differential `d == level`
             // (AOM1.4 master07 §Specialisation Depth).
             let differential = v.is_differential && dialect == Dialect::Adl2;
-            let bad = if is_ac_code(code) {
+            let bad = if AdlCodeDefinitionsData::is_value_set_code(code) {
                 d > level
             } else if differential {
                 d != level
@@ -182,7 +186,7 @@ pub(super) fn check_terminology(
     // (master08 §Code Validation). Value-code form on definition-referenced
     // codes is covered in the walk.
     for code in &defined {
-        if !is_valid_code(code) {
+        if !AdlCodeDefinitionsData::is_valid_code(code) {
             issues.push(ValidationIssue::new(
                 ValidationCode::Vatcv,
                 format!("terminology code {code:?} is not a valid code form"),
@@ -234,7 +238,8 @@ pub(super) fn check_terminology(
         for code in &defined {
             // The root concept code and id-code node ids are structural, not
             // "unused" terms; WOUC targets value at-codes and ac-codes.
-            if (is_at_code(code) || is_ac_code(code))
+            if (AdlCodeDefinitionsData::is_at_code(code)
+                || AdlCodeDefinitionsData::is_value_set_code(code))
                 && *code != complex_node_id(v.definition)
                 && !used_all.contains(code)
             {
@@ -337,7 +342,10 @@ pub(super) fn collect_usage(obj: &CObject, usage: &mut CodeUsage) {
 
 fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
     let nid = object_node_id(obj);
-    if !nid.is_empty() && (is_id_code(nid) || is_at_code(nid)) && !aom_type(obj).is_primitive() {
+    if !nid.is_empty()
+        && (AdlCodeDefinitionsData::is_id_code(nid) || AdlCodeDefinitionsData::is_at_code(nid))
+        && !aom_type(obj).is_primitive()
+    {
         usage.node_codes.insert(nid.to_owned());
     }
     match obj {
@@ -365,7 +373,9 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
         CObject::CTerminologyCode(tc) => {
             let codes = constraint_codes(&tc.constraint);
             if let Some(a) = tc.assumed_value.as_ref()
-                && let Some(ac) = codes.iter().find(|c| is_ac_code(c))
+                && let Some(ac) = codes
+                    .iter()
+                    .find(|c| AdlCodeDefinitionsData::is_value_set_code(c))
             {
                 usage
                     .assumed_refs

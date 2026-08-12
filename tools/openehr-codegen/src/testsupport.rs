@@ -1528,13 +1528,14 @@ fn hand_written_files(dir: &std::path::Path) -> Result<BTreeMap<String, String>,
 /// Returns an error if the composition fails to load or a crate tree cannot be
 /// read.
 pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
+    /// Per class: the functions the generation DECLARES, and those it realizes.
+    type ClassFunctions = BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)>;
+
     let comp = compose(key)?;
     let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../crates")
         .join(comp.comp.crate_name)
         .join("src");
-    /// Per class: the functions the generation DECLARES, and those it realizes.
-    type ClassFunctions = BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)>;
     let mut realized: Vec<(&str, ClassFunctions)> = Vec::new();
     for generation in &comp.generations {
         let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;

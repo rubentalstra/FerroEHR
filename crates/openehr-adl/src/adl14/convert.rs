@@ -29,6 +29,7 @@ use openehr_am::v2_4::aom2::archetype::authored_archetype::{
 use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 use openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm;
 use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_am::v2_4::aom2::terminology::value_set::ValueSet;
@@ -296,7 +297,7 @@ impl<'a> Converter<'a> {
         // fresh `acN` never collides with an existing `ac000(N-1)` → `acN`.
         let mut highest_ac = 0i64;
         let mut track_ac = |code: &str| {
-            if crate::codes::is_ac_code(code)
+            if AdlCodeDefinitionsData::is_value_set_code(code)
                 && !code.contains('.')
                 && let Some(n) = first_num(&shift_code(code, "ac"))
             {
@@ -456,7 +457,7 @@ impl<'a> Converter<'a> {
         // keeps its number — see `shift_code`). Anything else (`at5`) is
         // already ADL2; pass through.
         let Some((terminology, codes_str)) = body.split_once("::") else {
-            if crate::codes::is_ac_code(body) {
+            if AdlCodeDefinitionsData::is_value_set_code(body) {
                 let ac = self.collapsed_ac(body);
                 let assumed = assumed_raw.map(|a| self.collapsed_value_at(a));
                 return (ac, assumed);
@@ -574,7 +575,7 @@ impl<'a> Converter<'a> {
                 // `master07.13` §Terminology section) keeps its ac prefix,
                 // shifted like every other code so the converted
                 // `C_TERMINOLOGY_CODE` ac constraints still resolve (VACDF).
-                if crate::codes::is_ac_code(code) {
+                if AdlCodeDefinitionsData::is_value_set_code(code) {
                     let ac = self.collapsed_ac(code);
                     out.insert(ac.clone(), term_with_code(term, ac));
                     continue;
@@ -699,9 +700,9 @@ impl<'a> Converter<'a> {
         // Binding keys are codes or code-terminated paths; rename a leading code.
         if let Some(id) = self.node_map.get(key) {
             id.clone()
-        } else if crate::codes::is_at_code(key) {
+        } else if AdlCodeDefinitionsData::is_at_code(key) {
             self.value_at(key)
-        } else if crate::codes::is_ac_code(key) {
+        } else if AdlCodeDefinitionsData::is_value_set_code(key) {
             // A merged 1.4 `constraint_bindings` key (ADL2 folds that section
             // into `term_bindings`, `master07.13` §Terminology section)
             // follows its definitions-rebuild remap (collapse map first,
@@ -866,7 +867,7 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
             {
                 let mapped = if let Some(id) = cx.node_map.get(code) {
                     id.clone()
-                } else if crate::codes::is_at_code(code) {
+                } else if AdlCodeDefinitionsData::is_at_code(code) {
                     shift_code(code, "id")
                 } else {
                     code.to_owned()

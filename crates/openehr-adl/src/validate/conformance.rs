@@ -1,88 +1,31 @@
-//! The AOM2 conformance functions (`master04.5`, normative Eiffel).
+//! The validator's reading of the AOM2 conformance functions.
 //!
-//! These are the formal conformance interfaces a node in a specialised
-//! archetype must satisfy against the corresponding node in the flat parent,
-//! implemented 1:1 from the Eiffel blocks in
+//! The conformance functions themselves are AOM2 spec functions and live on the
+//! generated classes (`openehr_am::v2_4::aom2::constraint_model`, realized from
 //! `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
-//! (line ranges cited per function). They are the pure machinery the phase-2
-//! specialisation validator (`specialisation`) drives; each is unit-tested
-//! against the spec text's own examples.
+//! §Conformance Semantics). This module is what the phase-2 specialisation
+//! validator adds on top of them: the tri-state
+//! [`ValueConformance`]/[`TupleConformance`] verdicts its issue codes need, the
+//! VSONCO collective-occurrences computation, the VSONT meta-type rule, and the
+//! ADL 1.4 effective-value accessors.
 //!
-//! The functions take their context explicitly (owning attribute, grand-parent
-//! RM type) rather than through the generated model's `parent` back-references,
-//! which the assembler leaves unset.
+//! Context the spec functions read through the model's `parent` back-references
+//! is passed explicitly (owning attribute, grand-parent RM type), because the
+//! assembler leaves those unset.
 
 use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
-use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
 use super::rm::RmModel;
 use crate::aom::access::{AomType, aom_type, child_occurrences, object_node_id};
-use crate::aom::build::primitive_to_cobject;
+use crate::aom::build::cobject_to_primitive;
 use crate::aom::interval::{Bounds, bounds};
-use crate::codes::codes_conformant;
 use crate::paths::locate;
-
-/// `existence_conforms_to` (`master04.5` §Conformance Semantics: `C_ATTRIBUTE`,
-/// L58-68): true if `child`'s existence conforms to `other`'s — i.e. both set
-/// and `other.contains(child)`, or either unset.
-#[must_use]
-pub(crate) fn existence_conforms_to(
-    child: Option<&MultiplicityInterval>,
-    other: Option<&MultiplicityInterval>,
-) -> bool {
-    match (child, other) {
-        (Some(c), Some(o)) => o.contains(c),
-        _ => true,
-    }
-}
-
-/// `cardinality_conforms_to` (`master04.5` §Conformance Semantics: `C_ATTRIBUTE`,
-/// L70-80): true if `child`'s cardinality conforms to `other`'s — i.e. both
-/// set and `other.contains(child)`, or either unset.
-#[must_use]
-pub(crate) fn cardinality_conforms_to(
-    child: Option<&Cardinality>,
-    other: Option<&Cardinality>,
-) -> bool {
-    match (child, other) {
-        (Some(c), Some(o)) => o.interval.contains(&c.interval),
-        _ => true,
-    }
-}
-
-/// True if `child`'s occurrences conform to `other`'s.
-///
-/// `occurrences_conforms_to` (`master04.5` §Conformance Semantics: `C_OBJECT`,
-/// L287-299): "only redefinitions of single-occurrence nodes can be dealt with
-/// here" — if `child`'s occurrences is set and `other`'s upper is 1, require
-/// `other.contains(child)`; otherwise True (the multiple-occurrence case is
-/// VSONCO, evaluated at the owning attribute).
-#[must_use]
-pub fn occurrences_conforms_to(
-    child: Option<&MultiplicityInterval>,
-    other: Option<&MultiplicityInterval>,
-) -> bool {
-    let (Some(c), Some(o)) = (child, other) else {
-        return true;
-    };
-    if !o.upper_unbounded && o.upper == Some(1) {
-        o.contains(c)
-    } else {
-        true
-    }
-}
-
-/// `node_id_conforms_to` (`master04.5` §Conformance Semantics: `C_OBJECT`,
-/// L301-306): `codes_conformant(node_id, other.node_id)`.
-#[must_use]
-pub(crate) fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
-    codes_conformant(child_id, other_id)
-}
+use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
 /// `object_multiplicity` (`master04.5` §Occurrences inferencing rules, L219-236):
 /// the effective object multiplicity of objects at `attr` within `rm_type` from
@@ -100,37 +43,27 @@ pub(crate) fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -
     }
 }
 
-/// `effective_occurrences` (`master04.5` §Occurrences inferencing rules,
-/// L185-212): the effective occurrences of an object node when no local
-/// `occurrences` is set — from the owning attribute's cardinality upper, else
-/// the RM multiplicity of the owning attribute (lower forced to 0), else open
-/// (`0..*`).
+/// The [`Bounds`] reading of `C_OBJECT.effective_occurrences` for `obj`.
 ///
-/// `owning_attr` is the object's owning `C_ATTRIBUTE`; `grandparent_rm_type` is
-/// the RM type of the object owning that attribute (the Eiffel `parent.parent`),
-/// used for the RM fallback.
+/// The spec function is
+/// [`CObject::effective_occurrences`]; this supplies its two pieces of context —
+/// `owning_attr` (the Eiffel `parent`) and `grandparent_rm_type` (the Eiffel
+/// `parent.parent.rm_type_name`, empty when unknown) — and its `rm_prop_mult`
+/// lambda, which `master04.5` §Occurrences inferencing rules places in the
+/// reference-model schema rather than in the AOM ([`object_multiplicity`]).
 #[must_use]
 pub(crate) fn effective_occurrences(
-    occ: Option<&MultiplicityInterval>,
+    obj: &CObject,
     owning_attr: &CAttribute,
     grandparent_rm_type: &str,
     rm: &dyn RmModel,
 ) -> Bounds {
-    if let Some(o) = occ {
-        return bounds(o);
-    }
-    if let Some(card) = owning_attr.cardinality.as_ref() {
-        return if card.interval.upper_unbounded {
-            Bounds::new(0, None)
-        } else {
-            Bounds::new(0, card.interval.upper)
-        };
-    }
-    if grandparent_rm_type.is_empty() {
-        return Bounds::new(0, None);
-    }
-    let m = object_multiplicity(rm, grandparent_rm_type, &owning_attr.rm_attribute_name);
-    Bounds::new(0, m.upper)
+    let owner = (!grandparent_rm_type.is_empty()).then_some(grandparent_rm_type);
+    bounds(
+        &obj.effective_occurrences(Some(owning_attr), owner, &|rm_type, attr| {
+            object_multiplicity(rm, rm_type, attr).to_multiplicity_interval()
+        }),
+    )
 }
 
 /// `collective_occurrences_of` (`master04.5` §Conformance Semantics: `C_ATTRIBUTE`,
@@ -154,7 +87,7 @@ pub(crate) fn collective_occurrences_of(
     let mut lower: i64 = 0;
     let mut upper_sum: Option<i64> = Some(0);
     for child in attr.children.iter().flatten() {
-        if !node_id_conforms_to(object_node_id(child), parent_node_id) {
+        if !AdlCodeDefinitionsData::codes_conformant(object_node_id(child), parent_node_id) {
             continue;
         }
         let member = child_occurrences(child).map_or(parent_occ, bounds);
@@ -268,262 +201,74 @@ pub(crate) enum ValueConformance {
     Unknown,
 }
 
-/// `c_value_conforms_to` (`master04.5` §Conformance semantics per primitive,
-/// L499-723): true if the child primitive leaf's value constraint is the same
-/// as, or a strict subset of / narrower than, the parent's.
+/// The validator's tri-state reading of `C_PRIMITIVE_OBJECT.c_value_conforms_to`
+/// for two leaf nodes.
 ///
-/// Covers the enumerable primitives (Boolean / String — subset of the value
-/// list), the ordered primitives (Integer / Real — each child interval must be
-/// contained by some parent interval, per `C_ORDERED` L602-609), and
-/// `C_TERMINOLOGY_CODE` (constraint-status ordering + code conformance,
-/// L663-699). Temporal pattern conformance beyond equality is reported
-/// [`ValueConformance::Unknown`].
+/// The comparison itself is the spec function
+/// ([`CPrimitiveObject::c_value_conforms_to`], with
+/// [`CPrimitiveObject::c_value_congruent_to`] restoring the "same as OR narrower
+/// than" reading the specialisation rules need — `master04.5` states
+/// `c_value_conforms_to` as a STRICT narrowing and treats the equal case as
+/// congruence). Two decidability gates sit in front of it, because a `False`
+/// from a vacuous test is not evidence of a violation:
 ///
-/// Returns [`ValueConformance::Unknown`] when the two nodes are not the same
-/// primitive AOM type (the meta-type mismatch is VSONT, handled separately).
+/// - different primitive AOM types are a meta-type question (VSONT), not a
+///   value one;
+/// - a child that states no constraint against a constraining parent satisfies
+///   the strict-subset test vacuously, which says nothing about the value space.
 #[must_use]
-pub(crate) fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformance {
-    match (child, parent) {
-        (CObject::CBoolean(c), CObject::CBoolean(o)) => {
-            // `C_BOOLEAN` (L551-557): parent `any_allowed` (empty) ⇒ conform; else
-            // child constraint ⊆ parent constraint.
-            if o.constraint.as_ref().is_none_or(Vec::is_empty) {
-                ValueConformance::Conforms
-            } else {
-                bool_from(
-                    c.constraint
-                        .iter()
-                        .flatten()
-                        .all(|v| o.constraint.as_ref().is_some_and(|oc| oc.contains(v))),
-                )
-            }
-        }
-        (CObject::CString(c), CObject::CString(o)) => {
-            // `C_STRING` (L576-582): parent `any_allowed` (empty) ⇒ conform; else
-            // child ⊆ parent. A regex-only parent list is opaque here.
-            if o.constraint.as_ref().is_none_or(Vec::is_empty) {
-                ValueConformance::Conforms
-            } else if c.constraint.as_ref().is_none_or(Vec::is_empty) {
-                ValueConformance::Unknown
-            } else {
-                bool_from(
-                    c.constraint
-                        .iter()
-                        .flatten()
-                        .all(|v| o.constraint.as_ref().is_some_and(|oc| oc.contains(v))),
-                )
-            }
-        }
-        (CObject::CInteger(c), CObject::CInteger(o)) => ordered_conforms(
-            c.constraint.as_deref().unwrap_or_default(),
-            o.constraint.as_deref().unwrap_or_default(),
-        ),
-        (CObject::CReal(c), CObject::CReal(o)) => ordered_conforms(
-            c.constraint.as_deref().unwrap_or_default(),
-            o.constraint.as_deref().unwrap_or_default(),
-        ),
-        (CObject::CTerminologyCode(c), CObject::CTerminologyCode(o)) => terminology_conforms(
-            &c.constraint,
-            status_value(c.constraint_status.as_ref()),
-            &o.constraint,
-            status_value(o.constraint_status.as_ref()),
-        ),
-        // Temporal types (`master04.5` §`C_TEMPORAL` L632-639): `c_value_conforms_to`
-        // = precursor (`C_ORDERED` interval conformance) AND
-        // (`other.pattern_constraint` empty OR
-        // `valid_pattern_constraint_replacement(pattern, other.pattern)`).
-        (CObject::CDate(c), CObject::CDate(o)) => temporal_conforms(
-            c.pattern_constraint.as_deref(),
-            c.constraint.as_ref().is_none_or(Vec::is_empty),
-            o.pattern_constraint.as_deref(),
-            o.constraint.as_ref().is_none_or(Vec::is_empty),
-        ),
-        (CObject::CTime(c), CObject::CTime(o)) => temporal_conforms(
-            c.pattern_constraint.as_deref(),
-            c.constraint.as_ref().is_none_or(Vec::is_empty),
-            o.pattern_constraint.as_deref(),
-            o.constraint.as_ref().is_none_or(Vec::is_empty),
-        ),
-        (CObject::CDateTime(c), CObject::CDateTime(o)) => temporal_conforms(
-            c.pattern_constraint.as_deref(),
-            c.constraint.as_ref().is_none_or(Vec::is_empty),
-            o.pattern_constraint.as_deref(),
-            o.constraint.as_ref().is_none_or(Vec::is_empty),
-        ),
-        (CObject::CDuration(c), CObject::CDuration(o)) => temporal_conforms(
-            c.pattern_constraint.as_deref(),
-            c.constraint.as_ref().is_none_or(Vec::is_empty),
-            o.pattern_constraint.as_deref(),
-            o.constraint.as_ref().is_none_or(Vec::is_empty),
-        ),
-        // Different primitive types (VSONT territory).
-        _ => ValueConformance::Unknown,
-    }
-}
-
-/// `C_TEMPORAL` value conformance (`master04.5` §`C_TEMPORAL` L632-639).
-///
-/// The `precursor` (`C_ORDERED`) interval-containment half is only evaluable
-/// when both nodes carry an empty interval constraint — a pattern-constrained
-/// temporal carries an empty interval list (`master04.5` §`C_DATE` etc.: "For a
-/// pattern constraint or no constraint, use an empty list"), and the generated
-/// `Iso8601_*` types provide no ordering to compare non-empty interval bounds,
-/// so a non-empty interval constraint is reported [`ValueConformance::Unknown`].
-/// The pattern half is: parent pattern empty (`any_allowed`) ⇒ conforms; both
-/// present ⇒ [`valid_pattern_constraint_replacement`].
-fn temporal_conforms(
-    child_pattern: Option<&str>,
-    child_intervals_empty: bool,
-    parent_pattern: Option<&str>,
-    parent_intervals_empty: bool,
-) -> ValueConformance {
-    if !child_intervals_empty || !parent_intervals_empty {
-        // Ordered-interval comparison is not available for the Iso8601 types.
+fn value_conformance(child: &CPrimitiveObject, parent: &CPrimitiveObject) -> ValueConformance {
+    if child.constrained_typename() != parent.constrained_typename() {
         return ValueConformance::Unknown;
     }
-    let parent_pat = parent_pattern.filter(|s| !s.is_empty());
-    let Some(pp) = parent_pat else {
-        // Parent constrains no pattern ⇒ any_allowed ⇒ conforms.
-        return ValueConformance::Conforms;
-    };
-    let Some(cp) = child_pattern.filter(|s| !s.is_empty()) else {
-        // Parent constrains a pattern; child states none ⇒ child is not a strict
-        // subset ⇒ cannot confirm a valid narrowing.
+    if states_a_constraint(parent) && !states_a_constraint(child) {
         return ValueConformance::Unknown;
-    };
-    bool_from(valid_pattern_constraint_replacement(cp, pp))
-}
-
-/// `valid_pattern_constraint_replacement` (`master04.5` §`C_TEMPORAL`): true if
-/// the child ISO 8601 constraint pattern is a valid narrowing of the parent
-/// pattern.
-///
-/// NOTE: the AOM2 spec declares the function signature and the allowed-pattern
-/// lists but not the replacement algorithm body — this is our own design, read
-/// from the ISO 8601 pattern semantics (`master04.5` §`C_TEMPORAL`
-/// definitions): the patterns are position-aligned; a field position is
-/// mandatory (a letter `Y/M/D/H/m/s`), optional (`?`) or excluded (`X`/`x`), and
-/// a valid replacement narrows each position — parent optional (`?`) admits any
-/// child (mandatory, optional, or excluded), parent mandatory admits only a
-/// mandatory child, parent excluded admits only an excluded child; literal
-/// separators must match and the layouts must be the same length.
-fn valid_pattern_constraint_replacement(child: &str, parent: &str) -> bool {
-    let (cb, pb) = (child.as_bytes(), parent.as_bytes());
-    if cb.len() != pb.len() {
-        return false;
     }
-    cb.iter()
-        .zip(pb.iter())
-        .all(|(&c, &p)| position_narrows(c, p))
-}
-
-/// Field-presence classes of an ISO 8601 temporal-pattern position.
-#[derive(PartialEq, Eq, Clone, Copy)]
-enum PatternField {
-    /// A mandatory field (a letter `Y/M/D/H/m/s`).
-    Mandatory,
-    /// An optional field (`?`).
-    Optional,
-    /// An excluded field (`X`/`x`).
-    Excluded,
-    /// A literal separator (`-`, `:`, `T`, `P`, `W`, `/`, `.`).
-    Separator(u8),
-}
-
-fn classify(byte: u8) -> PatternField {
-    match byte {
-        b'?' => PatternField::Optional,
-        b'X' | b'x' => PatternField::Excluded,
-        b if b.is_ascii_alphabetic() => PatternField::Mandatory,
-        b => PatternField::Separator(b),
-    }
-}
-
-/// True if a child pattern position validly narrows the parent position.
-fn position_narrows(child: u8, parent: u8) -> bool {
-    match (classify(child), classify(parent)) {
-        // Separators must match exactly.
-        (PatternField::Separator(c), PatternField::Separator(p)) => c == p,
-        (PatternField::Separator(_), _) | (_, PatternField::Separator(_)) => false,
-        // Parent optional admits any child field; parent mandatory admits only a
-        // mandatory child; parent excluded admits only an excluded child.
-        (_, PatternField::Optional)
-        | (PatternField::Mandatory, PatternField::Mandatory)
-        | (PatternField::Excluded, PatternField::Excluded) => true,
-        _ => false,
-    }
-}
-
-fn bool_from(b: bool) -> ValueConformance {
-    if b {
+    if child.c_value_conforms_to(parent) || child.c_value_congruent_to(parent) {
         ValueConformance::Conforms
     } else {
         ValueConformance::Violates
     }
 }
 
-/// `C_ORDERED` value conformance (`master04.5` §`C_ORDERED`, L602-609): parent
-/// `any_allowed` (empty) ⇒ conform; else for every child interval there must
-/// exist a parent interval containing it.
-fn ordered_conforms<T>(
-    child: &[openehr_base::prelude::Interval<T>],
-    parent: &[openehr_base::prelude::Interval<T>],
-) -> ValueConformance
-where
-    T: PartialOrd,
-{
-    if parent.is_empty() {
-        return ValueConformance::Conforms;
+/// Whether a primitive leaf states any value constraint of its own — the
+/// negation of `any_allowed` (`master04.5` §Conformance semantics per
+/// primitive), read per leaf type because `any_allowed` is redefined down the
+/// hierarchy.
+fn states_a_constraint(node: &CPrimitiveObject) -> bool {
+    match node {
+        CPrimitiveObject::CBoolean(c) => !c.any_allowed(),
+        CPrimitiveObject::CString(c) => !c.any_allowed(),
+        CPrimitiveObject::CTerminologyCode(c) => !c.any_allowed(),
+        CPrimitiveObject::CDate(c) => {
+            !c.constraint.as_ref().is_none_or(Vec::is_empty)
+                || !c.pattern_constraint.as_deref().is_none_or(str::is_empty)
+        }
+        CPrimitiveObject::CDateTime(c) => {
+            !c.constraint.as_ref().is_none_or(Vec::is_empty)
+                || !c.pattern_constraint.as_deref().is_none_or(str::is_empty)
+        }
+        CPrimitiveObject::CDuration(c) => {
+            !c.constraint.as_ref().is_none_or(Vec::is_empty)
+                || !c.pattern_constraint.as_deref().is_none_or(str::is_empty)
+        }
+        CPrimitiveObject::CTime(c) => {
+            !c.constraint.as_ref().is_none_or(Vec::is_empty)
+                || !c.pattern_constraint.as_deref().is_none_or(str::is_empty)
+        }
+        CPrimitiveObject::CInteger(c) => !c.constraint.as_ref().is_none_or(Vec::is_empty),
+        CPrimitiveObject::CReal(c) => !c.constraint.as_ref().is_none_or(Vec::is_empty),
     }
-    if child.is_empty() {
-        return ValueConformance::Unknown;
-    }
-    bool_from(
-        child
-            .iter()
-            .all(|ci| parent.iter().any(|pi| pi.contains(ci))),
-    )
 }
 
-/// `C_TERMINOLOGY_CODE` value conformance (`master04.5` §`C_TERMINOLOGY_NODE`,
-/// L663-699): the constraint-status ordering required(0) < extensible(1) <
-/// preferred(2) < example(3) with child ≤ parent, "non-required parent ≡ no
-/// constraint" (`master09.05` §Terminology Constraint Redefinition), and code
-/// conformance for the value-set / at-code constraint.
-///
-/// NOTE: this terminology-agnostic core checks the constraint-status ordering
-/// and the lexical `codes_conformant` half only. The `value_set_expanded` subset
-/// half (`master04.5` §`C_TERMINOLOGY_NODE` L683-690) needs the child + flat
-/// parent terminologies, which this function does not receive; it is applied in
-/// `specialisation` (`check_terminology_leaf`), which has both flattened
-/// terminologies. This lexical core is used for the non-specialisation value
-/// path (`c_value_conforms_to`), where no value-set expansion is required.
-fn terminology_conforms(
-    child_code: &str,
-    child_status: i32,
-    parent_code: &str,
-    parent_status: i32,
-) -> ValueConformance {
-    // Empty parent constraint ⇒ `any_allowed` ⇒ conform.
-    if parent_code.is_empty() {
-        return ValueConformance::Conforms;
+/// [`value_conformance`] for two object nodes, `Unknown` unless both are
+/// primitive leaves.
+#[must_use]
+pub(crate) fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformance {
+    match (cobject_to_primitive(child), cobject_to_primitive(parent)) {
+        (Some(c), Some(p)) => value_conformance(&c, &p),
+        _ => ValueConformance::Unknown,
     }
-    // `constraint_status` ordering: numerically the child must be <= parent.
-    if child_status > parent_status {
-        return ValueConformance::Violates;
-    }
-    // A non-required parent (> 0) imposes no real constraint ⇒ conform.
-    if parent_status > 0 {
-        return ValueConformance::Conforms;
-    }
-    // Both required: lexical code conformance (value-set expansion deferred).
-    bool_from(codes_conformant(child_code, parent_code))
-}
-
-/// The numeric `constraint_status` (required=0 default), per `master04.5`
-/// §`C_TERMINOLOGY_NODE` L671-674.
-fn status_value(status: Option<&ConstraintStatus>) -> i32 {
-    status.map_or(0, |s| s.value())
 }
 
 /// The verdict of the second-order tuple conformance functions (`master04.5`
@@ -646,16 +391,12 @@ fn row_conforms_to(
         let Some(other) = order.get(i).and_then(|j| parent_row.members.get(*j)) else {
             return ValueConformance::Violates;
         };
-        let (c, p) = (
-            primitive_to_cobject(member.clone()),
-            primitive_to_cobject(other.clone()),
-        );
         // `same_type` (L785): a member of a different primitive type never
         // conforms.
-        if aom_type(&c) != aom_type(&p) {
+        if member.constrained_typename() != other.constrained_typename() {
             return ValueConformance::Violates;
         }
-        match c_value_conforms_to(&c, &p) {
+        match value_conformance(member, other) {
             ValueConformance::Conforms => {}
             ValueConformance::Violates => return ValueConformance::Violates,
             ValueConformance::Unknown => worst = ValueConformance::Unknown,
@@ -672,6 +413,7 @@ mod tests {
     use crate::parse::Dialect;
     use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
     use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_base::prelude::MultiplicityInterval;
 
     fn mi(lower: i32, upper: Option<i32>) -> MultiplicityInterval {
         MultiplicityInterval {
@@ -684,40 +426,77 @@ mod tests {
         }
     }
 
+    /// An attribute carrying only an `existence`, for the VSANCE assertions.
+    fn attr_with_existence(existence: Option<MultiplicityInterval>) -> CAttribute {
+        CAttribute {
+            parent: None,
+            soc_parent: None,
+            rm_attribute_name: "items".to_owned(),
+            existence,
+            children: None,
+            differential_path: None,
+            is_multiple: false,
+            cardinality: None,
+        }
+    }
+
+    /// An object node carrying only an `occurrences`, for the VSONCO
+    /// assertions.
+    fn object_with_occurrences(occurrences: Option<MultiplicityInterval>) -> CObject {
+        CObject::CComplexObject(CComplexObject::CComplexObject(
+            openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObjectData {
+                parent: None,
+                soc_parent: None,
+                rm_type_name: "ELEMENT".to_owned(),
+                occurrences,
+                node_id: "id2".to_owned(),
+                alternative_ids: None,
+                is_deprecated: None,
+                sibling_order: None,
+                default_value: None,
+                attributes: None,
+                attribute_tuples: None,
+            },
+        ))
+    }
+
     #[test]
     fn existence_conformance_is_containment() {
         // {0} does not conform to {1} (VSANCE example: redefining {1} → {0}).
-        assert!(!existence_conforms_to(
-            Some(&mi(0, Some(0))),
-            Some(&mi(1, Some(1)))
-        ));
+        assert!(
+            !attr_with_existence(Some(mi(0, Some(0))))
+                .existence_conforms_to(&attr_with_existence(Some(mi(1, Some(1)))))
+        );
         // {1} conforms to {0..1}.
-        assert!(existence_conforms_to(
-            Some(&mi(1, Some(1))),
-            Some(&mi(0, Some(1)))
-        ));
+        assert!(
+            attr_with_existence(Some(mi(1, Some(1))))
+                .existence_conforms_to(&attr_with_existence(Some(mi(0, Some(1)))))
+        );
         // unset always conforms.
-        assert!(existence_conforms_to(None, Some(&mi(1, Some(1)))));
+        assert!(
+            attr_with_existence(None)
+                .existence_conforms_to(&attr_with_existence(Some(mi(1, Some(1)))))
+        );
     }
 
     #[test]
     fn occurrences_single_occurrence_containment() {
         // parent {0..1} (upper 1): child {1..*} is NOT contained → non-conform.
-        assert!(!occurrences_conforms_to(
-            Some(&mi(1, None)),
-            Some(&mi(0, Some(1)))
-        ));
+        assert!(
+            !object_with_occurrences(Some(mi(1, None)))
+                .occurrences_conforms_to(&object_with_occurrences(Some(mi(0, Some(1)))))
+        );
         // parent {0..1}: child {0..1} contained → conform.
-        assert!(occurrences_conforms_to(
-            Some(&mi(0, Some(1))),
-            Some(&mi(0, Some(1)))
-        ));
+        assert!(
+            object_with_occurrences(Some(mi(0, Some(1))))
+                .occurrences_conforms_to(&object_with_occurrences(Some(mi(0, Some(1)))))
+        );
         // parent upper > 1 (multiple): the single-occurrence rule does not apply
         // here (VSONCO handles it) → always True.
-        assert!(occurrences_conforms_to(
-            Some(&mi(5, Some(9))),
-            Some(&mi(0, Some(3)))
-        ));
+        assert!(
+            object_with_occurrences(Some(mi(5, Some(9))))
+                .occurrences_conforms_to(&object_with_occurrences(Some(mi(0, Some(3)))))
+        );
     }
 
     /// Build the definition root of a tiny 1.4 archetype, for the ADL 1.4
@@ -821,8 +600,8 @@ ontology
 
     #[test]
     fn node_id_conformance_uses_codes_conformant() {
-        assert!(node_id_conforms_to("id3.1", "id3"));
-        assert!(!node_id_conforms_to("id4", "id3"));
+        assert!(AdlCodeDefinitionsData::codes_conformant("id3.1", "id3"));
+        assert!(!AdlCodeDefinitionsData::codes_conformant("id4", "id3"));
     }
 
     /// Build a single-attribute `C_ATTRIBUTE` from a tiny archetype's root, for
@@ -920,71 +699,171 @@ terminology
         assert_eq!(coll.upper, Some(4));
     }
 
+    /// A `C_TERMINOLOGY_CODE` leaf carrying a constraint and a status.
+    fn terminology_leaf(constraint: &str, status: i32) -> CPrimitiveObject {
+        CPrimitiveObject::CTerminologyCode(
+            openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode {
+                parent: None,
+                soc_parent: None,
+                rm_type_name: "DV_CODED_TEXT".to_owned(),
+                occurrences: None,
+                node_id: "at9999".to_owned(),
+                alternative_ids: None,
+                is_deprecated: None,
+                sibling_order: None,
+                default_value: None,
+                assumed_value: None,
+                is_enumerated_type_constraint: None,
+                constraint: constraint.to_owned(),
+                constraint_status: Some(constraint_status_of(status)),
+            },
+        )
+    }
+
+    /// The `CONSTRAINT_STATUS` value for an effective status integer
+    /// (`master04.5` §`C_TERMINOLOGY_NODE`: required 0, extensible 1,
+    /// preferred 2, example 3).
+    fn constraint_status_of(
+        status: i32,
+    ) -> openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus
+    {
+        use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+        match status {
+            1 => ConstraintStatus::Extensible,
+            2 => ConstraintStatus::Preferred,
+            3 => ConstraintStatus::Example,
+            _ => ConstraintStatus::Required,
+        }
+    }
+
+    /// A `C_DATE` leaf carrying a pattern and, optionally, a range constraint.
+    fn date_leaf(pattern: Option<&str>, ranged: bool) -> CPrimitiveObject {
+        use openehr_base::v1_3::foundation_types::interval::interval::Interval;
+        use openehr_base::v1_3::foundation_types::interval::point_interval::PointInterval;
+        use openehr_base::v1_3::foundation_types::time::iso8601_date::Iso8601Date;
+        let constraint = ranged.then(|| {
+            vec![Interval::PointInterval(PointInterval {
+                lower: Some(Iso8601Date {
+                    value: "2004-05-20".to_owned(),
+                }),
+                upper: Some(Iso8601Date {
+                    value: "2004-05-20".to_owned(),
+                }),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: true,
+                upper_included: true,
+            })]
+        });
+        CPrimitiveObject::CDate(
+            openehr_am::v2_4::aom2::constraint_model::primitive::c_date::CDate {
+                parent: None,
+                soc_parent: None,
+                rm_type_name: "DV_DATE".to_owned(),
+                occurrences: None,
+                node_id: "at9999".to_owned(),
+                alternative_ids: None,
+                is_deprecated: None,
+                sibling_order: None,
+                default_value: None,
+                assumed_value: None,
+                is_enumerated_type_constraint: None,
+                constraint,
+                pattern_constraint: pattern.map(str::to_owned),
+            },
+        )
+    }
+
     #[test]
     fn terminology_status_ordering() {
         // child example(3) vs parent required(0): 3 > 0 → violates.
         assert_eq!(
-            terminology_conforms("at0004", 3, "at0004", 0),
+            value_conformance(
+                &terminology_leaf("at0004", 3),
+                &terminology_leaf("at0004", 0)
+            ),
             ValueConformance::Violates
         );
         // parent non-required (extensible=1): child auto-conforms.
         assert_eq!(
-            terminology_conforms("ac2", 0, "ac1", 1),
+            value_conformance(&terminology_leaf("ac2", 0), &terminology_leaf("ac1", 1)),
             ValueConformance::Conforms
         );
         // both required, child code conforms lexically.
         assert_eq!(
-            terminology_conforms("at0004.1", 0, "at0004", 0),
+            value_conformance(
+                &terminology_leaf("at0004.1", 0),
+                &terminology_leaf("at0004", 0)
+            ),
             ValueConformance::Conforms
         );
         // both required, child code does not conform.
         assert_eq!(
-            terminology_conforms("at0005", 0, "at0004", 0),
+            value_conformance(
+                &terminology_leaf("at0005", 0),
+                &terminology_leaf("at0004", 0)
+            ),
             ValueConformance::Violates
         );
     }
 
+    /// The temporal pattern rules, through `C_TEMPORAL.c_value_conforms_to` and
+    /// the `C_DATE` replacement table (`c_temporal_definitions.adoc`
+    /// §Attributes).
+    ///
+    /// The last case is a child stating a date RANGE under a parent stating only
+    /// a PATTERN: `C_TEMPORAL.any_allowed` is False for a patterned parent, so
+    /// the `C_ORDERED` precursor finds no parent interval containing the child's
+    /// and the spec answer is a violation.
     #[test]
     fn temporal_pattern_replacement() {
-        // Parent `yyyy-??-??` (month/day optional): child `yyyy-mm-dd` narrows both
-        // to mandatory → valid replacement (master04.5 §C_TEMPORAL).
-        assert!(valid_pattern_constraint_replacement(
-            "yyyy-mm-dd",
-            "yyyy-??-??"
-        ));
+        // Parent `yyyy-??-??` (month/day optional): child `yyyy-mm-dd` narrows
+        // both to mandatory → valid replacement (master04.5 §C_TEMPORAL).
+        assert_eq!(
+            value_conformance(
+                &date_leaf(Some("yyyy-mm-dd"), false),
+                &date_leaf(Some("yyyy-??-??"), false)
+            ),
+            ValueConformance::Conforms
+        );
         // Child may also exclude an optional field.
-        assert!(valid_pattern_constraint_replacement(
-            "yyyy-mm-XX",
-            "yyyy-??-??"
-        ));
+        assert_eq!(
+            value_conformance(
+                &date_leaf(Some("yyyy-mm-XX"), false),
+                &date_leaf(Some("yyyy-??-??"), false)
+            ),
+            ValueConformance::Conforms
+        );
         // Parent mandatory day cannot be loosened to optional.
-        assert!(!valid_pattern_constraint_replacement(
-            "yyyy-mm-??",
-            "yyyy-mm-dd"
-        ));
-        // Separator / layout mismatch is not a valid replacement.
-        assert!(!valid_pattern_constraint_replacement(
-            "yyyy-mm",
-            "yyyy-mm-dd"
-        ));
-
-        // parent pattern empty ⇒ conforms; child interval-constrained ⇒ unknown.
         assert_eq!(
-            temporal_conforms(Some("yyyy-mm-dd"), true, None, true),
-            ValueConformance::Conforms
-        );
-        assert_eq!(
-            temporal_conforms(Some("yyyy-mm-dd"), true, Some("yyyy-??-??"), true),
-            ValueConformance::Conforms
-        );
-        assert_eq!(
-            temporal_conforms(Some("yyyy-mm-??"), true, Some("yyyy-mm-dd"), true),
+            value_conformance(
+                &date_leaf(Some("yyyy-mm-??"), false),
+                &date_leaf(Some("yyyy-mm-dd"), false)
+            ),
             ValueConformance::Violates
         );
-        // A non-empty interval constraint is not orderable on the Iso8601 types.
+        // Separator / layout mismatch is not a valid replacement.
         assert_eq!(
-            temporal_conforms(Some("yyyy-mm-dd"), false, Some("yyyy-??-??"), true),
-            ValueConformance::Unknown
+            value_conformance(
+                &date_leaf(Some("yyyy-mm"), false),
+                &date_leaf(Some("yyyy-mm-dd"), false)
+            ),
+            ValueConformance::Violates
+        );
+        // An unconstrained parent admits any pattern.
+        assert_eq!(
+            value_conformance(
+                &date_leaf(Some("yyyy-mm-dd"), false),
+                &date_leaf(None, false)
+            ),
+            ValueConformance::Conforms
+        );
+        assert_eq!(
+            value_conformance(
+                &date_leaf(Some("yyyy-mm-dd"), true),
+                &date_leaf(Some("yyyy-??-??"), false)
+            ),
+            ValueConformance::Violates
         );
     }
 }

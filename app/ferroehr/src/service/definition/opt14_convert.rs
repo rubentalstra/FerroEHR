@@ -1287,13 +1287,67 @@ fn render_expr(e: &opt14::types::ExprItem) -> Option<String> {
         opt14::types::ExprItem::ExprBinaryOperator(b) => {
             let l = render_expr(&b.left_operand)?;
             let r = render_expr(&b.right_operand)?;
-            Some(format!("{l} {} {r}", b.operator))
+            let op = binary_symbol(b.operator)?;
+            Some(format!("{l} {op} {r}"))
         }
         opt14::types::ExprItem::ExprUnaryOperator(u) => {
             let inner = render_expr(&u.operand)?;
-            Some(format!("{} ({inner})", u.operator))
+            let op = unary_symbol(u.operator)?;
+            Some(format!("{op} ({inner})"))
         }
         opt14::types::ExprItem::ExprLeaf(leaf) => render_leaf(leaf),
+    }
+}
+
+/// The ADL surface symbol of a binary `OPERATOR_KIND`, or `None` for a kind
+/// with no infix rendering.
+///
+/// The relational, arithmetic and logical renderings are the textual column of
+/// `LANG/docs/BEL/master03-language.adoc` §Operators; `matches` is the
+/// archetype-slot constraint operator
+/// (`AM/docs/ADL2/master07.10-adl_definition.adoc` §Archetype Slots). The two
+/// quantifiers (`for_all`, `exists`) are not infix operators — their syntax is
+/// `there_exists v : c | …` / `for_all v : c | …` (BEL master03 §Container
+/// Operators) — so a tree that carries one as a binary operator has no surface
+/// form here and is reported unconverted rather than rendered into text the
+/// slot-assertion parser would refuse.
+fn binary_symbol(op: opt14::types::OperatorKind) -> Option<&'static str> {
+    Some(match op {
+        opt14::types::OperatorKind::Equal => "=",
+        opt14::types::OperatorKind::NotEqual => "!=",
+        opt14::types::OperatorKind::LessThanOrEqual => "<=",
+        opt14::types::OperatorKind::LessThan => "<",
+        opt14::types::OperatorKind::GreaterThanOrEqual => ">=",
+        opt14::types::OperatorKind::GreaterThan => ">",
+        opt14::types::OperatorKind::Matches => "matches",
+        opt14::types::OperatorKind::And => "and",
+        opt14::types::OperatorKind::Or => "or",
+        opt14::types::OperatorKind::Xor => "xor",
+        opt14::types::OperatorKind::Implies => "implies",
+        opt14::types::OperatorKind::Plus => "+",
+        opt14::types::OperatorKind::Minus => "-",
+        opt14::types::OperatorKind::Multiply => "*",
+        opt14::types::OperatorKind::Divide => "/",
+        opt14::types::OperatorKind::Exponent => "^",
+        opt14::types::OperatorKind::Not
+        | opt14::types::OperatorKind::ForAll
+        | opt14::types::OperatorKind::Exists => return None,
+    })
+}
+
+/// The ADL surface symbol of a prefix `OPERATOR_KIND`, or `None` for a kind
+/// with no prefix rendering.
+///
+/// `not` "can be applied as a prefix operator to all operators returning a
+/// Boolean result as well as a parenthesised Boolean expression"
+/// (`LANG/docs/BEL/master03-language.adoc` §Logical Negation); the unary
+/// arithmetic signs are the same chapter's §Operators table.
+fn unary_symbol(op: opt14::types::OperatorKind) -> Option<&'static str> {
+    match op {
+        opt14::types::OperatorKind::Not => Some("not"),
+        opt14::types::OperatorKind::Plus => Some("+"),
+        opt14::types::OperatorKind::Minus => Some("-"),
+        _ => None,
     }
 }
 
@@ -2350,5 +2404,76 @@ mod tests {
             }),
             "the COMPOSITION → OBSERVATION fill edge was not recorded: {structure:?}"
         );
+    }
+
+    /// A rendered slot assertion is ADL surface syntax, i.e. it round-trips
+    /// through the slot-assertion parser the converted archetype is read back
+    /// with.
+    ///
+    /// The `OPERATOR_KIND` value the OPT carries is an XSD facet id (`2007` for
+    /// `matches`), which is not an operator token in any grammar; only the
+    /// textual rendering of `LANG/docs/BEL/master03-language.adoc` §Operators
+    /// parses.
+    #[test]
+    fn rendered_operators_are_adl_surface_syntax() {
+        let matches = binary_symbol(opt14::types::OperatorKind::Matches)
+            .expect("`matches` has a surface rendering");
+        let text =
+            format!("archetype_id/value {matches} {{/openEHR-EHR-OBSERVATION\\.minimal\\.v1/}}");
+        let parsed = openehr_adl::rules::parse_slot_assertions(&text)
+            .unwrap_or_else(|e| panic!("rendered assertion {text:?} did not parse: {e:?}"));
+        assert_eq!(parsed.len(), 1, "expected one assertion from {text:?}");
+
+        // The facet id itself is not a token, so the pre-mapping rendering
+        // could never have parsed.
+        let raw = format!(
+            "archetype_id/value {} {{/openEHR-EHR-OBSERVATION\\.minimal\\.v1/}}",
+            opt14::types::OperatorKind::Matches.as_wire()
+        );
+        assert!(
+            openehr_adl::rules::parse_slot_assertions(&raw).is_err(),
+            "the raw XSD facet id must not be accepted as an operator"
+        );
+    }
+
+    /// Every relational, arithmetic and logical `OPERATOR_KIND` renders to the
+    /// textual form of `LANG/docs/BEL/master03-language.adoc` §Operators, and
+    /// the two quantifiers — which have no infix syntax there — render to
+    /// nothing rather than to unparseable text.
+    #[test]
+    fn every_infix_operator_kind_maps_to_its_textual_rendering() {
+        for (kind, symbol) in [
+            (opt14::types::OperatorKind::Equal, "="),
+            (opt14::types::OperatorKind::NotEqual, "!="),
+            (opt14::types::OperatorKind::LessThanOrEqual, "<="),
+            (opt14::types::OperatorKind::LessThan, "<"),
+            (opt14::types::OperatorKind::GreaterThanOrEqual, ">="),
+            (opt14::types::OperatorKind::GreaterThan, ">"),
+            (opt14::types::OperatorKind::Matches, "matches"),
+            (opt14::types::OperatorKind::And, "and"),
+            (opt14::types::OperatorKind::Or, "or"),
+            (opt14::types::OperatorKind::Xor, "xor"),
+            (opt14::types::OperatorKind::Implies, "implies"),
+            (opt14::types::OperatorKind::Plus, "+"),
+            (opt14::types::OperatorKind::Minus, "-"),
+            (opt14::types::OperatorKind::Multiply, "*"),
+            (opt14::types::OperatorKind::Divide, "/"),
+            (opt14::types::OperatorKind::Exponent, "^"),
+        ] {
+            assert_eq!(binary_symbol(kind), Some(symbol), "{kind:?}");
+        }
+        for kind in [
+            opt14::types::OperatorKind::ForAll,
+            opt14::types::OperatorKind::Exists,
+            opt14::types::OperatorKind::Not,
+        ] {
+            assert_eq!(binary_symbol(kind), None, "{kind:?}");
+        }
+        assert_eq!(
+            unary_symbol(opt14::types::OperatorKind::Not),
+            Some("not"),
+            "`not` is the prefix negation of BEL master03 §Logical Negation"
+        );
+        assert_eq!(unary_symbol(opt14::types::OperatorKind::Matches), None);
     }
 }

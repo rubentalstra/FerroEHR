@@ -1,8 +1,10 @@
 //! Hand-written AOM2 `C_STRING` spec functions.
 //!
 //! Spec sources (vendored):
-//! `AM/docs/UML/classes/org.openehr.am.aom2.c_string.adoc` §Functions and
-//! `AM/docs/ADL2/master04.5-cadl_primitive_types.adoc` §Regular Expressions.
+//! `AM/docs/UML/classes/org.openehr.am.aom2.c_string.adoc` §Functions,
+//! `AM/docs/ADL2/master04.5-cadl_primitive_types.adoc` §Regular Expressions,
+//! and `AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
+//! §Conformance semantics: C_STRING.
 
 use crate::v2_4::aom2::constraint_model::primitive::c_string::CString;
 
@@ -24,6 +26,41 @@ impl CString {
             Some([only]) => only == REGEX_ANY_STRING,
             Some(_) => false,
         }
+    }
+
+    /// Returns true if this node's `constraint` is a strict subset of
+    /// `other.constraint`.
+    ///
+    /// `c_value_conforms_to` (`master04.5` §Conformance semantics: C_STRING):
+    /// `other.any_allowed or constraint.count < other.constraint.count and for
+    /// all c in constraint | other.constraint.has (c)`. Constraint items are
+    /// compared literally — a regular expression is narrower than another only
+    /// when the parent lists it, since regex containment is undecidable in
+    /// general.
+    #[must_use]
+    pub fn c_value_conforms_to(&self, other: &CString) -> bool {
+        other.any_allowed()
+            || (self.values().len() < other.values().len()
+                && self
+                    .values()
+                    .iter()
+                    .all(|value| other.values().contains(value)))
+    }
+
+    /// Returns true if this node's value constraint is the same as `other`'s.
+    ///
+    /// `c_value_congruent_to` (`master04.5` §Conformance semantics: C_STRING):
+    /// `constraint.count = other.constraint.count and then across constraint as
+    /// str_csr all other.constraint.i_th (str_csr.cursor_index).is_equal
+    /// (str_csr.item)`, i.e. equal item-by-item in declaration order.
+    #[must_use]
+    pub fn c_value_congruent_to(&self, other: &CString) -> bool {
+        self.values() == other.values()
+    }
+
+    /// The stated constraint values, empty when none is stated.
+    fn values(&self) -> &[String] {
+        self.constraint.as_deref().unwrap_or_default()
     }
 }
 
