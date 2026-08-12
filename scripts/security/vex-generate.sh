@@ -49,7 +49,25 @@ readonly VALID_STATUS='not_affected affected fixed under_investigation'
 readonly VALID_JUSTIFICATION='component_not_present vulnerable_code_not_present vulnerable_code_not_in_execute_path vulnerable_code_cannot_be_controlled_by_adversary inline_mitigations_already_exist'
 
 prose_json="$(yq -p toml -o json '.' "$PROSE")"
-gate_ids="$(yq -p toml -o json '[.advisories.ignore[].id]' "$GATE" | jq -r '.[]' | sort)"
+
+# cargo-deny's `ignore` accepts BOTH a bare id string and a `{ id, reason }`
+# table (https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html).
+# Reading only `.id` would let a bare-string advisory slip past every check
+# below with no published justification — the gate would still report agreement
+# because the id was never in the set it compared. Refuse the bare form instead
+# of quietly accepting it: this repository's convention is that an exception is
+# explicit, dated and reasoned, which the table form carries and a bare string
+# cannot. Bare non-advisory entries (`yanked@0.1.1`) stay legal.
+ignore_json="$(yq -p toml -o json '[.advisories.ignore[]]' "$GATE")"
+if bare="$(jq -r '.[] | select(type == "string" and startswith("RUSTSEC-"))' <<<"$ignore_json")" \
+   && [ -n "$bare" ]; then
+  echo "vex-generate: deny.toml ignores an advisory in the bare-string form:" >&2
+  sed 's/^/  /' <<<"$bare" >&2
+  echo "Use { id = \"…\", reason = \"…\" } so the exception carries its reason" >&2
+  echo "and this gate can require a published VEX justification for it." >&2
+  exit 1
+fi
+gate_ids="$(jq -r '.[] | if type == "object" then .id // empty else empty end' <<<"$ignore_json" | sort)"
 accepted_ids="$(jq -r '(.accepted // [])[].id' <<<"$prose_json" | sort)"
 lockfile_ids="$(jq -r '(.lockfile_only // [])[].id' <<<"$prose_json" | sort)"
 
