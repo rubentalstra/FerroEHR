@@ -30,8 +30,10 @@ use crate::v1_1::bmm::core::bmm_package::BmmPackage;
 use crate::v1_1::bmm::core::bmm_package_impl::do_recursive_packages_in;
 use crate::v1_1::bmm::core::bmm_package_impl::package_at_path_in;
 use crate::v1_1::bmm::core::bmm_property::BmmProperty;
+use crate::v1_1::bmm::core::bmm_schema_core::BmmSchemaCore;
 use crate::v1_1::bmm::core::bmm_type::BmmType;
 use crate::v1_1::bmm::core::bmm_type_impl::ANY_TYPE_NAME;
+use crate::v1_1::bmm_persistence::p_bmm_schema_impl::compose_schema_id;
 use openehr_base::containers::present;
 
 /// The delimiter separating the segments of the property path
@@ -129,10 +131,7 @@ impl BmmModel {
     /// join therefore wins, and the `'-'` prose is read as an editorial slip.
     #[must_use]
     pub fn schema_id(&self) -> String {
-        let publisher = &self.rm_publisher;
-        let name = &self.schema_name;
-        let release = &self.rm_release;
-        format!("{publisher}_{name}_{release}").to_lowercase()
+        compose_schema_id(&self.rm_publisher, &self.schema_name, &self.rm_release)
     }
 
     /// `BMM_MODEL.class_definition`: "Retrieve the class definition
@@ -545,6 +544,25 @@ impl BmmModel {
     }
 }
 
+impl BmmSchemaCore {
+    /// `BMM_SCHEMA_CORE.schema_id`: "Derived name of schema, based on model
+    /// publisher, model name, model release"
+    /// (`org.openehr.lang.bmm.bmm_schema_core.adoc` §Functions), answered by
+    /// whichever descendant this slot carries.
+    ///
+    /// The join is the one adjudicated on [`BmmModel::schema_id`].
+    #[must_use]
+    pub fn schema_id(&self) -> String {
+        match self {
+            Self::BmmModel(model) => model.schema_id(),
+            Self::PBmmSchema(schema) => schema.schema_id(),
+            Self::BmmSchemaCore(core) => {
+                compose_schema_id(&core.rm_publisher, &core.schema_name, &core.rm_release)
+            }
+        }
+    }
+}
+
 /// Replaces an open generic parameter name with `Any`, per the
 /// `type_conforms_to` NOTE on [`BmmModel::type_conforms_to`].
 fn substitute_open_parameter(a_type_name: &str) -> &str {
@@ -705,6 +723,38 @@ mod tests {
     fn schema_id_is_the_lower_cased_publisher_name_release() {
         let model = model(Vec::new(), Vec::new());
         assert_eq!(model.schema_id(), "openehr_rm_1.2.0");
+    }
+
+    /// The `BMM_SCHEMA_CORE` slot derives the SAME id from every descendant it
+    /// can carry, and from its own least-rich form — the three-part derivation
+    /// is the class's, not `BMM_MODEL`'s.
+    #[test]
+    fn the_schema_core_slot_derives_one_id_for_every_form() {
+        use crate::v1_1::bmm::core::bmm_schema_core::BmmSchemaCore;
+        use crate::v1_1::bmm::core::bmm_schema_core::BmmSchemaCoreData;
+
+        let core = BmmSchemaCoreData {
+            rm_publisher: "openEHR".to_owned(),
+            rm_release: "1.2.0".to_owned(),
+            schema_name: "RM".to_owned(),
+            schema_revision: "1.2.0".to_owned(),
+            schema_lifecycle_state: "stable".to_owned(),
+            schema_author: "openEHR SEC".to_owned(),
+            schema_description: "test schema".to_owned(),
+            schema_contributors: openehr_base::containers::present(Vec::new()),
+            archetype_parent_class: None,
+            archetype_data_value_parent_class: None,
+            archetype_rm_closure_packages: openehr_base::containers::present(Vec::new()),
+            archetype_visualise_descendants_of: None,
+        };
+        assert_eq!(
+            BmmSchemaCore::BmmSchemaCore(core).schema_id(),
+            "openehr_rm_1.2.0"
+        );
+        assert_eq!(
+            BmmSchemaCore::BmmModel(model(Vec::new(), Vec::new())).schema_id(),
+            "openehr_rm_1.2.0"
+        );
     }
 
     #[test]

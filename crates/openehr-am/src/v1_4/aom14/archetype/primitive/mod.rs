@@ -11,3 +11,8 @@ pub mod c_primitive;
 pub mod c_real;
 pub mod c_string;
 pub mod c_time;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod c_date_time_impl;
+pub mod c_primitive_impl;
+pub mod c_time_impl;

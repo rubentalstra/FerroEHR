@@ -17,6 +17,7 @@ pub mod observation;
 pub mod action_impl;
 pub mod activity_impl;
 pub mod admin_entry_impl;
+pub mod entry_impl;
 pub mod evaluation_impl;
 pub mod instruction_details_impl;
 pub mod instruction_impl;

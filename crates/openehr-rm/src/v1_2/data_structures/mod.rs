@@ -6,3 +6,6 @@ pub mod data_structure;
 pub mod history;
 pub mod item_structure;
 pub mod representation;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod data_structure_impl;

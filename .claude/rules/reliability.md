@@ -299,8 +299,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   code is MIT-licensed; vendored third-party material keeps its upstream
   terms — Apache-2.0 for the openEHR machine-readable artifacts and the
   vendored test corpora (`LICENSE-APACHE-2.0`), CC-BY-SA 3.0 for the openEHR
-  spec docs text and CKM-derived clinical models (`LICENSE-CC-BY-SA-3.0`;
-  clinical models carry per-file `licence` metadata). Every vendored tree's
+  spec docs text (`LICENSE-CC-BY-SA-3.0`), and CC-BY-SA **4.0** for the
+  CKM-derived clinical models (`LICENSE-CC-BY-SA-4.0`), which is what their
+  own per-file `licence` metadata declares — one version per corpus, never a
+  single version standing for both. The vendored ADL2 regression corpus
+  additionally carries three ISO 13606 BMM reference models offered under an
+  MPL 1.1 / GPL 2.0 / LGPL 2.1 tri-license; **we take them under MPL 1.1**, so
+  no GPL or LGPL obligation attaches (the election is recorded in that
+  corpus's `PROVENANCE.md`). Every vendored tree's
   `PROVENANCE.md` names its license, with the upstream `LICENSE` vendored
   alongside. Dependencies stay license-gated by `deny.toml`.
 - **C-STABLE — re-adjudicated for publication (owner rulings 2026-08-04,

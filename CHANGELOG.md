@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **About 190 openEHR spec functions are now callable on the generated types.**
+  The Reference Model, Archetype Model, BASE and LANG classes declare functions
+  the specifications define — `ITEM_LIST.ith_item`, `DV_QUANTIFIED.magnitude`,
+  `ARCHETYPE_HRID` decomposition, `Iso8601_timezone`'s eight accessors, the
+  AOM2 primitive-constraint validity checks, and many more. They existed only
+  as declarations; each one now has an implementation written from the
+  governing spec section, with that citation in its documentation and a test
+  asserting the published post-condition. Functions the released text leaves
+  undefined, or that need state the class does not carry, are deliberately
+  still absent and recorded as such rather than guessed at.
+
 - **`Time_Definitions`'s eleven validity functions are now public** on
   `openehr-base` — `valid_year`, `valid_month`, `valid_day`, `valid_hour`,
   `valid_minute`, `valid_second`, `valid_fractional_second`, `days_in_month`,
@@ -24,6 +35,22 @@ workflow refuses a tag that has no matching section here.
   anywhere despite being declared by the spec.
 
 ### Changed
+
+- **BREAKING — enumeration-constrained OPT and AOM2 fields are now typed
+  enums, not strings.** `EXPR_OPERATOR.operator` becomes `OperatorKind`, and
+  `C_DATE`/`C_DATE_TIME`/`C_TIME.timezone_validity` become
+  `Option<ValidityKind>`. The XML schemas constrain these fields to a fixed set
+  of values, and carrying them as free text meant an out-of-range value was
+  indistinguishable from a valid one until something downstream misread it;
+  they are now refused when read. The wire form is unchanged — the same
+  characters go out, and every operational template in the corpus still
+  round-trips byte-for-byte — so only code that reads these fields as strings
+  is affected.
+
+- **A Web Template's `tz_validity` no longer silently disappears when the
+  template is malformed.** It was parsed with a fallback that turned any
+  unreadable value into "no timezone constraint at all", which is a different
+  and weaker statement than the template made.
 
 - **An `ehr:` URI must name the `EHR` attribute it addresses.** The server
   accepted a short form that put the versioned-object id straight after the

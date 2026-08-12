@@ -1258,30 +1258,55 @@ fn generation_function_realization_agrees() {
 ///
 /// The projection used to skip those classes outright, so it was silent about
 /// exactly the ones with the most missing — 576 declared functions unreported
-/// against 75 shown (#2247). This asserts the property directly rather than
-/// trusting the count: `PATHABLE` declares six functions, has no
-/// `pathable_impl.rs`, and none of the six is realized anywhere, so all six
-/// must appear. If someone reintroduces a sibling gate, this fails.
+/// against 75 shown (#2247). This asserts the PROPERTY rather than naming a
+/// witness: it finds a class that has no behaviour sibling in the tree as it
+/// stands and still declares an unrealized function, and requires the
+/// projection to report it. Naming one made the test fail the moment that
+/// function was implemented, which is a burn-down succeeding, not a regression.
 #[test]
 fn the_unrealized_projection_measures_classes_without_a_behaviour_sibling() {
     let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-rm/src");
-    for generation in ["v1_1", "v1_2"] {
-        assert!(
-            !src.join(generation)
-                .join("common/pathable_impl.rs")
-                .exists(),
-            "{generation}: PATHABLE grew a behaviour sibling — pick another sibling-less \
-             class with declared functions, or assert the property some other way",
-        );
-    }
     let reported = testsupport::unrealized_bmm_functions("rm").expect("crate tree readable");
-    for generation in ["v1_1", "v1_2"] {
-        assert!(
-            reported.contains(&format!("{generation}/PATHABLE.item_at_path")),
-            "{generation}: PATHABLE.item_at_path is unrealized and must be reported; a class \
-             with no behaviour sibling is not out of scope (#2247)",
-        );
+
+    // A reported entry whose class owns no `*_impl.rs` anywhere under its
+    // generation: that class is measured despite having no sibling, which is
+    // the property the sibling gate used to break.
+    let sibling_less = reported.iter().find(|entry| {
+        let Some((generation, rest)) = entry.split_once('/') else {
+            return false;
+        };
+        let Some((class, _)) = rest.split_once('.') else {
+            return false;
+        };
+        let stem = format!("{}_impl.rs", class.to_lowercase());
+        !walk_contains(&src.join(generation), &stem)
+    });
+
+    assert!(
+        sibling_less.is_some(),
+        "no reported gap belongs to a class without a behaviour sibling, so this test no \
+         longer proves the projection reaches those classes. Either every such class is now \
+         implemented — in which case delete this test with the #2247 record — or a sibling \
+         gate has been reintroduced and the projection went silent again.",
+    );
+}
+
+/// Whether any file named `name` exists under `dir`, at any depth.
+fn walk_contains(dir: &std::path::Path, name: &str) -> bool {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            if walk_contains(&path, name) {
+                return true;
+            }
+        } else if path.file_name().is_some_and(|f| f == name) {
+            return true;
+        }
     }
+    false
 }
 
 /// Every BMM-declared function on an emitted class is realized, ratcheted
@@ -1347,6 +1372,27 @@ fn hand_written_twins_are_templates() {
 /// `UID_BASED_ID` — so this is a live property, not a vacuous one, and a
 /// re-vendoring that broke either half would otherwise surface as a document
 /// that silently fails to parse (#2271).
+/// An `xs:enumeration` facet set reaches the generated model as a typed enum,
+/// never as free text.
+///
+/// The facet declares a CLOSED value space, so a slot typed to it must refuse
+/// anything outside the set — carrying it as `String` makes an out-of-range
+/// value indistinguishable from a declared one. Both halves are checked: every
+/// faceted simple type of every XSD-driven closure emits its enum, and every
+/// element slot declared with one is typed to that enum, so a re-vendoring that
+/// adds a faceted type (or retypes a slot) cannot fall back to `String`
+/// unnoticed.
+#[test]
+fn every_enumeration_facet_set_emits_a_typed_enum() {
+    let untyped = testsupport::untyped_enumeration_facets().expect("closures readable");
+    assert_eq!(
+        untyped,
+        Vec::new(),
+        "an xs:enumeration-faceted simple type is carried as free text instead of the \
+         closed value space the facet declares"
+    );
+}
+
 #[test]
 fn the_concrete_only_variant_reading_loses_no_document_shape() {
     let lost = testsupport::lost_dispatch_variants().expect("closures readable");

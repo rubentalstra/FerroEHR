@@ -15,3 +15,10 @@ pub mod party_relationship;
 pub mod person;
 pub mod role;
 pub mod versioned_party;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod address_impl;
+pub mod contact_impl;
+pub mod party_identity_impl;
+pub mod party_impl;
+pub mod party_relationship_impl;

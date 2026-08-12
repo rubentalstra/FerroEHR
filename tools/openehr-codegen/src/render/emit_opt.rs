@@ -19,6 +19,12 @@
 //! - every other complexType (the AOM/OPT constraint model + the OPT envelope +
 //!   the `IntervalOf*` helpers) is **generated** into `opt14`.
 //!
+//! A named `xs:simpleType` whose restriction declares `xs:enumeration` facets
+//! (`OPERATOR_KIND`, `VALIDITY_KIND`, `PROPORTION_KIND`) is a closed value space,
+//! so it emits a fieldless enum over the XSD's OWN vocabulary — variants named
+//! from the facet `id`s, the facet `value` as the verbatim wire form, and text
+//! outside the set refused at parse.
+//!
 //! Abstract types used as polymorphic slots (`C_OBJECT`, `C_ATTRIBUTE`,
 //! `C_PRIMITIVE`, `EXPR_ITEM`, `STATE`) become untagged enums that dispatch on
 //! `xsi:type`; the type declarations are emitted here, and their `ToXml`/
@@ -62,7 +68,7 @@
 //! model gains or loses a constraint type, forcing a reconciliation + a design-record
 //! update.
 
-use crate::load::xsd::XsdModel;
+use crate::load::xsd::{XsdEnumFacet, XsdModel, XsdSimpleType};
 use crate::plan::{XmlField, XmlType, XmlVariant};
 use crate::render::emit_xml::{emit_from_xml, emit_to_xml};
 use crate::render::naming;
@@ -200,6 +206,53 @@ fn lenient_default(field_name: &str, type_name: &str, prelude: &str) -> Option<S
     }
 }
 
+/// The Rust name of the emitted error a refusing facet reader returns.
+///
+/// One per generated module: the module's types are self-contained (the
+/// zero-re-exports rule means nothing is shared across them), so each closure
+/// carries its own copy.
+const FACET_ERROR: &str = "UnknownFacetValue";
+
+/// Whether a facet reader over this `xs:restriction` base compares the TRIMMED
+/// element text against the declared facet values.
+///
+/// XSD fixes `whiteSpace` to `collapse` on every built-in datatype except
+/// `xs:string`, which alone keeps `preserve`
+/// (<https://www.w3.org/TR/xmlschema11-2/#rf-whiteSpace>). The vendored
+/// archetype schemas restrict `xs:integer` throughout, so their facet values are
+/// compared after trimming — exactly as every other numeric leaf already reads.
+fn facet_base_collapses_whitespace(base: &str) -> bool {
+    !matches!(base, "xs:string" | "xsd:string")
+}
+
+/// The Rust variant identifier for one `xs:enumeration` facet.
+///
+/// The openEHR schemas annotate every enumeration facet with an `id`
+/// (`<xs:enumeration value="2001" id="equal"/>`), which is the schema's own
+/// name for the value; a facet without one is named from its value, so a
+/// re-vendoring that drops the annotation still emits.
+fn facet_variant_ident(facet: &XsdEnumFacet) -> String {
+    let source = facet.id.clone().unwrap_or_else(|| {
+        let sanitized: String = facet
+            .value
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+            .collect();
+        if sanitized.starts_with(|c: char| c.is_ascii_alphabetic()) {
+            sanitized
+        } else {
+            format!("v_{sanitized}")
+        }
+    });
+    naming::type_name(&source)
+}
+
+/// A Rust string literal (including the quotes) carrying `s` verbatim.
+fn rust_str_literal(s: &str) -> String {
+    let escaped = s.replace('\\', "\\\\").replace('"', "\\\"");
+    format!("\"{escaped}\"")
+}
+
 /// How a referenced XSD type name resolves for a generated field.
 enum Resolved {
     /// A Rust primitive (`String`/`bool`/`i32`/`i64`/`f64`).
@@ -222,6 +275,9 @@ enum Resolved {
     /// A generated `opt14` type; the flag is `true` when it is a generated enum
     /// (a polymorphic slot), which single-valued fields must `Box` to stay sized.
     Gen(String, bool),
+    /// A named `xs:simpleType` whose `xs:restriction` declares `xs:enumeration`
+    /// facets → the generated fieldless enum over that closed value space.
+    Facet(String),
 }
 
 /// Everything about the emission TARGET that varies between the XSD-driven
@@ -344,12 +400,20 @@ impl<'a> OptModel<'a> {
                 return Resolved::Rm(format!("{path}::{rust}"));
             }
         }
-        // A named `xs:simpleType` (restriction over string/integer): text on the
-        // wire — `OPERATOR_KIND`, `Iso8601Date`, `VALIDITY_KIND`, patterns, … .
-        //
-        // NOTE: the AOM integer-enum `*_KIND` restrictions are carried verbatim as
-        // their wire text, round-tripping losslessly and deferring the validity
-        // and operator semantics to the consumer (#2271).
+        // A named `xs:simpleType` restricting a base with `xs:enumeration`
+        // facets declares a CLOSED value space (`OPERATOR_KIND`,
+        // `VALIDITY_KIND`, `PROPORTION_KIND`), so the slot is that enum.
+        if self
+            .xsd
+            .simple_types
+            .get(type_name)
+            .is_some_and(|t| !t.enumerations.is_empty())
+        {
+            return Resolved::Facet(naming::type_name(type_name));
+        }
+        // Every other named `xs:simpleType` restricts a text space with lexical
+        // facets only (`Iso8601Date`, `DateConstraintPattern`, `matchString`):
+        // still text on the wire.
         Resolved::Primitive("String")
     }
 
@@ -373,6 +437,9 @@ impl<'a> OptModel<'a> {
     fn base_decl(res: &Resolved, raw_spec: &str) -> (String, String) {
         match res {
             Resolved::Primitive(p) => ((*p).to_string(), String::new()),
+            // A simple type is never a complexType, so it never carries an
+            // `xsi:type`: the declared slot is empty, as for a primitive.
+            Resolved::Facet(n) => (n.clone(), String::new()),
             Resolved::Any => ("crate::xml::runtime::XmlAny".to_string(), String::new()),
             Resolved::Hash => (
                 "indexmap::IndexMap<String, String>".to_string(),
@@ -481,6 +548,182 @@ impl<'a> OptModel<'a> {
         out
     }
 
+    /// The closure's `xs:enumeration`-faceted simple types, name-ordered.
+    ///
+    /// These are the named simple types whose restriction fixes a closed value
+    /// space; each emits a fieldless Rust enum over the XSD's own vocabulary.
+    fn facet_types(&self) -> Vec<&'a XsdSimpleType> {
+        self.xsd
+            .simple_types
+            .values()
+            .filter(|t| !t.enumerations.is_empty())
+            .collect()
+    }
+
+    /// Every generated struct's fields as `(wire name, declared Rust type)` —
+    /// the exact pairs [`OptModel::emit_types`] writes, keyed by spec name.
+    ///
+    /// Exposed so the emitter invariants can assert what a slot is TYPED as
+    /// rather than re-deriving it, or scraping the emitted text.
+    #[must_use]
+    pub(crate) fn declared_field_types(&self) -> BTreeMap<String, Vec<(String, String)>> {
+        self.generate
+            .iter()
+            .filter(|spec| !self.enum_specs.contains(*spec))
+            .map(|spec| {
+                let fields = self
+                    .fields(spec)
+                    .into_iter()
+                    .map(|f| (f.xml.wire_name, f.decl_type))
+                    .collect();
+                (spec.clone(), fields)
+            })
+            .collect()
+    }
+
+    /// Emit the fieldless enum for one `xs:enumeration`-faceted simple type,
+    /// plus its wire accessors.
+    ///
+    /// The wire form is the facet `value` VERBATIM, so a document round-trips
+    /// byte-identically; a value outside the declared set is refused, which is
+    /// what an `xs:enumeration` facet means
+    /// (<https://www.w3.org/TR/xmlschema11-2/#rf-enumeration>).
+    fn emit_facet_enum(&self, b: &mut String, st: &XsdSimpleType) {
+        let rust = naming::type_name(&st.name);
+        let variants: Vec<(String, &XsdEnumFacet)> = st
+            .enumerations
+            .iter()
+            .map(|f| (facet_variant_ident(f), f))
+            .collect();
+        let mut seen = BTreeSet::new();
+        for (ident, facet) in &variants {
+            assert!(
+                seen.insert(ident.clone()),
+                "xs:simpleType {:?}: two xs:enumeration facets name the same Rust variant \
+                 {ident:?} (facet value {:?}) — the schema's own facet ids no longer \
+                 distinguish its values",
+                st.name,
+                facet.value
+            );
+        }
+        let _ = write!(
+            b,
+            "/// openEHR {} `{}` — an `xs:enumeration`-faceted XSD simple type\n\
+             /// restricting `{}`.\n\
+             ///\n\
+             /// The wire form is the facet value verbatim; text outside the declared set\n\
+             /// is refused by [`{rust}::from_wire`].\n\
+             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n\
+             pub enum {rust} {{\n",
+            self.target.type_label, st.name, st.base
+        );
+        for (ident, facet) in &variants {
+            match &facet.id {
+                Some(id) => {
+                    let _ = writeln!(
+                        b,
+                        "    /// The `{}` facet value (XSD facet id `{id}`).",
+                        facet.value
+                    );
+                }
+                None => {
+                    let _ = writeln!(b, "    /// The `{}` facet value.", facet.value);
+                }
+            }
+            let _ = writeln!(b, "    {ident},");
+        }
+        b.push_str("}\n\n");
+
+        let _ = write!(
+            b,
+            "impl {rust} {{\n\
+             /// Returns the `xs:enumeration` facet value this variant carries on the wire.\n\
+             pub const fn as_wire(&self) -> &'static str {{\n\
+             match self {{\n"
+        );
+        for (ident, facet) in &variants {
+            let _ = writeln!(b, "Self::{ident} => {},", rust_str_literal(&facet.value));
+        }
+        b.push_str("}\n}\n\n");
+        let _ = write!(
+            b,
+            "/// Parses one declared `xs:enumeration` facet value of `{}`.\n\
+             ///\n\
+             /// # Errors\n\
+             /// Returns [`{FACET_ERROR}`] when `text` is outside the declared facet set.\n\
+             pub fn from_wire(text: &str) -> Result<Self, {FACET_ERROR}> {{\n\
+             match text {{\n",
+            st.name
+        );
+        for (ident, facet) in &variants {
+            let _ = writeln!(
+                b,
+                "{} => Ok(Self::{ident}),",
+                rust_str_literal(&facet.value)
+            );
+        }
+        let _ = write!(
+            b,
+            "_ => Err({FACET_ERROR} {{ simple_type: {}, value: text.to_owned() }}),\n\
+             }}\n}}\n}}\n\n",
+            rust_str_literal(&st.name)
+        );
+        let _ = write!(
+            b,
+            "impl std::fmt::Display for {rust} {{\n\
+             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n\
+             f.write_str(self.as_wire())\n}}\n}}\n\n"
+        );
+    }
+
+    /// Emit the shared refusal error the facet readers return.
+    fn emit_facet_error(b: &mut String) {
+        let _ = write!(
+            b,
+            "/// Text outside the `xs:enumeration` facet set of one of this module's\n\
+             /// generated XSD simple types.\n\
+             #[derive(Debug, Clone, PartialEq, Eq)]\n\
+             pub struct {FACET_ERROR} {{\n\
+             /// The XSD simple type whose declared facet set refused the text.\n\
+             pub simple_type: &'static str,\n\
+             /// The refused text, verbatim as it appeared on the wire.\n\
+             pub value: String,\n\
+             }}\n\n\
+             impl std::fmt::Display for {FACET_ERROR} {{\n\
+             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n\
+             write!(f, \"{{:?}} is not a declared xs:enumeration value of {{}}\", self.value, self.simple_type)\n\
+             }}\n}}\n\n\
+             impl std::error::Error for {FACET_ERROR} {{}}\n\n"
+        );
+    }
+
+    /// Emit `ToXml`/`FromXml` for one faceted simple type's enum: the facet
+    /// value as element text out, the refusing reader in.
+    fn emit_facet_impls(&self, b: &mut String, st: &XsdSimpleType) {
+        let rust = naming::type_name(&st.name);
+        let prelude = self.target.prelude;
+        let _ = write!(
+            b,
+            "impl crate::xml::runtime::ToXml for {prelude}::{rust} {{\n\
+             fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, _declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
+             w.write_text_element(tag, self.as_wire())\n}}\n}}\n\n"
+        );
+        let read = if facet_base_collapses_whitespace(&st.base) {
+            "__s.trim()"
+        } else {
+            "__s.as_str()"
+        };
+        let _ = write!(
+            b,
+            "impl crate::xml::runtime::FromXml for {prelude}::{rust} {{\n\
+             fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
+             let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\n\
+             {prelude}::{rust}::from_wire({read}).map_err(|__e| crate::xml::runtime::XmlError::parse_source({}, __e))\n\
+             }}\n}}\n\n",
+            rust_str_literal(&format!("element text of {}", st.name))
+        );
+    }
+
     /// Build the [`XmlType`] for a generated spec (for the `emit_xml` impls).
     fn xml_type(&self, spec: &str) -> Option<XmlType> {
         self.xsd.types.get(spec)?;
@@ -538,6 +781,24 @@ impl<'a> OptModel<'a> {
              carries the lint bar\"\n\
              )]\n\n",
         );
+        // The faceted simple types first: they are the closure's leaf
+        // vocabularies, and the structs below declare fields of them.
+        let facets = self.facet_types();
+        if !facets.is_empty() {
+            Self::emit_facet_error(&mut b);
+        }
+        let generated_type_names: BTreeSet<String> =
+            self.generate.iter().map(|s| naming::type_name(s)).collect();
+        for st in facets {
+            let rust = naming::type_name(&st.name);
+            assert!(
+                !generated_type_names.contains(&rust),
+                "xs:simpleType {:?} and a complexType of this closure both emit the Rust type \
+                 {rust:?}",
+                st.name
+            );
+            self.emit_facet_enum(&mut b, st);
+        }
         for spec in &self.generate {
             let Some(ty) = self.xsd.types.get(spec) else {
                 continue;
@@ -629,6 +890,9 @@ impl<'a> OptModel<'a> {
              )]\n\
              use crate::xml::runtime::{ToXml, FromXml, XmlEvent, XmlError};\n\n",
         );
+        for st in self.facet_types() {
+            self.emit_facet_impls(&mut b, st);
+        }
         for spec in &self.generate {
             if let Some(ty) = self.xml_type(spec) {
                 emit_to_xml(&mut b, &ty, self.target.prelude, self.xsd, unmatched);
