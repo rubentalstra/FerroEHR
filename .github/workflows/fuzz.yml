@@ -76,7 +76,7 @@ jobs:
           cache: false
 
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-fuzz@0.13.2
 
@@ -158,7 +158,7 @@ jobs:
           cache: false
 
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           # Not in install-action's managed manifest set, so this resolves
           # through its cargo-binstall fallback against the upstream release

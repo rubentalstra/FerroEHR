@@ -273,7 +273,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: zizmor@1.29.0
       - name: Audit .github/workflows
@@ -522,7 +522,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-deny
       - run: cargo deny check
@@ -616,7 +616,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-hack
       - run: cargo hack check --rust-version --workspace --locked --all-targets
@@ -696,7 +696,7 @@ jobs:
             -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS pg_trgm;'
           PGPASSWORD=openehr psql -h localhost -U openehr -d postgres \
             -c "ALTER SYSTEM SET fsync = off" -c "ALTER SYSTEM SET synchronous_commit = off" -c "ALTER SYSTEM SET full_page_writes = off" -c "SELECT pg_reload_conf()"
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-nextest
       # The console is excluded from --all-features lanes (mutually exclusive
@@ -774,7 +774,7 @@ jobs:
           # Only ever runs on develop pushes, so save unconditionally; the
           # instrumented artifacts get their own key by construction (job id).
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-llvm-cov,cargo-nextest
       # The same two lanes as the test job (the old single `--workspace` run
@@ -1016,7 +1016,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-machete
       - run: cargo machete
@@ -1201,7 +1201,7 @@ jobs:
           cache-targets: false
       - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
         if: steps.console-cache.outputs.cache-hit != 'true'
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         if: steps.console-cache.outputs.cache-hit != 'true'
         with:
           # wasm-bindgen pinned to the workspace's wasm-bindgen version;
@@ -1290,7 +1290,7 @@ jobs:
         # cache is not release input.
         with: # zizmor: ignore[cache-poisoning]
           cache-targets: false
-      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
         with:
           tool: cargo-nextest
       # The CDR image is PACKAGED here, never compiled here (issue #335 — the
