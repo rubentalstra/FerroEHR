@@ -128,8 +128,11 @@ API, content, everything"
 - [specifications-CNF PR #5](https://github.com/openEHR/specifications-CNF/pull/5)
   "Make the tests runnable" — open since **June 2023**, unmerged. The official
   suite does not run against an arbitrary SUT out of the box.
-- `CNF/scripts/openehr_platform/*.txt` — 34 abstract pseudo-code scripts
-  (© 2017), a third representation not wired to anything.
+- `scripts/openehr_platform/*.txt` in the upstream CNF repository — 34 abstract
+  pseudo-code scripts (© 2017), a third representation not wired to anything.
+  Deliberately NOT vendored: nothing here reads them, and each one names
+  CC-BY-SA 3.0 while linking the NoDerivatives licence, a contradiction
+  reported upstream rather than carried.
 - Robot coverage is asymmetric to the schedule: robots exist for stub chapters
   (Query, Admin) and are missing for others (Demographic, Messaging).
 

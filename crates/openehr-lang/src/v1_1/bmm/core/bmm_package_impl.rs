@@ -11,17 +11,19 @@
 //! (`Package_name_delimiter` `"."`).
 //!
 //! The three container functions are implemented once here, as `pub(crate)`
-//! free functions over a `packages` map, and called from both
-//! [`BmmPackage`] and
-//! [`BmmModel`](crate::v1_1::bmm::core::bmm_model::BmmModel) — the two
-//! `BMM_PACKAGE_CONTAINER` descendants
-//! (`…bmm.bmm_model.adoc` §Inherit lists `BMM_PACKAGE_CONTAINER`).
+//! free functions over a `packages` map, and called from
+//! [`BmmPackage`], [`BmmModel`](crate::v1_1::bmm::core::bmm_model::BmmModel) —
+//! the two `BMM_PACKAGE_CONTAINER` descendants
+//! (`…bmm.bmm_model.adoc` §Inherit lists `BMM_PACKAGE_CONTAINER`) — and the
+//! [`BmmPackageContainer`] slot itself, which also carries the class's own
+//! least-rich form.
 
 use std::collections::BTreeMap;
 
 use crate::v1_1::bmm::core::bmm_class::BmmClass;
 use crate::v1_1::bmm::core::bmm_definitions::BmmDefinitionsData;
 use crate::v1_1::bmm::core::bmm_package::BmmPackage;
+use crate::v1_1::bmm::core::bmm_package_container::BmmPackageContainer;
 
 /// Splits a package path into its non-empty segments, delimited by
 /// `BMM_DEFINITIONS.Package_name_delimiter`
@@ -161,6 +163,46 @@ impl BmmPackage {
     }
 }
 
+impl BmmPackageContainer {
+    /// `BMM_PACKAGE_CONTAINER.packages`: "Child packages; keys all in upper case
+    /// for guaranteed matching" (class doc §Attributes), read through whichever
+    /// descendant this slot carries.
+    #[must_use]
+    pub fn packages(&self) -> Option<&BTreeMap<String, BmmPackage>> {
+        match self {
+            Self::BmmModel(model) => model.packages.as_ref(),
+            Self::BmmPackage(package) => package.packages.as_ref(),
+            Self::BmmPackageContainer(container) => container.packages.as_ref(),
+        }
+    }
+
+    /// `BMM_PACKAGE_CONTAINER.package_at_path`: "Package at the path `a_path`"
+    /// (`org.openehr.lang.bmm.bmm_package_container.adoc` §Functions).
+    ///
+    /// Keys are matched case-insensitively and the longest matching key prefix
+    /// wins at each level (module docs).
+    #[must_use]
+    pub fn package_at_path(&self, a_path: &str) -> Option<&BmmPackage> {
+        package_at_path_in(self.packages(), a_path)
+    }
+
+    /// `BMM_PACKAGE_CONTAINER.has_package_path`: "True if there is a package at
+    /// the path `a_path`; paths are delimited with Package_name_delimiter"
+    /// (`org.openehr.lang.bmm.bmm_package_container.adoc` §Functions).
+    #[must_use]
+    pub fn has_package_path(&self, a_path: &str) -> bool {
+        self.package_at_path(a_path).is_some()
+    }
+
+    /// `BMM_PACKAGE_CONTAINER.do_recursive_packages`: "Recursively execute
+    /// `action`, which is a procedure taking a BMM_PACKAGE argument, on all
+    /// members of packages"
+    /// (`org.openehr.lang.bmm.bmm_package_container.adoc` §Functions).
+    pub fn do_recursive_packages(&self, action: &mut dyn FnMut(&BmmPackage)) {
+        do_recursive_packages_in(self.packages(), action);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -271,6 +313,52 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["COMPOSITION"]
         );
+    }
+
+    /// The `BMM_PACKAGE_CONTAINER` slot answers the three container functions
+    /// for every descendant it can carry, INCLUDING the class's own least-rich
+    /// form — the boundary case a dispatcher over the two named descendants
+    /// alone would miss.
+    #[test]
+    fn the_package_container_slot_dispatches_over_every_form() {
+        use crate::v1_1::bmm::core::bmm_package_container::BmmPackageContainer;
+        use crate::v1_1::bmm::core::bmm_package_container::BmmPackageContainerData;
+
+        let leaf = package("composition", Vec::new(), &["COMPOSITION"]);
+        let root = package("org.openehr.rm", vec![leaf], &[]);
+        let packages: BTreeMap<String, BmmPackage> =
+            [("ORG.OPENEHR.RM".to_owned(), root.clone())].into();
+
+        let own = BmmPackageContainer::BmmPackageContainer(BmmPackageContainerData {
+            documentation: None,
+            packages: Some(packages),
+        });
+        assert!(own.has_package_path("org.openehr.rm.composition"));
+        assert_eq!(
+            own.package_at_path("org.openehr.rm").map(BmmPackage::path),
+            Some("org.openehr.rm")
+        );
+        let mut visited: Vec<String> = Vec::new();
+        own.do_recursive_packages(&mut |package| visited.push(package.name.clone()));
+        assert_eq!(
+            visited,
+            ["org.openehr.rm".to_owned(), "composition".to_owned()]
+        );
+
+        let as_package = BmmPackageContainer::BmmPackage(root);
+        assert!(as_package.has_package_path("composition"));
+        assert!(!as_package.has_package_path("ehr"));
+
+        // An empty container answers every function without a package.
+        let empty = BmmPackageContainer::BmmPackageContainer(BmmPackageContainerData {
+            documentation: None,
+            packages: None,
+        });
+        assert!(!empty.has_package_path("composition"));
+        assert!(empty.package_at_path("composition").is_none());
+        let mut none_visited = 0usize;
+        empty.do_recursive_packages(&mut |_| none_visited += 1);
+        assert_eq!(none_visited, 0);
     }
 
     #[test]

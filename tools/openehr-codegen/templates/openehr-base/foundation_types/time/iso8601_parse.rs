@@ -134,6 +134,33 @@ pub(crate) struct ParsedTime {
     pub(crate) decimal_sign_comma: bool,
 }
 
+/// A parsed ISO 8601 timezone designator (`Iso8601_timezone`): `sign` is `+1`
+/// or `-1`, `hour` is the offset hours, `minute` is absent for the partial
+/// `±hh` form, and `extended` records whether the value writes its `':'`
+/// separator (`Iso8601_timezone.is_extended`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ParsedTimezone {
+    pub(crate) sign: i32,
+    pub(crate) hour: u32,
+    pub(crate) minute: Option<u32>,
+    pub(crate) extended: bool,
+}
+
+impl ParsedTimezone {
+    /// The offset as signed minutes east of UTC — the form
+    /// [`ParsedTime::timezone`] carries. A partial `±hh` counts its absent
+    /// minute part as zero.
+    pub(crate) fn offset_minutes(self) -> i32 {
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_possible_wrap,
+            reason = "hour <= 14 and minute <= 59 by the checks in `scan_timezone` — far inside i32"
+        )]
+        let magnitude = self.hour as i32 * 60 + self.minute.unwrap_or(0) as i32;
+        self.sign * magnitude
+    }
+}
+
 /// A parsed ISO 8601 date/time: a date (possibly partial) with an optional
 /// time part (present exactly when the source carried a `T` separator).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -370,7 +397,7 @@ fn body_is_extended(body: &str) -> bool {
 
 /// True when a timezone lexeme is in extended form: `""` (unzoned), `Z` and
 /// `±hh` have no separator position; `±hh:mm` writes it, `±hhmm` does not.
-fn timezone_is_extended(tz: &str) -> bool {
+pub(crate) fn timezone_is_extended(tz: &str) -> bool {
     tz.contains(':') || tz.len() <= 3
 }
 
@@ -494,9 +521,26 @@ fn validate_time(
 /// NOTE: both invariants also require `hour > 0`, which would refuse `+00:00`
 /// while the same class defines `is_gmt` as "timezone `+0000`" — a released-text
 /// contradiction, so that clause is not enforced (reported as #2260).
-fn parse_timezone(tz: &str) -> Option<i32> {
+pub(crate) fn parse_timezone(tz: &str) -> Option<i32> {
+    Some(scan_timezone(tz)?.offset_minutes())
+}
+
+/// Decompose a timezone designator into the parts `Iso8601_timezone` publishes.
+///
+/// `Z` decomposes as `+00:00`, the equivalence the class description states
+/// ("`Z` is a literal meaning UTC (modern replacement for GMT), i.e. timezone
+/// `+0000`",
+/// `BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_timezone.adoc`
+/// §Description). The `±hh` form leaves `minute` absent — the partial case
+/// `Iso8601_timezone.is_partial` names.
+pub(crate) fn scan_timezone(tz: &str) -> Option<ParsedTimezone> {
     if tz == "Z" {
-        return Some(0);
+        return Some(ParsedTimezone {
+            sign: 1,
+            hour: 0,
+            minute: Some(0),
+            extended: true,
+        });
     }
     let sign = match tz.as_bytes().first()? {
         b'+' => 1,
@@ -505,13 +549,13 @@ fn parse_timezone(tz: &str) -> Option<i32> {
     };
     let rest = tz.get(1..)?;
     let (hh, mm) = if let Some((h, m)) = rest.split_once(':') {
-        (parse_fixed(h, 2)?, parse_fixed(m, 2)?)
+        (parse_fixed(h, 2)?, Some(parse_fixed(m, 2)?))
     } else {
         match rest.len() {
-            2 => (parse_fixed(rest.get(0..2)?, 2)?, 0),
+            2 => (parse_fixed(rest.get(0..2)?, 2)?, None),
             4 => (
                 parse_fixed(rest.get(0..2)?, 2)?,
-                parse_fixed(rest.get(2..4)?, 2)?,
+                Some(parse_fixed(rest.get(2..4)?, 2)?),
             ),
             _ => return None,
         }
@@ -521,16 +565,15 @@ fn parse_timezone(tz: &str) -> Option<i32> {
     } else {
         MAX_TIMEZONE_HOUR
     };
-    if hh > max_hour || mm > 59 {
+    if hh > max_hour || mm.is_some_and(|m| m > 59) {
         return None;
     }
-    #[expect(
-        clippy::as_conversions,
-        clippy::cast_possible_wrap,
-        reason = "hh <= 14 and mm <= 59 by the checks above — far inside i32"
-    )]
-    let minutes = sign * (hh as i32 * 60 + mm as i32);
-    Some(minutes)
+    Some(ParsedTimezone {
+        sign,
+        hour: hh,
+        minute: mm,
+        extended: timezone_is_extended(tz),
+    })
 }
 
 // ── Date/time parsing ──────────────────────────────────────────────────────────
@@ -1360,7 +1403,7 @@ fn insert_separators(compact: &str, separator: char) -> Option<String> {
 }
 
 /// Re-spell a compact `±hhmm` timezone designator as extended `±hh:mm`.
-fn insert_timezone_colon(tz: &str) -> Option<String> {
+pub(crate) fn insert_timezone_colon(tz: &str) -> Option<String> {
     Some(format!("{}:{}", tz.get(0..3)?, tz.get(3..5)?))
 }
 

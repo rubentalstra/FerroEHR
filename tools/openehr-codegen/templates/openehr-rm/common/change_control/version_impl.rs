@@ -1,8 +1,9 @@
 //! Hand-written RM spec functions of `VERSION`.
 //!
 //! The surface is `canonical_form()` over an already-serialised Version value,
-//! plus the subtype-dispatching `uid()` / `owner_id()` / `is_branch()` on the
-//! closed `VERSION` subtype set.
+//! plus the subtype-dispatching `uid()` / `owner_id()` / `is_branch()` /
+//! `preceding_version_uid()` / `lifecycle_state()` / `data()` on the closed
+//! `VERSION` subtype set.
 //!
 //! Spec authority:
 //! - RM common §"Digital Signature"
@@ -44,6 +45,7 @@
 use serde_json::Value;
 
 use crate::v1_2::common::change_control::version::Version;
+use crate::v1_2::data_types::text::dv_coded_text::DvCodedText;
 use openehr_base::v1_3::prelude::{HierObjectId, ObjectVersionId};
 
 impl<T> Version<T> {
@@ -84,6 +86,57 @@ impl<T> Version<T> {
     #[must_use]
     pub fn is_branch(&self) -> bool {
         self.uid().is_branch()
+    }
+
+    /// `VERSION.preceding_version_uid`: the identifier of the version this one
+    /// succeeds, or `None` when this is the first version.
+    ///
+    /// `VERSION` declares this abstract and each subtype effects it: an
+    /// `ORIGINAL_VERSION` stores it (`0..1`,
+    /// `UML/classes/org.openehr.rm.common.original_version.adoc` §Attributes),
+    /// an `IMPORTED_VERSION` derives it from the version it wraps
+    /// (`Post: Result = item.preceding_version_uid`,
+    /// `UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions).
+    /// The absent case is the spec's own: `VERSION.preceding_version_uid` is
+    /// documented "Void if this is the first version"
+    /// (`UML/classes/org.openehr.rm.common.version.adoc` §Functions).
+    #[must_use]
+    pub fn preceding_version_uid(&self) -> Option<&ObjectVersionId> {
+        match self {
+            Version::OriginalVersion(original) => original.preceding_version_uid.as_ref(),
+            Version::ImportedVersion(imported) => imported.preceding_version_uid(),
+        }
+    }
+
+    /// `VERSION.lifecycle_state`: the lifecycle state of the content item in
+    /// this version.
+    ///
+    /// The same dispatch: stored by an `ORIGINAL_VERSION`, derived as
+    /// `item.lifecycle_state` by an `IMPORTED_VERSION`
+    /// (`UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions).
+    #[must_use]
+    pub fn lifecycle_state(&self) -> &DvCodedText {
+        match self {
+            Version::OriginalVersion(original) => &original.lifecycle_state,
+            Version::ImportedVersion(imported) => imported.lifecycle_state(),
+        }
+    }
+
+    /// `VERSION.data`: the content of this version, or `None` when it carries
+    /// none.
+    ///
+    /// The same dispatch, over `ORIGINAL_VERSION.data`, which the spec
+    /// declares `0..1`. The absent case is a real version state rather than a
+    /// missing value: a logical delete commits "a new `ORIGINAL_VERSION` whose
+    /// data attribute is set to Void"
+    /// (`docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`
+    /// §Contributions).
+    #[must_use]
+    pub fn data(&self) -> Option<&T> {
+        match self {
+            Version::OriginalVersion(original) => original.data.as_ref(),
+            Version::ImportedVersion(imported) => imported.data(),
+        }
     }
 }
 
@@ -359,5 +412,88 @@ mod tests {
             "8849182c-82ad-4088-a07f-48ead4180515"
         );
         assert!(wrapper.is_branch());
+    }
+
+    /// The three remaining abstract functions dispatch to what the subtype
+    /// stores: an `ORIGINAL_VERSION` answers from its own attributes.
+    #[test]
+    fn an_original_version_answers_from_its_own_attributes() {
+        let mut original =
+            typed_original("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2");
+        original.preceding_version_uid = Some(
+            ObjectVersionId::new(
+                "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::1".to_owned(),
+            )
+            .expect("a well-formed identifier"),
+        );
+        let version = Version::OriginalVersion(original);
+
+        assert_eq!(
+            version.preceding_version_uid().map(ObjectVersionId::value),
+            Some("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::1")
+        );
+        assert_eq!(version.lifecycle_state().value, "complete");
+        assert_eq!(version.data(), Some(&"content".to_owned()));
+    }
+
+    /// "Void if this is the first version" — a first version reports no
+    /// predecessor, and a logically deleted version reports no data
+    /// (master06 §Contributions).
+    #[test]
+    fn the_absent_cases_are_version_states_not_missing_values() {
+        let mut original =
+            typed_original("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::1");
+        original.data = None;
+        let version = Version::OriginalVersion(original);
+
+        assert!(version.preceding_version_uid().is_none());
+        assert!(version.data().is_none());
+    }
+
+    /// An `IMPORTED_VERSION` answers from the version it WRAPS, not from its
+    /// own audit — the delegation the class table states.
+    #[test]
+    fn an_imported_version_answers_from_the_wrapped_original() {
+        let mut item = typed_original("8849182c-82ad-4088-a07f-48ead4180515::remote.example::3");
+        item.preceding_version_uid = Some(
+            ObjectVersionId::new(
+                "8849182c-82ad-4088-a07f-48ead4180515::remote.example::2".to_owned(),
+            )
+            .expect("a well-formed identifier"),
+        );
+        item.data = Some("imported content".to_owned());
+        let wrapper = Version::ImportedVersion(ImportedVersion {
+            contribution: ObjectRef::ObjectRef(ObjectRefData {
+                namespace: "local".to_owned(),
+                r#type: "CONTRIBUTION".to_owned(),
+                id: ObjectId::HierObjectId(
+                    HierObjectId::new("33333333-3333-4333-8333-333333333333".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
+            }),
+            signature: None,
+            commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
+                system_id: "local.example".to_owned(),
+                time_committed: DvDateTime {
+                    normal_status: None,
+                    normal_range: None,
+                    other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
+                    magnitude_status: None,
+                    accuracy: None,
+                    value: "2026-07-09T08:00:00Z".to_owned(),
+                },
+                change_type: coded("249", "creation"),
+                description: None,
+                committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
+            }),
+            item,
+        });
+
+        assert_eq!(
+            wrapper.preceding_version_uid().map(ObjectVersionId::value),
+            Some("8849182c-82ad-4088-a07f-48ead4180515::remote.example::2")
+        );
+        assert_eq!(wrapper.lifecycle_state().value, "complete");
+        assert_eq!(wrapper.data(), Some(&"imported content".to_owned()));
     }
 }

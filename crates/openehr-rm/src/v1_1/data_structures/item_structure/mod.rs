@@ -9,4 +9,7 @@ pub mod item_table;
 pub mod item_tree;
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod item_list_impl;
+pub mod item_single_impl;
 pub mod item_table_impl;
+pub mod item_tree_impl;

@@ -15,3 +15,15 @@ pub mod c_temporal_definitions;
 pub mod c_terminology_code;
 pub mod c_time;
 pub mod constraint_status;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod c_boolean_impl;
+pub mod c_date_impl;
+pub mod c_date_time_impl;
+pub mod c_duration_impl;
+pub mod c_ordered_impl;
+pub mod c_string_impl;
+pub mod c_temporal_definitions_impl;
+pub mod c_temporal_impl;
+pub mod c_terminology_code_impl;
+pub mod c_time_impl;

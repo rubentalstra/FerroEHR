@@ -316,16 +316,16 @@ You do not need the whole CDR to get the openEHR specifications in Rust. The
 generated specification layer is published on crates.io as eight
 independently usable crates — the same code this server runs on:
 
-| Crate                                                     | What it gives you                                                                                                                |
-|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| [`openehr-rm`](https://crates.io/crates/openehr-rm)       | The Reference Model — `COMPOSITION`, `EHR_STATUS`, `OBSERVATION`, the data structures and data types, change control             |
-| [`openehr-base`](https://crates.io/crates/openehr-base)   | BASE: the foundation + base types (identifiers, intervals, the terminology-facing types)                                         |
-| [`openehr-am`](https://crates.io/crates/openehr-am)       | The Archetype Model, both generations: AOM 1.4 and AOM 2.4                                                                       |
-| [`openehr-adl`](https://crates.io/crates/openehr-adl)     | The ADL engine: ADL2/cADL/ODIN parser, AOM2 validity catalogue, specialisation flattener, OPT2 generator, ADL 1.4 → 2 conversion |
-| [`openehr-its`](https://crates.io/crates/openehr-its)     | Canonical JSON + XML codecs, the ITS-REST contract, and the Simplified Formats (WebTemplate, FLAT, STRUCTURED)                   |
-| [`openehr-query`](https://crates.io/crates/openehr-query) | The AQL 1.1 lexer, parser and AST                                                                                                |
-| [`openehr-term`](https://crates.io/crates/openehr-term)   | The terminology model plus the bundled openEHR terminology                                                                       |
-| [`openehr-lang`](https://crates.io/crates/openehr-lang)   | The BMM/P_BMM object model and the ODIN instance reader                                                                          |
+| Crate                                                                                                                                                              | What it gives you                                                                                                                |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-rm?style=flat&logo=rust&label=openehr-rm&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-rm)          | The Reference Model — `COMPOSITION`, `EHR_STATUS`, `OBSERVATION`, the data structures and data types, change control             |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-base?style=flat&logo=rust&label=openehr-base&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-base)    | BASE: the foundation + base types (identifiers, intervals, the terminology-facing types)                                         |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-am?style=flat&logo=rust&label=openehr-am&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-am)          | The Archetype Model, both generations: AOM 1.4 and AOM 2.4                                                                       |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-adl?style=flat&logo=rust&label=openehr-adl&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-adl)       | The ADL engine: ADL2/cADL/ODIN parser, AOM2 validity catalogue, specialisation flattener, OPT2 generator, ADL 1.4 → 2 conversion |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-its?style=flat&logo=rust&label=openehr-its&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-its)       | Canonical JSON + XML codecs, the ITS-REST contract, and the Simplified Formats (WebTemplate, FLAT, STRUCTURED)                   |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-query?style=flat&logo=rust&label=openehr-query&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-query) | The AQL 1.1 lexer, parser and AST                                                                                                |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-term?style=flat&logo=rust&label=openehr-term&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-term)    | The terminology model plus the bundled openEHR terminology                                                                       |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-lang?style=flat&logo=rust&label=openehr-lang&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-lang)    | The BMM/P_BMM object model and the ODIN instance reader                                                                          |
 
 The multi-generation crates expose their generations as version-named modules
 (`openehr_rm::v1_2`, `openehr_rm::v1_1`, `openehr_am::v2_4`, …), with the

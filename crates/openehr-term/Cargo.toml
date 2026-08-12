@@ -1,6 +1,6 @@
 [package]
 name = "openehr-term"
-version = "0.0.22"
+version = "0.0.23"
 description = "openEHR TERM terminology data model, generated from BMM (generation v3_1 = TERM 3.1.0), plus the embedded official terminology XML bundle"
 edition.workspace = true
 rust-version.workspace = true
@@ -10,10 +10,26 @@ documentation = "https://docs.rs/openehr-term"
 readme = "README.md"
 keywords = ["openehr", "terminology", "healthcare", "ehr", "vocabulary"]
 categories = ["data-structures", "science"]
-include = ["src/**", "assets/**", "README.md", "LICENSE-MIT", "LICENSE-APACHE-2.0"]
+# `assets/schema/**` is deliberately absent. Those XSDs are read only by
+# `tests/it/xsd_conformance.rs`, which is not packaged, and upstream ships one
+# of them (`PropertyUnitData.xsd`) carrying an AGPL-3.0 header attributing it to
+# ADL2-tools — inside a repository whose own LICENSE is CC-BY-SA 3.0
+# (<https://github.com/openEHR/specifications-TERM/blob/master/LICENSE>).
+# We vendor byte-identically by design, so the contradiction cannot be edited
+# out; keeping the schemas out of the package removes it from the published
+# artifact instead. The data files the crate actually embeds are listed below.
+include = [
+    "src/**",
+    "assets/PROVENANCE.md",
+    "assets/*.xml",
+    "assets/*/openehr_terminology.xml",
+    "README.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE-2.0",
+]
 
 [dependencies]
-openehr-base = { path = "../openehr-base", version = "0.0.22" }
+openehr-base = { path = "../openehr-base", version = "0.0.23" }
 # Canonical-JSON (de)serialization is EMITTED manual `serde` impls on the spec
 # types (`openehr-codegen -- emit-json`, into `src/json_serde.rs`) — never a
 # derive.

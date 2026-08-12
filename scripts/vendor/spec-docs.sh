@@ -81,6 +81,14 @@ MANIFESTS=(
   'pom.xml' 'build.gradle*' 'go.mod' 'go.sum'
 )
 rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.junie' --exclude='.github' --exclude='AGENTS.md' --exclude='tmp-*')
+# CNF's abstract pseudo-code scripts are not vendored. Nothing in this
+# repository reads them — the CNF material we use is the test schedule
+# (docs/) and the Robot suites (tests/) — and every one of the 34 files
+# carries a licence header naming CC-BY-SA 3.0 while linking
+# creativecommons.org/licenses/by-nd/3.0 (NoDerivatives). Carrying a
+# self-contradicting licence statement for material we do not consume buys
+# nothing; the contradiction is reported upstream.
+rsync_args+=(--exclude='scripts/openehr_platform/')
 for manifest in "${MANIFESTS[@]}"; do
   rsync_args+=(--exclude="$manifest")
 done

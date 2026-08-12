@@ -7,4 +7,5 @@ pub mod dv_periodic_time_specification;
 pub mod dv_time_specification;
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod dv_general_time_specification_impl;
 pub mod dv_periodic_time_specification_impl;

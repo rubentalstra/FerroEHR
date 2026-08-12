@@ -12,3 +12,6 @@ pub mod p_c_complex_object_proxy;
 pub mod p_c_defined_object;
 pub mod p_c_object;
 pub mod p_c_primitive_object;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod p_c_object_impl;

@@ -11,6 +11,244 @@
     reason = "mechanically generated model text: the XSD is emitted in full under its own spec-owned element/attribute spellings, so naming, style and dead-code lints do not apply — the hand-written runtime carries the lint bar"
 )]
 
+/// Text outside the `xs:enumeration` facet set of one of this module's
+/// generated XSD simple types.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnknownFacetValue {
+    /// The XSD simple type whose declared facet set refused the text.
+    pub simple_type: &'static str,
+    /// The refused text, verbatim as it appeared on the wire.
+    pub value: String,
+}
+
+impl std::fmt::Display for UnknownFacetValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?} is not a declared xs:enumeration value of {}",
+            self.value, self.simple_type
+        )
+    }
+}
+
+impl std::error::Error for UnknownFacetValue {}
+
+/// openEHR AOM/OPT `OPERATOR_KIND` — an `xs:enumeration`-faceted XSD simple type
+/// restricting `xs:integer`.
+///
+/// The wire form is the facet value verbatim; text outside the declared set
+/// is refused by [`OperatorKind::from_wire`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum OperatorKind {
+    /// The `2001` facet value (XSD facet id `equal`).
+    Equal,
+    /// The `2002` facet value (XSD facet id `not_equal`).
+    NotEqual,
+    /// The `2003` facet value (XSD facet id `less_than_or_equal`).
+    LessThanOrEqual,
+    /// The `2004` facet value (XSD facet id `less_than`).
+    LessThan,
+    /// The `2005` facet value (XSD facet id `greater_than_or_equal`).
+    GreaterThanOrEqual,
+    /// The `2006` facet value (XSD facet id `greater_than`).
+    GreaterThan,
+    /// The `2007` facet value (XSD facet id `matches`).
+    Matches,
+    /// The `2010` facet value (XSD facet id `not`).
+    Not,
+    /// The `2011` facet value (XSD facet id `and`).
+    And,
+    /// The `2012` facet value (XSD facet id `or`).
+    Or,
+    /// The `2013` facet value (XSD facet id `xor`).
+    Xor,
+    /// The `2014` facet value (XSD facet id `implies`).
+    Implies,
+    /// The `2015` facet value (XSD facet id `for_all`).
+    ForAll,
+    /// The `2016` facet value (XSD facet id `exists`).
+    Exists,
+    /// The `2020` facet value (XSD facet id `plus`).
+    Plus,
+    /// The `2021` facet value (XSD facet id `minus`).
+    Minus,
+    /// The `2022` facet value (XSD facet id `multiply`).
+    Multiply,
+    /// The `2023` facet value (XSD facet id `divide`).
+    Divide,
+    /// The `2024` facet value (XSD facet id `exponent`).
+    Exponent,
+}
+
+impl OperatorKind {
+    /// Returns the `xs:enumeration` facet value this variant carries on the wire.
+    pub const fn as_wire(&self) -> &'static str {
+        match self {
+            Self::Equal => "2001",
+            Self::NotEqual => "2002",
+            Self::LessThanOrEqual => "2003",
+            Self::LessThan => "2004",
+            Self::GreaterThanOrEqual => "2005",
+            Self::GreaterThan => "2006",
+            Self::Matches => "2007",
+            Self::Not => "2010",
+            Self::And => "2011",
+            Self::Or => "2012",
+            Self::Xor => "2013",
+            Self::Implies => "2014",
+            Self::ForAll => "2015",
+            Self::Exists => "2016",
+            Self::Plus => "2020",
+            Self::Minus => "2021",
+            Self::Multiply => "2022",
+            Self::Divide => "2023",
+            Self::Exponent => "2024",
+        }
+    }
+
+    /// Parses one declared `xs:enumeration` facet value of `OPERATOR_KIND`.
+    ///
+    /// # Errors
+    /// Returns [`UnknownFacetValue`] when `text` is outside the declared facet set.
+    pub fn from_wire(text: &str) -> Result<Self, UnknownFacetValue> {
+        match text {
+            "2001" => Ok(Self::Equal),
+            "2002" => Ok(Self::NotEqual),
+            "2003" => Ok(Self::LessThanOrEqual),
+            "2004" => Ok(Self::LessThan),
+            "2005" => Ok(Self::GreaterThanOrEqual),
+            "2006" => Ok(Self::GreaterThan),
+            "2007" => Ok(Self::Matches),
+            "2010" => Ok(Self::Not),
+            "2011" => Ok(Self::And),
+            "2012" => Ok(Self::Or),
+            "2013" => Ok(Self::Xor),
+            "2014" => Ok(Self::Implies),
+            "2015" => Ok(Self::ForAll),
+            "2016" => Ok(Self::Exists),
+            "2020" => Ok(Self::Plus),
+            "2021" => Ok(Self::Minus),
+            "2022" => Ok(Self::Multiply),
+            "2023" => Ok(Self::Divide),
+            "2024" => Ok(Self::Exponent),
+            _ => Err(UnknownFacetValue {
+                simple_type: "OPERATOR_KIND",
+                value: text.to_owned(),
+            }),
+        }
+    }
+}
+
+impl std::fmt::Display for OperatorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_wire())
+    }
+}
+
+/// openEHR AOM/OPT `PROPORTION_KIND` — an `xs:enumeration`-faceted XSD simple type
+/// restricting `xs:integer`.
+///
+/// The wire form is the facet value verbatim; text outside the declared set
+/// is refused by [`ProportionKind::from_wire`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProportionKind {
+    /// The `0` facet value (XSD facet id `pk_ratio`).
+    PkRatio,
+    /// The `1` facet value (XSD facet id `pk_unitary`).
+    PkUnitary,
+    /// The `2` facet value (XSD facet id `pk_percent`).
+    PkPercent,
+    /// The `3` facet value (XSD facet id `pk_fraction`).
+    PkFraction,
+    /// The `4` facet value (XSD facet id `pk_integer_fraction`).
+    PkIntegerFraction,
+}
+
+impl ProportionKind {
+    /// Returns the `xs:enumeration` facet value this variant carries on the wire.
+    pub const fn as_wire(&self) -> &'static str {
+        match self {
+            Self::PkRatio => "0",
+            Self::PkUnitary => "1",
+            Self::PkPercent => "2",
+            Self::PkFraction => "3",
+            Self::PkIntegerFraction => "4",
+        }
+    }
+
+    /// Parses one declared `xs:enumeration` facet value of `PROPORTION_KIND`.
+    ///
+    /// # Errors
+    /// Returns [`UnknownFacetValue`] when `text` is outside the declared facet set.
+    pub fn from_wire(text: &str) -> Result<Self, UnknownFacetValue> {
+        match text {
+            "0" => Ok(Self::PkRatio),
+            "1" => Ok(Self::PkUnitary),
+            "2" => Ok(Self::PkPercent),
+            "3" => Ok(Self::PkFraction),
+            "4" => Ok(Self::PkIntegerFraction),
+            _ => Err(UnknownFacetValue {
+                simple_type: "PROPORTION_KIND",
+                value: text.to_owned(),
+            }),
+        }
+    }
+}
+
+impl std::fmt::Display for ProportionKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_wire())
+    }
+}
+
+/// openEHR AOM/OPT `VALIDITY_KIND` — an `xs:enumeration`-faceted XSD simple type
+/// restricting `xs:integer`.
+///
+/// The wire form is the facet value verbatim; text outside the declared set
+/// is refused by [`ValidityKind::from_wire`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ValidityKind {
+    /// The `1001` facet value (XSD facet id `mandatory`).
+    Mandatory,
+    /// The `1002` facet value (XSD facet id `optional`).
+    Optional,
+    /// The `1003` facet value (XSD facet id `disallowed`).
+    Disallowed,
+}
+
+impl ValidityKind {
+    /// Returns the `xs:enumeration` facet value this variant carries on the wire.
+    pub const fn as_wire(&self) -> &'static str {
+        match self {
+            Self::Mandatory => "1001",
+            Self::Optional => "1002",
+            Self::Disallowed => "1003",
+        }
+    }
+
+    /// Parses one declared `xs:enumeration` facet value of `VALIDITY_KIND`.
+    ///
+    /// # Errors
+    /// Returns [`UnknownFacetValue`] when `text` is outside the declared facet set.
+    pub fn from_wire(text: &str) -> Result<Self, UnknownFacetValue> {
+        match text {
+            "1001" => Ok(Self::Mandatory),
+            "1002" => Ok(Self::Optional),
+            "1003" => Ok(Self::Disallowed),
+            _ => Err(UnknownFacetValue {
+                simple_type: "VALIDITY_KIND",
+                value: text.to_owned(),
+            }),
+        }
+    }
+}
+
+impl std::fmt::Display for ValidityKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_wire())
+    }
+}
+
 /// openEHR AOM/OPT `ANNOTATION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Annotation {
@@ -299,7 +537,7 @@ pub struct CDate {
     /// The `pattern` attribute/element of the OPT `C_DATE` XSD type.
     pub pattern: Option<String>,
     /// The `timezone_validity` attribute/element of the OPT `C_DATE` XSD type.
-    pub timezone_validity: Option<String>,
+    pub timezone_validity: Option<ValidityKind>,
     /// The `range` attribute/element of the OPT `C_DATE` XSD type.
     pub range: Option<Intervalofdate>,
     /// The `assumed_value` attribute/element of the OPT `C_DATE` XSD type.
@@ -312,7 +550,7 @@ pub struct CDateTime {
     /// The `pattern` attribute/element of the OPT `C_DATE_TIME` XSD type.
     pub pattern: Option<String>,
     /// The `timezone_validity` attribute/element of the OPT `C_DATE_TIME` XSD type.
-    pub timezone_validity: Option<String>,
+    pub timezone_validity: Option<ValidityKind>,
     /// The `range` attribute/element of the OPT `C_DATE_TIME` XSD type.
     pub range: Option<Intervalofdatetime>,
     /// The `assumed_value` attribute/element of the OPT `C_DATE_TIME` XSD type.
@@ -544,7 +782,7 @@ pub struct CTime {
     /// The `pattern` attribute/element of the OPT `C_TIME` XSD type.
     pub pattern: Option<String>,
     /// The `timezone_validity` attribute/element of the OPT `C_TIME` XSD type.
-    pub timezone_validity: Option<String>,
+    pub timezone_validity: Option<ValidityKind>,
     /// The `range` attribute/element of the OPT `C_TIME` XSD type.
     pub range: Option<Intervaloftime>,
     /// The `assumed_value` attribute/element of the OPT `C_TIME` XSD type.
@@ -575,7 +813,7 @@ pub struct ExprBinaryOperator {
     /// The `type` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub r#type: String,
     /// The `operator` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
-    pub operator: String,
+    pub operator: OperatorKind,
     /// The `precedence_overridden` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub precedence_overridden: bool,
     /// The `left_operand` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
@@ -621,7 +859,7 @@ pub struct ExprUnaryOperator {
     /// The `type` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
     pub r#type: String,
     /// The `operator` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
-    pub operator: String,
+    pub operator: OperatorKind,
     /// The `precedence_overridden` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
     pub precedence_overridden: bool,
     /// The `operand` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.

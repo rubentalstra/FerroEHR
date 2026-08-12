@@ -12,3 +12,4 @@ pub mod pathable;
 // hand-written modules (spec behaviour), auto-declared:
 pub mod archetyped_impl;
 pub mod feeder_audit_details_impl;
+pub mod pathable_impl;

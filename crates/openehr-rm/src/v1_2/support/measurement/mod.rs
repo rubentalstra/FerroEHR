@@ -3,3 +3,6 @@
 //! The openEHR spec package `v1_2/support/measurement` — generated module tree.
 
 pub mod measurement_service;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod measurement_service_impl;

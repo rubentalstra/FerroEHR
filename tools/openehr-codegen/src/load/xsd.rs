@@ -5,7 +5,8 @@
 //! which properties are XML **attributes** vs child **elements**, the child
 //! **order** (canonical XML is order-sensitive), the inheritance `base`, and the
 //! `abstract` flag. From these it derives a subtype index for `xsi:type`
-//! polymorphic dispatch.
+//! polymorphic dispatch. Named `xs:simpleType` definitions are read alongside
+//! them, carrying the `xs:enumeration` facets that fix a closed value space.
 //!
 //! Each caller curates its OWN conflict-free file set — the RM *instance*
 //! closure (`BaseTypes`, Structure, Content, Composition, …), the AM/OPT
@@ -29,6 +30,34 @@ pub(crate) struct XsdModel {
     /// Target XML namespace (`http://schemas.openehr.org/v1` or `…/v2`).
     pub namespace: String,
     pub types: BTreeMap<String, XsdType>,
+    /// Named `xs:simpleType` definitions, keyed by name.
+    pub simple_types: BTreeMap<String, XsdSimpleType>,
+}
+
+/// One named `xs:simpleType` — its `xs:restriction` base and the
+/// `xs:enumeration` facets that restriction declares.
+///
+/// Only the enumeration facets are carried, because they are the ones that fix
+/// a CLOSED value space the emitter can turn into a Rust enum; the lexical
+/// facets the same schemas use (`xs:pattern` on `Iso8601Date`,
+/// `DateConstraintPattern`, …) restrict a text space that stays text.
+pub(crate) struct XsdSimpleType {
+    pub name: String,
+    /// The `xs:restriction` `base` (`xs:integer`, `xs:string`, …), empty when
+    /// the type is an `xs:union`/`xs:list` rather than a restriction.
+    pub base: String,
+    /// The declared `xs:enumeration` facets, in declaration order.
+    pub enumerations: Vec<XsdEnumFacet>,
+}
+
+/// One `<xs:enumeration>` facet of a named simple type.
+pub(crate) struct XsdEnumFacet {
+    /// The facet's `value` — the lexical form a document carries.
+    pub value: String,
+    /// The facet's `id` attribute. The openEHR schemas annotate every
+    /// enumeration facet with one (`<xs:enumeration value="2001" id="equal"/>`),
+    /// which names the value in the schema's own vocabulary.
+    pub id: Option<String>,
 }
 
 /// One `xs:complexType` (its *local* attributes/elements — inheritance is via
@@ -105,8 +134,10 @@ impl XsdModel {
             }
         }
 
-        // Pass 2: the complexTypes, with every group reference expanded in place.
+        // Pass 2: the complexTypes, with every group reference expanded in
+        // place, plus the named simpleTypes.
         let mut types: BTreeMap<String, XsdType> = BTreeMap::new();
+        let mut simple_types: BTreeMap<String, XsdSimpleType> = BTreeMap::new();
         let mut namespace = String::new();
         for path in paths {
             let text = std::fs::read_to_string(path)
@@ -119,15 +150,29 @@ impl XsdModel {
             {
                 namespace = ns.to_string();
             }
-            for node in root.children().filter(|n| local(n) == "complexType") {
-                if let Some(t) = parse_complex_type(node, &groups)
-                    .map_err(|e| format!("{}: {e}", path.display()))?
-                {
-                    types.entry(t.name.clone()).or_insert(t);
+            for node in root.children().filter(roxmltree::Node::is_element) {
+                match local(&node) {
+                    "complexType" => {
+                        if let Some(t) = parse_complex_type(node, &groups)
+                            .map_err(|e| format!("{}: {e}", path.display()))?
+                        {
+                            types.entry(t.name.clone()).or_insert(t);
+                        }
+                    }
+                    "simpleType" => {
+                        if let Some(t) = parse_simple_type(node) {
+                            simple_types.entry(t.name.clone()).or_insert(t);
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
-        Ok(Self { namespace, types })
+        Ok(Self {
+            namespace,
+            types,
+            simple_types,
+        })
     }
 
     /// The flattened (ancestor-first) attributes + elements for a concrete type,
@@ -318,6 +363,43 @@ fn parse_complex_type(
         .expand_attributes(&attrs, &mut Vec::new(), &mut ty.attributes)
         .map_err(|e| format!("complexType {name:?}: {e}"))?;
     Ok(Some(ty))
+}
+
+/// Parse one named `xs:simpleType`: its `xs:restriction` base and the
+/// `xs:enumeration` facets declared under it.
+///
+/// An `xs:union`/`xs:list` definition has no restriction, so it yields an empty
+/// base and no facets — it is still recorded, because the name exists in the
+/// closure and a slot may reference it.
+fn parse_simple_type(node: roxmltree::Node) -> Option<XsdSimpleType> {
+    let name = node.attribute("name")?;
+    let restriction = node
+        .children()
+        .filter(roxmltree::Node::is_element)
+        .find(|c| local(c) == "restriction");
+    let Some(restriction) = restriction else {
+        return Some(XsdSimpleType {
+            name: name.to_owned(),
+            base: String::new(),
+            enumerations: Vec::new(),
+        });
+    };
+    let enumerations = restriction
+        .children()
+        .filter(roxmltree::Node::is_element)
+        .filter(|f| local(f) == "enumeration")
+        .filter_map(|f| {
+            f.attribute("value").map(|value| XsdEnumFacet {
+                value: value.to_owned(),
+                id: f.attribute("id").map(str::to_owned),
+            })
+        })
+        .collect();
+    Some(XsdSimpleType {
+        name: name.to_owned(),
+        base: restriction.attribute("base").unwrap_or("").to_owned(),
+        enumerations,
+    })
 }
 
 /// Collect the element/attribute content directly under a container

@@ -1533,10 +1533,12 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
         .join("../../crates")
         .join(comp.comp.crate_name)
         .join("src");
-    let mut realized: Vec<(&str, BTreeMap<String, BTreeSet<String>>)> = Vec::new();
+    /// Per class: the functions the generation DECLARES, and those it realizes.
+    type ClassFunctions = BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)>;
+    let mut realized: Vec<(&str, ClassFunctions)> = Vec::new();
     for generation in &comp.generations {
         let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;
-        let mut per_class: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        let mut per_class: ClassFunctions = BTreeMap::new();
         for unit in &generation.units {
             for (name, class) in &unit.schema.classes {
                 let stem = name.to_lowercase();
@@ -1544,16 +1546,23 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
                     continue;
                 };
                 let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
+                let declared: BTreeSet<String> = class.functions.iter().cloned().collect();
                 let found = class
                     .functions
                     .iter()
                     .filter(|f| {
+                        // Both spellings: a BMM name that is a Rust keyword is
+                        // realized as a raw identifier (`fn r#type(`).
                         let item = format!("fn {f}(");
-                        sibling.contains(&item) || own.contains(&item)
+                        let raw = format!("fn r#{f}(");
+                        sibling.contains(&item)
+                            || own.contains(&item)
+                            || sibling.contains(&raw)
+                            || own.contains(&raw)
                     })
                     .cloned()
                     .collect();
-                per_class.insert(name.clone(), found);
+                per_class.insert(name.clone(), (declared, found));
             }
         }
         realized.push((generation.spec.module, per_class));
@@ -1561,14 +1570,21 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
     let mut divergent = Vec::new();
     for (i, (module, classes)) in realized.iter().enumerate() {
         for (other_module, other_classes) in realized.iter().skip(i + 1) {
-            for (class, functions) in classes {
-                let Some(other) = other_classes.get(class) else {
+            for (class, (_, functions)) in classes {
+                let Some((other_declared, other_found)) = other_classes.get(class) else {
                     continue;
                 };
-                for f in functions.difference(other) {
-                    divergent.push(format!(
-                        "{class}.{f}: realized in {module}, missing in {other_module}"
-                    ));
+                // Only a function BOTH generations declare can diverge. A
+                // generation pair like AM's `v1_4`/`v2_4` is two different
+                // specifications sharing class names, so a function one of
+                // them never declares is not a gap in the other — comparing
+                // against the realized set alone reported nine of those.
+                for f in functions.intersection(other_declared) {
+                    if !other_found.contains(f) {
+                        divergent.push(format!(
+                            "{class}.{f}: realized in {module}, missing in {other_module}"
+                        ));
+                    }
                 }
             }
         }
@@ -1672,8 +1688,14 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                 let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
                 let rust_type = naming::type_name(name);
                 for function in &class.functions {
+                    // A BMM name that is a Rust keyword is realized as a RAW
+                    // identifier (`BMM_CLASS.type` → `pub fn r#type(`), so the
+                    // witness has to accept both spellings or it can never
+                    // credit those functions at all.
                     let item = format!("fn {function}(");
-                    if sibling.contains(&item) || own.contains(&item) {
+                    let raw_item = format!("fn r#{function}(");
+                    let realized = |body: &str| body.contains(&item) || body.contains(&raw_item);
+                    if realized(sibling) || realized(own) {
                         continue;
                     }
                     // A method can be realized by a MACRO applied elsewhere in the
@@ -1684,7 +1706,7 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                     // drops a real gap (#2247).
                     if bodies
                         .values()
-                        .any(|body| body.contains(&item) && targets_type(body, &rust_type))
+                        .any(|body| realized(body) && targets_type(body, &rust_type))
                     {
                         continue;
                     }
@@ -1698,11 +1720,20 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
     Ok(missing)
 }
 
-/// Every `.rs` file under `dir` as file-stem → body, generated and hand-written
-/// alike (the realization check reads both: an accessor may be emitted on the
-/// struct or written in its behaviour sibling).
+/// Every `.rs` file under `dir` as file-stem → the CONCATENATED bodies of every
+/// file with that stem, generated and hand-written alike (the realization check
+/// reads both: an accessor may be emitted on the struct or written in its
+/// behaviour sibling).
+///
+/// Concatenated rather than inserted, because a stem is not unique within a
+/// generation: `openehr-lang`'s `v1_1` carries `bmm/core/bmm_class_impl.rs`
+/// AND `bmm3/core/entity/bmm_class_impl.rs` (likewise `bmm_type_impl` and
+/// `bmm_model_impl`). Keeping one body per stem dropped whichever file the
+/// directory walk reached second — reporting 36 already-realized `v1_1`
+/// functions as gaps, hiding the losing file's real gaps, and making the result
+/// depend on filesystem order rather than on the tree.
 fn rust_bodies_by_stem(dir: &std::path::Path) -> Result<BTreeMap<String, String>, Error> {
-    let mut out = BTreeMap::new();
+    let mut out: BTreeMap<String, String> = BTreeMap::new();
     if !dir.exists() {
         return Ok(out);
     }
@@ -1721,9 +1752,113 @@ fn rust_bodies_by_stem(dir: &std::path::Path) -> Result<BTreeMap<String, String>
                 continue;
             };
             let body = std::fs::read_to_string(&path).map_err(|e| Error::from(e.to_string()))?;
-            out.insert(stem.to_owned(), body);
+            let slot = out.entry(stem.to_owned()).or_default();
+            slot.push('\n');
+            slot.push_str(&body);
         }
     }
+    Ok(out)
+}
+
+/// The XSD-driven closures `emit-opt`/`emit-aom2` generate, each as
+/// `(module name, schema files)`.
+fn xsd_closures() -> [(&'static str, Vec<std::path::PathBuf>); 3] {
+    let its = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-its");
+    let v1_all = its.join("schemas/xml/its-xml-1.0.2-nsv1/ALL");
+    let aom2 = its.join("schemas/xml/its-xml-1.0.2-nsv1/AOM2");
+    [
+        ("opt14", crate::load::xsd::am_files_v1(&v1_all)),
+        ("aom2", crate::load::xsd::aom2_files(&aom2)),
+        ("aom2_model", crate::load::xsd::aom2_model_files(&aom2)),
+    ]
+}
+
+/// An `xs:enumeration`-faceted simple type an XSD-driven closure carries as
+/// free text rather than as the closed value space the facet declares.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UntypedFacet {
+    /// The emission closure (`opt14`, `aom2`, `aom2_model`).
+    pub closure: String,
+    /// The named `xs:simpleType` at fault.
+    pub simple_type: String,
+    /// Which property broke.
+    pub problem: &'static str,
+    /// The slot or Rust name the problem was observed at.
+    pub detail: String,
+}
+
+/// Every `xs:enumeration`-faceted simple type of an XSD-driven closure that the
+/// emitter does not carry as a typed enum.
+///
+/// Two properties, both of which a re-vendoring could silently break: the
+/// closure's faceted simple types each emit a fieldless enum, and every element
+/// slot declared with one is typed to that enum rather than falling back to
+/// `String` — which would make an out-of-range value indistinguishable from a
+/// declared one.
+///
+/// The base/rm resolution maps are deliberately empty: a simple type is never a
+/// key of either (they hold complexType class names), so the partition cannot
+/// affect facet emission, while generating every complexType widens the slot
+/// sweep instead of narrowing it.
+///
+/// # Errors
+/// When a closure's schema files cannot be read or parsed.
+pub fn untyped_enumeration_facets() -> Result<Vec<UntypedFacet>, Error> {
+    let targets = [
+        &crate::render::emit_opt::OPT_TARGET,
+        &crate::render::emit_opt::AOM2_TARGET,
+        &crate::render::emit_opt::AOM2_MODEL_TARGET,
+    ];
+    let empty = BTreeMap::new();
+    let mut out = Vec::new();
+    for ((name, files), target) in xsd_closures().into_iter().zip(targets) {
+        let xsd = crate::load::xsd::XsdModel::parse_files(&files).map_err(Error::from)?;
+        let model = crate::render::emit_opt::OptModel::new(&xsd, &empty, &empty, target);
+        let emitted = model.emit_types();
+        let faceted: BTreeMap<&str, String> = xsd
+            .simple_types
+            .values()
+            .filter(|t| !t.enumerations.is_empty())
+            .map(|t| (t.name.as_str(), naming::type_name(&t.name)))
+            .collect();
+
+        for (spec, rust) in &faceted {
+            if !emitted.contains(&format!("pub enum {rust} {{")) {
+                out.push(UntypedFacet {
+                    closure: name.to_owned(),
+                    simple_type: (*spec).to_owned(),
+                    problem: "the faceted simple type emits no typed enum",
+                    detail: rust.clone(),
+                });
+            }
+        }
+
+        let declared = model.declared_field_types();
+        for (spec, fields) in &declared {
+            let by_wire: BTreeMap<&str, &str> = fields
+                .iter()
+                .map(|(w, d)| (w.as_str(), d.as_str()))
+                .collect();
+            for elem in xsd.flattened(spec).1 {
+                let Some(rust) = faceted.get(elem.type_name.as_str()) else {
+                    continue;
+                };
+                if !by_wire
+                    .get(elem.name.as_str())
+                    .is_some_and(|d| d.contains(rust.as_str()))
+                {
+                    out.push(UntypedFacet {
+                        closure: name.to_owned(),
+                        simple_type: elem.type_name.clone(),
+                        problem: "an element slot of a faceted simple type is not typed to its enum",
+                        detail: format!("{spec}.{}", elem.name),
+                    });
+                }
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
     Ok(out)
 }
 
@@ -1759,17 +1894,8 @@ pub struct LostVariant {
 /// # Errors
 /// When a closure's schema files cannot be read or parsed.
 pub fn lost_dispatch_variants() -> Result<Vec<LostVariant>, Error> {
-    let its = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-its");
-    let v1_all = its.join("schemas/xml/its-xml-1.0.2-nsv1/ALL");
-    let aom2 = its.join("schemas/xml/its-xml-1.0.2-nsv1/AOM2");
-    let closures = [
-        ("opt14", crate::load::xsd::am_files_v1(&v1_all)),
-        ("aom2", crate::load::xsd::aom2_files(&aom2)),
-        ("aom2_model", crate::load::xsd::aom2_model_files(&aom2)),
-    ];
-
     let mut out = Vec::new();
-    for (name, files) in closures {
+    for (name, files) in xsd_closures() {
         let model = crate::load::xsd::XsdModel::parse_files(&files).map_err(Error::from)?;
         let slot_types: BTreeSet<String> = model
             .types

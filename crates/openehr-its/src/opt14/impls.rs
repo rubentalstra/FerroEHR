@@ -14,6 +14,75 @@
 )]
 use crate::xml::runtime::{FromXml, ToXml, XmlError, XmlEvent};
 
+impl crate::xml::runtime::ToXml for crate::opt14::types::OperatorKind {
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        _declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        w.write_text_element(tag, self.as_wire())
+    }
+}
+
+impl crate::xml::runtime::FromXml for crate::opt14::types::OperatorKind {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        crate::opt14::types::OperatorKind::from_wire(__s.trim()).map_err(|__e| {
+            crate::xml::runtime::XmlError::parse_source("element text of OPERATOR_KIND", __e)
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for crate::opt14::types::ProportionKind {
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        _declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        w.write_text_element(tag, self.as_wire())
+    }
+}
+
+impl crate::xml::runtime::FromXml for crate::opt14::types::ProportionKind {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        crate::opt14::types::ProportionKind::from_wire(__s.trim()).map_err(|__e| {
+            crate::xml::runtime::XmlError::parse_source("element text of PROPORTION_KIND", __e)
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for crate::opt14::types::ValidityKind {
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        _declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        w.write_text_element(tag, self.as_wire())
+    }
+}
+
+impl crate::xml::runtime::FromXml for crate::opt14::types::ValidityKind {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        crate::opt14::types::ValidityKind::from_wire(__s.trim()).map_err(|__e| {
+            crate::xml::runtime::XmlError::parse_source("element text of VALIDITY_KIND", __e)
+        })
+    }
+}
+
 impl crate::xml::runtime::ToXml for crate::opt14::types::Annotation {
     fn xml_type_name(&self) -> &'static str {
         "ANNOTATION"
