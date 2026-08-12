@@ -68,15 +68,27 @@ jobs:
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
         run: bash scripts/site/build.sh --dev-only       # writes ./_site
-      - name: Link-check gate (built HTML + external links)
+      - name: Link-check gate (internal links only — blocking)
+        # `--offline` blocks network requests, so this checks exactly the
+        # property this repository controls: that every relative and absolute
+        # in-site link resolves inside the built tree. A broken cross-reference
+        # is a real defect and this is the only thing that catches it.
+        #
+        # External reachability is NOT checked here, deliberately. A remote host
+        # rate-limiting or resetting a CI runner's connection says nothing about
+        # the change under review, and it failed two consecutive unrelated pull
+        # requests on links that return 200 when fetched directly (#2287). A
+        # gate that goes red for reasons the author cannot fix or influence
+        # teaches people to merge past red, which costs more than the check is
+        # worth. External links move to link-check-external.yml, which reports
+        # somewhere a human reads instead of blocking a merge.
+        #
         # The deployed site is served at the ferroehr.eu apex ROOT, so absolute
         # /docs/... links resolve against _site itself — no prefixed check tree
-        # is needed. The site's own public origin is excluded: those URLs are
-        # the very tree being checked locally (circular before first deploy).
+        # is needed.
         run: |
-          lychee --no-progress --max-retries 2 --timeout 20 --exclude-loopback \
+          lychee --offline --no-progress --exclude-loopback \
             --root-dir "$PWD/_site" \
-            --exclude '^https://ferroehr\.eu' \
             './_site/**/*.html'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
