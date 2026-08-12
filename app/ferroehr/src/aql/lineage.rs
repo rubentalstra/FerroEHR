@@ -67,14 +67,60 @@ impl ArchetypeKey {
     /// (an at/id-code, an arbitrary string).
     #[must_use]
     pub fn from_hrid(hrid: &str) -> Option<Self> {
-        let parsed = parse_hrid(hrid).ok()?;
-        let major: i32 = parsed.release_version.split('.').next()?.parse().ok()?;
-        let entity = format!(
-            "{}-{}-{}",
-            parsed.rm_publisher, parsed.rm_package, parsed.rm_class
-        );
-        Some(Self::new(&entity, &parsed.concept_id, major))
+        decompose_hrid(hrid).map(|q| q.key)
     }
+}
+
+/// An archetype identifier decomposed for matching.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueriedArchetype {
+    /// The interface key the identifier resolves to.
+    pub key: ArchetypeKey,
+    /// True when the version is the ADL 1.4 major-only form (`.v1`) rather
+    /// than the AOM2-era physical form (`.v1.0.0`).
+    ///
+    /// Only in the 1.4 form do the `-` segments of a `domain_concept` carry
+    /// specialisation (AM `AOM2` master07.05 §Physical Archetype Identifier),
+    /// so a concept-prefix match is meaningful there and nowhere else.
+    pub legacy_form: bool,
+}
+
+/// Decompose an archetype HRID in either era's form.
+///
+/// This is the ONE reading of an archetype identifier in the query path: the
+/// lineage index and the SQL predicate both go through it, so a form one of
+/// them accepts cannot be a form the other silently declines.
+///
+/// `None` when the text is not an archetype HRID at all (an at/id-code, an
+/// arbitrary string).
+#[must_use]
+pub fn decompose_hrid(hrid: &str) -> Option<QueriedArchetype> {
+    let parsed = parse_hrid(hrid).ok()?;
+    let major: i32 = parsed.release_version.split('.').next()?.parse().ok()?;
+    let entity = format!(
+        "{}-{}-{}",
+        parsed.rm_publisher, parsed.rm_package, parsed.rm_class
+    );
+    Some(QueriedArchetype {
+        key: ArchetypeKey::new(&entity, &parsed.concept_id, major),
+        legacy_form: version_is_major_only(hrid),
+    })
+}
+
+/// True when the identifier's own text carries a major-only version (`.v1`)
+/// rather than the physical `.v1.0.0` form.
+///
+/// The distinction has to come from the source text: `parse_hrid` normalises
+/// every version to `major.minor.patch`, so a parsed `.v1` and a parsed
+/// `.v1.0.0` are indistinguishable afterwards — and it is exactly `.v1` that
+/// licenses the ADL 1.4 concept-prefix match.
+fn version_is_major_only(hrid: &str) -> bool {
+    let Some(version) = hrid.rsplit_once(".v").map(|(_, v)| v) else {
+        return false;
+    };
+    // A `-rc`/`-alpha`/`-beta` build suffix is not part of the version number.
+    let numeric = version.split('-').next().unwrap_or_default();
+    !numeric.is_empty() && !numeric.contains('.')
 }
 
 /// The stored specialisation graph: for every archetype identity, the stored

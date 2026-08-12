@@ -234,6 +234,42 @@ impl Harness {
         }
     }
 
+    /// Explicit wait on an `XPath` that additionally requires the element to be
+    /// CLICKABLE — displayed and enabled — before returning it.
+    ///
+    /// A control the console disables until its form is valid is already
+    /// PRESENT, so [`Self::wait_xpath`] hands it back and the click is
+    /// INTERCEPTED by whatever sits above it. That is an error rather than a
+    /// lost interaction, so the re-click loop other journeys use for
+    /// pre-hydration clicks does not cover it — the condition has to be part of
+    /// the wait.
+    ///
+    /// # Panics
+    /// When the element never becomes clickable.
+    pub(crate) async fn wait_clickable_xpath(&self, xpath: &str) -> WebElement {
+        match self
+            .driver
+            .query(By::XPath(xpath))
+            .and_clickable()
+            .wait(Duration::from_secs(15), Duration::from_millis(200))
+            .first()
+            .await
+        {
+            Ok(element) => element,
+            Err(e) => {
+                let url = self
+                    .driver
+                    .current_url()
+                    .await
+                    .map(|u| u.to_string())
+                    .unwrap_or_default();
+                let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
+                drop(self.driver.screenshot(std::path::Path::new(&path)).await);
+                panic!("waiting for xpath `{xpath}` to become clickable at {url}: {e}");
+            }
+        }
+    }
+
     /// Wait until the current URL contains `fragment` (redirect chains).
     ///
     /// # Panics

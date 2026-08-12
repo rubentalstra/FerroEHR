@@ -3,6 +3,12 @@
 //! strings.
 //!
 //! Implements `FromServerFnError` per the Leptos book (`server/25`).
+//!
+//! NOTE: the variants carry their cause as text because this type crosses the
+//! server-fn boundary — `FromServerFnError` requires `Serialize`/`Deserialize`
+//! (Leptos book `server/25`), which no underlying `reqwest` or parser error
+//! implements, so an `#[source]` here would be unrepresentable rather than
+//! merely inconvenient.
 
 use serde::{Deserialize, Serialize};
 

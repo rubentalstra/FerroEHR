@@ -1726,3 +1726,96 @@ fn rust_bodies_by_stem(dir: &std::path::Path) -> Result<BTreeMap<String, String>
     }
     Ok(out)
 }
+
+/// A place where the concrete-only `xsi:type` reading would LOSE a document
+/// shape: a concrete type a slot must be able to carry that is missing from
+/// the variant set emitted for that slot.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct LostVariant {
+    /// The emission closure (`opt14`, `aom2`, `aom2_model`).
+    pub closure: String,
+    /// The slot's declared type — the dispatch enum's base.
+    pub declared: String,
+    /// The abstract type sitting between `declared` and the lost variant.
+    pub via_abstract: String,
+    /// The type at fault.
+    pub lost: String,
+    /// Which of the two properties broke.
+    pub problem: &'static str,
+}
+
+/// Every concrete type an XSD-driven closure's dispatch enums would fail to
+/// carry, reading `xsi:type` variants as CONCRETE descendants only.
+///
+/// A type declared `abstract` is not a legal `xsi:type` value, so it is
+/// correctly absent from a slot's variant set — but each of its CONCRETE
+/// descendants is legal there and must be present. The two facts are
+/// independent: the second is what guarantees the concrete-only reading
+/// discards no document shape, and it is the one worth checking, because the
+/// closures are full of slots typed above an abstract type (`EXPR_ITEM` over
+/// `EXPR_OPERATOR`, `C_OBJECT` over `C_DOMAIN_TYPE`, `OBJECT_ID` over
+/// `UID_BASED_ID`) rather than free of them (#2271).
+///
+/// # Errors
+/// When a closure's schema files cannot be read or parsed.
+pub fn lost_dispatch_variants() -> Result<Vec<LostVariant>, Error> {
+    let its = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-its");
+    let v1_all = its.join("schemas/xml/its-xml-1.0.2-nsv1/ALL");
+    let aom2 = its.join("schemas/xml/its-xml-1.0.2-nsv1/AOM2");
+    let closures = [
+        ("opt14", crate::load::xsd::am_files_v1(&v1_all)),
+        ("aom2", crate::load::xsd::aom2_files(&aom2)),
+        ("aom2_model", crate::load::xsd::aom2_model_files(&aom2)),
+    ];
+
+    let mut out = Vec::new();
+    for (name, files) in closures {
+        let model = crate::load::xsd::XsdModel::parse_files(&files).map_err(Error::from)?;
+        let slot_types: BTreeSet<String> = model
+            .types
+            .values()
+            .flat_map(|owner| {
+                let (attrs, elems) = model.flattened(&owner.name);
+                attrs
+                    .into_iter()
+                    .map(|a| a.type_name)
+                    .chain(elems.into_iter().map(|e| e.type_name))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+
+        for declared in &slot_types {
+            let variants: BTreeSet<String> = model.descendants(declared).into_iter().collect();
+            for abstract_ty in model.types.values().filter(|t| t.is_abstract) {
+                if !model.is_a(&abstract_ty.name, declared) {
+                    continue;
+                }
+                // The abstract type itself is correctly absent; every concrete
+                // type BELOW it is a shape a document can present at this slot.
+                for concrete in model.descendants(&abstract_ty.name) {
+                    if !variants.contains(&concrete) {
+                        out.push(LostVariant {
+                            closure: name.to_owned(),
+                            declared: declared.clone(),
+                            via_abstract: abstract_ty.name.clone(),
+                            lost: concrete,
+                            problem: "a concrete descendant is missing from the variant set",
+                        });
+                    }
+                }
+                if variants.contains(&abstract_ty.name) {
+                    out.push(LostVariant {
+                        closure: name.to_owned(),
+                        declared: declared.clone(),
+                        via_abstract: abstract_ty.name.clone(),
+                        lost: abstract_ty.name.clone(),
+                        problem: "an abstract type appears as an xsi:type variant",
+                    });
+                }
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    Ok(out)
+}

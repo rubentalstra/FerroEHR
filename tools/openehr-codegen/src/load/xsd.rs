@@ -47,14 +47,11 @@ pub(crate) struct XsdType {
 #[derive(Clone)]
 pub(crate) struct XsdAttr {
     pub name: String,
-    /// The declared `type` of the XSD attribute, loaded for completeness: the
-    /// emitters type an attribute from the BMM property it corresponds to, not
-    /// from the schema, so nothing reads this yet.
-    #[expect(
-        dead_code,
-        reason = "the LOAD stage records the XSD attribute declaration in full; \
-                  attribute typing comes from the BMM side of the merge"
-    )]
+    /// The declared `type` of the XSD attribute.
+    ///
+    /// The emitters type an attribute from the BMM property it corresponds to
+    /// rather than from the schema; this is read by the closure invariants,
+    /// which ask what a slot's declared type is.
     pub type_name: String,
     pub required: bool,
 }

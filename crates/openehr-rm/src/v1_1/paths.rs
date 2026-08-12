@@ -1086,18 +1086,19 @@ impl fmt::Display for VersionLocator {
     }
 }
 
-/// A parsed `top_level_structure_locator`: an optional `EHR` attribute name and
-/// an optional versioned-object reference.
+/// A parsed `top_level_structure_locator`: an `EHR` attribute name and an
+/// optional versioned-object reference.
 ///
 /// Master11 writes locators as `compositions/<uid-or-OVID>` or `directory`.
-///
-/// The attribute-less short form — the versioned-object id following the
-/// `ehr_id` directly — is ALSO accepted, and no released form defines it: no
-/// openEHR spec governs that acceptance, it is our own extension (#2270).
+/// The attribute is not optional: BASE `master11-paths` §"EHR Reference URIs"
+/// enumerates the locator's values — "The possible values for
+/// `top_level_structure_locator` come from attribute names of the class `EHR`
+/// … namely `compositions`, `directory` etc." — so a versioned-object id
+/// standing where the attribute belongs does not name a top-level structure.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopLevelLocator {
-    /// The `EHR` attribute name (`compositions`, `directory`, …), if present.
-    pub attribute: Option<String>,
+    /// The `EHR` attribute name (`compositions`, `directory`, …).
+    pub attribute: String,
     /// The versioned-object reference, if present (absent for e.g. `directory`).
     pub object: Option<VersionLocator>,
 }
@@ -1195,9 +1196,7 @@ impl fmt::Display for EhrUri {
             parts.push(ehr.to_string());
         }
         if let Some(loc) = &self.locator {
-            if let Some(attr) = &loc.attribute {
-                parts.push(attr.clone());
-            }
+            parts.push(loc.attribute.clone());
             if let Some(obj) = &loc.object {
                 parts.push(obj.to_string());
             }
@@ -1278,18 +1277,18 @@ fn parse_locator_and_path(
     if segs.is_empty() {
         return Ok((None, None));
     }
-    let (attribute, rest): (Option<String>, &[&str]) = match segs.split_first() {
-        Some((&first, tail)) if is_ehr_locator_attribute(first) => (Some(first.to_owned()), tail),
-        _ => (None, segs.as_slice()),
-    };
+    let (first, rest) = segs.split_at(1);
+    // The locator's first segment is an `EHR` attribute name — master11
+    // §"EHR Reference URIs" enumerates the possible values, so anything else
+    // (a bare versioned-object id included) names no top-level structure.
+    let first = first.first().copied().unwrap_or_default();
+    if !is_ehr_locator_attribute(first) {
+        return Err(EhrUriError::UnrecognisedLocator(first.to_owned()));
+    }
+    let attribute = first.to_owned();
     let (object, item_segs): (Option<VersionLocator>, &[&str]) = match rest.split_first() {
         Some((&head, tail)) if looks_like_version_id(head) => {
             (Some(parse_version_locator(head)?), tail)
-        }
-        Some((&head, _)) if attribute.is_none() => {
-            // No `EHR` attribute name and no version id → nothing identifies a
-            // top-level structure.
-            return Err(EhrUriError::UnrecognisedLocator(head.to_owned()));
         }
         _ => (None, rest),
     };
@@ -1765,28 +1764,61 @@ mod tests {
         s.parse().unwrap()
     }
 
-    /// The exact CNF `DV_EHR_URI` §"validate_open" accepted fixtures
-    /// (`master17.7-content_tc_data_types-uri.adoc`) must all parse.
+    /// The CNF `DV_EHR_URI` §"validate_open" fixtures
+    /// (`master17.7-content_tc_data_types-uri.adoc`), adjudicated against the
+    /// released grammar.
+    ///
+    /// Each fixture that reaches beyond the EHR omits the `EHR` attribute name,
+    /// putting the versioned-object id directly after the `ehr_id`. BASE
+    /// `master11-paths.adoc` §"EHR Reference URIs" enumerates the locator's
+    /// values ("come from attribute names of the class `EHR` … namely
+    /// `compositions`, `directory` etc.") and every example in
+    /// §"Top-level Structure Locator" and §"Item URIs" carries one, so those
+    /// fixtures are refused and their attribute-bearing twins accepted. The CNF
+    /// material is a stalled guide, never the oracle — the released spec wins.
     #[test]
-    fn cnf_dv_ehr_uri_fixtures_parse() {
+    fn cnf_dv_ehr_uri_fixtures_are_adjudicated() {
         const EHR: &str = "89c0752e-0815-47d7-8b3c-b3aaea2cea7a";
-        let accepted = [
+        const OVID: &str = "031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1";
+        const ITEM: &str = "context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value";
+
+        // The EHR-only fixtures name no top-level structure and stay accepted.
+        for s in [
             format!("ehr:/{EHR}"),
-            format!("ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"),
-            format!(
-                "ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value"
-            ),
             format!("ehr://CLOUD_EHRSERVER/{EHR}"),
-            format!(
-                "ehr://CLOUD_EHRSERVER/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
-            ),
-            format!(
-                "ehr://CLOUD_EHRSERVER/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value"
-            ),
-        ];
-        for s in accepted {
+        ] {
             assert!(s.parse::<EhrUri>().is_ok(), "should parse: {s}");
         }
+
+        // Every locator-bearing fixture, in both twins.
+        for (invalid, valid) in [
+            (
+                format!("ehr:/{EHR}/{OVID}"),
+                format!("ehr:/{EHR}/compositions/{OVID}"),
+            ),
+            (
+                format!("ehr:/{EHR}/{OVID}/{ITEM}"),
+                format!("ehr:/{EHR}/compositions/{OVID}/{ITEM}"),
+            ),
+            (
+                format!("ehr://CLOUD_EHRSERVER/{EHR}/{OVID}"),
+                format!("ehr://CLOUD_EHRSERVER/{EHR}/compositions/{OVID}"),
+            ),
+            (
+                format!("ehr://CLOUD_EHRSERVER/{EHR}/{OVID}/{ITEM}"),
+                format!("ehr://CLOUD_EHRSERVER/{EHR}/compositions/{OVID}/{ITEM}"),
+            ),
+        ] {
+            assert!(
+                matches!(
+                    invalid.parse::<EhrUri>(),
+                    Err(EhrUriError::UnrecognisedLocator(_))
+                ),
+                "the attribute-less locator names no top-level structure: {invalid}"
+            );
+            assert!(valid.parse::<EhrUri>().is_ok(), "should parse: {valid}");
+        }
+
         // Non-`ehr` schemes are rejected structurally.
         assert!(matches!(
             "ftp://ftp.is.co.za/rfc/rfc1808.txt".parse::<EhrUri>(),
@@ -1808,12 +1840,22 @@ mod tests {
         assert_eq!(u.locator, None);
         assert_eq!(u.item_path, None);
 
-        // Attribute-less short form (CNF): the OVID follows the ehr_id directly.
+        // The locator's attribute is mandatory (master11 §"EHR Reference URIs"
+        // enumerates the values), so an OVID directly after the ehr_id names no
+        // top-level structure.
+        assert!(matches!(
+            format!("ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1")
+                .parse::<EhrUri>(),
+            Err(EhrUriError::UnrecognisedLocator(_))
+        ));
+
+        // The same version, located: an exact OBJECT_VERSION_ID under
+        // `compositions` (master11 §"Top-level Structure Locator").
         let u = ehr_uri(&format!(
-            "ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
+            "ehr:/{EHR}/compositions/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
         ));
         let loc = u.locator.unwrap();
-        assert_eq!(loc.attribute, None);
+        assert_eq!(loc.attribute, "compositions");
         match loc.object.unwrap() {
             VersionLocator::Version(ovid) => {
                 assert_eq!(
@@ -1830,7 +1872,7 @@ mod tests {
             "ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2d4b-4e3d-a3f3-f303d2f4f34b",
         );
         let loc = u.locator.unwrap();
-        assert_eq!(loc.attribute.as_deref(), Some("compositions"));
+        assert_eq!(loc.attribute, "compositions");
         assert!(matches!(
             loc.object,
             Some(VersionLocator::VersionedObject(_))
@@ -1839,7 +1881,7 @@ mod tests {
         // `directory` attribute, no uid.
         let u = ehr_uri("ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/directory");
         let loc = u.locator.unwrap();
-        assert_eq!(loc.attribute.as_deref(), Some("directory"));
+        assert_eq!(loc.attribute, "directory");
         assert_eq!(loc.object, None);
 
         // Authority form.
@@ -1850,7 +1892,7 @@ mod tests {
         // Relative forms carry no ehr_id.
         let u = ehr_uri("ehr:directory");
         assert_eq!(u.ehr_id, None);
-        assert_eq!(u.locator.unwrap().attribute.as_deref(), Some("directory"));
+        assert_eq!(u.locator.unwrap().attribute, "directory");
         let u = ehr_uri(
             "ehr:compositions/87284370-2d4b-4e3d-a3f3-f303d2f4f34b/content[openEHR-EHR-SECTION.vital_signs.v1]",
         );
@@ -1864,10 +1906,10 @@ mod tests {
         // Forms whose predicates need no normalisation round-trip byte-exactly.
         for s in [
             format!("ehr:/{EHR}"),
-            format!("ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"),
+            format!("ehr:/{EHR}/compositions/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"),
             format!("ehr://CLOUD_EHRSERVER/{EHR}"),
             format!(
-                "ehr://CLOUD_EHRSERVER/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
+                "ehr://CLOUD_EHRSERVER/{EHR}/compositions/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
             ),
             "ehr:directory".to_owned(),
         ] {
@@ -1880,7 +1922,7 @@ mod tests {
         // The item-path form normalises `[archetype_id=…]` to the bare shortcut,
         // so it round-trips *structurally* (parse == parse∘format∘parse) even
         // when not byte-identical.
-        let s = "ehr:/89c0752e-0815-47d7-8b3c-b3aaea2cea7a/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value";
+        let s = "ehr:/89c0752e-0815-47d7-8b3c-b3aaea2cea7a/compositions/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value";
         let u = ehr_uri(s);
         let reparsed: EhrUri = u.to_string().parse().unwrap();
         assert_eq!(u, reparsed);

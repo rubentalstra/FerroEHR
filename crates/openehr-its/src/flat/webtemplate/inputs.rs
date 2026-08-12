@@ -216,14 +216,27 @@ fn external_terminology_inputs(terminology: Option<&str>) -> Vec<WebTemplateInpu
     vec![code, value]
 }
 
+/// The TERMINOLOGY_ID a `C_CODE_REFERENCE.referenceSetUri` names.
+///
+/// The Web Template `terminology` field carries a terminology identifier
+/// (`ITS-REST/specifications/schemas/web_template/Input3.yaml`, example
+/// `openehr`), so only the identifying part of the URI belongs in it. The
+/// bare form is `terminology:SNOMED-CT`
+/// (`CNF/tests/platform/robot/_resources/test_data_sets/valid_templates/`);
+/// the addressed form carries an authority, a path and a query —
+/// `terminology://snomed-ct/hierarchy?rootConceptId=50043002`
+/// (`QUERY/docs/AQL/master03-syntax.adoc`) — where the terminology is the
+/// authority and the rest selects within it.
 fn reference_set_uri(uri: &str) -> Option<String> {
     if uri.is_empty() {
-        None
-    } else if let Some(rest) = uri.strip_prefix("terminology:") {
-        Some(rest.to_owned())
-    } else {
-        Some(uri.to_owned())
+        return None;
     }
+    let Some(rest) = uri.strip_prefix("terminology:") else {
+        return Some(uri.to_owned());
+    };
+    let rest = rest.strip_prefix("//").unwrap_or(rest);
+    let id = rest.split(['/', '?', '#']).next().unwrap_or("");
+    (!id.is_empty()).then(|| id.to_owned())
 }
 
 fn coded_values(

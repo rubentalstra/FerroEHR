@@ -121,12 +121,27 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     if h.driver.find(By::Css(row_delete.clone())).await.is_ok() {
         return;
     }
-    h.wait_css("input[type=file]")
-        .await
-        .send_keys(&fixture_opt_path(fixture))
-        .await
-        .expect("upload the fixture OPT via the hidden file input");
-    h.wait_css(&row_delete).await;
+    // The file input's `on:change` is a hydrated listener, and the waits above
+    // only prove the SSR'd list rendered — so a `send_keys` landing before
+    // hydration is simply LOST, exactly like the login submit. Re-send until
+    // the row appears. A repeat after an upload that DID land cannot happen:
+    // the row is re-checked before every attempt.
+    for _ in 0..4 {
+        h.wait_css("input[type=file]")
+            .await
+            .send_keys(&fixture_opt_path(fixture))
+            .await
+            .expect("upload the fixture OPT via the hidden file input");
+        for _ in 0..40 {
+            if h.driver.find(By::Css(row_delete.clone())).await.is_ok() {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+    panic!(
+        "`{template_id}` never appeared after uploading `{fixture}` (pre-hydration uploads exhausted)"
+    );
 }
 
 /// Poll until no element matches `css` (the assert-gone half of every journey).

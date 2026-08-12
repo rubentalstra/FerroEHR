@@ -286,9 +286,13 @@ async fn terminology_expand_fhir_merges_expansion_codes() {
     let ehr = create_ehr(&svc).await;
 
     // SNOMED-coded leaves (non-openEHR terminology → not RM-terminology-checked).
-    create_coded(&svc, &ehr, "member", "http://snomed.info/sct", "442031002").await;
-    create_coded(&svc, &ehr, "child", "http://snomed.info/sct", "11713004").await;
-    create_coded(&svc, &ehr, "non-member", "http://snomed.info/sct", "999999").await;
+    // The terminology is spelled the way BASE `base_types` master05 spells it,
+    // not as the FHIR system URI: a `TERMINOLOGY_ID` is a `name-str`, and the
+    // URI belongs in the value-set argument below. The match is on
+    // `code_string`, so the spelling is not what this test measures.
+    create_coded(&svc, &ehr, "member", "SNOMED-CT", "442031002").await;
+    create_coded(&svc, &ehr, "child", "SNOMED-CT", "11713004").await;
+    create_coded(&svc, &ehr, "non-member", "SNOMED-CT", "999999").await;
 
     let aql = format!(
         "SELECT c/name/value \

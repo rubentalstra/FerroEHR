@@ -636,14 +636,27 @@ impl Expansion {
     }
 }
 
+/// Why a FHIR terminology response body could not be decoded.
+#[derive(Debug, thiserror::Error)]
+enum DecodeError {
+    /// The body is not the FHIR resource the operation returns.
+    #[cfg(feature = "fhir")]
+    #[error("{0}")]
+    Fhir(#[from] ferroehr_ext::fhir::terminology::TerminologyDecodeError),
+    /// A slim build has no FHIR model to decode with. Unreachable:
+    /// [`FhirTerminologyProvider::new`] refuses a configured provider at boot.
+    #[cfg(not(feature = "fhir"))]
+    #[error("this binary was built without the `fhir` cargo feature")]
+    FeatureAbsent,
+}
+
 /// Decode a FHIR terminology response body into the reduced form the service
 /// consumes, via the typed R4B model in the extension crate.
 #[cfg(feature = "fhir")]
-fn decode(kind: ResponseKind, body: &[u8]) -> Result<DecodedResponse, String> {
+fn decode(kind: ResponseKind, body: &[u8]) -> Result<DecodedResponse, DecodeError> {
     match kind {
         ResponseKind::Parameters => {
-            let view = ferroehr_ext::fhir::terminology::decode_parameters(body)
-                .map_err(|e| e.to_string())?;
+            let view = ferroehr_ext::fhir::terminology::decode_parameters(body)?;
             Ok(DecodedResponse::Parameters(ParameterValues {
                 booleans: view.booleans,
                 codes: view.codes,
@@ -651,8 +664,7 @@ fn decode(kind: ResponseKind, body: &[u8]) -> Result<DecodedResponse, String> {
             }))
         }
         ResponseKind::ValueSet => {
-            let members = ferroehr_ext::fhir::terminology::decode_expansion(body)
-                .map_err(|e| e.to_string())?;
+            let members = ferroehr_ext::fhir::terminology::decode_expansion(body)?;
             let mut expansion = Expansion::default();
             for member in &members {
                 collect(member, &mut expansion);
@@ -702,8 +714,8 @@ fn collect(member: &ferroehr_ext::fhir::terminology::ExpansionMember, out: &mut 
 /// A slim build decodes no FHIR responses. Unreachable:
 /// [`FhirTerminologyProvider::new`] refuses a configured provider at boot.
 #[cfg(not(feature = "fhir"))]
-fn decode(_kind: ResponseKind, _body: &[u8]) -> Result<DecodedResponse, String> {
-    Err("this binary was built without the `fhir` cargo feature".to_owned())
+fn decode(_kind: ResponseKind, _body: &[u8]) -> Result<DecodedResponse, DecodeError> {
+    Err(DecodeError::FeatureAbsent)
 }
 
 #[cfg(test)]

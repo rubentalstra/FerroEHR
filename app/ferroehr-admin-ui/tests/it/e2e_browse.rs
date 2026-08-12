@@ -75,14 +75,25 @@ async fn ensure_template_present(h: &Harness) -> bool {
         return false;
     }
     let path = fixture_opt_path();
-    h.wait_css("input[type=file]")
-        .await
-        .send_keys(&path)
-        .await
-        .expect("upload fixture OPT via the hidden file input");
-    // The new row (its detail anchor) appears once the list refetches.
-    h.wait_css(TEMPLATE_LINK).await;
-    true
+    // The change event that drives the upload is a HYDRATED listener, and the
+    // waits above only prove the SSR'd list rendered — a `send_keys` landing
+    // before hydration is simply lost (the login-submit precedent). Re-send
+    // until the row's detail anchor appears; the anchor is re-checked before
+    // every attempt, so an upload that did land is never repeated.
+    for _ in 0..4 {
+        h.wait_css("input[type=file]")
+            .await
+            .send_keys(&path)
+            .await
+            .expect("upload fixture OPT via the hidden file input");
+        for _ in 0..40 {
+            if h.driver.find(By::Css(TEMPLATE_LINK)).await.is_ok() {
+                return true;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+    panic!("the fixture template never appeared after upload (pre-hydration uploads exhausted)");
 }
 
 /// Expand every collapsed disclosure in the visible catalog tree so the deep
