@@ -200,9 +200,18 @@ jobs:
           set -euo pipefail
           assets="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
           echo "$assets"
+          # Every suffix release-build.yml uploads per architecture. The SBOM
+          # document and its attestation bundle are checked too: a release
+          # publishing without them is unfixable (immutability), and the only
+          # remedy would be another version.
           missing=""
           for arch in x86_64 aarch64; do
-            for suffix in ".tar.gz" ".tar.gz.sigstore.json" ".tar.gz.intoto.jsonl"; do
+            for suffix in \
+              ".tar.gz" \
+              ".tar.gz.sigstore.json" \
+              ".tar.gz.sbom.sigstore.json" \
+              ".tar.gz.intoto.jsonl" \
+              ".cdx.json"; do
               printf '%s\n' "$assets" \
                 | grep -q "ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}" \
                 || missing="$missing ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}"
