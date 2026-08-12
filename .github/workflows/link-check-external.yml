@@ -1,0 +1,120 @@
+# External link reachability — reported, never a merge gate (issue #2287).
+#
+# WHY THIS IS NOT IN THE PR PATH. Whether a third-party host answers a CI
+# runner is not a property of the change under review. The docs `build` job's
+# link-check failed two consecutive, unrelated pull requests on links that
+# return 200 when fetched directly — one of which touched only a CI workflow —
+# and lychee's caching turned each single reset into three reported failures.
+# A gate that goes red for reasons the author cannot fix or influence teaches
+# people to merge past red, which costs more than the check is worth.
+#
+# Internal links keep gating, in docs.yml, under `lychee --offline`. That is
+# the property this repository actually controls, and a broken cross-reference
+# is a real defect.
+#
+# A check nobody reads is not a check, so a genuine failure here opens an
+# issue rather than writing to a log that closes with the run.
+name: External links
+
+on:
+  schedule:
+    # Weekly, Monday 06:11 UTC. Off the hour: GitHub documents that runs
+    # scheduled on the hour are delayed by load spikes
+    # (https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+    - cron: "11 6 * * 1"
+  workflow_dispatch:
+
+env:
+  MDBOOK_VERSION: "0.5.4"
+  MDBOOK_MERMAID_VERSION: "0.17.0"
+  MDBOOK_TOC_VERSION: "0.15.4"
+  MDBOOK_KATEX_VERSION: "0.10.0"
+  MDBOOK_LINT_VERSION: "0.14.4"
+  LYCHEE_VERSION: "0.24.2"
+  SWAGGER_UI_VERSION: "5.32.8"
+  SITE_ORIGIN: "https://ferroehr.eu"
+  SITE_BASE: ""
+
+permissions: {}
+
+concurrency:
+  group: link-check-external
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write        # file the report; nothing else
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0 # zizmor: ignore[cache-poisoning]
+      - uses: taiki-e/install-action@7f4eb899022d8fe70b20c4f3de697aa85c309026 # v2.85.11
+        with:
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
+
+      - name: Render the generated includes the book expects
+        run: |
+          bash scripts/render/conformance-stats.sh includes
+          bash scripts/render/comparison.sh
+          bash scripts/render/perf-assets.sh
+          bash scripts/render/conformance-assets.sh
+          CONF_SUT=ehrbase bash scripts/render/conformance-assets.sh
+
+      - name: Assemble the site
+        run: bash scripts/site/build.sh --dev-only
+
+      # The full check, external links included. Retries and a long timeout are
+      # affordable here in a way they are not on the PR path: nobody is waiting
+      # on this run, so a slow host gets the benefit of the doubt rather than
+      # producing a false report. 429 is accepted outright — being rate-limited
+      # is evidence the host is UP, which is the only thing being measured.
+      - name: Check external links
+        id: lychee
+        continue-on-error: true
+        run: |
+          lychee --no-progress --max-retries 5 --retry-wait-time 10 --timeout 45 \
+            --accept '200..=299,429' --exclude-loopback \
+            --root-dir "$PWD/_site" \
+            --exclude '^https://ferroehr\.eu' \
+            --output summary.md --format markdown \
+            './_site/**/*.html'
+
+      # Report through the environment, never interpolated into the shell:
+      # every line of that summary is remote content (URLs and server messages
+      # from third-party hosts) and must not be parsed as script.
+      - name: Open or update the report issue
+        if: steps.lychee.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TITLE: "docs: external links are failing the scheduled reachability check"
+        run: |
+          set -euo pipefail
+          {
+            printf 'The weekly external link check found unreachable links.\n\n'
+            printf 'This is a REPORT, not a gate: a transient host failure must never block a\n'
+            printf 'pull request (#2287). Confirm each one by hand before changing a link —\n'
+            printf 'this check runs once a week and a host can simply have been down.\n\n'
+            printf 'Run: %s\n\n' "$RUN_URL"
+            cat summary.md
+          } > body.md
+
+          existing=$(gh issue list --state open --search "$TITLE in:title" \
+                       --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --title "$TITLE" --label documentation --label P3 --body-file body.md
+          fi
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: external-link-summary
+          path: summary.md
+          if-no-files-found: ignore
