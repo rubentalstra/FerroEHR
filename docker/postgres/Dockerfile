@@ -13,7 +13,7 @@
 # cannot (docs.docker.com/build/building/best-practices — "pinning to a digest
 # guarantees the same image version"). 18.4 is the latest PG 18 patch
 # (docs/VERSIONS.md); bump the tag AND the digest together.
-FROM postgres:18.4@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+FROM postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
 
 # Init scripts run once, on an empty data directory, as the bootstrap superuser.
 COPY initdb/ /docker-entrypoint-initdb.d/
