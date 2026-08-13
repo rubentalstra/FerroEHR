@@ -25,6 +25,32 @@
 # Aliases are transcribed from the advisory's own RustSec entry
 # (https://rustsec.org/advisories/) so a scanner keyed on a CVE or GHSA
 # identifier rather than a RUSTSEC one still matches the statement.
+#
+# THE DEPENDENCY PATH IS STRUCTURED, NOT ONLY PROSE. Every statement's argument
+# rests on WHERE the affected crate enters the build, and an impact statement
+# that names the wrong path is a false claim that reads perfectly — that
+# happened here: the `rsa` statement asserted the crate was reached only through
+# `openidconnect` while `cargo tree -i rsa` had shown a second path through
+# `pgp` all along. So each statement declares the path as data, and
+# `scripts/checks/vex-reachability.sh` compares it against the graph cargo
+# resolves:
+#
+#   crate            the affected package name
+#   version          optional; pins the `cargo tree -i` query when several
+#                    versions of the crate coexist in the graph, and states
+#                    which one the argument is about
+#   carriers         the crates that depend DIRECTLY on it (depth 1 of the
+#                    inverted tree) — exhaustive, in both directions
+#   workspace_roots  the workspace members it is reachable from — a graph fact
+#                    over every feature, target and dependency kind, so test
+#                    and tooling crates appear here; it is NOT a claim about
+#                    what the shipped artifacts contain (that argument belongs
+#                    in `impact`)
+#
+# Both sets are exhaustive: naming a crate the graph does not have fails, and
+# so does a crate in the graph the statement does not name. An empty pair
+# asserts the crate is absent from the resolved graph entirely, which is what
+# makes a `component_not_present` justification checkable.
 
 [document]
 # A stable IRI for the document, and a timestamp that is HAND-SET rather than
@@ -34,8 +60,8 @@
 id = "https://ferroehr.eu/vex/rust-dependency-advisories"
 author = "FerroEHR project"
 role = "vendor"
-timestamp = "2026-08-13T00:00:00Z"
-version = 2
+timestamp = "2026-08-14T00:00:00Z"
+version = 3
 
 # What the statements are about: the released server binary and the container
 # image built from it. Both carry the same Cargo dependency graph, which is the
@@ -53,6 +79,15 @@ products = [
 id = "RUSTSEC-2023-0071"
 crate = "rsa"
 aliases = ["CVE-2023-49092", "GHSA-c38w-74pg-36hr", "GHSA-4grx-2x9w-596c"]
+carriers = ["openidconnect", "pgp"]
+workspace_roots = [
+  "cnf-runner",
+  "ferroehr",
+  "ferroehr-admin-ui",
+  "ferroehr-rest",
+  "ferroehr-server",
+  "testkit",
+]
 status = "not_affected"
 justification = "vulnerable_code_cannot_be_controlled_by_adversary"
 impact = """
@@ -77,6 +112,9 @@ release beyond rsa 0.9 ships, or if the default signing mode changes.\
 [[accepted]]
 id = "RUSTSEC-2026-0194"
 crate = "quick-xml"
+version = "0.26.0"
+carriers = ["inferno"]
+workspace_roots = ["ferroehr", "ferroehr-rest", "ferroehr-server", "testkit"]
 status = "not_affected"
 justification = "vulnerable_code_not_in_execute_path"
 impact = """
@@ -100,6 +138,9 @@ Re-evaluate when `pprof`/`inferno` bump quick-xml.\
 [[accepted]]
 id = "RUSTSEC-2026-0195"
 crate = "quick-xml"
+version = "0.26.0"
+carriers = ["inferno"]
+workspace_roots = ["ferroehr", "ferroehr-rest", "ferroehr-server", "testkit"]
 status = "not_affected"
 justification = "vulnerable_code_not_in_execute_path"
 impact = """
@@ -118,13 +159,23 @@ advisory names. Re-evaluate when `pprof`/`inferno` bump quick-xml.\
 [[accepted]]
 id = "RUSTSEC-2026-0173"
 crate = "proc-macro-error2"
+carriers = [
+  "leptos_macro",
+  "leptos_router_macro",
+  "reactive_stores_macro",
+  "syn_derive",
+]
+workspace_roots = ["ferroehr-admin-ui"]
 status = "not_affected"
 justification = "vulnerable_code_not_present"
 impact = """
 An UNMAINTAINED-crate advisory, not a vulnerability: RustSec records no flaw \
 and no patched version, only that the author has stated the crate is no longer \
-maintained. `proc-macro-error2` is a procedural-macro dependency of \
-`leptos_macro` 0.8, used by the admin console. A proc-macro executes in the \
+maintained. `proc-macro-error2` is a procedural-macro dependency of the Leptos \
+0.8 macro crates — `leptos_macro`, `leptos_router_macro`, \
+`reactive_stores_macro`, and `syn_derive` beneath `rstml` — and the admin \
+console is the only workspace member any of them is reachable from. A \
+proc-macro executes in the \
 COMPILER during the build and its code is not linked into any shipped \
 artifact, so it is absent from both the server binary and the container image \
 this document describes. It goes away when Leptos drops it upstream; \
@@ -134,15 +185,27 @@ re-evaluate at the next Leptos bump.\
 [[accepted]]
 id = "RUSTSEC-2024-0436"
 crate = "paste"
+version = "1.0.15"
+carriers = [
+  "either_of",
+  "leptos",
+  "leptos-use",
+  "reactive_graph",
+  "reactive_stores",
+  "tachys",
+  "utoipa-axum",
+]
+workspace_roots = ["ferroehr-admin-ui", "ferroehr-rest", "ferroehr-server"]
 status = "not_affected"
 justification = "vulnerable_code_not_present"
 impact = """
 An UNMAINTAINED-crate advisory, not a vulnerability: the author archived the \
 repository and RustSec records no flaw and no patched version. `paste` is a \
-procedural macro that pastes tokens at compile time, reached by two carriers \
-(`cargo tree -i paste@1.0.15`): `utoipa-axum` 0.2.0 in the server — the latest \
-release of the official utoipa axum bindings, for which no paste-free version \
-exists — and the Leptos 0.8 crate family in the admin console. Like every \
+procedural macro that pastes tokens at compile time, reached by seven direct \
+dependents (`cargo tree -i paste@1.0.15`) falling into two groups: \
+`utoipa-axum` 0.2.0 in the server — the latest release of the official utoipa \
+axum bindings, for which no paste-free version exists — and six crates of the \
+Leptos 0.8 family in the admin console. Like every \
 proc-macro it runs inside the compiler and links into nothing that ships, so it \
 is absent from the artifacts this document describes. Re-evaluate on the next \
 `utoipa-axum` or Leptos release.\
@@ -162,6 +225,12 @@ is absent from the artifacts this document describes. Re-evaluate on the next \
 [[lockfile_only]]
 id = "RUSTSEC-2026-0235"
 crate = "rkyv"
+version = "0.7.46"
+# Empty on purpose, and machine-checked: `cargo tree -i rkyv@0.7.46` over every
+# feature, target and dependency kind resolves no node at all, which is the
+# `component_not_present` justification below stated as data.
+carriers = []
+workspace_roots = []
 status = "not_affected"
 justification = "component_not_present"
 impact = """

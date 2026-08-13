@@ -1226,6 +1226,7 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
+    profile: crate::config::profile::SpecProfile,
     ehr_id: EhrId,
     contribution_id: Uuid,
     resolve_refs: bool,
@@ -1258,7 +1259,7 @@ pub(crate) async fn get_contribution(
     for (vo_id, (t, b, v), creating_system_id, kind) in referenced {
         let tree = TreeId::from_columns(t, b, v);
         if resolve_refs {
-            let loaded = read::read_version(pool, vo_id, tree)
+            let loaded = read::read_version(pool, profile, vo_id, tree)
                 .await?
                 .ok_or_else(|| {
                     ServiceError::sm(

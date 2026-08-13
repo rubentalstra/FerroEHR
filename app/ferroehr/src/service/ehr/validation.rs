@@ -83,7 +83,7 @@ impl FerroEhrService {
         )
         .await?;
         for vo_id in vo_ids {
-            if let Some(read) = read_current(&self.pool, vo_id).await?
+            if let Some(read) = read_current(&self.pool, self.spec_profile, vo_id).await?
                 && is_persistent(&read.canonical)
                 && composition_template_id(&read.canonical) == Some(template_id)
             {

@@ -175,8 +175,8 @@ impl FerroEhrService {
         };
 
         let read = match version {
-            Some(v) => read_version(&self.pool, vo_id, v).await?,
-            None => read_current(&self.pool, vo_id).await?,
+            Some(v) => read_version(&self.pool, self.spec_profile, vo_id, v).await?,
+            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| {

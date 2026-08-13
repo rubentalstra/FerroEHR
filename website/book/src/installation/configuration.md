@@ -156,6 +156,23 @@ because RM 1.2.0 removed it. The attribute is derived data the server
 recomputes from `relationships`, so the copy you send is validated and then
 dropped rather than stored.
 
+Reading a stored object is bounded the same way. Every commit records whether
+the released generations can express the body it accepted, and under `stable`
+a stored version they cannot is **refused with `409 Conflict`** naming the
+active profile, the version, and the remedy — never served under a generation
+set that does not define it, and never rewritten to fit one. Under
+`development` the same object reads normally. This is FerroEHR's own
+extension: no openEHR specification governs runtime version selection, so the
+status follows HTTP itself (RFC 9110 §15.5.10 — a conflict with the current
+state of the target resource, whose resolution the response describes).
+
+**Queries are not covered by that refusal**, and the distinction matters: the
+profile gate on AQL is at *planning* time, over the query text. A query that
+names development-only surface is rejected; a generic projection that happens
+to traverse stored development-generation content still returns rows under
+`stable`. If you need those rows withheld as well, the profile is not the
+mechanism.
+
 The exact additive delta between the two generation sets is pinned in the
 build, so a future openEHR re-vendoring cannot silently widen or narrow what a
 profile accepts.
@@ -168,12 +185,18 @@ they are not symmetric:
 | Direction | Supported? | Why |
 |---|---|---|
 | `stable` → `development` | **Always safe** | openEHR minor releases are additive by the Foundation's own release strategy, so every object stored under the released generations is valid under the development ones. |
-| `development` → `stable` | **Only for data that never used a development-only construct** | There is no down-conversion: stored content is never rewritten to fit an older generation, and never hidden from a query. |
+| `development` → `stable` | **Only for data that never used a development-only construct** | There is no down-conversion. An object that did use one becomes unreadable — `409`, not a silently degraded body — until you switch back. |
 
 If you need to stay on released specifications, choose `stable` on day one
 rather than migrating into it later. Silently rewriting stored clinical
 content to fit an older generation would be data loss disguised as a setting,
 so no tool does it.
+
+Objects committed before this stamp existed, and objects written by the
+verbatim-replay paths (EHR-Extract import, archive load), carry no recorded
+answer; they are assessed at read instead, which costs one extra parse per
+read of such an object and only under `stable`. Nothing is written back — a
+read stays a read.
 
 > [!NOTE]
 > No openEHR specification governs runtime version selection — this key is

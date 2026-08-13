@@ -19,8 +19,13 @@
 # safe change (openEHR minor releases are additive); development → stable is
 # supported only for data that never used development-only constructs. The
 # profile is the ACCEPTANCE boundary: ingress and AQL planning refuse
-# constructs outside the active generation set; stored content is never
-# silently down-converted (a read-time refusal is tracked on #2352).
+# constructs outside the active generation set, and stored content is never
+# silently down-converted — every commit records whether the released
+# generations can express its body, and under "stable" a stored version they
+# cannot is refused with 409 naming this key rather than served. AQL is not
+# covered by that stamp: the planning gate refuses development-only constructs
+# in the QUERY, while a generic projection over stored development content
+# still returns rows.
 spec_profile = "development"
 
 # ── [server] — HTTP listener + REST surface ──────────────────────────────────
