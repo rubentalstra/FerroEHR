@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Vendor the real-world openEHR canonical-JSON corpus that grounds the
 # `openehr-its` fidelity gates (read -> re-serialize -> equality +
 # ITS-JSON schema validation).

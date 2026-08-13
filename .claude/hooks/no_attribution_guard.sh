@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # .claude/hooks/no_attribution_guard.sh
 #
 # Claude Code PreToolUse hook (matcher: Bash).

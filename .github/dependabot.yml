@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/dependabot.yml
 version: 2
 updates:

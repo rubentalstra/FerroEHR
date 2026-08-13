@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Cut a frozen documentation version onto the docs-dist orphan branch.
 # "generate once, never rebuild".
 #

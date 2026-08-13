@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The PGP signing probe family (#2163's second mode).
 #
 # #2163 is explicit that the PGP path must be exercised "with a real key,

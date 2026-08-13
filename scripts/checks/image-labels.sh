@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Image-metadata guard: the OCI annotation keys are declared once, correctly, and
 # the two places that declare them agree.
 #

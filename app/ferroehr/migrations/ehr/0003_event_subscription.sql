@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ehr schema: the event-filter subscription store (an extension — no openEHR
 -- spec governs eventing; "Event
 -- Trigger" parity).

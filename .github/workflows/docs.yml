@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/workflows/docs.yml — build + deploy the documentation website.
 # Rust-only toolchain, vendored static assets, no Node/Python build step for
 # the site render.

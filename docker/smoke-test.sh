@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # End-to-end smoke test for the two container images (amd64), run against the
 # TRUE end-user artifact: the standalone docker-compose.yml, pinned with an
 # explicit -f so a repo checkout's docker-compose.override.yml never merges in.

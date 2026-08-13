@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Vendor the official openEHR CKM archetype library — the ADL 1.4 half of the
 # two-dialect archetype corpus.
 #

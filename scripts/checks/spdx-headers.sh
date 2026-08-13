@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Every first-party Rust source file states its licensing INSIDE itself.
 #
 # `REUSE.toml` already covers the whole tree by glob and `reuse lint` proves it

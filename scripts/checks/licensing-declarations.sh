@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The licensing declarations, the licence texts and the licensing chapter must
 # describe the same set of licences.
 #

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Access-layer provenance guard (owner directive 2026-08-06, issue #1963).
 #
 # The authentication/authorization layer is OUR OWN DESIGN, grounded in the IETF

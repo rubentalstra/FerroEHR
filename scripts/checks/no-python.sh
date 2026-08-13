@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # No Python in this repository (owner hard rule, 2026-08-10).
 #
 # The tooling languages are bash and Rust. Python is banned everywhere —

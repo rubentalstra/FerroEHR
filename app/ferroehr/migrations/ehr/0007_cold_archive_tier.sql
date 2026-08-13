@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ehr schema: the COLD archival storage tier realizing SM I_ADMIN_ARCHIVE's
 -- "Move selected EHRs to archival storage" as an actual physical move.
 --

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # CNF external-terminology lane (compose OVERLAY) — the fail-OPEN posture.
 #
 # Switches on the `[terminology.external]` providers that docker/ferroehr.dev.toml

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # openEHR CNF 2.0 conformance pipeline — the acceptance instrument.
 #
 # Drives the CNF reference runner (tools/cnf-runner) end to end: bring up the

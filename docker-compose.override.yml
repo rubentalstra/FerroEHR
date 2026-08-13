@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Repo-development override — merged automatically onto docker-compose.yml by
 # any bare `docker compose` invocation run from a repo checkout
 # (docs.docker.com/compose/how-tos/multiple-compose-files — "the override

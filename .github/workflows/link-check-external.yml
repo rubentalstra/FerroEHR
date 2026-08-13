@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # External link reachability — reported, never a merge gate (issue #2287).
 #
 # WHY THIS IS NOT IN THE PR PATH. Whether a third-party host answers a CI

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Compose image-tag guard (the CITATION.cff / Helm appVersion pattern).
 #
 # The standalone quickstart docker-compose.yml pulls the PUBLISHED images by an

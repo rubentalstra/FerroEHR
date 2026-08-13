@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The terminology probe family (#2178, #2158) — against a REAL terminology
 # server, with REAL content.
 #

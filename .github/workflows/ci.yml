@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/workflows/ci.yml
 name: CI
 
@@ -395,6 +398,22 @@ jobs:
   # did not honour that file's path exclusions (measured 2026-08-12).
   # LICENSE, REUSE.toml and the codegen header constant must agree on the
   # copyright holder. They did not, and nothing compared them (#2325).
+  # Shell, SQL and YAML carry their licence in the file too, so a copied
+  # migration or script travels with it (#2326).
+  spdx-headers-text:
+    name: spdx-headers-text
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Shell, SQL and YAML state their licensing
+        run: bash scripts/checks/spdx-headers-text.sh
+
   copyright-holder:
     name: copyright-holder
     if: github.event_name == 'pull_request'
@@ -1854,6 +1873,7 @@ jobs:
       - no-python
       - license-text
       - copyright-holder
+      - spdx-headers-text
       - licensing
       - spec-citations
       - compose-hardening

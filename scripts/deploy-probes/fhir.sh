@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The FHIR probe family (#2178, #2158).
 #
 # FHIR is two integrations behind one config block, and they have OPPOSITE

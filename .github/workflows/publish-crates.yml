@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/workflows/publish-crates.yml
 #
 # Publishes the eight `crates/*` openEHR spec crates to crates.io

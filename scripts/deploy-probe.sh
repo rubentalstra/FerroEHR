@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The deployment-conformance harness (#2178).
 #
 # `cnf-runner` exists because "we believe the REST surface is conformant" was

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # OpenSSF Scorecard — an INDEPENDENT score of this repository's security posture.
 #
 # It is here for the same reason the conformance numbers are computed by a runner

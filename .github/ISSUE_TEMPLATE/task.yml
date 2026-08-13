@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 name: Task
 description: A general work item (maintenance, research, tooling, docs)
 labels: ["chore"]

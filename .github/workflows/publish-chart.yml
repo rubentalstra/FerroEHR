@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/workflows/publish-chart.yml
 #
 # Publishes the Helm chart to GHCR as an OCI artifact (issues #2104–#2106).
