@@ -82,8 +82,17 @@ backwards, and both stock distribution templates do it.
 `wit-bindgen` — plus `symbolic-demangle` again under
 `apache-2.0-runtime-library-exception`.
 
-These are resolved by allowing the exception forms in the policy, not by
-dismissing seven findings one at a time.
+The clean fix would be to approve those two licence forms in the policy, so the
+rule stops firing at all. **That is not available on this plan**: custom
+policies are a paid feature, and the stock templates cannot be edited. Both
+distribution templates flag these forms, so switching between them does not help
+either — verified by switching, after which the count did not move.
+
+They are therefore dismissed per finding, which treats the symptom and leaves
+the rule in place. Expect them to reappear when any of those crates changes
+version, because the resolution attaches to the finding rather than to the
+policy that produced it. That recurrence is a property of the tool on this
+plan, not a sign anything regressed.
 
 ## Real, and accepted with a reason
 
@@ -116,11 +125,19 @@ an older copy arriving transitively. Trace it with
 `.github/workflows/fossa.yml` sets `run-tests: false`, so the lane analyses and
 publishes but does not fail the build.
 
-Of twenty findings, ten are false positives and seven are permissive licences
-the stock policy flags in error. Gating today would fail the build for reasons
-no author could act on — and a gate that is permanently red is one people learn
-to merge past, which costs more than the gate was ever worth.
+Of the original twenty findings, ten were false positives and seven are
+permissive licences the stock policy flags in error. Gating on that would fail
+the build for reasons no author could act on, and a permanently red gate is one
+people learn to merge past — which costs more than the gate was ever worth.
 
-The order is: correct the policy, resolve the findings above, and only then
-decide whether to gate. Flipping `run-tests` before that would be enabling a
-check whose first act is to be wrong.
+The plan does not offer custom policies, and that is the deciding fact rather
+than a detail. A gate is only worth having if the rule behind it can be
+corrected when it is wrong; here it cannot. Every recurrence of the seven
+permissive findings would have to be dismissed by hand, and each dismissal is a
+judgement call made under pressure to get a build green — which is exactly the
+condition under which a real finding gets waved through with the noise.
+
+So `run-tests` stays `false`, and this is a settled position rather than a
+deferral: the lane analyses, publishes and is read, and `cargo deny` remains
+the gating advisory check, because its rules live in this repository where they
+can be fixed.
