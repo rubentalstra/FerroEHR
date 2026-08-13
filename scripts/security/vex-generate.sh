@@ -67,6 +67,24 @@ if bare="$(jq -r '.[] | select(type == "string" and startswith("RUSTSEC-"))' <<<
   echo "and this gate can require a published VEX justification for it." >&2
   exit 1
 fi
+# Refusing the bare form (above) only forces the SHAPE that can carry a reason.
+# An advisory entry whose `reason` is absent, empty or whitespace satisfies that
+# shape while carrying nothing, so the rule would be enforced down to the
+# punctuation and not the content. `{ crate = … }` package ignores are a
+# different form with no `id` and are untouched.
+if unreasoned="$(jq -r '
+      .[]
+      | select(type == "object" and has("id"))
+      | select((.reason // "" | gsub("^\\s+|\\s+$"; "")) == "")
+      | .id' <<<"$ignore_json")" && [ -n "$unreasoned" ]; then
+  echo "vex-generate: deny.toml accepts an advisory with no reason:" >&2
+  sed 's/^/  /' <<<"$unreasoned" >&2
+  echo "Every accepted advisory states why it does not apply and when to" >&2
+  echo "re-check it — deny.toml's own header requires exceptions to be" >&2
+  echo "explicit and dated." >&2
+  exit 1
+fi
+
 gate_ids="$(jq -r '.[] | if type == "object" then .id // empty else empty end' <<<"$ignore_json" | sort)"
 accepted_ids="$(jq -r '(.accepted // [])[].id' <<<"$prose_json" | sort)"
 lockfile_ids="$(jq -r '(.lockfile_only // [])[].id' <<<"$prose_json" | sort)"
