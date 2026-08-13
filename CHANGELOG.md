@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **A `fhir_outbound` readiness indicator.** When the FHIR outbound emitter is
+  enabled, `/health/readiness` now carries its broker-delivery liveness —
+  non-required, so a broker outage reports `DEGRADED` (the outbox retains
+  messages) and never fails readiness. Previously a PHI-bearing outbound
+  stream could be down with nothing on the health surface saying so.
+
 ### Changed
 
 - **The documentation site was read end-to-end against the tree and
@@ -30,6 +38,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The boot banner follows the resolved log format.** With the default
+  `log.format = "auto"` in a container (stdout not a terminal), logs render
+  as JSON but the multi-line ASCII banner still printed first, handing every
+  log collector unparseable lines on each boot. The banner now keys on the
+  same TTY-aware resolution the log layers use: `json`, and `auto` off a
+  terminal, are parseable JSON from the first byte.
+- **Partial feature builds of the server compile again.** The FHIR outbound
+  emitter's wiring was gated on the `events` cargo feature while its module
+  exists only under `fhir`: a `--features events` build (no `fhir`) failed to
+  compile, and a `--features fhir` build never started the emitter. Both
+  gates now sit on `fhir`, which implies `events` at every level.
 - **The Helm chart is `6.0.5`.** Reading the site against the tree corrected
   chart comments and operator-facing messages (the stale distroless base
   name, the secret-routing key list, the config-in-Secret cause in

@@ -44,3 +44,4 @@
 - [TERMINOLOGY_ID has no declared invariant](terminology-id-value-has-no-invariant.md) — BASE declares no Invariants row; master05's production is refuted by its own examples AND released QUERY `snomed_ct(3.1)`
 - [PGP subkey signature the runner cannot verify](pgp-subkey-signature-runner-cannot-verify.md) — RUNNER bin: rpgp 0.20 `SignedPublicKey::verify` is primary-only; the app signs with the `[S]` subkey since 7a8a8c9a3
 - [Baseline commit = where the run was RECORDED](baseline-commit-is-where-the-run-was-recorded.md) — diff the whole range since the previous results.json, never trust a handed-down "prime suspect"
+- [ehr_id scope is SM-grounded](ehr-id-scope-semantics-is-sm-grounded.md) — SM `_ehr_ids_` defines the effect (AMB-101 overstates the silence); EHRbase 2.34.0 discards both carriers

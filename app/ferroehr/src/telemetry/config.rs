@@ -27,6 +27,33 @@ pub enum LogFormat {
     Pretty,
 }
 
+impl LogFormat {
+    /// Resolves this profile against the stdout terminal state, yielding the
+    /// rendering that is actually installed.
+    ///
+    /// The terminal state is a parameter rather than a probe so the `auto` rule
+    /// lives in ONE testable place: the log layer and the boot banner both key
+    /// off the result, and a banner printed ahead of JSON output would make the
+    /// first bytes of stdout unparseable.
+    #[must_use]
+    pub fn resolve(self, stdout_is_terminal: bool) -> ResolvedLogFormat {
+        match self {
+            Self::Pretty => ResolvedLogFormat::Pretty,
+            Self::Auto if stdout_is_terminal => ResolvedLogFormat::Pretty,
+            Self::Json | Self::Auto => ResolvedLogFormat::Json,
+        }
+    }
+}
+
+/// The stdout rendering actually installed, with [`LogFormat::Auto`] decided.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResolvedLogFormat {
+    /// One JSON object per line.
+    Json,
+    /// Human-friendly multi-line text.
+    Pretty,
+}
+
 /// Logging configuration (`[log]`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -135,5 +162,24 @@ mod tests {
         assert_eq!(c.log.format, LogFormat::Auto);
         assert!(!c.otel.metrics_push);
         assert!(c.otel.flame_file.is_none());
+    }
+
+    /// `auto` follows the terminal state; the explicit profiles ignore it. This
+    /// is the ONE place the rule lives, so the log layer and the boot banner
+    /// cannot disagree about what stdout carries.
+    #[test]
+    fn auto_resolves_off_the_terminal_state() {
+        assert_eq!(LogFormat::Auto.resolve(false), ResolvedLogFormat::Json);
+        assert_eq!(LogFormat::Auto.resolve(true), ResolvedLogFormat::Pretty);
+        for is_terminal in [false, true] {
+            assert_eq!(
+                LogFormat::Json.resolve(is_terminal),
+                ResolvedLogFormat::Json
+            );
+            assert_eq!(
+                LogFormat::Pretty.resolve(is_terminal),
+                ResolvedLogFormat::Pretty
+            );
+        }
     }
 }

@@ -99,12 +99,9 @@ pub(super) fn init_subscriber(
 /// span's fields for trace↔log correlation.
 fn fmt_layer(format: super::config::LogFormat) -> BoxedLayer {
     use super::config::LogFormat;
-    let json = match format {
-        LogFormat::Json => true,
-        LogFormat::Pretty => false,
-        LogFormat::Auto => !std::io::stdout().is_terminal(),
-    };
-    if json {
+    use super::config::ResolvedLogFormat;
+    let is_terminal = std::io::stdout().is_terminal();
+    if format.resolve(is_terminal) == ResolvedLogFormat::Json {
         fmt::layer()
             .json()
             .with_current_span(true)
@@ -114,7 +111,7 @@ fn fmt_layer(format: super::config::LogFormat) -> BoxedLayer {
         // An explicit `pretty` is a human asking for the colored dev output
         // (e.g. `docker compose` logs, where stdout is a pipe, not a TTY) —
         // force ANSI on. Only `auto`-selected pretty keeps TTY detection.
-        let ansi = matches!(format, LogFormat::Pretty) || std::io::stdout().is_terminal();
+        let ansi = matches!(format, LogFormat::Pretty) || is_terminal;
         // The text format renders `Display` fields and interpolated messages
         // verbatim, so its writer neutralises CR/LF: a value cannot forge a
         // record (OWASP Logging Cheat Sheet §Log Injection —

@@ -61,10 +61,13 @@ type HeadlineMetric = (
 /// The headline metric tiles, in display order.
 ///
 /// Each is a counter or gauge the CDR registers
-/// (`ferroehr::telemetry::prometheus`); a histogram is deliberately absent —
+/// (`ferroehr::telemetry::metrics`); a histogram is deliberately absent —
 /// the CDR's actuator-style detail view folds a histogram's `_bucket`/`_sum`/
 /// `_count` lines into one sample list, so summing it would report a
 /// meaningless number.
+// NOTE: these are the Prometheus exporter's RENDERED names — `_total` is derived
+// from the counter kind, never written on the instrument — and the correspondence
+// is pinned by the CDR's `exporter_renders_the_console_metric_names` test.
 #[cfg(feature = "ssr")]
 const HEADLINE_METRICS: [HeadlineMetric; 4] = [
     ("http_server_active_requests", "In-flight requests", None),
