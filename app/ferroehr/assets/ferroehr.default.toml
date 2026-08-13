@@ -399,7 +399,7 @@ enabled = false              # on: SM lookups, AQL TERMINOLOGY(), and
                              # composition ac-code binding resolution route here
 fail_on_error = false        # TS unreachable/erroring: false = accept the
                              # composition (fail-open), true = reject it (422)
-# Named FHIR R4 terminology-server providers (map). EVERY entry is materialised
+# Named FHIR R4B terminology-server providers (map). EVERY entry is materialised
 # — a deployment binds SNOMED CT, LOINC, ICD… to different servers at once:
 #? [terminology.external.providers.default]
 #? type = "fhir"
@@ -481,7 +481,7 @@ transport = "udp"            # udp | tls ; PROD: tls
 #? tls_identity_cert_file = "/etc/ferroehr/client.pem"
 #? tls_identity_key_file = "/etc/ferroehr/client.key"
 
-# RESTful ATNA feed: FHIR R4 AuditEvent POSTs (IHE ITI-20 ATX:FHIR Feed).
+# RESTful ATNA feed: FHIR R4B AuditEvent POSTs (IHE ITI-20 ATX:FHIR Feed).
 [audit.fhir_feed]
 enabled = false
 url = "http://localhost:8080/fhir"   # POSTs {url}/AuditEvent; URL creds redacted

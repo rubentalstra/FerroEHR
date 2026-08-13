@@ -17,10 +17,11 @@
 //! - `support` — the shared seam onto [`crate::versioning`] (kind mapping,
 //!   ehr-less version loads, commit audits, canonical wire assembly),
 //! - `party` — `I_PARTY` CRUD (+ `I_DEMOGRAPHIC_SERVICE.create_party`),
-//! - `relationship` — `I_PARTY_RELATIONSHIP` (+ `create_party_relationship`),
-//! - `versioned` — the `VERSIONED_PARTY` read surface (our extension),
-//! - `contribution` — the demographic (ehr-less) CONTRIBUTION (our extension),
-//! - `tags` — the demographic `ITEM_TAG` surface (our extension),
+//! - `relationship` — `I_PARTY_RELATIONSHIP` (+ `create_party_relationship`;
+//!   the one surface absent from the released Demographic API — our extension),
+//! - `versioned` — the `VERSIONED_PARTY` read surface,
+//! - `contribution` — the demographic (ehr-less) CONTRIBUTION,
+//! - `tags` — the demographic `ITEM_TAG` surface,
 //! - `api` — the public `FerroEhrService` seam the ITS-REST adapter calls.
 //!
 //! The demographic wire contract is the **Demographic API of ITS-REST

@@ -785,7 +785,7 @@ where
             let Some(ns) = accept_xml_namespace(headers) else {
                 return ApiError::NotAcceptable(
                     "canonical XML is served in the openEHR ITS-XML lineages \
-                     `version=1` (default) and `version=2`"
+                     `version=1` and `version=2` (default)"
                         .to_owned(),
                 )
                 .into_response_body();
