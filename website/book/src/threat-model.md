@@ -25,9 +25,11 @@ network, your operators, your backups. The value here is that you do not have
 to reverse-engineer *our* half of it from configuration prose.
 
 Read it alongside [Security & multi-tenancy](security.md) (how each control is
-configured), [Audit trail](audit.md) (what is recorded), [Operations](operations.md)
-(the deployment surface) and [Cluster hardening](installation/kubernetes-hardening.md)
-(what the platform owes).
+configured), [Audit trail](audit.md) (what is recorded),
+[Verifying releases](verifying-releases.md) (establishing what you are running),
+[Operations](operations.md) (the deployment surface) and
+[Cluster hardening](installation/kubernetes-hardening.md) (what the platform
+owes).
 
 **Where this document and the code disagree, the code is right and this
 document is a defect** — report it.
@@ -106,23 +108,30 @@ Each boundary below names the control that holds and the risk that remains.
 
 ### B1 — Network and protocol
 
-**Control.** TLS terminates either at the server (`rustls`) or in front of it.
-Request bodies are size-limited, requests are timed out, and a `tower_governor`
-rate limit is available. Panics are caught and become a clean `500` rather than
-a dropped connection, and release builds run with overflow checks on so an
-arithmetic mistake is a loud panic rather than a silently wrong number. Response
-security headers are set. Every parser that reads attacker-controlled bytes —
-canonical JSON, canonical XML, AQL, ADL — has a libFuzzer harness compiled on
-the pull-request path, and a crash is fixed in the crate, never in the harness.
+**Control.** TLS terminates either at the server (`rustls`, TLS 1.3 by default)
+or in front of it. Connection-level bounds apply before a request even exists (an
+HTTP/1 header-read timeout, an HTTP/2 stream cap with keep-alive PINGs); request
+bodies are size-limited, requests are timed out, concurrency is capped by an
+admission limit, and a two-tier `tower_governor` rate limit is **on by
+default**. Panics are caught and become a clean `500` rather than a dropped
+connection, and release builds run with overflow checks on so an arithmetic
+mistake is a loud panic rather than a silently wrong number. Response security
+headers are set. Every parser that reads attacker-controlled bytes — canonical
+JSON, canonical XML, AQL, ADL, OPT 1.4 templates, the simplified formats, and
+the identifier types — has a libFuzzer harness, built on the pull-request path
+and fuzzed on a nightly campaign, and a crash is fixed in the crate, never in
+the harness.
 
 **Residual risk.**
 
 - **Fuzzing finds crashes; it does not prove their absence.** The harnesses
   cover the parsers we identified as reachable. A parser reached by a path we
   did not enumerate is not covered by anything.
-- **Rate limiting is off unless you turn it on**, and it is per-process. A
-  multi-replica deployment behind a load balancer divides the effective limit by
-  the replica count; it is not a distributed limiter.
+- **Rate limiting is per-process.** A multi-replica deployment behind a load
+  balancer divides the effective limit by the replica count; it is not a
+  distributed limiter. The shipped defaults are also deliberately generous —
+  they sit above this implementation's own measured whole-server ceiling, so the
+  limiter refuses abuse rather than shaping normal load.
 - **Algorithmic complexity in query execution is not bounded by the limiter.**
   A syntactically small AQL query can be an expensive one. Statement timeouts at
   the database are the backstop, and they are the operator's to set.
@@ -135,9 +144,11 @@ the pull-request path, and a crash is fixed in the crate, never in the harness.
 verified-credential cache, and OAuth2/OIDC bearer tokens validated against the
 issuer. Configuration is validated **at boot**, not on the first request: a
 mandatory audience list, an `https` issuer, an algorithm set bound to its key
-source, an HMAC entropy floor, and the OWASP Argon2id parameter floor. A
+source (with `none` refused outright and two competing key sources refused as a
+contradiction), an HMAC entropy floor, and the OWASP Argon2id parameter floor. A
 malformed `Authorization` header is a `400`, not a `401` — the server never read
-a credential. An unreachable issuer is a `503`, never a silent pass.
+a credential. An unreachable issuer is a `503`, never a silent pass. A `401` body
+names no reason, so it is not an oracle for expired-versus-forged.
 
 **Residual risk.**
 
@@ -162,10 +173,12 @@ allowed — which is what makes an optional stage safe to leave off:
 1. **Authentication** produces a principal or a typed refusal.
 2. **`EHR_ACCESS`** is always on and unconditional, from the openEHR Reference
    Model's own gateway clause.
-3. **RBAC** checks the coarse operation class (public / clinical / admin /
-   management) against roles taken from the RFC 9068 claim carriers. An OAuth2
+3. **RBAC** checks the coarse operation class — public, clinical, or admin —
+   against roles taken from the RFC 9068 claim carriers. An OAuth2
    scope is deliberately not treated as a role. The read-only restriction
-   overrides any grant.
+   overrides any grant. (The `/management/*` surface is *not* in this
+   classification: it is governed endpoint-by-endpoint by its own configuration,
+   and an endpoint you do not name is not mounted at all.)
 4. **ABAC** (off by default) evaluates subject and resource attributes through
    embedded Cedar or an external policy decision point, fanning multi-valued
    attributes out as a cartesian product with all-must-permit and short-circuit
@@ -212,12 +225,14 @@ to operator-configured endpoints.
 - **The terminology server is trusted to answer honestly.** A compromised or
   misconfigured one can permit a code that should have been refused. It is a
   correctness boundary, and a clinical-safety one.
-- **A response parsed from a semi-trusted peer is still parsed.** The S3 path
-  carries a `quick-xml` version with two denial-of-service advisories that no
-  reachable release fixes; the exposure is limited to responses from the
-  endpoint the operator configured, which is exactly the argument published as
-  a machine-readable [VEX document](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex)
-  rather than left in a comment.
+- **A response parsed from a semi-trusted peer is still parsed.** The object-store
+  path has carried an XML parser version with denial-of-service advisories that
+  the client-facing canonical-XML codec did not share; the exposure is limited to
+  responses from the endpoint the operator configured, which is exactly the
+  argument published as a machine-readable
+  [VEX document](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex)
+  rather than left in a comment. Read the current documents for the current
+  position — they name the versions, and they are regenerated from the gate.
 - **Multimedia blobs are stored, not inspected.** FerroEHR is not an antivirus
   and does not pretend to be; a malicious blob is delivered faithfully to
   whatever opens it.
@@ -235,14 +250,19 @@ reserved default rather than guessing, and a cross-tenant access is an empty
 result set rather than a `403` that would leak the existence of another tenant's
 data.
 
+A tenant *registry* that cannot be reached is a separate case and is not read as
+"no tenant": it answers `503`, like any other dependency failure, rather than
+falling through to the default.
+
 **Residual risk.**
 
-- **`FERROEHR__TENANCY__HEADER` is a tenant selector a client controls.** It is
-  a development affordance and there is no way to make it safe in production.
-  If it is set, tenancy is not a boundary. Leave it unset.
-- **A missing claim degrades quietly to the default tenant.** That is the
-  fail-safe choice, and its cost is that a misconfigured claim path looks like
-  "tenancy is doing nothing" rather than failing loudly.
+- **`FERROEHR__TENANCY__HEADER` is a tenant selector a client controls**, and
+  when set it **wins over the JWT claim**. It is a development affordance and
+  there is no way to make it safe in production. If it is set, tenancy is not a
+  boundary. Leave it unset.
+- **A missing or unknown claim degrades quietly to the default tenant.** That is
+  the fail-safe choice, and its cost is that a misconfigured claim path looks
+  like "tenancy is doing nothing" rather than failing loudly.
 - **Row-level security binds a connection, not a request.** The scoping is
   applied per connection from a shared pool; a defect in that plumbing is a
   cross-tenant read, which is why it is enforced by the database rather than by
@@ -279,9 +299,12 @@ contribution and an audit record in the same transaction.
 ### B7 — The audit trail
 
 **Control.** Every access is recorded in both official renderings (DICOM PS3.15
-and FHIR `AuditEvent`/BALP) into a local Audit Record Repository, on by default,
-with optional syslog and ATX:FHIR-Feed forwarding. Records are **hash-chained**,
-so `SELECT * FROM audit.verify_audit_chain()` names any record that was altered
+and FHIR R4B `AuditEvent`/BALP) into a local Audit Record Repository, on by
+default, with optional syslog and ATX:FHIR-Feed forwarding. Refusals — `401`,
+`403`, and the `400` a malformed credential header earns — are always recorded,
+and an unattributable denial is recorded as unattributed rather than under a
+fabricated subject. Records are **hash-chained**, so
+`SELECT * FROM audit.verify_audit_chain()` names any record that was altered
 or removed. ITI-81 is the retrieval side; ITI-19 mutual TLS is available for
 node authentication.
 
@@ -305,11 +328,15 @@ node authentication.
 **Control.** Releases are built by a reusable workflow that satisfies SLSA v1.0
 Build L3, signed through Sigstore with a signer identity a consumer can pin,
 carrying a CycloneDX dependency SBOM, a SPDX repository SBOM, in-toto
-provenance and a plain `sha256sum`. Container base images are digest-pinned and
-scanned weekly. Every action is pinned to a commit SHA, workflows are audited by
-`zizmor` on every pull request, and accepted advisories carry published VEX
-justifications. Commits and tags are signed and the tags are protected by a
-ruleset.
+provenance and a plain `sha256sum` — the verification procedure is
+[Verifying releases](verifying-releases.md). The release is created as a draft
+and only published once its full asset set is present, because a published
+release is immutable. Container base images are digest-pinned, and the published
+images are re-scanned weekly at the tag an operator actually pulls, with a
+fixable high-or-critical finding both failing the run and filing an issue. Every
+action is pinned to a commit SHA, workflows are audited by `zizmor` on every pull
+request, and accepted advisories carry published VEX justifications. Commits and
+tags are signed and the tags are protected by a ruleset.
 
 **Residual risk.**
 
@@ -343,8 +370,9 @@ Silence is never coverage, so these are stated rather than left to inference.
   the existence of records; nothing pads or delays.
 - **A legitimate user's authorized misuse**, beyond recording it.
 - **Denial of service by a resource-holding authorized caller** — an expensive
-  query, a large commit, a slow client. Rate limiting is coarse and off by
-  default; database and container limits are the operator's.
+  query, a large commit, a slow client. The rate limiter is on but coarse and
+  per-process; database statement timeouts and container limits are the
+  operator's.
 - **Data remanence.** Physical deletion removes rows; it does not scrub
   filesystem blocks, WAL segments, replicas or backups.
 - **Clinical correctness.** FerroEHR validates structure, invariants and

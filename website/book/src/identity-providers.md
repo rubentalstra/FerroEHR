@@ -28,9 +28,10 @@ not a user store — production deployments authenticate with OIDC bearer
 tokens.
 
 > [!NOTE]
-> The admin console follows the same rule: it signs in against the same IdP
-> and has no user-management screens. To create, disable, or re-role a user,
-> use your IdP's own administration surface.
+> The admin console follows the same rule: it authenticates against the same
+> credentials the CDR accepts — the same OIDC issuer, or Basic — and has no
+> user-management screens. To create, disable, or re-role a user, use your IdP's
+> own administration surface.
 
 ## How the CDR consumes an IdP
 
@@ -38,13 +39,17 @@ Two configuration groups do all the work:
 
 1. **Token validation** (`[auth.oidc]`): the server discovers the JWKS from
    the issuer's `.well-known/openid-configuration` and validates each
-   bearer token's signature, `iss`, and (when configured) `aud` — see the
+   bearer token's signature, `iss`, `exp`/`nbf`, and `aud` — the audience list
+   is mandatory, so a server with none refuses to boot rather than accepting
+   another service's token. See the
    [OIDC settings table](security.md#authentication).
 2. **Role mining** (`[authz.rbac]`): `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS`
    (default `["roles","groups","entitlements","realm_access.roles"]` — the RFC 9068
    §2.2.3.1 carriers, then the Keycloak shape) names the
    JWT claim paths whose values become the caller's roles for the
-   [role layer](security.md#authorization).
+   [role layer](security.md#authorization). A path may be dotted to walk nested
+   claims, and a claim holding a single string is accepted as readily as an
+   array.
 
 Everything below is just those two groups pointed at a different issuer.
 
@@ -69,10 +74,15 @@ Entra ID exposes a standards-compliant OIDC issuer per tenant.
    ```
 
 5. **Verify**: request a token for the app (any OAuth2 client credential or
-   auth-code flow) and call the API. A valid token without a required role must
-   get `403`; no token, `401`. If you instead get `400`, the header itself is
-   malformed rather than the credential rejected; a `503` means the CDR could not
-   reach your issuer's JWKS, so the token was never judged.
+   auth-code flow) and call the API. Read the status codes as a diagnostic:
+
+   | Status | What it tells you |
+   |---|---|
+   | `200`-family | roles arrived and the operation was permitted |
+   | `401` | no credential, or one the server rejected (the body deliberately never says which) |
+   | `403` | the token is valid but carries no role the operation needs — a clinical call needs at least one role, an admin call needs the admin role |
+   | `400` | the `Authorization` header itself is malformed; no credential was ever read |
+   | `503` | the CDR could not reach your issuer's JWKS, so the token was never judged — check network egress and the discovery document, not the token |
 
 > [!IMPORTANT]
 > A role must arrive in a **role claim**, not in `scope`. The OAuth2 `scope`
@@ -86,6 +96,14 @@ Entra ID exposes a standards-compliant OIDC issuer per tenant.
 > Group-based deployments can emit the `groups` claim instead and list it in
 > `ROLE_CLAIMS` — but group claims arrive as object IDs unless you configure
 > group names, so app roles usually read better in policy.
+
+> [!WARNING]
+> Two configuration mistakes are boot errors rather than runtime surprises, so
+> you will find them the first time you start the server: an issuer that is not
+> an `https` URL with no query or fragment, and an empty audience list. Both are
+> deliberate — the second is what stops this server accepting a token minted for
+> a different service. Do not reach for `ALLOW_INSECURE_ISSUER` or a shared
+> `HMAC_SECRET` to get past them; both are development-only postures.
 
 ## AD FS (on-premises Active Directory)
 
@@ -108,8 +126,8 @@ broker) rather than pointing anything at LDAP.
    ```
 
    Discovery works out of the box (`https://adfs.example.com/adfs/.well-known/openid-configuration`).
-4. **Verify** exactly as above: `401` without a token, `403` with a token
-   that lacks the required role.
+4. **Verify** with the same status table as above: `401` without a token, `403`
+   with a token that lacks the required role.
 
 > [!NOTE]
 > AD FS emits a single string for one role and an array for several; the
@@ -133,4 +151,14 @@ The broker owns the LDAP bind; the CDR sees only signed tokens.
 Tenancy is also credential-derived: the tenant is read from a JWT claim per
 request (see [multi-tenancy](security.md#multi-tenancy)), so a multi-tenant
 IdP setup simply issues the tenant claim alongside the roles. No client —
-including the admin console — chooses a tenant; the credential does.
+including the admin console — chooses a tenant; the credential does. There is a
+development header override, and setting it hands tenant selection to the
+client, so leave it unset.
+
+## Serving SMART apps
+
+If your IdP is also the authorization server for SMART App Launch apps, the same
+`[auth.oidc]` block does double duty: the CDR must be able to validate the tokens
+those apps come back with, so SMART cannot be enabled without it, and the issuer
+the CDR *advertises* to apps must be the same one it *accepts* tokens from — a
+mismatch is refused at boot. See [SMART App Launch](smart-app-launch.md).
