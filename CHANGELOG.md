@@ -673,6 +673,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A `TERMINOLOGY_ID` is no longer refused for its lexical form.** The CDR
+  rejected composition values such as `snomed_ct(3.1)` and `SNOMED CT` with
+  `Invariant Value_valid failed on type TERMINOLOGY_ID` — an invariant the
+  released BASE model does not declare anywhere: the class table carries no
+  Invariants row and the machine-readable model no `invariants` key. Released
+  QUERY 1.1.0 settles it from the other side by publishing
+  `terminology_id/value='snomed_ct(3.1)'` in its own normative example, which
+  the enforced production forbade. Values that were being rejected at commit
+  are now accepted.
+
 - **Five CI gates ran without gating anything.** Branch protection routes
   through a single aggregate check, which is what lets jobs be added or renamed
   without editing repository settings — but a job missing from that check's
