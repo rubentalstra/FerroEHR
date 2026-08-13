@@ -215,9 +215,9 @@ impl ConnectionConfig {
 ///
 /// Both defaults are derived from this implementation's own measured ceiling
 /// rather than chosen: the committed step-load record
-/// (`docs/conformance/ferroehr/stress.json`) puts maximum sustainable
-/// whole-server throughput at 512 requests/second on the reference SUT. The
-/// principal tier is set at twice that and the address tier at four times, so
+/// (`docs/conformance/ferroehr/stress.json`) is the authority for maximum
+/// sustainable whole-server throughput on the reference SUT. The
+/// principal tier is set at twice that ceiling and the address tier at four times, so
 /// neither can refuse a caller until it is asking for more than the entire
 /// server could serve — below that line, capacity is the shed's job, and above
 /// it the traffic is not a client. A deployment that earns a higher volumetric

@@ -17,8 +17,10 @@
 # One coupled choice — the components' generations are modelled against each
 # other, so they never vary independently. stable → development is always a
 # safe change (openEHR minor releases are additive); development → stable is
-# supported only for data that never used development-only constructs — such
-# stored objects are refused loudly at read, never silently down-converted.
+# supported only for data that never used development-only constructs. The
+# profile is the ACCEPTANCE boundary: ingress and AQL planning refuse
+# constructs outside the active generation set; stored content is never
+# silently down-converted (a read-time refusal is tracked on #2352).
 spec_profile = "development"
 
 # ── [server] — HTTP listener + REST surface ──────────────────────────────────
