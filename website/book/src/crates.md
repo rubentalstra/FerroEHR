@@ -20,8 +20,8 @@ vendored specification text.
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.27"
-openehr-its = "0.0.27"
+openehr-rm = "0.0.28"
+openehr-its = "0.0.28"
 ```
 
 All eight are **edition 2024** with an MSRV of **Rust 1.96**, and all eight
@@ -104,7 +104,7 @@ enforces instead of carrying a second one:
 
 ```toml
 [dependencies]
-openehr-its = { version = "0.0.27", default-features = false }
+openehr-its = { version = "0.0.28", default-features = false }
 ```
 
 ## Releases
@@ -121,18 +121,20 @@ internal requirements unresolvable for every consumer.
 ## Licensing
 
 `openehr-query` and `openehr-adl` are plain **MIT**: their packages ship only
-their own Rust sources, the README, and the MIT text. The six crates that embed
-material derived from the official openEHR machine-readable artifacts —
+their own Rust sources, the README, and the MIT text. Five of the crates that
+embed material derived from the official openEHR machine-readable artifacts —
 generated types carrying specification documentation text, and the vendored
 ITS-JSON schema — declare **`MIT AND Apache-2.0`** and ship both license texts
 in the package.
 
-`openehr-term` carries one further term: the official openEHR terminology XML
-it embeds (the five language bundles, the external-terminology index, and the
-property/unit data) is **CC-BY-SA 3.0**, redistributed verbatim with
-attribution, and is not covered by that crate's `MIT AND Apache-2.0`
-declaration. If you redistribute the crate, the terminology data travels under
-CC-BY-SA 3.0. The full picture, including the vendored material that never
-reaches a published package, is in [Licensing](licensing.md).
+`openehr-term` carries a third term, because it embeds a different kind of
+openEHR material: the official terminology XML (the five language bundles, the
+external-terminology index, and the property/unit data) is **CC-BY-SA 3.0**,
+redistributed verbatim with attribution. Its manifest declares
+**`MIT AND Apache-2.0 AND CC-BY-SA-3.0`** and the package ships all three
+license texts, so the declaration a consumer reads names every license the
+crate's own bytes are under. If you redistribute the crate, the terminology data
+travels under CC-BY-SA 3.0. The full picture, including the vendored material
+that never reaches a published package, is in [Licensing](licensing.md).
 
 The openEHR specifications themselves are © the openEHR Foundation.

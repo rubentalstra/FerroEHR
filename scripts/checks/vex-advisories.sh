@@ -17,6 +17,12 @@
 #
 # Mutation-proven in both directions: adding an ignore to `deny.toml` without a
 # prose entry fails, and touching one byte of the generated JSON fails.
+#
+# What this gate CANNOT see: whether either side still describes reality. An
+# ignore and its justification agree perfectly right up until a dependency
+# upgrade resolves the advisory, at which point both are stale and both still
+# pass here. `scripts/checks/advisory-exceptions.sh` is that half, and it runs in
+# the cargo-deny job, which is where the graph is resolvable.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 

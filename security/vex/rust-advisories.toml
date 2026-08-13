@@ -34,8 +34,8 @@
 id = "https://ferroehr.eu/vex/rust-dependency-advisories"
 author = "FerroEHR project"
 role = "vendor"
-timestamp = "2026-08-12T00:00:00Z"
-version = 1
+timestamp = "2026-08-13T00:00:00Z"
+version = 2
 
 # What the statements are about: the released server binary and the container
 # image built from it. Both carry the same Cargo dependency graph, which is the
@@ -57,49 +57,62 @@ status = "not_affected"
 justification = "vulnerable_code_cannot_be_controlled_by_adversary"
 impact = """
 The Marvin timing sidechannel leaks information about an RSA PRIVATE key \
-through the timing of private-key operations. FerroEHR holds no RSA private \
-key and performs no RSA private-key operation. The crate is reached only \
-through `openidconnect` in the OIDC authentication path, where the sole RSA \
-operation is verifying an RS256 signature on an ID token using the identity \
-provider's PUBLIC key. There is no secret in that computation for a timing \
-observation to recover. No upstream fix exists — `rsa` has no patched release \
-— so this is not a deferred upgrade; the exposure is absent rather than \
-accepted. Re-evaluate if a release beyond rsa 0.9 ships, or if this codebase \
-ever performs an RSA decryption or signing operation.\
+through the timing of private-key operations, so what matters is whether a \
+FerroEHR process performs one. Two paths reach the crate. Through \
+`openidconnect`, in the OIDC authentication path, the sole RSA operation is \
+verifying an RS256 signature on an ID token with the identity provider's \
+PUBLIC key: there is no secret in that computation for a timing observation to \
+recover. Through `pgp`, in VERSION signing, an RSA operation would be a \
+private-key one — but only in `[signing] mode = "pgp"`, which is not the \
+default: the shipped default is `digest` mode (SHA-256 over the canonical \
+form), which uses no asymmetric key at all, so the default artifact performs no \
+RSA private-key operation. A deployment that does enable `pgp` mode chooses its \
+own OpenPGP key, and an ECC/EdDSA signing key keeps `rsa` off the signing path \
+entirely; a deployment that enables `pgp` mode with an RSA key is outside this \
+statement and should rotate to an ECC key. No upstream fix exists — `rsa` has \
+no patched release — so this is not a deferred upgrade. Re-evaluate if a \
+release beyond rsa 0.9 ships, or if the default signing mode changes.\
 """
 
 [[accepted]]
 id = "RUSTSEC-2026-0194"
 crate = "quick-xml"
 status = "not_affected"
-justification = "vulnerable_code_cannot_be_controlled_by_adversary"
+justification = "vulnerable_code_not_in_execute_path"
 impact = """
 Quadratic run time when a start tag is checked for duplicate attribute names \
-(denial of service). The affected version, quick-xml 0.40.1, enters the graph \
-only through `object_store` 0.14.0 — the S3 multimedia offload — which is the \
-latest release and requires `quick-xml ^0.40`, so no fixed version is \
-reachable. The parser in that path reads S3 API RESPONSES from the endpoint \
-the operator configured, a semi-trusted peer inside the deployment's own \
-trust boundary; it never sees a request body, an AQL query, or any other \
-client-supplied bytes. FerroEHR's own canonical-XML surface — the one that \
-does parse client input — is built on quick-xml 0.41, which carries the fix. \
-Re-evaluate on the next `object_store` release.\
+(denial of service), fixed in quick-xml 0.41.0. Every XML surface FerroEHR \
+parses is already on the fixed version: the canonical-XML codec that reads \
+client input uses quick-xml 0.41, and so does the S3 multimedia offload, since \
+`object_store` 0.14.1 requires `quick-xml 0.41`. One pre-fix version remains in \
+the dependency graph — quick-xml 0.26.0 — and `cargo tree -i \
+quick-xml@0.26.0` resolves exactly one path to it: `inferno`, the flamegraph \
+RENDERER reached through `pprof` (the opt-in `/management/flamegraph` endpoint \
+and the criterion bench profiler). inferno imports `quick_xml::Writer` and the \
+`Bytes*`/`Event` writer types and nothing else; it constructs no `Reader`, no \
+`NsReader`, and never iterates a start tag's attributes, so the affected code — \
+the `Attributes` iterator with duplicate checks enabled, and `NsReader` which \
+reaches it internally — is never executed. There is no XML INPUT anywhere on \
+that path: inferno turns collapsed stack text into an SVG document. \
+Re-evaluate when `pprof`/`inferno` bump quick-xml.\
 """
 
 [[accepted]]
 id = "RUSTSEC-2026-0195"
 crate = "quick-xml"
 status = "not_affected"
-justification = "vulnerable_code_cannot_be_controlled_by_adversary"
+justification = "vulnerable_code_not_in_execute_path"
 impact = """
 Unbounded namespace-declaration allocation in `NsReader`, enabling \
-memory-exhaustion denial of service. Same reachability as RUSTSEC-2026-0194 \
-and the same argument: quick-xml 0.40.1 is pulled only by `object_store` \
-0.14.0 (the latest release, requiring `quick-xml ^0.40`) for the S3 \
-multimedia offload, where it parses responses from the operator-configured \
-object-store endpoint and never client input. The client-facing canonical-XML \
-codec uses quick-xml 0.41, which is patched. Re-evaluate on the next \
-`object_store` release.\
+memory-exhaustion denial of service, fixed in quick-xml 0.41.0. Same \
+reachability as RUSTSEC-2026-0194 and the same argument: both XML surfaces that \
+parse anything — the client-facing canonical-XML codec and the S3 multimedia \
+offload via `object_store` 0.14.1 — are on quick-xml 0.41, and the one pre-fix \
+version left, quick-xml 0.26.0, is reached solely by `inferno` through `pprof` \
+(the flamegraph renderer). inferno only WRITES XML: it constructs a \
+`quick_xml::Writer` and emits SVG events, and never instantiates `NsReader` or \
+calls `NamespaceResolver::push`, which are the affected code paths this \
+advisory names. Re-evaluate when `pprof`/`inferno` bump quick-xml.\
 """
 
 [[accepted]]
@@ -126,12 +139,13 @@ justification = "vulnerable_code_not_present"
 impact = """
 An UNMAINTAINED-crate advisory, not a vulnerability: the author archived the \
 repository and RustSec records no flaw and no patched version. `paste` is a \
-procedural macro that pastes tokens at compile time, reached through \
-`utoipa-axum` 0.2.0 — the latest release of the official utoipa axum \
-bindings, for which no paste-free version exists. Like every proc-macro it \
-runs inside the compiler and links into nothing that ships, so it is absent \
-from the artifacts this document describes. Re-evaluate on the next \
-`utoipa-axum` release.\
+procedural macro that pastes tokens at compile time, reached by two carriers \
+(`cargo tree -i paste@1.0.15`): `utoipa-axum` 0.2.0 in the server — the latest \
+release of the official utoipa axum bindings, for which no paste-free version \
+exists — and the Leptos 0.8 crate family in the admin console. Like every \
+proc-macro it runs inside the compiler and links into nothing that ships, so it \
+is absent from the artifacts this document describes. Re-evaluate on the next \
+`utoipa-axum` or Leptos release.\
 """
 
 # ── Reported by lock-file scanners only ─────────────────────────────────────
