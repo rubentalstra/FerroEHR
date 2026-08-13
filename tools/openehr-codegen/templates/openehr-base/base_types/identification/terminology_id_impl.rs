@@ -7,6 +7,15 @@
 //! Spec: BASE 1.3.0
 //! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.terminology_id.adoc`.
 //! Lexical form: `name [ '(' version ')' ]`, e.g. `SNOMED-CT`, `ICD10AM(3rd_ed)`.
+//!
+//! That lexical form is DESCRIPTIVE. The class table carries no `Invariants`
+//! row and the BMM no `invariants` key — unlike its sibling `VERSION_TREE_ID`,
+//! which declares seven — so this type constrains no value and there is no
+//! `Validate` impl below. Released QUERY 1.1.0
+//! (`docs/specs/openehr/QUERY/docs/AQL/master03-syntax.adoc` §Node predicate)
+//! publishes `terminology_id/value='snomed_ct(3.1)'`, which the master05
+//! §Syntaxes production forbids: enforcing it refused openEHR's own example
+//! (#2314).
 
 use super::terminology_id::TerminologyId;
 
@@ -32,6 +41,16 @@ impl TerminologyId {
             .and_then(|(_, rest)| rest.strip_suffix(')'))
             .unwrap_or("")
     }
+}
+
+impl crate::validate::Validate for TerminologyId {
+    /// Declares nothing, because the class declares nothing.
+    ///
+    /// The impl exists because the RM validation walk requires every visited
+    /// type to implement the trait, not because there is a constraint to
+    /// express: see the module documentation for why the lexical form is not
+    /// one.
+    fn validate_invariants(&self, _out: &mut Vec<crate::validate::InvariantViolation>) {}
 }
 
 #[cfg(test)]
@@ -64,109 +83,27 @@ mod tests {
         assert_eq!(t.name(), "ICD10AM");
         assert_eq!(t.version_id(), "");
     }
-}
 
-/// Lexical validity per BASE base_types master05 §Syntaxes:
-/// `terminology_id = name-str, [ '(', name-str, ')' ]` with
-/// `name-str = letter, { letter | digit | '_' | '-' | '/' | '+' }`.
-///
-/// The name is `name-str` exactly: an interior space, and the `:` and `.` of a
-/// URI, are all outside it.
-///
-/// NOTE: the version part drops `name-str`'s leading-letter requirement,
-/// because every example the same chapter gives — `ICD9(1999)`,
-/// `ICD10AM(3rd_ed)`, `ICD10AM(4th_ed)` (§Terminology Identifiers) — starts its
-/// version with a digit, so reading `name-str` there would refuse the released
-/// text's own identifiers (#2283).
-#[must_use]
-pub(crate) fn is_valid_terminology_id(value: &str) -> bool {
-    /// The `name-str` body: `letter | digit | '_' | '-' | '/' | '+'`.
-    fn body(s: &str) -> bool {
-        !s.is_empty()
-            && s.chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '/' | '+'))
-    }
-    /// `name-str = letter, { letter | digit | '_' | '-' | '/' | '+' }`.
-    fn name_str(s: &str) -> bool {
-        s.starts_with(|c: char| c.is_ascii_alphabetic()) && body(s)
-    }
-    match value.split_once('(') {
-        None => name_str(value),
-        Some((name, rest)) => rest
-            .strip_suffix(')')
-            .is_some_and(|version| name_str(name) && body(version)),
-    }
-}
-
-impl crate::validate::Validate for TerminologyId {
-    fn validate_invariants(&self, out: &mut Vec<crate::validate::InvariantViolation>) {
-        if !is_valid_terminology_id(&self.value) {
-            out.push(crate::validate::InvariantViolation::here(
-                "Invariant Value_valid failed on type TERMINOLOGY_ID (the master05 \
-                 §Syntaxes production `terminology_id = name-str, [ '(', name-str, \
-                 ')' ]`, where a name-str starts with a letter and continues with \
-                 letters, digits, '_', '-', '/' or '+')",
-            ));
-        }
-    }
-}
-
-#[cfg(test)]
-mod validity_tests {
-    use super::*;
-
-    /// The accepted forms are the production's, and they cover every
-    /// terminology this implementation actually carries.
+    /// The accessors read every shape a released component publishes as a
+    /// `TERMINOLOGY_ID.value`, including the two the withdrawn production
+    /// refused (#2314).
     #[test]
-    fn terminology_id_follows_the_name_str_production() {
-        for ok in [
-            "openehr",
-            "local",
-            "x",
-            "ISO_639-1",
-            "ISO_3166-1",
-            "IANA_character-sets",
-            "IANA_media-types",
-            "SNOMED-CT",
-            "ICD10",
-            "Unicode",
-            // The chapter's own versioned examples (§Terminology Identifiers).
-            "ICD9(1999)",
-            "ICD10AM(3rd_ed)",
-            "ICD10AM(4th_ed)",
-            // The production admits '/' and '+' in a name-str.
-            "some/terminology+ext",
-        ] {
-            assert!(is_valid_terminology_id(ok), "{ok:?} must be valid");
-        }
-    }
+    fn released_shapes_decompose() {
+        // QUERY 1.1.0 `master03-syntax.adoc:239` spells this as a
+        // `terminology_id/value` in the canonical node-predicate expansion.
+        let dotted = tid("snomed_ct(3.1)");
+        assert_eq!(dotted.name(), "snomed_ct");
+        assert_eq!(dotted.version_id(), "3.1");
 
-    /// Every refusal is asserted, so a silently loosened reader is a failing
-    /// build rather than a quiet drift (`.claude/rules/spec-adherence.md`).
-    #[test]
-    fn terminology_id_refuses_what_the_production_forbids() {
-        for bad in [
-            "",
-            // An interior space: the spec's own example is `SNOMED-CT`.
-            "SNOMED CT",
-            "SNOMED CT ",
-            // A URI: master05 admits neither ':' nor '.' in a name-str.
-            "http://snomed.info/sct",
-            "https://vsac.nlm.nih.gov/valueset/2.16.840.1.113762.1.4.1010.2",
-            // name-str must START with a letter.
-            "1CD10",
-            "_leading",
-            // An unclosed or empty version group.
-            "x(",
-            "ICD10AM(3rd_ed",
-            "ICD10AM()",
-            // The version drops only the leading-letter rule, not the character
-            // class.
-            "ICD10AM(3rd ed)",
-            "ICD10AM(1999.1)",
-            "bad\u{7}id",
-        ] {
-            assert!(!is_valid_terminology_id(bad), "{bad:?} must be invalid");
-        }
+        // An interior space is a name like any other now that nothing
+        // constrains the value.
+        let spaced = tid("SNOMED CT");
+        assert_eq!(spaced.name(), "SNOMED CT");
+        assert_eq!(spaced.version_id(), "");
+
+        // A URI has no version group, so it decomposes to itself.
+        let uri = tid("http://snomed.info/sct");
+        assert_eq!(uri.name(), "http://snomed.info/sct");
+        assert_eq!(uri.version_id(), "");
     }
 }
