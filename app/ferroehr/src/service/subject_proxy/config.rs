@@ -20,7 +20,7 @@
 //!
 //! This is the `[subject_proxy]` section of the one config tree
 //! ([`crate::config::FerroEhrConfig`]); no loader of its own. The env form
-//! `FERROEHR_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL` binds through the tree's
+//! `FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL` binds through the tree's
 //! mechanical mapping.
 
 #![expect(
