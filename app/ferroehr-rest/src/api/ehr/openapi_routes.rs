@@ -735,6 +735,18 @@ pub(crate) async fn ehr_create_with_id(
                                       Acceptable`\"; the Simplified Formats are \
                                       defined for templated COMPOSITION content \
                                       only, and EHR_STATUS is not templated).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -853,6 +865,18 @@ pub(crate) async fn ehr_status_get_by_version_id(
                                       Acceptable`\"; the Simplified Formats are \
                                       defined for templated COMPOSITION content \
                                       only, and EHR_STATUS is not templated).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -1491,6 +1515,18 @@ pub(crate) async fn versioned_ehr_status_revision_history(
                                       with HTTP status code `406 Not \
                                       Acceptable`\"; the Simplified Formats are \
                                       not defined for this resource).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -1646,6 +1682,18 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
                                       with HTTP status code `406 Not \
                                       Acceptable`\"; the Simplified Formats are \
                                       not defined for this resource).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -2233,6 +2281,18 @@ pub(crate) async fn composition_create(
                                       service cannot fulfill this aspect of the \
                                       request, it MUST respond with HTTP status \
                                       code `406 Not Acceptable`\").",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -3249,6 +3309,18 @@ pub(crate) async fn versioned_composition_revision_history(
                                       `406`; the Simplified Formats describe the \
                                       COMPOSITION content, not the VERSION \
                                       envelope).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -3461,6 +3533,18 @@ pub(crate) async fn versioned_composition_version_get_at_time(
                                       `406`; the Simplified Formats describe the \
                                       COMPOSITION content, not the VERSION \
                                       envelope).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -3643,6 +3727,18 @@ pub(crate) async fn versioned_composition_version_get_by_id(
                                       Acceptable`\"; the Simplified Formats are \
                                       defined for templated COMPOSITION \
                                       content, and a FOLDER is not templated).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -4677,6 +4773,18 @@ pub(crate) async fn directory_delete(
                                       Acceptable`\"; the Simplified Formats are \
                                       defined for templated COMPOSITION \
                                       content, and a FOLDER is not templated).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]
@@ -5511,6 +5619,18 @@ pub(crate) async fn contribution_list(
                                       aspect of the request, it MUST respond \
                                       with HTTP status code `406 Not \
                                       Acceptable`\").",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime specification-generation \
+                                      selection. The stored version body uses \
+                                      openEHR specification surface this \
+                                      deployment's active `spec_profile` does \
+                                      not define, so it is refused rather than \
+                                      served under a generation set that cannot \
+                                      express it — and never down-converted. \
+                                      Reachable only where `spec_profile = \"stable\"` \
+                                      is configured; the body names switching \
+                                      back to `development` as the remedy.",
          body = serde_json::Value)
     )
 )]

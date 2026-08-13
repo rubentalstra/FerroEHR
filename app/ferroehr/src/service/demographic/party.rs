@@ -95,7 +95,7 @@ impl FerroEhrService {
         if stored != Some(support::kind_of(kind)) {
             return Err(miss());
         }
-        support::load_ehrless(&self.pool, vo_id, version, at)
+        support::load_ehrless(&self.pool, self.spec_profile, vo_id, version, at)
             .await?
             .ok_or_else(miss)
     }

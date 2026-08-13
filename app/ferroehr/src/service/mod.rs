@@ -452,6 +452,7 @@ impl FerroEhrService {
         SigningCtx {
             system_id: self.effective_system_id(),
             signer: &self.signer,
+            spec_profile: self.spec_profile,
             #[cfg(feature = "multimedia")]
             multimedia: self.multimedia.as_deref(),
             outbox_enabled: self.outbox_enabled,
