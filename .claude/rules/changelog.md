@@ -67,12 +67,15 @@ optional:
   overwrite a published chart version. GitHub releases are immutable by the
   platform; container tags are immutable only because our lane enforces it.
 
-- **The tag also produces an archived artifact.** Zenodo is connected to this
-  repository, so publishing a release makes Zenodo take the zipball and mint a
-  DOI from `.zenodo.json`. That deposit is immutable — whatever the metadata
-  says at publish time is what the DOI carries — so the metadata is verified
-  BEFORE the cut, never after. A badge cites the CONCEPT DOI; a version DOI
-  freezes on whichever release was current the day it was added.
+- **The tag does NOT produce an archived artifact — Zenodo is not connected.**
+  Measured after the v3.17.4 cut: the Zenodo API returned zero records for this
+  project while a control query returned results, so the absence is real and
+  not an indexing lag. This entry previously asserted the integration as fact,
+  which is exactly how a cut passes believing it archived something when it did
+  not. `.zenodo.json` is generated and valid, so the metadata half is ready and
+  only the connection is missing. Two properties govern it if it is ever
+  enabled: a deposit is IMMUTABLE, so the metadata is verified before the cut
+  and never after; and enabling it archives the NEXT release, never a past one.
 - **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section
