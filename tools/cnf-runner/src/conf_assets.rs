@@ -49,6 +49,7 @@ const STYLE: &str = "<style>\n\
   .ev-failed { fill: #d55e00; }\n\
   .ev-inconclusive { fill: #e69f00; }\n\
   .ev-not-evidenced { fill: #cbc9c2; }\n\
+  .ev-not-claimed { fill: #edece8; }\n\
   .cell-required { stroke: #52514e; stroke-width: 1.2; }\n\
   .cell-optional { stroke: #cbc9c2; stroke-width: 1; stroke-dasharray: 3 2; }\n\
   .bar-passed { fill: #0072b2; }\n\
@@ -68,6 +69,7 @@ const STYLE: &str = "<style>\n\
     .ev-failed { fill: #e5484d; }\n\
     .ev-inconclusive { fill: #f5a623; }\n\
     .ev-not-evidenced { fill: #4a4a47; }\n\
+    .ev-not-claimed { fill: #2b2b29; }\n\
     .cell-required { stroke: #c3c2b7; }\n\
     .cell-optional { stroke: #4a4a47; }\n\
     .bar-passed { fill: #3987e5; }\n\
@@ -98,6 +100,7 @@ fn evidence_encoding(evidence: Evidence) -> (&'static str, &'static str, &'stati
         Evidence::Failed => ("ev-failed", "✕", "FAILED"),
         Evidence::Inconclusive => ("ev-inconclusive", "?", "INCONCLUSIVE"),
         Evidence::NotEvidenced => ("ev-not-evidenced", "○", "not evidenced"),
+        Evidence::NotClaimed => ("ev-not-claimed", "–", "not claimed"),
     }
 }
 
@@ -190,6 +193,7 @@ pub fn heat_grid_svg(
         Evidence::Failed,
         Evidence::Inconclusive,
         Evidence::NotEvidenced,
+        Evidence::NotClaimed,
     ] {
         let (class, glyph, label) = evidence_encoding(evidence);
         let _ = write!(
@@ -201,7 +205,10 @@ pub fn heat_grid_svg(
             lc = label_class(evidence),
             tx = lx + 18.0,
         );
-        lx += 20.0 + 7.2 * label.chars().count() as f64 + 16.0;
+        // Rounded to a tenth: the advance accumulates over the legend, and
+        // binary floating point otherwise prints a 17-digit coordinate into a
+        // published asset.
+        lx = ((lx + 20.0 + 7.2 * label.chars().count() as f64 + 16.0) * 10.0).round() / 10.0;
     }
     let _ = writeln!(
         out,
@@ -805,7 +812,10 @@ pub fn chapter_bars_svg(sut_label: &str, chapters: &[ChapterRow]) -> String {
             gx = lx + 7.0,
             tx = lx + 20.0,
         );
-        lx += 20.0 + 7.2 * label.chars().count() as f64 + 16.0;
+        // Rounded to a tenth: the advance accumulates over the legend, and
+        // binary floating point otherwise prints a 17-digit coordinate into a
+        // published asset.
+        lx = ((lx + 20.0 + 7.2 * label.chars().count() as f64 + 16.0) * 10.0).round() / 10.0;
     }
     let _ = writeln!(
         out,

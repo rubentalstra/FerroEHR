@@ -28,8 +28,8 @@ The Realization column says what the row's cases were verified against: `release
 | --- | --- | --- | --- | --- |
 | Platform | Adl14ArchetypeProvisioning | OPT | extension | INCONCLUSIVE (errored rows — never green by absorption) |
 | Platform | Adl14OptProvisioning | Y | released-wire | FAIL |
-| Platform | Adl2ArchetypeProvisioning | OPT | released-wire | not evidenced |
-| Platform | Adl2OptProvisioning | OPT | released-wire | not evidenced |
+| Platform | Adl2ArchetypeProvisioning | OPT | released-wire | not claimed |
+| Platform | Adl2OptProvisioning | OPT | released-wire | not claimed |
 | Platform | TemplateExamples | OPT | released-wire | not evidenced |
 | Platform | QueryProvisioning | Y | released-wire | FAIL |
 | Platform | EhrOperations | Y | released-wire | FAIL |
@@ -39,36 +39,36 @@ The Realization column says what the row's cases were verified against: `release
 | Platform | ChangeSets | Y | released-wire | FAIL |
 | Platform | Versioning | Y | released-wire | FAIL |
 | Platform | ArchetypeValidation | Y | released-wire | FAIL |
-| Platform | PartyOperations | OPT | released-wire | not evidenced |
-| Platform | PartyRelationshipOperations | OPT | extension | not evidenced |
-| Platform | DemographicArchetypeValidation | OPT | released-wire | not evidenced |
+| Platform | PartyOperations | OPT | released-wire | not claimed |
+| Platform | PartyRelationshipOperations | OPT | extension | not claimed |
+| Platform | DemographicArchetypeValidation | OPT | released-wire | not claimed |
 | Platform | AqlBasic | Y | released-wire | FAIL |
 | Platform | AqlAdvanced | OPT | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
-| Platform | AqlTerminology | OPT | released-wire | not evidenced |
-| Platform | ActivityReport | OPT | extension | not evidenced |
+| Platform | AqlTerminology | OPT | released-wire | not claimed |
+| Platform | ActivityReport | OPT | extension | not claimed |
 | Platform | PhysicalDeletion | OPT | released-wire | not evidenced |
-| Platform | EhrDumpLoad | OPT | extension | not evidenced |
-| Platform | BulkEhrLoad | OPT | released-wire | not evidenced |
-| Platform | EhrArchive | OPT | extension | not evidenced |
-| Platform | DemographicArchive | OPT | extension | not evidenced |
-| Platform | EhrExtract | OPT | extension | not evidenced |
-| Platform | Tds | OPT | extension | not evidenced |
+| Platform | EhrDumpLoad | OPT | extension | not claimed |
+| Platform | BulkEhrLoad | OPT | released-wire | not claimed |
+| Platform | EhrArchive | OPT | extension | not claimed |
+| Platform | DemographicArchive | OPT | extension | not claimed |
+| Platform | EhrExtract | OPT | extension | not claimed |
+| Platform | Tds | OPT | extension | not claimed |
 | Platform | DefinitionApi | Y | released-wire | FAIL |
 | Platform | EhrApi | Y | released-wire | FAIL |
-| Platform | DemographicApi | OPT | released-wire | not evidenced |
+| Platform | DemographicApi | OPT | released-wire | not claimed |
 | Platform | QueryApi | Y | released-wire | FAIL |
 | Platform | AdminApi | OPT | released-wire | not evidenced |
-| Platform | MessageApi | OPT | extension | not evidenced |
-| Platform | SystemApi | OPT | released-wire | not evidenced |
-| Platform | ItemTags | OPT | released-wire | not evidenced |
-| Platform | Signing | OPT | released-wire | not evidenced |
-| Platform | SimplifiedFormats | OPT | released-wire | not evidenced |
-| Platform | SmartAppLaunch | OPT | released-wire | not evidenced |
+| Platform | MessageApi | OPT | extension | not claimed |
+| Platform | SystemApi | OPT | released-wire | not claimed |
+| Platform | ItemTags | OPT | released-wire | not claimed |
+| Platform | Signing | OPT | released-wire | not claimed |
+| Platform | SimplifiedFormats | OPT | released-wire | not claimed |
+| Platform | SmartAppLaunch | OPT | released-wire | not claimed |
 | Security | EhrDemographicSeparation | Y | released-wire | pass |
 | Security | AuthenticatedAccess | Y | released-wire | pass |
 | Security | AuthorizationSeparation | Y | released-wire | not evidenced |
-| Security | AuditAccountability | Y | released-wire | not evidenced |
-| Security | AnonymousEhrs | Y | released-wire | not evidenced |
+| Security | AuditAccountability | Y | released-wire | not claimed |
+| Security | AnonymousEhrs | Y | released-wire | not claimed |
 
 ## Workload Coverage
 

@@ -3,6 +3,15 @@
 # a bare `FROM EHR e` projection returns exactly the ONE scoped EHR row, so
 # its zero-rows ground becomes a one-row ground; the CONTAINS shapes keep
 # the zero-row ground in the parent case.
+#
+# The one-row expectation is RELEASED text, not an adjudication: SM
+# i_query_service.adoc gives `_ehr_ids_` as "Specific set of EHRs on which to
+# execute the query. If none supplied, a full population query will be
+# performed", and Query_types.md §Population queries names them from the other
+# side as the queries "not referring or using any `ehr_id` parameter to
+# constrain the scope on a specific EHR". Register AMB-101 is therefore NOT
+# declared here — its remaining half is the unrealized wire branch for an
+# UNKNOWN ehr_id, which the -unknown_ehr_scope sibling drives.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr
 kind: functional
 component: QUERY

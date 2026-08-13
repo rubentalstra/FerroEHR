@@ -732,6 +732,7 @@ fn evidence_token(evidence: Evidence) -> &'static str {
         Evidence::Failed => "FAIL",
         Evidence::Inconclusive => "INCONCLUSIVE (errored rows — never green by absorption)",
         Evidence::NotEvidenced => "not evidenced",
+        Evidence::NotClaimed => "not claimed",
     }
 }
 

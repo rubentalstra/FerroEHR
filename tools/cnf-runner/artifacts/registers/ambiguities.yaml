@@ -2971,28 +2971,34 @@ AMB-100:
 
 AMB-101:
   ambiguity: >-
-    What the ehr_id scope DOES to the executed query is never stated: the
-    strongest released verbs are "used to execute the query within a
-    single EHR context" and "MAY be used by the underlying backend to
-    perform routing, optimizations or similar". No sentence says it
-    filters the result set, injects an EHR predicate, or how it interacts
-    with an AQL that already fixes a DIFFERENT ehr_id (the spec's own
-    body example hardcodes one). And no released branch exists for a
-    well-formed but UNKNOWN ehr_id (the SM's ehr_id_does_not_exist error
-    has no wire realization; the ad-hoc ops declare no 404 at all).
+    The SM error `ehr_id_does_not_exist` has no released wire
+    realization: I_QUERY_SERVICE declares it on BOTH query operations,
+    but the ad-hoc operations bind no not-found response at all, so a
+    well-formed ehr_id scope naming an EHR that does not exist has no
+    assigned outcome — an SM-to-ITS realization gap. (What the scope DOES
+    is NOT part of this entry: SM defines `_ehr_ids_` as "Specific set of
+    EHRs on which to execute the query. If none supplied, a full
+    population query will be performed", and the ITS-REST query chapter
+    states the same effect from the other side, calling population
+    queries the ones "not referring or using any `ehr_id` parameter to
+    constrain the scope on a specific EHR".)
   source: >-
-    ITS-REST specifications/docs/query/Request.md §About the ehr_id
-    parameter + §the body example; docs/query/Query_types.md §Single EHR
-    queries; SM UML/classes/i_query_service.adoc (the declared error) —
-    confirmed first-hand.
+    SM UML/classes/i_query_service.adoc §execute_ad_hoc_query (the
+    `_ehr_ids_` parameter + the declared `ehr_id_does_not_exist` error);
+    ITS-REST specifications/docs/query/Query_types.md §Population queries
+    (the constraining effect) + §Single EHR queries; ITS-REST
+    specifications/docs/query/Request.md §About the ehr_id parameter (the
+    two carriers, at SHOULD strength); ITS-REST
+    specifications/operations/query_execute_adhoc_query.yaml §responses
+    (200/400/408 only — no not-found branch) — confirmed first-hand.
   handling: >-
-    Fixed handling: the scope constrains execution to the named EHR (a
-    conflicting in-AQL EHR predicate simply yields the intersection —
-    empty when they differ), and a well-formed but unknown ehr_id answers
-    404, REALIZING the SM's declared ehr_id_does_not_exist (SM is a
-    released oracle; the 404 is the only declared realization candidate).
-    Reported upstream (#1547): define the scoping semantics and bind the
-    unknown-EHR branch.
+    Fixed handling: a well-formed but unknown ehr_id answers 404,
+    REALIZING the SM's declared ehr_id_does_not_exist (SM is a released
+    oracle; the 404 is the only declared realization candidate). The
+    scoping semantics need no adjudication — they are released text — so
+    a conflicting in-AQL EHR predicate yields the intersection, empty
+    when the two differ. Reported upstream (#1547): bind the unknown-EHR
+    branch to a status.
   disposition: fixed_handling
   upstream_issue: 1547
 
