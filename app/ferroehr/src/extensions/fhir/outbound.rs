@@ -67,7 +67,8 @@ pub struct FhirOutboundHandle {
     shutdown: watch::Sender<bool>,
     join: JoinHandle<()>,
     /// Liveness of broker delivery: `true` while emitting succeeds, `false`
-    /// after a publish/transport failure. Surfaced by a health indicator.
+    /// after a publish/transport failure.
+    // TODO(#2358): surface this through a readiness indicator.
     healthy: Arc<AtomicBool>,
 }
 
@@ -268,8 +269,7 @@ async fn process_batch(
         {
             // Only COMPOSITION versions can map to a FHIR resource
             // (EHR_STATUS/FOLDER carry no mappable template). The template is
-            // read from the COMPOSITION body by the service (the envelope's
-            // template_id is currently NULL — see the service NOTE).
+            // read from the COMPOSITION body by the service.
             if version.get("kind").and_then(Value::as_str) != Some("COMPOSITION") {
                 continue;
             }
