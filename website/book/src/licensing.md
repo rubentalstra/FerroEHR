@@ -19,14 +19,16 @@ is stated as *FerroEHR contributors*, identically in `LICENSE`, in `REUSE.toml`,
 and in every first-party file header — a CI gate compares the three so they
 cannot drift apart.
 
-The six published spec crates that **embed** openEHR-derived material —
-`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-term`,
-`openehr-its` — declare `MIT AND Apache-2.0` and ship both license texts in the
-package: the emitted Rust is this project's, while the specification
-documentation text carried in the generated doc comments and the vendored JSON
-Schema are openEHR's. `openehr-term` additionally embeds the official openEHR
+Five of the published spec crates that **embed** openEHR-derived material —
+`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its` —
+declare `MIT AND Apache-2.0` and ship both license texts in the package: the
+emitted Rust is this project's, while the specification documentation text
+carried in the generated doc comments and the vendored JSON Schema are
+openEHR's. `openehr-term` embeds that material **and** the official openEHR
 terminology XML, which is CC-BY-SA 3.0 (see the table below) and is
-redistributed verbatim with attribution. See [Rust crates](crates.md#licensing).
+redistributed verbatim with attribution, so it declares
+`MIT AND Apache-2.0 AND CC-BY-SA-3.0` and ships all three texts. See
+[Rust crates](crates.md#licensing).
 
 ## Vendored third-party material
 

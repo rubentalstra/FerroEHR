@@ -24,26 +24,37 @@
 # rust_decimal drops that requirement upstream. It is deliberately NOT ignored
 # below: an ignore for an advisory this tool never raises records nothing and
 # would silently start applying if the tool ever became lock-file-based.
+#
+# THAT RULE IS MACHINE-ENFORCED, and so is its mirror — an ignore kept after the
+# advisory stopped firing. cargo-deny raises `advisory-not-detected` for an
+# `ignore` entry no crate in the graph matches, and
+# `scripts/checks/advisory-exceptions.sh` runs the check with that diagnostic
+# promoted to an error, so an exception resolved by a dependency upgrade fails
+# the build instead of outliving the finding it describes.
 [advisories]
 version = 2
 # Fail on any RustSec advisory. Add exceptions explicitly and dated.
 yanked = "deny"
 ignore = [
-  # 2026-07-07: Marvin attack timing sidechannel in `rsa` (pulled in via
-  # openidconnect → ferroehr-rest OIDC auth). No fixed release exists upstream;
-  # we only *verify* RS256 ID-token signatures (public-key operation) and never
-  # hold RSA private keys, so the private-key timing oracle does not apply.
+  # 2026-08-13: Marvin attack timing sidechannel in `rsa`; no fixed release
+  # exists upstream. TWO paths (`cargo tree -i rsa@0.9.10`): openidconnect →
+  # ferroehr-rest, which only VERIFIES RS256 ID-token signatures with the
+  # provider's PUBLIC key (no secret in that computation); and pgp → the VERSION
+  # signing key, reached only in `[signing] mode = "pgp"` (the default is
+  # `digest`, which uses no asymmetric key) and then with whatever key the
+  # operator supplies — an ECC/EdDSA key keeps `rsa` off the signing path.
   # Re-check when rsa > 0.9 ships. https://rustsec.org/advisories/RUSTSEC-2023-0071
-  { id = "RUSTSEC-2023-0071", reason = "no fix upstream; RSA used for signature verification only (no private keys held)" },
-  # 2026-07-12: two quick-xml 0.40.1 DoS-class advisories (unbounded namespace
-  # allocation; quadratic duplicate-attribute check), pulled in transitively via
-  # object_store 0.14.0 (the S3 multimedia offload) — object_store 0.14.0 is the
-  # LATEST release and requires quick-xml ^0.40, so no fix is reachable yet. The
-  # affected parser only reads S3 API responses from the operator-configured
-  # endpoint (a semi-trusted peer), not client input; our own canonical-XML
-  # path uses quick-xml 0.41 (fixed). Re-check on the next object_store release.
-  { id = "RUSTSEC-2026-0194", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
-  { id = "RUSTSEC-2026-0195", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
+  { id = "RUSTSEC-2023-0071", reason = "no fix upstream; RSA verification only in the OIDC path, and the pgp signing path is off by default (digest mode) and key-algorithm-agnostic" },
+  # 2026-08-13: two quick-xml DoS-class advisories (quadratic duplicate-attribute
+  # check; unbounded namespace allocation), both fixed in 0.41.0. The S3
+  # multimedia offload no longer carries them — object_store 0.14.1 requires
+  # quick-xml 0.41. The only pre-fix version left is quick-xml 0.26.0, and
+  # `cargo tree -i quick-xml@0.26.0` shows exactly one path: inferno → pprof,
+  # the flamegraph renderer. inferno imports `quick_xml::Writer` and nothing
+  # else — it never builds a reader, so neither advisory's affected code (the
+  # `Attributes` iterator, `NsReader`) is called. Re-check when pprof bumps it.
+  { id = "RUSTSEC-2026-0194", reason = "quick-xml 0.26.0 only via inferno (the pprof flamegraph renderer), which writes SVG and never constructs a reader" },
+  { id = "RUSTSEC-2026-0195", reason = "quick-xml 0.26.0 only via inferno (the pprof flamegraph renderer), which writes SVG and never constructs a reader" },
   # 2026-07-18: unmaintained-crate advisory only (no vulnerability); a
   # build-time proc-macro dependency of leptos_macro 0.8 — goes away when
   # leptos drops it upstream. Re-check at the next leptos bump.
@@ -87,6 +98,11 @@ exceptions = [
   # dependency of the profiling instrument; nothing of ours is derivative.
   # Scoped exception, not a blanket allow (2026-08-04, issue #1861).
   { allow = ["CDDL-1.0"], crate = "inferno" },
+  # openehr-term is OUR OWN crate, and it declares CC-BY-SA-3.0 because it
+  # redistributes openEHR's terminology XML verbatim (upstream
+  # specifications-TERM) alongside our MIT code. Scoped to that one crate — never
+  # a blanket allow of a copyleft DEPENDENCY.
+  { allow = ["CC-BY-SA-3.0"], crate = "openehr-term" },
 ]
 
 [bans]
