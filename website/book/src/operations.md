@@ -186,10 +186,12 @@ API). The chart's own gates assert that per container on every render, and the
 posture read back from a running container, plus the two things the chart
 cannot do for you (applying the namespace enforcement label, and narrowing the
 NetworkPolicy's ingress sources — the shipped policy narrows the *ports* and,
-until you set `networkPolicy.ingressFrom`, admits every source on them), are
-covered in
+until you set `networkPolicy.ingressFrom`, admits every source on them; set
+`networkPolicy.ingressAllowAll: false`, and `adminUi.networkPolicy.ingressAllowAll`
+for the console, to have that state refused at render instead), are covered in
 [Installation → The workload: security context & admission](installation/hardening-workload.md)
-and [Namespaces, network & policy](installation/hardening-network-policy.md).
+and [Namespaces, network & policy →
+Ingress](installation/hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours).
 
 The Compose path carries a comparable floor, and one guard keeps it:
 `scripts/checks/compose-hardening.sh` runs over every committed compose

@@ -219,10 +219,29 @@ spec:
 {{- end }}
 {{- if .Values.adminUi.networkPolicy.enabled }}
 ---
+# The console's ingress half has the same three states the CDR's policy has, and
+# for the same API reason: an ingress rule with no `from` admits every source —
+# other namespaces and off-cluster clients included
+# (https://kubernetes.io/docs/concepts/services-networking/network-policies/ —
+# "If no ... from is specified ... it allows all traffic"). The console is the
+# HUMAN-facing surface, so an accidentally open rule here is a login page reachable
+# from anywhere the cluster network reaches.
+#   ingressFrom set                                     → sources narrowed
+#   ingressFrom empty, ingressAllowAll true             → EVERY source (shipped)
+#   ingressFrom empty, ingressAllowAll false            → refused at render, below
+{{- if and (not .Values.adminUi.networkPolicy.ingressFrom) (not .Values.adminUi.networkPolicy.ingressAllowAll) }}
+{{- fail "adminUi.networkPolicy.ingressAllowAll=false with an empty adminUi.networkPolicy.ingressFrom: set adminUi.networkPolicy.ingressFrom to the peers that may reach the console (a namespaceSelector/podSelector for your ingress controller, or an ipBlock), or set adminUi.networkPolicy.ingressAllowAll=true to admit every source deliberately. An ingress rule with no `from` admits EVERY source — other namespaces and off-cluster clients — while `kubectl get networkpolicy` and every summary of it still read as default-deny, and what is exposed here is the console's login page. The narrowing recipe is in the book, installation/hardening-network-policy.md §Ingress." }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: {{ include "ferroehr.adminUiFullname" . }}
+  annotations:
+    {{- /* The posture THIS render has, not the one the chart could produce — the
+           same honesty the CDR's policy carries, because `kubectl describe` is
+           where an operator reads a policy back. */}}
+    kubernetes.io/description: >-
+      {{ if .Values.adminUi.networkPolicy.ingressFrom }}Ingress for the admin console: only its HTTP port, and only from the adminUi.networkPolicy.ingressFrom peers. Egress admits the CDR Service and DNS only.{{ else }}Ingress for the admin console: only its HTTP port, but from EVERY source — this policy narrows ports, NOT sources (adminUi.networkPolicy.ingressAllowAll=true). Set adminUi.networkPolicy.ingressFrom for a PHI workload. Egress admits the CDR Service and DNS only.{{ end }}
   labels:
     {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
 spec:
@@ -233,6 +252,8 @@ spec:
     - Ingress
     - Egress
   ingress:
+    {{- /* An empty `ingressFrom` renders NO `from`, which admits every source —
+           sanctioned only by `ingressAllowAll` (refused above otherwise). */}}
     - {{- with .Values.adminUi.networkPolicy.ingressFrom }}
       from:
         {{- toYaml . | nindent 8 }}

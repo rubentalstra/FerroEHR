@@ -79,10 +79,9 @@ impl FerroEhrService {
     /// EHR with nothing archived restores nothing and succeeds).
     ///
     /// NOTE (`i_admin_archive.adoc` declares only the two archive operations):
-    /// the SM has no un-archive call and the released ITS-REST Admin API
-    /// publishes no route for one, so this is a service-layer operation of our
-    /// own — the reverse an archival tier must have to be trustworthy — and it
-    /// adds nothing to the wire.
+    /// the SM has no un-archive call, so this operation and its admin route
+    /// (`POST /admin/archive/ehrs/restore`) are both our own extension — the
+    /// reverse an archival tier must have to be trustworthy.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id is not a well-formed UUID.
@@ -101,7 +100,8 @@ impl FerroEhrService {
     /// [`Self::archive_parties`].
     ///
     /// NOTE (`i_admin_archive.adoc` declares only the two archive operations):
-    /// spec-silent like its EHR twin above, and likewise service-layer only.
+    /// spec-silent like its EHR twin above; served at
+    /// `POST /admin/archive/parties/restore`, our own extension.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id is not a well-formed UUID.

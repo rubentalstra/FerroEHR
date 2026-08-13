@@ -201,6 +201,10 @@ networkPolicy:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: ingress-nginx
+  # The strict posture: with this false, an ingressFrom that ever goes empty is a
+  # refused render rather than a policy that quietly admits every source. This
+  # overlay is where that combination is exercised.
+  ingressAllowAll: false
   egress:
     enabled: true
     # The mandatory destination, through the typed key.
