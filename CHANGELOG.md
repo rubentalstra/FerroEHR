@@ -31,6 +31,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Archive restore is on the wire.** `POST /admin/archive/ehrs/restore` and
+  `POST /admin/archive/parties/restore` (admin-gated, our own extension —
+  the SM declares no un-archive call) bring archived records back from the
+  cold tier: all-or-nothing over the same existence checks as archiving,
+  idempotent, `204` with no body. Archiving is no longer one-way for an
+  operator.
+- **The chart's NetworkPolicies say what they admit, and can refuse the
+  accident** (chart `6.0.6`). An empty `ingressFrom` renders an ingress rule
+  with no `from` — every source admitted — while reading as default-deny.
+  The open posture is now an explicit value (`networkPolicy.ingressAllowAll`
+  and `adminUi.networkPolicy.ingressAllowAll`, both shipped `true`): the
+  rendered object's description, the install notes and the chart README all
+  state it, and setting it `false` with no `ingressFrom` refuses at render —
+  so "no open ingress" becomes a machine-checked fact where it matters.
 - **A `fhir_outbound` readiness indicator.** When the FHIR outbound emitter is
   enabled, `/health/readiness` now carries its broker-delivery liveness —
   non-required, so a broker outage reports `DEGRADED` (the outbox retains

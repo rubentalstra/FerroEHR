@@ -3,7 +3,8 @@ name: ferroehr
 description: >-
   Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL
   1.1). A single static binary deployed with a hardened-by-default security posture:
-  runs as a non-root, read-only-rootfs, default-deny-ingress workload that
+  runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its
+  serving port only, and that
   connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations
   are run out of band by a separate migrator role).
 type: application
@@ -18,7 +19,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 6.0.5
+version: 6.0.6
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
