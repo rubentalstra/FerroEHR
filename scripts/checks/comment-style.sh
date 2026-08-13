@@ -66,11 +66,14 @@ esac
 
 fail=0
 for f in "${files[@]}"; do
-  # A generated file carries its banner in the HEADER. Matching the marker
-  # anywhere let a hand-written file exempt itself by merely mentioning it in
-  # prose — `templates/openehr-rm/validate.rs` did exactly that and carried an
-  # over-budget NOTE the guard never saw (#2266).
-  head -n 3 "$f" 2>/dev/null | grep -q '@generated' && continue
+  # The emitter writes its banner as the FIRST line of every generated file, so
+  # the skip anchors there. Matching the marker anywhere let a hand-written file
+  # exempt itself by merely mentioning it in prose — `templates/openehr-rm/
+  # validate.rs` did exactly that and carried an over-budget NOTE the guard
+  # never saw (#2266). Narrowing that to `head -n 3` shrank the window without
+  # closing it, and after #2318 it was closed only by accident: SPDX headers
+  # happened to occupy those lines. An accident is not an enforcement (#2323).
+  head -n 1 "$f" 2>/dev/null | grep -q '^// @generated' && continue
   out="$(awk -v NOTE_MAX="$NOTE_MAX" -v RUN_MAX="$RUN_MAX" '
     function flush_note() {
       if (note_len > NOTE_MAX)
