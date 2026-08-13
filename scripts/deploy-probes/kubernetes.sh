@@ -44,6 +44,22 @@ K8S_BASIC="clinician:ferroehr"
 K8S_AUTH_VALUES="deploy/helm/ci/basic-auth-values.yaml"
 K8S_PF_PID=""
 
+# The console workload the chart renders behind `adminUi.enabled` — a second
+# Deployment, Service, ServiceAccount and NetworkPolicy from a second image.
+# The name is what the chart's adminUiFullname helper produces for this release,
+# and the label is the console's OWN app.kubernetes.io/name: the two workloads
+# deliberately do not share a selector, so a probe that reused the server's
+# label would silently measure the server.
+K8S_UI="ferroehr-admin-ui"
+K8S_UI_LABEL="app.kubernetes.io/name=$K8S_UI"
+# The label the narrowed-ingress probe puts on its client pod, and which the
+# console NetworkPolicy's `from` selector then names.
+K8S_UI_CLIENT_LABEL="ferroehr.probe/client=admin-ui"
+# The console image under probe. Empty means the chart's own default, which is
+# what an operator installing this chart gets; set PROBE_K8S_ADMINUI_IMAGE to
+# probe a locally built console instead.
+K8S_UI_IMAGE="${PROBE_K8S_ADMINUI_IMAGE:-}"
+
 # The compose database this cluster is pointed at. It binds 0.0.0.0 because a
 # pod reaches the host through the Docker Desktop gateway, which a loopback bind
 # would refuse; the stack is thrown away at the end of the run.
@@ -92,12 +108,22 @@ k8s_resolve_db_host() {
 }
 
 k8s_try_db_hosts() {
-  local out
-  out="$(kubectl run "probe-hostcheck-$$-$RANDOM" --image=busybox:1.37 --restart=Never --rm \
-    --attach --quiet --command -- sh -c '
+  # Create → wait for completion → read LOGS, never `--attach`: a short-lived
+  # container finishes before the attach upgrades and `--rm` deletes the pod,
+  # so the output is lost and reads like a database that never answered (the
+  # same race that false-flagged P-K8S-UI-SERVE).
+  local name="probe-hostcheck-$$-$RANDOM" out phase _i
+  kubectl run "$name" --image=busybox:1.37 --restart=Never --command -- sh -c '
       for h in host.docker.internal gateway.docker.internal $(ip route | awk "/default/ {print \$3}"); do
         nc -w3 -z "$h" '"$K8S_DB_PORT"' && { echo "HOST=$h"; break; }
-      done' 2>/dev/null)"
+      done' >/dev/null 2>&1
+  for _i in $(seq 1 15); do
+    phase="$(kubectl get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)"
+    case "$phase" in Succeeded | Failed) break ;; esac
+    sleep 2
+  done
+  out="$(kubectl logs "$name" 2>/dev/null)"
+  kubectl delete pod "$name" --ignore-not-found --wait=false >/dev/null 2>&1
   printf '%s' "$out" | sed -n 's/.*HOST=\([^ ]*\).*/\1/p' | tr -d '\r' | head -1
 }
 
@@ -139,6 +165,51 @@ k8s_install() {
 }
 
 k8s_rollout() { kc rollout status "deploy/$K8S_RELEASE" --timeout="${1:-180s}" >/dev/null 2>&1; }
+
+# The same install with the console switched on. Everything else stays at the
+# chart's defaults, including the console's image: an overlay that pins a
+# hand-built console would stop measuring what `adminUi.enabled=true` gives an
+# operator.
+k8s_ui_install() {
+  local args=(--set adminUi.enabled=true)
+  if [ -n "$K8S_UI_IMAGE" ]; then
+    args+=(--set adminUi.image.repository="${K8S_UI_IMAGE%:*}"
+           --set adminUi.image.tag="${K8S_UI_IMAGE##*:}")
+  fi
+  k8s_install "${args[@]}" "$@"
+}
+
+# 300s by default: the console's own startup probe allows two minutes before it
+# gives up, and a first run also pulls the image.
+k8s_ui_rollout() { kc rollout status "deploy/$K8S_UI" --timeout="${1:-300s}" >/dev/null 2>&1; }
+
+# An HTTP GET issued from INSIDE the cluster, through the console's Service.
+#
+# Deliberately not a port-forward: a forward is the kubelet reaching a pod
+# directly, which skips Service resolution, cluster DNS and every ingress rule
+# between two pods — the hops a human's request actually takes. The client pod
+# carries the label the narrowed-ingress policy names, so the same call measures
+# the stock and the narrowed posture.
+#
+# The response is read from the finished pod's LOGS, never from `run --attach`:
+# a short-lived container regularly completes before the attach is established
+# ("couldn't attach … falling back to streaming logs: unable to upgrade
+# connection"), and the body then arrives EMPTY, which reads exactly like a
+# console that did not answer. That cost a red row here before it was understood.
+k8s_ui_get() {
+  local name="probe-ui-$$-$RANDOM" out phase _i
+  kubectl -n "$K8S_NS" run "$name" --image=busybox:1.37 --restart=Never \
+    --labels="$K8S_UI_CLIENT_LABEL" \
+    --command -- wget -q -O - "http://$K8S_UI:3000${1:-/login}" >/dev/null 2>&1
+  for _i in $(seq 1 30); do
+    phase="$(kc get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)"
+    case "$phase" in Succeeded | Failed) break ;; esac
+    sleep 2
+  done
+  out="$(kc logs "$name" 2>/dev/null)"
+  kc delete pod "$name" --ignore-not-found --wait=false >/dev/null 2>&1
+  printf '%s' "$out"
+}
 
 # A READY pod, preferred over merely the first one.
 #
@@ -263,6 +334,26 @@ probes_k8s_boot() {
   return 0
 }
 
+# The hardened posture, asserted against a container runtime spec — shared by
+# the server and the console because a second workload is exactly where such a
+# posture is quietly lost, and a weaker check for the second one would hide it.
+k8s_assert_hardened() {
+  local spec="$1"
+  assert_eq "65532" "$(printf '%s' "$spec" | jq -r '.process.user.uid')" \
+    "the image's nonroot uid must be what the process actually runs as"
+  assert_eq "true" "$(printf '%s' "$spec" | jq -r '.process.noNewPrivileges')" \
+    "without this a setuid binary inside the image could still escalate"
+  # An EMPTY bounding set, not "the default fourteen minus the ones we dropped":
+  # drop: [ALL] is only honoured if the runtime clears the bounding set, and
+  # nothing short of reading it proves that.
+  assert_eq "0" "$(printf '%s' "$spec" | jq -r '.process.capabilities.bounding | length')" \
+    "a non-empty bounding set means drop: [ALL] did not take effect"
+  assert_eq "true" "$(printf '%s' "$spec" | jq -r '.root.readonly')" \
+    "a writable root filesystem makes the container's own binaries replaceable"
+  assert_eq "SCMP_ACT_ERRNO" "$(printf '%s' "$spec" | jq -r '.linux.seccomp.defaultAction')" \
+    "RuntimeDefault must resolve to a deny-by-default filter, not to no filter at all"
+}
+
 # What the kernel actually got, read from the container runtime rather than from
 # the manifest. This is the whole reason to run on a cluster: `securityContext`
 # is a REQUEST, and a request that a runtime quietly declines looks identical in
@@ -289,19 +380,7 @@ probes_k8s_runtime_posture() {
   fi
   spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"
 
-  assert_eq "65532" "$(printf '%s' "$spec" | jq -r '.process.user.uid')" \
-    "the image's nonroot uid must be what the process actually runs as"
-  assert_eq "true" "$(printf '%s' "$spec" | jq -r '.process.noNewPrivileges')" \
-    "without this a setuid binary inside the image could still escalate"
-  # An EMPTY bounding set, not "the default fourteen minus the ones we dropped":
-  # drop: [ALL] is only honoured if the runtime clears the bounding set, and
-  # nothing short of reading it proves that.
-  assert_eq "0" "$(printf '%s' "$spec" | jq -r '.process.capabilities.bounding | length')" \
-    "a non-empty bounding set means drop: [ALL] did not take effect"
-  assert_eq "true" "$(printf '%s' "$spec" | jq -r '.root.readonly')" \
-    "a writable root filesystem makes the container's own binaries replaceable"
-  assert_eq "SCMP_ACT_ERRNO" "$(printf '%s' "$spec" | jq -r '.linux.seccomp.defaultAction')" \
-    "RuntimeDefault must resolve to a deny-by-default filter, not to no filter at all"
+  k8s_assert_hardened "$spec"
   probe_done
 
   # The mounts, from the same source. `/etc/ferroehr` holding the configuration
@@ -487,5 +566,167 @@ probes_k8s_readiness() {
   restarts_after="$(kc get pod "$pod" -o jsonpath='{.status.containerStatuses[0].restartCount}' 2>/dev/null)"
   assert_eq "${restarts_before:-0}" "${restarts_after:-x}" \
     "liveness restarted a process whose only problem was its dependency"
+  probe_done
+}
+
+# The admin console, the chart's optional second workload (#2354).
+#
+# It is off by default, which is exactly why it needs probing: the chart renders
+# a full Deployment, Service, ServiceAccount and NetworkPolicy behind
+# `adminUi.enabled`, from a second image, with its own copy of the hardened
+# security context — and a posture carried in a second place is a posture that
+# is quietly lost. Everything below runs LAST, because it changes the release's
+# shape and the probes above measure the shipped default.
+probes_k8s_admin_ui() {
+  bold "the admin console workload (adminUi.enabled)"
+
+  # The OFF state, on the release the probes above have been measuring: the gate
+  # must render nothing at all, not merely a scaled-down console.
+  probe "P-K8S-UI-OFF" "off" "chart" "-" \
+    "the shipped default renders no console object at all"
+  local off
+  off="$(kc get deploy,svc,serviceaccount,networkpolicy -l "$K8S_UI_LABEL" \
+         -o name 2>/dev/null | tr '\n' ' ')"
+  assert_eq "" "${off// /}" \
+    "adminUi.enabled defaults to false, so anything found here means the gate leaks"
+  probe_done
+
+  # The BROKEN state of the console's ingress posture: asking for a narrowed
+  # ingress while naming no peer must be REFUSED at render, because the
+  # alternative is a NetworkPolicy that reads as default-deny and admits every
+  # source to a login page.
+  probe "P-K8S-UI-NETPOL-GUARD" "broken" "chart" "-" \
+    "a console with ingressAllowAll=false and no ingressFrom is refused at render"
+  local guard
+  guard="$(helm template "$K8S_RELEASE" deploy/helm/ferroehr -n "$K8S_NS" \
+             -f "$K8S_AUTH_VALUES" --set database.existingSecret=ferroehr-db \
+             --set adminUi.enabled=true \
+             --set adminUi.networkPolicy.ingressAllowAll=false 2>&1)"
+  assert_contains "$guard" "adminUi.networkPolicy.ingressFrom" \
+    "a refusal that does not name the key that narrows the sources is just a wall"
+  probe_done
+
+  probe "P-K8S-UI-BOOT" "working" "chart" "-" \
+    "adminUi.enabled installs the console workload and it rolls out"
+  if ! k8s_ui_install; then
+    probe_fail "a successful helm upgrade --install with the console on" \
+      "helm refused the release" \
+      "re-run k8s_ui_install without the output redirect to see the render error"
+    probe_done
+    uncovered "every console probe after P-K8S-UI-BOOT" \
+      "the console workload never installed, so nothing about it could be observed"
+    return 0
+  fi
+  if ! k8s_ui_rollout; then
+    probe_fail "a rolled-out console Deployment" \
+      "$(kc logs -l "$K8S_UI_LABEL" --tail=6 --all-containers 2>&1 | tail -6
+         kc get pod -l "$K8S_UI_LABEL" -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason} {.items[0].status.containerStatuses[0].state.waiting.message}' 2>/dev/null)" \
+      "an unpullable console image and a console that cannot start under the hardened context both land here"
+    probe_done
+    uncovered "every console probe after P-K8S-UI-BOOT" \
+      "the console workload never became ready, so nothing about it could be observed"
+    return 0
+  fi
+  probe_done
+
+  probes_k8s_ui_runtime
+  probes_k8s_ui_psa
+  probes_k8s_ui_serve
+  probes_k8s_ui_netpol
+}
+
+# The console's applied posture, read from the container runtime for the same
+# reason the server's is: `securityContext` is a request, and the console's copy
+# of it is a second place for that request to go unhonoured.
+probes_k8s_ui_runtime() {
+  local node cid spec
+  node="$(k8s_node_container)"
+  if [ -z "$node" ]; then
+    uncovered "the console's applied runtime posture (uid, capabilities, seccomp, read-only root)" \
+      "this cluster node is not a local container, so its runtime spec is not readable from here"
+    return 0
+  fi
+  probe "P-K8S-UI-RUNTIME" "working" "chart" "-" \
+    "the console container runs under the same hardened posture as the server"
+  cid="$(docker exec "$node" crictl ps --name admin-ui -q 2>/dev/null | head -1)"
+  if [ -z "$cid" ]; then
+    probe_fail "a running admin-ui container on the node" "crictl listed none"
+  else
+    spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"
+    k8s_assert_hardened "$spec"
+  fi
+  probe_done
+}
+
+# Admission, for the second workload. The server passing under enforce=restricted
+# says nothing about the console: the profile is judged per pod, and the console
+# carries its own security context rather than inheriting the server's.
+probes_k8s_ui_psa() {
+  probe "P-K8S-UI-PSA" "working" "chart" "-" \
+    "the console pod is admitted under the Restricted profile"
+  kubectl label namespace "$K8S_NS" \
+    pod-security.kubernetes.io/enforce=restricted --overwrite >/dev/null 2>&1
+  kc rollout restart "deploy/$K8S_UI" >/dev/null 2>&1
+  if ! k8s_ui_rollout 240s; then
+    probe_fail "an admitted console rollout under enforce=restricted" \
+      "$(kc get events --sort-by=.lastTimestamp 2>/dev/null | grep -i 'violate\|forbidden' | tail -3)" \
+      "the chart holds both workloads to Restricted; admission is what settles it for the second one"
+  fi
+  # Removed again before any client pod runs: the probe pods below are plain
+  # busybox and would themselves be refused under the profile.
+  kubectl label namespace "$K8S_NS" pod-security.kubernetes.io/enforce- >/dev/null 2>&1
+  probe_done
+}
+
+probes_k8s_ui_serve() {
+  probe "P-K8S-UI-SERVE" "working" "server" "-" \
+    "the console serves its login page through its Service, to a client inside the cluster"
+  local page
+  page="$(k8s_ui_get /login)"
+  assert_contains "$page" 'name="username"' \
+    "the sign-in form must be in the first response: /login renders SsrMode::Async so it works without JavaScript"
+  assert_contains "$page" "ferroehr-admin" \
+    "the page served must be the console's own, not an error page from something else on that port"
+  probe_done
+
+  # What a served login page does NOT prove, said here rather than left to the
+  # reader: login_modes falls back to the console's own configuration when the
+  # CDR is unreachable, so the form renders either way.
+  uncovered "the console reaching the CDR over the in-cluster Service" \
+    "the login page renders from the console configuration alone when the CDR is unreachable, so serving it is not evidence of the REST hop"
+  uncovered "the console screens behind a session, and its OIDC sign-in path" \
+    "scripts/ui-e2e.sh drives the browser journeys against compose, and OIDC needs an identity provider plus a client secret this harness does not run"
+}
+
+# The narrowed ingress posture, which no run had ever installed: the chart's
+# console policy admits every source unless `ingressFrom` names peers, and the
+# narrowing path had only ever been rendered.
+probes_k8s_ui_netpol() {
+  cat > "$PROBE_TMP/adminui-narrow.yaml" <<YAML
+adminUi:
+  networkPolicy:
+    ingressAllowAll: false
+    ingressFrom:
+      - podSelector:
+          matchLabels:
+            ${K8S_UI_CLIENT_LABEL%=*}: ${K8S_UI_CLIENT_LABEL#*=}
+YAML
+
+  probe "P-K8S-UI-NETPOL-NARROW" "working" "chart" "-" \
+    "the narrowed console ingress installs, is stored as written, and still admits the peer it names"
+  if ! k8s_ui_install -f "$PROBE_TMP/adminui-narrow.yaml"; then
+    probe_fail "an install with ingressAllowAll=false and a non-empty ingressFrom" \
+      "helm refused the release" \
+      "the guard above must fire only on an EMPTY ingressFrom; refusing this one makes the narrowing path unusable"
+    probe_done
+    return 0
+  fi
+  local stored
+  stored="$(kc get networkpolicy "$K8S_UI" -o json 2>/dev/null \
+            | jq -r --arg k "${K8S_UI_CLIENT_LABEL%=*}" '.spec.ingress[0].from[0].podSelector.matchLabels[$k] // ""')"
+  assert_eq "${K8S_UI_CLIENT_LABEL#*=}" "$stored" \
+    "the API server must have stored the from selector; a pruned field would leave the rule admitting everything"
+  assert_contains "$(k8s_ui_get /login)" 'name="username"' \
+    "a narrowed policy that also stops the peer it names is a broken recipe, not a hardened one"
   probe_done
 }

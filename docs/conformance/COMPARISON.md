@@ -69,7 +69,7 @@ them.
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
 | **ferroehr** | 1052 | 1014 | 1014 | 0 | 0 |
-| **EHRbase** | 613 | 568 | 151 | 146 | 271 |
+| **EHRbase** | 614 | 568 | 151 | 146 | 271 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused
@@ -87,52 +87,54 @@ gating case green), **failed** (at least one gating case red),
 **inconclusive** (a gating case neither passed nor failed cleanly),
 **not_evidenced** (claimed, but no gating case produced a verdict — there
 is no excused state: a required capability without passing evidence fails
-its tier, whichever party claims it), or **not claimed** (absent from that
-party's ICS).
+its tier, whichever party claims it), or **not_claimed** (absent from that
+party's ICS, so no case naming it was ever selected — it can never count
+for or against that party). The whole capability matrix is listed for both
+columns, because the matrix is the profiles book as data, not a claim list.
 
 | Capability | ferroehr | EHRbase |
 |---|---|---|
-| ActivityReport | passed | not_evidenced |
+| ActivityReport | passed | not_claimed |
 | Adl14ArchetypeProvisioning | passed | inconclusive |
 | Adl14OptProvisioning | passed | failed |
-| Adl2ArchetypeProvisioning | passed | not_evidenced |
-| Adl2OptProvisioning | passed | not_evidenced |
+| Adl2ArchetypeProvisioning | passed | not_claimed |
+| Adl2OptProvisioning | passed | not_claimed |
 | AdminApi | passed | not_evidenced |
-| AnonymousEhrs | passed | not_evidenced |
+| AnonymousEhrs | passed | not_claimed |
 | AqlAdvanced | passed | inconclusive |
 | AqlBasic | passed | failed |
-| AqlTerminology | passed | not_evidenced |
+| AqlTerminology | passed | not_claimed |
 | ArchetypeValidation | passed | failed |
-| AuditAccountability | passed | not_evidenced |
+| AuditAccountability | passed | not_claimed |
 | AuthenticatedAccess | passed | passed |
 | AuthorizationSeparation | passed | not_evidenced |
-| BulkEhrLoad | passed | not_evidenced |
+| BulkEhrLoad | passed | not_claimed |
 | ChangeSets | passed | failed |
 | CompositionOps | passed | inconclusive |
 | DefinitionApi | passed | failed |
-| DemographicApi | passed | not_evidenced |
-| DemographicArchetypeValidation | passed | not_evidenced |
-| DemographicArchive | passed | not_evidenced |
+| DemographicApi | passed | not_claimed |
+| DemographicArchetypeValidation | passed | not_claimed |
+| DemographicArchive | passed | not_claimed |
 | DirectoryOps | passed | failed |
 | EhrApi | passed | failed |
-| EhrArchive | passed | not_evidenced |
+| EhrArchive | passed | not_claimed |
 | EhrDemographicSeparation | passed | passed |
-| EhrDumpLoad | passed | not_evidenced |
-| EhrExtract | passed | not_evidenced |
+| EhrDumpLoad | passed | not_claimed |
+| EhrExtract | passed | not_claimed |
 | EhrOperations | passed | failed |
 | EhrStatus | passed | failed |
-| ItemTags | passed | not_evidenced |
-| MessageApi | passed | not_evidenced |
-| PartyOperations | passed | not_evidenced |
-| PartyRelationshipOperations | passed | not_evidenced |
+| ItemTags | passed | not_claimed |
+| MessageApi | passed | not_claimed |
+| PartyOperations | passed | not_claimed |
+| PartyRelationshipOperations | passed | not_claimed |
 | PhysicalDeletion | passed | not_evidenced |
 | QueryApi | passed | failed |
 | QueryProvisioning | passed | failed |
-| Signing | passed | not_evidenced |
-| SimplifiedFormats | passed | not_evidenced |
-| SmartAppLaunch | passed | not_evidenced |
-| SystemApi | passed | not_evidenced |
-| Tds | passed | not_evidenced |
+| Signing | passed | not_claimed |
+| SimplifiedFormats | passed | not_claimed |
+| SmartAppLaunch | passed | not_claimed |
+| SystemApi | passed | not_claimed |
+| Tds | passed | not_claimed |
 | TemplateExamples | passed | not_evidenced |
 | Versioning | passed | failed |
 

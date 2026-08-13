@@ -72,11 +72,12 @@ visible in the committed record:
   specification versions EHRbase declares. EHRbase declares ITS-REST 1.0.3
   while the catalogue realizes 1.1.0, so every Release-1.1.0-dated behaviour is
   cited out of scope rather than driven. Unclaimed surfaces drop out the same
-  way — which matters, because the *raw* record does still hold red rows on
-  surfaces EHRbase never claimed (the ADL 2 artefact operations, bulk EHR load,
-  and version signatures). Those rows are excluded from the in-scope tally
-  above, and they are not listed as divergences below. The headline is the
-  verdict scope for exactly that reason.
+  way, and they drop out *before* the request: a case whose capabilities a
+  party's statement does not claim is recorded not applicable with its citation
+  instead of being driven, so an unclaimed surface cannot produce a red row at
+  all. Anything a record still carries from before that rule reached the driver
+  is excluded from the in-scope tally above and is not listed as a divergence
+  below. The headline is the verdict scope for exactly that reason.
 - **Inconclusive, not failed.** A row is inconclusive when EHRbase answered
   with a status the operation's specification-cited outcome map does not
   contain, or when the exchange that would have established the case's ground
@@ -172,6 +173,24 @@ here beyond what it actually captured.
   else, and the overview requires `406 Not Acceptable` when an XML request
   cannot be fulfilled. Both the listing and its version-get sibling answer
   success instead.
+- **A query scoped to one EHR is executed over all of them.** A client
+  restricts an ad-hoc query to a single record with the `ehr_id` query
+  parameter or the `openehr-ehr-id` request header. The service model defines
+  that input as the specific set of EHRs on which to execute the query, and the
+  released REST query chapter says the same thing from the other side: a
+  population query is one that does *not* use the parameter to constrain the
+  scope. EHRbase discards both carriers. In the record, a bare projection over
+  EHRs scoped to one freshly created EHR comes back at the request's own row
+  limit instead of the single scoped row, and a scope naming an EHR that does
+  not exist answers an ordinary result set rather than reporting the unknown
+  EHR. Reproduced live against a composed EHRbase, its own response metadata
+  discloses the query it actually executed, with a row limit appended and no
+  EHR predicate added — the header behaves exactly like the parameter. Naming
+  the EHR *inside* the AQL works, so what is dropped is specifically the
+  request-level scope. Stated at its true strength: the released REST text puts
+  *support* for these parameters at SHOULD and the semantics are the service
+  model's, so this is a divergence from service-model semantics on a released
+  carrier, not the breach of a REST-level MUST.
 - **A `405` carries no `Allow` header**, which RFC 9110 makes mandatory on that
   status; and the versioned-`EHR_STATUS` container names its owner with a
   lower-case `ehr` type where the Reference Model's object reference spells it
@@ -202,14 +221,16 @@ Some red rows are not EHRbase's fault, and are called out rather than counted.
   an already-stored higher version takes the next one up. Both are defensible
   readings, so those two rows record a difference of house convention. The
   open question is with openEHR, not with either implementation.
-- **What an unknown EHR scope does to an ad-hoc query.** The Service Model
-  declares an `ehr_id_does_not_exist` error for query execution; the released
-  REST text binds it to no status and the ad-hoc operation declares no
-  not-found branch at all. Our suite resolves that silence to not-found;
-  EHRbase answers success. Reported upstream, and recorded here as a reading
-  rather than a defect.
 
-Both silences are recorded in the runner's typed ambiguity register and
+One half of the EHR-scope row above is a silence too, and a much narrower one
+than this page previously claimed: the service model declares an error for a
+query scoped to an EHR that does not exist, and the released REST text binds
+that error to no status, so *which* refusal a conformant server owes is
+genuinely open — our suite resolves it to not-found. What the scope *does* is
+not open, which is why that row is published as a divergence rather than as a
+reading.
+
+Every silence is recorded in the runner's typed ambiguity register and
 reported upstream — a specification silence is never resolved privately, and
 never resolved by looking at what a server happens to do.
 

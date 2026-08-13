@@ -28,6 +28,10 @@
 #                     added since that release makes the appVersion image refuse
 #                     to boot — that is a real finding, and P-K8S-BOOT reports it
 #                     against the chart rather than hiding it.
+#   PROBE_K8S_ADMINUI_IMAGE
+#                     repo:tag of the admin-console image. Defaults to the
+#                     chart's own (appVersion), which is what an operator
+#                     enabling adminUi.enabled gets.
 #   PROBE_K8S_NS      namespace (default ferroehr-probe; created and deleted).
 #   PROBE_OUT         where the machine-readable record lands.
 set -uo pipefail
@@ -110,6 +114,7 @@ if probes_k8s_boot; then
   probes_k8s_service_links
   probes_k8s_secrets
   probes_k8s_readiness
+  probes_k8s_admin_ui
 else
   red "the release never served — the probes that need a running CDR were not run"
   uncovered "every probe after P-K8S-SERVE" \
@@ -117,15 +122,13 @@ else
 fi
 
 # ── The honest half ───────────────────────────────────────────────────────────
-uncovered "NetworkPolicy enforcement" \
-  "whether a policy is enforced is a property of the CNI, so a green result here would say nothing about the operator's cluster"
+uncovered "NetworkPolicy enforcement, for the server policy and for the console policy this run installs narrowed" \
+  "whether a policy is enforced is a property of the CNI, so this run proves the narrowed console recipe installs and still serves the peer it names, never that a peer outside ingressFrom is refused"
 uncovered "load balancing across replicas" \
   "kube-proxy distributes connections, which needs conntrack on the node — readable only on a local-container node"
 uncovered "horizontal autoscaling" \
   "the HPA needs a metrics API that a stock local cluster does not ship"
-uncovered "Ingress and TLS termination" \
-  "no controller is installed by this harness; the chart's Ingress is rendered but never reached"
-uncovered "the admin console on this platform (#2164)" \
-  "scripts/ui-e2e.sh drives the console against compose; the chart's console Deployment is not probed"
+uncovered "Ingress and TLS termination, for the API and for the console" \
+  "no controller is installed by this harness; both Ingress objects the chart renders are never reached"
 
 probe_report "$PROBE_OUT" "kubernetes"

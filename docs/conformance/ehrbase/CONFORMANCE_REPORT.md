@@ -76,7 +76,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | INCONCLUSIVE (errored rows — never green by absorption) | 4 | 0 | 6 | 1 |
+| Adl14ArchetypeProvisioning | INCONCLUSIVE (errored rows — never green by absorption) | 4 | 0 | 6 | 2 |
 | Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 5 |
 | QueryProvisioning | FAIL | 15 | 10 | 1 | 0 |
 | EhrOperations | FAIL | 18 | 2 | 0 | 3 |
@@ -92,7 +92,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | DefinitionApi | FAIL | 0 | 1 | 0 | 0 |
 | EhrApi | FAIL | 1 | 1 | 0 | 0 |
 | QueryApi | FAIL | 3 | 2 | 14 | 0 |
-| Signing | not evidenced | 0 | 0 | 0 | 2 |
+| Signing | not claimed | 0 | 0 | 0 | 2 |
 | EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |
 | AuthenticatedAccess | pass | 2 | 0 | 0 | 0 |
 | AuthorizationSeparation | not evidenced | 0 | 0 | 0 | 1 |
@@ -137,7 +137,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 568 of 613 selected cases driven.
+Coverage: 568 of 614 selected cases driven.
 
 Not-executed verdicts (each cited):
 
