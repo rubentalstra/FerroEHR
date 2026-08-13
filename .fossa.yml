@@ -38,6 +38,26 @@
 #     obligation attaches.
 version: 3
 
+# WHAT IS DELIBERATELY NOT SET HERE, and why (#2334). The v3 schema offers a
+# dozen more fields; every one left out is a decision, not an oversight.
+#
+#   project.name/.link/.jiraProjectKey/.policy/.team  — documented CREATE-ONLY.
+#     This project already exists, so setting them would be inert at best. The
+#     project is selected by the workflow's `project:` input, which is one
+#     place rather than half here and half there; unpinned, the CLI names it
+#     after the git remote and files results under a project literally called
+#     "https://github.com/rubentalstra/FerroEHR", which is how a duplicate
+#     appeared beside the hosted integration's.
+#   revision.branch/.commit  — passed by the workflow, which is the only place
+#     that knows the event. `github.head_ref || github.ref_name` there keeps a
+#     pull request off the `<PR>/merge` ref it would otherwise record under.
+#   vendoredDependencies  — nothing in this repository is scanned as a vendored
+#     DEPENDENCY: the vendored trees are specification text and test corpora,
+#     excluded below, not code this software links.
+#   server  — the default endpoint is correct; recorded as checked.
+#   telemetry  — left at the default deliberately rather than silently.
+#   maven/gradle blocks  — not applicable; this is a Cargo workspace.
+
 targets:
   only:
     - type: cargo
