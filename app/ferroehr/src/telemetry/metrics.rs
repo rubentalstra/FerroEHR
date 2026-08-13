@@ -59,7 +59,7 @@ pub const AUTH_FAILURES: &str = "auth_failures";
 pub const AUTHZ_CEDAR_DECISIONS: &str = "authz_cedar_decisions";
 /// Remote-PDP authorization calls (`result`).
 pub const AUTHZ_REMOTE_PDP_CALLS: &str = "authz_remote_pdp_calls";
-/// Database pool connections (`state`).
+/// Database pool connections (`state`), sampled as a gauge.
 pub const DB_POOL_CONNECTIONS: &str = "db_pool_connections";
 /// Database connection-acquire latency.
 pub const DB_POOL_ACQUIRE_DURATION: &str = "db_pool_acquire_duration";
@@ -171,8 +171,6 @@ pub struct Metrics {
     pub authz_cedar_decisions: Counter<u64>,
     /// Remote-PDP authorization calls.
     pub authz_remote_pdp_calls: Counter<u64>,
-    /// Database pool connections by state.
-    pub db_pool_connections: UpDownCounter<i64>,
     /// Database connection-acquire latency, seconds.
     pub db_pool_acquire_duration: Histogram<f64>,
     /// Service transactions by outcome.
@@ -253,10 +251,6 @@ impl Metrics {
             authz_remote_pdp_calls: meter
                 .u64_counter(AUTHZ_REMOTE_PDP_CALLS)
                 .with_description("Remote-PDP authorization calls by result")
-                .build(),
-            db_pool_connections: meter
-                .i64_up_down_counter(DB_POOL_CONNECTIONS)
-                .with_description("Connection pool connections by state")
                 .build(),
             db_pool_acquire_duration: meter
                 .f64_histogram(DB_POOL_ACQUIRE_DURATION)
@@ -555,6 +549,7 @@ mod tests {
         .expect("the Prometheus reader should build");
         let meter = provider.meter(SCOPE);
         let instruments = Metrics::new(&meter);
+        let pool = crate::telemetry::samplers::pool_gauge(&meter);
 
         // A family reaches the exposition only once it carries a measurement.
         instruments.http_active_requests.add(1, &[]);
@@ -564,9 +559,8 @@ mod tests {
         instruments
             .aql_queries
             .add(1, &[KeyValue::new("outcome", "ok")]);
-        instruments
-            .db_pool_connections
-            .add(1, &[KeyValue::new("state", "in_use")]);
+        pool.record(2, &[KeyValue::new("state", "idle")]);
+        pool.record(1, &[KeyValue::new("state", "in_use")]);
 
         let rendered = render(&registry).expect("the exposition should encode");
         for (instrument, exported) in CONSOLE_RENDERED_NAMES {
@@ -588,6 +582,68 @@ mod tests {
                 "the exporter renders no sample line for {exported}: {rendered}"
             );
         }
+    }
+
+    /// One instrument, one kind.
+    ///
+    /// `db_pool_connections` is created solely by the sampler, as a gauge. A
+    /// second instrument of a different kind under the same name on the same
+    /// meter is an `OpenTelemetry` duplicate-instrument conflict, and the pull
+    /// surface would then expose whichever stream won — the console's
+    /// `db_pool_connections{state="in_use"}` tile reads that family verbatim.
+    #[test]
+    fn the_pool_gauge_is_the_only_db_pool_connections_stream() {
+        use opentelemetry::metrics::MeterProvider as _;
+
+        let (provider, registry) = build_provider(
+            opentelemetry_sdk::Resource::builder().build(),
+            None::<opentelemetry_sdk::metrics::PeriodicReader<opentelemetry_otlp::MetricExporter>>,
+        )
+        .expect("the Prometheus reader should build");
+        let meter = provider.meter(SCOPE);
+        // The whole shipped instrument set plus the sampler's gauge, on one
+        // meter, exactly as the server creates them.
+        let _instruments = Metrics::new(&meter);
+        let pool = crate::telemetry::samplers::pool_gauge(&meter);
+        pool.record(2, &[KeyValue::new("state", "idle")]);
+        pool.record(1, &[KeyValue::new("state", "in_use")]);
+
+        let rendered = render(&registry).expect("the exposition should encode");
+        assert_eq!(
+            rendered.matches("# TYPE db_pool_connections ").count(),
+            1,
+            "db_pool_connections must render as exactly one family: {rendered}"
+        );
+        assert!(
+            rendered.contains("# TYPE db_pool_connections gauge"),
+            "db_pool_connections must render as a gauge: {rendered}"
+        );
+        for state in ["idle", "in_use"] {
+            let label = format!("state=\"{state}\"");
+            assert!(
+                rendered.lines().any(|line| {
+                    line.starts_with("db_pool_connections{") && line.contains(&label)
+                }),
+                "db_pool_connections carries no {label} sample: {rendered}"
+            );
+        }
+
+        // A second instrument kind under this name folds its stream into the
+        // same family, so one label set renders twice — which Prometheus
+        // rejects as a duplicate sample, losing the whole scrape.
+        let mut label_sets: Vec<&str> = rendered
+            .lines()
+            .filter(|line| line.starts_with("db_pool_connections{"))
+            .filter_map(|line| line.split_once('}').map(|(labels, _)| labels))
+            .collect();
+        let emitted = label_sets.len();
+        label_sets.sort_unstable();
+        label_sets.dedup();
+        assert_eq!(
+            label_sets.len(),
+            emitted,
+            "db_pool_connections renders a label set more than once: {rendered}"
+        );
     }
 
     /// The bucket ladders must be sorted and free of duplicates, or the
