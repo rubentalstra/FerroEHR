@@ -86,6 +86,7 @@ impl FerroEhrService {
         get_contribution(
             &self.pool,
             self.signer(),
+            self.spec_profile,
             ehr_id,
             contribution_id,
             resolve_refs,

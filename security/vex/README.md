@@ -29,7 +29,7 @@ re-evaluate.
 | File | Subject | Authored |
 |---|---|---|
 | `postgres-gosu.openvex.json` | Go standard-library advisories in `/usr/local/bin/gosu`, the privilege-dropping helper the upstream `postgres` image ships. Not reachable: gosu sets uid/gid and execs, opening no socket and parsing no untrusted input. | by hand |
-| `rust-advisories.openvex.json` | The Rust dependency advisories: the five accepted by the advisory gate, plus the one a lock-file-reading scanner reports for a crate our feature set never compiles. | **generated** |
+| `rust-advisories.openvex.json` | The Rust dependency advisories: the five accepted by the advisory gate, plus the one a lock-file-reading scanner reports for a crate our feature set never compiles. Each statement additionally carries a `ferroehr:reachability` block — our own extension, since OpenVEX defines none — naming the crates the affected package is reached through. | **generated** |
 
 ## The generated document
 
@@ -59,9 +59,25 @@ job, where the dependency graph is resolvable) closes that half — it promotes
 cargo-deny's `advisory-not-detected` diagnostic to an error, so an exception that
 has outlived its finding fails the build instead of ageing into a false claim.
 
+And a statement can be in agreement, describe an advisory that still fires, and
+still argue from a dependency path that is not the real one. That happened here:
+the `rsa` statement asserted the crate was reached only through `openidconnect`,
+where RSA verifies with a public key, while `cargo tree -i rsa` had shown a
+second path through `pgp`, where an RSA operation would be a private-key one —
+which is what the advisory is about. So each statement carries its path as data
+(`carriers`, `workspace_roots`) and `scripts/checks/vex-reachability.sh` — also
+in the `cargo-deny` job — compares both sets against the graph cargo resolves,
+exhaustively in both directions. They travel into the published document as a
+`ferroehr:reachability` block on each statement, so a consumer reads the same
+claim the gate checks.
+
 To change a statement: edit `rust-advisories.toml` (and `deny.toml` if the id
 set changes), bump the document's `version` and `timestamp`, then run
-`bash scripts/security/vex-generate.sh`.
+`bash scripts/security/vex-generate.sh`. If the change is about where a crate
+enters the build, `carriers` and `workspace_roots` come from
+`cargo tree -i <crate>[@<version>] --workspace --all-features --target all -e
+normal,build,dev` — the gate will not accept a set you have not read off the
+graph.
 
 ### Why lock-file-only findings are in there
 

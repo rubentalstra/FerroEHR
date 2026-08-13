@@ -153,15 +153,57 @@ impl VersionRead {
 /// `ORIGINAL_VERSION` instance is never modified"), so a foreign `523` version
 /// that arrived carrying data keeps it and reads back with that content.
 ///
+/// This is also the ONE seam a stored version body passes through on its way
+/// out of `vo_version`+`node` — every full-body read in this module composes
+/// its result here — so it carries the read-time `spec_profile` gate
+/// ([`crate::versioning::profile::gate`]): under the `stable` profile a
+/// version whose body only the development generations can express is a typed
+/// refusal, never a body served under a generation set that does not define
+/// it. The gate sits here rather than per handler precisely because every
+/// served kind (COMPOSITION / `EHR_STATUS` / `EHR_ACCESS` / FOLDER / the
+/// demographic parties) reaches the wire through this function. It does NOT
+/// cover AQL: the query engine reads `node` rows directly and has its own
+/// profile gate at planning time.
+///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when an imported row's stored wrapped
 /// `ORIGINAL_VERSION` fragment is not decodable, or when a stored commit-audit
 /// jsonb column is not the RM value it holds
 /// ([`crate::versioning::audit::AuditInput::from_meta`] carries the same
-/// rejections for the metadata-only read).
+/// rejections for the metadata-only read); the `409`-class
+/// [`ServiceError::Conflict`] of the `spec_profile` gate.
 fn version_read(
+    profile: crate::config::profile::SpecProfile,
     stored: crate::storage::version_repo::read::StoredVersion,
 ) -> Result<VersionRead, ServiceError> {
+    // The `ck_vo_version_kind` CHECK constraint admits exactly the `Kind` set,
+    // so a stored discriminator that does not classify is corrupted data, not
+    // a client condition — the loud answer is a fault, never a silent skip of
+    // the profile gate below.
+    let kind = Kind::from_type(&stored.kind).ok_or_else(|| {
+        ServiceError::exception(format!(
+            "vo_version.kind {:?} of versioned object {} is not an RM versioned type",
+            stored.kind, stored.vo_id
+        ))
+    })?;
+    let tree = TreeId::from_columns(
+        stored.trunk_version,
+        stored.branch_number,
+        stored.branch_version,
+    );
+    crate::versioning::profile::gate(
+        profile,
+        kind,
+        stored.stable_compatible,
+        &stored.canonical,
+        &|| {
+            crate::versioning::object_version_id::object_version_id(
+                stored.vo_id,
+                &stored.creating_system_id,
+                tree,
+            )
+        },
+    )?;
     let wrapped = stored
         .wrapped_original
         .as_ref()
@@ -170,11 +212,7 @@ fn version_read(
     Ok(VersionRead {
         vo_id: stored.vo_id,
         ehr_id: stored.ehr_id,
-        tree: TreeId::from_columns(
-            stored.trunk_version,
-            stored.branch_number,
-            stored.branch_version,
-        ),
+        tree,
         preceding_version_uid: stored.preceding_version_uid,
         other_input_version_uids: stored.other_input_version_uids,
         lifecycle_state: stored.lifecycle_state,
@@ -212,14 +250,16 @@ fn version_read(
 /// deleted read (RM common master06 §Logical Deletion).
 ///
 /// # Errors
-/// The storage read error of `version_repo::read::read_current`.
+/// The storage read error of `version_repo::read::read_current`, or the
+/// `spec_profile` refusal of [`version_read`].
 pub(crate) async fn read_current(
     pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
     vo_id: VoId,
 ) -> Result<Option<VersionRead>, ServiceError> {
     crate::storage::version_repo::read::read_current(pool, vo_id)
         .await?
-        .map(version_read)
+        .map(|stored| version_read(profile, stored))
         .transpose()
 }
 
@@ -228,15 +268,17 @@ pub(crate) async fn read_current(
 /// extract export iteration), never for wire version ids.
 ///
 /// # Errors
-/// The storage read error of `version_repo::read::read_version_by_ordinal`.
+/// The storage read error of `version_repo::read::read_version_by_ordinal`, or
+/// the `spec_profile` refusal of [`version_read`].
 pub(crate) async fn read_version_by_ordinal(
     pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
     vo_id: VoId,
     ordinal: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     crate::storage::version_repo::read::read_version_by_ordinal(pool, vo_id, ordinal)
         .await?
-        .map(version_read)
+        .map(|stored| version_read(profile, stored))
         .transpose()
 }
 
@@ -244,16 +286,18 @@ pub(crate) async fn read_version_by_ordinal(
 /// (`.../version/{version_uid}` — trunk or branch).
 ///
 /// # Errors
-/// The storage read error of `version_repo::read::read_version`.
+/// The storage read error of `version_repo::read::read_version`, or the
+/// `spec_profile` refusal of [`version_read`].
 pub(crate) async fn read_version(
     pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
     vo_id: VoId,
     tree: TreeId,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let (t, b, v) = tree.columns();
     crate::storage::version_repo::read::read_version(pool, vo_id, t, b, v)
         .await?
-        .map(version_read)
+        .map(|stored| version_read(profile, stored))
         .transpose()
 }
 
@@ -262,15 +306,17 @@ pub(crate) async fn read_version(
 /// reconstructable): the row whose `sys_period` contains `at`.
 ///
 /// # Errors
-/// The storage read error of `version_repo::read::version_at`.
+/// The storage read error of `version_repo::read::version_at`, or the
+/// `spec_profile` refusal of [`version_read`].
 pub(crate) async fn version_at(
     pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
     vo_id: VoId,
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
     crate::storage::version_repo::read::version_at(pool, vo_id, at)
         .await?
-        .map(version_read)
+        .map(|stored| version_read(profile, stored))
         .transpose()
 }
 

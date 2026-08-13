@@ -664,6 +664,14 @@ jobs:
       # cargo-deny and the toolchain are already installed in this job.
       - name: No exception for an advisory that no longer fires
         run: bash scripts/checks/advisory-exceptions.sh
+      # The third failure mode, which neither of the two above can see: an
+      # exception whose PUBLISHED ARGUMENT names the wrong dependency path (the
+      # `rsa` statement claimed the crate was reached only through
+      # openidconnect, with `pgp` in the graph all along). Also here because the
+      # graph is only resolvable where cargo is installed — and it needs no TOML
+      # reader, reading the generated document the `vex` job pins to the prose.
+      - name: Every VEX statement names the real dependency path
+        run: bash scripts/checks/vex-reachability.sh
 
   # The published VEX document must be exactly what `deny.toml` plus the prose
   # file generate. Every advisory the gate ACCEPTS carries a machine-readable

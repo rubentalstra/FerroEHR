@@ -147,7 +147,21 @@ possibly data migration".
   Direction contract: `stable → development` is always safe (minor releases
   are additive); `development → stable` is supported only for data that
   never used development-only constructs — anything else is refused loudly
-  at read, never silently down-converted. No openEHR spec governs runtime
+  at read, never silently down-converted. The mechanism is a **commit-time
+  stamp read at serve time**: every accepted commit records in
+  `vo_version.stable_compatible` whether the RELEASED generation's own reader
+  can express the body (`true` by construction under `stable`; the extra
+  in-memory parse runs only under `development`), and the one seam every
+  stored version body leaves storage through
+  (`ferroehr::versioning::read::version_read`) refuses a `false`-stamped
+  version under the `stable` profile with a `409` naming the profile, the
+  version and the remedy. A `NULL` stamp — a row committed before the column
+  existed, or written by a verbatim-replay path (EHR-Extract import, archive
+  load) — is assessed on the fly at read, with no write-back. **AQL is NOT
+  covered by the stamp**: the planning gate refuses development-only surface
+  in the QUERY, but a generic projection over stored development-generation
+  content still returns rows under `stable` — the stamp governs served
+  version bodies only. No openEHR spec governs runtime
   version selection — our own design/extension.
 - **Single pin still holds for TERM/QUERY/ITS-REST/ITS-XML** (the components
   the 2026-08-05 ruling did not touch): within a major line every release is

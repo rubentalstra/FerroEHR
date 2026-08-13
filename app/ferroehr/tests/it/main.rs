@@ -52,6 +52,7 @@ mod service_extract;
 mod service_import;
 mod service_signing;
 mod service_sm3;
+mod service_spec_profile;
 mod service_subject_proxy;
 mod service_system_id;
 mod service_tdd;
