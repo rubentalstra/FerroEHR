@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Every first-party shell, SQL and YAML file states its licensing INSIDE itself.
 #
 # The sibling gate `spdx-headers.sh` does this for Rust. This one exists rather
