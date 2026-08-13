@@ -641,18 +641,9 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `validation_failed`"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_non_member",
@@ -668,18 +659,9 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `validation_failed`"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-territory_invalid",
@@ -2399,18 +2381,9 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_composition",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 6,
-      "rows_total": 6,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 4,
-          "step": 1,
-          "reason": "expected `created`, observed `validation_failed`"
-        }
-      ]
+      "rows_total": 6
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_directory",
@@ -5757,18 +5730,9 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-node_name_term_code",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `validation_failed`"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-node_predicate_paths",
@@ -5832,18 +5796,9 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_expand_filters",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "row count 0 != expected 1",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "row count 0 != expected 1"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_member",
@@ -6054,18 +6009,9 @@
     },
     {
       "case": "SIG-VERSION-distinct_per_version-pgp",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 4,
-      "reason": "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 4,
-          "reason": "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "SIG-VERSION-distinct_per_version",
@@ -6075,18 +6021,9 @@
     },
     {
       "case": "SIG-VERSION-ehr_status_signature-pgp",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "SIG-VERSION-ehr_status_signature",
@@ -6102,18 +6039,9 @@
     },
     {
       "case": "SIG-VERSION-verifiable-pgp",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "SIG-VERSION-verifiable",
