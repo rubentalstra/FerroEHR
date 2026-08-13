@@ -1,5 +1,10 @@
 # Why FerroEHR exists
 
+This chapter is the project's position rather than a how-to: what makes openEHR
+worth implementing, what this implementation commits to, and what it asks of the
+organisations that build on it. Read it if you are deciding whether to depend on
+FerroEHR — or whether to contribute to it.
+
 <!-- toc -->
 
 ## openEHR is worth building for
@@ -34,13 +39,17 @@ and published* rather than asserted in a datasheet.
 
 - **MIT for all of our own code, with no open-core tier.** Multi-tenancy,
   role- and attribute-based access control, IHE ATNA audit, per-version
-  digital signatures, the FHIR connectors, change events, the admin console —
-  one repository, one licence. Nothing is held back to be sold back to you.
-- **Every claim checkable.** Conformance is executed by a runner against the
+  digital signatures, the FHIR R4B connectors, change events, the admin
+  console — one repository, one licence. Nothing is held back to be sold back
+  to you. (Vendored openEHR material keeps its own upstream terms, and the
+  spec crates that embed it say so in their own metadata — see
+  [Licensing & legal](licensing.md).)
+- **Every claim checkable.** Conformance is executed by a runner against a
   live server, and the run records, per-case results, measured performance and
-  the [comparison with another CDR](comparison.md) — in both
-  directions — are committed to the repository. If a number appears on this
-  site, the record it came from is in the tree.
+  the [comparison with another CDR](comparison.md) — in both directions — are
+  committed to the repository. If a number appears on this site, the record it
+  came from is in the tree, and a change that moves a verdict cannot land
+  quietly.
 - **The specification is the authority, not our opinion.** The normative
   openEHR text is vendored in the repository and cited decision by decision.
   Where we find it silent or self-contradictory, the finding is filed in
@@ -112,7 +121,7 @@ You do not have to write Rust to make this project better:
   environment, or the paragraph that would have saved you two days.
 - **Measurement** from your own hardware and workload — the instruments that
   produce our published numbers ship in the repository and run against any
-  server.
+  server, including one that is not FerroEHR.
 - **Code**: fixes, features, connectors, packaging for your platform.
 - **Sponsorship**, if your organisation depends on this and cannot spare
   engineering time.
@@ -128,11 +137,18 @@ products built on open foundations are a perfectly good outcome, and we would
 rather your product succeed with FerroEHR inside it than not exist at all.
 
 It is also not a claim to be the only good openEHR CDR. FerroEHR began as a
-fork of EHRbase and keeps that lineage in its history; today it is an
-independent Rust implementation, and we measure ourselves against EHRbase
-with the same instrument, publishing both directions of the result. FerroEHR
-is an independent implementation of the openEHR® specifications and is not
-affiliated with or endorsed by the openEHR Foundation.
+fork of EHRbase and keeps that lineage in its git history; today it is an
+independent Rust implementation with none of that code left in the tree, and
+we measure ourselves against EHRbase with the same instrument, publishing both
+directions of the result. FerroEHR is an independent implementation of the
+openEHR® specifications and is not affiliated with or endorsed by the openEHR
+Foundation.
+
+And it is not a large team. The project is maintained by one person today, with
+the machine gates — conformance, the fidelity suites, the CI guards — standing
+in for review capacity a bigger group would have; the
+[threat model](threat-model.md) and the repository's own governance and
+maintainer documents say so plainly rather than leaving you to find out.
 
 ---
 

@@ -89,8 +89,8 @@ sverdict() { jq -r '.security // "not claimed"' "$1/verdicts.json"; }
 |---|---|---|
 | Product | $(jq -r '.sut.name' "$RS/results.json") $(jq -r '.sut.version' "$RS/results.json") | $(jq -r '.sut.name' "$EB/results.json") $(jq -r '.sut.version' "$EB/results.json") |
 | Run date | ${rs_date} | ${eb_date} |
-| Party statement | \`tools/cnf-runner/party/ferroehr/\` | \`tools/cnf-runner/party/ehrbase/\` |
-| Stack | root compose, built from the current sources | \`docker/sut-ehrbase.yml\` (official images) |
+| Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
+| Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
 
 ## Methodology
 

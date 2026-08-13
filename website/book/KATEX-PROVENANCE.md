@@ -3,6 +3,7 @@
 `katex.min.css` and `fonts/*.woff2` are the KaTeX **0.16.4** distribution,
 taken verbatim from the npm package tarball
 (`https://registry.npmjs.org/katex/-/katex-0.16.4.tgz`, `dist/`).
+License: MIT (KaTeX's upstream license; declared in `REUSE.toml`).
 
 The version is load-bearing: math is pre-rendered at build time by
 `mdbook-katex`, whose bundled renderer (the `katex` Rust crate, its

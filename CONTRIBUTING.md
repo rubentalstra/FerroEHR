@@ -39,13 +39,22 @@ documentation correction, or measurement from your own hardware all count.
 cargo build --workspace
 cargo nextest run --workspace          # unit + integration (real PG 18 via Docker)
 cargo test --workspace --doc
-cargo clippy --workspace --all-targets --all-features -- -D warnings
+# clippy is THREE lanes: the console's hydrate/ssr features are mutually
+# exclusive (compile_error!-guarded), so it is excluded from --all-features
+# and linted per feature + per target:
+cargo clippy --workspace --exclude ferroehr-admin-ui --all-targets --all-features -- -D warnings
+cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
+cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 cargo fmt --all --check
 cargo deny check && cargo machete      # deny subsumes cargo-audit (same RustSec DB + yanked/licenses/bans/sources)
+cargo hack check --rust-version --workspace  # the declared MSRV actually builds
 bash scripts/checks/codegen-drift.sh    # generated layer matches the vendored specs
 ```
 
-CI runs the same set; nothing is advisory.
+CI runs the same set, plus the `scripts/checks/*` guard family (comment
+style, inline `Default` values, typed HTTP status comparisons, SPDX headers
++ licensing declarations, docs claims, no-Python) and the Helm
+render/boot lanes; nothing is advisory.
 
 ## Hard rules
 
