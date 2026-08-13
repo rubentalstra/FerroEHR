@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Changelog structure guard (Keep a Changelog 1.1.0).
 #
 # Fails when any release section of CHANGELOG.md (including [Unreleased])

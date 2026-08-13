@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Typed-status guard (owner directive 2026-08-06).
 #
 # An HTTP status is compared as a TYPE, never as a number:

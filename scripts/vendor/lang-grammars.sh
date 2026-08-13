@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Vendor the LANG component's normative ANTLR4 grammars, VERSION-SCOPED.
 #
 # Layout (the multi-generation foundation, #1936/#1942): each LANG component

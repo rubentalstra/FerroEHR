@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Every CI job must be reachable from the `conclusion` gate.
 #
 # Branch protection points at `conclusion` alone, on purpose: that is what lets

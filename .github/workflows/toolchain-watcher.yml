@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Scheduled Rust toolchain watcher (tracker issue #2278).
 #
 # The Cargo book's CI guidance asks for exactly this

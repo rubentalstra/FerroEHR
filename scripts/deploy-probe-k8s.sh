@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The deployment-conformance harness, Kubernetes platform (#2178).
 #
 # The compose harness (scripts/deploy-probe.sh) measures whether the software

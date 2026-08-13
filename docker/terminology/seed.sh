@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Seed the composed FHIR R4 terminology server with the CNF test terminologies.
 #
 # Runs as a one-shot init container of the `terminology` compose profile, after

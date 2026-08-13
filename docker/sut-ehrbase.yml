@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Upstream EHRbase as a CNF system-under-test — composed ONLY by
 # `CONF_SUT=ehrbase scripts/conformance.sh` (issue #232: the public CDR
 # comparison re-based on the CNF 2.0 pipeline). Fresh volumes per run (the

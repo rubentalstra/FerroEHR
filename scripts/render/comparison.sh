@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Render the public comparison page's content (tracker issue #147) from the
 # COMMITTED runner artifacts — the same no-hand-typed-numbers discipline as
 # scripts/render/conformance-stats.sh (CI: scripts/checks/conformance-numbers.sh).

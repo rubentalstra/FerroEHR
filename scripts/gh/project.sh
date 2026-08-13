@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # scripts/gh/project.sh — the deterministic GitHub Projects (v2) board helper.
 #
 # WHY THIS EXISTS: the public roadmap board is a GitHub Project (v2), and its

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Compose override for the image-mode E2E run (scripts/ui-e2e.sh with
 # UI_E2E_IMAGE=1): the composed console image receives the same OIDC test
 # wiring the host-mode harness passes as process env. The issuer uses the

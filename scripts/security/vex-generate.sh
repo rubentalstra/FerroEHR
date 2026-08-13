@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Generate the Rust-dependency OpenVEX document.
 #
 #   security/vex/rust-advisories.toml  (the reasoning)

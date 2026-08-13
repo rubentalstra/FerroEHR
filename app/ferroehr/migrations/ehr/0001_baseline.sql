@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ehr schema: the greenfield PG18-native CDR schema.
 --
 -- BASELINE. openEHR defines NO SQL schema — the relational layout here is our

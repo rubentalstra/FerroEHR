@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # The ferroehr CNF SUT stack (compose BASE — self-contained, like
 # docker/sut-ehrbase.yml): the conformance lanes compose THIS file, never
 # the end-user quickstart docker-compose.yml, so the quickstart artifact and

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # CNF pgp-mode signing variant (compose OVERLAY).
 #
 # Reconfigures the ferroehr SUT to sign committed VERSIONs with an OpenPGP

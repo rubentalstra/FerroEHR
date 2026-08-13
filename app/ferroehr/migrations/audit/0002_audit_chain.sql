@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- Tamper evidence for the local IHE ATNA Audit Record Repository, plus the
 -- least-privilege grants that make the `audit` schema usable by a role that
 -- holds no DDL rights.

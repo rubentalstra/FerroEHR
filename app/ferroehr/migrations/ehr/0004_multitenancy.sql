@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ehr schema: multi-tenancy — tenant registry + tenant_id scoping + RLS FORCE
 -- (an extension — no openEHR spec governs multi-tenancy; E2).
 --

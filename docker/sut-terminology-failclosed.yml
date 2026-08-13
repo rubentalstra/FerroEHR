@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # CNF external-terminology lane (compose OVERLAY) — the fail-CLOSED posture.
 #
 # `[terminology.external] fail_on_error` decides what a deployment does with a

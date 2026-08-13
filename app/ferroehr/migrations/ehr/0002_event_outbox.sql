@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ehr schema: the contribution-outbox eventing table.
 --
 -- Append-only on the baseline (0001). One transactional outbox row is

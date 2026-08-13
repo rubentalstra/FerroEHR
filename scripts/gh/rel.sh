@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # scripts/gh/rel.sh — the deterministic GitHub issue-relationship helper.
 #
 # WHY THIS EXISTS: `gh` has NO native subcommand for sub-issues or issue

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/workflows/image-scan.yml
 #
 # Scheduled vulnerability scan of the PUBLISHED container images (issue #2086;

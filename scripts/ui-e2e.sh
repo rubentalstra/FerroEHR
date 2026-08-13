@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Admin-console E2E harness: compose up the CDR stack +
 # Keycloak, build + run the console on the host, start chromedriver, run the
 # e2e journeys via nextest, tear down. Mirrors scripts/conformance.sh.

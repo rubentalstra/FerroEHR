@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Render the published performance SVG assets FROM the committed measurement
 # records (docs/conformance/<sut>/results.json measurements block, plus the
 # stress report when one exists) via `cnf-runner perf-assets`. Deterministic

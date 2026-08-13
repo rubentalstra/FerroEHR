@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The events / AMQP outbox probe family (#2178, #2158).
 #
 # Two claims are made about this integration and neither had been demonstrated

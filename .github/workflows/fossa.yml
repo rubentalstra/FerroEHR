@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Licence + dependency analysis via the FOSSA CLI (tracker issue #2298).
 #
 # WHY THIS LANE EXISTS, and not just the GitHub App: the hosted integration

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # One copyright holder, stated identically everywhere it is stated.
 #
 # `LICENSE` said "Ruben Talstra" while `REUSE.toml`, the codegen header constant

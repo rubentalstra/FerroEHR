@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ext schema: openEHR support functions + the cluster role/grant baseline
 -- (openEHR-semantics helper functions; no openEHR spec governs SQL helpers —
 -- they realize the cited RM/QUERY semantics).

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # FerroEHR quickstart, OIDC variant — a STANDALONE overlay on docker-compose.yml
 # (the same pattern as docker-compose.observability.yml). Download BOTH files
 # into one directory and run:

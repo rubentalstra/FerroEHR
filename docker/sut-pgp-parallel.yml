@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # CNF parallel pgp deployment (compose OVERLAY, stacks LAST).
 #
 # The conformance pipeline runs BOTH claimed version-signing modes in the ONE

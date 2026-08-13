@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 name: Enhancement Request
 description: Request new or extended functionality in FerroEHR
 labels: ["enhancement"]

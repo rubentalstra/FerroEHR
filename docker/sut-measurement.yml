@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # The MEASUREMENT posture overlay — composed on top of docker/sut-ferroehr.yml
 # only for the measured-performance (`cnf-runner perf`) and step-load
 # (`cnf-runner stress`) lanes, which scripts/conformance.sh selects when
