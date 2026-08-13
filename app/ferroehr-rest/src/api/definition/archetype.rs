@@ -472,6 +472,12 @@ pub(crate) async fn definition_artefact_adl2_count(
                                       case-insensitively matched, so an \
                                       unparseable id is simply an id nothing \
                                       is stored under.",
+         body = serde_json::Value),
+        (status = 409, description = "The artefact is a template kind that \
+                                      compositions still reference (the count \
+                                      is named in the body): deleting it would \
+                                      orphan committed content, so the store \
+                                      refuses. Archived content counts too.",
          body = serde_json::Value)
     )
 )]

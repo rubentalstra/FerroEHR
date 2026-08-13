@@ -57,7 +57,7 @@ strategy:
     maxUnavailable: 0
 
 image:
-  # -- Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base).
+  # -- Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian13:nonroot base).
   repository: ghcr.io/rubentalstra/ferroehr
   # -- Pull policy. IfNotPresent + an immutable pinned tag/digest in production.
   pullPolicy: IfNotPresent
@@ -187,9 +187,8 @@ migrations:
 # https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
 # So every value whose config key has a `*_file` sibling is MOUNTED at
 # /etc/ferroehr-secrets/<config.path> and the chart passes only the PATH as env.
-# The four that have no `*_file` sibling (db.url, events.url, fhir.outbound.url,
-# audit.fhir_feed.url) still pass their value as env — that is a config-tree gap,
-# not a chart choice.
+# The one key that has no `*_file` sibling (audit.fhir_feed.url) still passes
+# its value as env — that is a config-tree gap, not a chart choice.
 #
 # Setting any of these under `config:` instead REFUSES to render: they would land
 # in the ConfigMap, which is not a sensitive object. The refusal names the key
@@ -527,7 +526,7 @@ networkPolicy:
   # would break features in a way that looks like the feature being broken.
   #
   # The full config-key-to-destination table, with the port each needs and the
-  # order to add them in, is in the book: installation/kubernetes-hardening.md
+  # order to add them in, is in the book: installation/hardening-network-policy.md
   # §Egress. Read it before enabling this.
   #
   # DNS is always allowed when this is on — without it nothing resolves and

@@ -18,34 +18,37 @@ application code. Applications then store and retrieve that data through a
 standard API, against a shared Reference Model, so the same record is portable
 across every conformant system.
 
-FerroEHR implements that standard natively. It speaks the openEHR
-**REST API** (ITS-REST Release-1.1.0), executes
-**Archetype Query Language (AQL 1.1)**, and holds data as canonical openEHR
-compositions with full, indelible version history. There is no proprietary data format in the middle: what you commit is
+FerroEHR implements that standard natively. It speaks the openEHR **REST API**
+(ITS-REST Release-1.1.0), executes **Archetype Query Language (AQL 1.1)**, and
+holds data as canonical openEHR compositions with full, indelible version
+history. There is no proprietary data format in the middle: what you commit is
 what you query and what you read back.
 
 ## What makes this implementation different
 
-- **Compliance you can verify, not just read.** Every release runs the full
-  openEHR conformance catalogue against the live server, in both JSON and XML,
-  and computes the profile verdicts automatically. The current, run-derived
-  result — every number generated from the committed artifacts, never
-  hand-typed — is on the [Conformance](conformance.md) page.
+- **Compliance you can check, not just read.** The openEHR conformance
+  catalogue is executed by a committed runner against a live server, over both
+  canonical JSON and canonical XML, and the profile verdicts are computed from
+  the per-case outcomes rather than asserted. The run records live in the
+  repository, and every number on the [Conformance](conformance.md) page is
+  derived from them at build time — never hand-typed.
 - **The openEHR specifications, generated** directly from the official
-  machine-readable models: the REST API Release-1.1.0, AQL 1.1, the Reference
-  Model, Archetype Model 1.4 and 2.4, Terminology 3.1. A specification update
-  is a regeneration, not a rewrite.
+  machine-readable models: the Reference Model, the Archetype Model (1.4 and
+  2.4), the serialization schemas, and the REST API contract (Release-1.1.0).
+  openEHR's own published terminology (3.1) ships embedded, byte-identical to
+  upstream. A specification update is a regeneration, not a rewrite.
 - **Two selectable specification generations.** One configuration key,
   `spec_profile`, chooses the whole generation set the server runs:
-  `development` (Reference Model 1.2.0 with BASE 1.3.0 — the default) or
-  `stable` (the latest *released* generations, Reference Model 1.1.0 with
-  BASE 1.2.0). See
+  `development` (Reference Model 1.2.0 with BASE 1.3.0 and LANG 1.1.0 — the
+  default) or `stable` (the latest *released* generations, Reference Model
+  1.1.0 with BASE 1.2.0 and LANG 1.0.0). See
   [`spec_profile`](installation/configuration.md#spec_profile).
-- **One static binary.** No JVM and no runtime dependencies — predictable
-  memory, fast cold starts, and a minimal, shell-less container image.
+- **One self-contained binary.** No JVM, no language runtime, and a pure-Rust
+  TLS stack, so there is nothing to provision beside PostgreSQL — predictable
+  memory, fast cold starts, and a shell-less, non-root container image.
 - **PostgreSQL 18-native storage.** Clinical documents are decomposed into an
-  indexed node model with temporal, database-enforced versioning; canonical
-  openEHR JSON is stored verbatim so storage and API never disagree.
+  indexed node model with time-bounded, versioned rows; canonical openEHR JSON
+  is stored verbatim so storage and API never disagree.
 
 ## How the system is layered
 
@@ -67,19 +70,25 @@ user terms; if you are new to openEHR itself, start with the
   `docker compose up` to a stored composition and an AQL result in a few
   minutes.
 - **Deploying it?** [Installation](installation/index.md) covers Docker
-  Compose, Kubernetes/Helm, building from source, and the full
-  [configuration reference](installation/configuration.md).
+  Compose, Kubernetes/Helm, building from source, and the
+  [configuration reference](installation/configuration.md);
+  [Operations](operations.md) covers running it afterwards.
 - **Integrating an application?** [Using the API](using-the-api/index.md) and
   [Querying with AQL](querying-aql.md) are the core reference for client
   developers.
 - **Modelling clinical data?** [Templates & validation](templates-validation.md)
   explains how templates drive what the server will accept.
+- **Reviewing it for a deployment?** [Security & multi-tenancy](security.md)
+  and the [Threat model](threat-model.md) state what is enforced and what is
+  yours to enforce; the [Admin console](admin-ui/index.md) is the optional web
+  UI over the same public API.
 
 > [!NOTE]
-> FerroEHR is a successor to the **EHRbase** project (by vitasystems and
-> the Peter L. Reichertz Institute) and keeps that lineage in its history, but
-> it is an independent, from-scratch Rust implementation and is not affiliated
-> with or endorsed by the EHRbase project. FerroEHR's own code is
-> MIT-licensed; vendored openEHR material keeps its upstream terms —
-> Apache-2.0 for the machine-readable artifacts, CC-BY-SA 3.0 for the
-> specification text and clinical models (see [Licensing & legal](licensing.md)).
+> FerroEHR began as a fork of **EHRbase** (by vitasystems and the Peter L.
+> Reichertz Institute) and keeps that lineage in its git history, but it is an
+> independent, from-scratch Rust implementation — no EHRbase code is present in
+> this tree — and it is not affiliated with or endorsed by the EHRbase project.
+> FerroEHR's own code is MIT-licensed; vendored openEHR material keeps its
+> upstream terms — Apache-2.0 for the machine-readable artifacts, CC-BY-SA 3.0
+> for the specification text, and CC-BY-SA 3.0 and 4.0 for the clinical models
+> (see [Licensing & legal](licensing.md)).

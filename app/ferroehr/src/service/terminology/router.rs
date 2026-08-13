@@ -62,8 +62,9 @@ pub struct TerminologyRouter {
 impl TerminologyRouter {
     /// Materialise every configured provider and its routing.
     ///
-    /// `Ok(None)` when external terminology is disabled or no provider is
-    /// configured — the byte-identical bundle-only default.
+    /// `Ok(None)` when external terminology is disabled — the byte-identical
+    /// bundle-only default (enabled-with-no-provider is a boot error, so it
+    /// never reaches here).
     ///
     /// # Errors
     ///

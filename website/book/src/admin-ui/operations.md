@@ -7,54 +7,61 @@ endpoints over HTTP — the console has no privileged channel.
 
 ![Operations panel](img/operations/operations.png)
 
+<!-- toc -->
+
 ## When it appears
 
 The panel is **probe-and-hide**: on every page load the console asks the CDR for
-`GET /management/info`, and the sidebar entry appears only if the CDR answers.
-A CDR running with its management surface off (the default) simply has no
-Operations entry — the console never offers a screen that cannot work.
+`GET /management/info`, and the sidebar entry appears only if that endpoint
+exists. A `404` — the CDR's answer when the management surface is off, which is
+the default — hides the entry entirely; any other answer counts as present, so a
+refusal reaches you as a message on the card that asked rather than as a missing
+screen.
 
-So to get the panel, enable the surface on the CDR
-([Operations → The management surface](../operations.md#the-management-surface)):
+To get the panel, enable the surface on the CDR and give each endpoint you want
+an access level ([Operations → The management
+surface](../operations.md#the-management-surface)). **Every endpoint ships
+`off`**, so nothing is mounted until you name it:
 
 ```toml
 [management]
 enabled = true
 
 [management.endpoints]
-info = "private"        # the availability probe — enable it alongside the rest
-metrics = "private"
+info = "admin_only"     # the availability probe — enable it alongside the rest
+metrics = "admin_only"
 env = "admin_only"
 loggers = "admin_only"
 ```
 
-Each endpoint is independently opt-in, and a card whose endpoint is off says so
-in place instead of failing — but `info` is the probe, so a deployment that
-leaves `info` at `off` hides the whole panel.
+The levels are `off` (not mounted, `404`), `private` (any authenticated
+principal), `admin_only`, and `public` (served outside authentication). A card
+whose endpoint is off says so in place instead of failing — but `info` is the
+probe, so leaving `info` at `off` hides the whole panel.
 
 If the CDR serves management on its own internal listener
 (`management.port`) or under a renamed base path (`management.base_path`), point
 the console at it with one setting — the full prefix, including the path:
 
 ```bash
-FERROEHR_ADMIN__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9464/management
+FERROEHR_ADMIN__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9100/management
 ```
 
 Unset, the console derives `{cdr.base_url}/management`.
 
 > [!NOTE]
-> The management endpoints are access-level gated server-side (`admin_only` by
-> default). The console shows the panel whenever the surface exists — being
-> allowed to read a particular endpoint is the CDR's per-request decision, and a
-> refusal is reported on the card that asked, naming what to do about it.
+> The management endpoints are gated server-side at the level you chose. The
+> console shows the panel whenever the surface exists — being allowed to read a
+> particular endpoint is the CDR's per-request decision, and a refusal is
+> reported on the card that asked, naming what to do about it.
 
 ## Dependency health
 
 The health card reads the CDR's **public readiness probe**
 (`GET /health/readiness`, always served, no configuration): the aggregate state
 plus one row per dependency the server checks — the database ping, the
-migrations probe, and the optional component flags — with the CDR's own detail
-text where it gave one.
+migrations probe, and any optional components — with the CDR's own detail text
+where it gave one.
 
 This is deliberately a different question from the **status pill** in the
 topbar, which polls the product status document (`GET /ferroehr/rest/status`):

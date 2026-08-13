@@ -2,15 +2,16 @@
 
 This chapter takes you from nothing to a running server with a template loaded,
 a clinical composition stored, and an AQL query returning results — in a few
-minutes, using Docker Compose. It is the fastest way to see FerroEHR work
-end to end and to get a feel for the API before reading the reference chapters.
+minutes, using Docker Compose. It is the fastest way to see FerroEHR work end to
+end and to get a feel for the API before reading the reference chapters.
 Everything here uses the built-in development credentials; do not use them
 outside local evaluation.
 
 > [!WARNING]
 > The steps below enable Basic auth with the throwaway user `ferroehr` /
-> `ferroehr`, leave role-based access control **off**, and use a permissive CORS
-> policy — this is a development configuration only. See
+> `ferroehr`, leave role-based access control **off** (so that one user reaches
+> every enabled surface, admin API included), and use a permissive CORS policy.
+> This is a development configuration only. See
 > [Security & multi-tenancy](security.md) and the
 > [configuration reference](installation/configuration.md) before exposing a
 > server.
@@ -30,18 +31,18 @@ This pulls and starts two services: the server (`ferroehr`) on port **8080**,
 and a preconfigured **PostgreSQL 18** database. The server runs its schema
 migrations automatically on first boot, so the database is ready as soon as it
 reports healthy. Nothing else is needed — the server's configuration travels
-inside the Compose file.
+inside the Compose file, which also ships one Basic-auth user (`ferroehr` /
+`ferroehr`, holding both the `ADMIN` and `USER` roles) so the API authenticates
+out of the box.
 
-Three things are optional and stay down until you ask for them: the
-[admin console](admin-ui/index.md) (`docker compose --profile admin-ui up`, then
-<http://localhost:3000>), a SeaweedFS S3 gateway for multimedia
-(`--profile s3`), and a ready-made Keycloak identity provider for bearer-token
-auth (a second downloadable overlay, `docker-compose.keycloak.yml`). See
-[Docker Compose](installation/compose.md) for all of them.
-
-The Compose file's inline configuration ships one Basic-auth user
-(`ferroehr` / `ferroehr`, holding both the `ADMIN` and `USER` roles) so the API
-authenticates out of the box.
+Published ports bind `127.0.0.1` by default, so the stack is reachable from
+this machine and not from the network. Three things are optional and stay down
+until you ask for them: the [admin console](admin-ui/index.md)
+(`docker compose --profile admin-ui up`, then <http://localhost:3000>), a
+SeaweedFS S3 gateway for multimedia (`--profile s3`), and a ready-made Keycloak
+identity provider for bearer-token auth (a second downloadable overlay,
+`docker-compose.keycloak.yml`). See [Docker Compose](installation/compose.md)
+for all of them.
 
 ## 2. Probe the status endpoint
 
@@ -51,10 +52,16 @@ The status endpoint is public and confirms the server is up:
 curl http://localhost:8080/ferroehr/rest/status
 ```
 
-All clinical API routes live under the base path
-`/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is served at
-<http://localhost:8080/ferroehr/rest/swagger-ui>, and the full endpoint reference is
-published on the documentation site under `/ferroehr/api/` (the **API** tab).
+It answers a small JSON document — `status`, `server_version`,
+`openehr_rest_api_version` and a `timestamp`. All clinical API routes live under
+the base path `/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is
+served at <http://localhost:8080/ferroehr/rest/swagger-ui>, and the full
+endpoint reference is published on the documentation site under `/ferroehr/api/`
+(the **API** tab).
+
+There are also three always-on, unauthenticated health endpoints — `/health`,
+`/health/liveness` and `/health/readiness`; the last one reports each
+dependency it checked. See [Operations → Health probes](operations.md#health-probes).
 
 ## 3. Create an EHR
 
@@ -67,12 +74,14 @@ curl -u ferroehr:ferroehr -X POST -i \
 ```
 
 The `-i` flag shows the response headers. On success you get `201 Created`; the
-new EHR's identifier is in the `ETag` header (and the `Location` header points
-at the created resource). Copy the UUID; the examples below refer to it as
-`EHR_ID`.
+new EHR's identifier is in the `ETag` header (as the weak form
+`W/"<ehr_id>"`), and `Location` points at the created resource. Copy the UUID;
+the examples below refer to it as `EHR_ID`.
 
 By default the response body is empty. Add `-H 'Prefer: return=representation'`
-to have the server return the full `EHR` object instead.
+to have the server return the full `EHR` object instead, or
+`-H 'Prefer: return=identifier'` for just the `uid`; either way
+`Preference-Applied` echoes what the server honoured.
 
 ## 4. Upload a template
 
@@ -112,8 +121,8 @@ lifecycle and the WebTemplate/FLAT/STRUCTURED formats.
 ## 5. Commit a composition
 
 A **composition** is one clinical document, stored inside an EHR and validated
-against its template. Post the composition JSON (its `archetype_details`
-name the template it belongs to):
+against its template. Post the composition JSON (its `archetype_details` name
+the template it belongs to):
 
 ```shell
 curl -u ferroehr:ferroehr \
@@ -125,9 +134,9 @@ curl -u ferroehr:ferroehr \
 
 On success you get `201 Created` and — because of `Prefer: return=representation`
 — the stored composition in the body, now carrying a server-assigned version
-identifier in its `uid`. If the composition does not conform to its template,
-you get `422 Unprocessable Entity` with the validation errors; a malformed
-request gets `400 Bad Request`. The composition walkthrough in
+identifier in its `uid`. If the composition does not conform to its template you
+get `422 Unprocessable Entity` with the validation errors; a malformed request
+gets `400 Bad Request`. The composition walkthrough in
 [Resource walkthroughs](using-the-api/resources.md) covers update and delete,
 which use the `If-Match` header for optimistic concurrency.
 
@@ -143,10 +152,10 @@ curl -u ferroehr:ferroehr \
   http://localhost:8080/ferroehr/rest/openehr/v1/query/aql
 ```
 
-The response is a `RESULT_SET`: a `columns` array describing each selected
-value and a `rows` array of result tuples. To pull values out of the
-compositions you committed, select by their archetype path — for example, every
-systolic blood pressure above 140:
+The response is a `RESULT_SET`: a `columns` array describing each selected value
+and a `rows` array of result tuples. To pull values out of the compositions you
+committed, select by their archetype path — for example, every systolic blood
+pressure above 140:
 
 ```shell
 curl -u ferroehr:ferroehr -H 'Content-Type: application/json' -d '{
@@ -161,20 +170,27 @@ feature set.
 ## 7. Explore the API interactively
 
 Open <http://localhost:8080/ferroehr/rest/swagger-ui> to browse and try every
-endpoint from your browser. The UI's spec selector has one entry,
-`ferroehr-rest`, generated by the server itself and covering its **complete
-surface** — every openEHR API group (EHR, COMPOSITION, CONTRIBUTION, DIRECTORY,
-DEMOGRAPHIC, DEFINITION, QUERY, ADMIN) plus the server's extensions and
-operational endpoints. When authentication is enabled the "Authorize" dialog
-shows the scheme the server is configured for (HTTP Bearer/JWT with OIDC,
-otherwise HTTP Basic). You can also read the static API reference on the
-documentation site (the **API** tab, under `/ferroehr/api/`).
+endpoint from your browser. The UI's spec selector carries one entry per API
+family — the standardised openEHR groups (EHR, Query, Definition, Demographic,
+Admin) and the server's own extensions (status & management, terminology, party
+relationships, messaging, event subscriptions, multi-tenancy, the FHIR
+connector, SMART discovery) — plus **FerroEHR — Complete surface** last, which
+is the whole server in one document. Every entry is filtered from that same
+document, which the server generates from its own handlers, so nothing here can
+drift from the routes it actually serves. When authentication is enabled the
+"Authorize" dialog shows the one scheme the server is configured for (HTTP
+Bearer/JWT when OIDC is set up, otherwise HTTP Basic). You can also read the
+static API reference on the documentation site (the **API** tab, under
+`/ferroehr/api/`).
 
 ## Next steps
 
 - [Installation](installation/index.md) — running it for real (Compose,
-  Kubernetes, or from source) and the [configuration reference](installation/configuration.md).
+  Kubernetes, or from source) and the
+  [configuration reference](installation/configuration.md).
 - [Using the API](using-the-api/index.md) — the per-resource reference with
   headers, status codes, and versioning.
-- [Concepts](concepts/index.md) — the openEHR model and how FerroEHR is
-  built, if the terms above were unfamiliar.
+- [Operations](operations.md) — migrations, probes, observability and upgrades,
+  plus the [admin & messaging APIs](operations-admin-apis.md).
+- [Concepts](concepts/index.md) — the openEHR model and how FerroEHR is built,
+  if the terms above were unfamiliar.

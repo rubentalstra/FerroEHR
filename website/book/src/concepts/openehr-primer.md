@@ -8,6 +8,8 @@ compositions, versioning, and AQL — in plain terms. It is enough to follow the
 rest of this book; the [openEHR specifications](https://specifications.openehr.org/)
 are the full reference.
 
+<!-- toc -->
+
 ## The Reference Model: a fixed vocabulary of shapes
 
 At the bottom is the **Reference Model (RM)** — a fixed, general set of building
@@ -22,11 +24,12 @@ The RM is deliberately generic: it knows about "a quantity with a unit" but not
 about "systolic blood pressure in mmHg". That specificity comes from the layer
 above.
 
-FerroEHR carries **two Reference Model generations** and one configuration key,
-`spec_profile`, chooses which the deployment runs: **RM 1.2.0** (the
+FerroEHR carries **two Reference Model generations**, and one configuration key,
+`spec_profile`, chooses which one a deployment runs: **RM 1.2.0** (the
 `development` default) or **RM 1.1.0** (`stable`, the latest released
 generation). openEHR's minor releases are additive, so data written against
-1.1.0 reads unchanged under 1.2.0. See
+1.1.0 reads unchanged under 1.2.0 — the reverse is not guaranteed, which is why
+the choice is worth making before you commit clinical data. See
 [`spec_profile`](../installation/configuration.md#spec_profile).
 
 ## Archetypes and templates: the meaning layer
@@ -44,10 +47,10 @@ specific use — a particular form, message, or dataset. It picks the archetypes
 you need, narrows their optionality (mandatory here, hidden there), and pins
 down defaults. The template is what a CDR is actually loaded with.
 
-FerroEHR ingests templates in the **Operational Template (OPT) 1.4** XML
-format, and **ADL 2** artefacts as ADL2 source. Once a template is uploaded,
-the server derives everything it needs to validate incoming data and to
-describe the data's shape to client applications.
+FerroEHR ingests templates as **Operational Template (OPT) 1.4** XML, and
+**ADL 2** artefacts as ADL 2 source. Once a template is uploaded, the server
+derives what it needs to validate incoming data and to describe the data's shape
+to client applications — see [Templates & validation](../templates-validation.md).
 
 > [!NOTE]
 > The order is always: agree on archetypes → build a template from them →
@@ -73,14 +76,14 @@ openEHR records are **versioned and indelible**. When you update a composition,
 the previous version is not replaced — it is retained, and a new version is
 created. You can read any composition as of a point in time, list its full
 history, and never silently lose clinical data. Deletion is *logical*: the
-object is marked deleted but its history remains.
+object is marked deleted but its history remains readable.
 
 Every change is wrapped in a **contribution** — an atomic change-set that also
 records an **audit** entry (who, when, why). A single contribution can commit
 several compositions together, and either all of them land or none do.
 
-FerroEHR supports reading both the **latest version** and **all versions** of
-an object, and querying across version history — see
+FerroEHR serves both the **latest version** and **all versions** of an object,
+and AQL can query across version history — see
 [Querying with AQL](../querying-aql.md).
 
 ## AQL: querying by meaning, not by table
@@ -102,7 +105,8 @@ WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >
 
 The same query runs unchanged against any conformant openEHR system holding
 that archetype — that is the portability payoff. The
-[Querying with AQL](../querying-aql.md) chapter is a full walkthrough.
+[Querying with AQL](../querying-aql.md) chapter is a full walkthrough, including
+which constructs this engine supports and how it refuses the ones it does not.
 
 ## How it fits together
 
@@ -110,7 +114,7 @@ that archetype — that is the portability payoff. The
 flowchart TB
     rm["Reference Model<br/>(generic building blocks)"]
     arch["Archetypes<br/>(one clinical concept each)"]
-    tmpl["Template (OPT 1.4)<br/>(archetypes assembled for a use)"]
+    tmpl["Template (OPT 1.4 or ADL 2)<br/>(archetypes assembled for a use)"]
     comp["Compositions<br/>(committed clinical documents)"]
     ehr["EHR<br/>(one subject's record)"]
     aql["AQL<br/>(query by clinical path)"]

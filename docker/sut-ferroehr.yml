@@ -161,8 +161,11 @@ services:
       retries: 5
       start_period: 20s
 
-  # A real FHIR R4 terminology server (HAPI FHIR JPA), behind the
-  # `terminology` profile. openEHR models the resolver of an archetype
+  # A real HAPI FHIR JPA terminology server, behind the `terminology` profile.
+  # NOTE: the container is configured fhir_version R4 while the CDR's client
+  # speaks R4B — deliberate cross-version coverage: the terminology resources
+  # exercised ($validate-code/$expand shapes) are identical across the two.
+  # openEHR models the resolver of an archetype
   # constraint binding as an external "terminology query server" (BASE
   # docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
   # Value-sets to Archetypes": the archetype "simply hold[s] an identifier for

@@ -20,9 +20,9 @@
 | | ferroehr | EHRbase |
 |---|---|---|
 | Product | ferroehr 3.17.3 | ehrbase 2.34.0 |
-| Run date | 2026-08-07 | 2026-08-07 |
-| Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase/` |
-| Stack | root compose, built from the current sources | `docker/sut-ehrbase.yml` (official images) |
+| Run date | 2026-08-13 | 2026-08-07 |
+| Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
+| Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
 
 ## Methodology
 
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-08-07) vs **EHRbase
+Runs compared: **ferroehr** (run of 2026-08-13) vs **EHRbase
 2.34.0** (run of 2026-08-07) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
@@ -342,12 +342,13 @@ attributes to the EHRbase implementation. No expectation was bent either way.
 
 - **`composition_update` + `ehr_status_update` (wire 400, deterministic)** —
   one shared root cause: EHRbase rejects the RFC-9110-quoted `If-Match`
-  entity-tag form with `400 "UUID string too large"`. The released docs text
-  itself mandates the quoted form (ITS-REST overview `Requests_and_responses.md`
+  entity-tag form with a 400. The released docs text itself mandates the
+  quoted form (ITS-REST overview `Requests_and_responses.md`
   §"If-Match and accidental overwrites": `If-Match: "8849182c-…::openEHRSys.example.com::2"`),
-  and EHRbase 400s even its own returned `ETag` echoed back verbatim; it
-  succeeds only on the non-standard unquoted form. EHRbase non-conformance;
-  the record stands.
+  and in a live reproduction (recorded on issue #266 — the committed run
+  record carries statuses, not bodies) EHRbase 400s even its own returned
+  `ETag` echoed back verbatim, succeeding only on the non-standard unquoted
+  form. EHRbase non-conformance; the record stands.
 - **`tags_put` + `tags_read` (wire 404, deterministic)** — the item-tag paths
   (`/ehr/{ehr_id}/tags`, `/ehr/{ehr_id}/composition/{uid}/tags`, …) are members
   of the STABLE EHR API in released ITS-REST 1.1.0 (RM grounding:

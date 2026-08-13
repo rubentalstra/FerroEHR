@@ -57,8 +57,11 @@ BOOK=website/book/src
 TOML=app/ferroehr/assets/ferroehr.default.toml
 VALUES=deploy/helm/ferroehr/values.yaml
 # The pages that document the Helm chart, and therefore the only pages on which a
-# dotted token is read as a chart values path.
-CHART_PAGES="$BOOK/installation/kubernetes.md $BOOK/installation/kubernetes-hardening.md"
+# dotted token is read as a chart values path. Glob-derived: a hardcoded list
+# went silently stale when the hardening chapter split into sub-pages (#2348),
+# leaving five chart pages unchecked while the gate reported OK.
+CHART_PAGES=$(printf '%s ' "$BOOK"/installation/kubernetes*.md "$BOOK"/installation/hardening-*.md \
+  "$BOOK"/operations.md "$BOOK"/operations-admin-apis.md)
 
 for required in "$TOML" "$VALUES"; do
   [ -f "$required" ] || { echo "docs-claims: missing authority file $required" >&2; exit 1; }
@@ -150,6 +153,59 @@ for f in $files; do
   done < <(grep -ohE 'FERROEHR__[A-Z0-9_]+' "$f" | sort -u)
 done
 
+# ── 1b. documented defaults vs the shipped default TOML ─────────────────────
+# A `| Key | Type | Default |` row on a configuration page states a default the
+# TOML asset also states; the two went out of sync on the published site
+# (`[query] timeout_ms` documented as `0` against a shipped `30000` — #2348).
+# Only rows whose Default cell is a single backticked literal AND whose key has
+# an uncommented assignment in the TOML are compared — optional/`#?` keys and
+# prose cells ("unset", "—") carry no machine-checkable claim and are skipped,
+# so every report from this section is a real disagreement.
+awk '
+  /^\[/ { line=$0; gsub(/[][]/, "", line); sect=line; next }
+  /^[a-z0-9_]+[ \t]*=/ {
+    key=$0; sub(/[ \t]*=.*/, "", key)
+    val=$0; sub(/^[^=]*=[ \t]*/, "", val)
+    if (val ~ /^"/) { sub(/^"/, "", val); sub(/".*$/, "", val) }
+    else { sub(/[ \t]*#.*$/, "", val); sub(/[ \t]+$/, "", val) }
+    print (sect == "" ? key : sect "." key) "\t" val
+  }
+' "$TOML" > "$work/toml_defaults"
+for f in $files; do
+  case "$f" in
+    "$BOOK"/installation/configuration.md|"$BOOK"/installation/config-*.md) ;;
+    *) continue ;;
+  esac
+  [ -f "$f" ] || continue
+  awk '
+    /^#/ { intab=0
+           if (match($0, /\[[a-z0-9_.]+\]/)) sect = substr($0, RSTART+1, RLENGTH-2)
+           next }
+    /^\| Key \| Type \| Default/ { intab=1; next }
+    intab && /^\|[-| ]+$/ { next }
+    intab && /^\|/ {
+      split($0, c, /\|/)
+      key=c[2]; def=c[4]
+      gsub(/[` ]/, "", key)
+      sub(/^[ ]+/, "", def); sub(/[ ]+$/, "", def)
+      if (key != "" && def ~ /^`[^`]*`$/) { gsub(/`/, "", def); print sect "." key "\t" def }
+      next }
+    !/^\|/ { intab=0 }
+  ' "$f" > "$work/page_defaults"
+  while IFS=$(printf '\t') read -r path documented; do
+    [ -n "$path" ] || continue
+    actual=$(awk -F'\t' -v p="$path" '$1==p{print $2; exit}' "$work/toml_defaults")
+    [ -n "$actual" ] || continue
+    doc_n=$documented; act_n=$actual
+    # A page may spell a string default with its TOML quotes (`"1.3"`); the
+    # TOML side is stored unquoted, so strip a quote wrapper before comparing.
+    doc_n=${doc_n#\"}; doc_n=${doc_n%\"}
+    case "$doc_n" in \[*) doc_n=$(printf '%s' "$doc_n" | tr -d ' '); act_n=$(printf '%s' "$act_n" | tr -d ' ') ;; esac
+    [ "$doc_n" = "$act_n" ] \
+      || report "$f" "documents \`$path\` default as \`$documented\`; $TOML says \`$actual\`"
+  done < "$work/page_defaults"
+done
+
 # ── 2. Helm values paths (chart pages only) ──────────────────────────────────
 for f in $files; do
   case " $CHART_PAGES " in *" $f "*) ;; *) continue ;; esac
@@ -177,7 +233,7 @@ for f in $files; do
       adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
     esac
     report "$f" "documents Helm value \`$path\`, which the chart does not define"
-  done < <(grep -ohE '`[a-z][A-Za-z0-9]*(\.[A-Za-z0-9_]+)+`' "$f" | tr -d '`' | sort -u)
+  done < <(grep -ohE '`[a-z][A-Za-z0-9]*(\.[A-Za-z0-9_]+)+(=[^`]*)?`' "$f" | tr -d '`' | sed -E 's/=.*$//' | sort -u)
   # `--set` is unambiguous wherever it appears, so it is checked without the
   # top-level-key filter above.
   while read -r path; do
@@ -200,7 +256,86 @@ for f in $files; do
   done < <(grep -ohE '\-\-set +[a-z][A-Za-z0-9_.]*=' "$f" | sed -E 's/--set +//; s/=$//' | sort -u)
 done
 
-# ── 3. generated charts nothing embeds ───────────────────────────────────────
+# ── 3. chart/app version literals (chart pages only) ────────────────────────
+# Both went stale on the published site (`--version 5.0.1` against a 6.x chart,
+# `image.tag=3.17.3` against a 3.17.5 appVersion — #2348). Chart.yaml is the
+# machine authority for both, so a literal that disagrees with it fails here.
+CHART_YAML=deploy/helm/ferroehr/Chart.yaml
+chart_version=$(awk '$1=="version:"{print $2; exit}' "$CHART_YAML")
+app_version=$(awk '$1=="appVersion:"{gsub(/"/,""); print $2; exit}' "$CHART_YAML")
+for f in $files; do
+  case " $CHART_PAGES " in *" $f "*) ;; *) continue ;; esac
+  [ -f "$f" ] || continue
+  while read -r v; do
+    [ -n "$v" ] || continue
+    [ "$v" = "$chart_version" ] \
+      || report "$f" "pins chart \`--version $v\`; Chart.yaml says $chart_version"
+  done < <(grep -ohE '\-\-version +[0-9]+\.[0-9]+\.[0-9]+' "$f" | awk '{print $2}' | sort -u)
+  while read -r v; do
+    [ -n "$v" ] || continue
+    [ "$v" = "$app_version" ] \
+      || report "$f" "pins image tag \`$v\`; Chart.yaml appVersion is $app_version"
+  done < <(grep -ohE 'ferroehr(-admin-ui)?:[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
+done
+# Every page (and the landing): a fully-spelled ghcr image reference must carry
+# the current appVersion, and never a `v` prefix — the publish lane tags
+# `{{version}}` without one, so `ghcr.io/…:v3.17.5` does not resolve at all.
+for f in $files website/landing/index.html; do
+  [ -f "$f" ] || continue
+  if grep -qE 'ghcr\.io/rubentalstra/[A-Za-z0-9._-]+:v[0-9]' "$f"; then
+    report "$f" "references a v-prefixed ghcr image tag; published tags carry no v prefix"
+  fi
+  case " $CHART_PAGES " in *" $f "*) continue ;; esac
+  while read -r v; do
+    [ -n "$v" ] || continue
+    [ "$v" = "$app_version" ] \
+      || report "$f" "pins ghcr image tag \`$v\`; Chart.yaml appVersion is $app_version"
+  done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-admin-ui|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
+done
+# The from-source page: a Rust version literal must be the toolchain channel or
+# the MSRV ("Rust 1.96.1" shipped against a 1.97.1 toolchain — #2348).
+RUST_PAGE="$BOOK/installation/from-source.md"
+case " $files " in *" $RUST_PAGE "*)
+  channel=$(awk -F'"' '/^channel/{print $2; exit}' rust-toolchain.toml)
+  msrv=$(awk -F'"' '/^rust-version/{print $2; exit}' Cargo.toml)
+  while read -r v; do
+    case "$v" in "$channel"|"${channel%.*}"|"$msrv"|"$msrv".*) continue ;; esac
+    report "$RUST_PAGE" "names Rust \`$v\`, which is neither the toolchain channel ($channel) nor the MSRV ($msrv)"
+  done < <(grep -ohE '1\.[0-9]{2}(\.[0-9]+)?' "$RUST_PAGE" | sort -u)
+;; esac
+
+# ── 3b. quoted wire evidence on the comparison page ─────────────────────────
+# Five fabricated response-body quotes shipped on the published comparison page
+# (#2348) — none occurred anywhere in the committed run records. A backticked
+# double-quoted string on that page presents itself as captured wire evidence,
+# so it must occur verbatim in one of the committed results records.
+COMPARISON_PAGE="$BOOK/comparison.md"
+case " $files " in *" $COMPARISON_PAGE "*)
+  while read -r quote; do
+    [ -n "$quote" ] || continue
+    inner=${quote#\`\"}; inner=${inner%\"\`}
+    grep -qF "$inner" docs/conformance/ehrbase/results.json docs/conformance/ferroehr/results.json 2>/dev/null \
+      || report "$COMPARISON_PAGE" "quotes \`\"$inner\"\` as wire evidence, but no committed results record contains it"
+  done < <(grep -ohE '`"[^"`]{4,}"`' "$COMPARISON_PAGE" | sort -u)
+;; esac
+
+# ── 3c. banned phrases with a recorded refutation ────────────────────────────
+# "static binary" shipped on four pages, the landing and the README while the
+# runtime image is distroless/cc precisely because the binary links glibc
+# dynamically (#2348). The claim is false by construction for this build.
+# A NEGATED use ("is not a static binary: …") is the truthful correction and
+# stays legal; the match runs over line-joined text so a negation split across
+# a line wrap is still recognised.
+while read -r f; do
+  [ -f "$f" ] || continue
+  tr '\n' ' ' < "$f" \
+    | sed -E 's/(not|never) a static(ally linked)? binary//Ig' \
+    | grep -qiE 'static(ally linked)? binary' \
+    && report "$f" "claims a static binary — the binary is dynamically linked (distroless/cc); say 'self-contained'"
+done < <(grep -rilE 'static(ally linked)? binary' --include='*.md' "$BOOK" website/landing README.md 2>/dev/null; \
+         grep -lFi 'static binary' website/landing/index.html 2>/dev/null)
+
+# ── 4. generated charts nothing embeds ───────────────────────────────────────
 # Whole-corpus by nature: a page deleting its figure is exactly the case to
 # catch, and that page may not be in a narrow diff.
 #

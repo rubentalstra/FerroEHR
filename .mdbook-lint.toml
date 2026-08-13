@@ -1,6 +1,23 @@
 # mdbook-lint configuration (Docs CI: `mdbook-lint lint website/book/src`).
 #
-# MDBOOK010 (unclosed inline math) is disabled: this book enables no math
-# preprocessor, so a lone `$` — e.g. the literal `$subject_id` placeholder in
-# the Subject Proxy frame syntax — is plain text, never an open math block.
-disabled-rules = ["MDBOOK010"]
+# MDBOOK010 (unclosed inline math) is disabled. The book DOES pre-render math
+# (mdbook-katex, installed by docs.yml), but katex never processes fenced or
+# inline code, while MDBOOK010 counts every `$` on a line — so shell variables,
+# Argon2 `$argon2id$…` strings and the `$subject_id` frame placeholder all
+# false-fire. The real discipline (escape a literal `$` in PROSE as `\$`) is
+# review-enforced; measured 2026-08-13: enabling the rule reports only
+# code-span false positives.
+#
+# The 2026-08-13 sweep (#2348) found the two real cross-reference ERRORS in the
+# book buried under ~1200 style warnings, so the deliberate-style classes are
+# disabled too: CONTENT004 (the book intentionally uses sentence-case
+# headings), MD050 (strong-emphasis style is mixed by design in tables),
+# MD028 (consecutive `> [!NOTE]` callouts are the mdBook 0.5 idiom), and
+# MDBOOK005 (its orphan scan walks the whole repository, reporting every
+# non-book markdown file as "not referenced in SUMMARY.md"; orphaned book
+# assets are guarded by scripts/checks/docs-claims.sh instead). MD013 is set
+# to the width the book actually wraps at.
+disabled-rules = ["MDBOOK010", "CONTENT004", "MD050", "MD028", "MDBOOK005"]
+
+[MD013]
+line-length = 101

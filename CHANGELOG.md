@@ -15,8 +15,34 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The documentation site was read end-to-end against the tree and
+  rewritten.** Every page's substantive claims were verified against the
+  code, the chart, the workflows and the committed conformance artifacts;
+  drifted claims were corrected rather than catalogued (among them: the
+  binary is self-contained but not statically linked, the FHIR surfaces are
+  R4B, the TLS floor defaults to 1.3-only, rate limiting ships enabled, the
+  query execution budget ships at 30 s, and a removed `probes.exec` chart
+  option is gone from the docs too). Long chapters split into sub-pages:
+  cluster hardening (five), the configuration reference (five), release
+  verification, and the admin/messaging API walkthroughs.
+
 ### Fixed
 
+- **The Helm chart is `6.0.5`.** Reading the site against the tree corrected
+  chart comments and operator-facing messages (the stale distroless base
+  name, the secret-routing key list, the config-in-Secret cause in
+  NOTES.txt, two book citations that moved in the hardening split, and the
+  egress refusal's pointer); the packaged bytes changed, so the version
+  moves.
+- **Wire and OpenAPI text corrected while verifying the site.** The `406`
+  answer for an unrecognized XML `version` parameter now names `version=2`
+  as the default (it said `version=1`); the `expand_multimedia` parameter
+  description no longer claims the served body is byte-identical to the
+  committed one (expansion restores `data` while keeping the offload-added
+  `uri`/integrity fields); and `DELETE /definition/artefact/adl2/{id}`
+  documents its real `409` still-referenced refusal.
 - **The Helm chart is `6.0.4`.** The v3.17.5 cut moved the chart's
   `appVersion` to 3.17.5 without moving the chart's own version, and 6.0.3
   was already published — a published chart version is immutable, so the

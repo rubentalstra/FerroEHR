@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs, default-deny-ingress workload that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 6.0.4](https://img.shields.io/badge/Version-6.0.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.5](https://img.shields.io/badge/AppVersion-3.17.5-informational?style=flat-square)
+![Version: 6.0.5](https://img.shields.io/badge/Version-6.0.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.5](https://img.shields.io/badge/AppVersion-3.17.5-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ add — `helm repo add` does not apply to this chart and never will:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.4 \
+  --version 6.0.5 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.5
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `6.0.4` |
+| the **chart** (templates, defaults, this document) | `--version` | `6.0.5` |
 | the **server image** | `image.tag` | `3.17.5` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature** — who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.4 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.5 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.4 \
 A **SLSA build provenance attestation** — what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.4 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.5 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.5 \
   -R rubentalstra/FerroEHR
@@ -255,7 +255,7 @@ Kubernetes: `>=1.36.0-0`
 | hostUsers | bool | `false` | Run the pods in their own USER NAMESPACE, so container UIDs map to unprivileged host UIDs and a container escape lands as nobody rather than as the UID it ran under (KEP-127, stable v1.36 — the reason this chart's kubeVersion floor is 1.36). `false` here is the Kubernetes field spelling and means user namespaces are ON; set it to `true` to share the host's user namespace, which is the API default.  Set it to `true` if your nodes cannot support it. The requirement is a node-level one the chart cannot check: a Linux node whose container runtime implements it (containerd >= 2.0 or CRI-O >= 1.25) with idmap-mount support in the kernel. On a node without it the pod does not start — a loud failure, not a silent downgrade (https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/). |
 | image.digest | string | `""` | Image digest (`sha256:…`). Set it and the pod runs `repository@digest`, ignoring `tag` entirely: a digest is what the provenance attestation is made over, so deploying by digest is what makes verification bind to the running image. A tag can be moved afterwards; a digest cannot. |
 | image.pullPolicy | string | `"IfNotPresent"` | Pull policy. IfNotPresent + an immutable pinned tag/digest in production. |
-| image.repository | string | `"ghcr.io/rubentalstra/ferroehr"` | Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base). |
+| image.repository | string | `"ghcr.io/rubentalstra/ferroehr"` | Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian13:nonroot base). |
 | image.tag | string | `""` | Image tag. Empty string falls back to .Chart.appVersion. Pin a version in production, never `latest` — and prefer `digest` below, which a tag cannot be substituted for once it is set. |
 | imagePullSecrets | list | `[]` | imagePullSecrets for private registries. |
 | ingress.annotations | object | `{}` | Ingress annotations (TLS issuer, body size, timeouts — controller-specific). |

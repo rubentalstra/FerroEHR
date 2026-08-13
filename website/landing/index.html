@@ -11,7 +11,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>FerroEHR — a pure-Rust openEHR Clinical Data Repository</title>
-  <meta name="description" content="FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0, AQL 1.1, PostgreSQL 18-native storage, shipped as a single static binary. Spec-compliant and machine-verified.">
+  <meta name="description" content="FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0, AQL 1.1, PostgreSQL 18-native storage, shipped as a single self-contained binary. Spec-compliant and machine-verified.">
   <link rel="canonical" href="https://ferroehr.eu/">
   <link rel="icon" type="image/svg+xml" href="./assets/logo-mark.svg">
   <link rel="stylesheet" href="./style.css">
@@ -85,7 +85,7 @@
         "@type": "SoftwareSourceCode",
         "@id": "https://ferroehr.eu/#software",
         "name": "FerroEHR",
-        "description": "A pure-Rust openEHR Clinical Data Repository implementing ITS-REST 1.1.0 and AQL 1.1 on PostgreSQL 18, shipped as a single static binary.",
+        "description": "A pure-Rust openEHR Clinical Data Repository implementing ITS-REST 1.1.0 and AQL 1.1 on PostgreSQL 18, shipped as a single self-contained binary.",
         "url": "https://ferroehr.eu/",
         "codeRepository": "https://github.com/rubentalstra/FerroEHR",
         "programmingLanguage": "Rust",
@@ -129,13 +129,13 @@
           openEHR separates clinical knowledge from software: applications store
           and query structured health records through a vendor-neutral REST API
           and the Archetype Query Language. FerroEHR implements that standard
-          natively in Rust — headless, API-first, one static binary on PostgreSQL 18.
+          natively in Rust — headless, API-first, one self-contained binary on PostgreSQL 18.
         </p>
         <div class="hero-cta">
           <a class="btn btn-primary" href="./docs/latest/getting-started.html">Get started</a>
           <a class="btn btn-ghost" href="./api/">View the API</a>
         </div>
-        <p class="note">No JVM · no runtime dependencies · every compliance claim machine-verified.</p>
+        <p class="note">No JVM · no language runtime · every compliance claim machine-verified.</p>
       </div>
     </section>
 
@@ -242,7 +242,7 @@
 
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h.01M7 12h.01M7 16h.01M11 8h6M11 12h6M11 16h4"/></svg></div>
-            <h3>One static binary</h3>
+            <h3>One self-contained binary</h3>
             <p>Predictable memory, fast cold starts, a minimal distroless image — no garbage-collection pauses in the write path.</p>
           </article>
 
@@ -261,7 +261,7 @@
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M6 8.5v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3M12 13.5v2"/></svg></div>
             <h3>Integration</h3>
-            <p>FHIR R4 connectors, AMQP change events and S3 multimedia storage — bridge openEHR into the systems around it.</p>
+            <p>FHIR R4B connectors, AMQP change events and S3 multimedia storage — bridge openEHR into the systems around it.</p>
           </article>
 
         </div>
@@ -310,7 +310,7 @@
           <span class="chip">PostgreSQL 18</span>
           <span class="chip">Keycloak / OIDC</span>
           <span class="chip">RabbitMQ / AMQP</span>
-          <span class="chip">FHIR R4</span>
+          <span class="chip">FHIR R4B</span>
           <span class="chip">S3 / SeaweedFS</span>
           <span class="chip">Kubernetes / Helm</span>
           <span class="chip">Prometheus / OpenTelemetry</span>
@@ -332,9 +332,10 @@
           <p>A pure-Rust openEHR® Clinical Data Repository. Code licensed under
             <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE" rel="noopener">MIT</a>;
             vendored openEHR material keeps its upstream
-            <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-APACHE-2.0" rel="noopener">Apache-2.0</a>
-            and
+            <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-APACHE-2.0" rel="noopener">Apache-2.0</a>,
             <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-CC-BY-SA-3.0" rel="noopener">CC-BY-SA 3.0</a>
+            and
+            <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-CC-BY-SA-4.0" rel="noopener">CC-BY-SA 4.0</a>
             terms — see <a href="./docs/latest/licensing.html">Licensing &amp; legal</a>.</p>
           <p>Began as a fork of EHRbase by vitasystems and the Peter L. Reichertz
             Institute (PLRI). openEHR® is the registered trademark of the openEHR

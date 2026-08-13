@@ -651,8 +651,9 @@ pub(crate) async fn ehr_create_with_id(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -774,8 +775,9 @@ pub(crate) async fn ehr_status_get_by_version_id(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -1372,8 +1374,9 @@ pub(crate) async fn versioned_ehr_status_revision_history(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -1527,8 +1530,9 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -2072,8 +2076,9 @@ pub(crate) async fn composition_create(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -3095,8 +3100,9 @@ pub(crate) async fn versioned_composition_revision_history(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -3297,8 +3303,9 @@ pub(crate) async fn versioned_composition_version_get_at_time(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -3534,8 +3541,9 @@ pub(crate) async fn versioned_composition_version_get_by_id(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
@@ -4570,8 +4578,9 @@ pub(crate) async fn directory_delete(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served resource is \
-                        byte-identical to the committed one. A no-op when the \
+                        verifying its integrity, so the served body carries \
+                        the original data again (the offload-added uri and \
+                        integrity fields remain alongside it). A no-op when the \
                         body holds no external media; an error when the content \
                         cannot be restored, never a silent fall back to the \
                         stored reference.",
