@@ -953,8 +953,23 @@ fn write_crate(crate_name: &str, files: &[GenFile]) -> Result<(), Box<dyn std::e
     declare_hand_written_modules(&src, &mut written)?;
     rustfmt(&written)?;
     println!("emitted {} files into {}", files.len(), src.display());
+    eprintln!("{INCOMPLETE_AFTER_EMIT}");
     Ok(())
 }
+
+/// What `emit` alone leaves behind, printed at the end of every run.
+///
+/// `emit` purges each crate's `json_serde.rs` and its declaration, and only
+/// `emit-json` writes them back, so the workspace does not compile in between.
+/// The failure then surfaces far from its cause as unsatisfied
+/// `serde::Serialize` bounds in whichever crate builds first, and the recovery
+/// costs a full rebuild. Saying so at the end of the run is cheaper than
+/// discovering it (#2324).
+const INCOMPLETE_AFTER_EMIT: &str = "\
+note: `emit` alone leaves the workspace UNBUILDABLE — it removes each crate's
+      json_serde.rs, which only `emit-json` writes back. Run the full set:
+        emit-json emit-xml emit-rest emit-opt emit-aom2 emit-rm-model emit-validate
+      or use the /regen-codegen skill, which runs them all plus the drift check.";
 
 /// Whether a file's first line marks it as generated (`// @generated …`).
 fn is_generated_file(path: &Path) -> bool {
@@ -1085,4 +1100,19 @@ fn rustfmt(files: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("rustfmt failed with status {status}").into());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod emit_warning_tests {
+    use super::INCOMPLETE_AFTER_EMIT;
+
+    /// The note must name `emit-json` — the one target that restores what
+    /// `emit` removed. A note that only says "run the others" sends the reader
+    /// back to the documentation the foot-gun already survived (#2324).
+    #[test]
+    fn the_note_names_the_target_that_restores_the_tree() {
+        assert!(INCOMPLETE_AFTER_EMIT.contains("emit-json"));
+        assert!(INCOMPLETE_AFTER_EMIT.contains("json_serde.rs"));
+        assert!(INCOMPLETE_AFTER_EMIT.contains("UNBUILDABLE"));
+    }
 }
