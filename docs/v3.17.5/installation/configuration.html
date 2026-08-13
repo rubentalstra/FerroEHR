@@ -1,0 +1,1482 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Configuration reference - FerroEHR Documentation</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- Content-Security-Policy as a <meta> element, because GitHub Pages serves
+             static files and cannot set response headers. A meta CSP is genuinely
+             weaker than the header: `frame-ancestors`, `report-uri` and `sandbox` are
+             IGNORED in meta form (w3c CSP3 §3.3), and it applies only after the parser
+             reaches it. It still stops an injected external script or an exfiltrating
+             `connect-src`, which is the realistic risk for a docs site, so it is worth
+             having while being honest that the site cannot carry the full header set —
+             documented on the security page. `unsafe-inline` is required: mdBook emits
+             inline theme/sidebar scripts and inline styles of its own. -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'">
+        <meta name="referrer" content="strict-origin-when-cross-origin">
+        <!-- Self-hosted KaTeX stylesheet (fonts under katex/fonts/) — the site
+             serves no external requests, so mdbook-katex runs with no-css = true
+             and the vendored sheet is linked here. Version 0.16.4, matching the
+             KaTeX the katex-rs renderer inside mdbook-katex bundles (its
+             KATEX-VERSION file); provenance in website/book/KATEX-PROVENANCE.md. -->
+        <link rel="stylesheet" href="../katex/katex.min.css">
+
+        <meta name="description" content="User documentation for FerroEHR, a pure-Rust openEHR Clinical Data Repository.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/custom-79743c4e.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "coal";
+            window.path_to_searchindex_js = "../searchindex-ce1644f8.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a28755cd.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">FerroEHR Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/rubentalstra/FerroEHR" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/rubentalstra/FerroEHR/edit/develop/website/book/src/installation/configuration.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="configuration-reference"><a class="header" href="#configuration-reference">Configuration reference</a></h1>
+<p>FerroEHR is configured by <strong>one file — <code>ferroehr.toml</code></strong> — whose sections
+cover the entire server, with <code>FERROEHR_*</code> environment variables (and repeatable
+<code>--set</code> flags) as per-key overrides on top. This chapter is the complete
+reference: the quickstart, how configuration loads and how env names map onto
+the file, a subsection per configuration area, the CLI tools that validate and
+scaffold a config, the production checklist, and — for upgraders — the old→new
+variable map.</p>
+<ul>
+<li><a href="#quickstart">Quickstart</a></li>
+<li><a href="#how-configuration-loads">How configuration loads</a>
+<ul>
+<li><a href="#the-environment-variable-mapping">The environment-variable mapping</a></li>
+<li><a href="#file-discovery">File discovery</a></li>
+<li><a href="#strict-validation">Strict validation</a></li>
+</ul>
+</li>
+<li><a href="#spec_profile"><code>spec_profile</code></a>
+<ul>
+<li><a href="#why-it-is-one-key-and-not-three">Why it is one key and not three</a></li>
+<li><a href="#seeing-which-profile-is-active">Seeing which profile is active</a></li>
+<li><a href="#what-changes-on-the-wire">What changes on the wire</a></li>
+<li><a href="#changing-the-profile-on-an-existing-deployment">Changing the profile on an existing deployment</a></li>
+</ul>
+</li>
+<li><a href="#server"><code>[server]</code></a>
+<ul>
+<li><a href="#serverlimits-request-body-sizes"><code>[server.limits]</code>: request-body sizes</a></li>
+<li><a href="#serverrate_limit-per-caller-request-rates"><code>[server.rate_limit]</code>: per-caller request rates</a></li>
+<li><a href="#system_id-the-data-authoring-identity"><code>system_id</code>: the data-authoring identity</a></li>
+<li><a href="#servertls--native-tls--mutual-tls-client-authentication"><code>[server.tls]</code> — native TLS + mutual-TLS client authentication</a></li>
+<li><a href="#serveridentity"><code>[server.identity]</code></a></li>
+</ul>
+</li>
+<li><a href="#db"><code>[db]</code></a></li>
+<li><a href="#log"><code>[log]</code></a></li>
+<li><a href="#telemetry"><code>[telemetry]</code></a></li>
+<li><a href="#auth"><code>[auth]</code></a></li>
+<li><a href="#authz"><code>[authz]</code></a></li>
+<li><a href="#admin"><code>[admin]</code></a></li>
+<li><a href="#tenancy"><code>[tenancy]</code></a></li>
+<li><a href="#smart"><code>[smart]</code></a></li>
+<li><a href="#management"><code>[management]</code></a></li>
+<li><a href="#signing"><code>[signing]</code></a></li>
+<li><a href="#query"><code>[query]</code></a></li>
+<li><a href="#events"><code>[events]</code></a></li>
+<li><a href="#fhir"><code>[fhir]</code></a></li>
+<li><a href="#terminology"><code>[terminology]</code></a>
+<ul>
+<li><a href="#several-terminology-servers-at-once">Several terminology servers at once</a></li>
+<li><a href="#authenticating-to-a-terminology-server">Authenticating to a terminology server</a></li>
+<li><a href="#mutual-tls-to-a-terminology-server">Mutual TLS to a terminology server</a></li>
+<li><a href="#archetype-value-set-bindings-at-commit">Archetype value-set bindings at commit</a></li>
+</ul>
+</li>
+<li><a href="#multimedia"><code>[multimedia]</code></a></li>
+<li><a href="#audit"><code>[audit]</code></a>
+<ul>
+<li><a href="#auditstore--the-local-audit-record-repository"><code>[audit.store]</code> — the local Audit Record Repository</a></li>
+<li><a href="#auditsyslog--the-classic-dicomsyslog-feed-iti-20"><code>[audit.syslog]</code> — the classic DICOM/syslog feed (ITI-20)</a></li>
+<li><a href="#auditfhir_feed--the-restful-atna-feed-iti-20-atxfhir-feed"><code>[audit.fhir_feed]</code> — the RESTful-ATNA feed (ITI-20 ATX:FHIR Feed)</a></li>
+</ul>
+</li>
+<li><a href="#subject_proxy"><code>[subject_proxy]</code></a></li>
+<li><a href="#process--cli">Process / CLI</a></li>
+<li><a href="#the-config-subcommands">The <code>config</code> subcommands</a></li>
+<li><a href="#zero-config-boot-and-the-production-checklist">Zero-config boot and the production checklist</a></li>
+<li><a href="#what-belongs-in-a-mounted-file-vs-env">What belongs in a mounted file (vs env)</a></li>
+<li><a href="#variables-outside-the-servers-namespace">Variables outside the server’s namespace</a></li>
+</ul>
+<h2 id="quickstart"><a class="header" href="#quickstart">Quickstart</a></h2>
+<p>Generate an annotated template, edit it, and run:</p>
+<pre><code class="language-bash"># Write a fully-commented ferroehr.toml with every key at its default.
+ferroehr config default &gt; ferroehr.toml
+
+# Edit it — at minimum set db.url and an auth mechanism (see the checklist below).
+$EDITOR ferroehr.toml
+
+# Validate without touching the database, then run.
+ferroehr config check --config ferroehr.toml
+ferroehr --config ferroehr.toml
+</code></pre>
+<p>A server started with <strong>no file and no environment</strong> still boots (see
+<a href="#zero-config-boot-and-the-production-checklist">Zero-config boot</a>) — the file
+is optional, and every key has a default.</p>
+<h2 id="how-configuration-loads"><a class="header" href="#how-configuration-loads">How configuration loads</a></h2>
+<p>Configuration is assembled once at boot from four layers, lowest precedence to
+highest:</p>
+<ol>
+<li><strong>Built-in defaults</strong> — the values in the tables below.</li>
+<li><strong>The config file</strong> — <code>ferroehr.toml</code> (see <a href="#file-discovery">file discovery</a>).</li>
+<li><strong><code>FERROEHR_*</code> environment variables</strong> — override individual keys.</li>
+<li><strong><code>--set key=value</code> CLI flags</strong> (repeatable) — win over everything.</li>
+</ol>
+<p>Two permanent conventional aliases sit <em>below</em> their <code>FERROEHR_</code> forms within layer 3:
+<code>DATABASE_URL</code> → <code>db.url</code> and <code>RUST_LOG</code> → <code>log.filter</code>. Nothing else has a
+non-<code>FERROEHR_</code> name.</p>
+<h3 id="the-environment-variable-mapping"><a class="header" href="#the-environment-variable-mapping">The environment-variable mapping</a></h3>
+<p>Every key has one mechanical env spelling: <strong><code>FERROEHR</code> + the TOML path,
+upper-cased, with a double underscore (<code>__</code>) between every segment — including
+after the <code>FERROEHR</code> prefix.</strong> A single underscore only ever appears <em>inside</em> a
+key word.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>TOML</th><th>Environment variable</th></tr>
+</thead>
+<tbody>
+<tr><td><code>[db] max_connections = 20</code></td><td><code>FERROEHR__DB__MAX_CONNECTIONS=20</code></td></tr>
+<tr><td><code>[auth.oidc] issuer = "…"</code></td><td><code>FERROEHR__AUTH__OIDC__ISSUER=…</code></td></tr>
+<tr><td><code>[management.endpoints] env = "off"</code></td><td><code>FERROEHR__MANAGEMENT__ENDPOINTS__ENV=off</code></td></tr>
+<tr><td><code>[terminology.external.providers.default] url = "…"</code></td><td><code>FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Scalars are typed automatically (bool / int / float, else string).
+<strong>List-typed keys take comma-separated values</strong>
+(<code>FERROEHR__AUTH__OIDC__AUDIENCES=ferroehr,other</code>). Arrays of tables — the
+Basic-auth user store — are <strong>file-only</strong>.</p>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>Enum values are lowercase / <code>snake_case</code> tokens, exactly as the tables show.
+Secret-typed keys are redacted everywhere the config is rendered (the
+<code>/management/env</code> snapshot, <code>ferroehr config check</code>, logs), and each has a
+<code>*_file</code> sibling that reads the value from a file (for Kubernetes/Docker
+secret mounts). Setting a secret and its <code>*_file</code> sibling at once is a boot
+error.</p>
+</blockquote>
+<h3 id="file-discovery"><a class="header" href="#file-discovery">File discovery</a></h3>
+<p>The first of these that exists is loaded (later layers still override its
+values):</p>
+<ol>
+<li><code>--config &lt;path&gt;</code> (fatal if missing/unreadable),</li>
+<li><code>FERROEHR_CONFIG=&lt;path&gt;</code> (fatal if missing/unreadable),</li>
+<li><code>./ferroehr.toml</code> (current directory),</li>
+<li><code>/etc/ferroehr/ferroehr.toml</code>.</li>
+</ol>
+<p>An explicitly pointed-at file (1–2) is fatal if absent; the search-order files
+(3–4) are simply skipped when absent (but fatal if present and unparseable).</p>
+<h3 id="strict-validation"><a class="header" href="#strict-validation">Strict validation</a></h3>
+<p>Configuration is validated at boot (and by <code>ferroehr config check</code>), and the
+server refuses to start on any error:</p>
+<ul>
+<li><strong>Unknown keys are rejected</strong> — in the file (with the offending <code>file:line</code>)
+and in the <code>FERROEHR_</code> environment namespace — with a did-you-mean suggestion.
+A misspelled security key is a boot error, never silently ignored.</li>
+<li><strong>Type errors are boot errors</strong>, naming the key, the expected type, and where
+the bad value came from.</li>
+<li><strong>Semantic errors are aggregated</strong> — one pass reports every problem at once,
+so a broken config is fixed in a single iteration.</li>
+</ul>
+<h2 id="spec_profile"><a class="header" href="#spec_profile"><code>spec_profile</code></a></h2>
+<pre><code class="language-toml"># The openEHR specification generation set the server runs.
+spec_profile = "development"   # or "stable"
+</code></pre>
+<p>openEHR publishes released specification versions and keeps developing the
+next ones. FerroEHR generates <strong>both</strong> — each generation is a complete peer,
+with its own type model, canonical JSON and XML codecs, Reference Model
+attribute model, invariant cores and validation behaviour — and this key
+decides which set the running server serves.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>value</th><th>RM</th><th>BASE</th><th>LANG</th><th>Choose it when</th></tr>
+</thead>
+<tbody>
+<tr><td><code>development</code> <em>(default)</em></td><td>1.2.0</td><td>1.3.0</td><td>1.1.0</td><td>You want the generations this build is developed against. This is today’s behaviour and the default for every existing deployment.</td></tr>
+<tr><td><code>stable</code></td><td>1.1.0</td><td>1.2.0</td><td>1.0.0</td><td>Your governance requires running on RELEASED openEHR specifications only.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Environment form: <code>FERROEHR__SPEC_PROFILE=stable</code>. The key is a top-level
+scalar, not a section — there is no <code>[spec_profile]</code> table.</p>
+<h3 id="why-it-is-one-key-and-not-three"><a class="header" href="#why-it-is-one-key-and-not-three">Why it is one key and not three</a></h3>
+<p>The components’ generations are modelled against each other, not
+independently: RM 1.1.0’s own machine-readable model declares that it
+includes BASE 1.2.0. Letting you pick RM 1.1.0 with BASE 1.3.0 would offer a
+combination openEHR never published, so the profile is a single coupled
+choice and incoherent sets are unrepresentable rather than merely
+discouraged.</p>
+<h3 id="seeing-which-profile-is-active"><a class="header" href="#seeing-which-profile-is-active">Seeing which profile is active</a></h3>
+<p>The profile and the exact generation versions it selects appear in three
+places, so it is never a guess:</p>
+<ul>
+<li>the <strong>boot banner</strong>, on every start;</li>
+<li><strong><code>GET /management/info</code></strong>, alongside the build provenance;</li>
+<li>the <strong>openEHR system identity</strong> the server reports for conformance.</li>
+</ul>
+<h3 id="what-changes-on-the-wire"><a class="header" href="#what-changes-on-the-wire">What changes on the wire</a></h3>
+<p>Under <code>stable</code>, a request that addresses specification surface the released
+generations do not define is <strong>refused with an error naming the active
+profile</strong> — never answered as though the surface existed. That boundary is
+exact in both directions, which is the part most implementations get wrong:
+released surface the development line later dropped <strong>stays accepted</strong> under
+<code>stable</code>. Concretely, a demographic party carrying the RM 1.1.0
+<code>PARTY.reverse_relationships</code> attribute is validated and accepted under
+<code>stable</code> (the attribute is derived data the server recomputes, so the copy
+you send is not stored), while <code>development</code> refuses it as undeclared —
+because RM 1.2.0 removed it.</p>
+<p>The generation delta is machine-pinned in the build, so a future openEHR
+re-vendoring cannot silently widen or narrow what a profile accepts.</p>
+<h3 id="changing-the-profile-on-an-existing-deployment"><a class="header" href="#changing-the-profile-on-an-existing-deployment">Changing the profile on an existing deployment</a></h3>
+<p>Treat the profile as a deployment commitment. Both directions are defined,
+but they are not symmetric:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Direction</th><th>Supported?</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td><code>stable</code> → <code>development</code></td><td><strong>Always safe</strong></td><td>openEHR minor releases are additive by the Foundation’s own release strategy, so every object stored under the released generations is valid under the development ones.</td></tr>
+<tr><td><code>development</code> → <code>stable</code></td><td><strong>Only for data that never used a development-only construct</strong></td><td>Stored objects that did are refused <strong>loudly at read</strong>, with an error naming the profile conflict. They are never silently down-converted, and never hidden from a query.</td></tr>
+</tbody>
+</table>
+</div>
+<p>If you need to stay on released specifications, choose <code>stable</code> on day one
+rather than migrating into it later. There is no in-place down-conversion
+tool, by design: silently rewriting stored clinical content to fit an older
+generation would be data loss disguised as a setting.</p>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>No openEHR specification governs runtime version selection — this key is
+FerroEHR’s own design. What the specifications do govern is the
+compatibility direction it relies on: minor releases within a major line
+are additive supersets.</p>
+</blockquote>
+<h2 id="server"><a class="header" href="#server"><code>[server]</code></a></h2>
+<p>The HTTP listener and REST surface.</p>
+<pre><code class="language-toml">[server]
+bind = "0.0.0.0:8080"
+base_path = "/ferroehr/rest/openehr/v1"
+max_in_flight = 256
+swagger_ui = true
+cors_permissive = false
+system_id = "ferroehr.local"
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bind</code></td><td>string</td><td><code>0.0.0.0:8080</code></td><td>Socket address the API listener binds.</td></tr>
+<tr><td><code>base_path</code></td><td>string</td><td><code>/ferroehr/rest/openehr/v1</code></td><td>ITS-REST base path all API routes hang off. The status, health-adjacent and documentation routes hang off its parent (<code>/ferroehr/rest</code> by default), and the served OpenAPI document describes whatever paths this setting produces — never the defaults.</td></tr>
+<tr><td><code>max_in_flight</code></td><td>int</td><td><code>256</code></td><td>Concurrent-request admission cap (not per second). Requests beyond it are shed immediately with <code>503</code> + <code>Retry-After</code> — never queued — so offered load beyond capacity cannot exhaust memory. Status/health/discovery routes are never limited. <code>0</code> disables shedding.</td></tr>
+<tr><td><code>swagger_ui</code></td><td>bool</td><td><code>true</code></td><td>Serve Swagger UI + the OpenAPI JSON at the REST root. Consider <code>false</code> in production.</td></tr>
+<tr><td><code>cors_permissive</code></td><td>bool</td><td><code>false</code></td><td>Permissive (development) CORS. Production configures explicit origins.</td></tr>
+<tr><td><code>system_id</code></td><td>string</td><td><code>ferroehr.local</code></td><td><strong>This deployment’s own openEHR system identifier</strong> — see below. Set a stable, deployment-unique name in production (<code>FERROEHR__SERVER__SYSTEM_ID</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="serverlimits-request-body-sizes"><a class="header" href="#serverlimits-request-body-sizes"><code>[server.limits]</code>: request-body sizes</a></h3>
+<pre><code class="language-toml">[server.limits]
+body_bytes = 16777216        # 16 MiB
+bulk_body_bytes = 67108864   # 64 MiB
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>body_bytes</code></td><td>int</td><td><code>16777216</code></td><td>The largest request body the ordinary clinical surface accepts, in bytes.</td></tr>
+<tr><td><code>bulk_body_bytes</code></td><td>int</td><td><code>67108864</code></td><td>The largest body the bulk routes accept: operational-template upload, <code>/message/import</code>, <code>/message/tdd</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>A request over its tier’s limit is refused <code>413 Payload Too Large</code> with the
+standard openEHR error body. The status is not in the ITS-REST status table; it
+is admitted there as an additional, non-conflicting code, and is what RFC 9110
+§15.5.14 defines for this refusal.</p>
+<p>The defaults are sized against measured payloads rather than chosen as round
+numbers: the clinical tier was set to clear the largest operational template in
+the vendored CKM corpus several times over, with the measurement recorded beside
+the constant it justifies (<code>BodyLimits</code> in <code>app/ferroehr/src/config/server.rs</code>). <strong>Raise <code>body_bytes</code> if your
+compositions embed large <code>DV_MULTIMEDIA</code> data</strong> — a base64 radiology image can
+exceed either tier on its own, and that is a deliberate operator decision rather
+than a default.</p>
+<h3 id="serverrate_limit-per-caller-request-rates"><a class="header" href="#serverrate_limit-per-caller-request-rates"><code>[server.rate_limit]</code>: per-caller request rates</a></h3>
+<pre><code class="language-toml">[server.rate_limit]
+enabled = true
+principal_per_second = 1024
+principal_burst = 2048
+address_per_second = 2048
+address_burst = 4096
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Whether rate limiting is active. Off allocates no limiter state and costs no per-request check.</td></tr>
+<tr><td><code>principal_per_second</code></td><td>int</td><td><code>1024</code></td><td>Sustained requests per second per authenticated subject, on the clinical API.</td></tr>
+<tr><td><code>principal_burst</code></td><td>int</td><td><code>2048</code></td><td>How far one principal may burst before refusal.</td></tr>
+<tr><td><code>address_per_second</code></td><td>int</td><td><code>2048</code></td><td>Sustained requests per second per client address, across the whole tree.</td></tr>
+<tr><td><code>address_burst</code></td><td>int</td><td><code>4096</code></td><td>How far one address may burst before refusal.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>This is not <code>max_in_flight</code>, and an operator should be able to tell them apart
+from the status alone.</strong> <code>max_in_flight</code> protects <em>capacity</em>: too many requests
+in flight at once, from anyone, and the excess is shed <code>503</code> + <code>Retry-After</code>.
+Rate limiting protects <em>fairness</em>: one caller asking too often over time, refused
+<code>429</code> + <code>Retry-After</code>. A <code>503</code> means the server is full; a <code>429</code> means you are
+asking too fast.</p>
+<p>Two tiers, because they defend different things. The <strong>address</strong> tier sits
+outside authentication, so a flood of unauthenticated requests is refused before
+it can make the server verify a signature per request — a limiter must not itself
+be the expensive path. The <strong>principal</strong> tier sits inside authentication, keyed
+on the authenticated subject, which is the only fair key for a clinical API: a
+hospital behind one NAT is a single address, so an address-keyed clinical limit
+would throttle an entire site because one client was busy.</p>
+<p>The defaults are derived from this implementation’s own measured ceiling. The
+committed step-load record puts maximum sustainable whole-server throughput at
+512 requests/second on the reference SUT, so the principal tier is set at twice
+that and the address tier at four times: neither can refuse a caller until it is
+asking for more than the whole server could serve, and below that line capacity
+is <code>max_in_flight</code>’s job. <strong>A deployment that earns a higher volumetric class
+should raise both in proportion</strong> — a limit derived from a laptop-class
+measurement is too low for a server-class deployment.</p>
+<p>Refusals carry the limiter’s own <code>Retry-After</code> and <code>x-ratelimit-*</code> headers
+alongside the openEHR error body. <code>429</code> is the status RFC 6585 §4 defines for
+this refusal, admitted by ITS-REST as an additional, non-conflicting code.</p>
+<p>The always-on health family is covered by the address tier only, deliberately: an
+orchestrator probe must never be refused because a principal-keyed bucket was
+exhausted, and probe rates are nowhere near the address ceiling.</p>
+<p><strong>Benchmarking this server?</strong> Turn the limiter off first, or you will measure it
+instead of the server. Our own measurement lanes compose an overlay that does
+exactly that, and both instruments refuse to write a record if the server
+answered any <code>429</code>.</p>
+<h3 id="system_id-the-data-authoring-identity"><a class="header" href="#system_id-the-data-authoring-identity"><code>system_id</code>: the data-authoring identity</a></h3>
+<p><code>system_id</code> is the identifier this CDR stamps into the data it authors. It
+appears on the wire in three places:</p>
+<ul>
+<li><strong><code>EHR.system_id</code></strong>, recorded when an EHR is created. The openEHR RM
+(<code>EHR Information Model</code>, <em>EHR Identifier Allocation</em>) says the
+<code>EHR.system_id</code> “should be set to the value that would normally be used for
+locally created EHRs” — i.e. a value the deployment chooses, not a product
+constant.</li>
+<li><strong><code>AUDIT_DETAILS.system_id</code></strong> on every commit for which the client did not
+supply one through the <code>openehr-audit-details</code> header. The openEHR REST API
+requires that “when <code>system_id</code> is not provided by the client, the server
+MUST set it to its own configured system identifier”.</li>
+<li><strong><code>OBJECT_VERSION_ID.creating_system_id</code></strong> — the middle segment of every
+version identifier the server mints
+(<code>&lt;object_id&gt;::&lt;creating_system_id&gt;::&lt;version&gt;</code>).</li>
+</ul>
+<p>Practical notes:</p>
+<ul>
+<li><strong>The value must be a legal openEHR UID</strong> (a UUID, an ISO OID, or an
+internet-id / reverse-domain name per the openEHR BASE identification
+grammar). The server validates this at startup and refuses to boot on an
+illegal value — it becomes the <code>creating_system_id</code> segment of every
+version identifier the server mints, and an illegal value would produce
+ids the server’s own reader rejects. A DNS-style name like
+<code>cdr.hospital.example</code> is valid.</li>
+<li><strong>Choose it before going live and keep it stable.</strong> The value is stored with
+each EHR and each version; changing it later affects only <em>newly</em> authored
+data — existing EHR ids, audit rows, and version identifiers are never
+rewritten, and previously issued <code>OBJECT_VERSION_ID</code>s stay valid.</li>
+<li><strong>Make it unique per system</strong>, so data exchanged between openEHR systems
+keeps unambiguous provenance. A DNS-style host name (<code>cdr.hospital.example</code>)
+is the common convention.</li>
+<li><strong>With multi-tenancy on</strong> (<code>[tenancy]</code>), a tenant’s own <code>system_id</code> takes
+precedence over this value for requests resolved to that tenant.</li>
+<li><strong>Validated at boot.</strong> An empty value is refused (the RM requires a
+non-empty <code>AUDIT_DETAILS.system_id</code>), as is one containing <code>::</code> — that is
+the <code>OBJECT_VERSION_ID</code> field separator, so it would make version
+identifiers unparseable.</li>
+<li><strong><code>system_id</code> is not <code>[server.identity]</code>.</strong> <code>system_id</code> says <em>which system
+authored the data</em>; <code>[server.identity]</code> below is the <em>display</em> identity of
+the <code>OPTIONS</code> System-Options manifest (product, version, vendor, advertised
+profile). Rebranding changes the manifest and nothing in stored data;
+changing <code>system_id</code> changes what new data says about its origin and leaves
+the manifest alone. They are set independently.</li>
+</ul>
+<h3 id="servertls--native-tls--mutual-tls-client-authentication"><a class="header" href="#servertls--native-tls--mutual-tls-client-authentication"><code>[server.tls]</code> — native TLS + mutual-TLS client authentication</a></h3>
+<p>Native TLS termination on the main listener (off by default — deployments
+commonly terminate TLS at an ingress). Protocol floor: TLS 1.2+, per IETF
+BCP 195. <code>client_auth = "required"</code> is the IHE ATNA ITI-19
+mutually-authenticated-node posture (see the
+<a href="../audit.html#node-authentication-iti-19-mutual-tls">Audit trail chapter</a>).
+The separate-port management listener always stays plain HTTP.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Terminate TLS natively on the main listener.</td></tr>
+<tr><td><code>cert_file</code></td><td>path</td><td>unset</td><td>Server certificate chain (PEM). Required when enabled.</td></tr>
+<tr><td><code>key_file</code></td><td>path</td><td>unset</td><td>Server private key (PEM). Required when enabled.</td></tr>
+<tr><td><code>client_auth</code></td><td>enum{off,optional,required}</td><td><code>off</code></td><td>Client-certificate policy: <code>required</code> rejects any client without a verified certificate at the handshake.</td></tr>
+<tr><td><code>client_ca_file</code></td><td>path</td><td>unset</td><td>The explicit CA bundle client certificates must chain to (never the web PKI). Required unless <code>client_auth = "off"</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="serveridentity"><a class="header" href="#serveridentity"><code>[server.identity]</code></a></h3>
+<p>The System-Options manifest identity (<code>OPTIONS</code> on the API base path, e.g.
+<code>OPTIONS /ferroehr/rest/openehr/v1</code> — the System API’s one location). Defaults
+are measured, not asserted — the manifest never out-claims the last
+conformance verdict. This is the deployment’s <em>display</em> identity only; the
+identifier stamped into authored data is
+<a href="#system_id-the-data-authoring-identity"><code>server.system_id</code></a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>solution</code></td><td>string</td><td><code>FerroEHR</code></td><td>Product name.</td></tr>
+<tr><td><code>solution_version</code></td><td>string</td><td>build version</td><td>Product version.</td></tr>
+<tr><td><code>vendor</code></td><td>string</td><td><code>FerroEHR project</code></td><td>Providing organisation.</td></tr>
+<tr><td><code>restapi_specs_version</code></td><td>string</td><td>tested-contract identity</td><td>openEHR REST API edition the build is tested against.</td></tr>
+<tr><td><code>conformance_profile</code></td><td>string</td><td>last CNF verdict</td><td>Advertised conformance profile.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="db"><a class="header" href="#db"><code>[db]</code></a></h2>
+<p>PostgreSQL connection.</p>
+<pre><code class="language-toml">[db]
+url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"
+migrate = "apply"
+max_connections = 20
+min_connections = 2
+acquire_timeout_secs = 30
+statement_timeout_ms = 60000
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>url</code></td><td>secret URL</td><td><code>postgres://ferroehr:ferroehr@localhost:5432/ferroehr</code></td><td>Connection DSN. The default suits a local from-source run against a localhost PostgreSQL (the compose stacks set <code>FERROEHR__DB__URL</code> explicitly); <strong>production MUST set it</strong>. Credentials are redacted from every rendering. <code>DATABASE_URL</code> is a recognized lower-priority alias.</td></tr>
+<tr><td><code>url_file</code></td><td>path</td><td>unset</td><td>Read the DSN from a file instead of the key above, for a mounted secret. Preferred over the environment form in Kubernetes: an environment value is readable through <code>/proc/&lt;pid&gt;/environ</code> and inherited by every child process. At most one of the pair, where the built-in dev default does not count as “set”.</td></tr>
+<tr><td><code>migrate</code></td><td>enum{apply,verify}</td><td><code>apply</code></td><td>Whether the server applies its embedded migrations at boot. <code>apply</code> is what makes an empty configuration boot against an empty database. <code>verify</code> issues <strong>no DDL at all</strong>: it checks that the database already carries exactly this build’s migrations and refuses to start otherwise, so the DSN can authenticate as a role with no DDL rights. See <a href="../operations.html#applying-migrations">Operations</a>.</td></tr>
+<tr><td><code>max_connections</code></td><td>int</td><td><code>20</code></td><td>Pool ceiling. Write-heavy deployments benefit from 50+.</td></tr>
+<tr><td><code>min_connections</code></td><td>int</td><td><code>2</code></td><td>Idle connections kept open (avoids cold-reopen churn).</td></tr>
+<tr><td><code>acquire_timeout_secs</code></td><td>int</td><td><code>30</code></td><td>Seconds to wait for a free connection before failing.</td></tr>
+<tr><td><code>statement_timeout_ms</code></td><td>int</td><td><code>60000</code></td><td><code>statement_timeout</code> applied to every pooled connection; <code>0</code> leaves the server default. The backstop the HTTP request timeout cannot be — dropping a handler future does not cancel the statement PostgreSQL is running. Keep it above <code>query.timeout_ms</code> so the AQL engine’s own typed refusal fires first.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="log"><a class="header" href="#log"><code>[log]</code></a></h2>
+<pre><code class="language-toml">[log]
+format = "auto"
+filter = "info,ferroehr=info"
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>format</code></td><td>enum{auto,json,pretty}</td><td><code>auto</code></td><td>Stdout rendering; <code>auto</code> picks <code>json</code> when stdout is not a TTY (and suppresses the boot banner).</td></tr>
+<tr><td><code>filter</code></td><td>string</td><td><code>info,ferroehr=info</code></td><td>Boot <code>EnvFilter</code> directives; also the <code>/management/loggers</code> reset target. <code>RUST_LOG</code> is a recognized lower-priority alias.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="telemetry"><a class="header" href="#telemetry"><code>[telemetry]</code></a></h2>
+<p>OpenTelemetry export. Unset <code>otlp_endpoint</code> ⇒ the OTel layer is not installed
+(zero overhead).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>otlp_endpoint</code></td><td>string</td><td>unset</td><td>OTLP/gRPC collector endpoint.</td></tr>
+<tr><td><code>service_name</code></td><td>string</td><td><code>ferroehr</code></td><td><code>service.name</code> resource attribute.</td></tr>
+<tr><td><code>environment</code></td><td>string</td><td><code>dev</code></td><td><code>deployment.environment</code> resource attribute.</td></tr>
+<tr><td><code>traces_sample_ratio</code></td><td>float</td><td><code>1.0</code></td><td>Head-sampling ratio (<code>0.1</code> is a common prod start).</td></tr>
+<tr><td><code>metrics_push</code></td><td>bool</td><td><code>false</code></td><td>Push the <strong>OpenTelemetry SDK instruments</strong> over OTLP alongside the Prometheus pull surface. <strong>Partial by design today:</strong> the families recorded through the <code>metrics</code>-crate recorder — <code>ferroehr_build_info</code>, the HTTP request histogram, active requests, the ATNA audit counters, process start time — reach <code>/management/prometheus</code> by scrape only and do <strong>not</strong> appear in an OTLP collector. The server warns at boot listing exactly which families are affected. Scrape <code>/management/prometheus</code> as well if you need them (<a href="https://github.com/rubentalstra/FerroEHR/issues/2175">#2175</a>).</td></tr>
+<tr><td><code>flame_file</code></td><td>path</td><td>unset ⇒ layer not installed</td><td>Span-timing flamegraph capture (<code>tracing-flame</code>): write folded stack samples of every span to this file; render offline with <code>inferno-flamegraph &lt; file &gt; flame.svg</code>. For diagnostic sessions, not a standing posture — the file grows with span traffic.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="auth"><a class="header" href="#auth"><code>[auth]</code></a></h2>
+<p>Authentication (Basic + OAuth2/OIDC bearer).</p>
+<pre><code class="language-toml">[auth]
+enabled = true
+verified_cache_ttl_seconds = 60
+
+[[auth.basic.users]]
+username = "clinician"
+password_hash = "$argon2id$v=19$..."   # Argon2 PHC hash, never plaintext
+roles = ["USER"]
+
+[auth.oidc]
+issuer = "https://keycloak.example.com/realms/ferroehr"
+audiences = ["ferroehr"]
+algorithms = ["RS256"]
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Master switch. <code>false</code> = all requests pass unauthenticated (dev only). With <code>true</code> and <strong>no mechanism configured the server refuses to start</strong> — see below.</td></tr>
+<tr><td><code>verified_cache_ttl_seconds</code></td><td>int</td><td><code>60</code></td><td>Verified Basic-credential cache TTL (<code>0</code> disables); bounds Argon2 cost per busy client and revocation lag alike.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong><code>auth.enabled = true</code> with no mechanism is a boot error.</strong> Such a server
+could only refuse every request while advertising an authentication scheme it
+does not implement, which RFC 9110 §11.6.1 forbids (a <code>401</code> challenge must
+name a scheme applicable to the target resource). Configure
+<code>[[auth.basic.users]]</code>, configure <code>[auth.oidc]</code>, or set
+<code>auth.enabled = false</code> for a development server.</p>
+</blockquote>
+<p><code>[[auth.basic.users]]</code> — the Basic-auth user store (array of tables,
+<strong>file-only</strong>):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>username</code></td><td>string</td><td>required</td><td>Principal name. A blank or missing one is a boot error.</td></tr>
+<tr><td><code>password_hash</code></td><td>secret</td><td>required</td><td>Argon2<strong>id</strong> PHC hash (<code>$argon2id$v=19$…</code>), never a plaintext password. Boot-validated against the OWASP floor — see below.</td></tr>
+<tr><td><code>password_hash_file</code></td><td>path</td><td>unset</td><td>Read the hash from a file instead, for a mounted secret. A hash is an offline cracking target, so prefer this wherever the configuration file itself is not treated as sensitive. The Argon2id floor is validated identically either way. Exactly one of the pair is required.</td></tr>
+<tr><td><code>roles</code></td><td>list of string</td><td><code>["USER"]</code></td><td>Roles granted (upper-cased on authentication).</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>Every <code>password_hash</code> must meet the OWASP Argon2id floor: <code>m&gt;=19456</code>
+(19 MiB), <code>t&gt;=2</code>, <code>p&gt;=1</code>, algorithm <code>argon2id</code>.</strong> Anything weaker — or a
+non-<code>argon2id</code> PHC string, or an unparsable one — is a boot error naming the
+user. This is checked at startup because the verifier takes its cost
+parameters <em>from the stored hash</em>, so a deliberately cheap hash would
+otherwise verify happily and silently weaken every password in the store.
+The floor is the
+<a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html">OWASP Password Storage Cheat Sheet</a>
+§Argon2id minimum.</p>
+</blockquote>
+<p><code>[auth.oidc]</code> — bearer validation (absent table ⇒ bearer disabled):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>issuer</code></td><td>string</td><td>required when present</td><td>Expected <code>iss</code>; also the OIDC discovery base. Must be an <code>https</code> URL with no query and no fragment (RFC 8414 §2) — boot-validated.</td></tr>
+<tr><td><code>audiences</code></td><td>list of string</td><td><strong>required, non-empty</strong></td><td>Accepted <code>aud</code>. An empty list is a boot error.</td></tr>
+<tr><td><code>algorithms</code></td><td>list of string</td><td><code>["RS256"]</code></td><td>Accepted signature algorithms. Boot-bound to the key source: <code>HS*</code> requires <code>hmac_secret</code>, <code>RS*</code>/<code>ES*</code>/<code>PS*</code> require a JWKS (static or discovered). <code>none</code> is refused.</td></tr>
+<tr><td><code>require_at_jwt</code></td><td>bool</td><td><code>false</code></td><td>Refuse a token that does not carry <code>typ: at+jwt</code>. A token that DOES carry it is held to RFC 9068 §2.2 either way (<code>iat</code>, <code>jti</code>, <code>client_id</code> become mandatory).</td></tr>
+<tr><td><code>clock_skew_leeway_seconds</code></td><td>int</td><td><code>60</code></td><td>Leeway on the time-based claims (<code>exp</code>/<code>nbf</code>). Capped at <code>300</code>; above that is a boot error.</td></tr>
+<tr><td><code>allow_insecure_issuer</code></td><td>bool</td><td><code>false</code></td><td>Accept a non-<code>https</code> <code>issuer</code>. <strong>Development and test only.</strong></td></tr>
+<tr><td><code>hmac_secret</code> / <code>hmac_secret_file</code></td><td>secret / path</td><td>unset</td><td>Symmetric HS256 secret (dev/test), minimum 32 bytes. At most one of the pair.</td></tr>
+<tr><td><code>jwks_json</code> / <code>jwks_json_file</code></td><td>string / path</td><td>unset</td><td>Static JWKS document. At most one of the pair.</td></tr>
+<tr><td><code>connect_timeout_ms</code></td><td>int</td><td><code>3000</code></td><td>TCP connect timeout for the discovery + JWKS fetches.</td></tr>
+<tr><td><code>request_timeout_ms</code></td><td>int</td><td><code>5000</code></td><td>Whole-request timeout for the discovery + JWKS fetches (connect, TLS, body read).</td></tr>
+<tr><td><code>negative_cache_ttl_seconds</code></td><td>int</td><td><code>10</code></td><td>How long a <em>failed</em> discovery/JWKS fetch is remembered (<code>0</code> disables).</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>[auth.oidc]</code> boot rules, and what each one prevents:</p>
+<ul>
+<li><strong><code>audiences</code> must name at least one audience.</strong> RFC 7519 §4.1.3 obliges a
+recipient that does not identify itself with a value in a present <code>aud</code> claim
+to reject the JWT, and RFC 9068 §4 step 4 makes the check unconditional for an
+access token. A resource server that declares no audience cannot reject a
+token minted for a <em>different</em> resource server, and cannot tell an OpenID
+Connect ID token (whose <code>aud</code> is a client id) from an access token
+(RFC 8725 §3.9, §3.12). Set it to whatever your identity provider puts in
+<code>aud</code> for this CDR.</li>
+<li><strong><code>issuer</code> must be an <code>https</code> URL with no query or fragment.</strong> That is the
+RFC 8414 §2 definition of an issuer identifier, and §6.2 requires TLS for
+issuer metadata — over plain HTTP an attacker on the network can serve their
+own signing keys. A development issuer (a Keycloak on the compose network,
+say) is opted in explicitly with <code>allow_insecure_issuer = true</code>; the
+no-query/no-fragment rules still apply, since those are structural.</li>
+<li><strong><code>clock_skew_leeway_seconds</code> is capped at 300.</strong> RFC 7519 §4.1.4 allows
+“some small leeway, usually no more than a few minutes, to account for clock
+skew”, and RFC 9068 §4 step 6 repeats the bound. A large leeway silently
+extends the life of <em>every</em> token past its <code>exp</code>, so the key is capped rather
+than free.</li>
+<li><strong><code>hmac_secret</code> must be at least 32 bytes.</strong> RFC 8725 §3.5: “Human-memorizable
+passwords MUST NOT be directly used as the key to a keyed-MAC algorithm such
+as <code>HS256</code>”. A symmetric key is also shared with the authorization server —
+meaning this server could mint the very tokens it accepts — so the boot log
+warns that it is a development posture. Prefer discovery or <code>jwks_json</code>.</li>
+</ul>
+<p>The signing-key source is exactly one of: the symmetric secret, the static
+JWKS, or (when neither is set) the issuer’s OIDC discovery document.
+Configuring both <code>hmac_secret</code> and <code>jwks_json</code> (in either direct or <code>_file</code>
+form) is a boot-time configuration error — never resolved by silent
+precedence. A validated token must also carry a non-blank <code>sub</code> claim: the
+authenticated subject is stamped into the audit trail, so a token without one
+is refused with <code>401</code> rather than recorded under a placeholder identity.</p>
+<p>The last three keys apply only when keys come from the issuer’s OIDC discovery
+document — that is, when neither <code>hmac_secret</code> nor <code>jwks_json</code> is set. The
+timeouts stop an unresponsive identity provider from parking bearer requests
+until the operating system’s TCP timeout; the negative cache means an identity
+provider outage costs one discovery attempt per <code>negative_cache_ttl_seconds</code>
+rather than one per incoming request, so callers get fast <code>401</code>s instead of slow
+ones. Keep the negative TTL short: it is also how long recovery takes to be
+noticed after the provider comes back.</p>
+<h2 id="authz"><a class="header" href="#authz"><code>[authz]</code></a></h2>
+<p>RBAC + ABAC.</p>
+<p><code>[authz.rbac]</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Coarse role gate (active when auth is enabled).</td></tr>
+<tr><td><code>admin_role</code></td><td>string</td><td><code>ADMIN</code></td><td>Role required for admin-class operations.</td></tr>
+<tr><td><code>user_role</code></td><td>string</td><td><code>USER</code></td><td>Baseline clinical role.</td></tr>
+<tr><td><code>readonly_role</code></td><td>string</td><td><code>READONLY</code></td><td>Role marking a principal read-only: refused on every write operation (create/update/delete/upload), even alongside granting roles. Reads and AQL queries are still allowed.</td></tr>
+<tr><td><code>role_claims</code></td><td>list of string</td><td><code>["roles","groups","entitlements","realm_access.roles"]</code></td><td>JWT claim paths mined for roles, in order. Dotted paths walk nested claims. <strong><code>scope</code> is not a role source</strong> — see <a href="../security.html#rbac-role-based-coarse">Security</a>.</td></tr>
+<tr><td><code>ehr_access_default</code></td><td>enum{open,restricted}</td><td><code>open</code></td><td>What an EHR carrying no <code>ACCESS_CONTROL_SETTINGS</code> admits. <code>restricted</code> is object-level default-deny: only <code>admin_role</code> reaches a setting-less EHR. See <a href="../security.html#per-ehr-access-control-ehr_access">Security</a>.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>The management surface is <strong>not</strong> configured under <code>[authz.rbac]</code>.
+<code>[management.endpoints]</code> owns it, one level per endpoint, with no global
+default beside it — an endpoint you do not name is <code>off</code> and is not mounted.
+Only the <code>admin_only</code> level consults <code>authz.rbac.admin_role</code>.</p>
+</blockquote>
+<p><code>[authz.abac]</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Master ABAC switch.</td></tr>
+<tr><td><code>engine</code></td><td>enum{cedar,remote}</td><td><code>cedar</code></td><td>Embedded Cedar or a remote decision point.</td></tr>
+<tr><td><code>organization_claim</code></td><td>string</td><td><code>organization_id</code></td><td>JWT claim carrying the caller’s organization.</td></tr>
+<tr><td><code>patient_claim</code></td><td>string</td><td><code>patient_id</code></td><td>JWT claim carrying the patient id.</td></tr>
+<tr><td><code>check_directory</code></td><td>bool</td><td><code>false</code></td><td>Submit DIRECTORY (<code>FOLDER</code>) operations to the decision point. Engine-independent, so it works under Cedar as well as a remote PDP.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>[authz.abac.cedar]</code>: <code>policy_dir</code> (path — required when <code>engine=cedar</code> and ABAC
+on), <code>reload_secs</code> (int, unset — optional hot-reload interval).
+<code>[authz.abac.remote]</code>: <code>server</code> (string — required when <code>engine=remote</code>, must
+end <code>/</code>), <code>connect_timeout_ms</code> (int, <code>2000</code>), <code>request_timeout_ms</code> (int,
+<code>5000</code>).
+<code>[authz.abac.policy.&lt;kind&gt;]</code> (kind ∈ <code>ehr</code>, <code>ehr_status</code>, <code>composition</code>,
+<code>contribution</code>, <code>query</code>, <code>directory</code>): <code>name</code> (string), <code>parameters</code> (list of
+enum{organization,patient,template}).</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>With <code>engine = remote</code>, every resource kind the enforcement point consults
+needs a policy entry: <code>ehr</code>, <code>ehr_status</code>, <code>composition</code>, <code>contribution</code>,
+<code>query</code></strong> (plus <code>directory</code> when <code>check_directory = true</code>). A missing one is a
+boot error. At runtime a kind with no policy can only be <strong>denied</strong> — there is
+no policy to ask, and permitting would be a silent hole — so the
+misconfiguration is caught at startup rather than turning into blanket <code>403</code>s
+on live traffic. The Cedar engine reads its policies from
+<code>abac.cedar.policy_dir</code> and needs no entries here.</p>
+</blockquote>
+<h2 id="admin"><a class="header" href="#admin"><code>[admin]</code></a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Mount the ADMIN API (physical, irreversible delete). Off ⇒ every admin route answers <code>405 Method Not Allowed</code> with an empty <code>Allow</code> header, never 403.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="tenancy"><a class="header" href="#tenancy"><code>[tenancy]</code></a></h2>
+<p>Multi-tenancy.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Activate tenant middleware + row-level scoping.</td></tr>
+<tr><td><code>claim</code></td><td>string</td><td><code>tenant</code></td><td>JWT-claim path carrying the tenant key.</td></tr>
+<tr><td><code>header</code></td><td>string</td><td>unset</td><td>Dev-only request-header tenant override. Leave unset in production — a client header must not select a tenant.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="smart"><a class="header" href="#smart"><code>[smart]</code></a></h2>
+<p>SMART App Launch. Off by default; when off the discovery document is not served
+and the scope gate is inert. See <a href="../smart-app-launch.html">SMART App Launch</a>.</p>
+<p><code>[smart]</code>: <code>enabled</code> (bool, <code>false</code>), <code>platform_base_url</code> (string, unset ⇒ REST
+root), <code>public_base_url</code> (string, <strong>required when enabled</strong> — the external
+origin, e.g. <code>https://cdr.example.com</code>, from which the discovery document’s
+absolute <code>services.*.baseUrl</code> values are built), <code>ehr_id_claim</code> (string,
+<code>ehrId</code>), <code>patient_claim</code> (string, <code>patient</code>), <code>require_smart_scopes</code> (bool,
+<code>false</code> — when <code>true</code> the SMART resource-scope gate is fail-closed across the
+composition, template, and AQL families, and the <code>openehr-permission-v1</code>
+capability is advertised; when <code>false</code> the gate is advisory and the capability
+is not claimed), <code>launch_base64_json</code> (bool, <code>false</code>).
+<code>[smart.episode]</code>: <code>enabled</code> (bool, <code>false</code>).
+<code>[smart.endpoints]</code>: <code>issuer</code>, <code>jwks_uri</code>, <code>authorization_endpoint</code>,
+<code>token_endpoint</code>, <code>registration_endpoint</code>, <code>introspection_endpoint</code>,
+<code>revocation_endpoint</code>, <code>management_endpoint</code> (all string, unset ⇒ omitted from
+the discovery document); <code>token_endpoint_auth_methods_supported</code>,
+<code>grant_types_supported</code>, <code>response_types_supported</code>,
+<code>code_challenge_methods_supported</code>, <code>scopes_supported</code>, <code>capabilities</code> (all
+list of string, <code>[]</code> — <code>capabilities</code> appends operator-advertised HL7 base
+capabilities such as <code>launch-ehr</code>/<code>sso-openid-connect</code> to the derived openEHR
+set); <code>allow_insecure_endpoints</code> (bool, <code>false</code>).</p>
+<p>Everything in <code>[smart.endpoints]</code> is <strong>published</strong> at
+<code>/.well-known/smart-configuration</code> for third-party applications to act on, so
+<code>smart.enabled = true</code> boot-validates it rather than relaying whatever is
+configured:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Rule</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td>Deprecated grant types (<code>implicit</code>, password) rejected</td><td>master06 §Deprecated Flows</td></tr>
+<tr><td><code>public_base_url</code>, <code>authorization_endpoint</code>, <code>token_endpoint</code> required</td><td>an enabled Platform without them publishes an unusable document</td></tr>
+<tr><td>Every advertised endpoint an absolute <code>https</code> URL</td><td>the document tells apps where to send an authorization request and exchange a code, so a plaintext endpoint exposes the code and the access token (<a href="https://www.rfc-editor.org/rfc/rfc6749#section-3.1.2.1">RFC 6749 §3.1.2.1</a>, <a href="https://www.rfc-editor.org/rfc/rfc8414#section-6.2">RFC 8414 §6.2</a>). <code>allow_insecure_endpoints = true</code> opts out for development</td></tr>
+<tr><td><code>issuer</code> has no query and no fragment</td><td><a href="https://www.rfc-editor.org/rfc/rfc8414#section-2">RFC 8414 §2</a> — the same rule <code>auth.oidc.issuer</code> follows, because it is the same identity</td></tr>
+<tr><td><code>response_types_supported</code> non-empty</td><td>RFC 8414 §2 marks the field <strong>REQUIRED</strong></td></tr>
+<tr><td><code>token_endpoint_auth_methods_supported</code> non-empty</td><td>an empty list advertises a server that authenticates no client</td></tr>
+<tr><td><code>code_challenge_methods_supported</code> includes <code>S256</code></td><td>SMART App Launch requires PKCE (<a href="https://www.rfc-editor.org/rfc/rfc7636">RFC 7636</a>); publishing a list without it tells every app the server cannot do PKCE, and <code>plain</code> alone is not sufficient (§7.2)</td></tr>
+<tr><td><code>smart.endpoints.issuer</code> equals <code>auth.oidc.issuer</code></td><td>one says where apps <strong>obtain</strong> tokens, the other which tokens this server <strong>accepts</strong>. A mismatch means every app gets a valid token and every request is refused</td></tr>
+<tr><td><code>smart.enabled</code> requires <code>[auth.oidc]</code></td><td>the CDR cannot validate the tokens it directs applications to obtain</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="management"><a class="header" href="#management"><code>[management]</code></a></h2>
+<p>The ops-introspection surface (build info, Prometheus, metric views, effective
+config, runtime log control). Off in the bare binary and every endpoint off
+individually.</p>
+<p>The <strong>health probes are not configured here</strong>: <code>/health</code>, <code>/health/liveness</code>,
+and <code>/health/readiness</code> are always served on the main API port without
+authentication, whatever this section says (see
+<a href="../operations.html#health-probes">Operations → Health probes</a>).</p>
+<pre><code class="language-toml">[management]
+enabled = false
+base_path = "/management"
+
+[management.endpoints]
+info = "off"
+metrics = "off"
+prometheus = "off"
+env = "off"
+loggers = "off"
+flamegraph = "off"
+
+[management.profiling]
+max_seconds = 30
+max_frequency = 999
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Mount the management router.</td></tr>
+<tr><td><code>base_path</code></td><td>string</td><td><code>/management</code></td><td>Base path for the management endpoints.</td></tr>
+<tr><td><code>port</code></td><td>int</td><td>unset ⇒ share the main listener</td><td>Serve management on its own listener/port. Must differ from the <code>server.bind</code> port.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>[management.endpoints]</code> — <code>info</code>, <code>metrics</code>, <code>prometheus</code>, <code>env</code>, <code>loggers</code>,
+<code>flamegraph</code>, each enum{off,admin_only,private,public}, default <code>off</code>.</p>
+<p><code>[management.profiling]</code> — limits for the on-demand CPU flamegraph behind
+<code>endpoints.flamegraph</code> (see
+<a href="../operations.html#profiling-the-on-demand-cpu-flamegraph">Operations → Profiling</a>):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>max_seconds</code></td><td>int</td><td><code>30</code></td><td>Longest sample window one request may take. A request asking for more is refused with <code>400</code>, never clamped.</td></tr>
+<tr><td><code>max_frequency</code></td><td>int</td><td><code>999</code></td><td>Highest sampling frequency (Hz) a request may ask for. Same refusal semantics.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p><code>probes_enabled</code> and <code>endpoints.health</code> were <strong>removed</strong>. Configuration is
+strict, so a file or environment variable still setting either one fails at
+boot with an unknown-key error — delete the key; the probes are always on.</p>
+</blockquote>
+<h2 id="signing"><a class="header" href="#signing"><code>[signing]</code></a></h2>
+<p>VERSION signing. On by default in <code>digest</code> mode, with read-time verification of
+the server’s own signatures <strong>strict</strong> by default.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Server-side signing of committed versions.</td></tr>
+<tr><td><code>mode</code></td><td>enum{digest,pgp}</td><td><code>digest</code></td><td>SHA-256 integrity digest, or an OpenPGP (RFC 4880) detached signature.</td></tr>
+<tr><td><code>key_path</code></td><td>path</td><td>unset</td><td>Armored secret key; <strong>required for <code>pgp</code></strong>.</td></tr>
+<tr><td><code>key_passphrase</code> / <code>key_passphrase_file</code></td><td>secret / path</td><td>unset</td><td>Key passphrase.</td></tr>
+<tr><td><code>verify_on_read</code></td><td>enum{off,warn,strict}</td><td><code>strict</code> when signing is enabled</td><td>Read-time recompute-and-compare policy for the server’s own signatures.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p><strong><code>verify_on_read</code> defaults to <code>strict</code> when signing is enabled.</strong> On every
+read the server recomputes the signature of a version it signed and, on a
+mismatch, returns a <code>500</code> integrity fault rather than silently serving a
+provably corrupt record. Set it explicitly to <code>warn</code> (log + emit
+<code>version_signature_invalid_total</code>, still serve) or <code>off</code> (never check) to opt
+out. <strong>Client-supplied signatures</strong> — an author’s own signature, or one
+carried by an imported version — are always stored verbatim and <strong>never
+re-verified</strong> (the author may have signed a different agreed serialization),
+regardless of this setting.</p>
+</blockquote>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p><code>pgp</code> mode <strong>fails closed at boot</strong> if the key is missing or unusable — the
+server will not start. Verify the key and passphrase before switching modes.</p>
+</blockquote>
+<p><strong>On Kubernetes</strong>, <code>digest</code> mode needs nothing — it is the default. <code>pgp</code> mode
+needs the key as a file and its passphrase as a secret, both of which the chart
+mounts for you:</p>
+<pre><code class="language-yaml"># values.yaml
+config:
+  signing:
+    enabled: true
+    mode: pgp
+    key_path: /etc/ferroehr/signing-key.asc
+  files:
+    signing-key.asc: |
+      -----BEGIN PGP PRIVATE KEY BLOCK-----
+      …
+secrets:
+  signingKeyPassphrase: "…"
+</code></pre>
+<p><code>config.files</code> entries are mounted from a Secret at <code>0440</code> — that volume holds
+the private key, so it is never world-readable inside the container. <strong>To go
+back to <code>digest</code></strong>, set <code>mode: digest</code> and drop the key material; versions
+already signed keep their signatures and still verify.</p>
+<h2 id="query"><a class="header" href="#query"><code>[query]</code></a></h2>
+<p>AQL execution knobs.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>plan_cache_capacity</code></td><td>int</td><td><code>256</code></td><td>Max distinct cached query plans; <code>0</code> disables the cache. Cache activity is reported by the <code>aql_plan_cache_events_total</code> metric.</td></tr>
+<tr><td><code>timeout_ms</code></td><td>int</td><td><code>0</code></td><td>Per-query DB execution budget; <code>0</code> disables (the global request timeout remains). Overrun returns <code>408</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="events"><a class="header" href="#events"><code>[events]</code></a></h2>
+<p>Contribution-outbox eventing → AMQP, plus its admin API. Off by default;
+envelopes are PHI-free by design.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Spawn the outbox publisher (with <code>fhir.outbound.enabled</code>, gates the per-commit outbox INSERT).</td></tr>
+<tr><td><code>url</code></td><td>secret URL</td><td><code>amqp://guest:guest@localhost:5672/%2f</code></td><td>AMQP broker URL; credentials redacted from every rendering.</td></tr>
+<tr><td><code>url_file</code></td><td>path</td><td>unset</td><td>Read the broker URL from a file instead, for a mounted secret. At most one of the pair, where the built-in dev default does not count as “set”.</td></tr>
+<tr><td><code>exchange</code></td><td>string</td><td><code>ferroehr.events</code></td><td>Topic exchange (PHI-free envelope stream).</td></tr>
+<tr><td><code>tls</code></td><td>bool</td><td><code>false</code></td><td>Upgrade <code>amqp://</code> to <code>amqps://</code>.</td></tr>
+<tr><td><code>batch_size</code></td><td>int</td><td><code>128</code></td><td>Rows drained per poll.</td></tr>
+<tr><td><code>poll_interval_ms</code></td><td>int</td><td><code>1000</code></td><td>Idle poll interval.</td></tr>
+<tr><td><code>retention_days</code></td><td>int</td><td><code>7</code></td><td>Published-row retention window.</td></tr>
+<tr><td><code>prune_interval_secs</code></td><td>int</td><td><code>3600</code></td><td>Retention-prune cadence.</td></tr>
+<tr><td><code>publish_max_retries</code></td><td>int</td><td><code>3</code></td><td>Per-row publish retries before backing off.</td></tr>
+<tr><td><code>admin_api</code></td><td>bool</td><td><code>false</code></td><td>Mount the <code>/admin/event_subscription</code> CRUD routes.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="fhir"><a class="header" href="#fhir"><code>[fhir]</code></a></h2>
+<p>The FHIR connector — an inbound façade and an independent outbound emitter.</p>
+<p><code>[fhir]</code>: <code>api_enabled</code> (bool, <code>false</code>) — mount <code>/fhir/r4/*</code> +
+<code>/admin/fhir_mapping</code>.
+<code>[fhir.outbound]</code>: <code>enabled</code> (bool, <code>false</code>), <code>url</code> (secret URL, same AMQP
+default) or <code>url_file</code> (path, unset — read the broker URL from a mounted file
+instead), <code>exchange</code> (string, <code>ferroehr.fhir</code> — deliberately distinct from the
+events exchange for PHI isolation), <code>tls</code> (bool, <code>false</code>), <code>batch_size</code> (int,
+<code>128</code>), <code>poll_interval_ms</code> (int, <code>1000</code>), <code>publish_max_retries</code> (int, <code>3</code>).</p>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p>The outbound stream carries <strong>PHI</strong> — the mapped FHIR resource. It is a
+deliberately separate switch and exchange from the PHI-free change-event
+stream so broker access control can isolate it. Enable it only against a TLS,
+access-controlled broker.</p>
+</blockquote>
+<h2 id="terminology"><a class="header" href="#terminology"><code>[terminology]</code></a></h2>
+<p>Terminology extension API and external FHIR-terminology servers.</p>
+<p><code>[terminology]</code>: <code>api_enabled</code> (bool, <code>false</code>) — mount the terminology
+extension API.
+<code>[terminology.external]</code>: <code>enabled</code> (bool, <code>false</code>), <code>fail_on_error</code> (bool,
+<code>false</code> — on TS/connectivity error, reject vs accept).
+<code>[terminology.external.providers.&lt;name&gt;]</code> (conventionally <code>default</code>): <code>type</code>
+(enum{fhir}, <code>fhir</code>), <code>url</code> (string, required), <code>operation</code>
+(enum{validate_code,expand}, <code>validate_code</code>), <code>connect_timeout_ms</code> (int,
+<code>2000</code>), <code>request_timeout_ms</code> (int, <code>10000</code>), <code>oauth2_client</code> (string, unset —
+must name an entry under <code>[terminology.external.oauth2_clients]</code>),
+<code>client_cert_path</code> / <code>client_key_path</code> (paths, unset — the mutual-TLS client
+identity, see below), <code>ca_bundle_path</code> (path, unset — the trust anchors for
+this server, see below),
+<code>cache_ttl_secs</code> (int, <code>300</code> — TTL of the per-provider response cache; a
+repeated validate/expand/subsumes/lookup within the window is served locally
+instead of one HTTPS round trip per validated code; <code>0</code> disables),
+<code>cache_capacity</code> (int, <code>10000</code> — maximum cached responses per provider).</p>
+<p>Cached entries are the <em>decoded</em> responses, not raw JSON: a server answer that
+is not a valid FHIR R4B <code>Parameters</code>/<code>ValueSet</code> resource — for example a
+<code>$expand</code> result missing the required <code>ValueSet.status</code> or
+<code>expansion.timestamp</code> — is rejected as an upstream fault (HTTP <code>500</code>, subject
+to <code>fail_on_error</code>) rather than partially read.</p>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>External terminology servers need the <code>fhir</code> build feature (on in the
+published binary and container images). A binary built with
+<code>--no-default-features</code> refuses at startup if <code>terminology.external</code> is
+enabled with any provider configured; the in-process openEHR terminology
+bundle remains available.</p>
+</blockquote>
+<h3 id="several-terminology-servers-at-once"><a class="header" href="#several-terminology-servers-at-once">Several terminology servers at once</a></h3>
+<p><strong>Every</strong> entry under <code>[terminology.external.providers]</code> is materialised at
+startup, so one instance can serve SNOMED CT from one server and LOINC or ICD
+from others. <code>[terminology.external.routes]</code> maps a terminology to the provider
+that answers for it — the key is a terminology id (<code>SNOMED-CT</code>) or a system URI
+(<code>http://snomed.info/sct</code>), matched case-insensitively as a whole string, and
+the value names a provider. A terminology with no route goes to the provider
+named <code>default</code>, or to the sole configured provider when there is exactly one.
+A route naming a provider that does not exist is a startup error.</p>
+<pre><code class="language-toml">[terminology.external]
+enabled = true
+fail_on_error = false
+
+[terminology.external.providers.default]
+type = "fhir"
+url = "https://r4.ontoserver.csiro.au/fhir"
+
+[terminology.external.providers.snomed]
+type = "fhir"
+url = "https://snowstorm.example.org/fhir"
+oauth2_client = "ts-client"
+
+[terminology.external.routes]
+"SNOMED-CT" = "snomed"
+"http://snomed.info/sct" = "snomed"
+"http://loinc.org" = "default"
+</code></pre>
+<p>Routing applies everywhere terminology is consulted: the
+<code>/terminology/*</code> extension API, AQL <code>TERMINOLOGY(…)</code> resolution, and the
+composition-commit binding checks below.</p>
+<h3 id="authenticating-to-a-terminology-server"><a class="header" href="#authenticating-to-a-terminology-server">Authenticating to a terminology server</a></h3>
+<p><code>[terminology.external.oauth2_clients.&lt;name&gt;]</code> configures an OAuth2
+client-credentials client; a provider references it by name with
+<code>oauth2_client</code>. The access token is cached and re-requested shortly before it
+expires, so a validation burst costs one token request per token lifetime.</p>
+<p>Keys: <code>token_url</code> (string, required), <code>client_id</code> (string, required),
+<code>client_secret</code> (secret — or <code>client_secret_file</code> pointing at a file holding
+it; exactly one of the two), <code>scopes</code> (list of strings, empty),
+<code>refresh_leeway_secs</code> (int, <code>30</code> — how long before expiry the token is
+renewed), <code>auth_method</code>
+(enum{client_secret_basic,client_secret_post}, <code>client_secret_basic</code>).</p>
+<pre><code class="language-toml">[terminology.external.oauth2_clients.ts-client]
+token_url = "https://idp.example.org/realms/ts/protocol/openid-connect/token"
+client_id = "ferroehr-cdr"
+client_secret_file = "/run/secrets/ts-client"
+scopes = ["system/*.read"]
+</code></pre>
+<h3 id="mutual-tls-to-a-terminology-server"><a class="header" href="#mutual-tls-to-a-terminology-server">Mutual TLS to a terminology server</a></h3>
+<p>A terminology server that authenticates its clients with certificates instead
+of (or in addition to) a bearer token is configured <strong>per provider</strong>, because a
+client certificate is issued by that server’s PKI: a deployment enrolled with a
+national SNOMED CT service, a commercial value-set server and an in-house HAPI
+server holds three different certificates. Repeat the same paths in each
+provider table if one identity really does serve them all.</p>
+<p>Keys on <code>[terminology.external.providers.&lt;name&gt;]</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>client_cert_path</code></td><td>PEM file with the client certificate (optionally a chain) presented to this server.</td></tr>
+<tr><td><code>client_key_path</code></td><td>PEM file with that certificate’s private key.</td></tr>
+<tr><td><code>ca_bundle_path</code></td><td>PEM bundle of the trust anchors this server’s certificate is verified against.</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-toml">[terminology.external.providers.snomed]
+type = "fhir"
+url = "https://snowstorm.example.org/fhir"
+client_cert_path = "/run/secrets/ts-snomed-client.crt.pem"
+client_key_path = "/run/secrets/ts-snomed-client.key.pem"
+ca_bundle_path = "/run/secrets/ts-snomed-ca.pem"
+</code></pre>
+<p><code>client_cert_path</code> and <code>client_key_path</code> are set together — one without the
+other is a startup error, never a connection that silently presents no
+certificate. Unreadable files, a certificate file with no certificate in it and
+a key file with no key in it are startup errors too, so a broken identity never
+waits until the first validated code to surface.</p>
+<p><code>ca_bundle_path</code> <strong>replaces</strong> the default trust anchors for that provider, so a
+terminology server issued by a private PKI is pinned to that PKI instead of also
+accepting the whole public web PKI. Leave it unset to use the platform’s default
+trust store.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>There is no option to disable certificate verification. Server-certificate and
+hostname verification are always on for every provider; <code>ca_bundle_path</code>
+changes <em>which</em> anchors are trusted, never <em>whether</em> the server is verified.</p>
+</blockquote>
+<p>The client identity applies to the connection to the terminology server itself.
+An OAuth2 token endpoint (<code>oauth2_client</code>) is a different host in a different
+trust domain and keeps the default TLS stack.</p>
+<p>Kubernetes deployments mount the PEM files with the chart’s <code>config.files</code> map
+(see the Helm chart values), which materialises them under <code>/etc/ferroehr/</code>.</p>
+<h3 id="archetype-value-set-bindings-at-commit"><a class="header" href="#archetype-value-set-bindings-at-commit">Archetype value-set bindings at commit</a></h3>
+<p>With <code>[terminology.external]</code> enabled, committing a COMPOSITION also resolves
+the archetype <strong>constraint bindings</strong> its template declares: where a template
+binds an <code>ac</code> code to an external terminology query, the coded value in the
+composition must be a member of the value set that query returns. The query is
+sent to the server the binding’s terminology routes to.</p>
+<ul>
+<li>The code is in the value set → the commit proceeds.</li>
+<li>The code is <strong>not</strong> in the value set → <code>422</code> naming the path, the code, and
+the bound query. This is a real constraint violation, so <code>fail_on_error</code> does
+not change it.</li>
+<li>The value set could <strong>not be resolved</strong> (server down, error response, no
+provider routes to that terminology) → <code>fail_on_error</code> decides:
+<code>false</code> (default) accepts the commit and logs a warning; <code>true</code> rejects it
+with <code>422</code>.</li>
+</ul>
+<p>With <code>[terminology.external] enabled = false</code> (the default) no binding is
+resolved and no request is made, so commit behaviour is exactly as before.</p>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>The composition’s <code>terminology_id</code> is sent verbatim as the FHIR <code>system</code>
+parameter. If your archetypes use <code>SNOMED-CT</code> where your terminology server
+expects <code>http://snomed.info/sct</code>, configure the server to accept the id your
+archetypes carry — the CDR does not rewrite it.</p>
+</blockquote>
+<h2 id="multimedia"><a class="header" href="#multimedia"><code>[multimedia]</code></a></h2>
+<p>DV_MULTIMEDIA externalization → S3-compatible object store. Off by default
+(blobs stay inline, byte-identical).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Externalize large multimedia data.</td></tr>
+<tr><td><code>threshold_bytes</code></td><td>int</td><td><code>262144</code> (256 KiB)</td><td>Decoded size strictly above which data is offloaded.</td></tr>
+<tr><td><code>endpoint</code></td><td>string</td><td>unset ⇒ AWS default</td><td>S3-compatible endpoint.</td></tr>
+<tr><td><code>bucket</code></td><td>string</td><td><code>openehr-multimedia</code></td><td>Target bucket.</td></tr>
+<tr><td><code>region</code></td><td>string</td><td><code>us-east-1</code></td><td>AWS region (required even for non-AWS endpoints).</td></tr>
+<tr><td><code>access_key_id</code></td><td>string</td><td>unset</td><td>S3 access key id (unset + no secret = anonymous).</td></tr>
+<tr><td><code>secret_access_key</code> / <code>secret_access_key_file</code></td><td>secret / path</td><td>unset</td><td>S3 secret access key.</td></tr>
+<tr><td><code>allow_http</code></td><td>bool</td><td><code>false</code></td><td>Allow plain-HTTP endpoints — dev only; prod S3 is HTTPS.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="audit"><a class="header" href="#audit"><code>[audit]</code></a></h2>
+<p>The IHE ATNA audit trail (see the <a href="../audit.html">Audit trail chapter</a>). <strong>On
+by default</strong> with only the local store active; forwarding is opt-in per
+sink. (<code>[atna]</code> keys are rejected at boot with did-you-mean guidance
+pointing here.)</p>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>The local store and the ATX:FHIR Feed both carry a FHIR R4B <code>AuditEvent</code>
+document, so both need the <code>fhir</code> build feature (on in the published binary
+and container images). A binary built with <code>--no-default-features</code> refuses
+at startup if <code>audit.store.enabled</code> or <code>audit.fhir_feed.enabled</code> is set; the
+DICOM/syslog feed (<code>[audit.syslog]</code>) needs no FHIR and stays available.</p>
+</blockquote>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Master audit switch.</td></tr>
+<tr><td><code>enterprise_site_id</code></td><td>string</td><td>unset</td><td><code>AuditEnterpriseSiteID</code>.</td></tr>
+<tr><td><code>source_id</code></td><td>string</td><td><code>ferroehr</code></td><td>Audit source id.</td></tr>
+<tr><td><code>value_if_missing</code></td><td>string</td><td><code>UNKNOWN</code></td><td>Fill value for empty mandatory fields.</td></tr>
+<tr><td><code>suppress_login_events</code></td><td>bool</td><td><code>true</code></td><td>Skip successful-login records (rejections are always recorded).</td></tr>
+<tr><td><code>fail_mode</code></td><td>enum{open,closed}</td><td><code>open</code></td><td>On undeliverable audit: succeed and meter (<code>open</code>) or reject auditable operations with 503 (<code>closed</code> — includes an unhealthy local store).</td></tr>
+<tr><td><code>resolve_subject</code></td><td>bool</td><td><code>true</code></td><td>Enrich the patient participant via a background subject lookup.</td></tr>
+<tr><td><code>queue_capacity</code></td><td>int</td><td><code>8192</code></td><td>Bounded audit queue capacity (sized for write-path bursts; the drain persists in multi-row batches).</td></tr>
+<tr><td><code>server_host</code></td><td>string</td><td>unset</td><td>This node’s advertised address (<code>NetworkAccessPointID</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="auditstore--the-local-audit-record-repository"><a class="header" href="#auditstore--the-local-audit-record-repository"><code>[audit.store]</code> — the local Audit Record Repository</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Persist every record in the <code>audit</code> schema (served via the ITI-81 <code>GET /fhir/r4/AuditEvent</code> search).</td></tr>
+<tr><td><code>retention_days</code></td><td>int</td><td><code>0</code></td><td>Days to keep records; <code>0</code> = keep forever. Applied hourly.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="auditsyslog--the-classic-dicomsyslog-feed-iti-20"><a class="header" href="#auditsyslog--the-classic-dicomsyslog-feed-iti-20"><code>[audit.syslog]</code> — the classic DICOM/syslog feed (ITI-20)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Ship DICOM PS3.15 records to an external ARR over syslog.</td></tr>
+<tr><td><code>host</code></td><td>string</td><td><code>localhost</code></td><td>ARR host.</td></tr>
+<tr><td><code>port</code></td><td>int</td><td><code>514</code></td><td>ARR port (514 UDP / 6514 TLS typical).</td></tr>
+<tr><td><code>transport</code></td><td>enum{udp,tls}</td><td><code>udp</code></td><td>Syslog transport. Use <code>tls</code> for PHI-adjacent audit.</td></tr>
+<tr><td><code>tls_ca_file</code> / <code>tls_identity_cert_file</code> / <code>tls_identity_key_file</code></td><td>path</td><td>unset</td><td>PEM CA / client cert / client key for the TLS transport.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="auditfhir_feed--the-restful-atna-feed-iti-20-atxfhir-feed"><a class="header" href="#auditfhir_feed--the-restful-atna-feed-iti-20-atxfhir-feed"><code>[audit.fhir_feed]</code> — the RESTful-ATNA feed (ITI-20 ATX:FHIR Feed)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td><code>POST</code> each FHIR <code>AuditEvent</code> to an external FHIR ARR. Outbox-driven (loss-free) when the local store is on.</td></tr>
+<tr><td><code>url</code></td><td>url</td><td><code>http://localhost:8080/fhir</code></td><td>The ARR’s FHIR base; records go to <code>{url}/AuditEvent</code>. URL credentials are redacted from every rendering.</td></tr>
+<tr><td><code>batch_size</code></td><td>int</td><td><code>64</code></td><td>Outbox rows shipped per poll.</td></tr>
+<tr><td><code>poll_interval_ms</code></td><td>int</td><td><code>2000</code></td><td>Outbox poll interval when idle.</td></tr>
+<tr><td><code>max_retries</code></td><td>int</td><td><code>3</code></td><td>Per-record POST retries before the record is left pending (store on) or dropped + metered (store off).</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="subject_proxy"><a class="header" href="#subject_proxy"><code>[subject_proxy]</code></a></h2>
+<p>FHIR frames. Empty by default — no external FHIR system is reachable until one
+is named here (fail-closed). Systems are keyed by the name subject-proxy frames
+use as their <code>system_id</code>. See <a href="../beyond-core/subject-proxy.html">Subject Proxy</a>.</p>
+<p><code>[subject_proxy.systems.&lt;name&gt;]</code>: <code>base_url</code> (string, required per system),
+<code>connect_timeout_ms</code> (int, <code>2000</code>), <code>request_timeout_ms</code> (int, <code>10000</code>).</p>
+<pre><code class="language-toml">[subject_proxy.systems.pas]
+base_url = "https://pas.example.com/fhir"
+</code></pre>
+<p>The env form for a named system is
+<code>FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL</code>.</p>
+<h2 id="process--cli"><a class="header" href="#process--cli">Process / CLI</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>FERROEHR_HEALTHCHECK_URL</code></td><td>URL</td><td><code>http://127.0.0.1:8080/ferroehr/rest/status</code></td><td>Target URL for the binary’s <code>healthcheck</code> subcommand (container <code>HEALTHCHECK</code> and Kubernetes exec probes). Not part of <code>ferroehr.toml</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="the-config-subcommands"><a class="header" href="#the-config-subcommands">The <code>config</code> subcommands</a></h2>
+<pre><code>ferroehr config default             # print the annotated default ferroehr.toml
+ferroehr config check [--config P]  # validate (file + env + --set), print the
+                                   #   effective config (secrets redacted) with
+                                   #   a provenance column; exit 0 on success, 1 on error
+</code></pre>
+<p><code>ferroehr config check</code> runs the exact same three validation passes as boot but
+touches no database — use it in CI and before a rollout.</p>
+<h2 id="zero-config-boot-and-the-production-checklist"><a class="header" href="#zero-config-boot-and-the-production-checklist">Zero-config boot and the production checklist</a></h2>
+<p>With no file and no environment the server boots as: listener <code>0.0.0.0:8080</code>
+at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; RBAC on;
+signing on (digest); log <code>auto</code>/<code>info</code>; <strong>everything else off</strong>.</p>
+<p><code>auth.enabled</code> defaults to <code>true</code>, and <strong>authentication enabled with no
+mechanism configured is a boot error</strong>, not a running server that refuses
+everything: RFC 9110 §11.6.1 requires a <code>401</code> challenge to name a scheme
+applicable to the resource, and a server with no mechanism has none — it could
+only refuse every request while advertising a scheme it does not implement. The
+error names the three ways out: add <code>[[auth.basic.users]]</code>, add an <code>[auth.oidc]</code>
+issuer, or set <code>auth.enabled = false</code> for development. So a bare <code>docker run</code> of
+the image with no configuration stops at startup with that message; the
+downloadable Compose quickstart ships a user, which is why it boots.</p>
+<p>For production, set at least:</p>
+<ul>
+<li><strong><code>db.url</code></strong> — the real DSN, via <code>FERROEHR__DB__URL</code> (from a secret) or a
+<code>*_file</code>-mounted value, never inline in a world-readable file.</li>
+<li><strong>an auth mechanism</strong> — a Basic user store and/or <code>[auth.oidc]</code>.</li>
+<li><strong><code>log.format = "json"</code></strong> for cluster log collectors.</li>
+<li><strong><code>server.cors_permissive</code></strong> stays <code>false</code>; <strong><code>server.swagger_ui</code></strong> per posture.</li>
+<li><strong><code>server.system_id</code></strong> — this deployment’s own openEHR system identifier
+(default <code>ferroehr.local</code>). Choose it before the first EHR is created: it
+is stored with every EHR, audit entry, and version identifier.</li>
+<li><strong><code>management.*</code></strong> per posture (a dedicated <code>port</code> is recommended so
+<code>/management</code> is never reachable on the clinical listener).</li>
+<li><strong>TLS everywhere a transport supports it</strong> — <code>audit.syslog.transport = "tls"</code>,
+<code>events.tls</code>, <code>fhir.outbound.tls</code>, HTTPS S3.</li>
+<li><strong>real secrets via env or <code>*_file</code></strong>, never inline.</li>
+</ul>
+<h2 id="what-belongs-in-a-mounted-file-vs-env"><a class="header" href="#what-belongs-in-a-mounted-file-vs-env">What belongs in a mounted file (vs env)</a></h2>
+<p>Env cannot carry an array of tables, so the <strong>Basic-auth user store</strong>
+(<code>[[auth.basic.users]]</code>) is file-only. Genuinely file-shaped material — the
+<strong>PGP signing key</strong>, <strong>Cedar/ABAC policies</strong>, <strong>ATNA TLS PEMs</strong>, a <strong>JWKS
+blob</strong> — is referenced by an in-TOML <code>*_path</code> / <code>*_file</code> key pointing at a
+mounted path (e.g. the Helm chart’s <code>config.files</code>). Everything else is a
+plain key you can set in the file or override with an <code>FERROEHR_*</code> env var.</p>
+<p>For a worked dev example (server section, CORS, admin, management, and the
+Basic-auth user store), read the configuration carried inline in the quickstart
+<code>docker-compose.yml</code> — see <a href="compose.html">Docker Compose</a>; the repository’s
+<code>docker/ferroehr.dev.toml</code>, used by the from-source development stack, is a
+fuller one with three users and RBAC enabled.</p>
+<h2 id="variables-outside-the-servers-namespace"><a class="header" href="#variables-outside-the-servers-namespace">Variables outside the server’s namespace</a></h2>
+<p>The <code>PostgreSQL init</code> container variables are <code>PG_INIT_USER</code> / <code>_PASSWORD</code> /
+<code>_DB</code> — they configure the database container, not the server, and sit
+outside the server’s reserved <code>FERROEHR_</code> namespace.</p>
+<p>Inside that namespace, a handful of names are deliberately <strong>not</strong>
+configuration keys and pass the strict sweep untouched: <code>FERROEHR_CONFIG</code>
+(the config-file pointer), <code>FERROEHR_HEALTHCHECK_URL</code> (the container
+healthcheck), the build-stamp variables, and the Compose parameterization
+(image tags, host ports, CPU/memory limits). They keep a single <code>_</code> by
+design, which is exactly what distinguishes them from configuration keys.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../installation/from-source.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../concepts/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../installation/from-source.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../concepts/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/mermaid-eefea253.min.js"></script>
+        <script src="../theme/mermaid-init-ccf746f1.js"></script>
+        <script src="../theme/version-picker-3cfa9247.js"></script>
+
+
+
+    </div>
+    </body>
+</html>
