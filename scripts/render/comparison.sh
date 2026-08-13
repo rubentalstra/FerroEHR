@@ -155,8 +155,10 @@ gating case green), **failed** (at least one gating case red),
 **inconclusive** (a gating case neither passed nor failed cleanly),
 **not_evidenced** (claimed, but no gating case produced a verdict — there
 is no excused state: a required capability without passing evidence fails
-its tier, whichever party claims it), or **not claimed** (absent from that
-party's ICS).
+its tier, whichever party claims it), or **not_claimed** (absent from that
+party's ICS, so no case naming it was ever selected — it can never count
+for or against that party). The whole capability matrix is listed for both
+columns, because the matrix is the profiles book as data, not a claim list.
 
 | Capability | ferroehr | EHRbase |
 |---|---|---|
