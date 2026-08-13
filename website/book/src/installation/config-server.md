@@ -282,10 +282,10 @@ filter = "info,ferroehr=info"
 | `filter` | string | `info,ferroehr=info` | Boot log-filter directives; also the value `/management/loggers` resets to. `RUST_LOG` is a recognized lower-priority alias. |
 
 > [!TIP]
-> The ASCII boot banner is printed unless `format` is set explicitly to `json`.
-> Set `json` rather than relying on `auto` wherever every line of stdout must be
-> parseable — `auto` selects JSON *rendering* off a TTY, but the banner is keyed
-> on the configured value, not the resolved one.
+> The ASCII boot banner follows the rendering that is actually installed, not the
+> configured word: it prints for `pretty`, and for `auto` only when stdout is a
+> terminal. Under `json`, and under `auto` off a terminal — a container, a pipe
+> into a log collector — stdout is parseable JSON from the first byte.
 
 ## `[telemetry]`
 

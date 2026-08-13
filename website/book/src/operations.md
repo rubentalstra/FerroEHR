@@ -440,6 +440,7 @@ Not every indicator blocks readiness, and the distinction is deliberate:
 | `migrations` | this build's schema is present, re-tested on every probe | yes |
 | `audit_sender` | whether ATNA forwarding is enabled | no — reports `DEGRADED`, never `503` |
 | `events` | the event publisher's broker delivery (present only when eventing is enabled) | no — reports `DEGRADED`, never `503`: the outbox buffers while the broker is down |
+| `fhir_outbound` | the FHIR outbound emitter's broker delivery (present only when the emitter is enabled) | no — reports `DEGRADED`, never `503`: unemitted rows are retained and re-emitted |
 
 An instance whose event broker is unreachable therefore keeps taking traffic
 and says so in the body; an instance that cannot reach its database, or whose

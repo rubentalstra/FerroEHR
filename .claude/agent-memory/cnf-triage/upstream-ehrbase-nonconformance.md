@@ -56,6 +56,11 @@ pack/catalogue toward any of these.
 14. **Admin EHR delete served at `/ferroehr/rest/admin/ehr/{id}`** (204), 404 at
     the released `…/openehr/v1/admin/ehr/{id}` — but SPECITS-80 dates the
     operation to 1.1.0, so it is OUT OF SCOPE for a 1.0.3 party, not a finding.
+15. **The query `ehr_id` scope is DISCARDED on both released carriers** (the
+    `ehr_id` query parameter and the `openehr-ehr-id` header): 200 + a full
+    population result, disclosed by EHRbase's own `meta._executed_aql`. Grounds +
+    reproduction in [[ehr-id-scope-semantics-is-sm-grounded]]; two red rows
+    (`execute_ad_hoc_query-empty_db_bare_ehr`, `-unknown_ehr_scope`).
 
 **CORRECTION to the earlier note:** the item-tag 404s are NOT an upstream
 non-conformance for this party — SPECITS-77 dates ITEM_TAGs to Release-**1.1.0**

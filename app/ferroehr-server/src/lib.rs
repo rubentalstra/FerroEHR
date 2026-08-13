@@ -15,6 +15,7 @@
 //! `anyhow` is fine here: this lib target IS the binary's own logic half,
 //! not a consumable library.
 
+use std::io::IsTerminal as _;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -38,7 +39,7 @@ use uuid::Uuid;
 
 use ferroehr::db;
 use ferroehr::service::FerroEhrService;
-use ferroehr::telemetry::config::{LogFormat, TelemetryConfig};
+use ferroehr::telemetry::config::{LogFormat, ResolvedLogFormat, TelemetryConfig};
 use ferroehr::telemetry::{self, indicators};
 
 /// How long to wait for the audit queue to flush on shutdown.
@@ -221,6 +222,17 @@ async fn healthcheck(url: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Whether the ASCII boot banner prints, given the configured `[log] format`
+/// and whether stdout is a terminal.
+///
+/// Keyed on the RESOLVED rendering rather than the configured value: `format =
+/// "auto"` renders JSON whenever stdout is not a terminal, and a banner ahead of
+/// it would leave a log collector with unparseable first bytes. No openEHR spec
+/// governs logging — our own design.
+fn prints_banner(format: LogFormat, stdout_is_terminal: bool) -> bool {
+    format.resolve(stdout_is_terminal) == ResolvedLogFormat::Pretty
+}
+
 /// Whether a bind address is loopback-only, so a plaintext listener there is
 /// not reachable off the host.
 ///
@@ -277,8 +289,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         otel: config.telemetry.clone(),
     };
 
-    // ASCII banner before telemetry/log init (skipped under `json` logging).
-    if telemetry_config.log.format != LogFormat::Json {
+    // ASCII banner before telemetry/log init, on the same resolved rendering the
+    // log layer installs (so JSON output stays pure from the first byte).
+    if prints_banner(telemetry_config.log.format, std::io::stdout().is_terminal()) {
         ferroehr::banner::print(config.spec_profile);
     }
 
@@ -379,21 +392,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(handle) = &events_handle {
         indicators.push(Arc::new(indicators::EventsHealth::new(handle.healthy())));
     }
-    let health = HealthRegistry::new(indicators);
 
     telemetry.start_samplers(pool.clone());
 
     // `/management/env` reports the whole redacted config tree (secrets render
     // `***` by construction of the Secret type).
     let env_snapshot = Arc::new(serde_json::to_value(&config).unwrap_or(serde_json::Value::Null));
-    let observability = Observability {
-        management: config.management.clone(),
-        prometheus: Some(telemetry.registry()),
-        log_reload: Some(telemetry.log_reload()),
-        health,
-        build_info,
-        env_snapshot,
-    };
 
     // Version signing (fail-closed at boot for `pgp` without a usable key).
     let signer =
@@ -502,8 +506,10 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     let service = Arc::new(service);
 
-    // FHIR outbound emitter (off by default; carries PHI).
-    #[cfg(feature = "events")]
+    // FHIR outbound emitter (off by default; carries PHI). Gated on `fhir`:
+    // the outbound module exists only under ferroehr's `fhir` feature (which
+    // itself implies `events` for the broker transport).
+    #[cfg(feature = "fhir")]
     let fhir_outbound_handle = if config.fhir.outbound.enabled {
         tracing::info!(
             exchange = %config.fhir.outbound.exchange,
@@ -517,12 +523,29 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     } else {
         None
     };
-    #[cfg(not(feature = "events"))]
+    #[cfg(not(feature = "fhir"))]
     if config.fhir.outbound.enabled {
         return Err(anyhow::anyhow!(
-            "fhir.outbound.enabled = true, but this binary was built without the `events` cargo feature"
+            "fhir.outbound.enabled = true, but this binary was built without the `fhir` cargo feature"
         ));
     }
+    #[cfg(feature = "fhir")]
+    if let Some(handle) = &fhir_outbound_handle {
+        indicators.push(Arc::new(indicators::FhirOutboundHealth::new(
+            handle.healthy(),
+        )));
+    }
+
+    // The readiness registry closes over every started subsystem, so it is
+    // assembled after the last optional one (the FHIR outbound emitter).
+    let observability = Observability {
+        management: config.management.clone(),
+        prometheus: Some(telemetry.registry()),
+        log_reload: Some(telemetry.log_reload()),
+        health: HealthRegistry::new(indicators),
+        build_info,
+        env_snapshot,
+    };
 
     // Authorization — only wired when authentication is enabled: the RBAC gate
     // plus the ABAC engine + DB-backed attribute resolvers. A misconfigured
@@ -620,7 +643,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(handle) = events_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
-    #[cfg(feature = "events")]
+    #[cfg(feature = "fhir")]
     if let Some(handle) = fhir_outbound_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
@@ -729,7 +752,27 @@ fn subject_resolver(pool: PgPool) -> SubjectResolver {
 
 #[cfg(test)]
 mod tests {
-    use super::binds_loopback;
+    use super::{LogFormat, binds_loopback, prints_banner};
+
+    /// The banner follows the RESOLVED rendering: `auto` with stdout piped into
+    /// a log collector renders JSON, so no banner may precede it. The terminal
+    /// state is injected — never probed from the process — so both directions
+    /// are pinned deterministically.
+    #[test]
+    fn the_banner_is_keyed_on_the_resolved_log_format() {
+        assert!(!prints_banner(LogFormat::Auto, false));
+        assert!(prints_banner(LogFormat::Auto, true));
+        for is_terminal in [false, true] {
+            assert!(
+                !prints_banner(LogFormat::Json, is_terminal),
+                "explicit json never prints the banner"
+            );
+            assert!(
+                prints_banner(LogFormat::Pretty, is_terminal),
+                "explicit pretty always prints the banner"
+            );
+        }
+    }
 
     #[test]
     fn loopback_binds_are_recognized() {
