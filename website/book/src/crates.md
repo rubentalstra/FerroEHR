@@ -13,16 +13,23 @@ vendored specification text.
 | [`openehr-rm`](https://crates.io/crates/openehr-rm) | RM 1.1.0 + 1.2.0 | The Reference Model: `COMPOSITION`, data structures/types, change control, generated invariant validation, the static RM attribute model |
 | [`openehr-am`](https://crates.io/crates/openehr-am) | AM 1.4.0 + 2.4.0 | The Archetype Object Model, both majors side by side |
 | [`openehr-adl`](https://crates.io/crates/openehr-adl) | ADL 2.4.0 | ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion |
-| [`openehr-term`](https://crates.io/crates/openehr-term) | TERM 3.1.0 | Terminology model + the embedded official openEHR terminology (five languages) |
-| [`openehr-lang`](https://crates.io/crates/openehr-lang) | LANG 1.0.0 + 1.1.0 | The BMM meta-model + hand-written ODIN/BEL readers |
+| [`openehr-term`](https://crates.io/crates/openehr-term) | TERM 3.1.0 | Terminology model + the embedded official openEHR terminology (five languages: `en`, `es`, `ja`, `pt`, `zh`) |
+| [`openehr-lang`](https://crates.io/crates/openehr-lang) | LANG 1.0.0 + 1.1.0 | The BMM meta-model and its P_BMM schema form, plus hand-written ODIN, BEL and Expression-Language readers |
 | [`openehr-query`](https://crates.io/crates/openehr-query) | QUERY 1.1.0 | AQL lexer, parser, typed AST, and canonical printer |
-| [`openehr-its`](https://crates.io/crates/openehr-its) | ITS-REST 1.1.0 | Canonical JSON + XML codecs, the generated ITS-REST contract, OPT 1.4, Simplified Formats (FLAT/STRUCTURED/Web Template) |
+| [`openehr-its`](https://crates.io/crates/openehr-its) | ITS-JSON, ITS-XML, ITS-REST 1.1.0 | Canonical JSON + XML codecs, the generated ITS-REST contract, OPT 1.4, Simplified Formats (FLAT/STRUCTURED/Web Template) |
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.10"
-openehr-its = "0.0.10"
+openehr-rm = "0.0.27"
+openehr-its = "0.0.27"
 ```
+
+All eight are **edition 2024** with an MSRV of **Rust 1.96**, and all eight
+inherit the workspace lint table — including `unsafe_code = "forbid"`, which no
+attribute anywhere in the crate can relax. There is no `unsafe` block in the
+published specification layer.
+
+<!-- toc -->
 
 ## Generations: reaching more than one specification version
 
@@ -37,8 +44,10 @@ an older generation is reached by naming its module in full:
 // The current generation (RM 1.2.0), via the crate prelude:
 use openehr_rm::prelude::Composition;
 
-// The released generation (RM 1.1.0), via its own module path:
-use openehr_rm::v1_1::composition::composition::Composition as Rm110Composition;
+// The released generation (RM 1.1.0), via its own module path. Import
+// renaming is not used anywhere in this project; where both generations
+// appear in one file, give one of them a type alias:
+type Rm110Composition = openehr_rm::v1_1::composition::composition::Composition;
 ```
 
 Each generation mirrors its specification's own package structure, so the path
@@ -46,18 +55,32 @@ after the generation module reads the same in both. Every generation module
 also carries its own `prelude`; no name from one generation is ever mixed into
 another.
 
+`openehr-lang` is the one crate whose generations also differ in *what they
+contain*, because upstream publishes two BMM meta-models side by side. Its
+`v1_1` generation carries them as sibling specification units: the stable,
+tool-implemented BMM v2.x model (`bmm`, its persistence form
+`bmm_persistence`, and the `beom` expression model) is on the generation's
+prelude, while the paused BMM3 model (`bmm3`) is reachable only by full module
+path. They cannot be merged — a set of class names, `BmmClass`, `BmmModel` and
+`BmmPackage` among them, occurs in both units with materially different
+shapes — so the prelude carries the stable units and the choice stays explicit
+at the use site. The older `v1_0` generation is what its release actually
+defines: the BMM model plus an ODIN reader, with no BEL or Expression-Language
+notation.
+
 ## Versioning
 
-The package version is the crates' **own independent SemVer line** — it
-tracks this implementation's code and moves freely with fixes and
-improvements, never with the vendored openEHR specification versions. While
-the line is `0.0.x`, expect breaking changes between releases, which always
-ship in lockstep across all eight crates.
+The package version is the crates' **own independent SemVer line** — it tracks
+this implementation's code and moves freely with fixes and improvements, never
+with the vendored openEHR specification versions. While the line is `0.0.x`,
+expect breaking changes between releases, which always ship in lockstep across
+all eight crates.
 
 The implemented specification version is therefore a **separate datum, per
 generation**. Each generated crate emits a `Generation` enum that is the only
-authority for it — `Default` is the current generation, and every variant
-carries its specification version as a `const fn`:
+authority for it — one variant per generation module, `Default` marking the
+current one, each variant carrying its specification version as a `const fn`,
+and `Display`/`FromStr` round-tripping the module token:
 
 ```rust,no_run
 assert_eq!(openehr_rm::Generation::default().spec_version(), "1.2.0");
@@ -65,17 +88,51 @@ assert_eq!(openehr_rm::Generation::V1_1.spec_version(), "1.1.0");
 assert_eq!(openehr_rm::Generation::default().as_str(), "v1_2");
 ```
 
-There is deliberately **no crate-level `SPEC_VERSION` constant in the
-generated crates**: a single constant would contradict a caller using a
-non-current generation. The three hand-written crates implement exactly one
-specification each and do expose one — `openehr_its::SPEC_VERSION`,
-`openehr_query::SPEC_VERSION`, `openehr_adl::SPEC_VERSION`.
+There is deliberately **no crate-level `SPEC_VERSION` constant in the generated
+crates**: a single constant would contradict a caller using a non-current
+generation. Exactly three crates implement one specification each and do expose
+one — `openehr_its::SPEC_VERSION`, `openehr_query::SPEC_VERSION`,
+`openehr_adl::SPEC_VERSION`.
+
+## Building `openehr-its` without its dependencies
+
+`openehr-its` puts every codec behind one default feature, `full`. Taken with
+`default-features = false` it compiles to the SMART App Launch scope grammar
+alone — std-only, with no dependency of any kind — so a REST client targeting
+`wasm32-unknown-unknown` can parse scope strings with the very grammar the CDR
+enforces instead of carrying a second one:
+
+```toml
+[dependencies]
+openehr-its = { version = "0.0.27", default-features = false }
+```
+
+## Releases
+
+The eight crates are published through a manual release lane that authenticates
+with **crates.io Trusted Publishing** (OIDC, a protected environment, no
+long-lived token anywhere) and publishes them **one at a time in dependency
+order**, treating "already exists on the index" as done — so a run interrupted
+halfway can simply be re-run to finish the set. The lane then reads the
+registry back and refuses to report success unless all eight resolve at the
+same version, because while the line is `0.0.x` a straggler makes its siblings'
+internal requirements unresolvable for every consumer.
 
 ## Licensing
 
-`openehr-query` and `openehr-adl` are plain **MIT**. The six crates that embed
-material derived from the official openEHR machine-readable artifacts
-(generated types carrying specification documentation text, the terminology
-XML, the ITS-JSON schema) are **`MIT AND Apache-2.0`**, with both license
-texts shipped in the package. The openEHR specifications themselves are © the
-openEHR Foundation.
+`openehr-query` and `openehr-adl` are plain **MIT**: their packages ship only
+their own Rust sources, the README, and the MIT text. The six crates that embed
+material derived from the official openEHR machine-readable artifacts —
+generated types carrying specification documentation text, and the vendored
+ITS-JSON schema — declare **`MIT AND Apache-2.0`** and ship both license texts
+in the package.
+
+`openehr-term` carries one further term: the official openEHR terminology XML
+it embeds (the five language bundles, the external-terminology index, and the
+property/unit data) is **CC-BY-SA 3.0**, redistributed verbatim with
+attribution, and is not covered by that crate's `MIT AND Apache-2.0`
+declaration. If you redistribute the crate, the terminology data travels under
+CC-BY-SA 3.0. The full picture, including the vendored material that never
+reaches a published package, is in [Licensing](licensing.md).
+
+The openEHR specifications themselves are © the openEHR Foundation.

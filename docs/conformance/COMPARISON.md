@@ -342,12 +342,13 @@ attributes to the EHRbase implementation. No expectation was bent either way.
 
 - **`composition_update` + `ehr_status_update` (wire 400, deterministic)** —
   one shared root cause: EHRbase rejects the RFC-9110-quoted `If-Match`
-  entity-tag form with `400 "UUID string too large"`. The released docs text
-  itself mandates the quoted form (ITS-REST overview `Requests_and_responses.md`
+  entity-tag form with a 400. The released docs text itself mandates the
+  quoted form (ITS-REST overview `Requests_and_responses.md`
   §"If-Match and accidental overwrites": `If-Match: "8849182c-…::openEHRSys.example.com::2"`),
-  and EHRbase 400s even its own returned `ETag` echoed back verbatim; it
-  succeeds only on the non-standard unquoted form. EHRbase non-conformance;
-  the record stands.
+  and in a live reproduction (recorded on issue #266 — the committed run
+  record carries statuses, not bodies) EHRbase 400s even its own returned
+  `ETag` echoed back verbatim, succeeding only on the non-standard unquoted
+  form. EHRbase non-conformance; the record stands.
 - **`tags_put` + `tags_read` (wire 404, deterministic)** — the item-tag paths
   (`/ehr/{ehr_id}/tags`, `/ehr/{ehr_id}/composition/{uid}/tags`, …) are members
   of the STABLE EHR API in released ITS-REST 1.1.0 (RM grounding:
