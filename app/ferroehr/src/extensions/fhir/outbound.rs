@@ -67,13 +67,14 @@ pub struct FhirOutboundHandle {
     shutdown: watch::Sender<bool>,
     join: JoinHandle<()>,
     /// Liveness of broker delivery: `true` while emitting succeeds, `false`
-    /// after a publish/transport failure.
-    // TODO(#2358): surface this through a readiness indicator.
+    /// after a publish/transport failure. Surfaced by the `fhir_outbound` health
+    /// indicator (never blocks readiness — degraded-tolerable).
     healthy: Arc<AtomicBool>,
 }
 
 impl FhirOutboundHandle {
-    /// A shared flag reporting whether outbound delivery is currently healthy.
+    /// A shared flag reporting whether outbound delivery is currently healthy,
+    /// for the `fhir_outbound` health indicator.
     #[must_use]
     pub fn healthy(&self) -> Arc<AtomicBool> {
         Arc::clone(&self.healthy)

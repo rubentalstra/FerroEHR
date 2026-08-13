@@ -523,6 +523,73 @@ mod tests {
         }
     }
 
+    /// The admin console's headline tiles and metric deep links, as the pairs
+    /// `(instrument name, the name the Prometheus exporter renders it under)`.
+    ///
+    /// The console reads the rendered view over `/management/metrics`, so the
+    /// right-hand column is the wire contract; it cannot import a constant from
+    /// here (the console never depends on this crate).
+    const CONSOLE_RENDERED_NAMES: [(&str, &str); 4] = [
+        (HTTP_ACTIVE_REQUESTS, "http_server_active_requests"),
+        (COMPOSITIONS_COMMITTED, "compositions_committed_total"),
+        (AQL_QUERIES, "aql_queries_total"),
+        (DB_POOL_CONNECTIONS, "db_pool_connections"),
+    ];
+
+    /// Pins the exporter-derived name of every instrument the admin console
+    /// names as a literal.
+    ///
+    /// The console's `HEADLINE_METRICS` (and its `/operations?metric=…` deep
+    /// links) speak the exporter's rendered name space — `_total` is derived
+    /// from the counter kind, not written on the instrument — and the two name
+    /// spaces meet only here: a renamed instrument or a changed derivation would
+    /// otherwise degrade a console tile to an em-dash in silence.
+    #[test]
+    fn exporter_renders_the_console_metric_names() {
+        use opentelemetry::metrics::MeterProvider as _;
+
+        let (provider, registry) = build_provider(
+            opentelemetry_sdk::Resource::builder().build(),
+            None::<opentelemetry_sdk::metrics::PeriodicReader<opentelemetry_otlp::MetricExporter>>,
+        )
+        .expect("the Prometheus reader should build");
+        let meter = provider.meter(SCOPE);
+        let instruments = Metrics::new(&meter);
+
+        // A family reaches the exposition only once it carries a measurement.
+        instruments.http_active_requests.add(1, &[]);
+        instruments
+            .compositions_committed
+            .add(1, &[KeyValue::new("change_type", "249")]);
+        instruments
+            .aql_queries
+            .add(1, &[KeyValue::new("outcome", "ok")]);
+        instruments
+            .db_pool_connections
+            .add(1, &[KeyValue::new("state", "in_use")]);
+
+        let rendered = render(&registry).expect("the exposition should encode");
+        for (instrument, exported) in CONSOLE_RENDERED_NAMES {
+            assert!(
+                exported.starts_with(instrument),
+                "{exported} is not {instrument} plus an exporter-derived suffix"
+            );
+            assert!(
+                rendered.contains(&format!("# TYPE {exported} ")),
+                "the exporter renders no family named {exported} (instrument \
+                 {instrument}); the console's HEADLINE_METRICS and metric deep \
+                 links consume these rendered spellings verbatim, so a tile \
+                 would silently degrade to an em-dash: {rendered}"
+            );
+            assert!(
+                rendered
+                    .lines()
+                    .any(|line| line.starts_with(&format!("{exported}{{"))),
+                "the exporter renders no sample line for {exported}: {rendered}"
+            );
+        }
+    }
+
     /// The bucket ladders must be sorted and free of duplicates, or the
     /// exporter's cumulative buckets are nonsense.
     #[test]
