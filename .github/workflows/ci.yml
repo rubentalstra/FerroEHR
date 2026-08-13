@@ -658,6 +658,12 @@ jobs:
         with:
           tool: cargo-deny
       - run: cargo deny check
+      # The mirror of the check above: an `ignore` entry that outlived its
+      # finding. cargo-deny reports it as a WARNING, so the step above stays
+      # green on one; this promotes it to an error. It runs HERE because
+      # cargo-deny and the toolchain are already installed in this job.
+      - name: No exception for an advisory that no longer fires
+        run: bash scripts/checks/advisory-exceptions.sh
 
   # The published VEX document must be exactly what `deny.toml` plus the prose
   # file generate. Every advisory the gate ACCEPTS carries a machine-readable

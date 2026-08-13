@@ -49,12 +49,19 @@ Rust 1.96 (edition 2024).
 
 ## License
 
-Licensed as **MIT AND Apache-2.0**:
+Licensed as **MIT AND Apache-2.0 AND CC-BY-SA-3.0**:
 
 - The Rust code and hand-written parts are MIT ([`LICENSE-MIT`](LICENSE-MIT)).
-- The package embeds material derived from the official openEHR
+- The generated data classes and their doc text derive from the official openEHR
   machine-readable specification artifacts, which openEHR publishes under
-  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) — the embedded terminology XML in `assets/` and the generated data classes derive from official openEHR artifacts.
+  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)).
+- The official openEHR terminology XML in `assets/` — the five language
+  bundles, the external-terminology index and the property/unit data — is
+  redistributed verbatim with attribution under the CC-BY-SA 3.0 of its
+  upstream repository
+  ([`LICENSE-CC-BY-SA-3.0`](LICENSE-CC-BY-SA-3.0);
+  <https://github.com/openEHR/specifications-TERM/blob/master/LICENSE>). If you
+  redistribute this crate, that data travels under CC-BY-SA 3.0.
 
 ## Part of FerroEHR
 

@@ -225,11 +225,14 @@ to operator-configured endpoints.
 - **The terminology server is trusted to answer honestly.** A compromised or
   misconfigured one can permit a code that should have been refused. It is a
   correctness boundary, and a clinical-safety one.
-- **A response parsed from a semi-trusted peer is still parsed.** The object-store
-  path has carried an XML parser version with denial-of-service advisories that
-  the client-facing canonical-XML codec did not share; the exposure is limited to
-  responses from the endpoint the operator configured, which is exactly the
-  argument published as a machine-readable
+- **A response parsed from a semi-trusted peer is still parsed.** A terminology
+  answer, an object-store response and a broker message are all parsed by the
+  server, so a compromised endpoint reaches a parser rather than only a
+  validator. The object-store path once carried an XML parser version with
+  denial-of-service advisories the client-facing canonical-XML codec did not
+  share; both are now on the patched version, and the only pre-fix copy left in
+  the build reaches it through the flamegraph renderer, which writes SVG and
+  parses nothing. That argument is published as a machine-readable
   [VEX document](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex)
   rather than left in a comment. Read the current documents for the current
   position — they name the versions, and they are regenerated from the gate.

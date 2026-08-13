@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Security
+
+- **The rsa advisory's published VEX statement was false, and is re-grounded.**
+  It claimed RSA is "reached only through openidconnect" with "no RSA
+  private-key operation" — the OpenPGP signing path (`pgp → rsa`) was
+  missing. The corrected statement rests on the true ground (the default
+  `signing.mode = "digest"` performs no asymmetric operation; OIDC is
+  public-key verification) and explicitly places an RSA-keyed `pgp`
+  deployment outside its scope. The quick-xml statements now describe the
+  current graph (the advisories fire on `inferno`'s 0.26, writer-only, not
+  the upgraded `object_store` path), and a new CI gate fails any advisory
+  exception whose advisory cargo-deny no longer raises — a resolved advisory
+  cannot keep its exception silently.
+
 ### Added
 
 - **A `fhir_outbound` readiness indicator.** When the FHIR outbound emitter is
@@ -25,6 +39,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The `openehr-*` crates move to `0.0.28`, and `openehr-term` declares every
+  license its bytes are under.** The published `openehr-term` package ships
+  openEHR's verbatim terminology XML (CC-BY-SA 3.0) but declared only
+  `MIT AND Apache-2.0`; the expression is now
+  `MIT AND Apache-2.0 AND CC-BY-SA-3.0` and the license text travels in the
+  package. The other seven crates audited clean; all eight bump in lockstep.
 - **The documentation site was read end-to-end against the tree and
   rewritten.** Every page's substantive claims were verified against the
   code, the chart, the workflows and the committed conformance artifacts;

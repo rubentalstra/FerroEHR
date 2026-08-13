@@ -52,6 +52,13 @@ to emit anything unless the two sets match in **both** directions, and
 document and fails on any difference. Adding an ignore to `deny.toml` without
 publishing its justification is a red build, not an oversight nobody notices.
 
+Agreement is not the same as truth, though: an ignore and its justification stay
+in perfect agreement while a dependency upgrade quietly resolves the advisory
+underneath both. `scripts/checks/advisory-exceptions.sh` (in the `cargo-deny` CI
+job, where the dependency graph is resolvable) closes that half — it promotes
+cargo-deny's `advisory-not-detected` diagnostic to an error, so an exception that
+has outlived its finding fails the build instead of ageing into a false claim.
+
 To change a statement: edit `rust-advisories.toml` (and `deny.toml` if the id
 set changes), bump the document's `version` and `timestamp`, then run
 `bash scripts/security/vex-generate.sh`.
