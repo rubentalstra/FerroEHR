@@ -608,6 +608,47 @@ fn unserved_extension(
     Ok(citation.map(|citation| format!("{citation} — ISO/IEC 9646 test selection")))
 }
 
+/// Why the ICS puts `case` outside this party's test scope: it gates only
+/// capabilities the statement does not claim.
+///
+/// ISO/IEC 9646 selects the test cases a party is answerable for from its ICS,
+/// and the CNF profiles are exactly that list — "A profile may be defined
+/// logically as a particular list of platform components and capabilities"
+/// (CNF profiles `master02-overview.adoc` §Overview). The verdict pipeline
+/// already selects on the same predicate ([`crate::verdict`] step 2), so a
+/// driven row on an unclaimed capability can never reach a verdict: it lands
+/// in the record as a failure against a surface the party never offered to
+/// serve, and the record and the verdict then disagree about what a red row
+/// means.
+///
+/// A case declaring no capability at all gates nothing and is never excused
+/// here; without a statement (the statement-blind sweep) nothing is selected
+/// away.
+fn unclaimed_capabilities(
+    statement: Option<&crate::party::Statement>,
+    case: &CaseCore,
+) -> Option<String> {
+    let statement = statement?;
+    if case.capabilities.is_empty()
+        || case
+            .capabilities
+            .iter()
+            .any(|c| statement.claims.capabilities.contains(c))
+    {
+        return None;
+    }
+    Some(format!(
+        "the ICS claims none of the capabilities this case gates ({}) — CNF profiles \
+         master02-overview.adoc §Overview (a profile IS the list of capabilities a solution \
+         specifies); ISO/IEC 9646 test selection",
+        case.capabilities
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    ))
+}
+
 /// # Errors
 /// An interpreter defect propagated from the extension arm (a malformed SM
 /// operation anchor in the selection law).
@@ -622,6 +663,13 @@ fn selection_exception(
     }
     if let Some(citation) = unserved_extension(set, statement, case)? {
         return Ok(Some(Exception::Unrealized(citation)));
+    }
+    // The general form of the arm above, and the same predicate the verdict
+    // pipeline selects on: a case gating only unclaimed capabilities is out of
+    // the scope this party's own ICS declares, so it is excused HERE with the
+    // citation rather than driven into a red row no verdict will ever read.
+    if let Some(citation) = unclaimed_capabilities(statement, case) {
+        return Ok(Some(Exception::Guarded(citation)));
     }
     // An option branch the party statement does not declare is not this
     // SUT's behaviour — driving it records a spurious failure the verdict
@@ -1574,5 +1622,55 @@ mod tests {
             let text = format!("{exception:?}");
             assert!(!text.is_empty(), "{case}: silent exception");
         }
+    }
+
+    fn statement(capabilities: &[&str]) -> crate::party::Statement {
+        serde_json::from_value(serde_json::json!({
+            "product": { "name": "p", "version": "1", "vendor": "v", "identifier": "i" },
+            "schedule_release": "CNF-2.0",
+            "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
+            "claims": { "capabilities": capabilities, "profiles": ["CORE"] },
+            "tech_profiles": [ { "its": "its-rest", "formats": ["canonical-json"] } ],
+            "options": []
+        }))
+        .unwrap()
+    }
+
+    /// Capability scoping is a DRIVE-TIME selection law, not a verdict-layer
+    /// afterthought: a case gating only capabilities the ICS does not claim is
+    /// recorded not-applicable with its citation, so the record and the
+    /// verdict agree about what a red row means. A case sharing ONE claimed
+    /// capability still drives, a capability-less case is never excused this
+    /// way, and the statement-blind sweep selects nothing away.
+    #[test]
+    fn a_case_gating_only_unclaimed_capabilities_is_selected_away() {
+        let signing: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "SIG-VERSION-ehr_status_signature", "kind": "functional", "component": "EHR",
+            "sm_operation": "I_EHR_STATUS.get_ehr_status",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["Signing"],
+            "flow": [{ "step": 1, "call": "get_ehr_status", "expect": "ok" }]
+        }))
+        .unwrap();
+        let claimed = statement(&["EhrOperations", "Signing"]);
+        let unclaimed = statement(&["EhrOperations"]);
+
+        let citation = unclaimed_capabilities(Some(&unclaimed), &signing)
+            .expect("an unclaimed capability takes the case out of scope");
+        assert!(citation.contains("Signing"), "{citation}");
+        assert!(citation.contains("ISO/IEC 9646"), "{citation}");
+        assert!(unclaimed_capabilities(Some(&claimed), &signing).is_none());
+        assert!(unclaimed_capabilities(None, &signing).is_none());
+
+        let mut partly = signing.clone();
+        partly.capabilities = vec![
+            CapabilityName::parse("Signing").unwrap(),
+            CapabilityName::parse("EhrOperations").unwrap(),
+        ];
+        assert!(unclaimed_capabilities(Some(&unclaimed), &partly).is_none());
+
+        let mut capability_less = signing;
+        capability_less.capabilities.clear();
+        assert!(unclaimed_capabilities(Some(&unclaimed), &capability_less).is_none());
     }
 }

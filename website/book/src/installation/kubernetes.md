@@ -632,7 +632,15 @@ Three properties are worth knowing before you switch it on:
 The console carries the same security context as the server, and the chart's
 render gate holds it to the same Restricted profile and the same pod-isolation
 settings — a release whose two workloads disagreed about `hostUsers` would be a
-posture nobody could state in one sentence. Its screens are documented in the
+posture nobody could state in one sentence. The deployment probe harness then
+reads that back off the *running* console container, exactly as it does for the
+server: its uid, its empty capability bounding set, its read-only root and its
+seccomp filter come from the container runtime's own spec, its admission from an
+`enforce=restricted` namespace, and its login page from an HTTP request made
+inside the cluster through the console Service — so the second workload is never
+vouched for by the first. What that run does **not** establish is stated in its
+own record: the console's OIDC path, the screens behind a session, and whether a
+CNI enforces the console's NetworkPolicy. Its screens are documented in the
 [admin console](../admin-ui/index.md) chapter.
 
 ## Staying available while things move

@@ -77,6 +77,14 @@ pub enum Evidence {
     /// Java product included; no excuse arm survives in
     /// this module's `required_all_passed`.
     NotEvidenced,
+    /// The capability is absent from the party's ICS, so no case naming it was
+    /// ever selected. Distinct from `NotEvidenced`, which means CLAIMED and
+    /// unevidenced: the matrix row is published for every capability (the
+    /// matrix is the Profiles book as data, not a claim list), so without this
+    /// token an unclaimed row reads under a claimed party's token (#2363).
+    /// It satisfies no tier — a claimed profile whose required capability is
+    /// unclaimed still fails, exactly as before.
+    NotClaimed,
 }
 
 /// The selected gating cases behind one capability's [`Evidence`], counted by
@@ -318,7 +326,12 @@ pub fn compute(
     let capabilities: Vec<(CapabilityName, Evidence)> = matrix
         .entries()
         .iter()
-        .map(|(name, _)| (name.clone(), capability_evidence(name, cases, &selected)))
+        .map(|(name, _)| {
+            (
+                name.clone(),
+                capability_evidence(name, &statement.claims.capabilities, &selected),
+            )
+        })
         .collect();
     let capability_tallies: Vec<(CapabilityName, CapabilityTally)> = matrix
         .entries()
@@ -674,9 +687,14 @@ fn format_in_profile(format: Option<FormatName>, formats: &[FormatName]) -> bool
 
 fn capability_evidence(
     cap: &CapabilityName,
-    cases: &[CaseCore],
+    claimed: &[CapabilityName],
     selected: &[Selected<'_>],
 ) -> Evidence {
+    // An unclaimed capability selects no case at all (step 2's first filter),
+    // so its evidence is the ABSENCE of a claim, not an absence of evidence.
+    if !claimed.contains(cap) {
+        return Evidence::NotClaimed;
+    }
     let relevant: Vec<&Selected<'_>> = selected
         .iter()
         .filter(|s| s.gating && s.case.capabilities.contains(cap))
@@ -695,7 +713,6 @@ fn capability_evidence(
     // not evidenced (#626 — the excuse variants are deleted; the
     // claim-completeness gate already refuses the catalogue shapes that
     // used to need them).
-    let _ = cases;
     Evidence::NotEvidenced
 }
 
@@ -1173,6 +1190,65 @@ mod tests {
         assert_eq!(
             compute(&claimed, &rs, &cases, &[], &matrix(), &register()).security,
             Some(SecBasicVerdict::Pass)
+        );
+    }
+
+    /// An UNCLAIMED capability reads `not_claimed`, never `not_evidenced`
+    /// (#2363): the published grid carries the whole matrix, and
+    /// `not_evidenced` means claimed-and-unevidenced. The distinction is
+    /// presentational only — neither token satisfies a tier.
+    #[test]
+    fn an_unclaimed_capability_is_not_claimed_never_not_evidenced() {
+        let cases = vec![
+            functional_case(
+                "I_EHR_SERVICE.create_ehr-main",
+                &["EhrOperations"],
+                &["CORE"],
+            ),
+            functional_case("SF-FLAT-main", &["SimplifiedFormats"], &["OPTIONS"]),
+        ];
+        // AqlBasic is claimed with no result; SimplifiedFormats is unclaimed.
+        let st = statement(&["EhrOperations", "AqlBasic"], &["CORE"], &[]);
+        let rs = results(serde_json::json!([
+            { "case": "I_EHR_SERVICE.create_ehr-main", "format": "canonical-json",
+              "status": "passed", "rows_driven": 1, "rows_total": 1 },
+            { "case": "SF-FLAT-main", "format": "canonical-json",
+              "status": "failed", "rows_driven": 1, "rows_total": 1, "failing_step": 1 }
+        ]));
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
+        assert_eq!(
+            evidence_of(
+                &report.capabilities,
+                &CapabilityName::parse("SimplifiedFormats").unwrap()
+            ),
+            Some(Evidence::NotClaimed),
+            "an unclaimed capability's failing rows are out of scope, and the token says so"
+        );
+        assert_eq!(
+            evidence_of(
+                &report.capabilities,
+                &CapabilityName::parse("AqlBasic").unwrap()
+            ),
+            Some(Evidence::NotEvidenced),
+            "claimed-but-unevidenced keeps its own token"
+        );
+        assert_eq!(
+            evidence_of(
+                &report.capabilities,
+                &CapabilityName::parse("EhrOperations").unwrap()
+            ),
+            Some(Evidence::Passed)
+        );
+        // The OPTIONS pseudo-profile takes no credit from an unclaimed row.
+        let claims_options = statement(&["EhrOperations"], &["CORE", "OPTIONS"], &[]);
+        let report = compute(&claims_options, &rs, &cases, &[], &matrix(), &register());
+        assert_eq!(
+            report
+                .profiles
+                .iter()
+                .find(|(t, _)| *t == Tier::Options)
+                .map(|(_, v)| *v),
+            Some(ProfileVerdict::Fail)
         );
     }
 
