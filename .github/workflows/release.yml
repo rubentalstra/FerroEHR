@@ -140,14 +140,28 @@ jobs:
           # `dir:.` catalogues the checked-out release commit, so the document
           # describes the tree the release was cut from rather than a graph
           # resolved afterwards.
-          syft scan "dir:." --output "spdx-json=ferroehr-${TAG}.spdx.json"
-          # Refuse to attach a document that is not SPDX, rather than shipping a
-          # file that looks like an SBOM and is not.
+          #
+          # --source-name/--source-version, or the document names itself after
+          # the scanned directory: v3.17.4 shipped an SBOM whose `name` was
+          # literally "." (#2335). A consumer ingesting several SBOMs lists them
+          # by name, and one called "." is indistinguishable from any other
+          # directory scan.
+          syft scan "dir:." \
+            --source-name ferroehr --source-version "${TAG#v}" \
+            --output "spdx-json=ferroehr-${TAG}.spdx.json"
+          # Refuse to attach a document that is not SPDX, or that does not
+          # identify itself — either one ships a file that looks like an SBOM
+          # and answers no question a consumer can ask of it.
           version="$(jq -r '.spdxVersion' "ferroehr-${TAG}.spdx.json")"
           case "$version" in
             SPDX-*) ;;
             *) echo "::error::generated SBOM is not SPDX (spdxVersion=${version})"; exit 1 ;;
           esac
+          name="$(jq -r '.name' "ferroehr-${TAG}.spdx.json")"
+          if [ "$name" != "ferroehr" ]; then
+            echo "::error::SPDX document names itself '${name}', expected 'ferroehr'"
+            exit 1
+          fi
           count="$(jq '.packages | length' "ferroehr-${TAG}.spdx.json")"
           [ "$count" -gt 0 ] || { echo "::error::the SPDX SBOM lists no packages"; exit 1; }
           echo "SPDX ${version}, ${count} packages"
