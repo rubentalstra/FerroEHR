@@ -28,6 +28,19 @@ use super::metrics::{
 /// How often the sampler reads gauges + runs recorder upkeep.
 const SAMPLE_INTERVAL: Duration = Duration::from_secs(5);
 
+/// Creates the pool-connections gauge on `meter`.
+///
+/// The one place [`DB_POOL_CONNECTIONS`] becomes an instrument: same name with a
+/// second instrument kind on one meter is an `OpenTelemetry` duplicate-instrument
+/// conflict, and the pull surface would then expose whichever stream won.
+#[must_use]
+pub(super) fn pool_gauge(meter: &Meter) -> opentelemetry::metrics::Gauge<u64> {
+    meter
+        .u64_gauge(DB_POOL_CONNECTIONS)
+        .with_description("Connection pool connections by state")
+        .build()
+}
+
 /// Acquire a pooled connection, recording the wait on
 /// [`DB_POOL_ACQUIRE_DURATION`](crate::telemetry::metrics::DB_POOL_ACQUIRE_DURATION). Use in place of `pool.acquire()` on measured
 /// hot paths.
@@ -105,7 +118,7 @@ struct OtelGauges {
 impl OtelGauges {
     fn new(meter: &Meter) -> Self {
         Self {
-            pool: meter.u64_gauge(DB_POOL_CONNECTIONS).build(),
+            pool: pool_gauge(meter),
             workers: meter.u64_gauge(TOKIO_WORKERS).build(),
             global_queue_depth: meter.u64_gauge(TOKIO_GLOBAL_QUEUE_DEPTH).build(),
             alive_tasks: meter.u64_gauge(TOKIO_ALIVE_TASKS).build(),
