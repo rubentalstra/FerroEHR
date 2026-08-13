@@ -101,7 +101,23 @@ SECURITY POSTURE
   runAsNonRoot:            {{ .Values.podSecurityContext.runAsNonRoot }} (uid {{ .Values.podSecurityContext.runAsUser }})
   readOnlyRootFilesystem:  {{ .Values.securityContext.readOnlyRootFilesystem }}
   seccompProfile:          {{ .Values.securityContext.seccompProfile.type }}
-  NetworkPolicy:           {{ if .Values.networkPolicy.enabled }}default-deny-ingress (API port only){{ else }}DISABLED — enable networkPolicy for PHI workloads{{ end }}
+  NetworkPolicy:           {{ if .Values.networkPolicy.enabled }}{{ if .Values.networkPolicy.ingressFrom }}ingress on the API port only, from the networkPolicy.ingressFrom peers{{ else }}ports narrowed to the API port, sources NOT narrowed{{ end }}{{ else }}DISABLED — enable networkPolicy for PHI workloads{{ end }}
+{{- if and .Values.networkPolicy.enabled (not .Values.networkPolicy.ingressFrom) }}
+  ⚠  networkPolicy.ingressFrom is empty, so the ingress rule carries no `from` and
+     admits EVERY source on that port — other namespaces and off-cluster clients
+     included. The policy exists and reads as default-deny; it is not one. Set
+     networkPolicy.ingressFrom to your ingress controller's namespace/pods, or
+     set networkPolicy.ingressAllowAll=false to have the render refuse this state.
+{{- end }}
+{{- if .Values.adminUi.enabled }}
+  console NetworkPolicy:   {{ if .Values.adminUi.networkPolicy.enabled }}{{ if .Values.adminUi.networkPolicy.ingressFrom }}ingress on the console port only, from the adminUi.networkPolicy.ingressFrom peers{{ else }}ports narrowed to the console port, sources NOT narrowed{{ end }}; egress the CDR + DNS only{{ else }}DISABLED — enable adminUi.networkPolicy{{ end }}
+{{- if and .Values.adminUi.networkPolicy.enabled (not .Values.adminUi.networkPolicy.ingressFrom) }}
+  ⚠  adminUi.networkPolicy.ingressFrom is empty, so the console's login page is
+     reachable from EVERY source the cluster network reaches. Set it to your
+     ingress controller's namespace/pods, or set
+     adminUi.networkPolicy.ingressAllowAll=false to have the render refuse this.
+{{- end }}
+{{- end }}
 {{ if not .Values.config.auth.enabled }}
   ⚠  config.auth.enabled=false — ALL requests pass UNAUTHENTICATED. Dev only.
 {{ end -}}

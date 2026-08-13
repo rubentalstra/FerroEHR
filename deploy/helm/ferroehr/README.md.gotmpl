@@ -126,8 +126,16 @@ the Kubernetes API, and `enableServiceLinks` is off because the kubelet's
 injected `FERROEHR_*` Service variables would otherwise collide with the
 server's own configuration namespace and stop it booting.
 
-A default-deny-ingress NetworkPolicy ships enabled. **It does nothing unless
-your CNI enforces NetworkPolicy** — check yours; several do not.
+A NetworkPolicy ships enabled, and it admits inbound traffic to the API (and
+management) port only. **It narrows PORTS, not SOURCES, until you set
+`networkPolicy.ingressFrom`**: an ingress rule with no `from` admits every
+source, including other namespaces
+([NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)),
+so the shipped policy reads as default-deny while admitting everything on that
+port. Set `ingressFrom` to your ingress controller, or set
+`networkPolicy.ingressAllowAll=false` to have the chart refuse to render the
+open state at all. And note that **none of it does anything unless your CNI
+enforces NetworkPolicy** — check yours; several do not.
 
 {{ template "chart.requirementsSection" . }}
 

@@ -1,8 +1,8 @@
 # ferroehr
 
-Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs, default-deny-ingress workload that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
+Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 6.0.5](https://img.shields.io/badge/Version-6.0.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.5](https://img.shields.io/badge/AppVersion-3.17.5-informational?style=flat-square)
+![Version: 6.0.6](https://img.shields.io/badge/Version-6.0.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.5](https://img.shields.io/badge/AppVersion-3.17.5-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ add — `helm repo add` does not apply to this chart and never will:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.5 \
+  --version 6.0.6 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.5
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `6.0.5` |
+| the **chart** (templates, defaults, this document) | `--version` | `6.0.6` |
 | the **server image** | `image.tag` | `3.17.5` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature** — who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.5 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.6 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.5 \
 A **SLSA build provenance attestation** — what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.5 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.6 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.5 \
   -R rubentalstra/FerroEHR
@@ -126,8 +126,16 @@ the Kubernetes API, and `enableServiceLinks` is off because the kubelet's
 injected `FERROEHR_*` Service variables would otherwise collide with the
 server's own configuration namespace and stop it booting.
 
-A default-deny-ingress NetworkPolicy ships enabled. **It does nothing unless
-your CNI enforces NetworkPolicy** — check yours; several do not.
+A NetworkPolicy ships enabled, and it admits inbound traffic to the API (and
+management) port only. **It narrows PORTS, not SOURCES, until you set
+`networkPolicy.ingressFrom`**: an ingress rule with no `from` admits every
+source, including other namespaces
+([NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)),
+so the shipped policy reads as default-deny while admitting everything on that
+port. Set `ingressFrom` to your ingress controller, or set
+`networkPolicy.ingressAllowAll=false` to have the chart refuse to render the
+open state at all. And note that **none of it does anything unless your CNI
+enforces NetworkPolicy** — check yours; several do not.
 
 ## Requirements
 
@@ -166,8 +174,9 @@ Kubernetes: `>=1.36.0-0`
 | adminUi.ingress.enabled | bool | `false` | Publish the console through an Ingress. The console is a human-facing web UI, so unlike the API this is the normal way to reach it. |
 | adminUi.ingress.hosts | list | `[]` | Hosts and paths. |
 | adminUi.ingress.tls | list | `[]` | TLS blocks. |
-| adminUi.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for the console. Ingress admits `ingressFrom`; egress admits the CDR Service and DNS, and nothing else. The console is a REST client of the CDR by mandate, so this is enforceable rather than aspirational. |
-| adminUi.networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the console port. Empty means the rule carries no `from`, which admits EVERY source — set this to your ingress-controller namespace/pods. |
+| adminUi.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for the console. Egress admits the CDR Service and DNS, and nothing else — the console is a REST client of the CDR by mandate, so that half is enforceable rather than aspirational. Ingress narrows the console's PORT unconditionally and its SOURCES only when `ingressFrom` is set. |
+| adminUi.networkPolicy.ingressAllowAll | bool | `true` | Admit every source while `ingressFrom` is empty — the posture this chart SHIPS for the console, stated as a value rather than left implicit in an empty list. Set it to `false` to have the render REFUSED while `ingressFrom` is empty, instead of quietly exposing the console to everything. It only decides the empty case — a non-empty `ingressFrom` always narrows. |
+| adminUi.networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the console port. Empty means the rule carries no `from`, which admits EVERY source — other namespaces and off-cluster clients included (https://kubernetes.io/docs/concepts/services-networking/network-policies/). This is the human-facing login surface, so SET this to your ingress-controller namespace/pods. |
 | adminUi.nodeSelector | object | `{}` | Node selector. |
 | adminUi.podSecurityContext | object | `{"fsGroup":65532,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"},"supplementalGroupsPolicy":"Strict"}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. The user-namespace setting is NOT mirrored here — it is the release-wide `hostUsers` key, because a posture that differs between two workloads of one release is a posture nobody can state. |
 | adminUi.preStopSleepSeconds | int | `5` | Lame-duck pause before SIGTERM, in seconds (0 disables) — the same endpoint-propagation race the server's `preStopSleepSeconds` covers. |
@@ -286,7 +295,8 @@ Kubernetes: `>=1.36.0-0`
 | networkPolicy.egress.database | object | `{"port":5432,"to":[]}` | The database, which is NOT optional: the server cannot pass readiness without it. Rendering an egress policy with no database destination is a refusal, not a warning (see the template) — an egress policy that forgets the DSN is a total outage that looks like a database failure. `to` takes raw NetworkPolicyPeer entries: a `podSelector`/ `namespaceSelector` for an in-cluster database, or an `ipBlock` for a managed one. `port` is the DSN's port. |
 | networkPolicy.egress.enabled | bool | `false` | Refuse all outbound traffic except DNS, `database` and `rules`. |
 | networkPolicy.egress.rules | list | `[]` | Every other destination, as raw NetworkPolicyEgressRule entries — one per integration you have switched on. See the book's table. |
-| networkPolicy.enabled | bool | `true` | Install a default-deny-ingress NetworkPolicy that only admits traffic to the API (and management) port. Strongly recommended for a PHI workload. |
+| networkPolicy.enabled | bool | `true` | Install a NetworkPolicy that admits inbound traffic to the API (and management) port and nothing else. Strongly recommended for a PHI workload — but it narrows PORTS unconditionally and SOURCES only when `ingressFrom` is set, so "networkPolicy.enabled=true" alone is not a source restriction. |
+| networkPolicy.ingressAllowAll | bool | `true` | Admit every source while `ingressFrom` is empty — which is the posture this chart SHIPS, stated as a value rather than left implicit in an empty list. Set it to `false` to make "no open ingress" a machine-checked fact: with `ingressFrom` still empty the render is then REFUSED instead of quietly producing a policy that admits everything while reading as default-deny. It only decides the empty case — a non-empty `ingressFrom` always narrows. |
 | networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the API port. Empty means the rule carries no `from` at all, and a NetworkPolicy ingress rule without `from` admits EVERY source — other namespaces and off-cluster clients included, not just this namespace (https://kubernetes.io/docs/concepts/services-networking/network-policies/). Only the port list is narrowed in that state, so SET this to your ingress-controller namespace/pods for a PHI workload. |
 | nodeSelector | object | `{}` | Scheduling. |
 | podAnnotations | object | `{}` | Extra annotations on the pod template. Note a change here rolls the Deployment. |

@@ -503,8 +503,10 @@ ingress:
   tls: []
 
 networkPolicy:
-  # -- Install a default-deny-ingress NetworkPolicy that only admits traffic to
-  # the API (and management) port. Strongly recommended for a PHI workload.
+  # -- Install a NetworkPolicy that admits inbound traffic to the API (and
+  # management) port and nothing else. Strongly recommended for a PHI workload —
+  # but it narrows PORTS unconditionally and SOURCES only when `ingressFrom` is
+  # set, so "networkPolicy.enabled=true" alone is not a source restriction.
   enabled: true
   # -- Ingress `from` selectors admitted to the API port. Empty means the rule
   # carries no `from` at all, and a NetworkPolicy ingress rule without `from`
@@ -514,6 +516,13 @@ networkPolicy:
   # Only the port list is narrowed in that state, so SET this to your
   # ingress-controller namespace/pods for a PHI workload.
   ingressFrom: []
+  # -- Admit every source while `ingressFrom` is empty — which is the posture
+  # this chart SHIPS, stated as a value rather than left implicit in an empty
+  # list. Set it to `false` to make "no open ingress" a machine-checked fact:
+  # with `ingressFrom` still empty the render is then REFUSED instead of quietly
+  # producing a policy that admits everything while reading as default-deny.
+  # It only decides the empty case — a non-empty `ingressFrom` always narrows.
+  ingressAllowAll: true
   # ── Egress ────────────────────────────────────────────────────────────────
   # Default-deny egress: everything outbound is refused except what is listed
   # here. Off by default, and that is a deliberate choice rather than laziness —
@@ -834,15 +843,25 @@ adminUi:
   # -- Key within `existingSecret` carrying the client secret.
   existingSecretKey: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET
   networkPolicy:
-    # -- Install a NetworkPolicy for the console. Ingress admits `ingressFrom`;
-    # egress admits the CDR Service and DNS, and nothing else. The console is a
-    # REST client of the CDR by mandate, so this is enforceable rather than
-    # aspirational.
+    # -- Install a NetworkPolicy for the console. Egress admits the CDR Service
+    # and DNS, and nothing else — the console is a REST client of the CDR by
+    # mandate, so that half is enforceable rather than aspirational. Ingress
+    # narrows the console's PORT unconditionally and its SOURCES only when
+    # `ingressFrom` is set.
     enabled: true
     # -- Ingress `from` selectors admitted to the console port. Empty means the
-    # rule carries no `from`, which admits EVERY source — set this to your
+    # rule carries no `from`, which admits EVERY source — other namespaces and
+    # off-cluster clients included
+    # (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+    # This is the human-facing login surface, so SET this to your
     # ingress-controller namespace/pods.
     ingressFrom: []
+    # -- Admit every source while `ingressFrom` is empty — the posture this chart
+    # SHIPS for the console, stated as a value rather than left implicit in an
+    # empty list. Set it to `false` to have the render REFUSED while `ingressFrom`
+    # is empty, instead of quietly exposing the console to everything. It only
+    # decides the empty case — a non-empty `ingressFrom` always narrows.
+    ingressAllowAll: true
   # -- Pod-level security context. Mirrors the server's; a second workload is
   # where a hardened posture is most easily lost. The user-namespace setting is
   # NOT mirrored here — it is the release-wide `hostUsers` key, because a

@@ -1,8 +1,9 @@
 # Kubernetes & Helm
 
 The `ferroehr` Helm chart deploys FerroEHR as a hardened, production-shaped
-Kubernetes workload — non-root, read-only root filesystem, default-deny ingress,
-its own user namespace — against an **external** PostgreSQL 18. This chapter
+Kubernetes workload — non-root, read-only root filesystem, a NetworkPolicy that
+admits its serving port only, its own user namespace — against an **external**
+PostgreSQL 18. This chapter
 covers installing it, verifying what you installed, the database role model it
 expects, the security posture it pins, the health probes, the optional
 integrations, and upgrades.
@@ -37,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.5 -n ferroehr \
+  --version 6.0.6 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.5
 ```
@@ -54,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.5
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.6
 ```
 
 ### Pin two versions, not one
@@ -67,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 6.0.5` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 6.0.6` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=3.17.5` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest —
@@ -166,7 +167,7 @@ metadata lists — the server, and the optional admin console.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.5 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.6 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -360,7 +361,7 @@ renders pin the exact bytes so a changed default fails a diff.
 | `supplementalGroupsPolicy` | `Strict` — only the groups the manifest names |
 | ServiceAccount token | not mounted (the workload never calls the K8s API) |
 | `enableServiceLinks` | `false` (see below — not a preference) |
-| NetworkPolicy | default-deny ingress; only the API (and management) port admitted |
+| NetworkPolicy | ports narrowed to the API (and management) port; **sources admitted unless you narrow them** with `networkPolicy.ingressFrom` — set `networkPolicy.ingressAllowAll: false` to have the chart refuse the open state (see [§Ingress](hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours)) |
 
 The whole set satisfies the Pod Security **Restricted** profile, and the
 [deployment probe harness](./kubernetes-hardening.md) reads it back off a running
@@ -406,7 +407,11 @@ Two limits worth stating plainly. First, with `networkPolicy.ingressFrom` empty
 the rendered ingress rule carries no `from` selector, and a rule without `from`
 admits **every** source — other namespaces included. Only the port list is
 narrowed in that state, so set `ingressFrom` to your ingress controller for a PHI
-workload. Second, a NetworkPolicy is only as real as the CNI that implements it:
+workload, and set `networkPolicy.ingressAllowAll: false` if an open ingress rule
+must never render at all; the full treatment is
+[§Ingress](hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours).
+The console's own policy carries the same pair under `adminUi.networkPolicy`.
+Second, a NetworkPolicy is only as real as the CNI that implements it:
 on a cluster whose network plugin does not enforce NetworkPolicy the object is
 documentation rather than a control, and nothing in Kubernetes reports that.
 Confirm it by attempting a connection the policy should refuse.
@@ -551,7 +556,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.5 -n ferroehr --reuse-values \
+  --version 6.0.6 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -696,7 +701,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.5 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.6 \
   -n ferroehr -f my-values.yaml | less
 ```
 

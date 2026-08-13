@@ -1,21 +1,29 @@
 ---
 # Source: ferroehr/templates/networkpolicy.yaml
-# Default-deny ingress for the ferroehr pods, admitting traffic ONLY to the
-# API port (and the management port when it runs on its own listener). Every
-# other inbound port is denied. A PHI workload should never be reachable on
-# anything but its serving port.
-# The SOURCE is narrowed only when networkPolicy.ingressFrom is set: a rule with
-# no `from` admits every source, including other namespaces
-# (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+# Ingress policy for the ferroehr pods, admitting traffic ONLY to the API port
+# (and the management port when it runs on its own listener). Every other inbound
+# port is denied. A PHI workload should never be reachable on anything but its
+# serving port.
+#
+# PORTS are narrowed unconditionally; SOURCES only when networkPolicy.ingressFrom
+# is set. An ingress rule with no `from` admits every source — other namespaces
+# and off-cluster clients included
+# (https://kubernetes.io/docs/concepts/services-networking/network-policies/ —
+# "If no ... from is specified ... it allows all traffic"). So there are three
+# states, and the third exists because the first two look identical in every
+# summary of the policy:
+#   ingressFrom set                              → sources narrowed to those peers
+#   ingressFrom empty, ingressAllowAll true      → EVERY source admitted (shipped)
+#   ingressFrom empty, ingressAllowAll false     → refused at render, below
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: ferroehr
   annotations:
     kubernetes.io/description: >-
-      Default-deny ingress for the CDR: only the API port (and the management port when enabled) is admitted. An empty ingressFrom admits every source — narrow it for a PHI workload.
+      Ingress for the CDR: only the API port (and the management port when enabled), and only from the networkPolicy.ingressFrom peers.
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -89,7 +97,7 @@ metadata:
     kubernetes.io/description: >-
       Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -110,7 +118,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -142,7 +150,7 @@ kind: Secret
 metadata:
   name: ferroehr-env
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -168,7 +176,7 @@ kind: Secret
 metadata:
   name: ferroehr-config
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -189,7 +197,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -380,7 +388,7 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -414,7 +422,7 @@ metadata:
     kubernetes.io/description: >-
       The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -645,7 +653,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -679,7 +687,7 @@ kind: Ingress
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"
@@ -717,7 +725,7 @@ kind: ServiceMonitor
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.5
+    helm.sh/chart: ferroehr-6.0.6
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.5"

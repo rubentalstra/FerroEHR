@@ -1451,12 +1451,13 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         operations: 4,
     },
     NonSpecFamily {
-        // SM I_ADMIN_ARCHIVE's two calls; nothing released moves a resource to
-        // archival storage.
+        // SM I_ADMIN_ARCHIVE's two calls plus the two restore routes, which the
+        // SM declares no operation for at all; nothing released moves a resource
+        // to archival storage in either direction.
         label: "the ADMIN archive extension",
         prefixes: &["/ferroehr/rest/openehr/v1/admin/archive/"],
         flag: "no its-rest operation governs this",
-        operations: 2,
+        operations: 4,
     },
     NonSpecFamily {
         // The SM archetype/artefact operations of I_DEFINITION_ADL14 +

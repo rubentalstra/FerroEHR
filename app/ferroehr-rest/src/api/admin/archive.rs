@@ -3,7 +3,7 @@
 
 //! The ADMIN **archive** wire — **our own extension**.
 //!
-//! No openEHR ITS-REST operation governs either route here. The released Admin
+//! No openEHR ITS-REST operation governs any route here. The released Admin
 //! API is exactly two EHR deletes (`specifications/admin.openapi.yaml`), while
 //! the SM declares an archive interface the release never surfaced —
 //! `docs/specs/openehr/SM/docs/UML/classes/i_admin_archive.adoc`:
@@ -16,16 +16,25 @@
 //! **excluded from ITS-REST wire conformance**: they gate the `EhrArchive` /
 //! `DemographicArchive` CAPABILITY verdicts only.
 //!
-//! Both are all-or-nothing: every id in the list is existence-checked before
-//! anything is written, so an unknown id leaves the repository untouched
+//! Every route is all-or-nothing: each id in the list is existence-checked
+//! before anything is written, so an unknown id leaves the repository untouched
 //! (the SM declares the not-found error on the operation, not per element).
-//! Each call marks the objects archived AND physically moves their rows to the
+//! Archiving marks the objects archived AND physically moves their rows to the
 //! server's cold storage tier; archival stays read-neutral — the archived
 //! objects remain retrievable, served from that tier — so no resource
 //! representation changes and the success is a bodyless `204`.
 //!
-//! Gating: mounted under `/admin/`, so they inherit the group's RBAC Admin
-//! class (`401`/`403`, our own authorization design) and the
+//! The two `…/restore` routes are the reverse movement, and they realize NO SM
+//! operation: `i_admin_archive.adoc` declares the two archive calls and no
+//! un-archive counterpart, so naming one would be a false claim. They are our
+//! own design end to end — an archival tier is only trustworthy if the move it
+//! performs can be undone deliberately rather than only as the side effect of a
+//! write (which thaws the object it touches). Restoring is idempotent in the
+//! same way archiving is: an object with nothing archived restores nothing and
+//! succeeds.
+//!
+//! Gating: mounted under `/admin/`, so every route inherits the group's RBAC
+//! Admin class (`401`/`403`, our own authorization design) and the
 //! `AppConfig::admin.enabled` config gate (`405` with an empty `Allow` when
 //! off) unchanged.
 
@@ -57,6 +66,8 @@ pub(crate) fn archive_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(admin_archive_ehrs))
         .routes(routes!(admin_archive_parties))
+        .routes(routes!(admin_restore_archived_ehrs))
+        .routes(routes!(admin_restore_archived_parties))
 }
 
 /// Move selected EHRs to archival storage (`POST /admin/archive/ehrs`).
@@ -167,6 +178,135 @@ pub(crate) async fn admin_archive_parties(
     guarded_dispatch(state, "admin_archive_parties", parts, dispatch).await
 }
 
+/// Bring selected EHRs back from archival storage
+/// (`POST /admin/archive/ehrs/restore`).
+///
+/// **Our own extension — no ITS-REST operation governs this, and it realizes no
+/// SM operation either** (module docs): `i_admin_archive.adoc` declares
+/// `archive_ehrs` / `archive_parties` and no un-archive counterpart. The reverse
+/// of [`admin_archive_ehrs`], addressed as an action on the archive itself
+/// because a `DELETE` carrying the id list would be the one method whose
+/// "content … has no generally defined semantics" (RFC 9110 §9.3.5), while
+/// `POST` is exactly "providing a block of data … to a data-handling process"
+/// (RFC 9110 §9.3.3).
+#[utoipa::path(
+    post, path = "/admin/archive/ehrs/restore", tag = "admin-archive",
+    request_body(content = serde_json::Value,
+                 description = "`{ \"ehr_ids\": [ … ] }` — the EHR ids to bring \
+                                back from archival storage, in the same shape \
+                                the archive route takes. An empty list restores \
+                                nothing and succeeds.",
+                 example = json!({ "ehr_ids": ["7d44b88c-4199-4bad-97dc-d78268e01398"] })),
+    responses(
+        (status = 204, description = "Every archived versioned object of every \
+                                      named EHR is back in the primary storage \
+                                      tier and its archive marker is gone \
+                                      (idempotent — an EHR with nothing \
+                                      archived restores nothing and succeeds). \
+                                      No body: like archiving, restoring is a \
+                                      move, and reads were already served \
+                                      unchanged from the archival tier, so no \
+                                      representation changed. What DOES change \
+                                      is AQL visibility — the query engine reads \
+                                      the primary tier only, so a restored \
+                                      record appears in query results again."),
+        (status = 400, description = "The body is not `{ \"ehr_ids\": [ … ] }`, \
+                                      or an id is not a well-formed UUID. The \
+                                      whole request is rejected before anything \
+                                      is restored.",
+         body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal). Our own authorization design \
+                                      — the released admin operations carry \
+                                      `security: []`.",
+         body = serde_json::Value),
+        (status = 403, description = "Authenticated but not in the Admin class \
+                                      (`OperationClass::Admin`, keyed off the \
+                                      `/admin/` path). Our own authorization \
+                                      design.",
+         body = serde_json::Value),
+        (status = 404, description = "An id in the list names no EHR. Nothing is \
+                                      restored (all-or-nothing) — the same \
+                                      existence check the archive half applies.",
+         body = serde_json::Value),
+        (status = 405, description = "The admin API is disabled on this server \
+                                      (`AppConfig::admin.enabled`, default \
+                                      false), answered with an empty `Allow` \
+                                      per RFC 9110 §10.2.1.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      `application/json`.",
+         body = serde_json::Value)
+    )
+)]
+pub(crate) async fn admin_restore_archived_ehrs(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "admin_restore_archived_ehrs", parts, dispatch).await
+}
+
+/// Bring selected parties back from archival storage
+/// (`POST /admin/archive/parties/restore`).
+///
+/// **Our own extension — no ITS-REST operation governs this, and it realizes no
+/// SM operation either** (module docs). The reverse of
+/// [`admin_archive_parties`], with the same action-on-the-archive shape its EHR
+/// twin above documents.
+#[utoipa::path(
+    post, path = "/admin/archive/parties/restore", tag = "admin-archive",
+    request_body(content = serde_json::Value,
+                 description = "`{ \"party_ids\": [ … ] }` — the demographic \
+                                PARTY version-container ids to bring back from \
+                                archival storage, in the same shape the archive \
+                                route takes. An empty list restores nothing and \
+                                succeeds.",
+                 example = json!({ "party_ids": ["8849182c-82ad-4088-a07f-48ead4180515"] })),
+    responses(
+        (status = 204, description = "Every named party's archived versioned \
+                                      object is back in the primary storage \
+                                      tier and its archive marker is gone \
+                                      (idempotent). No body — as for the EHR \
+                                      half, whose declaration states the AQL \
+                                      visibility effect."),
+        (status = 400, description = "The body is not `{ \"party_ids\": [ … ] }`, \
+                                      or an id is not a well-formed UUID. The \
+                                      whole request is rejected before anything \
+                                      is restored.",
+         body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal). Our own authorization design.",
+         body = serde_json::Value),
+        (status = 403, description = "Authenticated but not in the Admin class. \
+                                      Our own authorization design.",
+         body = serde_json::Value),
+        (status = 404, description = "An id in the list names no demographic \
+                                      PARTY root (a `PARTY_RELATIONSHIP` id is \
+                                      not a party root and is refused the same \
+                                      way). The check spans BOTH storage tiers, \
+                                      so an archived party is found and \
+                                      restored, never reported missing. Nothing \
+                                      is restored.",
+         body = serde_json::Value),
+        (status = 405, description = "The admin API is disabled on this server \
+                                      (`AppConfig::admin.enabled`, default \
+                                      false), answered with an empty `Allow` \
+                                      per RFC 9110 §10.2.1.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      `application/json`.",
+         body = serde_json::Value)
+    )
+)]
+pub(crate) async fn admin_restore_archived_parties(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "admin_restore_archived_parties", parts, dispatch).await
+}
+
 // ── dispatch ─────────────────────────────────────────────────────────────────
 
 pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
@@ -198,6 +338,16 @@ async fn run(
         "admin_archive_parties" => {
             let ids = id_list(&negotiate::json_value(h, &parts.body)?, "party_ids")?;
             state.backend().archive_parties(ids).await?;
+            Ok(negotiate::empty(StatusCode::NO_CONTENT))
+        }
+        "admin_restore_archived_ehrs" => {
+            let ids = id_list(&negotiate::json_value(h, &parts.body)?, "ehr_ids")?;
+            state.backend().restore_archived_ehrs(ids).await?;
+            Ok(negotiate::empty(StatusCode::NO_CONTENT))
+        }
+        "admin_restore_archived_parties" => {
+            let ids = id_list(&negotiate::json_value(h, &parts.body)?, "party_ids")?;
+            state.backend().restore_archived_parties(ids).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         other => Err(RestError(ApiError::Internal(format!(
