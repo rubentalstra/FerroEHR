@@ -1,0 +1,1658 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Cluster hardening - FerroEHR Documentation</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- Content-Security-Policy as a <meta> element, because GitHub Pages serves
+             static files and cannot set response headers. A meta CSP is genuinely
+             weaker than the header: `frame-ancestors`, `report-uri` and `sandbox` are
+             IGNORED in meta form (w3c CSP3 §3.3), and it applies only after the parser
+             reaches it. It still stops an injected external script or an exfiltrating
+             `connect-src`, which is the realistic risk for a docs site, so it is worth
+             having while being honest that the site cannot carry the full header set —
+             documented on the security page. `unsafe-inline` is required: mdBook emits
+             inline theme/sidebar scripts and inline styles of its own. -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'">
+        <meta name="referrer" content="strict-origin-when-cross-origin">
+        <!-- Self-hosted KaTeX stylesheet (fonts under katex/fonts/) — the site
+             serves no external requests, so mdbook-katex runs with no-css = true
+             and the vendored sheet is linked here. Version 0.16.4, matching the
+             KaTeX the katex-rs renderer inside mdbook-katex bundles (its
+             KATEX-VERSION file); provenance in website/book/KATEX-PROVENANCE.md. -->
+        <link rel="stylesheet" href="../katex/katex.min.css">
+
+        <meta name="description" content="User documentation for FerroEHR, a pure-Rust openEHR Clinical Data Repository.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/custom-79743c4e.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "coal";
+            window.path_to_searchindex_js = "../searchindex-c4f53235.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a28755cd.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">FerroEHR Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/rubentalstra/FerroEHR" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/rubentalstra/FerroEHR/edit/develop/website/book/src/installation/kubernetes-hardening.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="cluster-hardening-what-the-chart-does-and-what-you-must"><a class="header" href="#cluster-hardening-what-the-chart-does-and-what-you-must">Cluster hardening: what the chart does, and what you must</a></h1>
+<p>The <a href="kubernetes.html">Kubernetes chapter</a> documents the chart. This page is the
+other half: an audit of this deployment against the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html">OWASP Kubernetes Security
+Cheat
+Sheet</a>,
+split by <strong>who can actually apply each control</strong>.</p>
+<p>That split is the point of this page. A workload chart controls its pod security
+context, its resource bounds, its NetworkPolicy, its ServiceAccount and how it
+consumes secrets. It cannot patch a node, set an API-server flag, configure etcd,
+authenticate a kubelet, or install an admission controller. For those, the honest
+deliverable is not a setting but a statement of <strong>what you owe and what happens if
+you do not</strong> — because a deployment that inherits an unchecked assumption is not
+secured by the chart’s own hardening.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>Several controls here are ones <strong>no application-level hardening can compensate
+for</strong>. If the kubelet accepts anonymous requests, or anything untrusted can read
+etcd, then every control this project ships — non-root, read-only rootfs, dropped
+capabilities, RBAC, ABAC, the audit trail — is bypassable, because the attacker
+is beneath the layer they operate in. Those are marked below.</p>
+</blockquote>
+<p>Claims on this page about the running deployment come from <code>kubectl</code>, <code>crictl</code> or
+<code>/proc</code> on a live cluster, not from reading <code>values.yaml</code>.</p>
+<h2 id="the-ownership-map"><a class="header" href="#the-ownership-map">The ownership map</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Cheat-sheet control</th><th>Owner</th><th>Where</th></tr>
+</thead>
+<tbody>
+<tr><td>Host hardening, OS patching, node firewall</td><td>operator</td><td><a href="#host-hardening-and-the-version-window">below</a></td></tr>
+<tr><td>Supported Kubernetes version window</td><td>operator (chart states the floor)</td><td><a href="#host-hardening-and-the-version-window">below</a></td></tr>
+<tr><td>Rolling upgrades rather than mutating containers</td><td><strong>chart</strong></td><td><code>strategy</code> in values; <a href="#upgrades-roll-they-do-not-replace">below</a></td></tr>
+<tr><td>Kubernetes security advisories</td><td>operator</td><td><a href="#security-advisories">below</a></td></tr>
+<tr><td>Kubernetes Dashboard</td><td>operator (we ship none)</td><td><a href="#the-dashboard-we-do-not-ship">below</a></td></tr>
+<tr><td>etcd access + encryption at rest</td><td>operator</td><td><a href="#etcd-and-what-our-secrets-contain">below</a></td></tr>
+<tr><td>Control-plane and kubelet ports</td><td>operator</td><td><a href="#ports-theirs-and-ours">below</a></td></tr>
+<tr><td>The workload’s own port surface</td><td><strong>chart</strong></td><td><a href="#ports-theirs-and-ours">below</a></td></tr>
+<tr><td>Cluster API access control, MFA</td><td>operator</td><td><a href="#cluster-api-access">below</a></td></tr>
+<tr><td>Cluster RBAC (<code>Node,RBAC</code>, <code>NodeRestriction</code>)</td><td>operator</td><td><a href="#cluster-rbac-and-why-this-chart-needs-none">below</a></td></tr>
+<tr><td>The workload’s own RBAC</td><td><strong>chart</strong> — deliberately none</td><td><a href="#cluster-rbac-and-why-this-chart-needs-none">below</a></td></tr>
+<tr><td>Kubelet authentication/authorization</td><td>operator</td><td><a href="#kubelet-access">below</a></td></tr>
+<tr><td>Minimal, current, authorized images</td><td><strong>chart/CI</strong></td><td><a href="#the-build-phase-and-what-distroless-costs">below</a></td></tr>
+<tr><td>Namespace isolation</td><td><strong>chart</strong> (namespace-scoped by construction)</td><td><a href="#namespaces-and-the-two-tenant-models">below</a></td></tr>
+<tr><td>Image provenance at admission</td><td>operator (we publish the attestations)</td><td><a href="#image-provenance-at-admission">below</a></td></tr>
+<tr><td>Continuous scanning of published images</td><td><strong>CI</strong></td><td><a href="#continuous-scanning-of-published-images">below</a></td></tr>
+<tr><td>Pod/container security context</td><td><strong>chart</strong></td><td><a href="#the-security-context-and-what-keeps-it-true">below</a></td></tr>
+<tr><td>Pod Security Admission enforcement</td><td>operator (one <code>kubectl label</code>)</td><td><a href="#pod-security-admission-complying-versus-being-refused">below</a></td></tr>
+<tr><td>Service mesh</td><td>neither — recorded decision</td><td><a href="#service-mesh-a-recorded-decision">below</a></td></tr>
+<tr><td>Centralized policy management</td><td>operator, for admission only</td><td><a href="#centralized-policy-and-which-engine">below</a></td></tr>
+<tr><td>Container resource bounds</td><td><strong>chart</strong></td><td><a href="#resource-bounds-four-layers">below</a></td></tr>
+<tr><td>Namespace <code>ResourceQuota</code>/<code>LimitRange</code></td><td>operator</td><td><a href="#resource-bounds-four-layers">below</a></td></tr>
+<tr><td>Egress restriction</td><td><strong>chart</strong> (mechanism) + operator (destinations)</td><td><a href="#egress-deny-by-default-and-what-it-breaks">below</a></td></tr>
+<tr><td>Secrets encrypted at rest</td><td>operator</td><td><a href="#secrets-at-rest-and-what-ours-contain">below</a></td></tr>
+<tr><td>Runtime/syscall detection</td><td>operator (unusually cheap here)</td><td><a href="#runtime-detection-on-a-shell-less-image">below</a></td></tr>
+<tr><td>Container sandboxing</td><td>neither — recorded decision</td><td><a href="#sandboxing-is-not-tenant-isolation">below</a></td></tr>
+<tr><td>Kernel-module loading</td><td><strong>satisfied by the chart</strong></td><td><a href="#kernel-modules-already-impossible">below</a></td></tr>
+<tr><td>Replica behavioural deviation</td><td>operator (from metrics we publish)</td><td><a href="#replica-deviation-and-the-outbound-inventory">below</a></td></tr>
+<tr><td>Breach containment + credential rotation</td><td>operator (procedure is ours)</td><td><a href="#breach-containment-and-rotating-credentials">below</a></td></tr>
+<tr><td>Cluster API audit logging</td><td>operator</td><td><a href="#logging-two-streams-that-are-not-interchangeable">below</a></td></tr>
+<tr><td>Container logging</td><td><strong>chart/app</strong></td><td><a href="#logging-two-streams-that-are-not-interchangeable">below</a></td></tr>
+<tr><td>Managed control plane</td><td>provider</td><td><a href="#on-a-managed-control-plane">below</a></td></tr>
+<tr><td>Supply chain</td><td><strong>CI</strong>, with two gaps</td><td><a href="#the-supply-chain-map">below</a></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="host-hardening-and-the-version-window"><a class="header" href="#host-hardening-and-the-version-window">Host hardening and the version window</a></h2>
+<p><strong>Operator’s.</strong> Keep the node OS patched, hardened and firewalled; a workload chart
+cannot reach any of it. The cheat sheet’s list applies unchanged.</p>
+<p>The part worth stating precisely is the <strong>version window</strong>. Upstream Kubernetes
+maintains release branches for the <strong>three most recent minor releases</strong>, each
+receiving roughly a year of patch support
+(<a href="https://kubernetes.io/releases/">kubernetes.io/releases</a>). As of this writing
+that is <strong>1.34, 1.35 and 1.36</strong>. A cluster below that window receives <strong>no
+security backports at all</strong> — a published CVE in the API server or kubelet simply
+stays open on it.</p>
+<p>The chart’s <code>kubeVersion: "&gt;=1.36.0-0"</code> is a <strong>compatibility</strong> floor: 1.36 is
+where the newest field it renders — <code>hostUsers</code>, user namespaces — became
+stable, which is what lets every field it renders apply unconditionally instead
+of being gated into silence on the clusters that most needed it. See <em>Beyond
+Restricted: the user namespace</em> below for what that buys.</p>
+<p>A version gate is a silent absence; a floor is a loud refusal. For a workload
+holding PHI the loud one is correct, so the chart declares the floor and refuses
+below it rather than installing with a safety property quietly inapplicable.</p>
+<p>If you run outside the supported window, you have accepted that the platform
+beneath this CDR is unpatched, and no setting in <code>values.yaml</code> changes that.</p>
+<h2 id="upgrades-roll-they-do-not-replace"><a class="header" href="#upgrades-roll-they-do-not-replace">Upgrades roll, they do not replace</a></h2>
+<p><strong>Chart’s.</strong> The cheat sheet asks that a new version arrive by rolling update
+rather than by mutating a running container. The chart sets the strategy
+explicitly rather than inheriting the API server’s percentages:</p>
+<pre><code class="language-yaml">strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0        # served capacity never drops
+</code></pre>
+<p><code>maxUnavailable: 0</code> means a replacement pod must pass its readiness probe before
+an old one is removed. At the default two replicas this is identical to what
+Kubernetes computed from <code>25%</code> (it rounds down to zero); above two replicas the
+percentage default would have taken a pod out of service, and this does not. The
+trade-off is real and fails in the safe direction: on a cluster with no spare
+scheduling capacity a <code>maxUnavailable: 0</code> rollout <strong>stalls visibly</strong> instead of
+proceeding at reduced capacity.</p>
+<p>Verified on a live cluster rather than argued: a probe pod issued <strong>400
+sequential requests</strong> to the Service through a full <code>helm upgrade</code> — with
+<code>Killing</code>/<code>Started</code> events for both replicas inside the window — and recorded
+<strong>zero failures</strong>, while the ReplicaSet history showed revision 1 scaled to zero
+as revision 2 scaled up (a roll, not a recreate) and the Deployment reported
+<code>Available=True (MinimumReplicasAvailable)</code> throughout.</p>
+<h2 id="security-advisories"><a class="header" href="#security-advisories">Security advisories</a></h2>
+<p><strong>Operator’s, with a decision recorded on our side.</strong></p>
+<p>You must follow
+<a href="https://groups.google.com/g/kubernetes-announce"><code>kubernetes-announce</code></a> and the
+<a href="https://kubernetes.io/docs/reference/issues-security/official-cve-feed/">official advisory
+feed</a>.
+Kubernetes CVEs are announced there, and nothing in this repository will tell you
+about them.</p>
+<p><strong>This project does not track Kubernetes platform advisories, deliberately.</strong> The
+decision, so it is not mistaken for an oversight: we run no cluster and cannot act
+on a node or control-plane CVE, and a watcher that opened issues we could only
+close as “the operator’s” would be noise that trains people to ignore it. What we
+<em>do</em> track is what we ship — dependency advisories (<code>cargo deny</code>, on every
+change), our own container images (scheduled scans), and the openEHR
+specifications (release watchers).</p>
+<p>A vulnerability in Kubernetes itself is reported to
+<a href="https://kubernetes.io/docs/reference/issues-security/security/">Kubernetes</a>, not
+to this project. A vulnerability in FerroEHR — including in this chart — comes to
+us, through <code>SECURITY.md</code>.</p>
+<h2 id="the-dashboard-we-do-not-ship"><a class="header" href="#the-dashboard-we-do-not-ship">The dashboard we do not ship</a></h2>
+<p><strong>Operator’s.</strong> This chart installs no Kubernetes Dashboard, and nothing in it
+depends on one. If you install one, the cheat sheet’s conditions apply: never
+expose it publicly, give it a limited-privilege ServiceAccount, and put an
+authenticating reverse proxy in front of it if it must be reachable at all.</p>
+<p>The reason this section is not simply “not applicable” is that <strong>the same
+reasoning applies to two surfaces that <em>are</em> ours</strong>, and an operator hardening
+“the dashboard” should find them here:</p>
+<ul>
+<li><strong><code>/management/*</code></strong> — the ops-introspection surface (<code>info</code>, <code>prometheus</code>,
+<code>metrics</code>, <code>env</code>, <code>loggers</code>, <code>flamegraph</code>). It is a privileged read onto the
+deployment: <code>env</code> renders the effective configuration and <code>flamegraph</code> profiles
+the live process. The chart ships the master switch on and <strong>every endpoint
+<code>off</code></strong>, so nothing is exposed until you name an endpoint and a level. Set
+<code>config.management.port</code> to move the whole surface onto its own
+listener so it is never reachable on the clinical API port.</li>
+<li><strong>The admin console</strong> — a separate image and deployment, not installed by this
+chart. It consumes the CDR strictly over ITS-REST and holds no database
+credential, but it is a privileged UI and belongs behind the same
+authenticating edge you would put in front of a dashboard.</li>
+</ul>
+<h2 id="etcd-and-what-our-secrets-contain"><a class="header" href="#etcd-and-what-our-secrets-contain">etcd and what our secrets contain</a></h2>
+<p><strong>Operator’s</strong>, and this is one of the controls that cannot be compensated for.</p>
+<p>The cheat sheet’s requirements stand: mutual TLS between the API server and etcd,
+etcd reachable from nothing else, and separate instances or ACLs to bound what a
+component can read.</p>
+<p>What makes it concrete for this deployment: <strong>anything that can read etcd can read
+every Secret in the cluster</strong>, and this release’s Secrets are not incidental. They
+hold the <strong>database DSN</strong> — the credential that reaches patient data — plus the
+OIDC HMAC secret, the version-signing passphrase, any terminology-server client
+secret, and (when a Basic user is configured) the whole rendered <code>ferroehr.toml</code>.
+So “etcd is a cluster concern” is true and insufficient: for this workload etcd is
+the confidentiality boundary of the credentials that reach PHI.</p>
+<p>Two mitigations you can apply without touching etcd’s network posture:</p>
+<ol>
+<li><strong>Encryption at rest for Secrets</strong> — not on by default in Kubernetes. See
+Kubernetes’
+<a href="https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/">encryption-at-rest
+configuration</a>,
+which is a cluster-level setting an operator applies once.</li>
+<li><strong>An external secret manager</strong>, which removes the credential from etcd
+entirely: every secret this chart carries has a <code>*_file</code> route or an
+<code>existingSecret</code> route, so the value can arrive from a CSI driver or an
+operator-synced Secret rather than from chart values.</li>
+</ol>
+<h2 id="ports-theirs-and-ours"><a class="header" href="#ports-theirs-and-ours">Ports, theirs and ours</a></h2>
+<p><strong>Operator’s, for the cluster’s ports.</strong> Block untrusted access to the
+control-plane ports — <code>6443</code> (API server), <code>2379-2380</code> (etcd), <code>10250-10257</code>
+(kubelet and controller/scheduler) — and the worker ports <code>10248-10250</code>. An
+exposed <code>10250</code> is the kubelet case below.</p>
+<p><strong>Ours, for the workload’s ports</strong>, and the surface is one port:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Port</th><th>Serves</th><th>Who should reach it</th></tr>
+</thead>
+<tbody>
+<tr><td><code>8080</code> (<code>service.port</code>)</td><td>the openEHR REST API, the always-on <code>/health</code> family, and <code>/management/*</code> when <code>config.management.port</code> is unset</td><td>your ingress controller or gateway — not the internet directly</td></tr>
+<tr><td><code>config.management.port</code> (unset by default)</td><td><code>/management/*</code> on its own listener when set</td><td>operators and your Prometheus, never clinical clients</td></tr>
+</tbody>
+</table>
+</div>
+<p>Measured on the running pod rather than read from the template — the listening
+sockets in the container’s network namespace, via <code>/proc/&lt;pid&gt;/net/tcp</code> on the
+node:</p>
+<pre><code class="language-text">LISTENING TCP ports in the container netns: [8080]
+</code></pre>
+<p>One port. Nothing else is bound, in the default posture.</p>
+<p>The shipped NetworkPolicy narrows inbound traffic to that port list, and the
+narrowing is <strong>enforced</strong>, not decorative. From a pod in a different namespace:</p>
+<pre><code class="language-text">nc -z &lt;pod-ip&gt; 8080   → exit 0     (admitted)
+nc -z &lt;pod-ip&gt; 9100   → exit 1
+nc -z &lt;pod-ip&gt; 5432   → exit 1
+</code></pre>
+<p>and with the policy’s port list patched to a port the app does <em>not</em> serve, while
+the process kept listening on 8080:</p>
+<pre><code class="language-text">nc -z &lt;pod-ip&gt; 8080   → exit 1     (refused by policy, not by the process)
+</code></pre>
+<p>Two limits stated in full on the <a href="kubernetes.html#security-posture">Kubernetes page</a>
+and repeated because they matter here: with <code>networkPolicy.ingressFrom</code> empty the
+rule carries no <code>from</code> and therefore admits <strong>every source</strong>, including other
+namespaces (only the port list is narrowed — the test above reached <code>8080</code> from a
+different namespace); and a NetworkPolicy is only as real as the CNI that
+implements it.</p>
+<h2 id="cluster-api-access"><a class="header" href="#cluster-api-access">Cluster API access</a></h2>
+<p><strong>Operator’s.</strong> Control access to the Kubernetes API: authenticate, then
+authorize, and deny by default.</p>
+<ul>
+<li><strong>Recommended routes:</strong> OIDC, a managed-IAM integration, or user
+impersonation — with <strong>MFA</strong> on the identities that can reach the cluster API.</li>
+<li><strong>Not suitable for production:</strong> static token files, long-lived X.509 client
+certificates, and service-account tokens used as human credentials. They cannot
+be revoked individually, they do not expire usefully, and they carry no second
+factor.</li>
+</ul>
+<p>Worth drawing explicitly, because it saves a translation: <strong>this server implements
+the same shape.</strong> Authentication then authorization, deny by default, OIDC
+preferred over long-lived credentials, and a missing credential distinguished from
+a refused one (<code>401</code> with a challenge versus <code>403</code>). The
+<a href="../security.html">Security chapter</a> is the detail. An operator who understands why
+a static token file is a poor cluster credential already understands why
+<code>auth.basic</code> is a development mechanism here and <code>auth.oidc</code> is the production
+one.</p>
+<h2 id="cluster-rbac-and-why-this-chart-needs-none"><a class="header" href="#cluster-rbac-and-why-this-chart-needs-none">Cluster RBAC, and why this chart needs none</a></h2>
+<p><strong>Operator’s, for the cluster:</strong> run the API server with
+<code>--authorization-mode=Node,RBAC</code> and enable the <code>NodeRestriction</code> admission
+plugin, so a compromised kubelet cannot edit objects belonging to other nodes.</p>
+<p><strong>Ours, and it is an absence on purpose.</strong> The chart creates a ServiceAccount and
+<strong>no Role, RoleBinding, ClusterRole or ClusterRoleBinding at all</strong>, with
+<code>automountServiceAccountToken: false</code>. That is not an omission to be tidied up
+later: the workload never calls the Kubernetes API, so it needs no permissions,
+and it is not given a token with which to try. Verified on the live release:</p>
+<pre><code class="language-text">$ helm get manifest ferroehr | grep -cE '^kind: (Role|RoleBinding|ClusterRole|ClusterRoleBinding)'
+0
+$ kubectl -n ferroehr get role,rolebinding
+No resources found in ferroehr namespace.
+$ find /var/lib/kubelet/pods/&lt;uid&gt;/volumes -name '*token*' -o -name '*serviceaccount*'
+(nothing)
+</code></pre>
+<p><strong>If you are reviewing this chart and reaching for a Role to add: don’t.</strong> The
+correct fix for a future feature that genuinely needs the Kubernetes API is a
+Role enumerating exactly the verbs and resources it needs, plus turning the token
+mount back on for that ServiceAccount alone — not a broad grant added
+speculatively.</p>
+<h2 id="kubelet-access"><a class="header" href="#kubelet-access">Kubelet access</a></h2>
+<p><strong>Operator’s</strong>, and the second control no application hardening can compensate
+for.</p>
+<p>Run every kubelet with <code>--anonymous-auth=false</code> and
+<code>--authorization-mode=Webhook</code> so its HTTPS endpoint is not open. Left open, that
+endpoint permits <strong>arbitrary command execution in any container on the node</strong>.</p>
+<p>For this deployment, spelled out: an attacker reaching an unauthenticated kubelet
+gets a process-level foothold in a running CDR — the ability to read the
+database DSN out of the process environment or its mounted secret files, to read
+patient data straight from memory, and to do so <strong>beneath</strong> the layer where
+authentication, RBAC, ABAC and the ATNA audit trail operate, so none of them see
+it and none of them can stop it. Non-root, a read-only root filesystem and an
+empty capability set raise the cost of what happens next; they do not prevent the
+entry.</p>
+<p>This is a cluster-configuration control, and it is worth confirming rather than
+assuming — an exposed <code>10250</code> is a routine finding in real clusters.</p>
+<h2 id="the-build-phase-and-what-distroless-costs"><a class="header" href="#the-build-phase-and-what-distroless-costs">The build phase, and what distroless costs</a></h2>
+<p><strong>Ours, and this is the section with the most evidence behind it.</strong> Each
+build-phase control and what actually satisfies it:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Control</th><th>Satisfied by</th></tr>
+</thead>
+<tbody>
+<tr><td>Minimal image (§3.4, §3.4.1 distroless)</td><td><code>gcr.io/distroless/cc-debian13:nonroot</code> — no shell, no package manager, no libc tooling</td></tr>
+<tr><td>Image currency (§3.1.1)</td><td>base images and CI job containers pinned <strong>by digest</strong>, not tag, so a rebuild cannot silently change bytes</td></tr>
+<tr><td>Vulnerability identification in CI (§3.3)</td><td>Trivy on every published image, hadolint on every Dockerfile, plus secret and misconfiguration scanning over the tree</td></tr>
+<tr><td>Continuous scanning after release (§4.3)</td><td>a scheduled scan of the <em>published</em> tags — <a href="#continuous-scanning-of-published-images">below</a></td></tr>
+<tr><td>Authorized images only (§3.2)</td><td>signed provenance published; <strong>enforcement is the operator’s</strong> — <a href="#image-provenance-at-admission">below</a></td></tr>
+<tr><td>Non-root by construction</td><td>the image declares <code>USER 65532:65532</code> (numeric, so the kubelet can verify it), and the pod pins <code>runAsNonRoot</code> + uid 65532 independently</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>What distroless costs, stated before an incident rather than during one: there
+is no shell in the image, so <code>kubectl exec … -- sh</code> does not work.</strong> That is the
+security property working as intended — an attacker who achieves command
+execution finds no interpreter, no <code>curl</code>, no package manager — but it changes how
+you debug. Use instead:</p>
+<ul>
+<li><code>kubectl logs</code> (the server logs JSON by default, for a collector),</li>
+<li>the always-on <code>/health/readiness</code> body, which names the failing dependency,</li>
+<li><code>/management/*</code> for the effective configuration, live log filters and an
+on-demand CPU flamegraph,</li>
+<li><code>kubectl debug -it &lt;pod&gt; --image=busybox:1.37 --target=ferroehr</code> — an ephemeral
+container shares the target’s namespaces without adding a shell to the image
+that ships.</li>
+</ul>
+<p>The registry posture: the images are <strong>public</strong> on GHCR, so a pull needs no
+credential and there is nothing to leak. Public does not mean trusted, which is
+the point of the next section — nothing about a public registry stops a cluster
+pulling a <em>different</em> image with the same name from somewhere else.</p>
+<h2 id="namespaces-and-the-two-tenant-models"><a class="header" href="#namespaces-and-the-two-tenant-models">Namespaces and the two tenant models</a></h2>
+<p><strong>Ours, and satisfied by construction.</strong> Every object the chart renders is
+namespace-scoped — Deployment, Service, ConfigMap, Secret, ServiceAccount,
+NetworkPolicy, PodDisruptionBudget, HorizontalPodAutoscaler, Ingress,
+ServiceMonitor. There is <strong>no ClusterRole, no ClusterRoleBinding, no
+CustomResourceDefinition, no cluster-scoped object of any kind</strong>, and no template
+hard-codes a namespace: every reference is <code>.Release.Namespace</code> or a bare name
+resolved within the release’s own namespace. So two releases in two namespaces
+cannot collide, and neither can reach the other’s Secrets.</p>
+<p>Two ways to isolate tenants, with genuinely different blast radii — choose
+deliberately:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th>Namespace per tenant</th><th>In-process multi-tenancy (<code>config.tenancy</code>)</th></tr>
+</thead>
+<tbody>
+<tr><td>Isolation boundary</td><td>Kubernetes: separate Secrets, NetworkPolicies, quotas, RBAC</td><td>one process, one database; tenant from a JWT claim, enforced by PostgreSQL row-level security</td></tr>
+<tr><td>Blast radius of an application-level bug</td><td>one tenant</td><td>potentially all tenants in the release</td></tr>
+<tr><td>Blast radius of a compromised database credential</td><td>one tenant’s database</td><td>every tenant in that database</td></tr>
+<tr><td>Cost</td><td>one Deployment, one connection pool, one image pull per tenant</td><td>one deployment for all</td></tr>
+</tbody>
+</table>
+</div>
+<p>The stronger boundary is a namespace and a database per tenant; the cheaper one is
+the tenancy feature. A deployment holding data for organizations that must not be
+able to reach each other under any single failure should prefer the first, and
+should not treat the second as equivalent because the wire behaviour looks the
+same.</p>
+<h2 id="image-provenance-at-admission"><a class="header" href="#image-provenance-at-admission">Image provenance at admission</a></h2>
+<p><strong>The operator’s — and this is provenance nobody currently checks.</strong></p>
+<p>The publishing lanes attest their artifacts through <strong>keyless Sigstore</strong>, so a
+verifier can establish that an artifact came from this repository’s build — the
+three published images carry a signed SLSA v1 provenance attestation today.
+Nothing in a cluster <em>requires</em> that check before running one, and a signature
+nobody verifies changes nothing about what actually runs. That is what the
+policies below close.</p>
+<h3 id="the-identity-to-trust-read-off-a-real-artifact"><a class="header" href="#the-identity-to-trust-read-off-a-real-artifact">The identity to trust, read off a real artifact</a></h3>
+<p>Each lane signs with a short-lived Fulcio certificate whose <strong>subject
+alternative name is the workflow that issued the token</strong>, and whose issuer is
+GitHub’s OIDC provider. The values below are not derived from the workflow
+files — they are read out of the certificate on a published image:</p>
+<pre><code class="language-shell">gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
+  -R rubentalstra/FerroEHR --format json \
+  | jq '.[0].verificationResult.signature.certificate
+        | {subjectAlternativeName, issuer, sourceRepositoryRef, runnerEnvironment}'
+</code></pre>
+<pre><code class="language-json">{
+  "subjectAlternativeName": "https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/heads/develop",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "sourceRepositoryRef": "refs/heads/develop",
+  "runnerEnvironment": "github-hosted"
+}
+</code></pre>
+<p><strong>The SAN’s ref varies with the trigger, and that is the part a policy gets
+wrong.</strong> Each lane runs on more than one ref, so each issues more than one
+identity:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Artifact</th><th>Signing workflow</th><th>SAN on a release build</th><th>SAN on a development build</th></tr>
+</thead>
+<tbody>
+<tr><td>the three images</td><td><code>containers.yml</code></td><td><code>…/containers.yml@refs/tags/vX.Y.Z</code></td><td><code>…/containers.yml@refs/heads/develop</code></td></tr>
+<tr><td>the chart</td><td><code>publish-chart.yml</code></td><td><code>…/publish-chart.yml@refs/tags/vX.Y.Z</code></td><td><code>…/publish-chart.yml@refs/heads/develop</code> (a <code>workflow_dispatch</code> chart-only publish)</td></tr>
+<tr><td>the release binaries</td><td><code>release-build.yml</code></td><td><code>…/release-build.yml@refs/tags/vX.Y.Z</code></td><td><em>(none — the lane only runs on a tag)</em></td></tr>
+</tbody>
+</table>
+</div>
+<p>All three prefixed with <code>https://github.com/rubentalstra/FerroEHR/.github/workflows/</code>,
+and all with issuer <code>https://token.actions.githubusercontent.com</code>.</p>
+<p>The release binaries are signed by <code>release-build.yml</code> rather than by
+<code>release.yml</code> because the build lives in a <strong>reusable</strong> workflow — the
+certificate names the workflow that owns the build definition, which is what
+makes the <code>--signer-workflow</code> pin below meaningful.</p>
+<p><strong>Pick the ref set deliberately, because the choice is a refusal.</strong> A policy
+matching <code>refs/tags/v…</code> only admits released images and <strong>refuses
+<code>ghcr.io/rubentalstra/ferroehr:develop</code></strong> — correct for production, and the
+reason a policy tested against <code>:develop</code> appears broken when it is working. A
+staging cluster that runs <code>:develop</code> needs both refs. Nothing accepts an
+arbitrary branch: <code>refs/heads/develop</code> is exact, not a prefix match.</p>
+<h3 id="kyverno"><a class="header" href="#kyverno">Kyverno</a></h3>
+<p>The engine <a href="#centralized-policy-and-which-engine">chosen below</a>. Two details
+decide whether this policy works at all:</p>
+<ul>
+<li><strong><code>type: SigstoreBundle</code>.</strong> These attestations are GitHub Artifact
+Attestations, stored in the <a href="https://docs.sigstore.dev/about/bundle/">Sigstore bundle
+format</a> as an OCI referrer. Kyverno
+reads that format only under this type; the field
+<a href="https://kyverno.io/docs/policy-types/cluster-policy/verify-images/sigstore/">defaults to <code>Cosign</code></a>,
+which looks for a <code>sha256-&lt;digest&gt;.sig</code> tag that these images do not have (it
+returns 404 — the bundle is a referrer, not a cosign tag). Requires
+<strong>Kyverno 1.13 or newer</strong>.</li>
+<li><strong><code>attestations:</code>, not <code>attestors:</code> alone.</strong> Kyverno’s own rule is that
+“each <code>verifyImages</code> rule can be used to verify signatures or attestations,
+but not both”, and what the lane produces is a signed <em>attestation</em> — there
+is no detached image signature. A rule with <code>attestors:</code> at the top level
+therefore fails <strong>closed</strong> on a perfectly legitimate image.</li>
+</ul>
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: ferroehr-image-provenance
+  annotations:
+    pod-policies.kyverno.io/autogen-controllers: none
+spec:
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-ferroehr-provenance
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [ferroehr]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/rubentalstra/ferroehr"
+            - "ghcr.io/rubentalstra/ferroehr:*"
+            - "ghcr.io/rubentalstra/ferroehr-admin-ui*"
+            - "ghcr.io/rubentalstra/ferroehr-postgres*"
+          # Sigstore bundle format — GitHub Artifact Attestations. Omitting
+          # this defaults to Cosign, which looks for a signature that does not
+          # exist and refuses every image.
+          type: SigstoreBundle
+          failureAction: Enforce
+          attestations:
+            - type: https://slsa.dev/provenance/v1
+              attestors:
+                - count: 1
+                  entries:
+                    - keyless:
+                        issuer: https://token.actions.githubusercontent.com
+                        # Released images only. For a staging cluster that runs
+                        # the development tag, make the group
+                        # `(heads/develop|tags/v.+)`.
+                        subjectRegExp: '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/containers\.yml@refs/(tags/v.+)$'
+                        rekor:
+                          url: https://rekor.sigstore.dev
+              conditions:
+                - all:
+                    - key: '{{ buildDefinition.buildType }}'
+                      operator: Equals
+                      value: https://actions.github.io/buildtypes/workflow/v1
+</code></pre>
+<p><code>failureAction</code> sits on the <code>verifyImages</code> entry: the spec-level
+<code>validationFailureAction</code> is
+<a href="https://github.com/kyverno/kyverno/blob/main/config/crds/kyverno/kyverno.io_clusterpolicies.yaml">deprecated in the CRD</a>
+(“use <code>validationFailureAction</code> under the validate rule instead”), and a
+<code>verifyImages</code> rule has no validate block. <code>mutateDigest</code>, <code>verifyDigest</code> and
+<code>required</code> all default to <code>true</code>, which is what you want: a tag is rewritten to
+the digest that was verified, and an image with no attestation is refused
+rather than passed.</p>
+<h3 id="sigstore-policy-controller"><a class="header" href="#sigstore-policy-controller">sigstore-policy-controller</a></h3>
+<p>If you already run it. The equivalent two details:</p>
+<ul>
+<li><strong><code>signatureFormat: bundle</code></strong> on the authority. The default is <code>legacy</code>
+(cosign’s own), which cannot read these attestations. Requires
+<strong>policy-controller v0.13.0 or newer</strong>.</li>
+<li><strong>an <code>attestations:</code> entry</strong>, because in bundle format policy-controller
+supports “only attestations, not plain signatures”.</li>
+</ul>
+<pre><code class="language-yaml">apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: ferroehr-image-provenance
+spec:
+  images:
+    - glob: "ghcr.io/rubentalstra/ferroehr**"
+  authorities:
+    - keyless:
+        url: https://fulcio.sigstore.dev
+        identities:
+          - issuer: https://token.actions.githubusercontent.com
+            # Same group as the Kyverno policy: `(heads/develop|tags/v.+)` for a
+            # staging cluster that runs the development tag.
+            subjectRegExp: '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/containers\.yml@refs/(tags/v.+)$'
+      signatureFormat: bundle
+      attestations:
+        - name: require-slsa-provenance
+          predicateType: https://slsa.dev/provenance/v1
+</code></pre>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p><strong>What has been checked, and what has not.</strong> The identity, the issuer and the
+predicate type above are verified first-hand against the three published
+images — <code>cosign verify --certificate-identity-regexp …</code> (cosign 3.1.3) admits
+all three and refuses both an unsigned image and, under a tags-only pattern, a
+<code>:develop</code> image, so the matcher is neither vacuous nor accidentally
+permissive. The manifests are checked field-by-field against the published
+<code>ClusterPolicy</code> and <code>ClusterImagePolicy</code> CRDs. <strong>Neither policy has been
+exercised by a running admission controller</strong>, and the Kyverno CLI is no
+substitute: <code>kyverno test</code> reports a <code>verifyImages</code> rule as <code>Excluded</code> and
+returns the same verdict whichever result you assert. Before enforcing, run
+the policy in <code>Audit</code> (Kyverno) or as a <code>warn</code> policy (policy-controller) long
+enough to see one real deployment pass.</p>
+</blockquote>
+<p><strong>No chart policy is offered yet.</strong> No chart version has been published, so
+there is nothing to reconcile a chart identity against; the row in the table
+above is what the lane <em>will</em> issue, not something read off an artifact. Verify
+the chart with the manual command below once a chart version exists.</p>
+<p><strong>Should the chart ship one? No, and the reason is structural:</strong> an admission
+policy is cluster-scoped and governs workloads the chart knows nothing about,
+while the chart deliberately renders no cluster-scoped object at all (see
+<a href="#namespaces-and-the-two-tenant-models">namespaces</a>). A <code>ClusterPolicy</code> in this
+chart would mean <code>helm uninstall</code> removing a control that other releases had come
+to depend on. The chart’s contribution is the policy <em>document</em>, here, versioned
+with the lanes whose identity it encodes.</p>
+<p><strong>Without an admission controller</strong>, the manual equivalent is a release-time
+check rather than a per-pod one. Add <code>--signer-workflow</code> to insist on the lane
+as well as the repository — without it you are trusting that <em>some</em> workflow
+here signed the image:</p>
+<pre><code class="language-shell">gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
+  -R rubentalstra/FerroEHR \
+  --signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml
+</code></pre>
+<p>Substitute a <code>vX.Y.Z</code> tag for <code>develop</code> on a release; the signer workflow is the
+same. Both forms are verified working on the current <code>develop</code> images.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>Signing landed in the publishing lanes during the <code>3.17.4</code> cycle, so
+<code>ferroehr:3.17.3</code> and every earlier tag answer <code>HTTP 404: Not Found</code> — there is
+nothing to verify, not a verification failure. The chart command
+(<code>oci://ghcr.io/rubentalstra/charts/ferroehr:&lt;chart-version&gt;</code>) has nothing to
+answer for yet either: no chart version has been published.</p>
+</blockquote>
+<p>Then deploy <strong>by digest</strong> (<code>image.digest</code>), so what you verified is what runs — a
+tag can be moved afterwards, a digest cannot.</p>
+<h2 id="continuous-scanning-of-published-images"><a class="header" href="#continuous-scanning-of-published-images">Continuous scanning of published images</a></h2>
+<p><strong>Ours.</strong> CI scans images at build time, which catches what was known when they
+were built and nothing after. A CVE published the week after a release applies to
+the image people are running, so the published tags are re-scanned on a schedule
+(<code>.github/workflows/image-scan.yml</code>, Mondays): all three images at the tag a user
+pulls, with the same <code>trivy.yaml</code> floor and the same adjudicated exceptions, and
+the OpenVEX documents under <code>security/vex/</code> applied so an accepted finding stays
+accepted with its argument attached.</p>
+<p>A finding does two things, because either alone fails quietly: it opens (or
+comments on) a tracking issue, <strong>and</strong> it fails the run. A red scheduled run
+nobody looks at is not a control, and an issue with no failing check can be closed
+without the finding being addressed.</p>
+<p><code>ferroehr-postgres</code> is the image this exists for — it is built on the upstream
+<code>postgres</code> image, so its OS package set is not ours and its CVEs arrive on
+someone else’s schedule. Measured when the lane was written: <strong>0</strong> fixable
+HIGH/CRITICAL findings across all three published images.</p>
+<h2 id="the-security-context-and-what-keeps-it-true"><a class="header" href="#the-security-context-and-what-keeps-it-true">The security context, and what keeps it true</a></h2>
+<p><strong>Ours, and settled.</strong> Read from the <em>running container</em> via <code>crictl</code>, not from
+<code>values.yaml</code>:</p>
+<pre><code class="language-text">process.user     : {'additionalGids': [65532], 'gid': 65532, 'uid': 65532}
+noNewPrivileges  : True
+capabilities.bnd : None            ← an EMPTY bounding set, not "default minus ours"
+root.readonly    : True
+seccomp default  : SCMP_ACT_ERRNO  (13 rule groups)
+RW mounts        : /tmp  (plus the kernel/kubelet-managed /proc, /dev/*, /etc/hosts)
+RO mounts        : /etc/ferroehr  /etc/ferroehr-secrets  /sys  /sys/fs/cgroup
+</code></pre>
+<p>Three things worth drawing out. The capability bounding set is <strong>empty</strong>, so the
+drop is total at the kernel level rather than a subtraction from a runtime’s
+default set. <code>readOnlyRootFilesystem: true</code> needed exactly <strong>one</strong> writable
+path — the chart’s own <code>/tmp</code> emptyDir — and no per-integration surprise, which
+is what makes it safe to keep rather than the setting an operator relaxes during
+the first incident. And there are no init containers and no sidecars, so the
+context above is the whole pod.</p>
+<p>What keeps it true is not this page: <code>deploy/helm/validate.sh</code> asserts every one
+of these fields on every render and the golden files pin the exact bytes, and both
+run in CI on any change to the chart. A template edit that drops
+<code>readOnlyRootFilesystem</code> or <code>allowPrivilegeEscalation: false</code> fails a job, not a
+review.</p>
+<h2 id="beyond-restricted-the-user-namespace"><a class="header" href="#beyond-restricted-the-user-namespace">Beyond Restricted: the user namespace</a></h2>
+<p>The Restricted profile stops a container from <em>asking</em> for privilege. It does
+nothing about what a container’s UID means <strong>on the node</strong> — and under the
+default posture, uid 65532 in the pod is uid 65532 on the host, so a container
+escape arrives as a real host user with whatever that user can reach.</p>
+<p>The chart closes that by default. Every pod it renders carries <code>hostUsers: false</code>, which puts the pod in its own user namespace and maps its UID range onto
+an unprivileged host range. Read off a running pod on a v1.36.1 node:</p>
+<pre><code class="language-text">$ cat /proc/self/uid_map
+         0     838860800      65536
+$ id
+uid=65532 gid=65532 groups=65532
+</code></pre>
+<p>The process still sees uid 65532. The kernel sees 838926332. Root <em>inside</em> the
+pod — which this workload never uses, but a compromised process might reach for
+— is host uid 838860800, which owns nothing. Capabilities granted inside the
+namespace do not apply outside it.</p>
+<p>This is why the chart’s <code>kubeVersion</code> floor is <strong>1.36</strong>: that is the release
+where user namespaces went stable
+(<a href="https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/">KEP-127</a>),
+and the floor is what lets the field render unconditionally instead of being
+gated and silently absent on the clusters that most needed it.</p>
+<p><strong>If your nodes cannot support it</strong>, the pod does not start, which is the
+failure mode you want rather than a silent downgrade. The requirement is a Linux
+node whose runtime implements idmapped mounts (containerd ≥ 2.0, CRI-O ≥ 1.25).
+Set <code>hostUsers: true</code> to opt out and share the host user namespace, the
+Kubernetes default.</p>
+<p>The same posture is applied to <code>supplementalGroupsPolicy: Strict</code>, so the
+process gets only the groups the manifest names — a group baked into an image
+cannot widen file access. And a chart-level gate asserts the whole isolation set
+is <strong>identical across every workload of a release</strong>: a console that shared the
+host user namespace while the server did not would be a posture nobody could
+state in one sentence, and that is exactly the shape of drift a second workload
+introduces.</p>
+<h3 id="apparmor-and-why-it-is-not-on-by-default"><a class="header" href="#apparmor-and-why-it-is-not-on-by-default">AppArmor, and why it is not on by default</a></h3>
+<p><code>securityContext.appArmorProfile</code> (stable since 1.31) is a further confinement
+layer, and it is left off deliberately, because it is not free: a node <strong>without</strong>
+AppArmor rejects the pod outright rather than ignoring the field. Measured on a
+v1.36.1 Docker Desktop node:</p>
+<pre><code class="language-text">STATUS: AppArmor
+Warning  AppArmor  pod/…  Cannot enforce AppArmor: AppArmor is not enabled on the host
+</code></pre>
+<p>Turn it on once you know your nodes carry it — most Debian and Ubuntu nodes do:</p>
+<pre><code class="language-yaml">securityContext:
+  appArmorProfile:
+    type: RuntimeDefault
+</code></pre>
+<h2 id="pod-security-admission-complying-versus-being-refused"><a class="header" href="#pod-security-admission-complying-versus-being-refused">Pod Security Admission: complying versus being refused</a></h2>
+<p>Meeting the Restricted profile and being <em>refused</em> when you stop meeting it are
+different properties, and only the first is ours.</p>
+<p><strong>Restricted compliance, field by field</strong>, so the claim is checkable against the
+<a href="https://kubernetes.io/docs/concepts/security/pod-security-standards/">standard</a>
+rather than asserted:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Restricted requires</th><th>The chart sets</th></tr>
+</thead>
+<tbody>
+<tr><td><code>hostNetwork</code>/<code>hostPID</code>/<code>hostIPC</code> unset</td><td>none set</td></tr>
+<tr><td>no privileged containers</td><td><code>privileged: false</code></td></tr>
+<tr><td><code>allowPrivilegeEscalation: false</code></td><td>set</td></tr>
+<tr><td>capabilities dropped to <code>ALL</code> (only <code>NET_BIND_SERVICE</code> may be added)</td><td><code>drop: [ALL]</code>, none added</td></tr>
+<tr><td><code>runAsNonRoot: true</code></td><td>set, pod and container, uid/gid 65532</td></tr>
+<tr><td><code>seccompProfile.type</code> <code>RuntimeDefault</code> or <code>Localhost</code></td><td><code>RuntimeDefault</code>, pod and container</td></tr>
+<tr><td>no hostPath volumes</td><td>only <code>emptyDir</code>, <code>projected</code>, <code>secret</code></td></tr>
+<tr><td><code>readOnlyRootFilesystem</code> (hardening beyond Restricted)</td><td><code>true</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>The enforcement half is the operator’s, and it is one command:</strong></p>
+<pre><code class="language-shell">kubectl label namespace ferroehr \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/warn=restricted
+</code></pre>
+<p><strong>Why the chart does not do this itself</strong>, recorded so it is not re-litigated:
+Helm installs <em>into</em> a namespace that already exists (or one <code>helm --create-namespace</code> creates, which is the CLI’s action and not a template), so a
+chart that declared its own release namespace would fight the tool — and
+<code>helm uninstall</code> would then delete a namespace holding objects the release does
+not own. More fundamentally, a PSA label is <strong>namespace-wide policy</strong>: it governs
+every workload in that namespace, including backup jobs, sidecars and any database
+an operator colocates. A single application chart is the wrong scope to claim it.</p>
+<p>Verified on a live cluster, in a namespace labelled <code>enforce=restricted</code>, with the
+database genuinely external to it:</p>
+<ul>
+<li>
+<p><strong>the chart installs and serves unchanged</strong> — both replicas <code>1/1 Running</code>, zero
+restarts, readiness <code>UP</code>, <code>POST /ehr</code> → <code>201</code>. No warnings for its pods.</p>
+</li>
+<li>
+<p><strong>a regression of the chart’s own pod spec is refused.</strong> Upgrading with
+<code>--set securityContext.privileged=true --set securityContext.allowPrivilegeEscalation=true</code>
+produced a ReplicaSet with <code>DESIRED 1, CURRENT 0</code> and:</p>
+<pre><code class="language-text">Error creating: pods "ferroehr-…" is forbidden: violates PodSecurity
+"restricted:latest": privileged (container "ferroehr" must not set
+securityContext.privileged=true), allowPrivilegeEscalation != false
+</code></pre>
+<p>while the healthy ReplicaSet stayed at <strong>2/2</strong> — because <code>maxUnavailable: 0</code>
+means the rollout cannot retire a good pod before a replacement is ready. The
+two controls compose: the label refuses the regression, and the strategy means
+the refusal costs no availability.</p>
+</li>
+</ul>
+<p><strong>What you get by not applying the label:</strong> the chart still complies, but nothing
+<em>enforces</em> it. A future chart change, a stray <code>--set securityContext.privileged=true</code>,
+or a sidecar injected by other tooling would be admitted, and the first sign would
+be a running privileged container in the namespace holding your PHI.</p>
+<p>One practical note from that test: a colocated database fixture is unlikely to be
+Restricted-compliant (the upstream <code>postgres</code> entrypoint must start as root), so
+labelling a namespace that contains one will refuse it. That is another reason the
+production posture puts the database outside the cluster.</p>
+<h2 id="service-mesh-a-recorded-decision"><a class="header" href="#service-mesh-a-recorded-decision">Service mesh: a recorded decision</a></h2>
+<p><strong>Not adopted, deliberately.</strong> The cheat sheet presents a mesh as a trade-off, not
+a requirement, and for this workload the trade lands clearly.</p>
+<p>What a mesh would provide, and what already provides it:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mesh benefit</th><th>Already covered by</th></tr>
+</thead>
+<tbody>
+<tr><td>mTLS between services</td><td>the server terminates TLS natively (<code>[server.tls]</code>), including mutual TLS for the IHE ATNA ITI-19 posture; the database connection uses <code>sslmode=verify-full</code></td></tr>
+<tr><td>East-west traffic restriction</td><td>the shipped NetworkPolicy, proven enforcing on this cluster</td></tr>
+<tr><td>Request-level observability</td><td>OTLP traces and Prometheus metrics from the application, which sees openEHR operations rather than an L7 proxy’s view of opaque HTTP</td></tr>
+<tr><td>An audit trail of access</td><td>the ATNA/BALP audit trail, which records <em>who read which patient’s record</em> — a property no proxy can reconstruct</td></tr>
+</tbody>
+</table>
+</div>
+<p>Against that: a mesh is a second control plane, a sidecar in every pod (which the
+Restricted profile and the empty capability set then have to accommodate), and an
+opinionated platform to upgrade in lockstep. For <strong>one workload plus an external
+database</strong>, the lateral-movement problem a mesh exists to solve barely exists.</p>
+<p><strong>A genuine gap, named rather than glossed:</strong> a mesh would give <em>workload
+identity</em> — SPIFFE-style cryptographic identity per pod, so the database could
+authenticate the client workload rather than a shared password held in a Secret.
+Nothing in this deployment provides that; the DSN is a bearer credential, and any
+process that can read the Secret can use it. The mitigations available without a
+mesh are an external secret manager plus short-lived credentials (for example
+cloud IAM database authentication, where the DSN carries a rotating token rather
+than a password). If you run a mesh anyway, expect the overlaps above rather than
+double-implementing them — and note that its sidecar will need its own PSA
+accommodation.</p>
+<h2 id="centralized-policy-and-which-engine"><a class="header" href="#centralized-policy-and-which-engine">Centralized policy, and which engine</a></h2>
+<p><strong>Operator’s, and only for one of OPA’s three use cases.</strong></p>
+<ul>
+<li><strong>Application authorization — already solved, do not add a second engine.</strong> This
+server ships a policy-driven authorization layer: RBAC, plus ABAC with an
+embedded Cedar engine or an external PDP. Adding OPA for application decisions
+would mean two policy engines disagreeing about one question, and the one that
+loses is whichever is consulted second.</li>
+<li><strong>Service-mesh authorization — moot</strong>, no mesh (<a href="#service-mesh-a-recorded-decision">above</a>).</li>
+<li><strong>Admission control — applies</strong>, and it is the same lever image provenance and
+Pod Security enforcement need.</li>
+</ul>
+<p><strong>Decision: Kyverno</strong>, chosen for what it must enforce rather than on general
+merit. It is the only one of the three candidates that covers <strong>both</strong> levers with
+one controller: <code>verifyImages</code> does keyless signature and attestation
+verification, and its policies can enforce pod-security constraints beyond what
+namespace labels express. <code>sigstore-policy-controller</code> does provenance only, so it
+would have to be paired with something else. Kubernetes’ built-in
+<strong>ValidatingAdmissionPolicy</strong> (CEL, no external controller) is attractive for pod
+shape and is the right tool for cheap structural rules — but it <strong>cannot verify
+signatures at all</strong>, because CEL evaluation makes no network calls and cannot
+reach a transparency log, so it cannot be the answer to the control that matters
+most here.</p>
+<p>If you already run OPA/Gatekeeper for other reasons, keep it and add
+<code>sigstore-policy-controller</code> alongside for provenance; do not run two general
+admission engines. The copyable provenance policy is
+<a href="#image-provenance-at-admission">above</a>, and Pod Security enforcement needs no
+engine at all — it is the namespace label in the previous section.</p>
+<h2 id="resource-bounds-four-layers"><a class="header" href="#resource-bounds-four-layers">Resource bounds: four layers</a></h2>
+<p><strong>Split exactly.</strong> Container requests and limits are the chart’s; namespace
+<code>ResourceQuota</code> and <code>LimitRange</code> are cluster-admin objects, and a workload chart
+that created one would be claiming the whole namespace for itself — wrong the
+moment anything else shares it.</p>
+<p>The chart’s bounds, and where the numbers come from:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th>Value</th><th>Derivation</th></tr>
+</thead>
+<tbody>
+<tr><td><code>requests.cpu</code></td><td><code>250m</code></td><td>the scheduling floor: enough to boot, run migrations and serve steady traffic. Measured steady-state use on an idle-but-serving pod is <strong>2m</strong>, so this is deliberately generous rather than tuned to the floor — a request is what the scheduler reserves, and a too-tight one gets the pod placed on a node with nothing left for a traffic spike.</td></tr>
+<tr><td><code>requests.memory</code></td><td><code>256Mi</code></td><td>measured steady-state <strong>33Mi</strong> resident, plus room for the connection pool, the template/WebTemplate cache and per-request AQL working set.</td></tr>
+<tr><td><code>limits.cpu</code></td><td><code>2</code></td><td>AQL execution is the CPU-heavy path and is bounded per query by <code>query.timeout_ms</code>; two cores lets a query and normal traffic proceed without throttling. CPU limits throttle rather than kill, so this trades latency, not availability.</td></tr>
+<tr><td><code>limits.memory</code></td><td><code>1Gi</code></td><td>a <strong>hard</strong> ceiling: exceeding it is an OOM kill, so it sits well above observed use. The application-level body and result limits below are what keep a single request from approaching it.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Those numbers are for a modest replica. Tune them from your own metrics rather than
+treating them as a recommendation — and remember that raising <code>replicaCount</code>
+multiplies the request, which is what a namespace quota will notice first.</p>
+<p><strong>The layering is the point</strong>, and an operator should see it as one story — four
+nested bounds, each catching what the next cannot:</p>
+<ol>
+<li><strong>Per request</strong> — <code>server.limits.body_bytes</code> (413 on an over-large body),
+<code>query.timeout_ms</code> and <code>query.max_result_rows</code> (a query cannot return an
+unbounded row set), <code>db.statement_timeout_ms</code> as the backstop the HTTP timeout
+cannot be.</li>
+<li><strong>Per connection / per caller</strong> — <code>server.connection.*</code> bounds a socket before
+a request exists; <code>server.rate_limit</code> refuses <code>429</code>; the in-flight shed answers
+<code>503</code> when the server is full.</li>
+<li><strong>Per container</strong> — the requests and limits above.</li>
+<li><strong>Per namespace</strong> — the operator’s, and the only layer that protects <em>other</em>
+workloads from this one:</li>
+</ol>
+<pre><code class="language-yaml">apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ferroehr
+  namespace: ferroehr
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "12"
+    limits.memory: 8Gi
+    pods: "12"
+    count/services: "4"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ferroehr-defaults
+  namespace: ferroehr
+spec:
+  limits:
+    - type: Container
+      # A pod that arrives with no limits gets these, so nothing in the namespace
+      # can be unbounded by omission.
+      default: {cpu: "1", memory: 512Mi}
+      defaultRequest: {cpu: 100m, memory: 128Mi}
+      max: {cpu: "4", memory: 2Gi}
+</code></pre>
+<p>Size the quota above <code>replicaCount × requests</code> with headroom for a rolling
+upgrade — <code>maxSurge: 1</code> means one extra pod exists mid-rollout, and a quota with
+no room for it makes upgrades stall rather than fail, which looks like a hung
+deployment.</p>
+<h2 id="egress-deny-by-default-and-what-it-breaks"><a class="header" href="#egress-deny-by-default-and-what-it-breaks">Egress: deny by default, and what it breaks</a></h2>
+<p><strong>The mechanism is the chart’s; the destinations are yours</strong> — and this is the
+control where a NetworkPolicy stops being free.</p>
+<p>Enabling <code>networkPolicy.egress.enabled</code> refuses <strong>all</strong> outbound traffic except
+what is listed. DNS is always included, and the database is a first-class value
+because it is the only destination that is never optional:</p>
+<pre><code class="language-yaml">networkPolicy:
+  egress:
+    enabled: true
+    database:
+      to:
+        - ipBlock: {cidr: 10.0.12.7/32}     # a managed database
+        # or, in-cluster:
+        # - podSelector: {matchLabels: {app.kubernetes.io/name: postgres}}
+      port: 5432
+    rules: []                                # one entry per integration, below
+</code></pre>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>Enabling egress with <strong>no</strong> database destination is refused at render time
+rather than at rollout, because that mistake presents as a database fault:
+readiness reports the DB down, the log shows a connect timeout, and nothing
+mentions the network policy.</p>
+</blockquote>
+<p><strong>The destination set, derived from the configuration tree rather than from what a
+default install happens to use.</strong> Every row is off unless its key is set, so add
+only the rows you have switched on:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Destination</th><th>Turned on by</th><th>Port</th><th>Typically</th></tr>
+</thead>
+<tbody>
+<tr><td>Cluster DNS</td><td>always</td><td>UDP+TCP 53</td><td>in-cluster (always allowed)</td></tr>
+<tr><td>PostgreSQL</td><td><code>db.url</code> — <strong>never optional</strong></td><td>the DSN’s (5432)</td><td>off-cluster (managed)</td></tr>
+<tr><td>OTLP collector</td><td><code>telemetry.otlp_endpoint</code></td><td>4317 gRPC / 4318 HTTP</td><td>in-cluster</td></tr>
+<tr><td>OIDC issuer (discovery + JWKS)</td><td><code>auth.oidc.issuer</code>, <strong>unless</strong> <code>auth.oidc.jwks_json</code>/<code>jwks_json_file</code> is supplied</td><td>443</td><td>off-cluster</td></tr>
+<tr><td>External policy decision point</td><td><code>authz.abac.engine: remote</code> + <code>authz.abac.remote.server</code></td><td>the URL’s (3001)</td><td>in-cluster</td></tr>
+<tr><td>FHIR terminology server(s)</td><td><code>terminology.external.enabled</code> + <code>…providers.&lt;name&gt;.url</code></td><td>443</td><td>off-cluster</td></tr>
+<tr><td>Terminology token endpoint</td><td><code>…oauth2_clients.&lt;name&gt;.token_url</code></td><td>443</td><td>off-cluster</td></tr>
+<tr><td>AMQP broker (events)</td><td><code>events.enabled</code> + <code>secrets.eventsUrl</code></td><td>5672, or 5671 with <code>events.tls</code></td><td>in-cluster</td></tr>
+<tr><td>AMQP broker (FHIR outbound)</td><td><code>fhir.outbound.enabled</code> + <code>secrets.fhirOutboundUrl</code></td><td>5672 / 5671</td><td>in-cluster</td></tr>
+<tr><td>Object store</td><td><code>multimedia.enabled</code> + <code>multimedia.endpoint</code> (unset ⇒ AWS regional resolution)</td><td>443, or the endpoint’s</td><td>off-cluster</td></tr>
+<tr><td>Syslog audit repository</td><td><code>audit.syslog.enabled</code></td><td>514 UDP, or 6514 TCP with <code>transport: tls</code></td><td>off-cluster</td></tr>
+<tr><td>FHIR audit repository</td><td><code>audit.fhir_feed.enabled</code> + <code>secrets.auditFhirFeedUrl</code></td><td>443</td><td>off-cluster</td></tr>
+<tr><td>Subject-proxy source system</td><td><code>subject_proxy.systems.&lt;name&gt;.base_url</code></td><td>443</td><td>off-cluster</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p><strong>A NetworkPolicy cannot match a DNS name.</strong> The API selects peers by pod,
+namespace or <code>ipBlock</code> CIDR only, so every off-cluster row above needs a CIDR
+you supply and keep current. A managed database that moves IP, or a terminology
+server behind a rotating CDN address, will break under a CIDR that was correct
+when written. Where a provider publishes no stable range, the honest options are
+an egress gateway with a fixed address, or leaving egress off and accepting that
+outbound traffic is unrestricted — not a <code>0.0.0.0/0</code> rule that pretends to be a
+policy.</p>
+</blockquote>
+<p><strong>Two failure modes worth knowing before you tighten this.</strong></p>
+<p><strong>An over-tight policy silently stops observability.</strong> A blocked OTLP exporter
+does <strong>not</strong> fail the request that generated the span — it drops the span, with no
+log line and no error. So a policy that forgets the collector produces a server
+that is healthy by every check and has quietly stopped being observable. If you
+enable egress and traces disappear, look at the policy before the collector.</p>
+<p><strong>Tightening egress under a running pod appears to work when it has not.</strong> A
+NetworkPolicy is enforced on new connections; existing conntrack flows survive. So
+a pod whose connection pool is already established keeps serving after you remove
+its database rule — and fails at the next restart, which may be a node drain at
+3am. Measured on this cluster:</p>
+<pre><code class="language-text">policy: DNS + database  → readiness 200 {"status":"UP", db UP, migrations UP}, POST /ehr 201
+remove the database rule (DNS only), pod untouched
+                        → readiness STILL 200, db STILL "UP"   ← the pool survives
+delete the pods so a fresh one must connect
+                        → readiness 503, both replicas unavailable
+                          kubelet: Readiness probe failed: HTTP probe failed with statuscode: 503
+restore the rule        → 2/2 ready again, with no restart
+</code></pre>
+<p>So: <strong>verify an egress policy by restarting a pod, not by watching the one that is
+already running.</strong> (The recovery in the last line needing no restart is the
+readiness check re-testing its dependencies on every probe — the same property
+described for <a href="kubernetes.html#health-probes">migrations</a>.)</p>
+<h2 id="secrets-at-rest-and-what-ours-contain"><a class="header" href="#secrets-at-rest-and-what-ours-contain">Secrets at rest, and what ours contain</a></h2>
+<p><strong>Operator’s</strong> — encryption at rest is an API-server flag
+(<code>--encryption-provider-config</code>), and <strong>Kubernetes does not encrypt Secrets by
+default</strong>. A <code>Secret</code> is base64-encoded, which is an encoding and not a
+protection: without that configuration, everything below sits readable in etcd,
+which is why <a href="#etcd-and-what-our-secrets-contain">the etcd section</a> is the other
+half of this one.</p>
+<p><strong>The useful half is ours: exactly what this deployment’s Secrets contain</strong>, so
+you can judge the exposure rather than reading “secrets” generically.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Secret content</th><th>Present when</th><th>What it gets an attacker</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>The database DSN</strong></td><td>always</td><td><strong>direct read/write access to all patient data</strong>, bypassing the API, its authorization and its audit trail entirely</td></tr>
+<tr><td>The whole rendered <code>ferroehr.toml</code></td><td>a Basic user is configured (it moves to a Secret)</td><td>the configuration, including that user’s Argon2id hash</td></tr>
+<tr><td>A Basic user’s Argon2id hash</td><td>as above</td><td>an offline cracking target, not a usable password</td></tr>
+<tr><td>The OIDC HMAC secret</td><td><code>secrets.authOidcHmacSecret</code> (HS256 development setups)</td><td>the ability to <strong>mint valid tokens</strong> for any user and role</td></tr>
+<tr><td>The version-signing passphrase (+ the PGP key via <code>config.files</code>)</td><td><code>signing.mode: pgp</code></td><td>the ability to forge version signatures, breaking the integrity guarantee</td></tr>
+<tr><td>Terminology <code>client_secret</code></td><td><code>secrets.terminologyOauth2ClientSecrets.*</code></td><td>access to that terminology server as this client</td></tr>
+<tr><td>AMQP broker URLs</td><td><code>secrets.eventsUrl</code>, <code>secrets.fhirOutboundUrl</code></td><td>the FHIR outbound stream <strong>carries PHI</strong>; the events stream is PHI-free by design</td></tr>
+<tr><td>The audit repository URL</td><td><code>secrets.auditFhirFeedUrl</code></td><td>the ability to read or forge audit records at the ARR</td></tr>
+<tr><td>S3 credentials</td><td><code>secrets.multimedia*</code></td><td>offloaded <code>DV_MULTIMEDIA</code> blobs, which <strong>are PHI</strong></td></tr>
+</tbody>
+</table>
+</div>
+<p>The first row is the one that matters most, and it has a property worth naming:
+<strong>the DSN is a bearer credential.</strong> Any process that can read it can use it, from
+anywhere the database is reachable — there is no binding to the workload that was
+issued it. That is the same gap named under
+<a href="#service-mesh-a-recorded-decision">service mesh</a> (workload identity), reached
+from the other direction, and the mitigation is the same: a credential that is
+short-lived and issued to a workload identity rather than a long-lived password in
+an object.</p>
+<p><strong>Enable encryption at rest</strong> with an
+<a href="https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/"><code>EncryptionConfiguration</code></a>
+on every API server. Prefer a KMS provider over <code>aescbc</code>/<code>secretbox</code> with a local
+key: a key sitting in a file on the control-plane node is protected by the same
+boundary as the etcd data it encrypts. On a managed cluster this is usually one
+setting (envelope encryption with the provider’s KMS) — check whether it is on,
+because it generally is not by default. Existing Secrets are only re-encrypted
+when rewritten, so follow the docs’ <code>kubectl get secrets --all-namespaces -o json | kubectl replace -f -</code> step, or the encryption applies to new writes only.</p>
+<p><strong>Or remove them from etcd entirely.</strong> Every secret this chart carries has a
+<code>*_file</code> route or an <code>existingSecret</code> route, so no code change is needed to source
+them from a secret manager:</p>
+<ul>
+<li><strong>A CSI driver</strong> (<a href="https://secrets-store-csi-driver.sigs.k8s.io/">Secrets Store CSI
+Driver</a> with the Vault, AWS,
+Azure or GCP provider) mounts the value as a file. Point <code>extraVolumes</code> /
+<code>extraVolumeMounts</code> at it and set the matching <code>*_file</code> configuration key —
+<code>auth.oidc.hmac_secret_file</code>, <code>signing.key_passphrase_file</code>,
+<code>multimedia.secret_access_key_file</code>, a terminology client’s
+<code>client_secret_file</code>. Nothing reaches a Kubernetes Secret at all.</li>
+<li><strong>An operator that syncs into a Secret</strong> (External Secrets Operator, Vault
+Agent Injector) still lands in etcd, so it buys rotation rather than removal —
+worth having, but pair it with encryption at rest.</li>
+<li><strong>The DSN</strong> is mounted too, from <code>database.existingSecret</code> via <code>db.url_file</code>, so
+a CSI-provided Secret carries it like any other. What a mount does <strong>not</strong> fix is
+that the DSN remains a <em>bearer</em> credential: cloud IAM database authentication is
+the route that removes the standing password (the DSN then carries a short-lived
+token), and <code>serviceAccount.annotations</code> exists for the IRSA/Workload-Identity
+binding that needs.</li>
+<li><strong><code>audit.fhir_feed.url</code></strong> is now the only credential-bearing key with no <code>*_file</code>
+sibling, so it is the one value still passed as environment.</li>
+</ul>
+<p><strong>Finding exposed secrets</strong> (§4.10.4) is already covered in CI rather than left to
+an operator: Trivy’s <code>secret</code> scanner runs over the whole tree and over every
+published image, so a credential committed to the repository or baked into a layer
+fails a job. The deliberate development credentials were checked against it and are
+not flagged, so nothing is exempted to make it pass.</p>
+<p>The volume-versus-environment half of this control — mounting secrets as read-only
+files rather than passing them as environment variables — is
+<a href="kubernetes.html#secrets-and-mounted-config">covered on the Kubernetes page</a> and is
+already the chart’s behaviour for every secret whose configuration key has a
+<code>*_file</code> sibling.</p>
+<h2 id="runtime-detection-on-a-shell-less-image"><a class="header" href="#runtime-detection-on-a-shell-less-image">Runtime detection on a shell-less image</a></h2>
+<p><strong>Operator’s tooling</strong> (Falco, Tetragon, or a managed equivalent), but the signals
+are unusually high-confidence here, and that is what makes it worth more than a
+recommendation.</p>
+<p>The runtime image is <strong>distroless and shell-less</strong>. There is no <code>sh</code>, no <code>bash</code>,
+no <code>curl</code>, no package manager, and the container runs one process. So the usual
+heuristics stop being heuristics:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Signal</th><th>Why it is unambiguous for this image</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Any <code>execve</code> of anything other than <code>/usr/local/bin/ferroehr</code></strong></td><td>the image contains no other executable to run — a second process means one arrived from outside</td></tr>
+<tr><td><strong>A shell process in the container</strong></td><td>impossible under normal operation; there is no shell in the filesystem</td></tr>
+<tr><td><strong>A write outside <code>/tmp</code></strong></td><td>the root filesystem is read-only and <code>/tmp</code> is the only declared writable mount — verified on the running container</td></tr>
+<tr><td><strong>An outbound connection to anything not in the egress table</strong></td><td>the <a href="#egress-deny-by-default-and-what-it-breaks">inventory</a> is complete and small</td></tr>
+<tr><td><strong>Any attempt to load a kernel module, mount, or change namespaces</strong></td><td>the capability bounding set is empty, so these cannot succeed — an <em>attempt</em> is still a signal</td></tr>
+</tbody>
+</table>
+</div>
+<p>A starter Falco rule set exploiting exactly that:</p>
+<pre><code class="language-yaml">- macro: ferroehr_container
+  condition: container.image.repository endswith "/ferroehr"
+
+- rule: FerroEHR unexpected process
+  desc: Any process other than the server binary in a shell-less image
+  condition: spawned_process and ferroehr_container and proc.exepath != "/usr/local/bin/ferroehr"
+  output: Unexpected process in FerroEHR container (proc=%proc.exepath parent=%proc.pname container=%container.id)
+  priority: CRITICAL
+
+- rule: FerroEHR write outside tmp
+  desc: The root filesystem is read-only; /tmp is the only writable mount
+  condition: open_write and ferroehr_container and not fd.name startswith "/tmp/"
+  output: Write outside /tmp in FerroEHR container (file=%fd.name proc=%proc.exepath container=%container.id)
+  priority: CRITICAL
+
+- rule: FerroEHR unexpected outbound connection
+  desc: Outbound to a destination outside the configured inventory
+  condition: &gt;
+    outbound and ferroehr_container and
+    not fd.sport in (53) and not fd.sport in (5432, 4317, 4318, 443, 5671, 5672, 6514)
+  output: Unexpected egress from FerroEHR container (dest=%fd.rip:%fd.rport proc=%proc.exepath)
+  priority: WARNING
+</code></pre>
+<p>Tune the port list to the destinations you actually enabled; the point of the
+third rule is that the list is short enough to be worth writing.</p>
+<p><strong>What each layer sees, and cannot.</strong> The syscall layer sees process execution,
+file writes and raw connections — a compromise of the <em>container</em> — but it has no
+idea which patient’s record was read, because to it every request is bytes on an
+established socket. The <strong>ATNA audit trail</strong> sees exactly that: which subject
+accessed which EHR, through which operation, under which authenticated identity —
+but it is emitted <em>by</em> the application, so a compromise deep enough to control the
+process can stop or falsify it. They are complementary and neither substitutes:
+runtime detection is how you learn the process is not itself any more; the audit
+trail is how you answer what was accessed while it still was. Forwarding audit
+records <strong>off-box</strong> to an external repository (<code>audit.syslog</code>, <code>audit.fhir_feed</code>)
+is what keeps the second answer available after the first alarm.</p>
+<h2 id="sandboxing-is-not-tenant-isolation"><a class="header" href="#sandboxing-is-not-tenant-isolation">Sandboxing is not tenant isolation</a></h2>
+<p><strong>Not required, and the reason matters more than the conclusion.</strong> The cheat sheet
+scopes sandboxing (Kata, gVisor, Firecracker) to clusters running <em>untrusted</em>
+workloads. This is our own code, so the threat it addresses — a container escape
+by hostile software you chose to run — is not the one in front of us.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>A container sandbox does nothing for this server’s multi-tenancy</strong>, and that
+is the misreading worth preventing. Tenants of a single release share <strong>one
+process and one database</strong>; they are separated by PostgreSQL row-level security
+and a per-request session GUC — <em>inside</em> the container. A sandbox draws a
+stronger boundary around the whole container, which both tenants are already on
+the same side of. Hardening the sandbox changes nothing about tenant isolation;
+only the <a href="#namespaces-and-the-two-tenant-models">namespace-per-tenant model</a>
+moves that boundary.</p>
+</blockquote>
+<p>A sandbox is worth considering in one case: a cluster where this workload runs
+<strong>beside</strong> third-party or customer-supplied code, and you want to protect this
+workload’s node from <em>that</em>. Note the cost first — a sandboxed runtime changes the
+syscall surface and the performance profile of a database-bound server, and the
+gVisor/Kata runtimes need a <code>RuntimeClass</code> the chart does not set (add it through
+your platform’s pod defaults if you adopt one).</p>
+<h2 id="kernel-modules-already-impossible"><a class="header" href="#kernel-modules-already-impossible">Kernel modules: already impossible</a></h2>
+<p><strong>Satisfied by the chart’s own posture</strong>, which is unusual for a host-side control
+and worth recording precisely rather than deferring.</p>
+<p>Loading a kernel module requires <strong><code>CAP_SYS_MODULE</code></strong>. The container’s capability
+bounding set is <strong>empty</strong> — verified on the running container via <code>crictl</code>
+(<code>capabilities.bnd: None</code>), not merely requested in the manifest — and
+<code>allowPrivilegeEscalation: false</code> with <code>noNewPrivileges</code> set means no
+<code>setuid</code> binary can regain it. So this container cannot trigger a module load at
+all, whatever <code>/etc/modprobe.d/</code> on the host says. An <em>attempt</em> would still be a
+<a href="#runtime-detection-on-a-shell-less-image">runtime-detection signal</a>; it just
+cannot succeed.</p>
+<p>Host-side blacklisting remains good practice <strong>for the node</strong>, and stays the
+operator’s: it constrains every other workload on that node, including ones with
+capabilities this one does not have, and a privileged pod anywhere on the node can
+still load modules that affect this container’s kernel.</p>
+<h2 id="replica-deviation-and-the-outbound-inventory"><a class="header" href="#replica-deviation-and-the-outbound-inventory">Replica deviation and the outbound inventory</a></h2>
+<p><strong>Operator’s practice, from material the server already publishes</strong> — which makes
+it more actionable here than the generic advice.</p>
+<p>Replicas of this Deployment are interchangeable: same image, same configuration,
+traffic distributed by the Service. So a metric that differs <em>per pod</em> is a signal,
+and the Prometheus surface is already per-pod (each pod is its own scrape target).
+Worth alerting on a divergence between pods rather than on an absolute value:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Comparison across pods</th><th>What a deviation suggests</th></tr>
+</thead>
+<tbody>
+<tr><td>request rate per pod</td><td>a load-balancing fault, or one pod being addressed directly, bypassing the Service</td></tr>
+<tr><td>error ratio (5xx / total) per pod</td><td>a pod-local fault: a broken database connection, an exhausted pool, a failing dependency one pod reaches and others do not</td></tr>
+<tr><td>p99 latency per pod</td><td>a throttled pod (CPU limit), a noisy neighbour, or a degraded node</td></tr>
+<tr><td>authentication-failure rate per pod</td><td>credential stuffing aimed at one endpoint — or a token-validation path failing on one pod (an unreachable JWKS endpoint)</td></tr>
+<tr><td>resident memory slope per pod</td><td>a leak or an unbounded working set on one replica only</td></tr>
+<tr><td>database pool acquire-wait per pod</td><td>that pod’s pool is starved while others are not</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>/management/prometheus</code> endpoint (opened with
+<code>config.management.endpoints.prometheus</code>) is the source, and
+<code>metrics.serviceMonitor.enabled</code> is how an operator-managed Prometheus discovers
+it. Two things worth knowing: the ATNA audit trail gives a second, independent
+view — an access pattern that deviates per pod is visible there at
+patient-and-operation granularity — and a pod that fails readiness leaves the
+Service, so “one pod has zero traffic” can mean it is unready rather than
+unreachable.</p>
+<p><strong>The outbound inventory</strong> the traffic half of this control asks for is the
+<a href="#egress-deny-by-default-and-what-it-breaks">egress table above</a>, derived from the
+configuration tree. In the chart’s default posture, measured from node conntrack on
+a running pod, the complete set is <strong>two destinations</strong>: TCP 5432 to the database
+and UDP 53 to cluster DNS. Nothing else. That is what makes a deny-by-default
+egress policy tractable — the base allowance is two rules, and every addition is a
+named, configured endpoint rather than an open range. Compare live traffic against
+the policy periodically: a connection the policy permits and nothing makes is a
+rule to remove.</p>
+<h2 id="breach-containment-and-rotating-credentials"><a class="header" href="#breach-containment-and-rotating-credentials">Breach containment and rotating credentials</a></h2>
+<p><strong>Scaling to zero is a clinical-safety decision, and it should be made before you
+need it.</strong> <code>kubectl scale deploy/ferroehr --replicas=0</code> is the Kubernetes-native
+containment action, and for this workload it means <strong>clinical access stops
+immediately</strong> — no reads, no commits, for everyone. That is the point during a
+breach, and it is also an outage of a system clinicians may be depending on at
+that moment. Decide in advance who is authorized to make that call.</p>
+<p>What scaling to zero <strong>does</strong>:</p>
+<ul>
+<li>stops all new requests, including whatever the attacker is doing through the API;</li>
+<li>leaves the database untouched — it is external, so its data, its contents and
+its own access controls are unaffected;</li>
+<li>preserves the pod’s evidence if you scale rather than delete… <strong>only
+partially</strong>: scaling to zero terminates the pods, so anything in memory is gone.
+To preserve a pod for forensics, cordon its node and remove the pod from the
+Service by editing its labels instead — the ReplicaSet then creates a
+replacement while the original keeps running, detached from traffic.</li>
+</ul>
+<p>What it does <strong>not</strong> do:</p>
+<ul>
+<li><strong>it does not undo committed data.</strong> openEHR change control is append-only, so a
+malicious commit is a new version, not an overwrite. The prior version is still
+there and still retrievable.</li>
+<li><strong>it does not stop an attacker who has the DSN.</strong> The database is reachable
+independently of these pods; a leaked DSN is used from anywhere the database
+admits, which is why rotating it (below) — not scaling — is the containment
+action for that particular compromise.</li>
+<li><strong>it does not truncate the audit trail.</strong> Records already written to the local
+store, or already forwarded to an external repository, survive. Records still in
+the outbox at termination are drained during the grace period, so a scale-to-zero
+loses less than a <code>kill -9</code>; forwarding to an external repository
+(<code>audit.syslog</code>, <code>audit.fhir_feed</code>) is what makes the trail survive the pods
+entirely.</li>
+</ul>
+<h3 id="rotating-each-credential"><a class="header" href="#rotating-each-credential">Rotating each credential</a></h3>
+<p>Every secret except two is a mounted file, so rotation is: update the Secret, then
+<strong>restart the pods</strong>. The restart is not optional — configuration is read at boot,
+and Kubernetes propagating a new Secret into the volume does not make a running
+process re-read it:</p>
+<pre><code class="language-shell">kubectl -n ferroehr create secret generic ferroehr-db \
+  --from-literal=FERROEHR__DB__URL='postgres://…new…' --dry-run=client -o yaml \
+  | kubectl apply -f -
+kubectl -n ferroehr rollout restart deploy/ferroehr
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Credential</th><th>Rotation</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Database DSN</td><td>update the Secret → <code>rollout restart</code></td><td>rotate the <strong>database</strong> password too, or the old one still works; <code>maxUnavailable: 0</code> keeps the old pods serving on the old credential until the new ones are ready, so grant both briefly or accept a gap</td></tr>
+<tr><td>OIDC HMAC secret</td><td>update → restart</td><td>invalidates every token signed with the old secret; prefer JWKS/discovery, where the issuer rotates for you and no secret lives here</td></tr>
+<tr><td>Terminology <code>client_secret</code></td><td>update → restart</td><td>rotate at the IdP in the same window</td></tr>
+<tr><td>AMQP broker URLs</td><td>update → restart</td><td>the credential is inside the URL</td></tr>
+<tr><td>S3 credentials</td><td>update → restart</td><td>or remove them entirely with IRSA/Workload Identity</td></tr>
+<tr><td>Audit repository URL</td><td>update → restart</td><td>still an environment value (no <code>*_file</code> sibling)</td></tr>
+<tr><td>Basic user password hash</td><td>update → restart</td><td>rotate the password, re-hash at the OWASP floor</td></tr>
+<tr><td><strong>Version signing key</strong></td><td><strong>read the next section first</strong></td><td>rotate the signing SUBKEY, not the certificate — see below</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="rotating-the-version-signing-key"><a class="header" href="#rotating-the-version-signing-key">Rotating the version signing key</a></h3>
+<p>In the default <code>digest</code> mode there is no key: <code>VERSION.signature</code> is
+<code>sha256:</code> + the hash of the canonical form, recomputed at read time. Nothing to
+rotate, and nothing breaks.</p>
+<p>In <code>pgp</code> mode there are two mechanisms, and the first is the one to reach for.</p>
+<p><strong>The ordinary path: rotate the signing subkey.</strong> OpenPGP is built for this. A
+certificate is a primary key plus its subkeys (<a href="https://www.rfc-editor.org/rfc/rfc9580.html">RFC 9580
+§10.1</a>), the primary key certifies
+while a subkey signs, and rotating means issuing a <em>new signing subkey</em> on the
+same certificate. The retired subkey stays in the certificate, so every version
+it signed keeps verifying — with no configuration change, no second key file,
+and no window where history is unreadable. It is also the only path that keeps
+the primary key’s identity intact; replacing a primary key discards everything
+that has ever been said about it.</p>
+<pre><code class="language-console"># add a fresh signing subkey to the existing certificate
+gpg --quick-add-key &lt;FINGERPRINT&gt; ed25519 sign 1y
+# revoke or expire the previous one, then re-export BOTH halves
+gpg --export-secret-keys --armor &lt;FINGERPRINT&gt; &gt; signing.asc
+</code></pre>
+<p>Update the mounted Secret and <code>rollout restart</code>. The server signs with the
+newest signing-capable subkey and verifies against every subkey the certificate
+carries, so the switch is invisible to readers.</p>
+<p><strong>The exception: a whole certificate is replaced.</strong> A compromised primary key,
+an organisational change, or migrating from a different signer means a genuinely
+new certificate — and then the old one must be retained, because a stored
+signature carries no key identifier and a <code>VERSION</code> signature is an immutable
+committed fact that cannot be re-issued. Keep the retired <strong>public</strong> key:</p>
+<pre><code class="language-toml">[signing]
+mode = "pgp"
+key_path = "/etc/ferroehr/signing.asc"                  # the new certificate
+retired_key_paths = ["/etc/ferroehr/signing-2025.pub.asc"]   # public, verify-only
+</code></pre>
+<p>Under Helm these are <code>config.signing.key_path</code> and
+<code>config.signing.retired_key_paths</code>, with the files mounted through
+<code>config.files</code>.</p>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>Retired entries are <strong>public</strong> keys, which is what makes the safety property
+structural rather than a promise: no secret key is loaded for them, so a
+retired certificate can verify and can never sign again. Verification does not
+become permissive either — a signature matching neither the active certificate
+nor any retired one still fails, and tampered content still fails.</p>
+</blockquote>
+<p>This is the same mechanism Debian uses for its archive: <code>debian-archive-keyring</code>
+ships current <em>and</em> retired keys so packages signed under an older key stay
+verifiable (<a href="https://ftp-master.debian.org/keys.html">Debian archive keys</a>).</p>
+<p><strong>What neither mechanism covers.</strong> Key <em>expiry</em> and <em>revocation</em> are a different
+problem: a strict verifier arguably should accept a signature made while the key
+was valid and reject one made after, and nothing in a detached signature proves
+<em>when</em> it was made. Solving that needs trusted timestamps (RFC 3161), the
+approach <a href="https://docs.sigstore.dev/about/security/">Sigstore</a> takes with
+short-lived keys and a timestamp authority. FerroEHR does not implement it, so
+treat an expired signing key as a certificate replacement and use
+<code>retired_key_paths</code>.</p>
+<p>If you are mid-rotation and need reads to keep working before either mechanism
+is in place, <code>signing.verify_on_read: warn</code> downgrades a verification failure
+from a 5xx to a logged and metered event
+(<code>version_signature_invalid_total{verdict="pgp_invalid"}</code>). That is a deliberate,
+recorded reduction in an integrity guarantee — not a setting to leave on.</p>
+<h2 id="logging-two-streams-that-are-not-interchangeable"><a class="header" href="#logging-two-streams-that-are-not-interchangeable">Logging: two streams that are not interchangeable</a></h2>
+<p><strong>Container logging is ours, and already the right shape.</strong> The server writes to
+stdout/stderr and never to a file inside the container — which is both the
+<a href="https://kubernetes.io/docs/concepts/cluster-administration/logging/">Kubernetes logging
+architecture</a>’s
+expectation and a requirement of <code>readOnlyRootFilesystem: true</code>: there is nowhere
+to write a log file, and a build that tried would fail rather than silently filling
+a writable layer. Set <code>config.log.format: json</code> (the chart’s default) for a
+collector; <code>pretty</code> is for a terminal.</p>
+<p><strong>The distinction that matters, because getting it wrong loses the accountability
+record:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th>Application log</th><th>ATNA audit trail</th></tr>
+</thead>
+<tbody>
+<tr><td>Purpose</td><td>diagnostics: what the process is doing</td><td><strong>accountability</strong>: who accessed which patient’s record</td></tr>
+<tr><td>Destination</td><td>stdout/stderr → node → your collector</td><td>its own store in the database (<code>audit</code> schema), plus optional forwarding to an external repository</td></tr>
+<tr><td>Format</td><td>JSON lines, ours</td><td>DICOM PS3.15 + FHIR <code>AuditEvent</code> (IHE BALP), standardised</td></tr>
+<tr><td>Retrieval</td><td>your log tool</td><td>the ITI-81 FHIR <code>AuditEvent</code> search endpoint</td></tr>
+<tr><td>Retention</td><td>your collector’s policy</td><td><code>audit.store.retention_days</code> (<code>0</code> = keep forever)</td></tr>
+<tr><td>May it be sampled or dropped?</td><td><strong>yes</strong> — it is diagnostics</td><td><strong>no</strong></td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>Do not treat the audit trail as “logs”.</strong> A collector configured to sample a
+noisy stream, or to drop under volume, is a reasonable policy for diagnostics and
+a compliance failure for the audit trail — it silently discards the record of who
+read which patient’s data. The two travel by different paths precisely so that
+one can be lossy: the audit trail does not go through stdout at all. If you also
+ship audit records to your log platform for convenience, that copy is a
+convenience, not the record.</p>
+</blockquote>
+<p>The audit trail’s own failure behaviour is configurable, and the default is worth
+knowing rather than inheriting: <strong><code>audit.fail_mode</code> defaults to <code>open</code></strong>, so an
+operation whose audit record cannot be written still proceeds, and the failure is
+metered rather than refused. <code>closed</code> answers <code>503</code> instead — the stronger
+compliance posture, and one that turns an audit outage into a clinical outage. Which
+is correct depends on whether your regulatory position can tolerate an unaudited
+access more or less than a refused one; it is a policy choice either way, and the
+shipped default chooses availability.</p>
+<p><strong>Cluster API audit logging is the operator’s.</strong> Enable it on the API server with
+an audit policy (<code>None</code> / <code>Metadata</code> / <code>Request</code> / <code>RequestResponse</code> per rule).
+<code>Metadata</code> for most resources with <code>Request</code>-level detail for Secret and RBAC
+changes is a reasonable starting shape. Two things worth alerting on specifically:
+<strong>authorization failures</strong> (<code>Forbidden</code> responses — a principal probing what it can
+reach), and any read of Secrets in this namespace by a principal that is not the
+kubelet, since that is what reading the DSN looks like from the API side.</p>
+<p><strong>Kubernetes <code>Events</code> are a third source</strong>, and distinct from both: they are the
+cluster’s account of what happened to your objects, they expire (typically an hour),
+and they are where this chart’s failures show up first —
+<code>Readiness probe failed: HTTP probe failed with statuscode: 503</code> when a dependency
+is down, <code>FailedCreate … violates PodSecurity "restricted:latest"</code> when a pod spec
+regresses under enforcement, <code>Unhealthy</code> and <code>Killing</code> during a rollout. Check
+<code>kubectl get events --sort-by=.lastTimestamp</code> before the application log when a pod
+will not start: the reason is usually there, and it is usually not in the log,
+because the container never ran.</p>
+<h2 id="on-a-managed-control-plane"><a class="header" href="#on-a-managed-control-plane">On a managed control plane</a></h2>
+<p>On EKS, GKE, AKS or an equivalent, <strong>several controls in this audit stop being
+yours</strong> — you cannot set API-server flags, reach etcd, or configure kubelet
+authentication. In exchange you inherit the provider’s defaults, which may be
+stronger or weaker than this sheet assumes, and which you should verify rather
+than assume.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Control</th><th>On a managed cluster</th></tr>
+</thead>
+<tbody>
+<tr><td>Host hardening, node OS patching</td><td>provider’s, though <strong>node images and upgrades are usually still yours to trigger</strong></td></tr>
+<tr><td>API-server flags, authorization mode</td><td>provider’s (RBAC is on by default everywhere mainstream)</td></tr>
+<tr><td>etcd access + encryption at rest</td><td>provider’s — but <strong>envelope encryption with your own KMS key is usually opt-in</strong>, and it is the control <a href="#secrets-at-rest-and-what-ours-contain">our Secrets need</a></td></tr>
+<tr><td>Kubelet authentication</td><td>provider’s</td></tr>
+<tr><td>Control-plane audit logging</td><td>provider’s to enable, <strong>often off or short-retention by default</strong>, and usually billed</td></tr>
+<tr><td>Pod Security Admission</td><td>yours (namespace labels)</td></tr>
+<tr><td>NetworkPolicy</td><td>yours to write — <strong>enforcement depends on the CNI</strong></td></tr>
+<tr><td>Everything the chart sets</td><td>unchanged: it is a workload</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Check the CNI before relying on the shipped NetworkPolicy.</strong> This is the item
+that varies most and fails most silently: a NetworkPolicy on a cluster whose
+network plugin does not enforce it is an object the API accepts, stores and
+displays, with no effect and no warning. Provider defaults differ, versions change
+them, and some require enabling enforcement at cluster creation — which cannot be
+changed afterwards on some platforms. Do not read your provider’s documentation
+and conclude; <strong>test it</strong>, the way this audit did:</p>
+<pre><code class="language-shell">kubectl -n ferroehr-probe run probe --image=busybox:1.37 --restart=Never --command -- sleep 600
+kubectl -n ferroehr-probe exec probe -- nc -w3 -z &lt;ferroehr-pod-ip&gt; 5432   # must fail
+kubectl -n ferroehr-probe exec probe -- nc -w3 -z &lt;ferroehr-pod-ip&gt; 8080   # must succeed
+</code></pre>
+<p>If the first command succeeds, the policy is decoration and every claim in this
+chapter that rests on it is void for your cluster.</p>
+<p>Provider audit tooling exists — for EKS, <a href="https://github.com/aws-samples/hardeneks">hardeneks</a>
+and MKAD are the commonly cited ones. <strong>We have not run them</strong>, so they are named
+as a starting point rather than a recommendation: treat their output as input to
+the same ownership question this page asks, not as a verdict.</p>
+<h2 id="the-supply-chain-map"><a class="header" href="#the-supply-chain-map">The supply-chain map</a></h2>
+<p>Each cheat-sheet supply-chain control, and the artifact that satisfies it — so a
+reader can check rather than trust:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Control</th><th>Satisfied by</th><th>Check it yourself</th></tr>
+</thead>
+<tbody>
+<tr><td>Trusted, minimal base images</td><td><code>gcr.io/distroless/cc-debian13:nonroot</code>, <strong>digest-pinned</strong>; build stages pinned by digest too</td><td><code>grep FROM docker/Dockerfile</code></td></tr>
+<tr><td>Vulnerability scanning in CI</td><td>Trivy on every published image, HIGH/CRITICAL with a fix</td><td>the <code>containers.yml</code> run log</td></tr>
+<tr><td>Scanning after release</td><td>scheduled weekly scan of the published tags</td><td><code>.github/workflows/image-scan.yml</code></td></tr>
+<tr><td>Dockerfile linting</td><td>hadolint, with adjudicated exceptions in <code>.hadolint.yaml</code></td><td>the <code>Dockerfile lint</code> job</td></tr>
+<tr><td>Secret + misconfiguration scanning</td><td>Trivy <code>secret</code> and <code>misconfig</code> over the tree</td><td>the <code>tree-scan</code> job</td></tr>
+<tr><td>Dependency advisories</td><td><code>cargo deny</code> on every change; a scheduled latest-deps lane</td><td><code>cargo deny check</code></td></tr>
+<tr><td>Signed images</td><td>Sigstore keyless SLSA provenance + SBOM attestations</td><td><code>gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:&lt;tag&gt; -R rubentalstra/FerroEHR</code></td></tr>
+<tr><td>Signed chart</td><td>the same, on the chart artifact</td><td><code>gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:&lt;version&gt; -R rubentalstra/FerroEHR</code></td></tr>
+<tr><td>SBOM</td><td>SPDX on the image index; a CycloneDX cargo-graph SBOM attached per release</td><td><code>docker buildx imagetools inspect &lt;image&gt; --format '{{json .SBOM}}'</code></td></tr>
+<tr><td>Adjudicated findings carry their argument</td><td>OpenVEX under <code>security/vex/</code>, applied by the scheduled scan</td><td>read the <code>impact_statement</code> in the document</td></tr>
+<tr><td>Secured CI/CD</td><td>every <code>uses:</code> digest-pinned, <code>permissions: {}</code> by default, no context interpolated into shells, zizmor + CodeQL over the workflows</td><td>the <code>zizmor</code> job</td></tr>
+<tr><td>No long-lived registry token</td><td>crates.io Trusted Publishing (OIDC); GHCR uses the ephemeral workflow token</td><td><code>.github/workflows/publish-crates.yml</code></td></tr>
+<tr><td>Independent grade</td><td>OpenSSF Scorecard, computed by someone other than us</td><td>the Scorecard badge</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Two gaps remain, stated here rather than left out of a page that otherwise reads
+as complete:</strong></p>
+<ol>
+<li><strong>Nothing verifies the signatures at admission.</strong> We sign; no cluster is
+required to check before running an image. The policy to close it is
+<a href="#image-provenance-at-admission">above</a> — and it is not yet verified against a
+live attestation, because none is published yet (issues #2085, #2120).</li>
+<li><strong>Provenance exists only from this release onward.</strong> Images published before
+the signing lane landed — <code>3.17.3</code> and earlier — carry no attestation and never
+will. <code>gh attestation verify</code> on those returns a 404, which is the correct
+answer and not a verification failure to work around.</li>
+</ol>
+<h2 id="final-thoughts-the-three-practices-checked"><a class="header" href="#final-thoughts-the-three-practices-checked">Final thoughts: the three practices, checked</a></h2>
+<p>The cheat sheet closes with three practices rather than controls. Checking them
+against this repository rather than claiming them:</p>
+<p><strong>“Embed security into the container lifecycle as early as possible” — evidenced.</strong>
+Security here is CI, not a review checklist: the golden-render gate asserts every
+Restricted field on every chart change, the secret-leak gate refuses a credential
+that would reach a ConfigMap, the image scanners run at build and weekly after
+release, <code>cargo deny</code> runs on every change, zizmor and CodeQL read the workflows,
+and the guards refuse a merge rather than filing a comment. The test of this claim
+is whether any of them has been <em>watched</em> to fail, and each of the chart-side ones
+has, deliberately, with the failure recorded.</p>
+<p><strong>“Use Kubernetes-native controls to reduce operational risk” — evidenced.</strong> The
+chart’s controls are the platform’s own: a NetworkPolicy rather than an in-app
+firewall, a security context and the Restricted profile rather than a hardening
+sidecar, resource limits rather than in-process throttling alone, probes rather
+than an external watchdog, and <a href="#service-mesh-a-recorded-decision">no service mesh</a>
+because what one would add is either already provided or not needed at this shape.
+The one place we did <em>not</em> take a native control is Pod Security Admission, and
+that is because <a href="#pod-security-admission-complying-versus-being-refused">labelling a namespace is not a chart’s
+call</a> — stated as the
+operator’s rather than quietly skipped.</p>
+<p><strong>“Leverage the context Kubernetes provides to prioritize remediation” — partly,
+and here is the honest version.</strong> The generic form of this practice is to rank
+findings by whether the affected code is reachable in your deployment. This
+project’s answer is the <strong>OpenVEX documents</strong>: when a scanner reports fifteen Go
+advisories in a privilege-dropping helper that opens no socket and parses no
+untrusted input, the response is a machine-readable <code>not_affected</code> statement with a
+controlled-vocabulary justification and an <code>impact_statement</code> a reader can check —
+not a silenced ignore list, and not a rebuild that fixes nothing.</p>
+<p>That mechanism has a cost, and stating it is what makes the claim honest: <strong>a VEX
+statement is a claim about today’s binary, and it must be re-checked on every
+base-image bump.</strong> When upstream rebuilds that helper, statements about it become
+obsolete, and a stale <code>not_affected</code> is worse than no VEX at all — it is an
+argument that has quietly stopped being true while still suppressing its finding.
+The obligation is written into <code>security/vex/README.md</code>, and the scheduled scan is
+what surfaces a finding whose statement no longer matches. The prioritisation
+practice is only as good as that re-check, and it is a human obligation, not an
+automated one.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../installation/kubernetes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../installation/from-source.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../installation/kubernetes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../installation/from-source.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/mermaid-eefea253.min.js"></script>
+        <script src="../theme/mermaid-init-ccf746f1.js"></script>
+        <script src="../theme/version-picker-3cfa9247.js"></script>
+
+
+
+    </div>
+    </body>
+</html>
