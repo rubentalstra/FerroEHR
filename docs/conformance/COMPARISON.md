@@ -20,9 +20,9 @@
 | | ferroehr | EHRbase |
 |---|---|---|
 | Product | ferroehr 3.17.3 | ehrbase 2.34.0 |
-| Run date | 2026-08-07 | 2026-08-07 |
-| Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase/` |
-| Stack | root compose, built from the current sources | `docker/sut-ehrbase.yml` (official images) |
+| Run date | 2026-08-13 | 2026-08-07 |
+| Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
+| Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
 
 ## Methodology
 
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-08-07) vs **EHRbase
+Runs compared: **ferroehr** (run of 2026-08-13) vs **EHRbase
 2.34.0** (run of 2026-08-07) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own

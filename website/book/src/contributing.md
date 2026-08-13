@@ -1,12 +1,21 @@
 # Contributing
 
-FerroEHR is open source (MIT; vendored openEHR artifacts remain Apache-2.0) and welcomes contributions. This
-chapter is a short orientation for anyone who wants to file an issue, report a
+FerroEHR is open source — MIT for the project's own code, with vendored
+third-party material under its upstream terms
+([Licensing & legal](licensing.md)) — and welcomes contributions. This chapter
+is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
 repository and are linked below. There is no contributor licence agreement and
-no copyright assignment — you keep your copyright, and the licence stays MIT
-for everyone. [Why FerroEHR exists](why-ferroehr.md) explains what the project
-asks of the companies that build on it, and why.
+no copyright assignment: you keep your copyright, and the licence stays MIT for
+everyone. [Why FerroEHR exists](why-ferroehr.md) explains what the project asks
+of the companies that build on it, and why.
+
+Contributions are not only code. A bug report with a reproducing request, a
+conformance case for behaviour nothing covers yet, a specification ambiguity you
+had to resolve in your own integration, a documentation correction, or a
+measurement from your own hardware all count.
+
+<!-- toc -->
 
 ## Where to start
 
@@ -21,14 +30,18 @@ The three governing documents are kept in the repository root:
 
 ## Setting up
 
-The Rust toolchain is pinned by the repository's `rust-toolchain.toml`, so
-`rustup` installs the right version automatically on your first build. Two
-extra tools are needed for the full test suite:
+The Rust toolchain is pinned by the repository's `rust-toolchain.toml` (stable
+1.97.1), so `rustup` installs the right version automatically on your first
+build. The declared minimum supported version is lower — Rust 1.96 — and CI
+verifies it independently with `cargo hack`, so do not reach for a language
+feature newer than that. The edition is 2024.
+
+Two extra tools are needed for the full test suite:
 
 - **A PostgreSQL 18 server** for the database-backed tests. The shared test
   harness starts (or re-adopts) one reusable container if Docker is running;
-  otherwise point it at a server you already run with
-  `FERROEHR_TEST_PG_URL` (its role must be able to `CREATE DATABASE`). See
+  otherwise point it at a server you already run with `FERROEHR_TEST_PG_URL`
+  (its role must be able to `CREATE DATABASE`). See
   [From source → Running the tests](installation/from-source.md#running-the-tests).
 - **`xmllint`** (from `libxml2`), used by the canonical-XML parity tests.
 
@@ -51,43 +64,64 @@ cargo clippy --workspace --exclude ferroehr-admin-ui --all-targets --all-feature
 cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
 cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 
-# rustdoc lints + doctests (the [workspace.lints.rustdoc] table is inert
-# without a doc run)
+# rustdoc lints + doctests (the rustdoc lint table is inert without a doc run)
 RUSTDOCFLAGS='-D warnings' cargo doc --workspace --exclude ferroehr-admin-ui \
   --all-features --no-deps --document-private-items
+RUSTDOCFLAGS='-D warnings' cargo doc -p ferroehr-admin-ui --features ssr --no-deps
 cargo test --workspace --doc
 
 cargo deny check                       # subsumes cargo-audit: same RustSec DB, plus yanked/licenses/bans/sources
 cargo machete                          # unused dependencies
 cargo hack check --rust-version --workspace   # the declared MSRV really builds
 bash scripts/checks/codegen-drift.sh    # generated layer matches the vendored specs
-bash scripts/checks/comment-style.sh --all     # the comment-style rules
 ```
+
+Beyond those, a family of small single-purpose scripts under `scripts/checks/`
+runs on every pull request: comment and doc-comment style, default values
+declared inline in their struct's `Default` impl, HTTP statuses compared as
+types rather than as numbers, licensing declarations and SPDX headers, no Python
+anywhere in the tooling, and the documentation-claim gates for this site. Each
+is a plain `bash` script you can run yourself, and the failure message names
+what to fix.
 
 CI adds a few gates that need more than a checkout: a container smoke test that
 composes the built server image against the database image, the browser
-end-to-end battery for the admin console (`bash scripts/ui-e2e.sh`), and the
-changelog, crate-version, and attribution guards. Console-only work has its own
-local battery — see the repository's `CONTRIBUTING.md`.
+end-to-end battery for the admin console (`bash scripts/ui-e2e.sh`), the Helm
+chart render and boot lanes, and the changelog, crate-version, and attribution
+guards. Console-only work has its own local battery — see the repository's
+`CONTRIBUTING.md`.
 
 > [!IMPORTANT]
 > Two rules are absolute. Never hand-edit a generated file — anything under a
-> `// @generated … DO NOT EDIT` header is produced by the code generator;
-> change the generator and regenerate instead. And never weaken, skip, or
-> delete a test to make a build pass, or edit a test to route around a bug it
-> exposes.
+> `// @generated … DO NOT EDIT` header is produced by the code generator; change
+> the generator and regenerate instead. And never weaken, skip, or delete a test
+> to make a build pass, or edit a test to route around a bug it exposes.
 
 A few more conventions worth knowing before you open a pull request:
 
-- Branch from `develop`, and target your pull request at `develop`.
-- Keep changes focused, and describe **what** changed and **why**. For
-  anything that touches openEHR behaviour, cite the relevant specification
-  section.
+- Branch from `develop`, and target your pull request at `develop`. Branch names
+  are `<type>/<slug>` with the conventional-commit types (`feat/…`, `fix/…`,
+  `docs/…`, `chore/…`, and so on), and commit subjects use the same types.
+- Keep changes focused, and describe **what** changed and **why**. For anything
+  that touches openEHR behaviour, cite the relevant specification section.
 - Behaviour changes come with tests. Snapshot changes must be reviewed, not
   blindly accepted.
-- Any user-visible change (the REST surface, AQL, validation, configuration,
-  the CLI, or the deployment artifacts) adds an entry to the changelog in the
-  same pull request — a CI guard enforces this.
+- Any user-visible change (the REST surface, AQL, validation, configuration, the
+  CLI, or the deployment artifacts) adds an entry to the changelog **and**
+  updates the matching page of this documentation, both in the same pull
+  request. CI guards enforce both.
+
+## Review
+
+Two things review a pull request. The maintainers, who decide; and CodeRabbit,
+which comments on every pull request from the committed `.coderabbit.yaml`.
+
+The bot is a second opinion, and deliberately nothing more. Its check is not
+required, it blocks no merge, and every commit-producing suggestion is turned
+off in the configuration — if one of its comments is right, the change is
+written by hand. A finding that contradicts the vendored openEHR specification
+text, the repository's own rules, or a local gate is wrong by construction, and
+saying so on the thread is the correct response.
 
 ## Profiling: finding where the time goes
 
@@ -98,19 +132,19 @@ Four flamegraph instruments, all built on established crates (the sampling is
 - **A running server** (composed stack, staging, production): the
   `GET /management/flamegraph` endpoint — see
   [Operations → Profiling](operations.md#profiling-the-on-demand-cpu-flamegraph).
-- **A code path in isolation**: the criterion benches carry a pprof profiler,
-  so any bench emits a flamegraph under `--profile-time`:
+- **A code path in isolation**: the criterion benches carry a pprof profiler, so
+  any bench emits a flamegraph under `--profile-time`:
 
   ```bash
   cargo bench -p ferroehr --bench aql -- --profile-time 10
   # → target/criterion/<bench>/profile/flamegraph.svg
   ```
 
-- **Async attribution** (a sampled stack under tokio often blames the
-  executor's poll loop; a span flame blames the instrumented operation): set
+- **Async attribution** (a sampled stack under tokio often blames the executor's
+  poll loop; a span flame blames the instrumented operation): set
   `telemetry.flame_file = "/tmp/ferroehr.folded"` — the
-  [`tracing-flame`](https://docs.rs/tracing-flame/latest/tracing_flame/)
-  layer captures span timings as folded stacks, rendered offline:
+  [`tracing-flame`](https://docs.rs/tracing-flame/latest/tracing_flame/) layer
+  captures span timings as folded stacks, rendered offline:
 
   ```bash
   cargo install inferno
@@ -118,8 +152,8 @@ Four flamegraph instruments, all built on established crates (the sampling is
   ```
 
 - **A whole local binary run** (no code changes needed):
-  [`cargo flamegraph`](https://crates.io/crates/flamegraph) — a dev tool,
-  not a dependency (`cargo install flamegraph`):
+  [`cargo flamegraph`](https://crates.io/crates/flamegraph) — a dev tool, not a
+  dependency (`cargo install flamegraph`):
 
   ```bash
   cargo flamegraph --bin ferroehr            # Linux: perf; add -F 999 for finer sampling
@@ -128,19 +162,18 @@ Four flamegraph instruments, all built on established crates (the sampling is
 
   On macOS it uses `dtrace`, which needs elevated permissions — run with
   `sudo cargo flamegraph …` or grant your terminal Developer-Tools access; on
-  Linux you may need `perf` installed and
-  `kernel.perf_event_paranoid` ≤ 2.
+  Linux you may need `perf` installed and `kernel.perf_event_paranoid` ≤ 2.
 
 ## Reporting issues and vulnerabilities
 
 Use the GitHub issue tracker for bugs and feature requests.
 
 > [!WARNING]
-> Do **not** open a public issue for a suspected security vulnerability.
-> Report it privately through
+> Do **not** open a public issue for a suspected security vulnerability. Report
+> it privately through
 > [GitHub's private vulnerability reporting](https://github.com/rubentalstra/FerroEHR/security/advisories/new)
-> ("Report a vulnerability" on the repository's Security tab). Because the
-> server handles PHI-class data by design, reports about data exposure through
-> the API, AQL, telemetry, or the audit trail are in scope even when they look
-> like "just configuration". Coordinated disclosure is preferred — please
-> allow a reasonable window for a fix before publishing details.
+> ("Report a vulnerability" on the repository's Security tab). Because the server
+> handles PHI-class data by design, reports about data exposure through the API,
+> AQL, telemetry, or the audit trail are in scope even when they look like "just
+> configuration". Coordinated disclosure is preferred — please allow a reasonable
+> window for a fix before publishing details.

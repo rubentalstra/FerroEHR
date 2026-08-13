@@ -1,10 +1,23 @@
 # Dashboard & queries
 
+The console's query surfaces are three views of the same thing: the dashboard
+summarises what the repository holds, the Query Builder assembles AQL from a
+template's own paths, and the raw editor runs AQL you wrote yourself. All three
+save to, and run against, the CDR's own stored-query registry — nothing is kept
+on the console's side.
+
+<!-- toc -->
+
 ## Dashboard
 
 The landing screen shows EHR / composition / template / stored-query counts,
 one tile per **stored-query namespace** (the summed match counts of the
 queries in it), and a commit-activity trend rendered as pure SVG.
+
+The namespace tiles are live: each one runs every stored query in that
+namespace as a count. If one of them fails, the tile reports no number rather
+than a misleading total — run that query on the Queries screen to read the
+CDR's own diagnostic.
 
 ![Dashboard](img/dashboard/dashboard.png)
 
@@ -16,23 +29,25 @@ from the template's own constraints (coded value sets, ordinal scales,
 quantity units). Conditions combine into arbitrarily nested ALL/ANY groups
 with per-condition and per-group negation. The generated AQL is previewed
 live and is always grammatically valid — the builder assembles the same
-query syntax tree the server validates, never text.
+query syntax tree the server parses, then prints it, so it never hand-builds
+query text.
 
 ![Query builder](img/queries/query-builder.png)
 
 Choose what comes back: whole compositions, projected data points (with
-column aliases), or a bare match count. Run pages through the result set;
-save the query to the CDR's stored-query registry under a namespace and a
-name (see [Grouping is the namespace](#grouping-is-the-namespace)).
+column aliases), a bare match count, or the distinct EHR ids matching the
+criteria tree (**EHRs (cohort)**). Run pages through the result set; save the
+query to the CDR's stored-query registry under a namespace and a name (see
+[Grouping is the namespace](#grouping-is-the-namespace)).
 
 ## The raw AQL editor
 
 The same run/save surface for hand-written AQL: grammar validation before
 anything reaches the CDR, JSON parameter bindings, paged results. The
 builder's "open in raw editor" hands its generated query across. When the editor
-was opened from a stored query, it also links back the other way — **Open in
-builder** and **Run with parameters** — so the three surfaces are reachable from
-each other for the same stored definition.
+was opened from a stored query, it also links back the other way, with
+**Open in builder** and **Run with parameters**, so the three surfaces are
+reachable from each other for the same stored definition.
 
 ![Raw AQL editor](img/queries/query-aql.png)
 
@@ -44,9 +59,7 @@ never empties. When a column holds ISO-8601 date/times it is offered as the
 true distance apart whatever order the rows came back in. The row order stays
 available as the fallback axis, and a single numeric column still draws as one
 plain line. A result set with nothing to chart — no numeric column, or a single
-row — says so in the chart pane rather than showing a blank box. The builder's
-output shapes include **EHRs (cohort)**: the distinct EHR ids matching the
-criteria tree.
+row — says so in the chart pane rather than showing a blank box.
 
 ![Query results](img/queries/query-aql-results.png)
 
@@ -92,12 +105,13 @@ instead of colliding with the one you opened (see [Versions](#versions)).
 ### Opening a stored query in the builder
 
 The builder writes one shape of AQL, and it will only load a stored query back
-into its controls when it can reproduce that query **byte for byte**. Anything
-else opens with a notice naming exactly what the builder cannot express — a
-`$parameter` it has no field for, a query over other RM classes, an aggregate
-outside its output shapes — beside a link to work on it in the raw editor
-instead. There is no partial load: a builder that showed *most* of a stored
-query would quietly rewrite it on the next save.
+into its controls when it can reproduce that query **byte for byte** — it
+re-lowers what it recognised and compares the result against the stored text.
+Anything else opens with a notice naming exactly what the builder cannot
+express — a `$parameter` it has no field for, a query over other RM classes, an
+aggregate outside its output shapes — beside a link to work on it in the raw
+editor instead. There is no partial load: a builder that showed *most* of a
+stored query would quietly rewrite it on the next save.
 
 A query that does load arrives complete — template, conditions (including
 nested ALL/ANY groups and negation), output shape, ordering, limit — with its
@@ -126,7 +140,7 @@ because openEHR does not allow a request window and a query window together.
 
 openEHR defines three ways to name the version of a stored query you are
 reading, and the runner offers all three. The line under the picker always
-states the exact request your choice will send:
+states the exact request your choice sends:
 
 | Resolution | Request | Which version runs |
 | --- | --- | --- |
@@ -155,7 +169,7 @@ replica. Queries saved without a namespace collect under **unqualified**.
 
 Both save surfaces (the builder and the raw editor) therefore offer the
 **Namespace** field beside the **Query name**, and show the exact qualified
-name the save will write. Typing the whole `namespace::name` into the name
+name the save writes. Typing the whole `namespace::name` into the name
 field works too.
 
 ### Versions
@@ -172,9 +186,9 @@ which of the two openEHR store operations a click will perform:
 
 Because an explicit version is immutable, **Open in editor** and **Open in
 builder** both propose the next minor version (opening `1.0.0` fills the field
-with `1.1.0`) — edit, save, and both versions are then listed side by side. Which part to bump is yours to
-change; the field is free text and only checks that a version you type is a
-complete triple.
+with `1.1.0`) — edit, save, and both versions are then listed side by side.
+Which part to bump is yours to change; the field is free text and only checks
+that a version you type is a complete triple.
 
 A shorter pattern like `1` or `1.0` is a **read** form, not a store form: when
 *fetching or executing* a stored query, openEHR resolves a partial version to

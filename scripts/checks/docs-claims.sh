@@ -304,6 +304,37 @@ case " $files " in *" $RUST_PAGE "*)
   done < <(grep -ohE '1\.[0-9]{2}(\.[0-9]+)?' "$RUST_PAGE" | sort -u)
 ;; esac
 
+# ── 3b. quoted wire evidence on the comparison page ─────────────────────────
+# Five fabricated response-body quotes shipped on the published comparison page
+# (#2348) — none occurred anywhere in the committed run records. A backticked
+# double-quoted string on that page presents itself as captured wire evidence,
+# so it must occur verbatim in one of the committed results records.
+COMPARISON_PAGE="$BOOK/comparison.md"
+case " $files " in *" $COMPARISON_PAGE "*)
+  while read -r quote; do
+    [ -n "$quote" ] || continue
+    inner=${quote#\`\"}; inner=${inner%\"\`}
+    grep -qF "$inner" docs/conformance/ehrbase/results.json docs/conformance/ferroehr/results.json 2>/dev/null \
+      || report "$COMPARISON_PAGE" "quotes \`\"$inner\"\` as wire evidence, but no committed results record contains it"
+  done < <(grep -ohE '`"[^"`]{4,}"`' "$COMPARISON_PAGE" | sort -u)
+;; esac
+
+# ── 3c. banned phrases with a recorded refutation ────────────────────────────
+# "static binary" shipped on four pages, the landing and the README while the
+# runtime image is distroless/cc precisely because the binary links glibc
+# dynamically (#2348). The claim is false by construction for this build.
+# A NEGATED use ("is not a static binary: …") is the truthful correction and
+# stays legal; the match runs over line-joined text so a negation split across
+# a line wrap is still recognised.
+while read -r f; do
+  [ -f "$f" ] || continue
+  tr '\n' ' ' < "$f" \
+    | sed -E 's/(not|never) a static(ally linked)? binary//Ig' \
+    | grep -qiE 'static(ally linked)? binary' \
+    && report "$f" "claims a static binary — the binary is dynamically linked (distroless/cc); say 'self-contained'"
+done < <(grep -rilE 'static(ally linked)? binary' --include='*.md' "$BOOK" website/landing README.md 2>/dev/null; \
+         grep -lFi 'static binary' website/landing/index.html 2>/dev/null)
+
 # ── 4. generated charts nothing embeds ───────────────────────────────────────
 # Whole-corpus by nature: a page deleting its figure is exactly the case to
 # catch, and that page may not be in a narrow diff.

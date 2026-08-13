@@ -1,5 +1,13 @@
 # Templates & EHR browsing
 
+These are the console's read-and-write screens over clinical content: the
+templates the CDR validates against, and the EHRs, folders, compositions and
+contributions committed under them. Every screen here is a view of the CDR's
+public API, so anything you change is a normal openEHR write that every other
+client sees.
+
+<!-- toc -->
+
 ## Template Manager
 
 Upload ADL 1.4 operational templates (the CDR's validation diagnostics
@@ -14,11 +22,11 @@ format.
 
 ![Template detail](img/templates/template-detail.png)
 
-The list filters by id, concept, or archetype id as you type, and is paged by
-the shared footer under the table — rows on screen out of how many,
-previous/next, and 25/50/100 rows per page, all in the URL (see
-[Paging](index.md#paging)). The filter narrows the rows; the footer counts what
-the filter left.
+The list filters as you type, matching a template's id, its concept, or its
+root archetype id, and is paged by the shared footer under the table — rows on
+screen out of how many, previous/next, and 25/50/100 rows per page, all in the
+URL (see [Paging](index.md#paging)). The filter narrows the rows; the footer
+counts what the filter left.
 
 The list also shows each template's root **archetype id**, and the detail
 screen opens with an identity card — concept, version, default language,
@@ -98,8 +106,8 @@ FLAT document (FLAT requires the template id, sent as the
 shown verbatim on rejection.
 
 The contributions tab opens with a **contribution activity** timeline —
-writes to this EHR per day, from the same contribution data the list below
-it shows.
+writes to this EHR per calendar day, bucketed from a wider window of the same
+contribution data the paged list below it shows.
 
 ### Directory editing
 
@@ -123,10 +131,11 @@ advanced mode still edits the canonical JSON directly.
 ![Directory](img/ehrs/directory/directory.png)
 
 The toolbar adds the read-side tools: **version history** (every directory
-version, read-only preview, one-click restore of an older tree), a
-**`version_at_time`** time-travel lookup, a **`path=` sub-folder query**,
-and the two-step **directory delete** (a logical delete — the history stays
-readable, and a new directory can be created afterwards).
+version, read-only preview, one-click restore of an older tree), an **At time**
+lookup that resolves the directory as it stood at a chosen instant, a
+**path query** for one sub-folder, and the two-step **directory delete** (a
+logical delete — the history stays readable, and a new directory can be created
+afterwards).
 
 ![Directory history](img/ehrs/directory/history.png)
 
