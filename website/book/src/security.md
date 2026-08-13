@@ -530,6 +530,33 @@ The `*.sbom.sigstore.json` asset beside it is the same thing for the SBOM
 attestation, so "which dependency graph was this binary built from" is
 verifiable offline too.
 
+**Worked through, against a release that exists.** Every command above was run
+against `v3.17.4` — the first release to carry these assets — on a downloaded
+copy, not on the build machine:
+
+```console
+$ shasum -a 256 -c ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz.sha256sum
+ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz: OK
+
+$ gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz \
+    --bundle ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz.sigstore.json \
+    --repo rubentalstra/FerroEHR
+# exit 0
+```
+
+Two things are worth doing yourself the first time, because a verification that
+cannot fail proves nothing. Append a single byte to the tarball and re-run: it
+exits non-zero. Point `--repo` at a repository that did not build it: also
+non-zero. Only then does a passing run mean something.
+
+The same digest appears in three independently produced places — the
+`.sha256sum` file, the `subject.digest.sha256` inside the `.intoto.jsonl`
+provenance, and the bytes you downloaded:
+
+```text
+eb7dd42f77f88b827c8c76e862ae57a8b437a9b53bb6328e1c9b5da65e74c614
+```
+
 **With neither `gh` nor `cosign` installed.** Every release tarball ships a
 plain `.sha256sum` beside it, which is the only verification available in a
 locked-down environment — and a locked-down environment is what a clinical
