@@ -1,6 +1,10 @@
 # mdbook-lint configuration (Docs CI: `mdbook-lint lint website/book/src`).
 #
-# MDBOOK010 (unclosed inline math) is disabled: this book enables no math
-# preprocessor, so a lone `$` — e.g. the literal `$subject_id` placeholder in
-# the Subject Proxy frame syntax — is plain text, never an open math block.
+# MDBOOK010 (unclosed inline math) is disabled. The book DOES pre-render math
+# (mdbook-katex, installed by docs.yml), but katex never processes fenced or
+# inline code, while MDBOOK010 counts every `$` on a line — so shell variables,
+# Argon2 `$argon2id$…` strings and the `$subject_id` frame placeholder all
+# false-fire. The real discipline (escape a literal `$` in PROSE as `\$`) is
+# review-enforced; measured 2026-08-13: enabling the rule reports only
+# code-span false positives.
 disabled-rules = ["MDBOOK010"]
