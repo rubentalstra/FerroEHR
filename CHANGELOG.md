@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Helm chart is `6.0.4`.** The v3.17.5 cut moved the chart's
+  `appVersion` to 3.17.5 without moving the chart's own version, and 6.0.3
+  was already published — a published chart version is immutable, so the
+  publish lane refused rather than replacing it. Install with
+  `--version 6.0.4` to get the 3.17.5 application image by default.
+
 ## [3.17.5] - 2026-08-13
 
 ### Security
