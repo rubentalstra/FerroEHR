@@ -7,7 +7,7 @@
 //! a live collector), and readiness reflecting a DOWN database.
 
 use ferroehr::telemetry::health::{Health, HealthIndicator, HealthStatus};
-use ferroehr::telemetry::metrics::histogram_views;
+use ferroehr::telemetry::metrics::{DB_POOL_CONNECTIONS, histogram_views};
 
 /// The histogram bucket ladders as a stable text table, so a re-bucketing is
 /// reviewed deliberately: `OTel`'s defaults are not ours, and a silently changed
@@ -77,7 +77,7 @@ async fn otlp_metrics_push_pipeline_smoke() {
         .build();
 
     let meter = provider.meter("ferroehr");
-    let gauge = meter.u64_gauge("db_pool_connections").build();
+    let gauge = meter.u64_gauge(DB_POOL_CONNECTIONS).build();
     gauge.record(3, &[KeyValue::new("state", "idle")]);
 
     provider.force_flush().expect("flush");
@@ -88,7 +88,7 @@ async fn otlp_metrics_push_pipeline_smoke() {
     );
     let has_gauge = metrics.iter().any(|rm| {
         rm.scope_metrics()
-            .any(|sm| sm.metrics().any(|m| m.name() == "db_pool_connections"))
+            .any(|sm| sm.metrics().any(|m| m.name() == DB_POOL_CONNECTIONS))
     });
     assert!(has_gauge, "db_pool_connections not present in the export");
 }

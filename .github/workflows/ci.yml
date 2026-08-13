@@ -731,6 +731,44 @@ jobs:
       - run: cargo clippy --locked -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
       - run: cargo clippy --locked -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 
+  # ── The slim server: the optional-integration features, subtracted ──────────
+  # The clippy job above compiles the workspace with --all-features, so nothing
+  # in CI ever built the server WITHOUT the optional integrations: every
+  # `require_disabled` refusal path, every `#[cfg(not(feature = …))]` block and
+  # the additive feature wiring of #1890 were compiled by no lane at all. That
+  # is how a wrong gate on the FHIR outbound emitter stayed latent until #2358,
+  # where `--features events` without `fhir` did not compile.
+  #
+  # Three feature sets, each a real deployment shape: the slim CDR, and each
+  # single integration enabled on top of it. `fhir` pulls `events` in by its own
+  # feature edge, so the `events`-only lane is the one that proves the gates are
+  # not silently coupled the other way. clippy, not check: the deny-tier lints
+  # must cover the gated code too. No tests — the feature graphs are compile
+  # properties, and the test job owns behaviour.
+  feature-combos:
+    name: clippy (slim server feature combos)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rust-cache, for the reason the clippy job states: sccache cannot cache
+      # clippy-driver invocations (mozilla/sccache#539). This job's cache entry
+      # is its own (rust-cache keys on the job), which is what it must be — the
+      # target dir here holds a different feature graph than the clippy job's.
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          components: clippy
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+      - run: cargo clippy --locked -p ferroehr-server --no-default-features --all-targets -- -D warnings
+      - run: cargo clippy --locked -p ferroehr-server --no-default-features --features events --all-targets -- -D warnings
+      - run: cargo clippy --locked -p ferroehr-server --no-default-features --features fhir --all-targets -- -D warnings
+
   # ── Rustdoc: intra-doc links + doc lints are inert unless rustdoc runs ──────
   # [workspace.lints.rustdoc] levels apply to every `cargo doc`; the -D
   # warnings env additionally promotes the warn-tier doc lints in CI
@@ -1886,6 +1924,7 @@ jobs:
       - deny
       - vex
       - clippy
+      - feature-combos
       - doc
       - msrv
       - codegen-drift
