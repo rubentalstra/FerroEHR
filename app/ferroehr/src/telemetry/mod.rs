@@ -4,16 +4,18 @@
 //! Telemetry initialization.
 //!
 //! The single `tracing` instrumentation API fanned out to stdout logs +
-//! (opt-in) OTLP spans, the `metrics` facade pulled via a Prometheus recorder,
-//! and (opt-in) an OTLP metrics push path.
+//! (opt-in) OTLP spans, and one OpenTelemetry `SdkMeterProvider` feeding up to
+//! two readers — the Prometheus scrape surface and the (opt-in) OTLP metrics
+//! push — so every instrument reaches both surfaces (see `metrics.rs`).
 //!
 //! **No openEHR spec governs this — our own design.** This is operational
 //! observability (spans, gauges, Prometheus scrape), categorically distinct
 //! from the ATNA *audit* trail (`crate::system_log`), which is a
 //! security/medico-legal record. The two are deliberately separate siblings.
 //!
-//! [`init`] installs the Prometheus recorder, builds the `OTel` providers when an
-//! endpoint is configured (absent ⇒ nothing installed, zero overhead), sets the
+//! [`init`] builds the meter provider and its readers, builds the `OTel` span
+//! provider when an endpoint is configured (absent ⇒ nothing installed, zero
+//! overhead), sets the
 //! W3C propagator, and installs the subscriber. It returns a [`TelemetryGuard`]
 //! carrying the reload handle, the Prometheus render handle, and the `OTel`
 //! providers; the guard flushes the batch exporter and stops the samplers on
