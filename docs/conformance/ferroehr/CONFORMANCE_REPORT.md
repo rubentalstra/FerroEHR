@@ -7,8 +7,8 @@ Runner: cnf-runner 3.17.3 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 1006 |
-| failed | 8 |
+| passed | 1014 |
+| failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 38 |
@@ -20,20 +20,20 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 435 | 3 | 0 | 18 |
+| **EHR** | 438 | 0 | 0 | 18 |
 | — EHR resource | 25 | 0 | 0 | 2 |
 | — EHR_STATUS | 46 | 0 | 0 | 5 |
-| — COMPOSITION | 132 | 2 | 0 | 0 |
+| — COMPOSITION | 134 | 0 | 0 | 0 |
 | — DIRECTORY | 77 | 0 | 0 | 6 |
-| — CONTRIBUTION | 90 | 1 | 0 | 5 |
+| — CONTRIBUTION | 91 | 0 | 0 | 5 |
 | — Item tags | 59 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 95 | 0 | 0 | 10 |
 | — ADL 1.4 templates | 35 | 0 | 0 | 5 |
 | — ADL 2 artefacts | 32 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
-| **Query** | 54 | 2 | 0 | 0 |
-| — Ad-hoc AQL | 43 | 2 | 0 | 0 |
+| **Query** | 56 | 0 | 0 | 0 |
+| — Ad-hoc AQL | 45 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
 | **Demographic** | 110 | 0 | 0 | 4 |
 | — Parties | 85 | 0 | 0 | 3 |
@@ -63,8 +63,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Audit accountability | 1 | 0 | 0 | 0 |
 | — Anonymous EHRs | 1 | 0 | 0 | 0 |
 | — EHR/demographic separation | 1 | 0 | 0 | 0 |
-| **Signing** | 8 | 3 | 0 | 2 |
-| — Version signing | 8 | 3 | 0 | 2 |
+| **Signing** | 11 | 0 | 0 | 2 |
+| — Version signing | 11 | 0 | 0 | 2 |
 | **SMART App Launch** | 3 | 0 | 0 | 0 |
 | — Discovery | 1 | 0 | 0 | 0 |
 | — Resource scopes | 2 | 0 | 0 | 0 |
@@ -86,15 +86,15 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | EhrStatus | pass | 44 | 0 | 0 | 5 |
 | CompositionOps | pass | 59 | 0 | 0 | 0 |
 | DirectoryOps | pass | 75 | 0 | 0 | 8 |
-| ChangeSets | FAIL | 83 | 1 | 0 | 5 |
+| ChangeSets | pass | 84 | 0 | 0 | 5 |
 | Versioning | pass | 69 | 0 | 0 | 0 |
-| ArchetypeValidation | FAIL | 123 | 2 | 0 | 0 |
+| ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
 | PartyOperations | pass | 86 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 19 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 11 | 0 | 0 | 0 |
-| AqlBasic | FAIL | 31 | 1 | 0 | 0 |
+| AqlBasic | pass | 32 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 3 | 0 | 0 | 0 |
-| AqlTerminology | FAIL | 5 | 1 | 0 | 0 |
+| AqlTerminology | pass | 6 | 0 | 0 | 0 |
 | ActivityReport | pass | 15 | 0 | 0 | 0 |
 | PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
 | EhrDumpLoad | pass | 15 | 0 | 0 | 0 |
@@ -111,7 +111,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | MessageApi | pass | 4 | 0 | 0 | 0 |
 | SystemApi | pass | 1 | 0 | 0 | 0 |
 | ItemTags | pass | 63 | 0 | 0 | 0 |
-| Signing | FAIL | 8 | 3 | 0 | 2 |
+| Signing | pass | 11 | 0 | 0 | 2 |
 | SimplifiedFormats | pass | 73 | 0 | 0 | 2 |
 | SmartAppLaunch | pass | 3 | 0 | 0 | 0 |
 | EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |

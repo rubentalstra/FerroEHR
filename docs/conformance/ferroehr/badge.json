@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR conformance",
-  "message": "NOT PASSING · 1006/1014 cases",
-  "color": "red"
+  "message": "CORE+STANDARD PASS · 1014/1014 cases",
+  "color": "brightgreen"
 }
