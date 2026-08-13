@@ -393,6 +393,22 @@ jobs:
   # we wrote is a licence conflict. It lives here rather than in `.fossa.yml`
   # because FOSSA's customLicenseSearch could not upload on this org's plan and
   # did not honour that file's path exclusions (measured 2026-08-12).
+  # LICENSE, REUSE.toml and the codegen header constant must agree on the
+  # copyright holder. They did not, and nothing compared them (#2325).
+  copyright-holder:
+    name: copyright-holder
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: One copyright holder, stated identically everywhere
+        run: bash scripts/checks/copyright-holder.sh
+
   license-text:
     name: license-text
     if: github.event_name == 'pull_request'
@@ -1837,6 +1853,7 @@ jobs:
       - error-source-chain
       - no-python
       - license-text
+      - copyright-holder
       - licensing
       - spec-citations
       - compose-hardening
