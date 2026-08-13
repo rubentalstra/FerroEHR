@@ -15,6 +15,13 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Security
+
+- **The `ferroehr-postgres` image moves to a rebuilt PostgreSQL 18.4 base.** The
+  upstream `postgres:18.4` image was rebuilt with current Debian packages, and
+  this pulls that rebuild in. Nothing about FerroEHR changes: the schema, the
+  extensions and the entrypoint are untouched.
+
 ## [3.17.4] - 2026-08-13
 
 ### Added
