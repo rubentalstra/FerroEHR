@@ -4,54 +4,69 @@
        80px margin — beyond the 40pt GitHub recommends, because the outer edge
        is cropped on some surfaces.
 
-       Centred, because with the name, one line and the trace there is nothing
-       to align a column against; left-aligning this little content just leaves
-       a hole on the right. The ECG trace is the logo mark's own motif given
-       the width of the card. -->
+       Capabilities rather than version numbers: a stranger seeing this card
+       wants to know what the thing DOES. Pins belong in the README, where they
+       can be read against the tree that states them. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#14100e"/>
       <stop offset="0.5" stop-color="#1c1714"/>
       <stop offset="1" stop-color="#14100e"/>
     </linearGradient>
-    <!-- Symmetrical fade: the signal arrives and leaves, rather than starting
-         and stopping at the safe margin. -->
+    <!-- Symmetrical fade: the signal passes through the card rather than
+         starting and stopping at the safe margin. -->
     <linearGradient id="trace" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#e4712f" stop-opacity="0"/>
-      <stop offset="0.22" stop-color="#e4712f" stop-opacity="0.95"/>
-      <stop offset="0.78" stop-color="#e4712f" stop-opacity="0.95"/>
+      <stop offset="0.20" stop-color="#e4712f" stop-opacity="0.95"/>
+      <stop offset="0.80" stop-color="#e4712f" stop-opacity="0.95"/>
       <stop offset="1" stop-color="#e4712f" stop-opacity="0"/>
     </linearGradient>
     <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#e4712f" stop-opacity="0.18"/>
+      <stop offset="0" stop-color="#e4712f" stop-opacity="0.16"/>
       <stop offset="1" stop-color="#e4712f" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
   <rect width="1280" height="640" fill="url(#bg)"/>
-  <ellipse cx="640" cy="452" rx="440" ry="150" fill="url(#glow)"/>
+  <ellipse cx="640" cy="366" rx="460" ry="130" fill="url(#glow)"/>
 
-  <!-- Logo mark, the iron-tile variant, centred above the wordmark. -->
-  <g transform="translate(584,96) scale(1.75)">
+  <!-- Logo mark first, wordmark beside it. -->
+  <g transform="translate(80,84) scale(1.6875)">
     <rect x="2" y="2" width="60" height="60" rx="12" fill="#21262B"/>
     <path transform="translate(14.80 44.00)" d="M2.20 0.00V-21.83H16.17V-18.53H6.11V-11.98H15.19V-8.73H6.11V0.00Z M25.93 0.34Q23.45 0.34 21.67 -0.70Q19.89 -1.74 18.93 -3.63Q17.97 -5.52 17.97 -8.09Q17.97 -10.61 18.92 -12.52Q19.86 -14.43 21.60 -15.51Q23.33 -16.58 25.68 -16.58Q27.67 -16.58 29.38 -15.71Q31.08 -14.84 32.12 -13.02Q33.16 -11.19 33.16 -8.32V-7.12H21.77Q21.84 -4.94 22.99 -3.79Q24.14 -2.65 25.97 -2.65Q27.23 -2.65 28.13 -3.19Q29.03 -3.74 29.41 -4.78L32.92 -4.06Q32.33 -2.08 30.49 -0.87Q28.65 0.34 25.93 0.34ZM21.78 -9.71H29.46Q29.28 -11.47 28.34 -12.53Q27.39 -13.59 25.69 -13.59Q23.95 -13.59 22.93 -12.47Q21.91 -11.35 21.78 -9.71Z" fill="#F2F1EF"/>
     <polyline points="12,15 17,15 20,9 23,19 26,13 29,15 36,15" fill="none" stroke="#D97742"
               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
-  <g font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">
-    <text x="640" y="330" font-size="104" font-weight="700" fill="#f3ece8" letter-spacing="-3">FerroEHR</text>
-    <text x="640" y="386" font-size="30" font-weight="500" fill="#b3a79f">
+  <g font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <text x="272" y="162" font-size="92" font-weight="700" fill="#f3ece8" letter-spacing="-2.5">FerroEHR</text>
+    <text x="276" y="212" font-size="29" font-weight="500" fill="#b3a79f">
       An openEHR clinical data repository, written in Rust.
     </text>
   </g>
 
-  <!-- The heartbeat, given the full width and its own space. -->
-  <polyline points="80,462 452,462 476,462 496,406 516,532 536,462 576,462 596,438 616,486 636,462 1200,462"
+  <!-- The heartbeat, with its own band of space. -->
+  <polyline points="80,340 452,340 476,340 496,286 516,406 536,340 576,340 596,316 616,362 636,340 1200,340"
             fill="none" stroke="url(#trace)" stroke-width="3.6"
             stroke-linecap="round" stroke-linejoin="round"/>
 
-  <text x="640" y="574" text-anchor="middle"
-        font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
-        font-size="22" font-weight="500" fill="#6b605a" letter-spacing="0.5">ferroehr.eu</text>
+  <!-- What it does, set as a typographic strip rather than buttons: nothing on
+       this card is clickable, so nothing on it should pretend to be. -->
+  <g font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+     font-size="20" font-weight="600" fill="#c9bdb5" letter-spacing="3.4">
+    <text x="80" y="470">VERSIONED RECORDS</text>
+    <text x="418" y="470">AQL QUERIES</text>
+    <text x="666" y="470">AUDIT TRAIL</text>
+    <text x="898" y="470">SELF-HOSTED</text>
+    <text x="1122" y="470">MIT</text>
+  </g>
+  <g stroke="#e4712f" stroke-opacity="0.5" stroke-width="1.5" stroke-linecap="round">
+    <line x1="392" y1="454" x2="392" y2="474"/>
+    <line x1="640" y1="454" x2="640" y2="474"/>
+    <line x1="872" y1="454" x2="872" y2="474"/>
+    <line x1="1096" y1="454" x2="1096" y2="474"/>
+  </g>
+
+  <text x="80" y="566" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="22" font-weight="500" fill="#6b605a">ferroehr.eu</text>
 </svg>
