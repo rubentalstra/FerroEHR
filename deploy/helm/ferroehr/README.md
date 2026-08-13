@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs, default-deny-ingress workload that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 6.0.3](https://img.shields.io/badge/Version-6.0.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.4](https://img.shields.io/badge/AppVersion-3.17.4-informational?style=flat-square)
+![Version: 6.0.3](https://img.shields.io/badge/Version-6.0.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.5](https://img.shields.io/badge/AppVersion-3.17.5-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -36,7 +36,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
   --version 6.0.3 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
-  --set image.tag=3.17.4
+  --set image.tag=3.17.5
 ```
 
 OCI registries require Helm 3.8 or newer.
@@ -48,7 +48,7 @@ They are independent SemVer lines and they move independently:
 | What | Set with | This release |
 |---|---|---|
 | the **chart** (templates, defaults, this document) | `--version` | `6.0.3` |
-| the **server image** | `image.tag` | `3.17.4` |
+| the **server image** | `image.tag` | `3.17.5` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
 is what keeps an upgrade of one from silently moving the other.
@@ -69,7 +69,7 @@ A **SLSA build provenance attestation** — what source it was built from, and h
 ```console
 gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.3 \
   -R rubentalstra/FerroEHR
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.4 \
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.5 \
   -R rubentalstra/FerroEHR
 ```
 
