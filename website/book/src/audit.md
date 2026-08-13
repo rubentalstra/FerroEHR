@@ -7,6 +7,8 @@ openEHR itself points at (the platform Service Model names the System Log
 component "IHE ATNA-compliant system log"). It is **on by default**: every
 deployment records a queryable audit trail with zero external dependencies.
 
+<!-- toc -->
+
 The trail is orthogonal to openEHR's own `CONTRIBUTION`/`AUDIT_DETAILS`
 change-control audit (which the server always writes in the same transaction
 as every version change): openEHR audit records what a version says about its
@@ -31,19 +33,29 @@ IHE standards define:
   Query (110112), Export/Import (110106/110107, the EHR-Extract directions),
   User Authentication (110114, with the Login `EventTypeCode` 110122).
 
-Every server operation is audited (unrecognised extension operations fail
-*closed* to a generic audited class — nothing is silently unaudited), and
-access refusals are always recorded: a `401`, a `403`, and the `400` a malformed
-`Authorization` header now earns. A refusal is attributed to the caller **only
-when one actually authenticated** — an unattributable denial is recorded as
-unattributed rather than under a placeholder subject, so no audit record ever
-names an identity that did not authenticate.
+Every server operation is audited — an unrecognised extension operation fails
+*closed* to a generic audited class, so nothing is silently unaudited — and
+access refusals are always recorded: a `401`, a `403`, and the `400` a
+malformed `Authorization` header earns. A refusal is attributed to the caller
+**only when one actually authenticated**; an unattributable denial is recorded
+as unattributed rather than under a fabricated subject, so no audit record
+ever names an identity that did not authenticate.
+
+> [!NOTE]
+> **Successful-login records are suppressed by default**
+> (`[audit] suppress_login_events = true`). Set it to `false` to record them.
+> Even then, a login record marks a genuine authentication *event*, not every
+> authenticated request: it is emitted when credentials were actually
+> verified — a Basic verified-credential-cache miss. A cache hit continues an
+> established session, and a Bearer request authenticated out of band at your
+> identity provider, so neither mints a per-request login record. Rejections
+> are recorded regardless of this switch.
 
 ## Sinks
 
 Records fan out to independently configured sinks (`[audit]` in
 `ferroehr.toml` — see the
-[configuration reference](installation/configuration.md#audit)):
+[configuration reference](installation/config-audit.md#audit)):
 
 | Sink | Default | What it does |
 |---|---|---|
@@ -51,12 +63,16 @@ Records fan out to independently configured sinks (`[audit]` in
 | `[audit.syslog]` | off | The classic ATNA feed: DICOM PS3.15 XML over syslog (RFC 5424; UDP or TLS transport) to an external ARR, per IHE ITI-20. |
 | `[audit.fhir_feed]` | off | The RESTful-ATNA feed (ITI-20 **ATX: FHIR Feed**): each FHIR `AuditEvent` is `POST`ed to an external FHIR ARR. With the local store on, delivery is **outbox-driven**: an ARR outage loses nothing, pending records ship on recovery. |
 
-The local store is the durability anchor. Under `fail_mode = "closed"`, a
-store that stops accepting writes makes every subsequent auditable operation
-answer `503 Service Unavailable` until a write succeeds again — no un-audited
-PHI access. (`open`, the default, drops-and-meters instead; every loss path
-is metered — see the `atna_audit_*` counters in
-[Operations](operations.md).)
+Emission never blocks the request path — a record is handed to a bounded queue
+(`queue_capacity`) and written by a background drain.
+
+The local store is the durability anchor. Under `fail_mode = "closed"`, an
+operation whose audit record cannot be recorded answers
+`503 Service Unavailable` — the deployment demanded an audit trail it cannot
+currently deliver, so no un-audited PHI access happens. (`open`, the default,
+drops-and-meters instead; every loss path is metered — see the `atna_audit_*`
+counters in [Operations](operations.md).) Login and rejection records never
+gate a response in either mode.
 
 ## Tamper evidence
 
@@ -111,17 +127,26 @@ Three controls sit on top of it, and they are separate on purpose:
 The RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** transaction is served
 at the FHIR façade:
 
-```
+```text
 GET /ferroehr/rest/openehr/v1/fhir/r4/AuditEvent
 ```
 
 It returns a FHIR `searchset` Bundle of the stored `AuditEvent` documents,
 newest first, with the full match `total`. Supported search parameters:
-`date` (`ge`/`le`-prefixed instants, repeatable), `patient`, `agent` (the
-principal), `entity` (the resource id), `outcome` (`0`/`4`/`8`/`12`),
-`action` (`C`/`R`/`U`/`D`/`E`), and `_count`/`_offset` paging; other FHIR
-search parameters are ignored (lenient search). The surface is **admin-only**
-under RBAC and answers `404` when the local store is disabled.
+
+| Parameter | Meaning |
+|---|---|
+| `date` | event-time bound, `ge`/`le`-prefixed RFC 3339 instants, repeatable |
+| `patient` | the recorded patient (EHR subject) id |
+| `agent` | the authenticated principal |
+| `entity` | the touched resource id |
+| `outcome` | the outcome indicator: `0`, `4`, `8` or `12` |
+| `action` | the action code: `C`, `R`, `U`, `D` or `E` |
+| `_count` / `_offset` | paging; page size defaults to 50, capped at 1000 |
+
+Other FHIR search parameters are ignored (lenient search); a malformed value on
+a supported one is a `400` carrying a FHIR `OperationOutcome`. The surface is
+**admin-only** under RBAC and answers `404` when the local store is disabled.
 
 ```bash
 # Who accessed patient-42's data this month?
@@ -132,34 +157,49 @@ curl -u admin:pw \
 This is also the openEHR "record demerging" instrument: when data lands in
 the wrong EHR, the patient-filtered audit search shows exactly who read it.
 
+> [!NOTE]
+> Audit records are themselves sensitive — they name patients, subjects and
+> actions — so this endpoint is a PHI-disclosure surface and is authorized like
+> any other.
+
 ## Node authentication (ITI-19, mutual TLS)
 
 ATNA's second half is node authentication. `[server.tls]` terminates TLS
-natively (protocol floor: TLS 1.2+, per IETF BCP 195) and can demand a
-verified client certificate:
+natively and can demand a verified client certificate:
 
 ```toml
 [server.tls]
 enabled = true
 cert_file = "/etc/ferroehr/server.pem"
 key_file = "/etc/ferroehr/server.key"
+min_version = "1.3"               # 1.3 (default) | 1.2
 client_auth = "required"          # off | optional | required
 client_ca_file = "/etc/ferroehr/client-ca.pem"
 ```
 
+The protocol floor is **TLS 1.3 only** by default, following the OWASP
+Transport Layer Security cheat sheet. Setting `min_version = "1.2"` enables
+1.2 *alongside* 1.3 — never instead of it — for a client that genuinely cannot
+do 1.3, such as an older integration engine or a pinned Java runtime. TLS 1.1
+and 1.0 are not selectable at all.
+
 With `client_auth = "required"`, only clients presenting a certificate
 chaining to your explicit trust anchor complete the handshake — the IHE
 mutually-authenticated-node posture. Deployments terminating TLS at an
-ingress keep `[server.tls]` off and enforce mTLS there instead. The
-separate-port management listener always stays plain HTTP (an internal
-surface). Complete the posture with time synchronisation (IHE Consistent
-Time): run NTP/chrony on every node so audit timestamps align across
-systems.
+ingress keep `[server.tls]` off and enforce mTLS there instead.
+
+> [!WARNING]
+> The separate-port management listener (`management.port`) stays **plain HTTP**
+> even with `[server.tls]` enabled, and it binds all interfaces. Treat it as an
+> internal surface and keep it off any publicly routed port.
+
+Complete the posture with time synchronisation (IHE Consistent Time): run
+NTP/chrony on every node so audit timestamps align across systems.
 
 ## Configuration summary
 
 Auditing defaults to on with the local store only; see the
-[configuration reference](installation/configuration.md#audit) for every
+[configuration reference](installation/config-audit.md#audit) for every
 `[audit]` key and its `FERROEHR__AUDIT__*` environment form. The syslog sink's
 own keys are `host` / `port` / `transport` / `tls_ca_file` /
 `tls_identity_cert_file` / `tls_identity_key_file` under `[audit.syslog]`; the

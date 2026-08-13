@@ -8,11 +8,14 @@ security surfaces you configure when you deploy FerroEHR: **authentication**
 (recording what happened). Each is independently configurable, and each is
 described here in terms of the environment variables you actually set.
 
-This chapter tells you **how to configure each control**. The
-[Threat model](threat-model.md) is its companion and tells you **what remains
-true after each control has done its job** — the trust boundaries, the residual
-risk at each, and what this software explicitly does not defend against. Read
-that one before you decide a control is sufficient for your deployment.
+This chapter tells you **how to configure each control**. Its companions tell you
+the rest: the [Threat model](threat-model.md) states **what remains true after
+each control has done its job** — the trust boundaries, the residual risk at
+each, and what this software explicitly does not defend against; and
+[Verifying releases](verifying-releases.md) covers the artifacts themselves —
+how to establish that the binary, image, or chart you downloaded came from this
+project's own build. Read the threat model before you decide a control is
+sufficient for your deployment.
 
 <!-- toc -->
 
@@ -35,9 +38,10 @@ each by the presence of its configuration block:
 
 - **HTTP Basic** is active when a `basic` block with a user list is
   configured. Each user has a username, an Argon2 password hash (a PHC string
-  beginning `$argon2id$`), and a set of roles (default `["USER"]`). Because it
-  is a list of users, the Basic block is normally supplied through the TOML
-  configuration file rather than environment variables.
+  beginning `$argon2id$`) or a `password_hash_file` pointing at one, and a set
+  of roles (defaulting to `["USER"]`). Because it is a list of users, the Basic
+  block is normally supplied through the TOML configuration file rather than
+  environment variables.
 - **OAuth2/OIDC bearer tokens** are active when an `oidc` block is configured.
   The server validates the token's signature, issuer, and audience.
 
@@ -51,6 +55,9 @@ honour **refuses to boot** rather than degrading at the first request:
 | `[auth.oidc] issuer` not `https`, or carrying a query/fragment | error — RFC 8414 §2, §6.2 (`allow_insecure_issuer = true` opts a dev issuer out of the scheme rule only) |
 | `[auth.oidc] clock_skew_leeway_seconds` above `300` | error — leeway may be "no more than a few minutes" (RFC 9068 §4 step 6) |
 | `[auth.oidc] hmac_secret` under 32 bytes | error — RFC 8725 §3.5 forbids memorizable passwords as keyed-MAC keys |
+| `[auth.oidc]` with **both** `hmac_secret` and `jwks_json` (or their `*_file` forms) | error — two competing key sources, never resolved by silent precedence |
+| `[auth.oidc] algorithms` naming `none`, or empty | error — an unsigned token proves nothing |
+| `[auth.oidc] algorithms` disagreeing with the key source | error — `HS*` verifies only against a symmetric secret, `RS*`/`ES*`/`PS*` only against public keys |
 | `[auth.oidc] hmac_secret` set at all | boot **warning** — a symmetric key is a development posture (see below) |
 | a `password_hash` below `m=19456,t=2,p=1` argon2id | error — the OWASP Argon2id floor |
 
@@ -69,15 +76,25 @@ The OIDC settings:
 |---|---|---|
 | `FERROEHR__AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base; an `https` URL with no query/fragment |
 | `FERROEHR__AUTH__OIDC__AUDIENCES` | — (**required, non-empty**) | accepted `aud` values |
-| `FERROEHR__AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms |
+| `FERROEHR__AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms; must match the key source |
 | `FERROEHR__AUTH__OIDC__CLOCK_SKEW_LEEWAY_SECONDS` | `60` | leeway on `exp`/`nbf`; capped at `300` |
+| `FERROEHR__AUTH__OIDC__REQUIRE_AT_JWT` | `false` | refuse a token that does not claim the RFC 9068 `at+jwt` access-token profile |
 | `FERROEHR__AUTH__OIDC__ALLOW_INSECURE_ISSUER` | `false` | accept a non-`https` issuer (development/testing only) |
 | `FERROEHR__AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret, min. 32 bytes (development/testing) |
 | `FERROEHR__AUTH__OIDC__JWKS_JSON` | unset | a static JWKS document |
+| `FERROEHR__AUTH__OIDC__CONNECT_TIMEOUT_MS` | `3000` | discovery/JWKS connect budget |
+| `FERROEHR__AUTH__OIDC__REQUEST_TIMEOUT_MS` | `5000` | discovery/JWKS request budget |
+| `FERROEHR__AUTH__OIDC__NEGATIVE_CACHE_TTL_SECONDS` | `10` | how long a *failed* key fetch is remembered (`0` = off), so an issuer outage does not mean one discovery attempt per request |
 
 There is no separate JWKS or discovery URL to set: the server discovers the
 JWKS URI from the issuer's `.well-known/openid-configuration` unless you supply
-a static `JWKS_JSON` (preferred when present) or an `HMAC_SECRET`.
+a static `JWKS_JSON` or an `HMAC_SECRET` — and setting both of those is a boot
+error rather than a precedence rule.
+
+`REQUIRE_AT_JWT` is off by default because RFC 9068 §2.1 makes the `at+jwt`
+type a `SHOULD` for the authorization server, so requiring it would reject
+conforming issuers. A token that *does* claim the profile is held to the whole
+of §2.2 either way — `iat`, `jti` and `client_id` become mandatory for it.
 
 > [!TIP]
 > **Keycloak example.** Point the issuer at your realm and let discovery do the
@@ -103,6 +120,14 @@ with `Retry-After` (no token can be validated, so the server cannot decide — i
 is not a statement about the caller's credential). The per-status table for
 client authors is in [Using the API](using-the-api/index.md#which-status-a-credential-problem-gets).
 
+The `401` body deliberately says nothing about *why*. Rendering the rejection
+told an unauthenticated caller whether a token was expired or forged, which is
+exactly the distinction an attacker probes for; the reason stays in the log,
+where the operator can read it and the caller cannot. The
+`WWW-Authenticate` challenge still carries the RFC 6750 §3.1 error code, and a
+request that carried no credential at all deliberately gets no code — it has not
+made a mistake yet.
+
 ### Two limits worth planning around
 
 **A symmetric `hmac_secret` is a development posture, not a production one.**
@@ -113,17 +138,15 @@ warning at boot whenever one is configured. Use the issuer's OIDC discovery
 document (the default when no static key material is set) or `jwks_json`.
 
 **Revocation latency equals the access-token lifetime.** Tokens are validated
-offline against the issuer's published keys; the CDR does not call an
-introspection endpoint (RFC 7662 defines that mechanism but does not require a
-resource server to use it), so a token revoked at the identity provider stays
-acceptable here until its `exp` passes. This is deliberate: introspecting on
-every request would put the identity provider's availability directly in the
-request path, and caching introspection results only trades the lag for a
-shorter one. **The control is therefore the token lifetime, which your
-authorization server owns** — keep access-token lifetimes short (minutes, not
+offline against the issuer's published keys; the CDR calls no introspection
+endpoint (RFC 7662 defines that mechanism but does not require a resource server
+to use it), so a token revoked at the identity provider stays acceptable here
+until its `exp` passes. That is deliberate — introspecting per request would put
+the identity provider's availability in the request path, and caching the results
+only shortens the lag. **The control is therefore the token lifetime, which your
+authorization server owns**: keep access-token lifetimes short (minutes, not
 hours) if prompt revocation matters, and use refresh tokens for session length.
-`clock_skew_leeway_seconds` (default `60`, capped at `300`) adds at most its own
-value on top of `exp`.
+`clock_skew_leeway_seconds` adds at most its own value on top of `exp`.
 
 ## Authorization
 
@@ -148,7 +171,8 @@ that admits is a **server-wide choice**:
 `open` is the default because it is what every existing deployment runs, and
 changing it changes who can read existing records. `restricted` is object-level
 **default-deny**, and it is the setting to reach for if your threat model
-includes a caller enumerating record ids: an `ehr_id` is a UUIDv7, and the OWASP
+includes a caller enumerating record ids: a server-created `ehr_id` is a
+time-ordered UUIDv7, so it is not even unpredictable, and the OWASP
 [Insecure Direct Object Reference Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)
 cheat sheet is explicit that an unpredictable identifier is not itself an access
 control.
@@ -193,9 +217,11 @@ server default**, in both directions:
   `403`.
 - **Privacy levels** — integer sensitivity levels with meanings you define
   for your jurisdiction. A composition's level is its override entry or the
-  default; a caller with `restricted_below` access may only read
-  compositions strictly below their `max_level`, while `full` access has no
-  ceiling.
+  default, and a caller may read it only when its level is *strictly below*
+  their ceiling. `full` access has no ceiling; `restricted_below` uses the
+  entry's `max_level`; a caller with **no access-list entry** gets
+  `default_level + 1`, so the default level stays readable and only raised
+  levels are withheld. This gate applies to Composition **read** routes.
 - **Gate-keeper** — once set, only that principal may commit a new
   `EHR_ACCESS` version (via a CONTRIBUTION; there is no dedicated
   `EHR_ACCESS` endpoint in the openEHR REST API). Changes are versioned and
@@ -204,19 +230,20 @@ server default**, in both directions:
 The scheme is a FerroEHR extension: openEHR mandates the `EHR_ACCESS`
 object and its change control but publishes no concrete access-control
 scheme. Query (AQL) results are not filtered by privacy level in this
-release; the per-EHR gate still applies to EHR-scoped query routes.
+release — query execution carries no per-row principal context — but the
+per-EHR gate still applies to every query route that binds an `ehr_id`.
 
 ### RBAC (role-based, coarse)
 
-Every operation is classified as Public, Clinical, Management, or Admin, and a
-role model gates each class. Roles are plain, case-insensitive strings; the
-defaults are `USER` (the baseline clinical role) and `ADMIN`.
+Every openEHR operation is classified as **Public**, **Clinical**, or
+**Admin**, and a role model gates each class. Roles are plain,
+case-insensitive strings; the defaults are `USER` and `ADMIN`.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
 | `FERROEHR__AUTHZ__RBAC__ENABLED` | `true` | the coarse role gate (active only when auth is enabled) |
 | `FERROEHR__AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
-| `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
+| `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | names the baseline clinical role |
 | `FERROEHR__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
 | `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles |
 
@@ -226,15 +253,20 @@ for conveying authorization state (`roles`, `groups`, `entitlements`, of which
 `roles` and `entitlements` are [SCIM](https://www.rfc-editor.org/rfc/rfc7643#section-4.1.2)
 attributes), followed by the widely deployed nested `realm_access.roles` — or from
 a Basic user's configured roles. A claim path may be dotted, so an issuer that
-nests them differently is configuration rather than a code change. A clinical
-operation needs at least one role; an admin operation needs the admin role.
-Disabling RBAC restores authentication-only behaviour.
+nests them differently is configuration rather than a code change; a claim
+carrying a single string and one carrying an array are both accepted.
+
+**A Clinical operation needs at least one role of any name; an Admin operation
+needs the admin role.** `USER_ROLE` records what the baseline clinical role is
+called rather than being required by the gate — a Basic user with no `roles`
+list gets `["USER"]`, which satisfies the Clinical class and no Admin
+operation. Disabling RBAC restores authentication-only behaviour.
 
 > [!IMPORTANT]
 > **The management surface is not configured here.** `/management/*` is governed
 > entirely by `[management.endpoints]`, one level per endpoint, and nothing under
-> `[authz.rbac]` changes it. There is no global default beside it: an endpoint
-> you do not name is `off`.
+> `[authz.rbac]` changes it. There is **no global default beside it: an endpoint
+> you do not name is `off`** and is not mounted at all.
 >
 > Each level means: `off` — not mounted, answers `404`; `private` — any
 > authenticated principal; `admin_only` — authenticated **and** holding
@@ -245,7 +277,8 @@ Disabling RBAC restores authentication-only behaviour.
 > an anonymous caller **whatever** your RBAC settings say, because a `public`
 > endpoint is mounted outside the authentication layer. Lock the surface down by
 > raising the levels in `[management]`, and read the effective set back from
-> `/management/env` rather than assuming.
+> `/management/env` — or from the boot log line that names every mounted
+> endpoint and its level — rather than assuming.
 
 > [!IMPORTANT]
 > **The OAuth2 `scope` claim does not grant roles.** A scope grants a *client*
@@ -254,15 +287,14 @@ Disabling RBAC restores authentication-only behaviour.
 > at-least-one-role check pass for every OIDC token, since `openid` alone
 > satisfied it. If your callers rely on a scope naming a role, move that role
 > into one of the role claims above. Scopes remain on the principal and still
-> drive SMART scope enforcement.
+> drive SMART scope enforcement and ABAC policy.
 
 > [!NOTE]
 > The downloadable Compose quickstart deliberately runs with RBAC **off** and a
 > single user, so every surface works out of the box (see
 > [Docker Compose](installation/compose.md)). Turn the role gate on with
 > `[authz.rbac] enabled = true` (or `FERROEHR__AUTHZ__RBAC__ENABLED=true`) and
-> give each principal an explicit `roles` list — a Basic user without one falls
-> back to the baseline `USER` role, which grants no admin operation.
+> give each principal an explicit `roles` list.
 
 A principal carrying the `readonly_role` (default `READONLY`) is refused on
 every write operation — creating an EHR, committing a composition, uploading a
@@ -271,8 +303,9 @@ as `ADMIN` (a restriction always overrides a grant). Reads and AQL queries stay
 permitted, so a `READONLY` account is an authenticated, view-only principal. The
 repository's from-source development stack ships one such account
 (`ferroehr-readonly`, password `ferroehr`) alongside `ferroehr` and
-`ferroehr-admin`, with RBAC enabled, so the separation can be tried out; the
-downloadable quickstart file has neither (one user, no role gate).
+`ferroehr-admin`, with RBAC at its default `enabled = true`, so the separation
+can be tried out; the downloadable quickstart file has neither (one user, no
+role gate).
 
 ### ABAC (attribute-based, fine-grained)
 
@@ -290,24 +323,33 @@ without it.
 | `FERROEHR__AUTHZ__ABAC__ENGINE` | `cedar` | `cedar` (embedded) or `remote` (external PDP) |
 | `FERROEHR__AUTHZ__ABAC__ORGANIZATION_CLAIM` | `organization_id` | JWT claim for the organisation attribute |
 | `FERROEHR__AUTHZ__ABAC__PATIENT_CLAIM` | `patient_id` | JWT claim for the patient attribute (enables the subject gate) |
-| `FERROEHR__AUTHZ__ABAC__CEDAR__POLICY_DIR` | — (required for `cedar`) | directory of `.cedar` policy files |
+| `FERROEHR__AUTHZ__ABAC__CHECK_DIRECTORY` | `false` | also submit DIRECTORY (FOLDER) operations to the policy engine |
+| `FERROEHR__AUTHZ__ABAC__CEDAR__POLICY_DIR` | — (required for `cedar`) | directory of `*.cedar` policy files |
 | `FERROEHR__AUTHZ__ABAC__CEDAR__RELOAD_SECS` | off | optional policy hot-reload interval |
 | `FERROEHR__AUTHZ__ABAC__REMOTE__SERVER` | — (required for `remote`) | PDP base URL (must end with `/`) |
 | `FERROEHR__AUTHZ__ABAC__REMOTE__CONNECT_TIMEOUT_MS` | `2000` | PDP connect timeout |
 | `FERROEHR__AUTHZ__ABAC__REMOTE__REQUEST_TIMEOUT_MS` | `5000` | PDP request timeout |
 
 Two engines sit behind one interface. **Cedar** is the embedded default:
-policies live in `.cedar` files, are schema-validated at boot (an invalid
-policy set stops the server rather than silently denying), and need no
+policies live in `*.cedar` files, are schema-validated at boot against a
+shipped schema built from the resource-kind and access-mode sets themselves (an
+invalid policy set stops the server rather than silently denying), and need no
 external service. The **remote PDP** option consults an external policy server
-over HTTP for deployments that already run one.
+over HTTP for deployments that already run one; it additionally requires an
+`[authz.abac.policy.<kind>]` binding for every resource kind it will be asked
+about, and a missing one is a boot error rather than a first-request surprise.
 
 A policy sees the **caller**, not just the request: the authenticated subject,
 its roles (as the role layer above resolved them), its scopes, the resolved
 organization and patient, the resource's patient and template, and the operation
 id. So a rule can be written about one caller, a role, a scope, or a single
-operation — the [shipped example policies](https://github.com/rubentalstra/FerroEHR/tree/develop/app/ferroehr-rest/examples/policies)
-show a role-keyed break-glass permit and a scope-keyed write restriction.
+operation — the [shipped example policy](https://github.com/rubentalstra/FerroEHR/tree/develop/app/ferroehr-rest/examples/policies)
+shows a role-keyed break-glass permit and a scope-keyed write restriction.
+
+A request whose `patient` or `template` resolves to several values is evaluated
+over the full cartesian product of them, and **every** combination must permit;
+the first deny short-circuits. A request that resolves to no combination at all
+permits vacuously, because there is nothing to decide about.
 
 > [!WARNING]
 > Authorization is **fail-closed in two distinct senses**, and the difference
@@ -344,7 +386,10 @@ differs, not because one was forgotten.
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | request paths carry `ehr_id` and version identifiers; this keeps them out of cross-origin `Referer` headers |
 | `Cross-Origin-Resource-Policy` | `same-site` | refuses cross-site embedding of API responses |
 | `X-Frame-Options` | `DENY` | for the HTML this origin can serve (Swagger UI) |
-| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` | the defensive minimum. The cheat sheet is explicit that CSP "might be meaningless in the response of a REST API that returns content that is not going to be rendered", so this is not a policy pretending to govern scripts — it says nothing loads and nothing frames |
+| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` | the defensive minimum, applied wherever a response does not set its own — Swagger UI needs a real policy and brings one. The cheat sheet is explicit that CSP "might be meaningless in the response of a REST API that returns content that is not going to be rendered", so this is not a policy pretending to govern scripts — it says nothing loads and nothing frames |
+
+`X-XSS-Protection` and `X-Powered-By` are absent because the cheat sheet says to
+remove them, and no `Server` header is sent at all.
 
 **`Strict-Transport-Security` is deliberately not sent by the API server.** It is a
 property of the TLS edge, and [RFC 6797 §7.2](https://www.rfc-editor.org/rfc/rfc6797#section-7.2)
@@ -355,33 +400,38 @@ owns TLS; sending it from here would be inert at best and misleading at worst.
 **The admin console** additionally carries the browser set with a real CSP, because
 it serves HTML and hydrates WebAssembly.
 
-**The published documentation site cannot carry response headers at all.** GitHub
-Pages serves static files, so the policy travels as a `<meta http-equiv>` element,
-which is weaker by specification: `frame-ancestors`, `report-uri` and `sandbox`
-are ignored in meta form, and the policy applies only once the parser reaches it.
-It still blocks an injected external script or an exfiltrating connection, which
-is the realistic risk for a docs site. Anyone re-hosting these docs behind a real
+**The published documentation site cannot carry response headers at all** — it is
+static files on GitHub Pages, so its policy travels as a `<meta http-equiv>`
+element, which is weaker by specification (`frame-ancestors`, `report-uri` and
+`sandbox` are ignored in meta form). Anyone re-hosting these docs behind a real
 web server should send the headers properly instead.
 
 ## Request limits and rate limiting
 
-Two different protections, two different statuses, and an operator should be able
-to tell them apart from the status alone.
+Four different protections, four different statuses, and an operator should be
+able to tell them apart from the status alone.
+
+**Connection bounds** — `[server.connection]`. The limits that apply *before* a
+request exists, because a client that opens a socket and trickles headers reaches
+none of the others: an HTTP/1 header-read timeout, and an HTTP/2 concurrent-stream
+cap with keep-alive PINGs.
 
 **Body size** — `[server.limits]`. Two tiers: the clinical surface, and the routes
 that accept bulk by design (template upload, `/message/import`, `/message/tdd`).
-Over-limit is `413`. The defaults are sized to clear the largest operational
-template in the vendored corpus several times over, and a deployment whose
-compositions embed large `DV_MULTIMEDIA` data raises `body_bytes` deliberately.
+Over-limit is `413`. The defaults are sized against the largest operational
+template and example composition in the vendored corpus rather than round
+numbers, and a deployment whose compositions embed large `DV_MULTIMEDIA` data
+raises `body_bytes` deliberately.
 
 **Request rate** — `[server.rate_limit]`, on by default. The **address** tier sits
 outside authentication so a flood is refused before the server verifies a
 signature per request; the **principal** tier sits inside it, keyed on the
 authenticated subject, because a hospital behind one NAT is a single address and
 address-keying a clinical API would throttle a whole site for one busy client.
-Refusal is `429` with `Retry-After`.
+Refusal is `429` with `Retry-After` and the `x-ratelimit-*` headers the limiter
+computed.
 
-**Concurrency** — `[server].max_in_flight`, the pre-existing load shed. Refusal is
+**Concurrency** — `[server].max_in_flight`, the admission cap. Refusal is
 `503` with `Retry-After`.
 
 So: `503` means the server is full right now, `429` means you are asking too
@@ -398,24 +448,39 @@ number.
 
 | Surface | Default | Notes |
 |---|---|---|
-| `/health`, `/health/liveness`, `/health/readiness` | **always on, unauthenticated** | Deliberate: orchestrator probes must not need credentials. The payload is a status per component plus a fixed-string detail — never a driver error, a DSN, or a panic payload. Causes are logged for the operator instead. |
+| `/health`, `/health/liveness` | **always on, unauthenticated** | Deliberate: orchestrator probes must not need credentials. Both answer a plain-text `OK` with no I/O behind them. |
+| `/health/readiness` | **always on, unauthenticated** | A status per registered component, `200` while the aggregate is up or degraded and `503` when a required component is down. Each component's detail is a **fixed string** — never a driver error, a DSN, or a panic payload. Causes are logged for the operator instead. |
 | `/management/*` | **not mounted at all** (`management.enabled = false`) | With the master switch off, every route is `404`. |
-| `/management/{info,metrics,prometheus,env,loggers,flamegraph}` | each **`off`** individually | Even with the master switch on, each endpoint stays unmounted until given a level. The global fallback is `admin_only`, so a level set carelessly lands on the admin gate rather than open. |
-| `management.port` | unset (shares the API listener) | Set it to serve ops introspection from **its own listener**, which is how to get the port/interface separation the OWASP cheat sheet asks for — bind it away from the clinical interface. |
+| `/management/{info,metrics,prometheus,env,loggers,flamegraph}` | each **`off`** individually | Even with the master switch on, each endpoint stays unmounted until you name a level for it. There is no global fallback: silence means `off`, so a surface this privileged opens one endpoint at a time, by name. |
+| `management.port` | unset (shares the API listener) | Set it to serve ops introspection from **its own listener** on its own port. It binds all interfaces and always stays plain HTTP even with `[server.tls]` on, so treat it as an internal surface and keep it off any publicly routed port — the interface half of the separation is your network's, not this key's. |
 
-`env` and `flamegraph` deserve their individual defaults: `env` renders the
+`env` and `flamegraph` deserve particular caution: `env` renders the
 effective configuration (redacted, but still configuration), and `flamegraph`
 starts a CPU profiler on request, which is both a disclosure and a
-denial-of-service lever. Both are `off` by default and `admin_only` under the
-global fallback; the profiler additionally caps the window and sampling
-frequency, refusing an out-of-range request rather than clamping it silently.
+denial-of-service lever. Both are `off` until you name a level, and the profiler
+additionally caps the window and sampling frequency, refusing an out-of-range
+request rather than clamping it silently.
 
 ## Secrets: mount files, never bake values
 
 Every secret this server reads has a `*_file` sibling, and the loader reads and
-trims the file at startup: `hmac_secret_file`, `jwks_json_file`,
-`key_passphrase_file`, `client_secret_file`, and the TLS key/cert paths. Exactly
-one of a pair may be set — both is a boot error.
+trims the file at startup. Exactly one of a pair may be set — both is a boot
+error naming the pair:
+
+| Secret | File sibling |
+|---|---|
+| the database DSN | `db.url_file` |
+| a Basic user's Argon2 hash | `auth.basic.users[].password_hash_file` |
+| the OIDC symmetric key | `auth.oidc.hmac_secret_file` |
+| a static JWKS document | `auth.oidc.jwks_json_file` |
+| the PGP signing-key passphrase | `signing.key_passphrase_file` |
+| a terminology OAuth2 client secret | `terminology.external.oauth2_clients.<name>.client_secret_file` |
+| the object-store secret key | `multimedia.secret_access_key_file` |
+| the AMQP URLs (events and FHIR outbound) | `events.url_file`, `fhir.outbound.url_file` |
+
+(The TLS `cert_file` / `key_file` / `client_ca_file` settings are paths by
+nature and have no inline form at all, which is the same property arrived at
+from the other direction.)
 
 That is deliberately the shape Docker Secrets and Kubernetes Secrets deliver: a
 file mounted into the container. So the recommended posture needs no extra
@@ -435,11 +500,11 @@ secrets:
     file: ./secrets/oidc_jwks.json   # or `external: true` in swarm
 ```
 
-Why files rather than environment variables, concretely: an environment variable
-is readable from `/proc/<pid>/environ` by anything in the container's namespace,
-appears in `docker inspect` output, is inherited by every child process, and is
-routinely captured whole by crash reporters and process listings. A mounted file
-is none of those things, and it can be rotated without recreating the container.
+Why files rather than environment variables: an environment variable is readable
+from `/proc/<pid>/environ` by anything in the container's namespace, appears in
+`docker inspect` output, is inherited by every child process, and is routinely
+captured whole by crash reporters and process listings. A mounted file is none of
+those, and it can be rotated without recreating the container.
 
 Two properties worth knowing because they are not obvious:
 
@@ -461,196 +526,14 @@ Two properties worth knowing because they are not obvious:
 
 ## Verifying what you pulled
 
-Release artifacts carry **signed** build provenance, SBOMs and a checksum, so
-you can establish that a binary or image came from this repository's build and
-see what went into it. Provenance was already being generated before —
-BuildKit's SLSA statement on each image index — but unsigned, which means readable
-and not verifiable. It is signed through Sigstore.
-
-> [!IMPORTANT]
-> **No published release carries these assets yet.** The signing lane landed
-> after the `v3.17.3` cut (2026-08-05), which is the newest release at the time
-> of writing, so `v3.17.3` and every earlier tag have exactly two assets each
-> and the release-binary commands below answer `HTTP 404: Not Found` for them.
-> That is the honest state, not a verification failure — there is nothing to
-> verify, because those artifacts were built before the lane signed anything.
-> The development images (`ghcr.io/rubentalstra/ferroehr:develop` and its two
-> siblings) **are** signed and verify today; the release-binary and chart forms
-> below begin answering at the next cut, at which point this note is removed and
-> the commands are re-run against the real assets rather than assumed correct.
->
-> Every command below writes `<tag>` where a release tag goes. Substitute the
-> tag you actually downloaded — the examples deliberately name no specific
-> version, so that this page cannot drift into quoting a release that does not
-> exist.
-
-**An image** — signed and verifying today on the development tag:
-
-```bash
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop -R rubentalstra/FerroEHR
-```
-
-Add `--signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml` to
-require the image lane specifically, not merely some workflow in this repository.
-On a release, substitute the `vX.Y.Z` tag for `develop`.
-
-**The Helm chart** carries a keyless cosign **signature** in addition to its
-attestation — the attestation says what the chart was built from, the signature
-says who signed the artifact you pulled.
-
-```bash
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
-  --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com
-```
-
-Both flags are the point: without an identity and an issuer, `cosign verify`
-accepts a signature from anyone in the transparency log. The chart ships **no**
-PGP `.prov`, so `helm install --verify` does not apply — deliberately, since a
-`.prov` needs a long-lived private key in CI.
-
-**A release binary:**
-
-```bash
-gh attestation verify ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz -R rubentalstra/FerroEHR
-```
-
-**A release binary, without reaching GitHub.** Each release also carries its
-Sigstore bundles as assets, so verification needs nothing but the artifact and
-the bundle — useful on an air-gapped host, and the only form in which the
-signature travels with the download:
-
-```bash
-gh attestation verify ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz \
-  --bundle ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz.sigstore.json \
-  --repo rubentalstra/FerroEHR
-```
-
-The `*.sbom.sigstore.json` asset beside it is the same thing for the SBOM
-attestation, so "which dependency graph was this binary built from" is
-verifiable offline too.
-
-**Worked through, against a release that exists.** Every command above was run
-against `v3.17.4` — the first release to carry these assets — on a downloaded
-copy, not on the build machine:
-
-```console
-$ shasum -a 256 -c ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz.sha256sum
-ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz: OK
-
-$ gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz \
-    --bundle ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz.sigstore.json \
-    --repo rubentalstra/FerroEHR
-# exit 0
-```
-
-Two things are worth doing yourself the first time, because a verification that
-cannot fail proves nothing. Append a single byte to the tarball and re-run: it
-exits non-zero. Point `--repo` at a repository that did not build it: also
-non-zero. Only then does a passing run mean something.
-
-The same digest appears in three independently produced places — the
-`.sha256sum` file, the `subject.digest.sha256` inside the `.intoto.jsonl`
-provenance, and the bytes you downloaded:
-
-```text
-eb7dd42f77f88b827c8c76e862ae57a8b437a9b53bb6328e1c9b5da65e74c614
-```
-
-**With neither `gh` nor `cosign` installed.** Every release tarball ships a
-plain `.sha256sum` beside it, which is the only verification available in a
-locked-down environment — and a locked-down environment is what a clinical
-deployment tends to be:
-
-```bash
-sha256sum -c ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz.sha256sum
-```
-
-Be clear about what that buys: a checksum detects a **corrupt or truncated
-download**, not a substituted release, because an attacker who can replace the
-tarball can replace the checksum beside it. Only the Sigstore bundle answers
-"who built this". The checksum is a floor, not a substitute.
-
-### Three SBOMs, three questions
-
-A release involves three SBOM documents. They are not redundant — they describe
-different things for different readers, and both reviews genuinely happen for a
-clinical deployment:
-
-| Document | Where | Format | Answers |
-|---|---|---|---|
-| `ferroehr-<tag>-<target>.cdx.json` | a release asset, one per architecture | CycloneDX 1.5 | *what is inside the binary I am about to run?* Every cargo component with a `pkg:cargo/…` purl and licence, most with checksums, and the **dependency edges** — so "is this crate direct or four levels down" is answerable rather than guessed. This is what a vulnerability scanner consumes. |
-| `ferroehr-<tag>.spdx.json` | a release asset, one per release | SPDX | *what am I redistributing, and under what terms?* The attribution and licence-obligation view of the source tree at the release commit — the document a legal or procurement reviewer of a four-licence redistribution asks for. |
-| the image SBOM | attached to each container image index | SPDX | *what is in the image's OS layer?* Which is what matters for `ferroehr-postgres`, built on the upstream `postgres` image. |
-
-CycloneDX 1.5 is the highest version the generator emits (`cargo-cyclonedx`
-accepts 1.3, 1.4 or 1.5 and defaults to 1.3, so the release lane sets it
-explicitly); it carries everything 1.6 consumers read.
-
-### What SLSA level each artifact reaches, and what is still not claimed
-
-The levels are [SLSA v1.0 Build levels](https://slsa.dev/spec/v1.0/levels), and
-they differ per artifact, so the table is the honest form:
-
-| artifact | level | why |
-|---|---|---|
-| release binaries + their SBOM | **Build L3** | built and attested inside a *reusable* workflow, so the signing material is out of reach of any caller-defined step |
-| container images | Build L2 | attested in the job that builds them |
-| the Helm chart | Build L2 | same |
-
-Build L3's distinguishing requirement is that the platform must "prevent secret
-material used to sign the provenance from being accessible to the user-defined
-build steps". Every step of a GitHub Actions job shares one runner VM, so
-attesting inside the building job cannot satisfy it. The release lane therefore
-builds and signs inside `release-build.yml`, a reusable workflow: it runs on its
-own VM and a caller passes declared inputs — it cannot add steps. The caller job
-has no steps at all, which is what makes the property hard to lose by accident.
-
-The consumer-visible benefit is that you can **require** that signer:
-
-```bash
-gh attestation verify ferroehr-<tag>-x86_64-unknown-linux-gnu.tar.gz \
-  -R rubentalstra/FerroEHR \
-  --signer-workflow rubentalstra/FerroEHR/.github/workflows/release-build.yml
-```
-
-Without that flag you are trusting that *some* workflow in this repository signed
-the artifact. With it, you are trusting one specific hardened lane.
-
-What is still **not** claimed, in either lane: the isolation is GitHub's rather
-than ours, and nothing here asserts a reproducible or hermetic build — those are
-separate SLSA tracks this project does not address. Naming the boundary is worth
-more than rounding a level up.
-
-### Findings a scanner will report, and why they are not what they look like
-
-Run a scanner over a FerroEHR artifact and it will report findings. Every one
-this project has assessed and accepted is published as an
-[OpenVEX](https://openvex.dev) document under
-[`security/vex/`](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex),
-carrying a controlled-vocabulary justification and an impact statement you can
-check — rather than an ignore entry that records only the verdict. Point your
-tooling at them (`trivy --vex`, and most SCA platforms take an OpenVEX feed).
-
-| Document | Covers |
-|---|---|
-| `rust-advisories.openvex.json` | the Rust dependency advisories: the five the advisory gate accepts, plus one that only a `Cargo.lock`-reading scanner reports |
-| `postgres-gosu.openvex.json` | Go standard-library findings in the `gosu` helper the upstream `postgres` image ships |
-
-The Rust document is **generated** from `deny.toml` — the gate that actually
-decides whether a build passes — joined with the published reasoning, and a CI
-job fails if the two disagree in either direction. So an advisory cannot be
-accepted without a justification reaching you, and a justification cannot claim
-something the gate does not do.
-
-One asymmetry worth knowing, because it produces findings that are real reports
-of nothing. `Cargo.lock` records the union of every dependency any feature
-combination *could* pull, so a scanner reading the lock file alone reports
-crates this project's feature set never compiles. `cargo deny` resolves
-features and does not. Where the two disagree in that direction the
-feature-resolving tool is the more precise instrument — and the VEX document
-carries that argument for the specific crate it currently applies to, so you do
-not have to take our word for it in prose.
+Release binaries, container images and the Helm chart carry signed build
+provenance, SBOMs and checksums, so you can establish that the bytes you are
+about to run came from this repository's own pipeline and see what went into
+them. The commands, the SBOM formats, the SLSA levels claimed per artifact, and
+the published VEX justifications for scanner findings are all in
+**[Verifying releases](verifying-releases.md)**. Enforcing image provenance at
+admission time inside a Kubernetes cluster is covered separately, in
+[Images: build, provenance, scanning](installation/hardening-supply-chain.md).
 
 ## Multi-tenancy
 
@@ -668,15 +551,26 @@ A request's tenant is resolved from the configured JWT claim (a dotted path
 such as `realm_access.tenant` is walked through nested objects). Isolation is
 enforced in the database with **PostgreSQL row-level security**: the resolved
 tenant scopes the connection so a query can only ever see its own tenant's
-rows.
+rows, and the policies are installed with `FORCE ROW LEVEL SECURITY`, so even a
+table owner is subject to them.
 
 > [!WARNING]
-> Leave `FERROEHR__TENANCY__HEADER` unset in production — a client-supplied
-> header must never be able to select a tenant; the tenant must come from the
-> authenticated token. Isolation is also fail-safe by design: an absent or
-> unresolvable tenant runs unscoped against a reserved default rather than
-> guessing, and a cross-tenant access surfaces as an empty result set, never a
-> `403` that would leak the existence of another tenant's data.
+> Leave `FERROEHR__TENANCY__HEADER` unset in production. When it is set, the
+> header **wins over the JWT claim**, so a client-supplied value selects the
+> tenant — which means tenancy is not a boundary at all. The tenant must come
+> from the authenticated token.
+
+Isolation is otherwise fail-safe by design, and the three cases are distinct:
+
+- **No tenant key, or an unknown one** — the request runs unscoped against a
+  reserved default tenant rather than guessing, and a cross-tenant access
+  surfaces as an empty result set, never a `403` that would leak the existence
+  of another tenant's data.
+- **A tenant registry that cannot be reached** — a `503`, like any other
+  dependency failure. A resolution *error* is never quietly read as "no
+  tenant", because that would fall through to the default tenant.
+- **Tenancy off** — no middleware is installed at all, so single-tenant
+  deployments pay nothing.
 
 **On Kubernetes**, the same keys arrive through the chart's `config`
 passthrough:
@@ -691,11 +585,10 @@ config:
 
 **Before you enable it:** your identity provider must actually put that claim
 in the token — with the claim absent, a request runs unscoped against the
-reserved default rather than guessing, so a misconfigured claim looks like
-"tenancy is doing nothing" rather than failing loudly. Do **not** set
-`config.tenancy.header` in production. **To turn it off**, set
-`enabled: false`; the server then behaves byte-for-byte as a single-tenant
-system.
+reserved default, so a misconfigured claim path looks like "tenancy is doing
+nothing" rather than failing loudly. Do **not** set `config.tenancy.header` in
+production. **To turn it off**, set `enabled: false`; the server then behaves
+byte-for-byte as a single-tenant system.
 
 ## ATNA audit trail
 
@@ -718,7 +611,7 @@ role and the off-box sinks.
 The full chapter — record content, sinks, tamper evidence, the ITI-81 search,
 fail-mode semantics, and mTLS — is **[Audit trail (IHE ATNA)](audit.md)**;
 every `[audit]` key is in the
-[configuration reference](installation/configuration.md#audit).
+[configuration reference](installation/config-audit.md#audit).
 
 > [!NOTE]
 > The ATNA trail is orthogonal to openEHR's own `CONTRIBUTION` and
