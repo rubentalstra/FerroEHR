@@ -39,7 +39,7 @@
 # ── Container isolation posture ──────────────────────────────────────────────
 # Every service drops ALL capabilities and adds back only what its entrypoint
 # provably needs, refuses privilege escalation, bounds its file descriptors, and
-# restarts unless stopped. Two services additionally run a READ-ONLY root
+# restarts unless stopped. Three services additionally run a READ-ONLY root
 # filesystem with tmpfs for the paths that must be writable; the two that do not
 # say why inline.
 #
@@ -48,8 +48,11 @@
 # profile already blocks ~44 of the ~300+ syscalls, including every one behind a
 # capability we drop above (docs.docker.com/engine/security/seccomp). Writing
 # `seccomp=unconfined` is the dangerous move, so the guard to keep is the ABSENCE
-# of that string — `scripts/checks/compose-hardening.sh` enforces it, along with
-# the rest of this block, on every compose artifact.
+# of that string. What `scripts/checks/compose-hardening.sh` actually enforces on
+# every compose artifact: cap_drop + no-new-privileges on every service, no
+# `privileged`, no unconfined seccomp/AppArmor, no daemon-socket mount, and that
+# every published port names a host address. The rest of this block (ulimits,
+# read-only roots, the loopback address choice) is convention, kept by review.
 #
 # ── Where the ports are published (security-relevant) ────────────────────────
 # Every published port binds the LOOPBACK interface by default
