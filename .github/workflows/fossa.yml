@@ -82,10 +82,15 @@ jobs:
           # "https://github.com/rubentalstra/FerroEHR". A stable name keeps the
           # dashboard, the badge and this lane pointing at one place.
           project: FerroEHR
-          # `github.ref_name` is the branch on a push and the PR number on a
-          # pull_request, which is what FOSSA's own example uses to keep a PR's
-          # results off the branch's history.
-          branch: ${{ github.ref_name }}
+          # The SOURCE branch, never the merge ref. `github.ref_name` is the
+          # branch on a push but `<PR>/merge` on a pull_request — a ref no
+          # branch corresponds to — so FOSSA recorded revisions under names
+          # like `2315/merge` and its project view landed on a merge ref from a
+          # pull request that had closed hours earlier. FOSSA's CI guidance is
+          # to analyse "a published branch, or pass the revision explicitly"
+          # (https://docs.fossa.com/docs/project-setup/cicd-scanning); a merge
+          # ref is neither.
+          branch: ${{ github.head_ref || github.ref_name }}
           run-tests: false
           # NO `generate-report` HERE. It needs a READ-scoped token and fails
           # with "Invalid API token type" on the push-only one this repository
