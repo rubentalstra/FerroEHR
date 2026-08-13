@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # .claude/hooks/phase_gate.sh
 #
 # Claude Code Stop hook: blocks ending a session in which no commit was made

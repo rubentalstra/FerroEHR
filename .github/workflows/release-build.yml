@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # The release build, as a REUSABLE workflow — the SLSA v1.0 Build Level 3 lane.
 #
 # WHY THIS IS A SEPARATE FILE, which is the whole point of it. SLSA Build L3

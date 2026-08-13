@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Copy the 7 documentation OAS bundles into the served copy; --check fails on drift.
 #
 # The served specs are a byte copy of the vendored `-html` ITS-REST bundles

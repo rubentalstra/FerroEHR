@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Docs-claim guard: a documented KEY must exist in the thing it documents.
 #
 # The v3.17.4 book sweep found five substantive defects that had shipped to the

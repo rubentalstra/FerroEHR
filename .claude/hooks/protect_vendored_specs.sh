@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # .claude/hooks/protect_vendored_specs.sh
 #
 # Claude Code PreToolUse hook (matcher: Write|Edit|NotebookEdit). Mechanical

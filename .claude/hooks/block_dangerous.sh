@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # .claude/hooks/block_dangerous.sh
 #
 # Claude Code PreToolUse hook (matcher: Bash). Blocks destructive commands:

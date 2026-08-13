@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ext schema: multi-tenancy session context (an extension — no openEHR spec
 -- governs multi-tenancy; E2).
 --

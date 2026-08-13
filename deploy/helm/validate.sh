@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 #
 # Validate the ferroehr Helm chart:
 #   1. helm lint      — default + all-features value sets (must be clean)

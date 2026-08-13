@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Every openEHR spec file a comment cites must exist under docs/specs/openehr/.
 #
 # The vendored spec text is the oracle (.claude/rules/spec-adherence.md), and a

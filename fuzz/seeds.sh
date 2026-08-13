@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Populate fuzz/seeds/<target>/ from the corpora already committed in this
 # repository, as SYMLINKS — the archetype and template packs are ~100 MB, are
 # provenance-stamped where they live, and are never copied.

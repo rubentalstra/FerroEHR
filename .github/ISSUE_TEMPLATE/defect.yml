@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 name: Bug Report
 description: Report a defect in FerroEHR (wrong wire behaviour, a crash, a conformance divergence)
 labels: ["bug"]

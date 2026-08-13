@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Alert starter pack — documented, not imposed. Load into a Prometheus/Grafana
 # alerting instance and calibrate every threshold against real traffic: these
 # rules exist to be tuned, and a rule that never fires in your deployment is a

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Scheduled libFuzzer campaigns over the parsers that read attacker-controlled
 # bytes off the REST wire (the harnesses live in `fuzz/`).
 #

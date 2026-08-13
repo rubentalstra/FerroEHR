@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- ehr schema: the FHIR **outbound** emitter's delivery cursor (an extension —
 -- no openEHR spec governs FHIR interop;
 -- 4a — event-driven FHIR resource emission).

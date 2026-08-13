@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Render `.zenodo.json` from `CITATION.cff` (#2210).
 #
 # Zenodo's own rule makes this file necessary and dangerous in one sentence:

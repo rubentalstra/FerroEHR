@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The VEX drift gate: the published OpenVEX document must be exactly what the
 # generator produces from `deny.toml` + `security/vex/rust-advisories.toml`.
 #

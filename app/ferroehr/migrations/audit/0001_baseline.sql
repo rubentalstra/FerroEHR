@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: FerroEHR contributors
+-- SPDX-License-Identifier: MIT
+
 -- audit schema baseline: the local IHE ATNA Audit Record Repository.
 --
 -- NOTE: no openEHR spec governs audit storage mechanics — our own

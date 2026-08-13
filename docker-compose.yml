@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # FerroEHR quickstart — a STANDALONE file: download it anywhere and run
 #
 #   docker compose up

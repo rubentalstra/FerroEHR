@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Scheduled openEHR spec-update watcher (tracker issue #137; the full
 # live-verified design dossier is recorded on that issue — the mechanism
 # notes live in scripts/watch/spec-update.sh itself).

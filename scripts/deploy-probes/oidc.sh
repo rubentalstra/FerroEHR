@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The OIDC / Keycloak probe family.
 #
 # Driven through the PUBLISHED quickstart overlay and the recipe the book gives

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Refuses copyleft licence TEXT inside this project's own source.
 #
 # This project's own code is MIT (.claude/rules/reliability.md §C-PERMISSIVE).

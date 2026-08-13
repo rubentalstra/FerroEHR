@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # Vendor the AM component's normative ADL/cADL ANTLR4 grammars, VERSION-SCOPED.
 #
 # Layout (the multi-generation foundation, #1936/#1946): the grammar files are

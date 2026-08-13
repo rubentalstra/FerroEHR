@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # .github/workflows/latest-deps.yml — scheduled latest-dependencies check.
 #
 # Cargo.toml pins caret ranges; Cargo.lock freezes CI to known-good versions

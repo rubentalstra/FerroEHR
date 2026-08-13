@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The multi-tenancy probe family (#2178, #2158).
 #
 # Tenancy is off by default, and its claim is the strongest one this server

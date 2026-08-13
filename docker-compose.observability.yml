@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # Observability overlay for the FerroEHR quickstart — STANDALONE, like
 # docker-compose.keycloak.yml: download it beside docker-compose.yml and run
 #

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # CNF SMART on openEHR lane (compose OVERLAY).
 #
 # Boots the ferroehr SUT in the SMART *resource-server* role so the three

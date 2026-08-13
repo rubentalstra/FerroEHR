@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
 # CodeQL code scanning (security analysis).
 #
 # Enables GitHub code scanning so security alerts exist — the prerequisite for
