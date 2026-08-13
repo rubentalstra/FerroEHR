@@ -142,35 +142,7 @@ impl FerroEhrConfig {
         if let Err(e) = self.smart.validate() {
             errors.push(ConfigError::semantic(format!("smart: {e}")));
         }
-        // The two issuers must agree. `smart.endpoints.issuer` tells third-party
-        // applications where to OBTAIN a token; `auth.oidc.issuer` is what this
-        // server will ACCEPT one from. Configured independently and left
-        // unchecked, a mismatch is silently broken in the most confusing way
-        // available: every app obtains a valid token and every request is
-        // refused as an invalid one. Both values are known here, so it is a boot
-        // error.
-        if self.smart.enabled {
-            match (&self.smart.endpoints.issuer, &self.auth.oidc) {
-                (_, None) => errors.push(ConfigError::semantic(
-                    "smart.enabled = true requires an [auth.oidc] issuer: the CDR directs \
-                     applications to an authorization server, so it must be able to validate \
-                     the tokens they come back with"
-                        .to_owned(),
-                )),
-                (Some(advertised), Some(oidc))
-                    if advertised.trim().trim_end_matches('/')
-                        != oidc.issuer.trim().trim_end_matches('/') =>
-                {
-                    errors.push(ConfigError::semantic(format!(
-                        "smart.endpoints.issuer ({advertised:?}) and auth.oidc.issuer ({:?}) \
-                         name different authorization servers: applications would obtain tokens \
-                         from the first and every request would be refused by the second",
-                        oidc.issuer
-                    )));
-                }
-                _ => {}
-            }
-        }
+        self.validate_smart_issuer(&mut errors);
         // signing.mode = pgp ⇒ key_path set.
         if matches!(
             self.signing.mode,
@@ -236,6 +208,39 @@ impl FerroEhrConfig {
             Ok(())
         } else {
             Err(ConfigErrors(errors))
+        }
+    }
+
+    /// The two issuers must agree. `smart.endpoints.issuer` tells third-party
+    /// applications where to OBTAIN a token; `auth.oidc.issuer` is what this
+    /// server will ACCEPT one from. Configured independently and left
+    /// unchecked, a mismatch is silently broken in the most confusing way
+    /// available: every app obtains a valid token and every request is
+    /// refused as an invalid one. Both values are known here, so it is a boot
+    /// error.
+    fn validate_smart_issuer(&self, errors: &mut Vec<ConfigError>) {
+        if !self.smart.enabled {
+            return;
+        }
+        match (&self.smart.endpoints.issuer, &self.auth.oidc) {
+            (_, None) => errors.push(ConfigError::semantic(
+                "smart.enabled = true requires an [auth.oidc] issuer: the CDR directs \
+                 applications to an authorization server, so it must be able to validate \
+                 the tokens they come back with"
+                    .to_owned(),
+            )),
+            (Some(advertised), Some(oidc))
+                if advertised.trim().trim_end_matches('/')
+                    != oidc.issuer.trim().trim_end_matches('/') =>
+            {
+                errors.push(ConfigError::semantic(format!(
+                    "smart.endpoints.issuer ({advertised:?}) and auth.oidc.issuer ({:?}) \
+                     name different authorization servers: applications would obtain tokens \
+                     from the first and every request would be refused by the second",
+                    oidc.issuer
+                )));
+            }
+            _ => {}
         }
     }
 
