@@ -205,8 +205,8 @@ pub async fn serve_full(
 /// with graceful shutdown and per-connection peer info — plain HTTP, or
 /// native TLS with optional client-certificate (mutual-TLS) verification when
 /// `[server.tls]` is enabled (the IHE ATNA ITI-19 node-authentication
-/// posture; the protocol floor is the rustls safe default, TLS 1.2+ per
-/// IETF BCP 195).
+/// posture; the protocol floor is TLS 1.3 unless `min_version = "1.2"`
+/// admits 1.2 alongside).
 async fn run_server(
     app: axum::Router,
     bind: &str,

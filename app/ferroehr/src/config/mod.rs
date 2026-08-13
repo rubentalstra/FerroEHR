@@ -152,7 +152,9 @@ impl FerroEhrConfig {
         if self.smart.enabled {
             match (&self.smart.endpoints.issuer, &self.auth.oidc) {
                 (_, None) => errors.push(ConfigError::semantic(
-                    "smart.enabled = true requires an [auth.oidc] issuer: the CDR directs                      applications to an authorization server, so it must be able to validate                      the tokens they come back with"
+                    "smart.enabled = true requires an [auth.oidc] issuer: the CDR directs \
+                     applications to an authorization server, so it must be able to validate \
+                     the tokens they come back with"
                         .to_owned(),
                 )),
                 (Some(advertised), Some(oidc))
@@ -160,7 +162,9 @@ impl FerroEhrConfig {
                         != oidc.issuer.trim().trim_end_matches('/') =>
                 {
                     errors.push(ConfigError::semantic(format!(
-                        "smart.endpoints.issuer ({advertised:?}) and auth.oidc.issuer ({:?})                          name different authorization servers: applications would obtain tokens                          from the first and every request would be refused by the second",
+                        "smart.endpoints.issuer ({advertised:?}) and auth.oidc.issuer ({:?}) \
+                         name different authorization servers: applications would obtain tokens \
+                         from the first and every request would be refused by the second",
                         oidc.issuer
                     )));
                 }
