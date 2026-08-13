@@ -445,6 +445,194 @@ async fn archiving_a_party_relationship_id_is_refused_like_an_unknown_party() {
     );
 }
 
+// ── the restore pair (our own design — the SM declares no un-archive) ────────
+
+/// Execute an ad-hoc AQL query and return how many rows it selected.
+async fn aql_rows(app: &Router, aql: &str) -> usize {
+    let request = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/query/aql"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(serde_json::json!({ "q": aql }).to_string()))
+        .expect("request");
+    let (status, body) = send(app, request).await;
+    assert_eq!(status, StatusCode::OK, "AQL {aql}: {body}");
+    let result: serde_json::Value = serde_json::from_str(&body).expect("RESULT_SET json");
+    result["rows"].as_array().expect("rows array").len()
+}
+
+/// How many rows of `relation` belong to `vo_id` (the archival move is physical,
+/// so the primary/cold split is the only place it is observable).
+///
+/// Every `relation` argument in this file is a literal, so the interpolation
+/// carries no caller data (`sqlx::AssertSqlSafe`).
+async fn vo_rows(pool: &sqlx::PgPool, relation: &str, vo_id: &str) -> i64 {
+    let vo = uuid::Uuid::parse_str(vo_id).expect("versioned object uuid");
+    let sql = format!("SELECT count(*) FROM {relation} WHERE vo_id = $1");
+    sqlx::query_scalar(sqlx::AssertSqlSafe(sql))
+        .bind(vo)
+        .fetch_one(pool)
+        .await
+        .expect("row count")
+}
+
+/// `POST /admin/archive/ehrs/restore` reverses the archival move: the EHR's
+/// content returns to the primary tier, so it is AQL-visible again. Query
+/// visibility is the operative difference — the engine reads the primary tier
+/// only, while id-addressed reads are served from either tier and therefore
+/// answer `200` throughout.
+#[tokio::test]
+async fn restoring_an_archived_ehr_makes_it_queryable_again() {
+    let (_pg, app) = app(true).await;
+    let ehr_id = create_ehr(&app).await;
+    // Joins the EHR's current EHR_STATUS version, which archiving moves out of
+    // the primary tier; `SELECT e/ehr_id/value` alone reads the `ehr` row, which
+    // archival never touches, and would stay visible either way.
+    let aql = "SELECT e/ehr_status/is_queryable FROM EHR e";
+    let body = format!(r#"{{"ehr_ids":["{ehr_id}"]}}"#);
+
+    assert_eq!(aql_rows(&app, aql).await, 1, "the fresh EHR is queryable");
+
+    let (status, reply) = send(&app, post_json("/admin/archive/ehrs", &body)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "archive: {reply}");
+    assert_eq!(
+        aql_rows(&app, aql).await,
+        0,
+        "an archived EHR leaves the queryable store"
+    );
+
+    let (status, reply) = send(&app, post_json("/admin/archive/ehrs/restore", &body)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "restore: {reply}");
+    assert_eq!(
+        aql_rows(&app, aql).await,
+        1,
+        "the restored EHR is queryable again"
+    );
+
+    let (status, _) = send(&app, get(&format!("/ehr/{ehr_id}"))).await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "the id-addressed read answers 200 in both tiers"
+    );
+}
+
+/// `POST /admin/archive/parties/restore` moves an archived party's versioned
+/// object back to the primary tier, physically: the party's rows leave the cold
+/// mirror and reappear in the primary tables.
+#[tokio::test]
+async fn restoring_an_archived_party_moves_its_rows_back_to_the_primary_tier() {
+    let (pg, app) = app(true).await;
+    let pool = pg.pool();
+
+    let party = create_demographic(
+        &app,
+        "person",
+        &party_body("PERSON", "openEHR-DEMOGRAPHIC-PERSON.person.v1", "Jane Doe"),
+    )
+    .await;
+    let body = format!(r#"{{"party_ids":["{party}"]}}"#);
+    let hot = vo_rows(&pool, "vo_version", &party).await;
+    assert!(hot > 0, "the party has stored versions");
+
+    let (status, reply) = send(&app, post_json("/admin/archive/parties", &body)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "archive: {reply}");
+    assert_eq!(vo_rows(&pool, "vo_version", &party).await, 0);
+    assert_eq!(vo_rows(&pool, "cold.vo_version", &party).await, hot);
+
+    let (status, reply) = send(&app, post_json("/admin/archive/parties/restore", &body)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "restore: {reply}");
+    assert_eq!(vo_rows(&pool, "vo_version", &party).await, hot);
+    assert_eq!(vo_rows(&pool, "cold.vo_version", &party).await, 0);
+    let markers = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM vo_archive WHERE vo_id = $1")
+        .bind(uuid::Uuid::parse_str(&party).expect("party uuid"))
+        .fetch_one(&pool)
+        .await
+        .expect("marker count");
+    assert_eq!(markers, 0, "restore drops the archive marker");
+}
+
+/// Restoring a record that was never archived is a no-op success on both
+/// halves — the mirror of re-archiving an archived record. The existence check
+/// still applies, so the id has to name a real record.
+#[tokio::test]
+async fn restoring_an_unarchived_record_succeeds_and_changes_nothing() {
+    let (pg, app) = app(true).await;
+    let pool = pg.pool();
+    let ehr_id = create_ehr(&app).await;
+    let party = create_demographic(
+        &app,
+        "person",
+        &party_body("PERSON", "openEHR-DEMOGRAPHIC-PERSON.person.v1", "John Doe"),
+    )
+    .await;
+    let hot = vo_rows(&pool, "vo_version", &party).await;
+
+    for (path, body) in [
+        (
+            "/admin/archive/ehrs/restore",
+            format!(r#"{{"ehr_ids":["{ehr_id}"]}}"#),
+        ),
+        (
+            "/admin/archive/parties/restore",
+            format!(r#"{{"party_ids":["{party}"]}}"#),
+        ),
+    ] {
+        let (status, reply) = send(&app, post_json(path, &body)).await;
+        assert_eq!(status, StatusCode::NO_CONTENT, "{path}: {reply}");
+    }
+
+    assert_eq!(
+        vo_rows(&pool, "vo_version", &party).await,
+        hot,
+        "an unarchived party is left exactly as it was"
+    );
+    assert_eq!(vo_rows(&pool, "cold.vo_version", &party).await, 0);
+    let (status, _) = send(&app, get(&format!("/ehr/{ehr_id}"))).await;
+    assert_eq!(status, StatusCode::OK);
+}
+
+/// The restore halves carry the archive halves' refusals unchanged: an unknown
+/// id is `404`, a malformed one `400`, a body of the wrong shape `400`, and an
+/// empty list restores nothing and succeeds — all-or-nothing in every branch.
+#[tokio::test]
+async fn the_restore_routes_refuse_unknown_malformed_and_shapeless_requests() {
+    let (_pg, app) = app(true).await;
+
+    for (path, field) in [
+        ("/admin/archive/ehrs/restore", "ehr_ids"),
+        ("/admin/archive/parties/restore", "party_ids"),
+    ] {
+        let (status, body) = send(
+            &app,
+            post_json(path, &format!(r#"{{"{field}":["{ABSENT}"]}}"#)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{path} unknown id: {body}");
+
+        let (status, body) = send(
+            &app,
+            post_json(path, &format!(r#"{{"{field}":["not-a-uuid"]}}"#)),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "{path} malformed id: {body}"
+        );
+
+        let (status, body) = send(&app, post_json(path, r#"{"wrong":[]}"#)).await;
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "{path} wrong shape: {body}"
+        );
+
+        let (status, body) = send(&app, post_json(path, &format!(r#"{{"{field}":[]}}"#))).await;
+        assert_eq!(status, StatusCode::NO_CONTENT, "{path} empty list: {body}");
+    }
+}
+
 // ── the dump/load pair (SM I_ADMIN_DUMP_LOAD) ────────────────────────────────
 
 /// A unique archive location for one test (the SM `file_sys_loc` parameter is
@@ -605,6 +793,13 @@ async fn the_admin_gate_covers_the_extension_groups() {
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
 
     let (status, _) = send(&app, post_json("/admin/archive/ehrs", r#"{"ehr_ids":[]}"#)).await;
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+
+    let (status, _) = send(
+        &app,
+        post_json("/admin/archive/ehrs/restore", r#"{"ehr_ids":[]}"#),
+    )
+    .await;
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
 
     let (status, _) = send(

@@ -130,7 +130,7 @@ envelope is documented per construct; rejections are explicit typed errors.
 Base path `/ferroehr/rest/openehr/v1`, implementing the generated ITS-REST
 1.1.0 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
-API (plus the own-design activity-report, archive and dump/load routes under
+API (plus the own-design activity-report, archive/restore and dump/load routes under
 the same gate), the `/message` group realizing the SM Message component
 (EHR-Extract export/import + TDD import — the release publishes no such API),
 the always-on public health family (`/health`, `/health/liveness`,

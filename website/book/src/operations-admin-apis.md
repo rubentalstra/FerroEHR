@@ -126,21 +126,26 @@ and are reported normally.
 
 ## Archiving
 
-Two routes that move a selected set of records to the server's cold storage
-tier, behind the same switch and role. Archiving is **not** a delete: the
-archived records stay fully readable through the normal API, with their whole
-revision history intact.
+Four routes that move a selected set of records to the server's cold storage
+tier and back, behind the same switch and role. Archiving is **not** a delete:
+the archived records stay fully readable through the normal API, with their
+whole revision history intact.
 
 | Route | Body | Success |
 |---|---|---|
 | `POST {base}/admin/archive/ehrs` | `{"ehr_ids": ["…"]}` | **204** — every named EHR and all its versioned content is archived |
 | `POST {base}/admin/archive/parties` | `{"party_ids": ["…"]}` | **204** — every named demographic party is archived |
+| `POST {base}/admin/archive/ehrs/restore` | `{"ehr_ids": ["…"]}` | **204** — every named EHR's archived content is back in the primary tier |
+| `POST {base}/admin/archive/parties/restore` | `{"party_ids": ["…"]}` | **204** — every named party's archived content is back in the primary tier |
 
-Both are **all-or-nothing and idempotent**: a body of the wrong shape or a
+All four are **all-or-nothing and idempotent**: a body of the wrong shape or a
 malformed id is **400** and an id that names nothing is **404**, in both cases
-before anything is archived; re-archiving an already-archived record changes
-nothing. An empty list succeeds and archives nothing. A body sent without
-`Content-Type: application/json` is **415**.
+before anything is moved; re-archiving an already-archived record, or restoring
+one that is not archived, changes nothing. An empty list succeeds and moves
+nothing. A body sent without `Content-Type: application/json` is **415**. A
+party that is currently archived is still found by its restore call — the
+existence check spans both tiers — so an archived party is never reported
+missing.
 
 A party's `PARTY_RELATIONSHIP`s are **not** carried along — each is an
 independently addressable versioned object, archived in its own right.
@@ -161,11 +166,13 @@ Two consequences to plan for:
   appearing in query results — that is exactly what shedding the query tables'
   rows and indexes buys you. Everything addressed by id (an EHR, a
   composition, a folder, a party, a version, a revision history) keeps working
-  as before.
-- **There is no un-archive route.** The reverse movement exists in the server,
-  and a write to an archived record triggers it, but no endpoint asks for it
-  in bulk. Archive deliberately, and treat the query-visibility change as the
-  operative effect.
+  as before. Restoring puts the record back in query results.
+- **There are three ways back, and only one of them is deliberate.** The
+  `…/restore` routes above reverse a whole set on request; a write to an
+  archived record thaws just that record as a side effect, whichever route the
+  write came in on; and a physical delete removes it from both tiers. Query
+  visibility is the effect to plan around, and the restore routes are how you
+  get it back.
 
 ## Dump and load
 
@@ -241,7 +248,10 @@ while the rest of the archive loads.
 > The activity report, the archive routes and the dump/load pair are FerroEHR
 > extensions: the openEHR *service model* defines these operations, but the
 > released REST API surfaces no endpoint for them, so their URLs are our own.
-> They gate no openEHR conformance claim; see [Conformance](conformance.md).
+> The two `…/restore` routes go one step further — the service model declares
+> the archive calls and no un-archive counterpart, so both the operation and its
+> URL are ours. They gate no openEHR conformance claim; see
+> [Conformance](conformance.md).
 
 ## EHR Extract and TDD import
 

@@ -623,6 +623,10 @@
             "type": "object"
           }
         },
+        "ingressAllowAll": {
+          "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` — which admits every source. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
+          "type": "boolean"
+        },
         "egress": {
           "type": "object",
           "additionalProperties": false,
@@ -953,6 +957,10 @@
             "ingressFrom": {
               "description": "Empty means the rule carries no `from`, which admits EVERY source.",
               "type": "array"
+            },
+            "ingressAllowAll": {
+              "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` — which admits every source to the console. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
+              "type": "boolean"
             }
           }
         },

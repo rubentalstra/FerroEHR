@@ -2,8 +2,9 @@
 
 Where the release's boundaries are drawn: namespace scoping, the two ways to
 isolate tenants, the decisions not to adopt a mesh or a second policy engine,
-resource bounds in four nested layers, and deny-by-default egress — the one
-control on these pages that is not free.
+resource bounds in four nested layers, the ingress policy that narrows ports
+before it narrows sources, and deny-by-default egress — the one control on these
+pages that is not free.
 
 <!-- toc -->
 
@@ -170,6 +171,73 @@ upgrade — `maxSurge: 1` means one extra pod exists mid-rollout, and a quota wi
 no room for it makes upgrades stall rather than fail, which looks like a hung
 deployment. The migration Job needs its share too when
 `migrations.job.enabled` is on.
+
+## Ingress: ports are narrowed, sources are yours
+
+**The chart's mechanism, your peers** — and the one control on this page whose
+default looks stronger than it is.
+
+`networkPolicy.enabled` ships **on**, and the policy it renders admits inbound
+traffic to the API port (plus the management port when that runs on its own
+listener) and to nothing else. That half is unconditional. The other half is not:
+the rule's **sources** are narrowed only when you set `networkPolicy.ingressFrom`.
+While that list is empty the rule carries no `from` clause at all, and in the
+NetworkPolicy API a rule with no `from` admits **every** source — other
+namespaces and off-cluster clients included, not "any pod in this namespace"
+([NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)).
+
+So the shipped posture is: **ports restricted, sources open**. Nothing about
+`kubectl get networkpolicy`, the object's own name, or a summary that says
+"NetworkPolicy: enabled" distinguishes that from a policy that restricts both —
+which is why the chart now states it as a value you can see and change rather
+than leaving it implicit in an empty list.
+
+Narrow it to whatever fronts the CDR:
+
+```yaml
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx   # your controller's namespace
+    # - ipBlock: {cidr: 10.0.0.0/16}                   # or a CIDR, for off-cluster callers
+  ingressAllowAll: false                               # refuse to ever render the open rule
+```
+
+The admin console does not need an entry: when `adminUi.enabled` is on, the chart
+appends the console's own pod selector to whatever you list, because a narrowed
+policy that forgets it locks the console out of the CDR and presents as the CDR
+being down.
+
+**The console's own policy works exactly the same way**, under
+`adminUi.networkPolicy.ingressFrom` and `adminUi.networkPolicy.ingressAllowAll`,
+with the same refusal on `false` + empty. Its egress half is genuinely closed —
+the CDR Service and DNS, nothing else — but its ingress half ships open like the
+CDR's, and what sits behind it is a login page. Narrow both.
+
+> [!IMPORTANT]
+> **`networkPolicy.ingressAllowAll: false` makes "no open ingress" a checked
+> fact.** With it set, an empty `ingressFrom` is refused at render time — the same
+> treatment [egress](#egress-deny-by-default-and-what-it-breaks) gives a policy
+> with no database destination, and for the same reason: an absent selector is a
+> decision, and this one is invisible in the place an operator would look for it.
+> Set it in the values file of any deployment where an open ingress rule would be
+> a finding, and a later edit that drops your `ingressFrom` fails the install
+> instead of quietly reopening the port.
+>
+> It ships as `true`, which is the honest name for what the chart has always
+> rendered: a stock `helm install` produces the open rule, and now says so — in
+> the values file, in the object's `kubernetes.io/description`, and in the notes
+> printed at install. A non-empty `ingressFrom` always narrows, whatever this key
+> is set to; it decides the empty case only.
+
+> [!WARNING]
+> **A NetworkPolicy is only as real as the CNI that implements it.** On a cluster
+> whose network plugin does not enforce NetworkPolicy, the object is accepted,
+> stored and displayed with no effect and no warning. Verify by attempting a
+> connection the policy should refuse — from a pod in another namespace, since
+> that is precisely the source an empty `ingressFrom` admits.
 
 ## Egress: deny by default, and what it breaks
 

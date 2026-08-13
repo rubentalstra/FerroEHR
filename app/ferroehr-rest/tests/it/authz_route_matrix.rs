@@ -348,6 +348,8 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     ("DELETE", "/admin/query/{qualified_query_name}/{version}"),
     ("POST", "/admin/archive/ehrs"),
     ("POST", "/admin/archive/parties"),
+    ("POST", "/admin/archive/ehrs/restore"),
+    ("POST", "/admin/archive/parties/restore"),
     ("POST", "/admin/dump"),
     ("POST", "/admin/load"),
     ("POST", "/admin/tenant"),

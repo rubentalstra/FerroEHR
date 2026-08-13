@@ -175,11 +175,15 @@ section](hardening-detection-response.md#on-a-managed-control-plane) shows —
 attempt a connection the policy should refuse, from a pod in another namespace,
 and require it to fail.
 
-Two limits stated in full on the [Kubernetes
-page](kubernetes.md#security-posture) and repeated because they matter here: with
-`networkPolicy.ingressFrom` empty the rule carries no `from` and therefore admits
-**every** source, including other namespaces (only the port list is narrowed in
-that state); and a NetworkPolicy is only as real as the CNI that implements it.
+Two limits stated in full under [Namespaces, network & policy
+§Ingress](hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours)
+and repeated because they matter here: with `networkPolicy.ingressFrom` empty the
+rule carries no `from` and therefore admits **every** source, including other
+namespaces (only the port list is narrowed in that state — set
+`networkPolicy.ingressAllowAll: false` to have the chart refuse to render that
+state at all, and the same pair exists for the console under
+`adminUi.networkPolicy`); and a NetworkPolicy is only as real as the CNI that
+implements it.
 
 ## Cluster API access
 

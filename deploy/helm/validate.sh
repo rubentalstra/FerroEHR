@@ -22,6 +22,11 @@
 #                        (typos, wrong types, bad enums, out-of-range ports) and
 #                        still ACCEPTS what must stay open (the server's own
 #                        config vocabulary, a parent chart's `global`)
+#   7. policy refusals — assert the NetworkPolicy absent-selector states are
+#                        refused at render (an ingress rule with no `from`, an
+#                        egress policy with no database), and that the two
+#                        sanctioned ingress postures render with the source
+#                        posture each of them claims
 #
 # What it does NOT check is printed at the end of every run, and is not a
 # footnote: every one of those properties has failed while this script was green
@@ -284,6 +289,122 @@ secret_leak_gate() {
 }
 secret_leak_gate
 
+# ── NetworkPolicy: an absent selector is a decision, and it is refused ────────
+# A NetworkPolicy rule with no `from`/`to` admits or permits EVERYTHING
+# (https://kubernetes.io/docs/concepts/services-networking/network-policies/),
+# while `kubectl get networkpolicy` and every prose summary of it read as
+# default-deny. Both directions therefore carry a render-time refusal, and a
+# refusal nothing exercises is a comment: `helm template` succeeding is the only
+# way to notice one that stopped firing.
+#
+# Both halves are probed, because a refusal gate is only meaningful next to the
+# render it forbids: the sanctioned paths must still render, AND the rendered
+# policy must have the source posture claimed for it — the open default has no
+# `from`, the narrowed one has one. Asserting the open default explicitly is not
+# redundant with the golden: this is where the SHIPPED posture is a checked claim
+# rather than whatever the template happens to emit.
+#
+# BOTH pod-bearing workloads are covered. The console carries the same ingress
+# shape, and it is the HUMAN-facing surface — the §3 lesson applies here too: a
+# gate that only ever saw the server's policy would let the console's regress
+# while reporting the property as checked.
+network_policy_gate() {
+  bold "── NetworkPolicy absent-selector refusals ───────────────"
+  local base="${CI_DIR}/default-values.yaml" console="${CI_DIR}/admin-ui-values.yaml"
+  local out refused=0
+
+  # <values file>|<--set arguments>|<the refusal must name this>
+  local -a refusals=(
+    "${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom"
+    "${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to"
+    "${console}|--set adminUi.networkPolicy.ingressAllowAll=false|adminUi.networkPolicy.ingressFrom"
+  )
+  local values probe want
+  for case in "${refusals[@]}"; do
+    values="${case%%|*}"
+    probe="${case#*|}"; probe="${probe%|*}"
+    want="${case##*|}"
+    # shellcheck disable=SC2086  # the probe is a deliberate multi-word --set list
+    if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" $probe 2>&1)"; then
+      red "  NOT REFUSED: ${probe} rendered instead of failing"
+      refused=1
+    elif ! grep -qF -- "$want" <<<"$out"; then
+      red "  ${probe} was refused, but the message does not name '${want}':"
+      printf '%s\n' "$out" | head -4
+      refused=1
+    elif ! grep -qF -- "hardening-network-policy.md" <<<"$out"; then
+      red "  ${probe} was refused without pointing at the book page that fixes it:"
+      printf '%s\n' "$out" | head -4
+      refused=1
+    fi
+  done
+  if [[ "$refused" -eq 0 ]]; then
+    echo "  all ${#refusals[@]} absent-selector states refused, each naming its value and the book page"
+  else
+    FAIL=1
+  fi
+
+  # The sanctioned postures, read back off the rendered policy — per workload.
+  # <label>|<values file>|<policy name>|<the values key prefix>|<the template>
+  local -a workloads=(
+    "server|${base}|ferroehr|networkPolicy|templates/networkpolicy.yaml"
+    "console|${console}|ferroehr-admin-ui|adminUi.networkPolicy|templates/admin-ui.yaml"
+  )
+  local label name prefix template policy posture=0
+  for case in "${workloads[@]}"; do
+    label="$(cut -d'|' -f1 <<<"$case")"
+    values="$(cut -d'|' -f2 <<<"$case")"
+    name="$(cut -d'|' -f3 <<<"$case")"
+    prefix="$(cut -d'|' -f4 <<<"$case")"
+    template="$(cut -d'|' -f5 <<<"$case")"
+
+    # The shipped posture: open, and saying so.
+    if ! out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" \
+                -s "$template" 2>&1)"; then
+      red "  ${label}: the shipped values no longer render at all:"
+      printf '%s\n' "$out" | head -4
+      posture=1
+      continue
+    fi
+    policy="$(printf '%s' "$out" | yq -r "select(.kind == \"NetworkPolicy\" and .metadata.name == \"${name}\")")"
+    if [[ -z "$policy" ]]; then
+      red "  ${label}: no NetworkPolicy named ${name} in the render — this gate checked nothing"
+      posture=1
+      continue
+    fi
+    if [[ "$(printf '%s' "$policy" | yq -r '.spec.ingress[0] | has("from")')" != "false" ]]; then
+      red "  ${label}: the shipped values render a \`from\` — update this gate and the book if that is the new posture"
+      posture=1
+    fi
+    if [[ "$(printf '%s' "$policy" | yq -r '.metadata.annotations["kubernetes.io/description"]')" != *"from EVERY source"* ]]; then
+      red "  ${label}: the open default no longer SAYS it admits every source in the object's description"
+      posture=1
+    fi
+
+    # The hardened posture: refusal armed AND the peers reaching the policy.
+    if ! out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" \
+                --set "${prefix}.ingressAllowAll=false" \
+                --set "${prefix}.ingressFrom[0].namespaceSelector.matchLabels.kubernetes\\.io/metadata\\.name=ingress-nginx" \
+                -s "$template" 2>&1)"; then
+      red "  ${label}: a narrowed ingressFrom must render (it is the hardened path):"
+      printf '%s\n' "$out" | head -4
+      posture=1
+      continue
+    fi
+    policy="$(printf '%s' "$out" | yq -r "select(.kind == \"NetworkPolicy\" and .metadata.name == \"${name}\")")"
+    if [[ "$(printf '%s' "$policy" | yq -r '.spec.ingress[0].from[0].namespaceSelector.matchLabels["kubernetes.io/metadata.name"]')" != "ingress-nginx" ]]; then
+      red "  ${label}: a narrowed ingressFrom rendered without reaching the policy's \`from\`"
+      posture=1
+    fi
+  done
+  if [[ "$posture" -eq 0 ]]; then
+    echo "  server and console: the shipped default renders no \`from\` and says so; a set ingressFrom reaches the policy"
+  else
+    FAIL=1
+  fi
+}
+network_policy_gate
+
 # ── The values schema must refuse and permit exactly what it claims to ────────
 # A schema that is present but vacuous is worse than none: `helm template` stays
 # green, Artifact Hub renders a Values-schema tab, and an operator reads both as
@@ -322,6 +443,8 @@ schema_gate() {
     "image.digest=sha256:nothex|/image/digest"
     "service.port=70000|/service/port"
     "metrics.serviceMonitor.interval=30|/metrics/serviceMonitor/interval"
+    "networkPolicy.ingressAllowAll=maybe|/networkPolicy/ingressAllowAll"
+    "adminUi.networkPolicy.ingressAllowAll=maybe|/adminUi/networkPolicy/ingressAllowAll"
   )
   local refused=0 probe want out
   for case in "${refusals[@]}"; do
