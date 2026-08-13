@@ -37,7 +37,7 @@ software: applications store and query structured health records through a
 vendor-neutral REST API and the Archetype Query Language, against a shared
 clinical information model. **FerroEHR** implements that standard natively
 in Rust — a headless, API-first Clinical Data Repository shipped as a single
-static binary on PostgreSQL 18. No JVM, no runtime dependencies, and every
+self-contained binary on PostgreSQL 18. No JVM, no language runtime, and every
 compliance claim it makes is **machine-verified**: each release runs the full
 conformance catalogue against the live server and generates its own
 Conformance Statement and Certificate.
