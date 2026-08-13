@@ -7,6 +7,8 @@ so what you see in the console is exactly what the API serves. The whole
 application is Rust (Leptos SSR + WebAssembly); there is no hand-written
 JavaScript anywhere, including its browser tests.
 
+<!-- toc -->
+
 ## Running it
 
 The quickstart compose ships the console as the `ferroehr-admin-ui` service on
@@ -61,13 +63,26 @@ and a Secret holding its client secret. **To turn the console off**, set
 `adminUi.enabled: false` and upgrade — every console object is removed and the
 CDR is untouched.
 
+> [!NOTE]
+> The console keeps its sessions **in process**, so the chart deploys one
+> replica deliberately. Scaling it out needs sticky sessions at the ingress, or
+> users get logged out whenever a request lands on the other pod.
+
 ## Signing in
 
 The sign-in page offers exactly the methods that can actually work: the
 console's configured login modes intersected with the authentication
 schemes the CDR advertises (its `WWW-Authenticate` challenge). A Basic
-form is never shown against a bearer-only CDR, and vice versa. The page
-is served fully rendered and works with JavaScript disabled.
+form is never shown against a bearer-only CDR, and vice versa. If the CDR
+cannot be reached at all, the page falls back to the console's own
+configuration and renders anyway — the outage then surfaces on the login
+attempt instead of hiding the page. Sign-in is served fully rendered and works
+with JavaScript disabled.
+
+The console manages no accounts of its own: it authenticates you against the
+CDR (Basic) or your identity provider (OIDC), and there are no user, role, or
+password screens to find — those live in the CDR's configuration and in your
+IdP.
 
 The console ships a full dark theme (the toggle persists per browser),
 and the user menu opens the access drawer:
@@ -104,16 +119,17 @@ and a previewed grant is an upper bound.
 One TOML file (`ferroehr-admin-ui.toml`, searched in the working directory
 and `/etc/ferroehr/admin-ui.toml`, or pointed at with
 `FERROEHR_ADMIN_CONFIG`), with `FERROEHR_ADMIN__<SECTION>__<KEY>` environment
-overrides:
+overrides. Unknown keys are refused at startup, exactly as on the CDR:
 
 | Key | Default | Meaning |
 |---|---|---|
 | `cdr.base_url` | `http://localhost:8080` | The CDR origin (the ITS-REST base path is appended). |
 | `cdr.request_timeout_secs` | `30` | Per-request timeout toward the CDR. |
-| `cdr.management_base_url` | `{cdr.base_url}/management` | The CDR's management surface, base path included — set it when the CDR serves management on its own internal listener (`management.port`) or under a renamed base path. Drives the [Operations panel](operations.md). |
+| `cdr.management_base_url` | derived from `cdr.base_url` | The CDR's management surface, base path included — set it when the CDR serves management on its own internal listener (`management.port`) or under a renamed base path. Drives the [Operations panel](operations.md). |
 | `auth.basic_enabled` | `true` | Offer the username/password form (validated against the CDR; held server-side). |
 | `auth.oidc.enabled` | `false` | Offer OIDC login (authorization code + PKCE). |
-| `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the console's externally visible origin for the redirect URI. |
+| `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the console's externally visible origin for the redirect URI. Enabling OIDC without issuer, client id and public base URL is a startup error. |
+| `auth.oidc.resolve` | — | A `host=ip:port` override for the issuer host, for split-horizon DNS: the console reaches an issuer whose canonical name only resolves inside the container network, while browsers and tokens keep the canonical URL. |
 | `session.idle_minutes` | `60` | Session idle expiry. |
 | `session.cookie_secure` | `false` | Set behind TLS. |
 
@@ -121,7 +137,7 @@ The console is **stateless apart from its in-process session store**: it has
 no database and keeps no local files of its own. Everything it shows —
 including how stored queries are grouped, which is derived from the namespace
 in each query's qualified name — lives in the CDR and is read over ITS-REST,
-so two console replicas always agree and nothing needs backing up.
+so nothing here needs backing up and every replica shows the same repository.
 
 Login and sessions live in the console's backend; CDR credentials and
 bearer tokens never reach the browser.
@@ -169,7 +185,7 @@ accessed what, with what outcome — through the standard IHE ITI-81
 retrieval (`GET /fhir/r4/AuditEvent`; see the
 [Audit trail chapter](../audit.md)). Filter by event-time window, patient,
 principal, outcome, or action; every filter lives in the URL, so a filtered
-view is shareable and refresh-safe. Each row opens the full stored FHIR
+view is shareable and refresh-safe. Each row opens the full stored FHIR R4B
 `AuditEvent` record.
 
 The audit trail is an operator surface: under role-based access control the
@@ -178,8 +194,8 @@ is disabled the screen says so instead of erroring.
 
 ![Audit log](img/audit/audit.png)
 
-Each row's **view** disclosure opens the full stored FHIR `AuditEvent`
-record — exactly what the ITI-81 API serves:
+Each row's **view** disclosure opens the full stored `AuditEvent` record —
+exactly what the ITI-81 API serves:
 
 ![Audit log — the raw record](img/audit/audit-record.png)
 

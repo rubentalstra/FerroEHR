@@ -507,9 +507,9 @@ fn config_card() -> AnyView {
 ///
 /// The affordances render only once the CDR answered with a mounted `loggers`
 /// endpoint. Capability is not authorization: whether THIS session may change
-/// the filter is the CDR's per-request answer (the endpoint's access level —
-/// `admin_only` by default), and a refusal arrives as the actionable failure
-/// toast, never as a silent no-op.
+/// the filter is the CDR's per-request answer (the endpoint's configured
+/// access level — every management endpoint is `off` until named), and a
+/// refusal arrives as the actionable failure toast, never as a silent no-op.
 fn loggers_card(
     apply: ApplyFilterAction,
     reset: ResetFilterAction,

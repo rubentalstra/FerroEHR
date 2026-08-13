@@ -53,7 +53,7 @@ spec:
          the one destination that is never optional, so its absence is refused at
          render time rather than discovered at rollout. */}}
   {{- if and (not .Values.networkPolicy.egress.database.to) (not .Values.networkPolicy.egress.rules) }}
-  {{- fail "networkPolicy.egress.enabled=true with no destination for the database: set networkPolicy.egress.database.to (a podSelector/namespaceSelector for an in-cluster database, or an ipBlock for a managed one). DNS alone leaves the server unable to reach its DSN, which fails readiness with a connect timeout and no mention of the policy. The destination table is in the book, installation/kubernetes-hardening.md §Egress." }}
+  {{- fail "networkPolicy.egress.enabled=true with no destination for the database: set networkPolicy.egress.database.to (a podSelector/namespaceSelector for an in-cluster database, or an ipBlock for a managed one). DNS alone leaves the server unable to reach its DSN, which fails readiness with a connect timeout and no mention of the policy. The destination table is in the book, installation/hardening-network-policy.md §Egress." }}
   {{- end }}
   egress:
     # DNS is always required: without it every destination below fails name

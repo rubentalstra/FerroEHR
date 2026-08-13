@@ -103,7 +103,8 @@ impl EhrAccessGate {
                         Ok(())
                     } else {
                         Err(format!(
-                            "this EHR carries no ACCESS_CONTROL_SETTINGS and the server default                              is restricted; only the '{admin_role}' role may reach it"
+                            "this EHR carries no ACCESS_CONTROL_SETTINGS and the server default \
+                             is restricted; only the '{admin_role}' role may reach it"
                         ))
                     }
                 }

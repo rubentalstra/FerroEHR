@@ -120,3 +120,10 @@ integration it was built without — `multimedia.enabled`, `events.enabled`,
 `fhir.outbound.enabled`, `audit.store.enabled`, `audit.fhir_feed.enabled`,
 or a configured external FHIR terminology provider. The syslog ATNA feed and
 the in-process terminology bundle remain available in slim builds.
+
+> [!WARNING]
+> The local audit store is **on in the shipped defaults**, so a slim build
+> refuses to start on an untouched configuration. To run one, disable it
+> explicitly (`FERROEHR__AUDIT__STORE__ENABLED=false`) or configure the
+> syslog feed as the audit sink — silently dropping the audit trail is not
+> a boot mode.

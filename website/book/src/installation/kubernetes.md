@@ -1,21 +1,24 @@
 # Kubernetes & Helm
 
-The `deploy/helm/ferroehr` chart deploys FerroEHR as a hardened,
-production-shaped Kubernetes workload: non-root, read-only root filesystem,
-default-deny ingress, connecting to an **external** PostgreSQL 18. This chapter
-covers installing the chart, the database role model it expects, the security
-posture it enforces, the health probes, and the optional integrations. It
-assumes a cluster at Kubernetes 1.36 or newer.
+The `ferroehr` Helm chart deploys FerroEHR as a hardened, production-shaped
+Kubernetes workload — non-root, read-only root filesystem, default-deny ingress,
+its own user namespace — against an **external** PostgreSQL 18. This chapter
+covers installing it, verifying what you installed, the database role model it
+expects, the security posture it pins, the health probes, the optional
+integrations, and upgrades.
+
+<!-- toc -->
 
 > [!IMPORTANT]
 > **The chart requires Kubernetes 1.36 or newer** (`kubeVersion: ">=1.36.0-0"`).
-> Every pod runs in its own user namespace (`hostUsers: false`), so a container
-> escape lands as an unprivileged host UID — that field is stable as of 1.36 and
-> the chart renders it unconditionally. Your nodes must be Linux with
-> containerd ≥ 2.0 or CRI-O ≥ 1.25; without that support the pod does not start,
-> which is the loud failure rather than a silent downgrade. Set `hostUsers: true`
-> to opt out. What it buys is in
-> [Kubernetes hardening](./kubernetes-hardening.md).
+> That is a compatibility floor, not a support opinion: 1.36 is the release where
+> the newest field the chart renders — `hostUsers`, which gives every pod its own
+> user namespace — became stable, so nothing has to be version-gated into silence.
+> Your nodes must be Linux with containerd 2.0 or newer, or CRI-O 1.25 or newer;
+> without that support the pod does not start, which is the loud failure rather
+> than a silent downgrade. Set `hostUsers: true` to opt out and share the host's
+> user namespace. What the user namespace buys is in
+> [Cluster hardening](./kubernetes-hardening.md).
 
 > [!IMPORTANT]
 > There is **no in-chart PostgreSQL**. A CDR stores PHI, so its database must be
@@ -34,24 +37,24 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 5.0.1 -n ferroehr \
+  --version 6.0.5 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
-  --set image.tag=3.17.3
+  --set image.tag=3.17.5
 ```
 
 > [!IMPORTANT]
 > **`helm repo add` does not work for this chart, and never will.** There is no
 > HTTP chart repository and no `index.yaml` — OCI is the only publication path, so
-> that there is exactly one place a chart version can exist. The install form is
+> that there is exactly one place a chart version can exist. Every command takes
 > the `oci://` reference above. Helm has treated OCI registries as first-class
 > since 3.8, so the cost of this choice is real but narrow: a client older than
 > Helm 3.8 cannot install this chart at all.
 
 `helm show`, `helm pull`, `helm template` and `helm upgrade` all take the same
-`oci://` reference. To read the chart's metadata without installing it:
+reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.1
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.5
 ```
 
 ### Pin two versions, not one
@@ -64,8 +67,8 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 5.0.1` | SemVer over the chart's own contract |
-| Image tag | the server binary | `--set image.tag=3.17.3` (or `image.digest`) | the application's SemVer line |
+| Chart version | templates, values schema, defaults | `--version 6.0.5` | SemVer over the chart's own contract |
+| Image tag | the server binary | `--set image.tag=3.17.5` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest —
 never `latest`. Pin the two deliberately: the `config` tree is passed through to
@@ -74,6 +77,13 @@ is a boot refusal (`unknown configuration key …`), which presents as
 `CrashLoopBackOff`. A chart version is never republished with different content —
 the publish lane refuses to overwrite one — so a pinned chart version is a fixed
 artifact.
+
+> [!NOTE]
+> A published chart version being immutable is a property of that refusal, not of
+> the registry: an OCI tag is mutable, and `helm push` over an existing one would
+> silently replace it. That is why a correction always ships as a new chart
+> version, and why the `6.0.3` → `6.0.4` bump exists — the chart's `appVersion`
+> moved to a new release while its own version had already been published.
 
 ### Verifying what you installed
 
@@ -101,15 +111,20 @@ is what signed the bytes you pulled.
 ```shell
 # the chart
 gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR
-# the images it deploys
+# the image it deploys
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/FerroEHR
 ```
+
+The publish lane reads both back from the registry before it reports success, so
+a run that produced only one of them fails instead of going green.
 
 > [!IMPORTANT]
 > Both commands verify what the publishing lanes produce now. A published
 > artifact is never replaced, so if one you pinned answers `HTTP 404: Not Found`
 > it carries no attestation — that is the honest state rather than a verification
-> failure, and the fix is to pin a current version.
+> failure, and the fix is to pin a current version. Image signing landed during
+> the `3.17.4` cycle, so image tags from before it have nothing to
+> verify.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP
@@ -141,8 +156,9 @@ pod starts, not when the chart renders; `--skip-schema-validation` disables the
 check entirely if you ever need to bypass it.
 
 The chart is also listed on **[Artifact
-Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr)**, which renders this
-chapter's metadata plus a security report over the published images.
+Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr)**, which renders the
+chart's metadata plus a security report over the two images the chart's own
+metadata lists — the server, and the optional admin console.
 
 > [!WARNING]
 > Between releases the chart's `config` defaults track development and can be
@@ -150,7 +166,7 @@ chapter's metadata plus a security report over the published images.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.1 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.5 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -162,13 +178,16 @@ chapter's metadata plus a security report over the published images.
 > key means the image is older than the chart's defaults: use a newer tag, or set
 > that key to `null` for this deployment. A *published* chart is checked this way
 > before it is published — the publish lane refuses to ship a chart whose defaults
-> its own `appVersion` image rejects — so this matters mainly when you install from
-> a checkout of `develop`, or pin an image older than the chart.
+> its own `appVersion` image rejects, and it repeats the check against every values
+> overlay the chart carries — so this matters mainly when you install from a
+> checkout of `develop`, or pin an image older than the chart.
 
 That install alone **boots but answers `401` to everything**, deliberately:
 `config.auth.enabled` is on and no mechanism is configured yet, and a server that
-authenticates nothing is not a safe default. Add an `config.auth.oidc` issuer or
+authenticates nothing is not a safe default. Add a `config.auth.oidc` issuer or
 a `config.auth.basic.users` entry before expecting a request to succeed.
+
+## Configuration: one key, one file
 
 The chart carries the server's whole configuration under one key, **`config`**,
 rendered into a `ferroehr.toml` ConfigMap mounted at
@@ -184,13 +203,14 @@ that skips Secrets, and not covered by Secret encryption at rest. The chart
 therefore classifies every key it renders and takes one of two actions.
 
 **A secret the chart routes** — `auth.oidc.hmac_secret`, `signing.key_passphrase`,
-`multimedia.secret_access_key`, a terminology `client_secret`, and the four
-URL-shaped ones (`db.url`, `events.url`, `fhir.outbound.url`,
-`audit.fhir_feed.url`) — has a `secrets:` key of its own, so a value under
-`config:` is a mistake and fails the render, naming the key that belongs there:
+`multimedia.secret_access_key`, a Basic user's `password_hash`, a terminology
+`client_secret`, and the four URL-shaped ones (`db.url`, `events.url`,
+`fhir.outbound.url`, `audit.fhir_feed.url`) — has a `secrets:` key of its own, so
+a value under `config:` is a mistake and fails the render, naming the key that
+belongs there:
 
 ```text
-Error: execution error at (ferroehr/templates/deployment.yaml:18:28):
+Error: execution error at (ferroehr/templates/deployment.yaml:…):
   refusing to render a secret into the ConfigMap (a ConfigMap is not a sensitive object …):
   - config.auth.oidc.hmac_secret: set `secrets.authOidcHmacSecret` instead
 ```
@@ -212,11 +232,11 @@ kubectl -n ferroehr get secret ferroehr-config \
 Classification is by **name shape**, not by a list of today's keys: any key whose
 name carries `password`, `passphrase`, `secret`, `credential`, `private_key`,
 `api_key` or a trailing `token` is treated as a credential unless it ends in
-`_file`, `_path` or `_dir` (those hold a path), and the URL-shaped secrets are
-matched by path. That is what makes a secret key added to the server's
-configuration tree in a future release move to the Secret rather than leak
-silently. `extraEnv` is the escape hatch for anything neither `config:` nor
-`secrets:` surfaces.
+`_file`, `_path` or `_dir` (those hold a path), and the four URL-shaped secrets are
+matched by path, because `url` carries no shape a classifier can see. That is what
+makes a secret key added to the server's configuration tree in a future release
+move to the Secret rather than leak silently. `extraEnv` is the escape hatch for
+anything neither `config:` nor `secrets:` surfaces.
 
 ## Database roles — who runs migrations
 
@@ -244,11 +264,11 @@ and `config.db.migrate` is where you choose:
   Recommended for production.
 
 Set `migrations.job.enabled` and the chart runs (b) for you as a
-`pre-install,pre-upgrade` hook `Job`. Helm creates it before the Deployment and
-waits for it, so a failed migration fails the release rather than rolling pods
-against a schema that was never applied. The Job authenticates from its **own**
-Secret — deliberately a different credential from `database.existingSecret` —
-and rendering is refused if you enable it without one:
+`pre-install,pre-upgrade` hook `Job` that runs `ferroehr db migrate`. Helm creates
+it before the Deployment and waits for it, so a failed migration fails the release
+rather than rolling pods against a schema that was never applied. The Job
+authenticates from its **own** Secret — deliberately a different credential from
+`database.existingSecret` — and rendering is refused if you enable it without one:
 
 ```yaml
 database:
@@ -264,8 +284,9 @@ config:
 
 Give the migrator DSN a short `lock_timeout`
 (`?options=-c%20lock_timeout%3D5s`) so DDL blocked behind live traffic fails
-fast instead of queueing. `migrations.runByMigratorRole` remains an
-informational marker surfaced in the install NOTES, which also tell you when
+fast instead of queueing; `migrations.job.activeDeadlineSeconds` is the hard
+ceiling on the step either way. `migrations.runByMigratorRole` remains an
+informational marker surfaced in the install notes, which also tell you when
 the Job is enabled but `config.db.migrate` is still `apply` — a combination
 that buys nothing, because the server would migrate itself anyway.
 
@@ -298,15 +319,15 @@ asks for a read-only volume instead.
 
 | Secret | How the chart delivers it |
 |---|---|
+| the database DSN | mounted at `/etc/ferroehr-secrets/db.url`, reached through `FERROEHR__DB__URL_FILE` — projected from `database.existingSecret` when you supply one, so **the credential that reaches patient data never enters the pod's environment** |
 | `secrets.authOidcHmacSecret` | mounted at `/etc/ferroehr-secrets/auth.oidc.hmac_secret`; only the path is env |
 | `secrets.signingKeyPassphrase` | mounted at `/etc/ferroehr-secrets/signing.key_passphrase` |
 | `secrets.multimediaSecretAccessKey` | mounted at `/etc/ferroehr-secrets/multimedia.secret_access_key` |
-| `secrets.terminologyOauth2ClientSecrets.<name>` | mounted at `/etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret`; the chart injects the matching `client_secret_file` into the rendered TOML |
-| the database DSN | mounted at `/etc/ferroehr-secrets/db.url` (`db.url_file`) — projected from `database.existingSecret` when you supply one, so **the credential that reaches patient data never enters the pod's environment** |
-| `secrets.basicUserPasswordHashes.<username>` | mounted at `/etc/ferroehr-secrets/auth.basic.users.<username>.password_hash`; the chart injects the matching `password_hash_file` |
-| `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | mounted at `/etc/ferroehr-secrets/events.url` and `…/fhir.outbound.url` (`events.url_file`, `fhir.outbound.url_file`) |
-| `secrets.auditFhirFeedUrl` | env — `audit.fhir_feed.url` is now the only credential-bearing key with no `*_file` sibling |
-| `secrets.multimediaAccessKeyId` | env — an access key *id* is not secret (it is reported unredacted by `/management/env`) |
+| `secrets.basicUserPasswordHashes` (per username) | mounted at `/etc/ferroehr-secrets/auth.basic.users.<username>.password_hash`; the chart injects the matching `password_hash_file` |
+| `secrets.terminologyOauth2ClientSecrets` (per client) | mounted at `/etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret`; the chart injects the matching `client_secret_file` |
+| `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | mounted at `/etc/ferroehr-secrets/events.url` and `…/fhir.outbound.url` |
+| `secrets.auditFhirFeedUrl` | env — `audit.fhir_feed.url` is the only credential-bearing key with no `*_file` sibling |
+| `secrets.multimediaAccessKeyId` | env — an access key *id* is not secret (it is reported unredacted by the management surface's `env` endpoint) |
 
 The mount is read-only, `0440`, owned `root:65532` so the non-root process reads
 it through the group bit, and it is deliberately **not** a `subPath` mount,
@@ -315,20 +336,18 @@ not propagate.
 
 > [!NOTE]
 > A Basic user's Argon2id hash is delivered as a mounted file like the others: put
-> it in `secrets.basicUserPasswordHashes.<username>` and declare only the
-> `username` and `roles` under `config.auth.basic.users`. The chart mounts the hash
-> and injects `password_hash_file`, so it reaches neither the ConfigMap nor the
-> environment. Setting `password_hash` under `config:` is refused, and the error
-> names this key. (Before the server had `password_hash_file`, configuring a Basic
-> user moved the whole rendered configuration into the Secret; that is no longer
-> necessary and no longer happens.) An Argon2id hash is not a plaintext password,
-> but it is an offline cracking target, which is what the boot-time OWASP parameter
-> floor exists to make expensive.
+> it in `secrets.basicUserPasswordHashes` under the username, and declare only the
+> `username` and `roles` under `config.auth.basic.users`. Setting `password_hash`
+> under `config:` is refused, and the error names the key that carries it. An
+> Argon2id hash is not a plaintext password, but it is an offline cracking target,
+> which is what the boot-time OWASP parameter floor exists to make expensive.
 
 ## Security posture
 
-The chart pins — and its `validate.sh` gate asserts on every render — the
-following:
+The chart pins the following, and its render gate holds it: the Restricted fields
+are asserted per container for every workload in the render, the two isolation
+settings are asserted to agree across a release's workloads, and the golden
+renders pin the exact bytes so a changed default fails a diff.
 
 | Field | Value |
 |---|---|
@@ -337,21 +356,23 @@ following:
 | `allowPrivilegeEscalation` | `false` |
 | `capabilities.drop` | `[ALL]` |
 | `seccompProfile.type` | `RuntimeDefault` (pod and container) |
+| `hostUsers` | `false` — the pod gets its own user namespace |
+| `supplementalGroupsPolicy` | `Strict` — only the groups the manifest names |
 | ServiceAccount token | not mounted (the workload never calls the K8s API) |
 | `enableServiceLinks` | `false` (see below — not a preference) |
 | NetworkPolicy | default-deny ingress; only the API (and management) port admitted |
 
-Verified on a running pod rather than inferred from the rendered manifest: the
-container runs as uid/gid 65532 with an **empty** capability bounding set,
-`noNewPrivileges`, a read-only root filesystem, and a default-deny seccomp
-filter; the only writable path is the `emptyDir` at `/tmp`. The whole set
-satisfies the Pod Security **Restricted** profile.
+The whole set satisfies the Pod Security **Restricted** profile, and the
+[deployment probe harness](./kubernetes-hardening.md) reads it back off a running
+pod rather than off the rendered manifest — the container runtime's own spec for
+the security context, the API server for admission, the EndpointSlice for
+readiness.
 
-Satisfying it and **enforcing** it are different things, and only one of them is
-yours to do. Enforcement comes from a label on the namespace, which a chart
-cannot set for a namespace it does not own — so label it, or the posture above
-is a convention nothing checks and nothing fails when a future change regresses
-it:
+Satisfying the profile and **enforcing** it are different things, and only one of
+them is yours to do. Enforcement comes from a label on the namespace, which a
+chart cannot set for a namespace it does not own — so label it, or the posture
+above is a convention nothing checks and nothing fails when a future change
+regresses it:
 
 ```shell
 kubectl label --overwrite namespace ferroehr \
@@ -363,7 +384,7 @@ With the label in place the API server refuses a non-compliant pod outright
 ([Pod Security
 Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)),
 which is a stronger guarantee than any check the chart can make about itself.
-The install prints this as a prerequisite for the same reason.
+The install notes print this as a prerequisite for the same reason.
 
 `enableServiceLinks: false` is load-bearing, not hygiene. The kubelet injects a
 [set of Service link environment
@@ -378,7 +399,8 @@ targets — the database, broker, terminology server — are deployment-specific
 when you enable it the chart always admits DNS and you add rules for the rest.
 In the default posture the server's only outbound traffic is DNS and PostgreSQL,
 so those two rules suffice; each integration you switch on adds a target, and a
-blocked one can fail silently.
+blocked one can fail silently. The full destination table is in
+[Namespaces, network & policy](./hardening-network-policy.md#egress-deny-by-default-and-what-it-breaks).
 
 Two limits worth stating plainly. First, with `networkPolicy.ingressFrom` empty
 the rendered ingress rule carries no `from` selector, and a rule without `from`
@@ -388,6 +410,7 @@ workload. Second, a NetworkPolicy is only as real as the CNI that implements it:
 on a cluster whose network plugin does not enforce NetworkPolicy the object is
 documentation rather than a control, and nothing in Kubernetes reports that.
 Confirm it by attempting a connection the policy should refuse.
+
 The database-side controls (TLS with `sslmode=verify-full`, pgaudit, at-rest
 encryption, WAL archiving / PITR) belong to whoever provisions PostgreSQL — the
 chart references them but cannot enforce them. See
@@ -395,20 +418,27 @@ chart references them but cannot enforce them. See
 
 ## Health probes
 
-Probes use the always-on, unauthenticated, PHI-free health routes on the main
-HTTP port. They need no configuration at all — no management surface, no
+All three probes use the always-on, unauthenticated, PHI-free health routes on the
+main HTTP port. They need no configuration at all — no management surface, no
 access level, nothing to forget:
 
 | Probe | Route | Contract |
 |---|---|---|
 | liveness | `/health/liveness` | 200 while the process is up; touches no dependency |
-| readiness | `/health/readiness` | 200 (UP/DEGRADED) or 503 (DOWN): checks DB ping, migrations applied, audit sender, events — each 1s-bounded |
-| startup | `/health/liveness` | gates a slow first boot |
+| readiness | `/health/readiness` | 200 (UP/DEGRADED) or 503 (DOWN): checks the database ping, migrations applied, the audit sender and the event outbox — each bounded at one second |
+| startup | `/health/liveness` | the same constant, with a long failure threshold, so a slow first boot is not killed mid-migration |
 
 That split is deliberate: a database outage must fail *readiness* (the pod stops
 receiving traffic) and never liveness (which would restart the container in a
-loop). If the kubelet cannot reach the HTTP port, set `probes.exec.enabled=true`
-to use the binary's `healthcheck` subcommand instead.
+loop).
+
+> [!NOTE]
+> There is no `exec` probe option. One existed and was removed: it ran the
+> binary's `healthcheck` subcommand, which defaults to the openEHR status
+> document rather than a health route, so **readiness never touched the
+> database** and a pod with a dead database reported Ready and took clinical
+> traffic. `ferroehr healthcheck --url …` is still useful by hand; it is not what
+> a readiness probe should run.
 
 > [!WARNING]
 > **Migrations run only at boot, so a replaced or wiped database leaves the pods
@@ -417,34 +447,32 @@ to use the binary's `healthcheck` subcommand instead.
 > not applied)"}` while `"db"` reads `UP` — the pod reaches PostgreSQL, finds no
 > schema, and does not migrate again, because migration is a startup step.
 > Liveness keeps passing (correctly: the process is healthy), so the kubelet never
-> restarts the container and the Deployment sits at `0/N` ready with no error in
-> the logs after the first one:
+> restarts the container and the Deployment sits with no ready replicas and no
+> error in the logs after the first one:
 >
 > ```shell
-> kubectl -n ferroehr get pods                      # Running, 0/2 READY
+> kubectl -n ferroehr get pods                      # Running, not READY
 > curl -s http://ferroehr:8080/health/readiness     # 503, "migrations" DOWN, "db" UP
 > kubectl -n ferroehr rollout restart deploy/ferroehr
 > ```
 >
 > The check re-tests the schema on every probe, so a pod recovers on its own within
-> one `readiness.periodSeconds` of the schema existing — verified on a two-replica
-> Deployment: after the schema was dropped both pods went `READY false` with zero
-> restarts, and when a *replacement* pod migrated at boot, the untouched pod
-> returned to `READY true` with `RESTARTS 0` and its original start time. What
-> needs the restart is the case where the only thing that would migrate is the pod
+> one `probes.readiness.periodSeconds` of the schema existing — an untouched pod
+> returns to ready, with no restart, once anything else has migrated. What needs
+> the restart is the case where the only thing that would migrate is the pod
 > itself.
 >
 > That is what makes the interaction with flow (b) load-bearing: when migrations
 > run out of band, the migration step must complete *before* the Deployment rolls,
-> or the first pods sit unready waiting for a schema. Gate the rollout on the
-> migration Job rather than starting both together. Durable storage is the other
+> or the first pods sit unready waiting for a schema. `migrations.job.enabled`
+> does exactly that, as a hook Helm waits on. Durable storage is the other
 > half — an `emptyDir`-backed or otherwise disposable PostgreSQL puts a clinical
 > repository one node eviction away from this state.
 >
 > One recovery path does **not** self-heal, and it is worth knowing before you try
 > it: restoring or dropping *part* of the schema set. The archival tier's tables
 > live in their own `cold` schema, so a `DROP SCHEMA ehr CASCADE` leaves them
-> behind, and the baseline migration then fails permanently with
+> behind, and re-running the migration set then fails permanently with
 > `relation "vo_version" already exists` — the pod crash-loops, and restarting it
 > retries the same failure. Recreate the whole database rather than one schema.
 
@@ -457,7 +485,8 @@ exposed until you opt one in. Set
 to add the `prometheus.io/*` scrape annotations; set `config.management.port`
 to serve the surface on its own internal listener, so `/management` is never
 reachable on the clinical API port. The health probes stay on the main port
-regardless of all of this.
+regardless of all of this, and the install notes warn you if you add the scrape
+annotations while the endpoint is still `off`.
 
 Those annotations are honoured by a Prometheus that discovers targets in its own
 scrape configuration. An **operator-managed** Prometheus
@@ -494,8 +523,8 @@ config:
       audiences: [ferroehr]
 ```
 
-or Basic auth, whose password hashes are secrets — see
-`deploy/helm/ci/basic-auth-values.yaml` for the full shape.
+or Basic auth, whose password hashes go in `secrets.basicUserPasswordHashes`
+while the username and roles stay under `config.auth.basic.users`.
 
 > [!WARNING]
 > `config.auth.enabled: false` makes the chart render, and serves **every**
@@ -521,7 +550,8 @@ config:
 ```
 
 ```shell
-helm upgrade ferroehr ferroehr/ferroehr --reuse-values \
+helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
+  --version 6.0.5 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -555,21 +585,50 @@ is an explicit, auditable decision:
 | ADMIN API | `config.admin.enabled` | off | Physical, irreversible delete. Gate behind admin RBAC. |
 | Terminology extension API | `config.terminology.api_enabled` | off | 404 when off. |
 | Event-subscription API | `config.events.admin_api` | off | Admin CRUD over event filters. |
-| Multi-tenancy | `config.tenancy.enabled` | off | Tenant from a JWT claim (`config.tenancy.claim`); never set `tenancy.header` in production. Pairs with PG row-level security. |
-| OAuth2/OIDC auth | `config.auth.oidc.*` | unset | Prefer JWKS/discovery over the HS256 `secrets.authOidcHmacSecret`. |
+| Multi-tenancy | `config.tenancy.enabled` | off | Tenant from a JWT claim (`config.tenancy.claim`); never set `config.tenancy.header` in production. Pairs with PG row-level security. |
+| OAuth2/OIDC auth | `config.auth.oidc.issuer` | unset | Prefer JWKS/discovery over the HS256 `secrets.authOidcHmacSecret`. |
 | RBAC | `config.authz.rbac.enabled` | **on** | The coarse role gate (active while `config.auth.enabled`). |
 | ABAC | `config.authz.abac.enabled` | off | Cedar (policies via a `config.files` mount) or a remote policy decision point. |
 | Eventing → AMQP | `config.events.enabled` | off | Envelopes are **PHI-free** by design. Use `config.events.tls: true`; URL via `secrets.eventsUrl`. |
 | FHIR inbound/façade | `config.fhir.api_enabled` | off | Read façade + inbound mapping. |
 | FHIR outbound → AMQP | `config.fhir.outbound.enabled` | off | ⚠ **Carries PHI** (the mapped FHIR resource). Separate exchange; TLS broker only; URL via `secrets.fhirOutboundUrl`. |
-| S3 multimedia | `config.multimedia.enabled` | off | ⚠ Offloaded blobs are PHI. Private, encrypted, HTTPS bucket; keys via `secrets.multimedia*`. |
-| External terminology | `config.terminology.external.enabled` | off | FHIR terminology server; the provider map is more `config.terminology.external.providers.*` keys. |
+| S3 multimedia | `config.multimedia.enabled` | off | ⚠ Offloaded blobs are PHI. Private, encrypted, HTTPS bucket; keys via `secrets.multimediaAccessKeyId` and `secrets.multimediaSecretAccessKey`. |
+| External terminology | `config.terminology.external.enabled` | off | FHIR terminology server; the provider map is more `config.terminology.external.providers` keys. |
 | ATNA audit trail | `config.audit.enabled` | **on** | On with the local store only; forwarding (`config.audit.syslog`, `config.audit.fhir_feed`) is opt-in per sink. |
-| Version signing | `config.signing.*` | **on** (`digest`) | `mode: pgp` needs a `config.files` key plus `secrets.signingKeyPassphrase`, and fails closed at boot without a usable key. |
-| OTLP telemetry | `config.telemetry.*` | unset | `config.telemetry.otlp_endpoint` is all it takes (the `config` tree is the TOML verbatim); an unset endpoint means the OTel layer is not installed (zero overhead). With `networkPolicy.egress.enabled`, add a rule for the collector — a blocked exporter drops spans without an error. |
+| Version signing | `config.signing.enabled` | **on** (`config.signing.mode: digest`) | `pgp` mode needs a `config.files` key plus `secrets.signingKeyPassphrase`, and fails closed at boot without a usable key. |
+| OTLP telemetry | `config.telemetry.otlp_endpoint` | unset | Setting the endpoint is all it takes; unset means the OpenTelemetry layer is not installed at all (zero overhead). With `networkPolicy.egress.enabled`, add a rule for the collector — a blocked exporter drops spans without an error. |
 
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
 [Security & multi-tenancy](../security.md), and [Operations](../operations.md).
+
+### The admin console (a second workload, off by default)
+
+`adminUi.enabled` renders a second Deployment and Service for the Leptos admin
+console beside the CDR, from its own image
+(`adminUi.image.repository`, tagged `appVersion` by default so the two move
+together). It is off by default: the console is a separate product surface with
+its own attack surface, and a CDR is complete without it.
+
+Three properties are worth knowing before you switch it on:
+
+- **It reaches the CDR strictly over the REST API**, which
+  `adminUi.networkPolicy.enabled` (on by default) *enforces* rather than
+  assumes — the console's egress admits the CDR Service, DNS and outbound HTTPS
+  for an identity provider, and nothing else. It holds no database credential.
+- **It is a human-facing web UI**, so `adminUi.ingress.enabled` is the normal way
+  to reach it, and `adminUi.auth.oidc.enabled` with an issuer, client id and
+  `adminUi.auth.oidc.publicBaseUrl` is how you keep a person who should not see
+  PHI out of it. Its client secret comes from `adminUi.existingSecret`, mounted
+  as a file exactly as the server's DSN is.
+- **`adminUi.replicaCount` is 1 deliberately.** The console holds session state
+  in process, so a second replica needs sticky sessions at the ingress or users
+  are logged out on a reroute.
+
+The console carries the same security context as the server, and the chart's
+render gate holds it to the same Restricted profile and the same pod-isolation
+settings — a release whose two workloads disagreed about `hostUsers` would be a
+posture nobody could state in one sentence. Its screens are documented in the
+[admin console](../admin-ui/index.md) chapter.
 
 ## Staying available while things move
 
@@ -594,7 +653,7 @@ the removal still has to propagate to every node. `preStopSleepSeconds` (default
 action rather than an `exec` hook, because the image ships no shell to run one.
 
 **A node drain does not hang on unhealthy pods.** The PodDisruptionBudget sets
-`unhealthyPodEvictionPolicy: AlwaysAllow`, the
+`podDisruptionBudget.unhealthyPodEvictionPolicy: AlwaysAllow`, the
 [documented recommendation](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
 The API default, `IfHealthyBudget`, makes a drain wait for pods to become
 healthy — which never completes when they are unhealthy *because* of the drain.
@@ -602,15 +661,15 @@ healthy — which never completes when they are unhealthy *because* of the drain
 **A migration interrupted by a drain is not counted as a failure.** The
 migration Job carries a `podFailurePolicy` that ignores pod failures caused by
 disruption, so ordinary cluster maintenance during a release cannot exhaust
-`backoffLimit` and fail the upgrade with no migration error anywhere in the
-logs.
+`migrations.job.backoffLimit` and fail the upgrade with no migration error
+anywhere in the logs.
 
 Two more are available and off by default. `service.trafficDistribution:
 PreferSameZone` keeps traffic inside the caller's zone — lower latency and
 inter-zone cost, at the price of even load, so measure before setting it. And
-`autoscaling.behavior` passes scaling policies straight through; the defaults
-already scale up immediately and wait out a five-minute window before scaling
-down, so change it only to be *more* conservative.
+`autoscaling.behavior` passes scaling policies straight through; the documented
+defaults already scale up immediately and wait out a five-minute stabilization
+window before scaling down, so change it only to be *more* conservative.
 
 ## Upgrades
 
@@ -618,16 +677,17 @@ Migrations are **append-only** — a schema change is a new file, never an edit 
 an applied one — so a rolling upgrade stays compatible with the previous schema
 during the window where both versions run: additive DDL first, destructive
 changes in a later release once all pods are on the new version. Keep
-`replicaCount >= 2` (or autoscaling) and the default PodDisruptionBudget so
-upgrades and node drains never fully interrupt the API; the default
-`terminationGracePeriodSeconds` covers the binary's shutdown drain. Roll back by
-re-pinning the prior image tag or digest.
+`replicaCount` at two or more (or `autoscaling.enabled`) and the default
+PodDisruptionBudget so upgrades and node drains never fully interrupt the API;
+the default `terminationGracePeriodSeconds` covers the binary's shutdown drain.
+Roll back by re-pinning the prior image tag or digest.
 
 A change anywhere under `config`, `config.files` or `secrets` changes the
 `checksum/config` pod annotation, so `helm upgrade` rolls the pods for a
 configuration-only change too — including a rotated secret or an edited ABAC
 policy, both of which are read at boot and would otherwise reach the volume while
 every running pod kept using the old value.
+
 `helm uninstall` removes everything the chart created — the chart declares no
 PersistentVolumeClaim, so nothing is left behind; your database, and the Secret
 holding its DSN, are yours and survive.
@@ -636,14 +696,15 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.1 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 6.0.5 \
   -n ferroehr -f my-values.yaml | less
 ```
 
 Working from a checkout instead, `deploy/helm/validate.sh` runs the chart's full
-gate — the helm-version pin, the secret-leak gate, lint, render, the
-security-field assertions and the golden-render diff. It is the same gate CI runs
-on every change to the chart, so a local run and a pull request agree by
+render gate — the helm-version pin, lint, YAML validity, the structural
+Restricted-profile and selector-immutability gates, the secret-leak gate, the
+values-schema probes, and the golden-render diff. It is the same gate CI runs on
+every change to the chart, so a local run and a pull request agree by
 construction.
 
 ### Check your values before you deploy them
@@ -653,14 +714,14 @@ server, so it cannot see a configuration the server refuses — a missing
 authentication mechanism, an HMAC secret under the 32-byte floor, a password
 hash that is not a real Argon2id PHC string, SMART enabled without its public
 base URL. Every one of those renders perfectly and crash-loops the pod. The
-script now prints exactly which properties it does not check, so a green run is
-not mistaken for a working deployment.
+script prints exactly which properties it does not check, on success as well as
+on failure, so a green run is not mistaken for a working deployment.
 
 The check that closes that gap runs the image against your rendered
 configuration:
 
 ```shell
-FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:3.17.3 \
+FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:3.17.5 \
   deploy/helm/ci/boot-check.sh my-values.yaml
 ```
 

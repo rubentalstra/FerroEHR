@@ -178,7 +178,8 @@ impl FerroEhrService {
         // operational extension — no openEHR spec governs a query timeout):
         // when set, the DB execution is bounded so an over-long query is
         // reported as `408 Request Timeout` rather than hanging until the
-        // global request timeout. Default off → zero drift.
+        // global request timeout. On by default (`QueryConfig::default`,
+        // 30 s); `0` disables it.
         let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx);
         let result = match self.query_timeout {
             Some(budget) => tokio::time::timeout(budget, exec)

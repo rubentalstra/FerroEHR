@@ -38,7 +38,7 @@
 # unset, for keys the chart carries that the image predates. It is loud, it is
 # never used by CI (which builds the image from the tree, so no key can be too
 # new), and it can only REMOVE configuration — it cannot make a bad value pass.
-#   FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:3.17.3 \
+#   FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:3.17.5 \
 #   FERROEHR_SKEW_UNSET=config.db.migrate deploy/helm/ci/boot-check.sh
 #
 # Requires docker and helm. The CI lane is `chart-boot` in .github/workflows/ci.yml.

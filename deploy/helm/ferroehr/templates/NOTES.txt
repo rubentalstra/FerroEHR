@@ -21,8 +21,8 @@ Configuration: one ferroehr.toml, rendered from .Values.config and mounted at
 from a Secret, as a mounted file where the config key has a *_file sibling.
 {{ if eq (include "ferroehr.configInSecret" .) "true" -}}
   ferroehr.toml source: Secret "{{ include "ferroehr.configSecretName" . }}" — NO ConfigMap was created,
-  because the configuration carries a secret this chart has no secrets: route
-  for (a Basic user's password_hash has no password_hash_file sibling). Read it
+  because the configuration carries a secret-classed value this chart has no
+  secrets: route for. Read it
   with `kubectl get secret {{ include "ferroehr.configSecretName" . }} -o jsonpath='{.data.ferroehr\.toml}' | base64 -d`.
 {{ else -}}
   ferroehr.toml source: ConfigMap "{{ include "ferroehr.fullname" . }}"
