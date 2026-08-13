@@ -30,6 +30,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The Helm chart is `6.0.5`.** Reading the site against the tree corrected
+  chart comments and operator-facing messages (the stale distroless base
+  name, the secret-routing key list, the config-in-Secret cause in
+  NOTES.txt, two book citations that moved in the hardening split, and the
+  egress refusal's pointer); the packaged bytes changed, so the version
+  moves.
 - **Wire and OpenAPI text corrected while verifying the site.** The `406`
   answer for an unrecognized XML `version` parameter now names `version=2`
   as the default (it said `version=1`); the `expand_multimedia` parameter
