@@ -198,4 +198,4 @@ the database.
 > Base64 inflates a blob by about a third on the wire, and the whole request
 > body is still subject to `[server.limits] body_bytes` (16 MiB by default) —
 > a composition that exceeds it is refused `413` before offload is ever
-> considered. See [`[server.limits]`](../installation/configuration.md).
+> considered. See [`[server.limits]`](../installation/config-server.md#serverlimits-request-body-sizes).

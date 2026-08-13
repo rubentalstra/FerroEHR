@@ -43,7 +43,7 @@ any of them.
 > This is a physical delete of the template registration, not a versioned
 > one. The server-side switch is `admin.enabled`
 > (`FERROEHR__ADMIN__ENABLED`), off by default — see
-> [`[admin]`](../installation/configuration.md#admin).
+> [`[admin]`](../installation/config-auth.md#admin).
 
 ## EHR browser
 
