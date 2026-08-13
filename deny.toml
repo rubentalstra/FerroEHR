@@ -37,22 +37,18 @@ version = 2
 yanked = "deny"
 ignore = [
   # 2026-08-13: Marvin attack timing sidechannel in `rsa`; no fixed release
-  # exists upstream. TWO paths (`cargo tree -i rsa@0.9.10`): openidconnect →
-  # ferroehr-rest, which only VERIFIES RS256 ID-token signatures with the
-  # provider's PUBLIC key (no secret in that computation); and pgp → the VERSION
-  # signing key, reached only in `[signing] mode = "pgp"` (the default is
-  # `digest`, which uses no asymmetric key) and then with whatever key the
-  # operator supplies — an ECC/EdDSA key keeps `rsa` off the signing path.
+  # exists upstream. The dependency-path argument lives in ONE place — the
+  # RUSTSEC-2023-0071 statement in security/vex/rust-advisories.toml, whose
+  # carrier/root claims scripts/checks/vex-reachability.sh compares against
+  # the resolved graph — never restated here, where nothing checks it.
   # Re-check when rsa > 0.9 ships. https://rustsec.org/advisories/RUSTSEC-2023-0071
   { id = "RUSTSEC-2023-0071", reason = "no fix upstream; RSA verification only in the OIDC path, and the pgp signing path is off by default (digest mode) and key-algorithm-agnostic" },
   # 2026-08-13: two quick-xml DoS-class advisories (quadratic duplicate-attribute
-  # check; unbounded namespace allocation), both fixed in 0.41.0. The S3
-  # multimedia offload no longer carries them — object_store 0.14.1 requires
-  # quick-xml 0.41. The only pre-fix version left is quick-xml 0.26.0, and
-  # `cargo tree -i quick-xml@0.26.0` shows exactly one path: inferno → pprof,
-  # the flamegraph renderer. inferno imports `quick_xml::Writer` and nothing
-  # else — it never builds a reader, so neither advisory's affected code (the
-  # `Attributes` iterator, `NsReader`) is called. Re-check when pprof bumps it.
+  # check; unbounded namespace allocation), both fixed in 0.41.0; the one
+  # pre-fix version left is 0.26.0. The dependency-path and never-invoked
+  # arguments live in the two statements in security/vex/rust-advisories.toml
+  # (machine-compared to the graph by scripts/checks/vex-reachability.sh) —
+  # never restated here. Re-check when pprof bumps it.
   { id = "RUSTSEC-2026-0194", reason = "quick-xml 0.26.0 only via inferno (the pprof flamegraph renderer), which writes SVG and never constructs a reader" },
   { id = "RUSTSEC-2026-0195", reason = "quick-xml 0.26.0 only via inferno (the pprof flamegraph renderer), which writes SVG and never constructs a reader" },
   # 2026-07-18: unmaintained-crate advisory only (no vulnerability); a

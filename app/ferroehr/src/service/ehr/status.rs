@@ -60,8 +60,8 @@ impl FerroEhrService {
                 )
             })?;
         let read = match at {
-            Some(at) => version_at(&self.pool, vo_id, at).await?,
-            None => read_current(&self.pool, vo_id).await?,
+            Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
+            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
         .ok_or_else(|| {
             ServiceError::sm(
@@ -85,7 +85,7 @@ impl FerroEhrService {
         vo_id: VoId,
         version: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = read_version(&self.pool, vo_id, version)
+        let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| {
@@ -193,12 +193,14 @@ impl FerroEhrService {
                     format!("EHR_STATUS for EHR {ehr_id}"),
                 )
             })?;
-        let read = read_current(&self.pool, vo_id).await?.ok_or_else(|| {
-            ServiceError::sm(
-                CallStatusType::EhrIdDoesNotExist,
-                format!("EHR_STATUS for EHR {ehr_id}"),
-            )
-        })?;
+        let read = read_current(&self.pool, self.spec_profile, vo_id)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR_STATUS for EHR {ehr_id}"),
+                )
+            })?;
         let current = self.version_response(ehr_id, vo_id, read)?;
         let preceding = current
             .meta
@@ -299,7 +301,7 @@ impl FerroEhrService {
         vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
-        let read = read_version(&self.pool, vo_id, version)
+        let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| {
@@ -333,8 +335,8 @@ impl FerroEhrService {
                 )
             })?;
         let read = match at {
-            Some(at) => version_at(&self.pool, vo_id, at).await?,
-            None => read_current(&self.pool, vo_id).await?,
+            Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
+            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
         .ok_or_else(|| {
             ServiceError::sm(

@@ -137,8 +137,8 @@ impl FerroEhrService {
         version: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = match version {
-            Some(v) => read_version(&self.pool, vo_id, v).await?,
-            None => read_current(&self.pool, vo_id).await?,
+            Some(v) => read_version(&self.pool, self.spec_profile, vo_id, v).await?,
+            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| {
@@ -167,7 +167,7 @@ impl FerroEhrService {
         vo_id: VoId,
         at: jiff::Timestamp,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = version_at(&self.pool, vo_id, at)
+        let read = version_at(&self.pool, self.spec_profile, vo_id, at)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| {
@@ -243,7 +243,7 @@ impl FerroEhrService {
         vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
-        let read = read_version(&self.pool, vo_id, version)
+        let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| {
@@ -270,8 +270,8 @@ impl FerroEhrService {
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = match at {
-            Some(at) => version_at(&self.pool, vo_id, at).await?,
-            None => read_current(&self.pool, vo_id).await?,
+            Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
+            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| {

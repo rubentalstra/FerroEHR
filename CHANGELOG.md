@@ -31,6 +31,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The documented development→stable read-time refusal now exists.** Every
+  accepted commit records whether the released generation's own reader can
+  express the body (`vo_version.stable_compatible`; the extra in-memory
+  parse runs only under the development profile), and the one seam every
+  stored version body leaves storage through refuses a stamped-incompatible
+  version under `spec_profile = "stable"` with a `409` naming the profile,
+  the version and the remedy — never a silent down-conversion. Rows from
+  before the column existed are assessed on the fly at read. AQL is
+  deliberately not covered by the stamp (the planning gate refuses
+  development-only surface in queries; the stamp governs served version
+  bodies) — the boundary is stated in the docs. Our own extension; no
+  openEHR spec governs runtime generation selection.
 - **Archive restore is on the wire.** `POST /admin/archive/ehrs/restore` and
   `POST /admin/archive/parties/restore` (admin-gated, our own extension —
   the SM declares no un-archive call) bring archived records back from the

@@ -95,6 +95,13 @@ pub struct StoredVersion {
     /// `{contribution, commit_audit, signature?}` fragment; `None` on a locally
     /// created version (master06 §Committal and Audits).
     pub wrapped_original: Option<Value>,
+    /// Whether the RELEASED openEHR generation set can express this version's
+    /// body, as stamped at commit; `None` for a row nothing stamped (committed
+    /// before the column existed, or written by a verbatim-replay path — the
+    /// EHR-Extract import and the archive load), which the read-time
+    /// `spec_profile` gate assesses on the fly. No openEHR spec governs runtime
+    /// generation selection — our own design/extension.
+    pub stable_compatible: Option<bool>,
     /// Reassembled canonical JSON, or [`Value::Null`] for a logically deleted
     /// version (no node rows — master06 §Logical Deletion).
     pub canonical: Value,
@@ -134,7 +141,7 @@ macro_rules! version_select {
             "SELECT v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
-            "v.signature_client_supplied, v.wrapped_original, ",
+            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
@@ -220,6 +227,7 @@ async fn stored_version(
         signature: row.try_get("signature")?,
         signature_client_supplied: row.try_get("signature_client_supplied")?,
         wrapped_original: row.try_get("wrapped_original")?,
+        stable_compatible: row.try_get("stable_compatible")?,
         canonical,
         attestations_at_committal,
         attestations_after_committal,

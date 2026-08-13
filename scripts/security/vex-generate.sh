@@ -19,6 +19,14 @@
 #
 # OpenVEX specification: https://github.com/openvex/spec/blob/main/OPENVEX-SPEC.md
 #
+# One key per statement is NOT OpenVEX: `ferroehr:reachability`, carrying the
+# dependency path the impact statement argues about as data
+# (`scripts/checks/vex-reachability.sh` compares it against `cargo tree`). The
+# specification defines no extension mechanism and no such field, so this is
+# our own extension: the key is namespaced to make that obvious, and because
+# the documents are JSON-LD and the `@context` defines no term for it, a
+# JSON-LD parser drops it on expansion rather than misreading it.
+#
 # Usage: scripts/security/vex-generate.sh [--write | --stdout]
 #   --write   (default) overwrite security/vex/rust-advisories.openvex.json
 #   --stdout  print the document instead, changing nothing on disk
@@ -121,6 +129,15 @@ while read -r entry; do
     value="$(jq -r --arg f "$field" '.[$f] // ""' <<<"$entry")"
     [ -n "$value" ] || note "${id:-<no id>}: missing '$field'"
   done
+  # The dependency-path claim is required, and its EMPTY form has meaning ("the
+  # crate is absent from the resolved graph"), so presence is checked with
+  # `has` — a missing array would otherwise be indistinguishable from an
+  # asserted-absent one, and a statement with no path claim would ship
+  # unchecked by scripts/checks/vex-reachability.sh.
+  for field in carriers workspace_roots; do
+    jq -e --arg f "$field" 'has($f) and (.[$f] | type == "array")' <<<"$entry" > /dev/null \
+      || note "${id:-<no id>}: missing '$field' (an array; empty asserts the crate is absent from the graph)"
+  done
   status="$(jq -r '.status // ""' <<<"$entry")"
   justification="$(jq -r '.justification // ""' <<<"$entry")"
   grep -qw -- "$status" <<<"$VALID_STATUS" \
@@ -154,6 +171,11 @@ document="$(jq -S '
           status: $e.status,
           justification: $e.justification,
           impact_statement: $e.impact,
+          "ferroehr:reachability": {
+            package: ($e.crate + (if ($e.version // "") == "" then "" else "@" + $e.version end)),
+            direct_dependents: ($e.carriers | sort),
+            workspace_roots: ($e.workspace_roots | sort),
+          },
         }
       ],
     }

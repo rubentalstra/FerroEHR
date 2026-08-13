@@ -133,7 +133,7 @@ impl FerroEhrService {
         let Some((vo_id, _)) = self.current_vo(ehr_id, Kind::EhrAccess).await? else {
             return Ok(None);
         };
-        let Some(read) = read_current(&self.pool, vo_id).await? else {
+        let Some(read) = read_current(&self.pool, self.spec_profile, vo_id).await? else {
             return Ok(None);
         };
         Ok(EhrAccessSettings::from_ehr_access(&read.canonical))

@@ -486,7 +486,7 @@ impl FerroEhrService {
 
         let mut versions = Vec::with_capacity(selected.len());
         for sv in &selected {
-            let read = read_version_by_ordinal(&self.pool, vo_id, *sv)
+            let read = read_version_by_ordinal(&self.pool, self.spec_profile, vo_id, *sv)
                 .await?
                 .ok_or_else(|| {
                     ServiceError::sm(
@@ -585,7 +585,7 @@ impl FerroEhrService {
         }
         let mut out = Vec::new();
         for vo_id in party_ids {
-            let Some(read) = read_current(&self.pool, vo_id).await? else {
+            let Some(read) = read_current(&self.pool, self.spec_profile, vo_id).await? else {
                 continue; // not held locally — cannot be written in
             };
             if read.ehr_id.is_some() {

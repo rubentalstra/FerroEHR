@@ -98,17 +98,21 @@ pub(super) fn inject_uid(
 /// the demographics repository's scope, module NOTE).
 ///
 /// # Errors
-/// [`ServiceError`] on a storage/database fault during the version read.
+/// [`ServiceError`] on a storage/database fault during the version read, or
+/// the `409`-class `spec_profile` refusal of a stored body the active
+/// generation set cannot express
+/// ([`crate::versioning::profile::gate`]).
 pub(super) async fn load_ehrless(
     pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
     vo_id: VoId,
     version: Option<TreeId>,
     at: Option<jiff::Timestamp>,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let read = match (version, at) {
-        (Some(v), _) => read_version(pool, vo_id, v).await?,
-        (None, Some(at)) => version_at(pool, vo_id, at).await?,
-        (None, None) => read_current(pool, vo_id).await?,
+        (Some(v), _) => read_version(pool, profile, vo_id, v).await?,
+        (None, Some(at)) => version_at(pool, profile, vo_id, at).await?,
+        (None, None) => read_current(pool, profile, vo_id).await?,
     };
     Ok(read.filter(|r| r.ehr_id.is_none()))
 }
@@ -359,7 +363,7 @@ impl FerroEhrService {
         version: TreeId,
         label: &str,
     ) -> Result<Value, ServiceError> {
-        let read = load_ehrless(&self.pool, vo_id, Some(version), None)
+        let read = load_ehrless(&self.pool, self.spec_profile, vo_id, Some(version), None)
             .await?
             .ok_or_else(|| {
                 ServiceError::sm(
@@ -386,7 +390,7 @@ impl FerroEhrService {
         at: Option<jiff::Timestamp>,
         label: &str,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = load_ehrless(&self.pool, vo_id, None, at)
+        let read = load_ehrless(&self.pool, self.spec_profile, vo_id, None, at)
             .await?
             .ok_or_else(|| {
                 ServiceError::sm(

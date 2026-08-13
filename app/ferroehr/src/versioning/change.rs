@@ -37,7 +37,7 @@ use crate::versioning::lifecycle::{
     self, reject_deleted_with_data, resolve_lifecycle, validate_transition,
 };
 use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id};
-use crate::versioning::{Kind, SigningCtx, integrity};
+use crate::versioning::{Kind, SigningCtx, integrity, profile};
 
 /// The outcome of a versioned-object write: the object id, the new version's
 /// tree id, and the provenance carried into the event-outbox envelope.
@@ -420,6 +420,10 @@ struct ResolvedWrite {
     client_signature: Option<String>,
     /// The decomposed node rows (empty for a logical delete — data Void).
     rows: Vec<NodeRow>,
+    /// Whether the RELEASED generation set can express this body — the
+    /// commit-time `vo_version.stable_compatible` stamp
+    /// ([`crate::versioning::profile::stable_compatible`]).
+    stable_compatible: bool,
     /// `UPDATE_VERSION.attestations` committed with this version.
     attestations: Vec<attestation::AttestationInput>,
     /// A newly created FOLDER hierarchy that joins `EHR.folders` (create only).
@@ -566,6 +570,10 @@ async fn apply_change(
                 &mut canonical,
                 &object_version_id(vo_id, &ctx.system_id, TreeId::trunk(1)),
             )?;
+            // Asked of the ACCEPTED body, before it is decomposed: the stored
+            // node rows reassemble to these bytes, and the released-generation
+            // reader's answer is what a later `stable` deployment reads back.
+            let stable_compatible = profile::stable_compatible(ctx.spec_profile, kind, &canonical);
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
                 Some(ts) => ts,
@@ -583,6 +591,7 @@ async fn apply_change(
                 close_ordinal: None,
                 client_signature: signature,
                 rows,
+                stable_compatible,
                 attestations,
                 is_first_folder: kind == Kind::Folder && ehr_id.is_some(),
                 time_committed,
@@ -619,6 +628,7 @@ async fn apply_change(
                 &mut canonical,
                 &object_version_id(vo_id, &ctx.system_id, next.tree),
             )?;
+            let stable_compatible = profile::stable_compatible(ctx.spec_profile, kind, &canonical);
             let rows = decompose(canonical)?;
             ResolvedWrite {
                 kind,
@@ -632,6 +642,7 @@ async fn apply_change(
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows,
+                stable_compatible,
                 attestations,
                 is_first_folder: false,
                 time_committed: known_now.unwrap_or(next.now),
@@ -660,6 +671,10 @@ async fn apply_change(
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows: Vec::new(),
+                // A deleted version's data is Void (master06 §Logical
+                // Deletion): there is no body a generation could fail to
+                // express.
+                stable_compatible: true,
                 attestations: Vec::new(),
                 is_first_folder: false,
                 time_committed: known_now.unwrap_or(next.now),
@@ -755,6 +770,7 @@ async fn commit_resolved(
         template_id: r.template_id.as_deref(),
         signature: signature.as_deref(),
         signature_client_supplied,
+        stable_compatible: r.stable_compatible,
     };
     let time_committed = match contribution {
         ContributionCtx::New => {

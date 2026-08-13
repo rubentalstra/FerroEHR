@@ -84,6 +84,7 @@ pub(crate) mod import;
 pub(crate) mod integrity;
 pub(crate) mod lifecycle;
 pub mod object_version_id;
+pub(crate) mod profile;
 pub(crate) mod read;
 pub mod signature;
 pub(crate) mod wire;
@@ -191,6 +192,13 @@ pub(crate) struct SigningCtx<'a> {
     /// own id when tenancy is on, else the service default.
     pub(crate) system_id: String,
     pub(crate) signer: &'a Signer,
+    /// The ACTIVE openEHR specification generation set. The commit path asks
+    /// the RELEASED generation's reader whether it could express the accepted
+    /// body and stores the answer (`vo_version.stable_compatible`), so a
+    /// deployment later configured to the `stable` profile can refuse rather
+    /// than silently serve or down-convert
+    /// ([`crate::versioning::profile`]).
+    pub(crate) spec_profile: crate::config::profile::SpecProfile,
     /// The optional `DV_MULTIMEDIA` externalization engine (no openEHR spec
     /// governs media externalization — our own extension). When set, the commit
     /// path offloads large inline `DV_MULTIMEDIA.data` before the canonical body

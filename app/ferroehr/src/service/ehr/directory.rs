@@ -142,8 +142,8 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         let vo_id = self.directory_vo(ehr_id).await?;
         let read = match at {
-            Some(at) => version_at(&self.pool, vo_id, at).await?,
-            None => read_current(&self.pool, vo_id).await?,
+            Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
+            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| {
@@ -193,7 +193,7 @@ impl FerroEhrService {
         version: TreeId,
         path: Option<&str>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = read_version(&self.pool, vo_id, version)
+        let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| {
@@ -252,7 +252,7 @@ impl FerroEhrService {
         if self.directory_vo_opt(ehr_id).await? != Some(vo_id) {
             return Ok(false);
         }
-        Ok(read_version(&self.pool, vo_id, version)
+        Ok(read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
             .is_some_and(|r| r.ehr_id == Some(ehr_id)))
     }
