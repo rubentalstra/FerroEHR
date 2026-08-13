@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.5] - 2026-08-13
+
 ### Security
 
 - **The `ferroehr-postgres` image moves to a rebuilt PostgreSQL 18.4 base.** The
@@ -6531,7 +6533,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.4...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.5...HEAD
+[3.17.5]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.4...v3.17.5
 [3.17.4]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.3...v3.17.4
 [3.17.3]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.2...v3.17.3
 [3.17.2]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.1...v3.17.2
