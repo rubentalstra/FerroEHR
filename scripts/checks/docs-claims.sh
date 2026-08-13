@@ -60,7 +60,8 @@ VALUES=deploy/helm/ferroehr/values.yaml
 # dotted token is read as a chart values path. Glob-derived: a hardcoded list
 # went silently stale when the hardening chapter split into sub-pages (#2348),
 # leaving five chart pages unchecked while the gate reported OK.
-CHART_PAGES=$(printf '%s ' "$BOOK"/installation/kubernetes*.md "$BOOK"/installation/hardening-*.md)
+CHART_PAGES=$(printf '%s ' "$BOOK"/installation/kubernetes*.md "$BOOK"/installation/hardening-*.md \
+  "$BOOK"/operations.md "$BOOK"/operations-admin-apis.md)
 
 for required in "$TOML" "$VALUES"; do
   [ -f "$required" ] || { echo "docs-claims: missing authority file $required" >&2; exit 1; }
@@ -276,6 +277,32 @@ for f in $files; do
       || report "$f" "pins image tag \`$v\`; Chart.yaml appVersion is $app_version"
   done < <(grep -ohE 'ferroehr(-admin-ui)?:[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
 done
+# Every page (and the landing): a fully-spelled ghcr image reference must carry
+# the current appVersion, and never a `v` prefix — the publish lane tags
+# `{{version}}` without one, so `ghcr.io/…:v3.17.5` does not resolve at all.
+for f in $files website/landing/index.html; do
+  [ -f "$f" ] || continue
+  if grep -qE 'ghcr\.io/rubentalstra/[A-Za-z0-9._-]+:v[0-9]' "$f"; then
+    report "$f" "references a v-prefixed ghcr image tag; published tags carry no v prefix"
+  fi
+  case " $CHART_PAGES " in *" $f "*) continue ;; esac
+  while read -r v; do
+    [ -n "$v" ] || continue
+    [ "$v" = "$app_version" ] \
+      || report "$f" "pins ghcr image tag \`$v\`; Chart.yaml appVersion is $app_version"
+  done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-admin-ui|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
+done
+# The from-source page: a Rust version literal must be the toolchain channel or
+# the MSRV ("Rust 1.96.1" shipped against a 1.97.1 toolchain — #2348).
+RUST_PAGE="$BOOK/installation/from-source.md"
+case " $files " in *" $RUST_PAGE "*)
+  channel=$(awk -F'"' '/^channel/{print $2; exit}' rust-toolchain.toml)
+  msrv=$(awk -F'"' '/^rust-version/{print $2; exit}' Cargo.toml)
+  while read -r v; do
+    case "$v" in "$channel"|"${channel%.*}"|"$msrv"|"$msrv".*) continue ;; esac
+    report "$RUST_PAGE" "names Rust \`$v\`, which is neither the toolchain channel ($channel) nor the MSRV ($msrv)"
+  done < <(grep -ohE '1\.[0-9]{2}(\.[0-9]+)?' "$RUST_PAGE" | sort -u)
+;; esac
 
 # ── 4. generated charts nothing embeds ───────────────────────────────────────
 # Whole-corpus by nature: a page deleting its figure is exactly the case to
