@@ -1,64 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640"
      role="img" aria-label="FerroEHR — an openEHR clinical data repository, written in Rust">
-  <!-- GitHub social preview (1280x640). GitHub crops the outer edges on some
-       surfaces, so everything that carries meaning stays inside an 80px margin —
-       comfortably beyond the 40pt GitHub asks for.
+  <!-- GitHub social preview (1280x640). Everything meaningful stays inside an
+       80px margin — beyond the 40pt GitHub recommends, because the outer edge
+       is cropped on some surfaces.
 
-       The ECG trace is the same motif as the logo mark, and it doubles as the
-       divider rather than sitting beside a second rule: one line, doing both
-       jobs, so the spike has room instead of colliding with something. -->
+       Centred, because with the name, one line and the trace there is nothing
+       to align a column against; left-aligning this little content just leaves
+       a hole on the right. The ECG trace is the logo mark's own motif given
+       the width of the card. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#14100e"/>
       <stop offset="0.5" stop-color="#1c1714"/>
       <stop offset="1" stop-color="#14100e"/>
     </linearGradient>
+    <!-- Symmetrical fade: the signal arrives and leaves, rather than starting
+         and stopping at the safe margin. -->
     <linearGradient id="trace" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e4712f" stop-opacity="0.9"/>
-      <stop offset="0.42" stop-color="#e4712f" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#e4712f" stop-opacity="0.06"/>
+      <stop offset="0" stop-color="#e4712f" stop-opacity="0"/>
+      <stop offset="0.22" stop-color="#e4712f" stop-opacity="0.95"/>
+      <stop offset="0.78" stop-color="#e4712f" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#e4712f" stop-opacity="0"/>
     </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e4712f" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#e4712f" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
   <rect width="1280" height="640" fill="url(#bg)"/>
+  <ellipse cx="640" cy="452" rx="440" ry="150" fill="url(#glow)"/>
 
-  <!-- Logo mark, the iron-tile variant, scaled from the 64-unit source. -->
-  <g transform="translate(80,74) scale(1.5625)">
+  <!-- Logo mark, the iron-tile variant, centred above the wordmark. -->
+  <g transform="translate(584,96) scale(1.75)">
     <rect x="2" y="2" width="60" height="60" rx="12" fill="#21262B"/>
     <path transform="translate(14.80 44.00)" d="M2.20 0.00V-21.83H16.17V-18.53H6.11V-11.98H15.19V-8.73H6.11V0.00Z M25.93 0.34Q23.45 0.34 21.67 -0.70Q19.89 -1.74 18.93 -3.63Q17.97 -5.52 17.97 -8.09Q17.97 -10.61 18.92 -12.52Q19.86 -14.43 21.60 -15.51Q23.33 -16.58 25.68 -16.58Q27.67 -16.58 29.38 -15.71Q31.08 -14.84 32.12 -13.02Q33.16 -11.19 33.16 -8.32V-7.12H21.77Q21.84 -4.94 22.99 -3.79Q24.14 -2.65 25.97 -2.65Q27.23 -2.65 28.13 -3.19Q29.03 -3.74 29.41 -4.78L32.92 -4.06Q32.33 -2.08 30.49 -0.87Q28.65 0.34 25.93 0.34ZM21.78 -9.71H29.46Q29.28 -11.47 28.34 -12.53Q27.39 -13.59 25.69 -13.59Q23.95 -13.59 22.93 -12.47Q21.91 -11.35 21.78 -9.71Z" fill="#F2F1EF"/>
     <polyline points="12,15 17,15 20,9 23,19 26,13 29,15 36,15" fill="none" stroke="#D97742"
               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
-  <g font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
-    <text x="262" y="152" font-size="88" font-weight="700" fill="#f3ece8" letter-spacing="-2.5">FerroEHR</text>
-    <text x="266" y="200" font-size="28" font-weight="500" fill="#b3a79f">
+  <g font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">
+    <text x="640" y="330" font-size="104" font-weight="700" fill="#f3ece8" letter-spacing="-3">FerroEHR</text>
+    <text x="640" y="386" font-size="30" font-weight="500" fill="#b3a79f">
       An openEHR clinical data repository, written in Rust.
     </text>
-
-    <!-- Divider + heartbeat in one stroke. The QRS complex sits left of centre
-         so it leads the eye into the figures below rather than away from them. -->
-    <polyline points="80,330 296,330 316,330 332,288 348,382 364,330 396,330 412,312 428,348 444,330 1200,330"
-              fill="none" stroke="url(#trace)" stroke-width="3.2"
-              stroke-linecap="round" stroke-linejoin="round"/>
-
-    <!-- Three figures, each true of the committed tree rather than aspiration,
-         on a 400px pitch so nothing crowds its neighbour. -->
-    <g transform="translate(80,452)">
-      <text x="0" y="0" font-size="42" font-weight="700" fill="#e4712f">1014 / 1014</text>
-      <text x="0" y="36" font-size="21" font-weight="500" fill="#b3a79f">openEHR CNF conformance</text>
-    </g>
-    <g transform="translate(480,452)">
-      <text x="0" y="0" font-size="42" font-weight="700" fill="#f3ece8">ITS-REST 1.1.0</text>
-      <text x="0" y="36" font-size="21" font-weight="500" fill="#b3a79f">with AQL 1.1</text>
-    </g>
-    <g transform="translate(880,452)">
-      <text x="0" y="0" font-size="42" font-weight="700" fill="#f3ece8">PostgreSQL 18</text>
-      <text x="0" y="36" font-size="21" font-weight="500" fill="#b3a79f">native storage engine</text>
-    </g>
-
-    <text x="80" y="566" font-size="21" font-weight="500" fill="#6b605a">
-      MIT, no CLA · signed releases with SLSA provenance and SBOMs · ferroehr.eu
-    </text>
   </g>
+
+  <!-- The heartbeat, given the full width and its own space. -->
+  <polyline points="80,462 452,462 476,462 496,406 516,532 536,462 576,462 596,438 616,486 636,462 1200,462"
+            fill="none" stroke="url(#trace)" stroke-width="3.6"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="640" y="574" text-anchor="middle"
+        font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="22" font-weight="500" fill="#6b605a" letter-spacing="0.5">ferroehr.eu</text>
 </svg>
