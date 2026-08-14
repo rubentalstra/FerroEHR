@@ -20,8 +20,8 @@ vendored specification text.
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.28"
-openehr-its = "0.0.28"
+openehr-rm = "0.0.29"
+openehr-its = "0.0.29"
 ```
 
 All eight are **edition 2024** with an MSRV of **Rust 1.96**, and all eight
@@ -104,7 +104,7 @@ enforces instead of carrying a second one:
 
 ```toml
 [dependencies]
-openehr-its = { version = "0.0.28", default-features = false }
+openehr-its = { version = "0.0.29", default-features = false }
 ```
 
 ## Releases
@@ -125,7 +125,10 @@ their own Rust sources, the README, and the MIT text. Five of the crates that
 embed material derived from the official openEHR machine-readable artifacts —
 generated types carrying specification documentation text, and the vendored
 ITS-JSON schema — declare **`MIT AND Apache-2.0`** and ship both license texts
-in the package.
+in the package. `openehr-its` is the one of them that packages a third-party
+file as bytes rather than as generated code, so its README carries that file's
+attribution — upstream repository, the exact vendored commit, and the license —
+inside the package, where it travels with any redistribution.
 
 `openehr-term` carries a third term, because it embeds a different kind of
 openEHR material: the official terminology XML (the five language bundles, the
