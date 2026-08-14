@@ -90,6 +90,28 @@
     "versioned-party-xml-unsupported",
     "xml-namespace-negotiated"
   ],
+  "served_extensions": [
+    "health",
+    "server-status",
+    "openapi-meta",
+    "management",
+    "terminology",
+    "event-subscription",
+    "tenancy",
+    "fhir-r4-connector",
+    "fhir-mapping-store",
+    "iti-81-audit-record-repository",
+    "party-relationship",
+    "stored-query-bare-list",
+    "admin-extension-routes",
+    "adl14-archetype",
+    "adl2-archetype",
+    "admin-activity-report",
+    "admin-archive",
+    "admin-dump-load",
+    "message-extract",
+    "message-tdd"
+  ],
   "performance": {
     "class": "POC",
     "environment_ref": "ixit.json#/environment"

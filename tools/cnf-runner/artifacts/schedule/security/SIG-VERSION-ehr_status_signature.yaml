@@ -22,8 +22,6 @@ spec_refs:
   - "ITS-REST overview Resources.md §Resource identification (VERSIONED_EHR_STATUS / its contained VERSION instances)"
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the SUT declares no Signing capability — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id} with its initial EHR_STATUS version

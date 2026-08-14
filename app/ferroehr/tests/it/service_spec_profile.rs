@@ -16,10 +16,12 @@
 
 #![expect(
     clippy::expect_used,
+    let_underscore_drop,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
               module's helpers and async bodies; panicking assertions are the \
-              intended shape here (the Rust Book ch11)"
+              intended shape here (the Rust Book ch11), and the archive temp-dir \
+              cleanup is best-effort — its failure is not a test outcome"
 )]
 
 use serde_json::{Value, json};
@@ -27,6 +29,7 @@ use serde_json::{Value, json};
 use ferroehr::config::profile::SpecProfile;
 use ferroehr::ids::{EhrId, VoId};
 use ferroehr::service::FerroEhrService;
+use ferroehr::service::admin::types::ExportSpec;
 use ferroehr::service::status::{CallStatusType, SmError};
 use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
@@ -308,6 +311,127 @@ async fn archive_and_restore_preserve_the_stamp() {
     svc.get_composition_latest(ehr_id, vo_id)
         .await
         .expect("the restored object reads under the development profile");
+}
+
+/// A unique temporary directory for one dump archive.
+fn archive_dir() -> String {
+    std::env::temp_dir()
+        .join(format!(
+            "ferroehr-profile-dumpload-{}",
+            uuid::Uuid::now_v7()
+        ))
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// The stamp survives the ADMIN dump/load round trip: a development-only body
+/// exported from one repository and loaded into a fresh one is still refused
+/// under `stable` there, and still served under `development`.
+///
+/// Dump/load is the one path that reconstructs a version in a database that
+/// never saw the commit (SM `I_ADMIN_DUMP_LOAD.export_ehrs`/`load_ehrs`,
+/// `docs/specs/openehr/SM/docs/UML/classes/i_admin_dump_load.adoc`), so it is
+/// where an inherited `stable_compatible = true` would be a claim nothing made:
+/// the loaded rows must never read as compatible with a generation set that
+/// cannot express them.
+#[tokio::test]
+async fn dump_and_load_into_a_fresh_repository_preserve_the_stamp() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let target_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target = FerroEhrService::new(target_db.pool());
+
+    let (ehr_id, vo_id) = commit(&source, &development_only_composition()).await;
+    assert_eq!(stamp(&source_db.pool(), vo_id).await, Some(false));
+
+    let dir = archive_dir();
+    let export_reports = source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
+        .await
+        .expect("export the EHR carrying the development-only body");
+    assert!(
+        export_reports.is_empty(),
+        "a clean export reports no failures, got {export_reports:?}"
+    );
+    let load_reports = target
+        .load_ehrs(dir.clone())
+        .await
+        .expect("load into the fresh repository");
+    assert!(
+        load_reports.is_empty(),
+        "loading into an empty repository reports no failures, got {load_reports:?}"
+    );
+
+    // The loaded row never claims a compatibility the body does not have —
+    // whether the archive carried the stamp or the read assesses it on the fly.
+    assert_ne!(
+        stamp(&target_db.pool(), vo_id).await,
+        Some(true),
+        "a loaded development-only body must not read as stable-compatible"
+    );
+
+    // The profile gate lands the same way in the repository that never saw the
+    // commit: served under `development`, refused under `stable`.
+    let served = target
+        .get_composition_latest(ehr_id, vo_id)
+        .await
+        .expect("the loaded body is served under the development profile");
+    assert_eq!(served["content"][0]["data"]["_type"], "CLUSTER");
+
+    let refused = stable_service(target_db.pool())
+        .get_composition_latest(ehr_id, vo_id)
+        .await;
+    let Err(SmError {
+        status: CallStatusType::Conflict,
+        message,
+        ..
+    }) = refused
+    else {
+        panic!("the stable profile must refuse the loaded body, got {refused:?}");
+    };
+    assert!(message.contains("stable"), "{message}");
+    assert!(
+        message.contains(&vo_id.to_string()),
+        "the refusal names the loaded version: {message}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The mirror case: a released-surface body dumped and loaded is still served
+/// under BOTH profiles in the fresh repository — the gate above narrows nothing
+/// it should not.
+#[tokio::test]
+async fn dump_and_load_keep_a_released_surface_body_readable_under_stable() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let target_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target = FerroEhrService::new(target_db.pool());
+
+    let (ehr_id, vo_id) = commit(&source, &stable_clean_composition()).await;
+    let dir = archive_dir();
+    source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
+        .await
+        .expect("export");
+    target.load_ehrs(dir.clone()).await.expect("load");
+
+    assert_ne!(
+        stamp(&target_db.pool(), vo_id).await,
+        Some(false),
+        "a loaded released-surface body must not read as stable-INcompatible"
+    );
+    let under_development = target
+        .get_composition_latest(ehr_id, vo_id)
+        .await
+        .expect("served under the development profile");
+    let under_stable = stable_service(target_db.pool())
+        .get_composition_latest(ehr_id, vo_id)
+        .await
+        .expect("served under the stable profile");
+    assert_eq!(under_stable, under_development);
+
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 // ── The FHIR read façade goes through the same gate ──────────────────────────

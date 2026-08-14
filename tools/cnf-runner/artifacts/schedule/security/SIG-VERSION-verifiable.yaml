@@ -29,7 +29,6 @@ spec_refs:
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "not-applicable when the SUT declares no Signing capability — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
   - "requires ixit-declared signing key material — the verifying key is a statement/ixit input, not a wire value (RM common §change_control Digital Signature)"
 requires:
   server: any
