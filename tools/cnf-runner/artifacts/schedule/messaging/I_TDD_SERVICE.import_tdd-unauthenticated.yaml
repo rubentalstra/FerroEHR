@@ -29,7 +29,6 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the /message/tdd/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-tdd) and adjudicated by register AMB-34. The row gates the Tds CAPABILITY verdict only, never ITS-REST wire conformance"
-  - "addresses the ixit `unauthenticated` instance — a party that declares no such principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
 requires: { server: any }
 data_sets: [cnf.messaging.tdd.v1]
 flow:

@@ -31,8 +31,6 @@ spec_refs:
   - "ITS-REST overview Resources.md §Resource identification (VERSIONED_EHR_STATUS / its contained VERSION instances)"
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the party declares no openPGP-posture instance (`sut_pgp`) — the mode a deployment runs is an ixit declaration, not a wire value (RM common §change_control Digital Signature)"
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id} (with its initial EHR_STATUS version) on the addressed deployment

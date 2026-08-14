@@ -619,7 +619,10 @@ fixture_gate() {
   # The live run authenticates, so the fixture must still configure a usable
   # mechanism — and the hash must arrive by the mounted route, not in the ConfigMap.
   grep -q 'password_hash_file' "$rendered" || { red "  fixture configures no Basic user via the mounted route (password_hash_file absent)"; missing=1; }
-  if grep -A200 '^kind: ConfigMap$' "$rendered" | grep -q 'argon2id'; then
+  # yq document selection, not a fixed grep window: the ConfigMap grows with
+  # the config tree, and a `grep -A<n>` ceiling silently stops covering the
+  # tail the day the document passes n lines (#2391).
+  if yq eval 'select(.kind == "ConfigMap")' "$rendered" | grep -q 'argon2id'; then
     red "  fixture puts an Argon2id hash in the ConfigMap"
     missing=1
   fi

@@ -1,10 +1,19 @@
 # Official master11 case (id verbatim). master11:61-72 is a stub (Flow "xx").
 # execute_stored_query has no stored query to run without one being provisioned
 # first, so the flow stores a valid AQL text (I_DEFINITION_QUERY.store_query,
-# cross-interface call; SM Pre_valid_query holds), then executes it by name on
-# the empty server — a well-formed RESULT_SET with zero rows. The stored-query
-# PUT is the `stored` outcome kind (wire 200, not 201; see the store_query
-# binding).
+# cross-interface call; SM Pre_valid_query holds), then executes it by name
+# scoped to an EHR that holds no COMPOSITION — a well-formed RESULT_SET with
+# zero rows. The stored-query PUT is the `stored` outcome kind (wire 200, not
+# 201; see the store_query binding).
+#
+# THE ZERO-ROW GROUND IS LOAD-BEARING, not vacuous: the flow first mints a
+# SECOND EHR and commits a COMPOSITION into it, so the server DOES hold
+# composition content when the stored query runs, and the stored text is an
+# unscoped population query (Query_types.md §"Population queries": "not
+# referring or using any `ehr_id` parameter to constrain the scope on a specific
+# EHR"). The `ehr_id` execution parameter is therefore the only thing excluding
+# it — a server that dropped it would answer one row. Without the second EHR the
+# row would pass on any server whenever provisioning had refused every template.
 id: I_QUERY_SERVICE.execute_stored_query-empty_db
 kind: functional
 component: QUERY
@@ -24,15 +33,25 @@ spec_refs:
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
 requires:
   server: any                              # emptiness scoped to a fresh EHR (Request.md ehr_id scope)
+  templates: [cnf.opt.minimal_event]       # the second EHR's content needs its OPT provisioned
   ehr: { commits: none }                   # mints ${ehr_id} with zero commits
+data_sets: [cnf.composition.minimal_event.v1]
 flow:
-  - step: 1
+  - step: 1                                # a SECOND EHR, so the zero-row answer has something to exclude
+    call: I_EHR_SERVICE.create_ehr
+    expect: created
+    capture: { second_ehr_id: created.ehr_id }
+  - step: 2                                # content in the second EHR — an unscoped answer would carry it
+    call: I_EHR_COMPOSITION.create_composition
+    with: { ehr_id: "${second_ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+  - step: 3
     call: I_DEFINITION_QUERY.store_query
     with:
       qualified_query_name: "org.openehr.cnf::stored_empty_db"
       query: "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c"
     expect: stored
-  - step: 2
+  - step: 4
     call: execute_stored_query
     with:
       qualified_query_name: "org.openehr.cnf::stored_empty_db"

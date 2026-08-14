@@ -388,6 +388,16 @@ pub struct Requires {
     /// The terminology deployment the case needs (`ixit.terminology`).
     #[serde(default)]
     pub terminology: Option<TerminologyRequirement>,
+    /// The openEHR specification generation set the case's expectation rests
+    /// on, matched against the addressed instance's `ixit.spec_profile`
+    /// declaration at SELECTION time.
+    ///
+    /// No released openEHR text says which generation set a deployment runs,
+    /// so a case that needs one the party does not declare is not-applicable
+    /// with that citation (ISO/IEC 9646 test selection) — never driven against
+    /// a deployment running the other set.
+    #[serde(default)]
+    pub spec_profile: Option<crate::ixit::SpecProfile>,
     /// Multi-instance cases state `requires` per named instance.
     #[serde(default)]
     pub instances: Option<std::collections::BTreeMap<InstanceName, Requires>>,

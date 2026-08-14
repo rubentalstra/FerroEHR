@@ -34,9 +34,6 @@ spec_refs:
   - "BASE architecture_overview §Terminology in openEHR"
   - "ITS-REST ehr §422_Composition"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the party declares no terminology posture, or declares the fail-open one — a running deployment realizes exactly one unresolvable-value-set branch (register AMB-172), and which one is an ixit declaration no released operation discloses"
-  - "not-applicable when the party declares no second, fail-closed deployment — BASE architecture_overview master12 §Binding Terminology Value-sets to Archetypes leaves the unresolvable case open, and one running server settles it one way, so a single-deployment party evidences one branch and the other stays a selection outcome"
 requires:
   server: any
   templates: [cnf.tpl.dv_coded_text_binding_tsdown]

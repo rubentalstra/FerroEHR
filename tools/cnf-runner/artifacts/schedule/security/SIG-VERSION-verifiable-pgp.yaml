@@ -40,8 +40,6 @@ spec_refs:
   - "RM common §change_control (Digital Signature: signature generated per openPGP from the hash of the canonical Version serialisation)"
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the party declares no openPGP-posture instance (`sut_pgp`) — the mode a deployment runs is an ixit declaration, not a wire value (RM common §change_control Digital Signature)"
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

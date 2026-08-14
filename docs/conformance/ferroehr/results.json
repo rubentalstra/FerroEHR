@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.17.3"
+    "version": "3.17.5"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.3",
+    "version": "3.17.5",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -18,7 +18,7 @@
       "wt-structured"
     ]
   },
-  "ixit_digest": "da0286744e33b57f",
+  "ixit_digest": "a79538e1e8652ec3",
   "restapi_specs_version": "1.1.0",
   "outcomes": [
     {
@@ -823,6 +823,24 @@
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_at_version-deleted_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_development",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_stable_409",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-spec_profile_stable_clean_served_under_both",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5621,6 +5639,24 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_projection",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_header",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_param",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-contains_and_or",
       "status": "passed",
       "rows_driven": 1,
@@ -5676,12 +5712,6 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
-    },
-    {
-      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5784,6 +5814,12 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-select_literals",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-spec_profile_whole_object_409",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

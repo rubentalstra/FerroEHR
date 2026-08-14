@@ -585,7 +585,7 @@ pub struct Mirror {
 
 /// One generation's declared model as `CLASS` → attribute name → signature.
 ///
-/// The signature is [`attribute_signature`]'s canonical text, so a comparison
+/// The signature is `attribute_signature`'s canonical text, so a comparison
 /// over this map sees an attribute's TYPE and CARDINALITY, not only its name.
 pub type GenerationAttributeMap = BTreeMap<String, BTreeMap<String, String>>;
 
@@ -731,7 +731,7 @@ pub fn attribute_delta(
 /// `key` — the acceptance-boundary ledger's input (#1943; the REMOVED
 /// direction #1961; the RETYPE direction #2382).
 ///
-/// The comparison is over attribute SIGNATURES ([`attribute_signature`]), so a
+/// The comparison is over attribute SIGNATURES (`attribute_signature`), so a
 /// changed type, existence or container cardinality lands in
 /// [`GenerationDelta::attributes_changed`] instead of passing as unchanged.
 ///

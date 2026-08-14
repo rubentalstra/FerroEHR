@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# CNF stable-spec-profile deployment (compose OVERLAY, stacks on the primary).
+#
+# The conformance pipeline runs BOTH claimed openEHR generation sets in the
+# ONE committed record — the same both-postures law the signing lane follows
+# (RM has no say here: no openEHR spec governs runtime generation selection,
+# our own design/extension; docs/VERSIONS.md §Spec version policy). Unlike the
+# pgp lane this is NOT a second project: the stable deployment is a SECOND
+# SERVER OVER THE SAME DATABASE, in the same compose project, because the
+# behaviour under test is precisely "one repository, read under the released
+# generation set" — the development-only stored body a `stable` server must
+# refuse (409) can only be committed through a development-profile server, and
+# an isolated stable stack could never hold one (its own ingress refuses the
+# body at parse time, and that refusal is itself one of the served answers).
+#
+#   docker compose -p ferroehr-cnf --project-directory . \
+#     -f docker/sut-ferroehr.yml -f docker/sut-smart.yml \
+#     -f docker/sut-terminology.yml -f docker/sut-spec-stable.yml \
+#     up -d --wait ferroehr-stable
+#
+# The service is deliberately EXPLICIT rather than `extends`-derived: compose
+# resolves an extended service's relative paths against the extended file's
+# own directory, while every path in docker/sut-*.yml is repo-root-relative
+# under `--project-directory .` — an extends here would silently rebase the
+# config mount. The env below is therefore the primary `ferroehr` service's
+# posture (docker/sut-ferroehr.yml + the SMART overlay's trust block) with
+# exactly two deltas: FERROEHR__SPEC_PROFILE=stable and the remapped host
+# port. It never builds: docker/sut-ferroehr.yml pins the explicit `image:`
+# tag the primary service builds, so this service starts the identical
+# artefact under the other generation set — one build, two profiles.
+#
+# The ixit declares this deployment as the `sut_stable` instance carrying its
+# own `spec_profile` block; the spec-profile cases address it with `on:`.
+services:
+  ferroehr-stable:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
+    depends_on:
+      ferroehr-postgres:
+        condition: service_healthy
+    environment:
+      # The SAME database as the primary service — the shared repository is
+      # the ground the profile gate is about, not an accident.
+      FERROEHR__DB__URL: postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@ferroehr-postgres:5432/${PG_INIT_DB:-ferroehr}
+      FERROEHR__DB__MAX_CONNECTIONS: ${FERROEHR__DB__MAX_CONNECTIONS:-10}
+      # The one behavioural delta: the RELEASED openEHR generation set.
+      FERROEHR__SPEC_PROFILE: stable
+      FERROEHR__SERVER__MAX_IN_FLIGHT: ${FERROEHR__SERVER__MAX_IN_FLIGHT:-256}
+      FERROEHR__SERVER__RATE_LIMIT__ENABLED: ${FERROEHR__SERVER__RATE_LIMIT__ENABLED:-true}
+      FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
+      FERROEHR__LOG__FORMAT: ${FERROEHR__LOG__FORMAT:-pretty}
+      FERROEHR__LOG__FILTER: ${FERROEHR__LOG__FILTER:-info}
+      # The SMART resource-server posture of the primary (docker/sut-smart.yml)
+      # — same trust, same scope discipline, so the ixit's bearer_mint
+      # principals reach this deployment with the same tokens.
+      FERROEHR__SMART__ENABLED: "true"
+      FERROEHR__SMART__REQUIRE_SMART_SCOPES: "true"
+      # master04 §Services: baseUrl names the origin THIS deployment is
+      # reached on, not the primary's.
+      FERROEHR__SMART__PUBLIC_BASE_URL: "http://localhost:${FERROEHR_STABLE_PORT:-8082}"
+      FERROEHR__SMART__ENDPOINTS__ALLOW_INSECURE_ENDPOINTS: "true"
+      FERROEHR__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT: "https://as.cnf.test/authorize"
+      FERROEHR__SMART__ENDPOINTS__TOKEN_ENDPOINT: "https://as.cnf.test/token"
+      FERROEHR__SMART__ENDPOINTS__JWKS_URI: "https://as.cnf.test/jwks.json"
+      FERROEHR__SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED: "authorization_code,client_credentials"
+      FERROEHR__SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED: "code"
+      FERROEHR__SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED: "client_secret_basic,private_key_jwt"
+      FERROEHR__SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED: "S256"
+      FERROEHR__AUTH__OIDC__ISSUER: "https://as.cnf.test"
+      FERROEHR__AUTH__OIDC__AUDIENCES: "cnf-smart-sut"
+      FERROEHR__AUTH__OIDC__ALGORITHMS: "RS256"
+      FERROEHR__AUTH__OIDC__JWKS_JSON_FILE: /etc/ferroehr/cnf-smart-jwks.json
+    volumes:
+      - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
+      - ./tools/cnf-runner/party/smart/jwks.json:/etc/ferroehr/cnf-smart-jwks.json:ro
+    ports:
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_STABLE_PORT:-8082}:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "${FERROEHR_CPUS:-4}"
+          memory: ${FERROEHR_MEM:-4G}
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ferroehr", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

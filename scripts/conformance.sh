@@ -94,11 +94,19 @@ STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 # validation — when a real FHIR R4 server is composed and seeded beside the
 # CDR. docker/sut-terminology.yml points the CDR at it in the fail-OPEN
 # posture; the ixit declares the resulting servers/namespaces/posture.
+# docker/sut-spec-stable.yml adds the SECOND openEHR generation-set posture to
+# the SAME project: a `spec_profile = stable` server over the SAME database
+# (the shared repository IS the ground — the development-only stored body the
+# stable server must refuse can only be committed through the development
+# server), declared as the ixit's `sut_stable` instance. The spec-profile
+# cases address it with `on:`; both claimed generation sets land in the ONE
+# record, the same both-postures law the signing lane follows.
 FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf \
   --project-directory "$REPO_ROOT" --profile terminology \
   -f "$REPO_ROOT/docker/sut-ferroehr.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
-  -f "$REPO_ROOT/docker/sut-terminology.yml")
+  -f "$REPO_ROOT/docker/sut-terminology.yml" \
+  -f "$REPO_ROOT/docker/sut-spec-stable.yml")
 # A measurement lane composes one more overlay: docker/sut-measurement.yml turns
 # the rate limiter off for the run, because the instruments offer load past the
 # server's knee on purpose and a 429 would measure the limiter instead of the
@@ -210,6 +218,12 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
       # CURRENT sources — build the image unless explicitly skipped.
       (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" up -d --build --wait ferroehr)
     fi
+    # The stable-generation-set deployment of the SAME image, over the SAME
+    # database (docker/sut-spec-stable.yml). Started AFTER the primary and
+    # never with --build: the service pins the explicit `image:` tag the
+    # primary just built (or pulled), so this starts the identical artefact
+    # under spec_profile=stable — one build, two generation sets.
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" up -d --wait ferroehr-stable)
     # The parallel pgp-posture deployment of the SAME image. NEVER --build:
     # docker/sut-ferroehr.yml pins explicit `image:` tags, which are project-
     # independent, so the artefact the primary just built (or, under
@@ -257,6 +271,11 @@ if [ -n "${CONF_PERF_CLASS:-}" ]; then
   if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" = "ferroehr" ]; then
     echo "==> Tearing down the parallel pgp deployment before the measured window"
     (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
+    # The stable-profile server shares the primary's project AND database; a
+    # resident second server is part of the environment, so it leaves the
+    # envelope before the window opens — perf drives the primary alone.
+    echo "==> Stopping the stable-profile deployment before the measured window"
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" rm -sf ferroehr-stable) || true
   fi
   echo "==> Measured performance run (class $CONF_PERF_CLASS, ${CONF_PERF_HOURS:-1} h window)"
   perf_args=(perf --root "$ROOT" --ixit "$IXIT" --results "$OUT/results.json"

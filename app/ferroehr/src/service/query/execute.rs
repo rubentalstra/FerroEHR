@@ -48,6 +48,9 @@ impl FerroEhrService {
     ///   collision, or a malformed `ehr_id` → precondition (`400`);
     /// - a listed EHR that does not exist → `ehr_id_does_not_exist`
     ///   (`i_query_service.adoc` Errors);
+    /// - a whole-object projection that would serve a stored version body the
+    ///   active `spec_profile` cannot express → conflict (`409`), our own
+    ///   extension (`crate::versioning::profile::gate_result_bodies`);
     /// - a database/assembly failure, or an execution-budget overrun (tagged
     ///   [`QUERY_TIMEOUT_TAG`], rendered `408` at the wire) → exception.
     pub async fn execute_ad_hoc_query(
@@ -180,7 +183,7 @@ impl FerroEhrService {
         // reported as `408 Request Timeout` rather than hanging until the
         // global request timeout. On by default (`QueryConfig::default`,
         // 30 s); `0` disables it.
-        let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx);
+        let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx, self.spec_profile);
         let result = match self.query_timeout {
             Some(budget) => tokio::time::timeout(budget, exec)
                 .await
@@ -463,6 +466,10 @@ fn map_exec_error(e: AqlError) -> SmError {
         AqlError::Exec(ExecError::Database(db)) => crate::storage::error::classify_sqlx(&db),
         AqlError::Exec(ExecError::Assembly(a)) => internal_fault("assemble the RESULT_SET", &a),
         AqlError::Exec(ExecError::Terminology(msg)) => SmError::exception(msg),
+        // The `spec_profile` refusal is already the SM `conflict` the resource
+        // reads carry (→ `409`), so it crosses unchanged: same cause, same
+        // status, same remedy, whichever route reached the stored body.
+        AqlError::Exec(ExecError::Profile(e)) => SmError::from(e),
         AqlError::Exec(e @ ExecError::MissingColumnAlias { .. }) => {
             internal_fault("bind a RESULT_SET column to its generated SQL alias", &e)
         }
