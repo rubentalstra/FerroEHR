@@ -172,7 +172,7 @@ pub(crate) fn gate(
 ///
 /// Scalar/leaf cells are NOT gated: they serve data VALUES over paths the
 /// planning gate already bounded to the active generation's declared surface
-/// ([`crate::aql::analyze`]), not version bodies.
+/// (`crate::aql::analyze`), not version bodies.
 ///
 /// Cost under the default `development` profile is zero — the first line
 /// returns. Under `stable` it is ONE key-lookup statement over the page's

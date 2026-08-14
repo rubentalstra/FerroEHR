@@ -164,7 +164,7 @@ impl VersionRead {
 /// demographic parties) reaches the wire through this function. AQL does not
 /// pass through here — the query engine reads `node` rows directly — so it
 /// carries the same gate twice over: on the query text at planning time
-/// ([`crate::aql::analyze`]) and on every projected version body at result
+/// (`crate::aql::analyze`) and on every projected version body at result
 /// assembly (`crate::versioning::profile::gate_result_bodies`).
 ///
 /// # Errors
