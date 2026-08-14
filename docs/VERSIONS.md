@@ -140,10 +140,18 @@ possibly data migration".
   the development generations (within-major supersets make every
   stable-generation instance valid there); the profile is the ACCEPTANCE
   boundary — surface the released generation does not define is a typed,
-  profile-naming refusal (the AQL planning gate), and the exact additive
-  delta between the generation sets is MACHINE-PINNED
-  (`profile_generation_delta_is_pinned`, the emitter invariants), so a
-  re-vendor that widens it fails until the boundary is extended.
+  profile-naming refusal (the AQL planning gate), and the exact model
+  delta between the RM and BASE generation sets — the two profile-coupled
+  components whose types can appear in stored or served content — is
+  MACHINE-PINNED (`profile_generation_delta_is_pinned`, the emitter
+  invariants), so a re-vendor that changes it fails until the boundary is
+  extended. The LANG generations are deliberately OUTSIDE that pin (#2390):
+  LANG types are code-generation input only — the application binds nothing
+  but the `openehr_lang::Generation` token — so no LANG delta entry can
+  change what the boundary accepts or serves, and the `v1_1` generation's
+  side-by-side `bmm`/`bmm3` specification units (18 class names in both,
+  materially different shapes) make a name-keyed cross-generation diff
+  ill-defined by construction.
   Direction contract: `stable → development` is always safe (minor releases
   are additive); `development → stable` is supported only for data that
   never used development-only constructs — anything else is refused loudly
@@ -157,12 +165,17 @@ possibly data migration".
   version under the `stable` profile with a `409` naming the profile, the
   version and the remedy. A `NULL` stamp — a row committed before the column
   existed, or written by a verbatim-replay path (EHR-Extract import, archive
-  load) — is assessed on the fly at read, with no write-back. **AQL is NOT
-  covered by the stamp**: the planning gate refuses development-only surface
-  in the QUERY, but a generic projection over stored development-generation
-  content still returns rows under `stable` — the stamp governs served
-  version bodies only. No openEHR spec governs runtime
-  version selection — our own design/extension.
+  load) — is assessed on the fly at read, with no write-back. **AQL takes the
+  same stamp wherever it serves a version BODY**: a whole-object (or subtree)
+  projection is gated at RESULT ASSEMBLY, so a page reaching a version the
+  released generations cannot express refuses the whole query with that same
+  `409` naming the version — never a row silently elided from the result set,
+  which the `RESULT_SET` has no per-row diagnostic channel to explain. Leaf
+  projections over the identical rows stay UNGATED: they serve data values, not
+  version bodies, over paths the planning gate has already bounded to the
+  released generation's declared surface. Under `development` the assembly gate
+  costs nothing — it returns before it touches the database. No openEHR spec
+  governs runtime version selection — our own design/extension.
 - **Single pin still holds for TERM/QUERY/ITS-REST/ITS-XML** (the components
   the 2026-08-05 ruling did not touch): within a major line every release is
   a compatible superset, so the newest-generation pin accepts every valid

@@ -26,7 +26,6 @@ ambiguities: [AMB-32]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
   - "EXTENSION ROUTE — no openEHR spec governs /demographic/party_relationship; our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-32. The row gates the PartyRelationshipOperations CAPABILITY verdict only, never ITS-REST wire conformance"
-  - "addresses the ixit `unauthenticated` instance — a party that declares no such principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
 test_purpose: >-
   Every PARTY_RELATIONSHIP route refuses a request that carries no valid
   authentication — create, read, update and delete alike, and regardless of

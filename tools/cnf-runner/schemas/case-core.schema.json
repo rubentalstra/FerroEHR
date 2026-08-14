@@ -101,7 +101,7 @@
       }
     },
     "guards": {
-      "description": "Non-version run conditions, each spec-cited; a failed guard makes the case not-applicable WITH that citation. Prose, and deliberately so — it carries the conditions no runner rule expresses. THE BOUNDARY: a condition the runner already implements structurally is never restated here, because a per-case restatement is free to drift from the implemented rule with nothing to catch it. Capability scoping is the typed shape and is expressed by `capabilities:` alone — selection excuses a case gating only capabilities the ICS does not claim, and the `guard-scope` validate gate refuses a guard that restates it (or that scopes to a capability the case does not gate, which would state a rule nothing implements).",
+      "description": "Non-version run conditions, each spec-cited; a failed guard makes the case not-applicable WITH that citation. Prose, and deliberately so — it carries the conditions no runner rule expresses. THE BOUNDARY: a condition the runner already implements structurally is never restated here, because a per-case restatement is free to drift from the implemented rule with nothing to catch it. Capability scoping is one typed shape, expressed by `capabilities:` alone — selection excuses a case gating only capabilities the ICS does not claim, and the `guard-scope` validate gate refuses a guard that restates it (or that scopes to a capability the case does not gate, which would state a rule nothing implements). INSTANCE scoping is the other typed shape, expressed by the flow's own `on:` addressing — selection excuses a case addressing an instance the party does not declare, with the citation, so a guard saying the party 'declares no' such instance restates it and is refused too; the same goes for a prose copy of a declared `requires.terminology` or `requires.spec_profile` block.",
       "type": "array",
       "items": {
         "type": "string",
@@ -437,6 +437,13 @@
               "minimum": 1
             }
           }
+        },
+        "spec_profile": {
+          "description": "The openEHR specification GENERATION SET the case's expectation rests on, matched against the addressed instance's ixit.spec_profile declaration at SELECTION time. No released operation discloses which set a deployment runs (the openEHR release strategy makes a minor release a compatible superset, so the sets differ only in accepted surface); a case needing one the party does not declare is not-applicable with that citation. A multi-instance case states a per-instance need under `instances`; this case-level form binds every addressed instance.",
+          "enum": [
+            "stable",
+            "development"
+          ]
         },
         "instances": {
           "type": "object",

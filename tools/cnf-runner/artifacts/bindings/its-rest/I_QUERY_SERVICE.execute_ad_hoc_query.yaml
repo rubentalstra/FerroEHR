@@ -43,3 +43,8 @@ outcomes:
     body: result_set_body
   invalid_query: { status: 400 }          # 400_Query.yaml
   timeout: { status: 408 }                # 408_Query.yaml
+  # NOTE: register AMB-210 — no openEHR spec governs runtime generation-set
+  # selection (our own design/extension); a whole-object projection reaching a
+  # stored version body the active `spec_profile` cannot express refuses the
+  # whole query 409 (RFC 9110 §15.5.10), never a silently elided row.
+  conflict: { status: 409 }

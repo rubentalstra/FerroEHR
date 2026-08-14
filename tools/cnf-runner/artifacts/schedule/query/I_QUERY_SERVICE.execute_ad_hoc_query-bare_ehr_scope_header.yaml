@@ -1,0 +1,63 @@
+# ONE behaviour, ONE carrier: the `openehr-ehr-id` REQUEST HEADER narrows a
+# bare-EHR population projection to exactly the named EHR — the second released
+# carrier of the same scope the -bare_ehr_scope_param sibling drives through the
+# URL. Split per carrier so a red row names WHICH carrier the server dropped;
+# the grammar half is -bare_ehr_projection.
+#
+# Ground — RELEASED TEXT, which is why this case declares no ambiguity.
+# ITS-REST docs/query/Request.md §"About the ehr_id parameter": "Depending on
+# the needs, clients MAY supply it as a query parameter `ehr_id` or
+# alternatively as a request header named `openehr-ehr-id`", with
+# §"Common Headers and Query Parameters" listing it under "Related request
+# headers: `openehr-ehr-id` - used to execute the query within a single EHR
+# context: an EHR identifier taken from EHR.ehr_id.value", and
+# docs/query/Query_types.md §"Single EHR queries" repeating the pair. The
+# EFFECT of the scope is SM UML/classes/i_query_service.adoc
+# §execute_ad_hoc_query: "`_ehr_ids_`:: Specific set of EHRs on which to execute
+# the query. If none supplied, a full population query will be performed on all
+# EHRs whose status has the `_is_queryable_` flag set to `True`". Register
+# AMB-101 is NOT declared: its remaining half is the unrealized wire branch for
+# an UNKNOWN ehr_id, which the -unknown_ehr_scope sibling drives.
+#
+# THE DISCRIMINATION IS TWO-EHR AND DETERMINISTIC: the flow mints a SECOND EHR
+# before executing, so at least two EHRs exist and the unscoped AQL selects over
+# the whole population; exactly one row is expected, so a server that ignores
+# the header answers with two rows or more and the row fails.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_header
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic, QueryApi]
+profiles: [STANDARD]
+test_purpose: >-
+  An ad-hoc execution whose EHR scope is supplied ONLY as the `openehr-ehr-id`
+  request header answers a bare-EHR projection with exactly the scoped EHR's
+  row.
+description: "Bare-EHR AQL scoped by the openehr-ehr-id request header alone"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "ITS-REST query Request.md §About the ehr_id parameter"
+  - "ITS-REST query Request.md §Common Headers and Query Parameters"
+  - "ITS-REST query Query_types.md §Single EHR queries, §Population queries"
+  - "QUERY AQL §SELECT, §FROM"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+requires:
+  server: any
+  ehr: { commits: none }                   # mints ${ehr_id} — the scoped EHR
+flow:
+  - step: 1                                 # a SECOND EHR, so the scoped read has something to exclude
+    call: I_EHR_SERVICE.create_ehr
+    expect: created
+    capture: { second_ehr_id: created.ehr_id }
+  - step: 2
+    call: execute_ad_hoc_query
+    variant: get_ehr_id_header              # GET /query/aql, scope via openehr-ehr-id
+    with:
+      ehr_id: "${ehr_id}"                   # travels in the header, not the query string
+      q: "${ds:cnf.aql.valid.select_ehr}"   # unscoped AQL: the header is the only scope
+      fetch: 100                            # fetch always explicit
+    expect: ok
+    assert:
+      - assert: result_set
+        match: count
+        count: 1                            # the scoped EHR alone, never the population

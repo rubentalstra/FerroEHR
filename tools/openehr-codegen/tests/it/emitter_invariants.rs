@@ -1194,6 +1194,20 @@ fn rm_base_twin_classes_keep_both_generations() {
 /// the development-only form on the stable profile; `RESOURCE_DESCRIPTION`
 /// stays outside the REST ingress. A new delta entry invalidates the matching
 /// adjudication — extend the boundary in `ferroehr` first, then re-pin here.
+///
+/// SCOPE (#2390): the pin covers RM and BASE — the two profile-coupled
+/// components whose types can reach a stored version body or the REST
+/// ingress, which is the surface the acceptance boundary gates. LANG is
+/// DELIBERATELY outside it, for two adjudicated reasons: LANG types are
+/// code-generation input only (the application binds nothing but the
+/// `openehr_lang::Generation` token — `ferroehr::config::profile`), so no
+/// LANG delta entry can change what the profile boundary accepts or serves;
+/// and the `v1_1` generation emits the v2.x and BMM3 SPECIFICATION UNITS side
+/// by side with 18 class names declared in BOTH with materially different
+/// shapes, so a name-keyed cross-generation attribute diff over that
+/// generation is ill-defined by construction. `docs/VERSIONS.md` §Spec
+/// version policy states the same scope, so the policy's citation and this
+/// guard agree about what is covered.
 #[test]
 fn profile_generation_delta_is_pinned() {
     // RM: 1.2.0 adds exactly `EHR.tags` over 1.1.0 (and no classes).

@@ -9114,3 +9114,49 @@ AMB-209:
     form and therefore does NOT carry the `mandatory` word the
     content-table refusal split keys on (schedule/content/README.md).
   disposition: fixed_handling
+
+AMB-210:
+  ambiguity: >-
+    No released openEHR text says which specification GENERATION SET a running
+    server implements, and none says what a server does with STORED content
+    that a configured older generation set cannot express. The release
+    strategy makes a minor release "significant additions that do not change
+    the semantics of the existing part of the release", so the released and
+    development generations accept different surface while looking identical
+    on every wire the release defines — which set a deployment runs is
+    therefore a deployment fact no operation discloses, and the behaviour at
+    the boundary (a body committed under the development set, read under the
+    released one) is unassigned by every released component.
+  source: >-
+    openEHR release strategy
+    (specifications.openehr.org/governance/release_strategy — minor releases
+    as compatible supersets, read 2026-07-20); ITS-REST overview
+    Requests_and_responses.md §HTTP status codes (the 409 row, "a conflict");
+    RM common master06-change_control_package.adoc (VERSION semantics — a
+    stored version is served verbatim, never rewritten). None of them names a
+    runtime generation-set selection mechanism; the mechanism is this
+    product's own design/extension (the `spec_profile` configuration key,
+    docs/VERSIONS.md §Spec version policy).
+  handling: >-
+    Fixed handling: the generation set is an IXIT declaration (`spec_profile`
+    on the party and per instance — the same law the signing and terminology
+    postures follow), matched at selection time against a case's
+    `requires.spec_profile`, so a party that declares no set is
+    not-applicable-with-citation on every case whose expectation rests on
+    one. The boundary behaviour the spec leaves unassigned is fixed as: a
+    stored version body the ACTIVE profile's generation set cannot express is
+    refused with 409 — RFC 9110 §15.5.10 assigns 409 to "a conflict with the
+    current state of the target resource" whose resolution the response
+    describes, which is exactly this condition (the stored state conflicts
+    with the deployment's declared profile, and switching the profile back
+    resolves it) — never served under a generation set that does not define
+    it, never down-converted, and never silently elided (AQL whole-object
+    projections refuse the whole query: a RESULT_SET has no per-row
+    diagnostic channel that could explain a dropped row). 406 was rejected
+    (RFC 9110 §15.5.7 scopes it to proactive content negotiation; no request
+    header changes this outcome) and 500 was rejected (the condition is a
+    deployment decision with a named remedy). The wire cases drive both
+    directions on the two composed deployments: the development instance
+    commits and serves the development-only body, the stable instance refuses
+    it at read, and a released-surface body serves identically under both.
+  disposition: fixed_handling

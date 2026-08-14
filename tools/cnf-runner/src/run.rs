@@ -428,7 +428,7 @@ fn undeclared_instances(case: &CaseCore, ixit: &Ixit) -> Vec<String> {
 
 /// The instances a case's flow addresses: every `on:` selector, and the
 /// default `sut` when any step carries none.
-fn addressed_instances(case: &CaseCore) -> Vec<InstanceName> {
+pub(crate) fn addressed_instances(case: &CaseCore) -> Vec<InstanceName> {
     let mut named: Vec<InstanceName> = Vec::new();
     let mut any_default = false;
     for step in &case.flow {
@@ -527,6 +527,60 @@ fn unsatisfied_terminology(case: &CaseCore, ixit: &Ixit) -> Option<String> {
                      §Overview — several terminologies served at the same time)"
                 ));
             }
+        }
+    }
+    None
+}
+
+/// Why THIS party's declared openEHR generation set does not satisfy the
+/// case's `requires.spec_profile` — the selection guard for every behaviour
+/// whose expectation rests on which generation set a deployment runs.
+///
+/// No released openEHR operation discloses the generation set a server
+/// implements, and the release strategy
+/// (<https://specifications.openehr.org/governance/release_strategy>) makes a
+/// minor release a compatible superset — so the RELEASED and development sets
+/// accept different surface while looking identical on every wire the release
+/// defines. The set is therefore an IXIT declaration, per instance first with
+/// the party default filling in ([`Ixit::spec_profile_of`]), and an undeclared
+/// or differently-declared one costs COVERAGE, never correctness. A
+/// multi-instance case states a per-instance need in `requires.instances`;
+/// the case-level `requires.spec_profile` binds every addressed instance.
+fn unsatisfied_spec_profile(case: &CaseCore, ixit: &Ixit) -> Option<String> {
+    let per_instance = case.requires.instances.as_ref();
+    for name in addressed_instances(case) {
+        // An undeclared instance is already the `undeclared_instances` guard's
+        // business; skip it here so one case never reports two citations.
+        let Some(instance) = ixit.instance(&name) else {
+            continue;
+        };
+        let required = per_instance
+            .and_then(|map| map.get(&name))
+            .and_then(|requires| requires.spec_profile)
+            .or(case.requires.spec_profile);
+        let Some(required) = required else {
+            continue;
+        };
+        match ixit.spec_profile_of(instance) {
+            None => {
+                return Some(format!(
+                    "instance {name}: the ixit declares no `spec_profile` — the case's \
+                     expectation rests on the `{}` generation set, and no released operation \
+                     discloses which set a deployment runs (openEHR release strategy: a minor \
+                     release is a compatible superset, so the sets differ only in accepted \
+                     surface)",
+                    required.token()
+                ));
+            }
+            Some(declared) if declared != required => {
+                return Some(format!(
+                    "instance {name}: the case needs the `{}` specification generation set and \
+                     this deployment declares `{}` — one running server implements exactly one",
+                    required.token(),
+                    declared.token()
+                ));
+            }
+            Some(_) => {}
         }
     }
     None
@@ -742,6 +796,14 @@ fn selection_exception(
     // or differently declared => not-applicable with the citation, never a
     // red row against a deployment that legitimately runs the other posture.
     if let Some(citation) = unsatisfied_terminology(case, ixit) {
+        return Ok(Some(Exception::Guarded(format!(
+            "{citation}; ISO/IEC 9646 test selection"
+        ))));
+    }
+    // The openEHR specification generation set is the same class of party
+    // declaration: no released operation discloses which one a deployment
+    // runs, and one running server implements exactly one.
+    if let Some(citation) = unsatisfied_spec_profile(case, ixit) {
         return Ok(Some(Exception::Guarded(format!(
             "{citation}; ISO/IEC 9646 test selection"
         ))));
@@ -1587,6 +1649,94 @@ mod tests {
                 &ixit
             )
             .is_some_and(|c| c.contains("2 distinct reachable"))
+        );
+    }
+
+    /// The generation set is a DECLARED deployment fact: an undeclared set, a
+    /// mismatched set, and a per-instance requirement against a per-instance
+    /// declaration are each a selection outcome with its own citation — never
+    /// a driven guess.
+    #[test]
+    fn spec_profile_requirements_are_selected_against_the_declaration() {
+        let case = |requires: serde_json::Value| -> CaseCore {
+            serde_json::from_value(serde_json::json!({
+                "id": "X-profile", "kind": "functional", "component": "EHR_COMPOSITION",
+                "sm_operation": "I_EHR_COMPOSITION.get_composition_at_version",
+                "test_purpose": "t", "description": "d", "spec_refs": [],
+                "requires": requires,
+                "flow": [
+                    { "step": 1, "call": "get_composition_at_version", "expect": "ok" },
+                    { "step": 2, "call": "get_composition_at_version",
+                      "on": "sut_stable", "expect": "conflict" }
+                ]
+            }))
+            .unwrap()
+        };
+        let ixit: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": {
+                "sut": { "base_url": "http://x", "auth": { "mode": "none" } },
+                "sut_stable": { "base_url": "http://y", "auth": { "mode": "none" },
+                                "spec_profile": "stable" }
+            },
+            "spec_profile": "development"
+        }))
+        .unwrap();
+
+        // A case with no generation-set requirement is untouched.
+        assert!(unsatisfied_spec_profile(&case(serde_json::json!({})), &ixit).is_none());
+
+        // Satisfied: the case-level need matches the party default, and the
+        // per-instance need matches the instance's own declaration.
+        assert!(
+            unsatisfied_spec_profile(
+                &case(serde_json::json!({
+                    "spec_profile": "development",
+                    "instances": { "sut_stable": { "spec_profile": "stable" } }
+                })),
+                &ixit
+            )
+            .is_none()
+        );
+
+        // A per-instance requirement is read on its own, with no case-level
+        // form present, and its mismatch names the instance.
+        assert!(
+            unsatisfied_spec_profile(
+                &case(serde_json::json!({
+                    "instances": { "sut_stable": { "spec_profile": "development" } }
+                })),
+                &ixit
+            )
+            .is_some_and(|c| c.contains("sut_stable") && c.contains("exactly one"))
+        );
+
+        // A mismatched case-level declaration names both sets.
+        let citation = unsatisfied_spec_profile(
+            &case(serde_json::json!({ "spec_profile": "stable" })),
+            &ixit,
+        )
+        .expect("set mismatch is a selection outcome");
+        assert!(
+            citation.contains("`stable`") && citation.contains("`development`"),
+            "{citation}"
+        );
+
+        // A party declaring no set at all.
+        let undeclared: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": {
+                "sut": { "base_url": "http://x", "auth": { "mode": "none" } },
+                "sut_stable": { "base_url": "http://y", "auth": { "mode": "none" } }
+            }
+        }))
+        .unwrap();
+        let citation = unsatisfied_spec_profile(
+            &case(serde_json::json!({ "spec_profile": "development" })),
+            &undeclared,
+        )
+        .expect("undeclared set is a selection outcome");
+        assert!(
+            citation.contains("declares no `spec_profile`"),
+            "{citation}"
         );
     }
 

@@ -277,7 +277,7 @@
     [
       "Versioning",
       {
-        "passed": 69,
+        "passed": 72,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -322,7 +322,7 @@
     [
       "AqlBasic",
       {
-        "passed": 32,
+        "passed": 35,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -448,7 +448,7 @@
     [
       "QueryApi",
       {
-        "passed": 20,
+        "passed": 22,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1052,
-    "driven": 1014,
-    "passed": 1014,
+    "selected": 1058,
+    "driven": 1020,
+    "passed": 1020,
     "failed": 0,
     "inconclusive": 0
   }

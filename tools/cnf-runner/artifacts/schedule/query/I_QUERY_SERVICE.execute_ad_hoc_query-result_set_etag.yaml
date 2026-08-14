@@ -24,7 +24,11 @@
 # The matcher lives on the binding, so every ok query row checks it; this case
 # exists so the header has a case whose PURPOSE is the header, and a red row
 # names it directly. The query is scoped to the case's own freshly minted,
-# commit-free EHR, so the row count is deterministic without any corpus.
+# commit-free EHR, so the row count is deterministic without any corpus — and
+# the flow first mints a SECOND EHR carrying a COMPOSITION, so that zero-row
+# answer is evidence of the `ehr_id` scope rather than of an empty store: the
+# AQL is an unscoped population query (Query_types.md §"Population queries"),
+# so a server that dropped the parameter would answer one row.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-result_set_etag
 kind: functional
 component: QUERY
@@ -43,9 +47,19 @@ spec_refs:
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
 requires:
   server: any
+  templates: [cnf.opt.minimal_event]          # the second EHR's content needs its OPT provisioned
   ehr: { commits: none }                      # mints ${ehr_id} with zero commits
+data_sets: [cnf.composition.minimal_event.v1]
 flow:
-  - step: 1
+  - step: 1                                   # a SECOND EHR, so the zero-row answer has something to exclude
+    call: I_EHR_SERVICE.create_ehr
+    expect: created
+    capture: { second_ehr_id: created.ehr_id }
+  - step: 2                                   # content in the second EHR — an unscoped answer would carry it
+    call: I_EHR_COMPOSITION.create_composition
+    with: { ehr_id: "${second_ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+  - step: 3
     call: execute_ad_hoc_query
     with:
       ehr_id: "${ehr_id}"                     # single-EHR execution context

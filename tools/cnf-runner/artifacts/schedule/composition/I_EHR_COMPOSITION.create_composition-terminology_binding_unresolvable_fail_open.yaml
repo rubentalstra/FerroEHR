@@ -39,8 +39,6 @@ spec_refs:
   - "BASE architecture_overview §Terminology in openEHR"
   - "ITS-REST ehr §201_Composition"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the party declares no terminology posture, or declares the fail-closed one — a running deployment realizes exactly one unresolvable-value-set branch (register AMB-172), and which one is an ixit declaration no released operation discloses"
 requires:
   server: any
   templates: [cnf.tpl.dv_coded_text_binding_tsdown]
