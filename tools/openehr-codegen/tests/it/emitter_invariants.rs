@@ -1171,24 +1171,29 @@ fn rm_base_twin_classes_keep_both_generations() {
     );
 }
 
-/// The acceptance-boundary ledger (#1943; the REMOVED direction #1961): the
-/// EXACT model delta between the stable profile's released generations and
-/// the development pins, in BOTH directions, pinned so a re-vendor that
-/// changes either direction FAILS here until the application's profile
+/// The acceptance-boundary ledger (#1943; the REMOVED direction #1961; the
+/// RETYPED direction #2382): the EXACT model delta between the stable
+/// profile's released generations and the development pins — every class and
+/// attribute ADDED, REMOVED, or RETYPED, an attribute's signature covering its
+/// type, its existence and its container cardinality — pinned so a re-vendor
+/// that changes any direction FAILS here until the application's profile
 /// boundary is extended to cover the new surface.
 ///
-/// Verified first-hand 2026-08-05 over the vendored BMMs. The wire
-/// consequences the pins protect: no ADDED delta is client-postable
-/// (`EHR.tags` is server-managed — the item-tag API stores rows, the EHR
-/// wire never carries the attribute; `CODE_PHRASE`/`RESOURCE_DESCRIPTION`
-/// are BASE resource-metadata surface outside the REST ingress). In the
-/// REMOVED direction, `PARTY.reverse_relationships` IS client-postable
-/// released surface, and the stable demographic ingress boundary accepts it
-/// (`ferroehr-rest` `api::demographic::party::rm_party`); the nine
-/// 1.1.0-BMM-only classes carry no enforceable wire surface (documented
-/// nowhere — the #1927 defect family) and no served root reaches them. A
-/// new delta entry invalidates the matching adjudication — extend the
-/// boundary in `ferroehr` first, then re-pin here.
+/// Verified first-hand 2026-08-05 over the vendored BMMs; the retype direction
+/// 2026-08-14. The wire consequences the pins protect: no ADDED delta is
+/// client-postable (`EHR.tags` is server-managed — the item-tag API stores
+/// rows, the EHR wire never carries the attribute; `CODE_PHRASE`/
+/// `RESOURCE_DESCRIPTION` are BASE resource-metadata surface outside the REST
+/// ingress). In the REMOVED direction, `PARTY.reverse_relationships` IS
+/// client-postable released surface, and the stable demographic ingress
+/// boundary accepts it (`ferroehr-rest` `api::demographic::party::rm_party`);
+/// the nine 1.1.0-BMM-only classes carry no enforceable wire surface
+/// (documented nowhere — the #1927 defect family) and no served root reaches
+/// them. In the RETYPED direction, `GENERIC_ENTRY.data` IS client-postable
+/// released surface whose two types are disjoint, and the profile gate refuses
+/// the development-only form on the stable profile; `RESOURCE_DESCRIPTION`
+/// stays outside the REST ingress. A new delta entry invalidates the matching
+/// adjudication — extend the boundary in `ferroehr` first, then re-pin here.
 #[test]
 fn profile_generation_delta_is_pinned() {
     // RM: 1.2.0 adds exactly `EHR.tags` over 1.1.0 (and no classes).
@@ -1223,6 +1228,17 @@ fn profile_generation_delta_is_pinned() {
         vec!["PARTY.reverse_relationships".to_owned()]
     );
 
+    // RM RETYPED direction (#2382): the development generation widens
+    // `GENERIC_ENTRY.data` from `ITEM_TREE` to the abstract `ITEM` — SPECRM-18,
+    // "Change `GENERIC_ENTRY` data attribute type from `ITEM_TREE` to the
+    // abstract `ITEM` class" (RM `integration/master00-amendment_record.adoc`).
+    // The two types are disjoint, so this IS the construct class the profile
+    // acceptance boundary exists for.
+    assert_eq!(
+        rm.attributes_changed,
+        vec!["GENERIC_ENTRY.data: ITEM_TREE -> ITEM".to_owned()]
+    );
+
     // BASE: 1.3.0 adds exactly the legacy CODE_PHRASE class (SPECAM-82) and
     // RESOURCE_DESCRIPTION.title over 1.2.0, and removes nothing.
     let base = testsupport::generation_attribute_delta("base", "v1_2", "v1_3")
@@ -1234,6 +1250,68 @@ fn profile_generation_delta_is_pinned() {
     );
     assert_eq!(base.classes_removed, Vec::<String>::new());
     assert_eq!(base.attributes_removed, Vec::<String>::new());
+
+    // BASE RETYPED direction: `RESOURCE_DESCRIPTION.lifecycle_state` becomes a
+    // plain `String` — SPECBASE-39, "Change `RESOURCE_DESCRIPTION`
+    // _lifecycle_state_ type to `String`" (BASE
+    // `resource/master00-amendment_record.adoc`). Resource metadata, outside
+    // the REST ingress, and the development form is the wider one.
+    assert_eq!(
+        base.attributes_changed,
+        vec!["RESOURCE_DESCRIPTION.lifecycle_state: Terminology_code -> String".to_owned()]
+    );
+}
+
+/// The delta comparison SEES a retype: injecting one into a scratch copy of a
+/// loaded generation model makes it surface, and the existence sets stay
+/// silent about it.
+///
+/// The mutation proof for the pin above (#2382). Before the signature
+/// comparison landed, the name-set difference reported nothing for a changed
+/// type — which is exactly how the `GENERIC_ENTRY.data` retype stayed
+/// invisible to a guard whose contract is the EXACT model delta.
+#[test]
+fn a_retype_in_a_scratch_generation_fails_the_delta_pin() {
+    let older = testsupport::generation_attribute_map("rm", "v1_1").expect("rm v1_1 loads");
+    let mut newer = testsupport::generation_attribute_map("rm", "v1_2").expect("rm v1_2 loads");
+
+    let clean = testsupport::attribute_delta(&older, &newer);
+    assert!(
+        !clean
+            .attributes_changed
+            .iter()
+            .any(|entry| entry.starts_with("COMPOSITION.content:")),
+        "the vendored RM generations already disagree about COMPOSITION.content — pick another \
+         witness for the mutation",
+    );
+
+    // The synthetic retype: a container element type nothing in the RM models.
+    newer
+        .get_mut("COMPOSITION")
+        .expect("RM v1_2 declares COMPOSITION")
+        .insert(
+            "content".to_owned(),
+            "?List<SYNTHETIC_RETYPE> [0..*]".to_owned(),
+        );
+    let mutated = testsupport::attribute_delta(&older, &newer);
+
+    assert!(
+        mutated
+            .attributes_changed
+            .iter()
+            .any(|entry| entry.starts_with("COMPOSITION.content: ")),
+        "a retyped attribute did not reach attributes_changed — the delta is comparing names \
+         again, and every retype is invisible to the pin",
+    );
+    assert_eq!(
+        mutated.attributes_added, clean.attributes_added,
+        "a retype must not read as an added attribute",
+    );
+    assert_eq!(
+        mutated.attributes_removed, clean.attributes_removed,
+        "a retype must not read as a removed attribute — which is precisely why the existence \
+         sets alone cannot pin the model delta",
+    );
 }
 
 /// The generations of one crate realize the SAME BMM-declared functions.

@@ -260,9 +260,12 @@ pub fn render_report(
 /// and the attestation.
 ///
 /// `served_extensions` is the catalogue's outward wire-surface axis
-/// (`vocab/wire_surface.yaml`); it is rendered verbatim as a declaration and
-/// never enters a verdict. An empty slice renders no section at all — a party
-/// that serves nothing beyond the openEHR resource set has nothing to declare.
+/// (`vocab/wire_surface.yaml`), the ROUTE DETAIL of each family. What a given
+/// statement publishes is scoped by that party's own
+/// [`Statement::served_extensions`] declaration — a party declaring none says
+/// so explicitly — because a route family is one product's own design and a
+/// statement may never declare another vendor's surface. It is a declaration
+/// and never enters a verdict.
 #[must_use]
 pub fn render_statement(
     statement: &Statement,
@@ -354,45 +357,68 @@ pub fn render_statement(
     out
 }
 
-/// The statement's "Additional non-openEHR surface" section: the outward
-/// wire-surface axis rendered as a declaration — family, routes, and the
-/// configuration that enables it — under release-pinned wording that puts the
-/// whole surface outside every conformance claim in the document. Nothing is
-/// written when the party declares no extension family.
+/// The statement's "Additional non-openEHR surface" section: the families THIS
+/// party declares (`statement.served_extensions`), rendered with the route and
+/// configuration detail the catalogue axis carries for each, under
+/// release-pinned wording that puts the whole surface outside every
+/// conformance claim in the document.
+///
+/// A party declaring no family gets the section with an explicit statement of
+/// none — silence would leave a reader unable to tell "declares nothing" from
+/// "the question was never asked". A declared family the catalogue axis does
+/// not carry is rendered as such rather than dropped; the `served-extension-
+/// declaration` validate gate refuses it before any run.
 fn write_served_extensions(
     out: &mut String,
     statement: &Statement,
     served_extensions: &[ServedExtension],
 ) {
-    if served_extensions.is_empty() {
+    let _ = writeln!(out, "## Additional non-openEHR surface\n");
+    let its_rest = statement
+        .spec_versions
+        .get(crate::vocab::SpecComponent::ItsRest)
+        .unwrap_or("(unstated)");
+    if statement.served_extensions.is_empty() {
+        let _ = writeln!(
+            out,
+            "Beside the openEHR resources of ITS-REST {its_rest}, this product declares no \
+             additional route family in this statement.\n"
+        );
         return;
     }
-    let _ = writeln!(out, "## Additional non-openEHR surface\n");
     let _ = writeln!(
         out,
-        "Beside the openEHR resources of ITS-REST {}, this product serves the route \
+        "Beside the openEHR resources of ITS-REST {its_rest}, this product serves the route \
          families below. **None of them is part of any conformance claim in this \
          statement**: no openEHR specification governs them, no conformance case \
          exercises them, and no verdict below depends on them. They are declared here \
          so a reader of this document learns the surface exists rather than \
          discovering it on the wire. Paths are the default deployment spelling; a \
          non-default API base path moves the base-path-relative ones.\n",
-        statement
-            .spec_versions
-            .get(crate::vocab::SpecComponent::ItsRest)
-            .unwrap_or("(unstated)"),
     );
     let _ = writeln!(out, "| Family | Routes | Enabled by |");
     let _ = writeln!(out, "| --- | --- | --- |");
-    for extension in served_extensions {
-        let routes: Vec<String> = extension.routes.iter().map(|r| format!("`{r}`")).collect();
-        let _ = writeln!(
-            out,
-            "| {} | {} | {} |",
-            extension.family,
-            routes.join("<br>"),
-            extension.config_gate,
-        );
+    for family in &statement.served_extensions {
+        match served_extensions.iter().find(|e| &e.family == family) {
+            Some(extension) => {
+                let routes: Vec<String> =
+                    extension.routes.iter().map(|r| format!("`{r}`")).collect();
+                let _ = writeln!(
+                    out,
+                    "| {} | {} | {} |",
+                    extension.family,
+                    routes.join("<br>"),
+                    extension.config_gate,
+                );
+            }
+            None => {
+                let _ = writeln!(
+                    out,
+                    "| {family} | (declared by this party; the catalogue wire-surface axis \
+                     carries no route detail for it) | — |"
+                );
+            }
+        }
     }
     let _ = writeln!(out);
 }
@@ -856,34 +882,67 @@ mod tests {
         assert!(a.contains("| **EHR** |"));
     }
 
+    /// The catalogue's extension families, as the axis carries them.
+    fn served() -> Vec<ServedExtension> {
+        serde_json::from_value(serde_json::json!([
+            { "family": "management", "routes": ["GET /management/info"],
+              "config_gate": "management.enabled (default off)",
+              "spec_silence": "no released clause governs the URI space beyond the resource set",
+              "never_gates": true }
+        ]))
+        .unwrap()
+    }
+
     #[test]
     fn statement_renders_verdicts_and_attestation() {
         let text = render_statement(&statement(), &verdicts(), &[]);
         assert!(text.ends_with('\n'));
         assert!(text.contains("We declare conformance."));
         assert!(text.contains("CORE"));
-        // No extensions declared → no section at all.
-        assert!(!text.contains("Additional non-openEHR surface"));
+        // A party declaring no family SAYS so — silence would leave a reader
+        // unable to tell "declares nothing" from "never asked".
+        assert!(text.contains("declares no additional route family"));
     }
 
     /// The outward axis renders as a declaration: the family, its routes and
     /// its gate, under wording that says it is in no conformance claim.
     #[test]
     fn statement_declares_the_non_openehr_surface() {
-        let served: Vec<ServedExtension> = serde_json::from_value(serde_json::json!([
-            { "family": "management", "routes": ["GET /management/info"],
-              "config_gate": "management.enabled (default off)",
-              "spec_silence": "no released clause governs the URI space beyond the resource set",
-              "never_gates": true }
-        ]))
-        .unwrap();
-        let text = render_statement(&statement(), &verdicts(), &served);
+        let mut statement = statement();
+        statement.served_extensions = vec!["management".to_owned()];
+        let text = render_statement(&statement, &verdicts(), &served());
         assert!(text.contains("## Additional non-openEHR surface"));
         assert!(text.contains("ITS-REST 1.1.0"));
         assert!(text.contains(
             "| management | `GET /management/info` | management.enabled (default off) |"
         ));
         assert!(text.contains("None of them is part of any conformance claim"));
+    }
+
+    /// A statement never publishes a family the party did not declare.
+    ///
+    /// The catalogue axis is ONE product's outward surface, so rendering it
+    /// into every party's `SDoC` declared another vendor's routes as that
+    /// vendor's own (#2377).
+    #[test]
+    fn a_party_declaring_no_family_publishes_none_of_the_catalogue_table() {
+        let text = render_statement(&statement(), &verdicts(), &served());
+        assert!(text.contains("## Additional non-openEHR surface"));
+        assert!(text.contains("declares no additional route family"));
+        assert!(!text.contains("management"));
+        assert!(!text.contains("GET /management/info"));
+    }
+
+    /// A declared family the catalogue axis does not carry is rendered as
+    /// such, never dropped — the `served-extension-declaration` gate refuses
+    /// it before any run, and a silent omission would hide the defect.
+    #[test]
+    fn a_declared_family_without_route_detail_is_rendered_as_such() {
+        let mut statement = statement();
+        statement.served_extensions = vec!["not-in-the-axis".to_owned()];
+        let text = render_statement(&statement, &verdicts(), &served());
+        assert!(text.contains("| not-in-the-axis |"));
+        assert!(text.contains("carries no route detail for it"));
     }
 
     #[test]

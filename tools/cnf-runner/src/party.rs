@@ -179,6 +179,16 @@ pub struct Statement {
     /// branches.
     #[serde(default)]
     pub options: Vec<OptionTag>,
+    /// The `served_extensions` families THIS party declares it serves beyond
+    /// the openEHR resource set — never a claim, never a verdict input.
+    ///
+    /// Each name resolves in the catalogue's `vocab/wire_surface.yaml`
+    /// `served_extensions` axis, which carries the routes and configuration
+    /// gate of the family; an unresolvable name is a validation finding. A
+    /// party that serves nothing beyond the openEHR resources declares an
+    /// empty list, and its statement says exactly that.
+    #[serde(default)]
+    pub served_extensions: Vec<String>,
     /// An optional performance claim.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub performance: Option<Performance>,

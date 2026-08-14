@@ -32,8 +32,6 @@ spec_refs:
   - "QUERY AQL §TERMINOLOGY, §WHERE"
   - "ITS-REST query §200_Query (RESULT_SET)"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
-guards:
-  - "AqlTerminology (OPTIONS): terminology-backed AQL — QUERY Aql master03 §TERMINOLOGY; not-applicable when the SUT declares no terminology support"
 requires:
   server: any
   templates: [cnf.tpl.dv_coded_text_constraint_ref]

@@ -130,6 +130,14 @@
         "pattern": "^[a-z0-9_-]+$"
       }
     },
+    "served_extensions": {
+      "description": "The route families THIS party declares it serves beyond the openEHR resource set, by their vocab/wire_surface.yaml served_extensions family name. A declaration, never a claim: no verdict reads it, and the statement renders only what the party itself declares — the catalogue axis is one product's outward surface and is never published as another vendor's. An unresolvable family name is a validation finding; an absent or empty list renders as an explicit declaration of none.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "performance": {
       "type": "object",
       "additionalProperties": false,

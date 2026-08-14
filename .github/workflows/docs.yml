@@ -61,6 +61,18 @@ jobs:
           bash scripts/render/perf-assets.sh
           bash scripts/render/conformance-assets.sh
           CONF_SUT=ehrbase bash scripts/render/conformance-assets.sh
+      - name: Regenerate the derived party documents (verdicts + renders + badges)
+        # The published statements/reports/certificates are DERIVED from the
+        # committed statement + results + catalogue by the same pure pipeline
+        # a campaign ends with. Regenerating them here, beside the SVGs, is
+        # what stops a catalogue or statement change from leaving a published
+        # document silently stale (#2377). results.json is an input only.
+        run: bash scripts/render/conformance-docs.sh
+      - name: Party-documents drift gate (regenerated documents match the committed ones)
+        # COMPARISON.md is written by comparison.sh in the render step above and
+        # was the one regenerated record no gate diffed — a stale committed copy
+        # passed CI silently.
+        run: git diff --exit-code docs/conformance/ferroehr docs/conformance/ehrbase docs/conformance/COMPARISON.md
       - name: Perf-assets drift gate (regenerated SVGs match the committed assets)
         run: git diff --exit-code website/book/src/perf-assets
       - name: Conformance-assets drift gate (regenerated SVGs match the committed assets)

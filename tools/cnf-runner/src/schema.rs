@@ -286,7 +286,11 @@ pub fn case_core_schema() -> Value {
             "description": { "type": "string", "minLength": 1 },
             "spec_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "applies": applies_def(),
-            "guards": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "guards": {
+                "description": "Non-version run conditions, each spec-cited; a failed guard makes the case not-applicable WITH that citation. Prose, and deliberately so — it carries the conditions no runner rule expresses. THE BOUNDARY: a condition the runner already implements structurally is never restated here, because a per-case restatement is free to drift from the implemented rule with nothing to catch it. Capability scoping is the typed shape and is expressed by `capabilities:` alone — selection excuses a case gating only capabilities the ICS does not claim, and the `guard-scope` validate gate refuses a guard that restates it (or that scopes to a capability the case does not gate, which would state a rule nothing implements).",
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+            },
             "capabilities": string_array(Some(IDENT_PATTERN)),
             "exercises": string_array(Some(IDENT_PATTERN)),
             "profiles": { "type": "array", "items": { "enum": tokens(Tier::ALL) } },
@@ -780,6 +784,11 @@ pub fn statement_schema() -> Value {
             },
             "tech_profiles": { "type": "array", "items": tech_profile_def() },
             "options": string_array(Some(OPTION_TAG_PATTERN)),
+            "served_extensions": {
+                "description": "The route families THIS party declares it serves beyond the openEHR resource set, by their vocab/wire_surface.yaml served_extensions family name. A declaration, never a claim: no verdict reads it, and the statement renders only what the party itself declares — the catalogue axis is one product's outward surface and is never published as another vendor's. An unresolvable family name is a validation finding; an absent or empty list renders as an explicit declaration of none.",
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+            },
             "performance": {
                 "type": "object",
                 "additionalProperties": false,

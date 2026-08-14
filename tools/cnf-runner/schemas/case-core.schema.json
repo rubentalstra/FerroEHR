@@ -101,6 +101,7 @@
       }
     },
     "guards": {
+      "description": "Non-version run conditions, each spec-cited; a failed guard makes the case not-applicable WITH that citation. Prose, and deliberately so — it carries the conditions no runner rule expresses. THE BOUNDARY: a condition the runner already implements structurally is never restated here, because a per-case restatement is free to drift from the implemented rule with nothing to catch it. Capability scoping is the typed shape and is expressed by `capabilities:` alone — selection excuses a case gating only capabilities the ICS does not claim, and the `guard-scope` validate gate refuses a guard that restates it (or that scopes to a capability the case does not gate, which would state a rule nothing implements).",
       "type": "array",
       "items": {
         "type": "string",
