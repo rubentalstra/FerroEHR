@@ -15,12 +15,17 @@
 # file is GENERATED: CITATION.cff stays the single source for every fact both
 # carry, and `citation-guard` runs this script in --check mode.
 #
-# The output is the InvenioRDM RECORD shape, not the flat legacy deposit shape
-# the help page documents. Zenodo runs on InvenioRDM now and the GitHub
-# integration accepts this form — verified against a live GitHub-archived
-# record whose .zenodo.json is this shape and whose published record carries
-# the custom_fields it declares. The legacy shape cannot say what language a
-# piece of software is written in.
+# The output is the FLAT LEGACY DEPOSIT shape the help page documents — not
+# the InvenioRDM record shape this script previously emitted. Measured
+# first-hand on this repository's own first GitHub-archived deposit
+# (10.5281/zenodo.21940280, v3.17.6, read 2026-08-15): the record-shape file
+# was IGNORED entirely and the deposit fell back to GitHub's raw repo
+# metadata (title "rubentalstra/FerroEHR: v3.17.6", the full 29-name
+# contributor list as creators), refuting the earlier claim that the
+# integration accepts the record shape. The help page's complete example
+# (read 2026-08-15) is the authority for the field spellings used below:
+# flat top-level keys, `license` as a lowercase id, camelCase
+# `related_identifiers[].relation`, creators as {name, orcid, affiliation}.
 #
 # Usage:
 #   scripts/render/zenodo-json.sh            # write .zenodo.json
@@ -63,9 +68,10 @@ cff_list() {
   ' "$CFF" | jq -R . | jq -s .
 }
 
-# `authors` → InvenioRDM `creators`. The ORCID is emitted as the BARE
-# identifier: CITATION.cff stores the full https://orcid.org/… URL, and passing
-# that through yields a record with no linked ORCID at all.
+# `authors` → legacy-deposit `creators` ({name, orcid, affiliation}). The
+# ORCID is emitted as the BARE identifier: CITATION.cff stores the full
+# https://orcid.org/… URL, and passing that through yields a record with no
+# linked ORCID at all.
 cff_creators() {
   awk '
     /^authors:[ \t]*$/ { grab = 1; next }
@@ -86,21 +92,9 @@ cff_creators() {
          capture("^(?<k>[^:]+):[[:space:]]*(?<v>.*)$")
          | {(.k): (.v | sub("^\"";"") | sub("\"$";""))}
        ) | add) as $a
-      | {
-          person_or_org: (
-            {
-              type: "personal",
-              given_name: $a["given-names"],
-              family_name: $a["family-names"],
-              name: ($a["family-names"] + ", " + $a["given-names"]),
-            }
-            + (if $a.orcid
-               then {identifiers: [{scheme: "orcid",
-                                    identifier: ($a.orcid | split("/") | last)}]}
-               else {} end)
-          ),
-        }
-      + (if $a.affiliation then {affiliations: [{name: $a.affiliation}]} else {} end)
+      | { name: ($a["family-names"] + ", " + $a["given-names"]) }
+      + (if $a.orcid then {orcid: ($a.orcid | split("/") | last)} else {} end)
+      + (if $a.affiliation then {affiliation: $a.affiliation} else {} end)
     )'
 }
 
@@ -127,57 +121,36 @@ rendered="$(
     --argjson specs    "$SPECS" \
     --argjson crates   "$CRATES" \
 '{
-  access: { record: "public", files: "public" },
-
-  # The complete set of software custom fields Zenodo actually carries,
-  # established by enumerating the custom_fields of the 100 newest software
-  # records: code:codeRepository, code:programmingLanguage,
-  # code:developmentStatus. code:operatingSystem, code:runtimePlatform,
-  # code:softwareRequirements and code:license returned ZERO records and do not
-  # exist — nothing here invents them.
-  custom_fields: {
-    "code:codeRepository": $repo,
-    "code:programmingLanguage": [
-      { id: "rust", title: { en: "Rust" } },
-      { id: "sql",  title: { en: "SQL"  } }
-    ],
-    "code:developmentStatus": { id: "active", title: { en: "Active" } }
-  },
-
-  metadata: {
-    resource_type: { id: "software" },
-    title: $title,
-    description: ("<p>" + $abstract + "</p>"),
-    publication_date: $released,
-    version: $version,
-    creators: $creators,
-    languages: [ { id: "eng", title: { en: "English" } } ],
-    rights: [ { id: $license } ],
-    subjects: ($keywords | map({ subject: . })),
-    references: [
-      { reference: "openEHR Reference Model (RM) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/RM/Release-1.1.0" },
-      { reference: "openEHR Archetype Query Language (AQL), QUERY Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/QUERY/Release-1.1.0" },
-      { reference: "openEHR REST API (ITS-REST) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0" },
-      { reference: "openEHR Archetype Model (AM) Release 2.3.0. openEHR International. https://specifications.openehr.org/releases/AM/Release-2.3.0" }
-    ],
-    related_identifiers: (
-      [ { identifier: $site, scheme: "url",
-          relation_type: { id: "isdocumentedby" },
-          resource_type: { id: "publication-softwaredocumentation" } } ]
-      + ($specs | map({ identifier: ., scheme: "url",
-                        relation_type: { id: "isderivedfrom" } }))
-      + ($crates | map({ identifier: ("https://crates.io/crates/" + .),
-                         scheme: "url",
-                         relation_type: { id: "haspart" },
-                         resource_type: { id: "software" } }))
-    ),
-    additional_descriptions: [
-      { type: { id: "technical-info" },
-        description: "<p>Implements the openEHR specifications at these pinned versions: Reference Model 1.2.0, BASE 1.3.0, Archetype Model 1.4.0 and 2.4.0, Terminology 3.1.0, AQL (QUERY) 1.1.0, ITS-REST 1.1.0 and ITS-XML. The specification layer is generated from the official machine-readable specifications rather than hand-written, and conformance is measured per release by a built-in openEHR CNF conformance runner whose results are committed alongside the source. Requires PostgreSQL 18.</p>" },
-      { type: { id: "notes" },
-        description: "<p>Licensing: the recorded licence covers this project&rsquo;s own code. Vendored third-party material keeps its upstream terms &mdash; Apache-2.0 for the openEHR machine-readable artifacts and test corpora, CC-BY-SA-3.0 for the openEHR specification text and CKM-derived clinical models &mdash; each recorded in the PROVENANCE.md of the tree that carries it.</p>" }
-    ]
-  }
+  # The flat legacy deposit shape — every key spelled as the help page
+  # example spells it. No `doi` key on purpose: Zenodo mints the version DOI
+  # itself, and a supplied one would collide with the minting.
+  upload_type: "software",
+  access_right: "open",
+  language: "eng",
+  title: $title,
+  description: ("<p>" + $abstract + "</p>"),
+  publication_date: $released,
+  version: $version,
+  creators: $creators,
+  license: $license,
+  keywords: $keywords,
+  references: [
+    "openEHR Reference Model (RM) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/RM/Release-1.1.0",
+    "openEHR Archetype Query Language (AQL), QUERY Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/QUERY/Release-1.1.0",
+    "openEHR REST API (ITS-REST) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0",
+    "openEHR Archetype Model (AM) Release 2.3.0. openEHR International. https://specifications.openehr.org/releases/AM/Release-2.3.0"
+  ],
+  related_identifiers: (
+    [ { identifier: $site,
+        relation: "isDocumentedBy",
+        resource_type: "publication-softwaredocumentation" },
+      { identifier: $repo, relation: "isSupplementTo" } ]
+    + ($specs | map({ identifier: ., relation: "isDerivedFrom" }))
+    + ($crates | map({ identifier: ("https://crates.io/crates/" + .),
+                       relation: "hasPart",
+                       resource_type: "software" }))
+  ),
+  notes: "Implements the openEHR specifications at these pinned versions: Reference Model 1.2.0, BASE 1.3.0, Archetype Model 1.4.0 and 2.4.0, Terminology 3.1.0, AQL (QUERY) 1.1.0, ITS-REST 1.1.0 and ITS-XML. The specification layer is generated from the official machine-readable specifications rather than hand-written, and conformance is measured per release by a built-in openEHR CNF conformance runner whose results are committed alongside the source. Requires PostgreSQL 18. Licensing: the recorded licence covers this project'\''s own code; vendored third-party material keeps its upstream terms — Apache-2.0 for the openEHR machine-readable artifacts and test corpora, CC-BY-SA-3.0 for the openEHR specification text and CKM-derived clinical models — each recorded in the PROVENANCE.md of the tree that carries it."
 }'
 )"
 
