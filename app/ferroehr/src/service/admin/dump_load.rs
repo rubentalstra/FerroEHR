@@ -1333,6 +1333,9 @@ impl FerroEhrService {
             // A deleted version has no node rows; its body stays `null`. An
             // export covers the WHOLE repository, so the content is read across
             // both storage tiers (`crate::storage::version_repo::tier`).
+            // NOTE: no openEHR spec governs the `spec_profile` gate — our own
+            // design/extension: a dump replicates stored bytes for restore
+            // rather than serving an RM body, so it reads ungated.
             let body = if lifecycle_state == DELETED_LIFECYCLE {
                 Value::Null
             } else {

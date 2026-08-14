@@ -362,6 +362,30 @@ takes a comma-separated list
 > `pgp` mode **fails closed at boot** if the key is missing or unusable — the
 > server will not start. Verify the key and passphrase before switching modes.
 
+### Choose an Ed25519 (or other ECC) signing key
+
+Any OpenPGP key algorithm is accepted, but an **RSA** signing key makes every
+commit perform an RSA private-key operation — the operation the Marvin timing
+sidechannel concerns (RUSTSEC-2023-0071 / CVE-2023-49092), for which the
+underlying `rsa` crate has no fixed release. An Ed25519 or ECDSA key keeps that
+code off the signing path entirely.
+
+The server does **not** refuse an RSA key: a repository whose history is
+already RSA-signed needs that key to keep verifying, and signatures are
+immutable committed facts that cannot be re-issued. Instead it logs a warning
+at boot naming the advisory. To clear it:
+
+1. Generate a new signing key: `gpg --quick-generate-key "…" ed25519 sign`, and
+   export the armored secret key to `key_path`.
+2. Export the **public** half of the old certificate and add it to
+   `retired_key_paths`, so versions signed with it still verify (see above).
+3. Restart. New versions are signed with Ed25519; old ones keep verifying.
+
+Rotation inside one certificate is cheaper still: add an Ed25519 **signing
+subkey** to the existing certificate and the server signs with it
+automatically, with no `retired_key_paths` entry needed — the certificate keeps
+the previous subkey, so past signatures continue to verify.
+
 **On Kubernetes**, `digest` mode needs nothing — it is the default. `pgp` mode
 needs the key as a file and its passphrase as a secret, both of which the chart
 mounts for you:
