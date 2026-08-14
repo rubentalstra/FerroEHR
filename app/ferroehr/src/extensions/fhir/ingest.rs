@@ -17,7 +17,6 @@ use crate::service::error::{ServiceError, Violation, internal_fault};
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
-use crate::storage::version_repo;
 
 use ferroehr_ext::fhir::mapping::FhirMappingDefinition;
 
@@ -30,9 +29,10 @@ use ferroehr_ext::fhir::mapping::FhirMappingDefinition;
 /// COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is a
 /// (null) RM leaf on the AQL read path (the reassembled body carries no uid),
 /// whereas the VERSION variable's uid is the engine-synthesized object-version
-/// id. The COMPOSITION body is then loaded through the versioned read seam
-/// ([`version_repo::read::read_version_by_ordinal`]) by that uid, keeping the façade
-/// on the query seam and reusing the same read seam the outbound emitter uses.
+/// id. The COMPOSITION body is then loaded through the GATED versioned read
+/// seam ([`crate::versioning::read::read_version_by_ordinal`]) by that uid,
+/// keeping the façade on the query seam and reusing the same read seam the
+/// outbound emitter uses.
 const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
      CONTAINS VERSION v CONTAINS COMPOSITION c \
      WHERE c/archetype_details/template_id/value = $templateId";
@@ -308,9 +308,13 @@ impl FerroEhrService {
                 ) else {
                     continue;
                 };
-                let Some(read) =
-                    version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version)
-                        .await?
+                let Some(read) = crate::versioning::read::read_version_by_ordinal(
+                    &self.pool,
+                    self.spec_profile,
+                    vo_id,
+                    sys_version,
+                )
+                .await?
                 else {
                     continue;
                 };
@@ -358,14 +362,15 @@ impl FerroEhrService {
     /// Returns an empty vec (nothing to emit) when the version is absent, a
     /// logical delete (a deleted COMPOSITION has no content to map — a FHIR
     /// delete notification is out of the starter scope), carries no template,
-    /// or its template has no enabled mapping. Reuses the versioned read seam
-    /// ([`version_repo::read::read_version_by_ordinal`]) and the reverse transform.
+    /// or its template has no enabled mapping. Reuses the gated versioned read
+    /// seam ([`crate::versioning::read::read_version_by_ordinal`]) and the
+    /// reverse transform.
     ///
     /// NOTE: the template is read from the COMPOSITION itself (as the
-    /// read façade's AQL also does), NOT from `vo_version.template_id` — that
-    /// column is currently left NULL on the commit path, so relying on it would
-    /// emit nothing. Deriving it from the canonical body avoids touching the
-    /// versioning path.
+    /// read façade's AQL also does), NOT from `vo_version.template_id` — the
+    /// canonical body is the authoritative carrier
+    /// (`archetype_details.template_id`), and deriving from it keeps this
+    /// reader independent of the envelope column's population rules.
     ///
     /// # Errors
     /// A database failure on the version/mapping/subject reads, or
@@ -379,8 +384,13 @@ impl FerroEhrService {
         sys_version: i32,
     ) -> Result<Vec<(String, String, Value)>, ServiceError> {
         // Load the exact committed version; skip absent / logically-deleted ones.
-        let Some(read) =
-            version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+        let Some(read) = crate::versioning::read::read_version_by_ordinal(
+            &self.pool,
+            self.spec_profile,
+            vo_id,
+            sys_version,
+        )
+        .await?
         else {
             return Ok(Vec::new());
         };

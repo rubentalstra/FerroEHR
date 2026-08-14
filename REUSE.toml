@@ -219,3 +219,19 @@ path = "docs/specs/openehr/CNF/tests/platform/robot/I_EHR_COMPOSITION/get_compos
 precedence = "override"
 SPDX-FileCopyrightText = "openEHR Foundation"
 SPDX-License-Identifier = "CC-BY-SA-3.0"
+
+# ── Our own provenance records inside the vendored trees ────────────────────
+# The PROVENANCE.md files are FIRST-PARTY prose about the upstream material,
+# not upstream bytes; the tree globs above would mis-attribute them to the
+# openEHR Foundation (`override` means no in-file header could correct it,
+# and openehr-term ships its record in the published package under that
+# declaration). Placed LAST: a later matching annotation wins.
+[[annotations]]
+path = [
+  "crates/openehr-its/schemas/json/PROVENANCE.md",
+  "crates/openehr-its/schemas/xml/PROVENANCE.md",
+  "crates/openehr-term/assets/PROVENANCE.md",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "FerroEHR contributors"
+SPDX-License-Identifier = "MIT"

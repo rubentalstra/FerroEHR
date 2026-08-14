@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 //! `OpenPGP`-mode integration tests: sign→verify round-trip with a
-//! generated key, tamper detection, armor-parse failures, and the fail-closed
-//! boot validation (missing path, garbled key, wrong passphrase).
+//! generated key, tamper detection, armor-parse failures, the fail-closed
+//! boot validation (missing path, garbled key, wrong passphrase), and the
+//! boot advisory an RSA signing key raises.
 //!
 //! Keys are generated in-test via rPGP so there is no vendored key fixture.
 
@@ -15,8 +16,10 @@
               fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
 use ferroehr::versioning::signature::key::KeyError;
@@ -26,6 +29,9 @@ use pgp::composed::{
     ArmorOptions, KeyType, SecretKeyParamsBuilder, SignedSecretKey, SubkeyParamsBuilder,
 };
 use rand::rngs::OsRng;
+use tracing::field::{Field, Visit};
+use tracing_subscriber::layer::{Context, Layer};
+use tracing_subscriber::prelude::*;
 
 /// A short openEHR-canonical-form-like string to sign in the tests.
 const CANONICAL: &str = r#"{"_type":"ORIGINAL_VERSION","uid":{"value":"a::b::1"}}"#;
@@ -371,5 +377,117 @@ fn a_subkey_signature_verifies_against_the_certificate_that_retains_it() {
         rotated.verify(CANONICAL, &signature),
         Verdict::PgpValid,
         "a subkey signature must verify against a retained certificate, not just the active one"
+    );
+}
+
+// ── The RSA signing-key boot advisory ───────────────────────────────────────
+
+/// One captured `tracing` event: its level and its rendered field values.
+#[derive(Debug, Clone)]
+struct CapturedEvent {
+    level: tracing::Level,
+    fields: BTreeMap<String, String>,
+}
+
+/// A layer collecting every event emitted while it is the default subscriber.
+#[derive(Clone, Default)]
+struct EventCapture {
+    events: Arc<Mutex<Vec<CapturedEvent>>>,
+}
+
+impl<S: tracing::Subscriber> Layer<S> for EventCapture {
+    fn on_event(&self, event: &tracing::Event<'_>, _ctx: Context<'_, S>) {
+        let mut visitor = FieldVisitor::default();
+        event.record(&mut visitor);
+        self.events.lock().expect("lock").push(CapturedEvent {
+            level: *event.metadata().level(),
+            fields: visitor.0,
+        });
+    }
+}
+
+/// Collects field name → rendered value.
+#[derive(Default)]
+struct FieldVisitor(BTreeMap<String, String>);
+
+impl Visit for FieldVisitor {
+    fn record_str(&mut self, field: &Field, value: &str) {
+        self.0.insert(field.name().to_owned(), value.to_owned());
+    }
+    fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+        self.0.insert(field.name().to_owned(), format!("{value:?}"));
+    }
+}
+
+/// Build a `pgp`-mode signer with a capturing subscriber installed, returning
+/// every event the key load emitted.
+fn boot_events(armored_key: &str) -> Vec<CapturedEvent> {
+    let capture = EventCapture::default();
+    let events = Arc::clone(&capture.events);
+    let subscriber = tracing_subscriber::registry().with(capture);
+    {
+        let _guard = tracing::subscriber::set_default(subscriber);
+        pgp_signer(armored_key, None).expect("build signer");
+    }
+    events.lock().expect("lock").clone()
+}
+
+/// Generate an armored RSA-2048 `OpenPGP` secret key (rPGP refuses anything
+/// smaller as insecure).
+fn generate_rsa_key() -> String {
+    let mut builder = SecretKeyParamsBuilder::default();
+    builder
+        .key_type(KeyType::Rsa(2048))
+        .can_sign(true)
+        .primary_user_id("ferroehr-signing rsa <rsa@ferroehr.local>".into());
+    let params = builder.build().expect("build RSA key params");
+    let key: SignedSecretKey = params.generate(OsRng).expect("generate RSA key");
+    key.to_armored_string(ArmorOptions::default())
+        .expect("armor RSA key")
+}
+
+/// An RSA signing key BOOTS — the operator with an RSA-signed corpus keeps a
+/// read path — and raises a prominent warning naming the advisory and the
+/// remedy.
+#[test]
+fn an_rsa_signing_key_boots_with_a_prominent_advisory() {
+    let warnings: Vec<CapturedEvent> = boot_events(&generate_rsa_key())
+        .into_iter()
+        .filter(|e| e.level == tracing::Level::WARN)
+        .collect();
+    let advisory = warnings
+        .iter()
+        .find(|e| {
+            e.fields
+                .get("advisory")
+                .is_some_and(|a| a == "RUSTSEC-2023-0071")
+        })
+        .unwrap_or_else(|| panic!("no RSA advisory among the boot events: {warnings:?}"));
+    let message = advisory.fields.get("message").expect("a message field");
+    assert!(
+        message.contains("RSA"),
+        "the warning names the key algorithm: {message}"
+    );
+    assert!(
+        message.contains("Ed25519"),
+        "the warning names the recommended replacement: {message}"
+    );
+    assert!(
+        message.contains("retired_key_paths"),
+        "the warning points at the rotation mechanism that keeps history verifying: {message}"
+    );
+}
+
+/// An Ed25519 key keeps `rsa` off the signing path entirely, so it raises no
+/// advisory at all.
+#[test]
+fn an_ed25519_signing_key_raises_no_advisory() {
+    let advisories: Vec<CapturedEvent> = boot_events(&generate_key(None))
+        .into_iter()
+        .filter(|e| e.fields.contains_key("advisory"))
+        .collect();
+    assert!(
+        advisories.is_empty(),
+        "an ECC signing key must boot silently, got {advisories:?}"
     );
 }

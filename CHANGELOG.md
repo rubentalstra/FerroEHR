@@ -62,15 +62,26 @@ workflow refuses a tag that has no matching section here.
   non-required, so a broker outage reports `DEGRADED` (the outbox retains
   messages) and never fails readiness. Previously a PHI-bearing outbound
   stream could be down with nothing on the health surface saying so.
+- **A boot advisory for RSA OpenPGP signing keys.** With
+  `signing.mode = "pgp"` and an RSA key, every signature is an RSA
+  private-key operation — the operation the Marvin timing sidechannel
+  (RUSTSEC-2023-0071) concerns, with no fixed `rsa` release. Boot now emits
+  a prominent warning naming the advisory and the Ed25519/ECC rotation path
+  (`signing.retired_key_paths` keeps history verifying); deliberately not a
+  refusal, because signatures are immutable committed facts an operator must
+  stay able to verify. The signing configuration page carries the guidance.
 
 ### Changed
 
-- **The `openehr-*` crates move to `0.0.28`, and `openehr-term` declares every
-  license its bytes are under.** The published `openehr-term` package ships
-  openEHR's verbatim terminology XML (CC-BY-SA 3.0) but declared only
-  `MIT AND Apache-2.0`; the expression is now
-  `MIT AND Apache-2.0 AND CC-BY-SA-3.0` and the license text travels in the
-  package. The other seven crates audited clean; all eight bump in lockstep.
+- **The `openehr-*` crates move to `0.0.29`, declaring and attributing every
+  third-party byte they ship.** `openehr-term` ships openEHR's verbatim
+  terminology XML (CC-BY-SA 3.0) but declared only `MIT AND Apache-2.0`; the
+  expression now names all three licenses and the text travels in the
+  package. The published `openehr-its` package carries attribution for the
+  openEHR JSON Schema it ships (pinned commit, upstream path, license, in
+  the README), and a new guard fails any crate packaging third-party bytes
+  whose pinned attribution does not travel. The other crates audited clean;
+  all eight bump in lockstep.
 - **The documentation site was read end-to-end against the tree and
   rewritten.** Every page's substantive claims were verified against the
   code, the chart, the workflows and the committed conformance artifacts;
@@ -84,6 +95,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The FHIR read façade and outbound emitter respect the spec-profile read
+  gate.** Both read stored bodies around the gated versioning seam, so a
+  development-only body was mapped to FHIR under the `stable` profile with
+  no refusal; both now go through the gated read, mutation-proven.
 - **The boot banner follows the resolved log format.** With the default
   `log.format = "auto"` in a container (stdout not a terminal), logs render
   as JSON but the multi-line ASCII banner still printed first, handing every

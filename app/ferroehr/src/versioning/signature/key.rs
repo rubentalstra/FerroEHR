@@ -16,6 +16,8 @@ use pgp::composed::{
     ArmorOptions, Deserializable, DetachedSignature, SignedPublicKey, SignedSecretKey,
 };
 use pgp::crypto::hash::HashAlgorithm;
+use pgp::crypto::public_key::PublicKeyAlgorithm;
+use pgp::types::KeyDetails as _;
 use pgp::types::Password;
 use rand::rngs::OsRng;
 
@@ -171,7 +173,35 @@ impl PgpKey {
         // Fail-closed: a real signature proves the passphrase unlocks the key
         // and it can actually sign.
         key.sign(b"ferroehr-signing boot check")?;
+        if let Some(algorithm) = key.key_algorithm_warning() {
+            warn_rsa_signing_key(algorithm);
+        }
         Ok(key)
+    }
+
+    /// The public-key algorithm of the component that actually signs — the
+    /// signing subkey when the certificate carries one, else the primary key
+    /// (the same choice [`Self::sign`] makes).
+    fn signing_algorithm(&self) -> PublicKeyAlgorithm {
+        match self
+            .signing_subkey
+            .and_then(|index| self.secret.secret_subkeys.get(index))
+        {
+            Some(subkey) => subkey.key.algorithm(),
+            None => self.secret.primary_key.algorithm(),
+        }
+    }
+
+    /// Returns the signing algorithm of this key when it is one whose
+    /// PRIVATE-key operations carry the Marvin timing sidechannel, `None` for a
+    /// key that keeps `rsa` off the signing path.
+    ///
+    /// The classification is a pure seam over [`Self::signing_algorithm`]; the
+    /// boot loader turns a `Some` into the operator-facing warning
+    /// ([`warn_rsa_signing_key`]).
+    pub(crate) fn key_algorithm_warning(&self) -> Option<PublicKeyAlgorithm> {
+        let algorithm = self.signing_algorithm();
+        rsa_family(algorithm).then_some(algorithm)
     }
 
     /// Produce an ASCII-armored RFC 4880 detached signature over `data`.
@@ -215,6 +245,35 @@ impl PgpKey {
     }
 }
 
+/// Whether `algorithm` signs with RSA, in any of the three spellings RFC 9580
+/// §9.1 registers (`RSA`, plus the deprecated sign-only and encrypt-only
+/// codepoints an older certificate can still carry).
+fn rsa_family(algorithm: PublicKeyAlgorithm) -> bool {
+    matches!(
+        algorithm,
+        PublicKeyAlgorithm::RSA | PublicKeyAlgorithm::RSASign | PublicKeyAlgorithm::RSAEncrypt
+    )
+}
+
+/// Warns that the configured signing key performs RSA private-key operations.
+///
+/// A warning rather than a boot refusal: an operator whose corpus is already
+/// RSA-signed must keep the key configured to verify that history (a
+/// `VERSION.signature` is an immutable committed fact — RM common
+/// `master06-change_control_package.adoc` §Digital Signature), so refusing the
+/// key would strand them with no read path at all.
+fn warn_rsa_signing_key(algorithm: PublicKeyAlgorithm) {
+    tracing::warn!(
+        key_algorithm = ?algorithm,
+        advisory = "RUSTSEC-2023-0071",
+        "the configured OpenPGP signing key is RSA, so every signature is an RSA private-key \
+         operation — the operation the Marvin timing sidechannel (RUSTSEC-2023-0071 / \
+         CVE-2023-49092) concerns, and the `rsa` crate has no fixed release. Rotate to an Ed25519 \
+         (or other ECC) signing key and keep this certificate in `signing.retired_key_paths` so \
+         versions already signed keep verifying."
+    );
+}
+
 /// Verify `sig` against every component of one certificate — the primary key
 /// and each of its subkeys.
 ///
@@ -236,4 +295,41 @@ fn verify_against_certificate(
         .public_subkeys
         .iter()
         .any(|subkey| sig.verify(subkey, data).is_ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every RFC 9580 §9.1 RSA codepoint classifies as RSA — including the two
+    /// deprecated single-purpose ones, which an older certificate still uses
+    /// and which sign with exactly the same private-key operation.
+    #[test]
+    fn every_rsa_codepoint_is_classified_as_rsa() {
+        for algorithm in [
+            PublicKeyAlgorithm::RSA,
+            PublicKeyAlgorithm::RSASign,
+            PublicKeyAlgorithm::RSAEncrypt,
+        ] {
+            assert!(rsa_family(algorithm), "{algorithm:?} must classify as RSA");
+        }
+    }
+
+    /// The algorithms that keep `rsa` off the signing path raise no advisory.
+    #[test]
+    fn elliptic_curve_algorithms_raise_no_advisory() {
+        for algorithm in [
+            PublicKeyAlgorithm::Ed25519,
+            PublicKeyAlgorithm::Ed448,
+            PublicKeyAlgorithm::EdDSALegacy,
+            PublicKeyAlgorithm::ECDSA,
+            PublicKeyAlgorithm::ECDH,
+            PublicKeyAlgorithm::X25519,
+        ] {
+            assert!(
+                !rsa_family(algorithm),
+                "{algorithm:?} performs no RSA private-key operation"
+            );
+        }
+    }
 }

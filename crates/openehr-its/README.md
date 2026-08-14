@@ -56,6 +56,27 @@ package version.
 
 Rust 1.96 (edition 2024).
 
+## Attribution — the embedded openEHR artifact
+
+Exactly one third-party file travels inside this package:
+
+- **Packaged path:** `schemas/json/openehr_rm_1.1.0_all.json`
+- **Upstream:** [`openEHR/specifications-ITS-JSON`](https://github.com/openEHR/specifications-ITS-JSON),
+  path `components/openehr_rm_1.1.0_all.json`, commit
+  `5acae056248e917a4b4c56f7e712f4fcfeb616a6` (`master` — ITS-JSON is
+  DEVELOPMENT status and has no numbered release)
+- **Copyright:** openEHR Foundation; redistributed **verbatim** under
+  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0),
+  <https://github.com/openEHR/specifications-ITS-JSON/blob/master/LICENSE>)
+- **Role here:** the consolidated ITS-JSON RM 1.1.0 JSON Schema, embedded as
+  `openehr_its::json::RM_SCHEMA_JSON` and used as the validation oracle for
+  canonical-JSON output — it is not a code source.
+
+If you redistribute this crate, that file and this attribution travel with it.
+The rest of the vendored ITS-JSON tree, and the ITS-XML XSDs and ITS-REST
+OpenAPI documents the generated code was emitted from, stay in the repository
+and are not packaged.
+
 ## License
 
 Licensed as **MIT AND Apache-2.0**:
@@ -63,7 +84,9 @@ Licensed as **MIT AND Apache-2.0**:
 - The Rust code and hand-written parts are MIT ([`LICENSE-MIT`](LICENSE-MIT)).
 - The package embeds material derived from the official openEHR
   machine-readable specification artifacts, which openEHR publishes under
-  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) — the generated codecs/contract derive from the vendored ITS XSD/OpenAPI/BMM artifacts, and the package embeds the official ITS-JSON RM schema (`schemas/json/`).
+  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) — the generated
+  codecs/contract derive from the vendored ITS XSD/OpenAPI/BMM artifacts, and
+  the package embeds the official ITS-JSON RM schema attributed above.
 
 ## Part of FerroEHR
 
