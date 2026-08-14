@@ -30,6 +30,12 @@ self-tagging; there are no JSON structs to generate. `openehr-its::json` reads
 `openehr_rm_1.1.0_all.json` (via `include_str!`) to validate canonical-JSON
 output in the fidelity gate (`tests/`).
 
+That one file — and only that one — is also PACKAGED in the published
+`openehr-its` crate, so its attribution has to travel with the package rather
+than with this tree: the crate's `README.md` carries it, pinned to the same
+commit as above, and `scripts/checks/packaged-attribution.sh` fails the build
+if the two ever disagree. Re-vendoring moves both.
+
 ## Known version divergence (adjudicated, machine-pinned — #1697)
 
 ITS-JSON tops out at RM 1.1.0 while our generated RM is 1.2.0 (from BMM), and
