@@ -84,3 +84,25 @@ commit-message wording; close/reopen for late labels.
   closes only #1. Every issue needs its own `Closes #N` (one per line is
   clearest). Happened on PR #1821 (14 of 15 left open, owner-corrected
   2026-08-03); Batch A (#1812) had the correct per-issue form.
+- **A hung `docker-credential-desktop` silently blocks every `docker pull`**
+  (hit 2026-08-14, cost ~2 h): pulls/builds hang with NO output while
+  `docker run`/`images`/host curl all work — the client stalls calling the
+  keychain-backed credential helper (a pending macOS Keychain/TCC dialog;
+  even reading `~/Library/Group Containers/group.com.docker/settings*.json`
+  hangs then). Diagnose: `echo '{}' | docker-credential-desktop list` hangs.
+  Bypass without touching user config: a scratch
+  `DOCKER_CONFIG=$SCRATCH/dockercfg` whose `config.json` is
+  `{"cliPluginsExtraDirs": ["$HOME/.docker/cli-plugins"]}` — the plugin dir
+  entry is REQUIRED or `docker compose`/`buildx` vanish ("unknown shorthand
+  flag: 'p'"). All conformance pulls are anonymous, so this is loss-free.
+- **Render-time dates must be UTC-stable or the drift gates detonate on the
+  tag** (hit 2026-08-14, v3.17.6): `git log --format=%cs` renders the
+  committer's OWN timezone, so a baseline committed just past local midnight
+  regenerates a different day than the copy rendered pre-commit under the
+  mtime fallback — and the regenerate-and-diff gate fails permanently INSIDE
+  the tag's immutable tree (the frozen-site cut can then never pass from the
+  tag; recover by fixing the script on develop and running
+  `scripts/site/cut-version.sh vX.Y.Z` locally — toolchain versions must
+  match the workflow pins). Any rendered date derives from the committed
+  artifact in UTC (`TZ=UTC --date=format-local:%Y-%m-%d`), never `%cs`,
+  never the wall clock.
