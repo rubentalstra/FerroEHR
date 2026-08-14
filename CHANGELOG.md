@@ -73,15 +73,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
-- **The `openehr-*` crates move to `0.0.29`, declaring and attributing every
-  third-party byte they ship.** `openehr-term` ships openEHR's verbatim
-  terminology XML (CC-BY-SA 3.0) but declared only `MIT AND Apache-2.0`; the
-  expression now names all three licenses and the text travels in the
-  package. The published `openehr-its` package carries attribution for the
-  openEHR JSON Schema it ships (pinned commit, upstream path, license, in
-  the README), and a new guard fails any crate packaging third-party bytes
-  whose pinned attribution does not travel. The other crates audited clean;
-  all eight bump in lockstep.
+- **The `openehr-*` crates move to `0.0.30`, and the published packages are
+  self-consistent.** `openehr-term` ships openEHR's verbatim terminology XML
+  (CC-BY-SA 3.0) but declared only `MIT AND Apache-2.0` — the expression now
+  names all three licenses and the text travels in the package. The
+  published `openehr-its` package carries attribution for the openEHR JSON
+  Schema it ships (pinned commit, upstream path, license). Packaged test
+  code no longer embeds fixture paths the package does not carry, so
+  `cargo test` inside a published `.crate` compiles again. Two new guards
+  keep all of it true: a pinned attribution that stops travelling fails, and
+  a packaged source embedding an unpackaged path fails. All eight bump in
+  lockstep.
 - **The documentation site was read end-to-end against the tree and
   rewritten.** Every page's substantive claims were verified against the
   code, the chart, the workflows and the committed conformance artifacts;

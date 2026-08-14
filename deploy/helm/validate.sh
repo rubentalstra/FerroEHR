@@ -22,11 +22,14 @@
 #                        (typos, wrong types, bad enums, out-of-range ports) and
 #                        still ACCEPTS what must stay open (the server's own
 #                        config vocabulary, a parent chart's `global`)
-#   7. policy refusals — assert the NetworkPolicy absent-selector states are
-#                        refused at render (an ingress rule with no `from`, an
-#                        egress policy with no database), and that the two
-#                        sanctioned ingress postures render with the source
-#                        posture each of them claims
+#   7. policy postures  — assert the two sanctioned NetworkPolicy ingress
+#                        postures render with the source posture each of them
+#                        claims (the absent-selector refusals themselves are
+#                        step 8)
+#   8. template refusals — every `fail` in templates/ is probed: the values that
+#                        must be refused, the message asserted, and the
+#                        ENUMERATION checked both ways, so a `fail` added with
+#                        no probe fails this script
 #
 # What it does NOT check is printed at the end of every run, and is not a
 # footnote: every one of those properties has failed while this script was green
@@ -289,60 +292,28 @@ secret_leak_gate() {
 }
 secret_leak_gate
 
-# ── NetworkPolicy: an absent selector is a decision, and it is refused ────────
+# ── NetworkPolicy: the shipped ingress posture is a CHECKED claim ─────────────
 # A NetworkPolicy rule with no `from`/`to` admits or permits EVERYTHING
 # (https://kubernetes.io/docs/concepts/services-networking/network-policies/),
 # while `kubectl get networkpolicy` and every prose summary of it read as
-# default-deny. Both directions therefore carry a render-time refusal, and a
-# refusal nothing exercises is a comment: `helm template` succeeding is the only
-# way to notice one that stopped firing.
+# default-deny. The absent-selector states are refused at render, and those
+# refusals are probed with every other one in the refusal registry below.
 #
-# Both halves are probed, because a refusal gate is only meaningful next to the
-# render it forbids: the sanctioned paths must still render, AND the rendered
-# policy must have the source posture claimed for it — the open default has no
-# `from`, the narrowed one has one. Asserting the open default explicitly is not
-# redundant with the golden: this is where the SHIPPED posture is a checked claim
-# rather than whatever the template happens to emit.
+# This gate is the other half, which a refusal gate alone never covers: the
+# sanctioned paths must still render, AND the rendered policy must have the
+# source posture claimed for it — the open default has no `from`, the narrowed
+# one has one. Asserting the open default explicitly is not redundant with the
+# golden: this is where the SHIPPED posture is a checked claim rather than
+# whatever the template happens to emit.
 #
 # BOTH pod-bearing workloads are covered. The console carries the same ingress
 # shape, and it is the HUMAN-facing surface — the §3 lesson applies here too: a
 # gate that only ever saw the server's policy would let the console's regress
 # while reporting the property as checked.
 network_policy_gate() {
-  bold "── NetworkPolicy absent-selector refusals ───────────────"
+  bold "── NetworkPolicy ingress postures ───────────────────────"
   local base="${CI_DIR}/default-values.yaml" console="${CI_DIR}/admin-ui-values.yaml"
-  local out refused=0
-
-  # <values file>|<--set arguments>|<the refusal must name this>
-  local -a refusals=(
-    "${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom"
-    "${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to"
-    "${console}|--set adminUi.networkPolicy.ingressAllowAll=false|adminUi.networkPolicy.ingressFrom"
-  )
-  local values probe want
-  for case in "${refusals[@]}"; do
-    values="${case%%|*}"
-    probe="${case#*|}"; probe="${probe%|*}"
-    want="${case##*|}"
-    # shellcheck disable=SC2086  # the probe is a deliberate multi-word --set list
-    if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" $probe 2>&1)"; then
-      red "  NOT REFUSED: ${probe} rendered instead of failing"
-      refused=1
-    elif ! grep -qF -- "$want" <<<"$out"; then
-      red "  ${probe} was refused, but the message does not name '${want}':"
-      printf '%s\n' "$out" | head -4
-      refused=1
-    elif ! grep -qF -- "hardening-network-policy.md" <<<"$out"; then
-      red "  ${probe} was refused without pointing at the book page that fixes it:"
-      printf '%s\n' "$out" | head -4
-      refused=1
-    fi
-  done
-  if [[ "$refused" -eq 0 ]]; then
-    echo "  all ${#refusals[@]} absent-selector states refused, each naming its value and the book page"
-  else
-    FAIL=1
-  fi
+  local out values
 
   # The sanctioned postures, read back off the rendered policy — per workload.
   # <label>|<values file>|<policy name>|<the values key prefix>|<the template>
@@ -404,6 +375,123 @@ network_policy_gate() {
   fi
 }
 network_policy_gate
+
+# ── Every `fail` in a template is a refusal, and every refusal is PROBED ──────
+# A `fail` decides something for an operator, and it ships as a string nothing
+# executes: the render that would trigger it is precisely the render nobody
+# runs. The egress refusal shipped a whole release guarded by nothing, which is
+# not a lapse in diligence — it is the DEFAULT outcome for a branch with no
+# probe, so the class is closed structurally rather than case by case.
+#
+# The registry below is the chart's complete refusal set — one record per `fail`
+# call under templates/ — and it is checked in BOTH directions:
+#
+#   * every record's probe is rendered and must be REFUSED, with the message
+#     naming the values an operator has to change. A refusal that fires without
+#     naming its remedy is a crash with prose attached, and the message text is
+#     the entire user interface of a render-time refusal.
+#   * every `fail` found by grepping templates/ must have a record. This is the
+#     half that stops the class from regrowing: a refusal added without a probe
+#     fails this script on the commit that adds it, not a release later.
+#
+# The reverse direction is checked too — a record whose `fail` no longer exists
+# fails as well, because a probe that can never fire is a gate reporting a
+# property nothing has.
+#
+# <template>|<substring unique to that fail's message>|<values file>|<--set probe>|<what the refusal must name, `;`-separated>
+refusal_registry_gate() {
+  bold "── template refusals: every \`fail\` is probed ────────────"
+  local base="${CI_DIR}/default-values.yaml"
+  local basic="${CI_DIR}/basic-auth-values.yaml"
+  local console="${CI_DIR}/admin-ui-values.yaml"
+  local -a registry=(
+    "deployment.yaml|no authentication mechanism is configured|${base}|--set config.auth.oidc.issuer=null|config.auth.basic.users;config.auth.oidc.issuer"
+    "migration-job.yaml|requires migrations.job.existingSecret|${base}|--set migrations.job.enabled=true|migrations.job.existingSecret"
+    "hpa.yaml|with every target utilisation at 0|${base}|--set autoscaling.enabled=true --set autoscaling.targetCPUUtilizationPercentage=0 --set autoscaling.targetMemoryUtilizationPercentage=0|autoscaling.targetCPUUtilizationPercentage;autoscaling.targetMemoryUtilizationPercentage"
+    "_helpers.tpl|refusing to render a secret into the ConfigMap|${base}|--set-string config.db.url=SENTINEL_PROBE|config.db.url;database.existingSecret"
+    "_helpers.tpl|has no matching entry at config.auth.basic.users[]|${basic}|--set-string secrets.basicUserPasswordHashes.ghost=SENTINEL_PROBE|secrets.basicUserPasswordHashes.ghost"
+    "_helpers.tpl|has no client declared at config.terminology.external.oauth2_clients|${base}|--set-string secrets.terminologyOauth2ClientSecrets.ghost=SENTINEL_PROBE|config.terminology.external.oauth2_clients.ghost"
+    "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
+    "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
+    "admin-ui.yaml|adminUi.networkPolicy.ingressAllowAll=false with an empty|${console}|--set adminUi.networkPolicy.ingressAllowAll=false|adminUi.networkPolicy.ingressFrom;hardening-network-policy.md"
+  )
+
+  local record values probe wants want out refused=0
+  for record in "${registry[@]}"; do
+    values="$(cut -d'|' -f3 <<<"$record")"
+    probe="$(cut -d'|' -f4 <<<"$record")"
+    wants="$(cut -d'|' -f5 <<<"$record")"
+    # shellcheck disable=SC2086  # the probe is a deliberate multi-word --set list
+    if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" $probe 2>&1)"; then
+      red "  NOT REFUSED: ${probe} rendered instead of failing"
+      refused=1
+      continue
+    fi
+    while IFS= read -r want; do
+      [[ -n "$want" ]] || continue
+      grep -qF -- "$want" <<<"$out" && continue
+      red "  ${probe} was refused, but the message does not name '${want}':"
+      printf '%s\n' "$out" | head -4
+      refused=1
+    done < <(tr ';' '\n' <<<"$wants")
+  done
+  if [[ "$refused" -eq 0 ]]; then
+    echo "  all ${#registry[@]} refusals fire, each naming the values that fix them"
+  else
+    FAIL=1
+  fi
+
+  # The enumeration. `fail` as a template FUNCTION is `fail "…"`, `fail (…)` or
+  # `fail $…`; prose about failing ("fail to mount", "fail the render") is not
+  # followed by one of those, which is what keeps the comment-heavy templates
+  # out of this scan.
+  local sites site file content anchor covered missing=0 orphaned=0 count=0
+  sites="$(grep -rnE '(^|[^[:alnum:]_.])fail[[:space:]]*[("$]' "${CHART_DIR}/templates" || true)"
+  while IFS= read -r site; do
+    [[ -n "$site" ]] || continue
+    count=$((count + 1))
+    file="${site%%:*}"
+    file="${file##*/}"
+    content="${site#*:}"
+    content="${content#*:}"
+    covered=0
+    for record in "${registry[@]}"; do
+      [[ "$(cut -d'|' -f1 <<<"$record")" == "$file" ]] || continue
+      anchor="$(cut -d'|' -f2 <<<"$record")"
+      case "$content" in *"$anchor"*) covered=1 ;; esac
+    done
+    if [[ "$covered" -eq 0 ]]; then
+      red "  UNPROBED \`fail\`: ${site%%:*}:$(cut -d: -f2 <<<"$site")"
+      red "  Add a record to refusal_registry_gate: the values that must be refused,"
+      red "  and what the message has to name. A refusal nothing renders is a comment."
+      missing=1
+    fi
+  done <<<"$sites"
+
+  for record in "${registry[@]}"; do
+    file="$(cut -d'|' -f1 <<<"$record")"
+    anchor="$(cut -d'|' -f2 <<<"$record")"
+    covered=0
+    while IFS= read -r site; do
+      [[ -n "$site" ]] || continue
+      [[ "${site%%:*}" == *"/${file}" ]] || continue
+      content="${site#*:}"
+      content="${content#*:}"
+      case "$content" in *"$anchor"*) covered=1 ;; esac
+    done <<<"$sites"
+    if [[ "$covered" -eq 0 ]]; then
+      red "  STALE probe: no \`fail\` in ${file} says '${anchor}' any more — drop or re-anchor the record"
+      orphaned=1
+    fi
+  done
+
+  if [[ "$missing" -eq 0 && "$orphaned" -eq 0 ]]; then
+    echo "  ${count} \`fail\` call(s) in templates/, each with a probe; no probe without its \`fail\`"
+  else
+    FAIL=1
+  fi
+}
+refusal_registry_gate
 
 # ── The values schema must refuse and permit exactly what it claims to ────────
 # A schema that is present but vacuous is worse than none: `helm template` stays

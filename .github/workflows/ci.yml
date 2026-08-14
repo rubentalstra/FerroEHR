@@ -549,6 +549,15 @@ jobs:
       # repository vendors.
       - name: Packaged third-party bytes carry a pinned attribution
         run: bash scripts/checks/packaged-attribution.sh
+      # `cargo package --list` needs the pinned toolchain; the two packaging
+      # guards are the only cargo consumers in this job.
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+      # A packaged src file embedding a path its own package does not carry
+      # compiles in this repository and breaks inside the published .crate.
+      - name: Packaged sources embed only packaged files
+        run: bash scripts/checks/packaged-includes.sh
 
   # The compose hardening properties (cap_drop ALL, no-new-privileges, no
   # privileged, no seccomp=unconfined, loopback-only publishing). This gate

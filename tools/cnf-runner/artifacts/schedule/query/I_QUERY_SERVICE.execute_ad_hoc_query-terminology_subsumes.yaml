@@ -36,8 +36,6 @@ spec_refs:
   - "QUERY AQL master03-syntax §Identified expression"
   - "ITS-REST query §200_Query (RESULT_SET)"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
-guards:
-  - "AqlTerminology (OPTIONS): terminology-backed AQL — QUERY Aql master03 §TERMINOLOGY; not-applicable when the SUT declares no terminology support"
 requires:
   server: any
   ehr: { commits: none }                    # mints ${ehr_id}

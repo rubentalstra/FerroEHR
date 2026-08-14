@@ -554,3 +554,81 @@ fn an_adjudication_citing_an_absent_register_entry_fails_validate() {
         "workload_exclusion cites AMB-99999 which is not in the register",
     );
 }
+
+const FERROEHR_STATEMENT: &str = "party/ferroehr/statement.json";
+const SIGNING_CASE: &str = "artifacts/schedule/security/SIG-VERSION-signature_present.yaml";
+
+/// A party may declare only extension families the catalogue axis carries
+/// (#2377): the statement renders the ROUTE DETAIL of what it declares, so a
+/// name with nothing behind it would publish an empty promise.
+#[test]
+fn a_party_declaring_an_unknown_extension_family_fails_validate() {
+    let world = World::new();
+    world.edit(FERROEHR_STATEMENT, |text| {
+        text.replace(
+            "\"served_extensions\": [\n",
+            "\"served_extensions\": [\n    \"no-such-family\",\n",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "served-extension-declaration",
+        "served_extensions declares \"no-such-family\"",
+    );
+}
+
+/// The same family twice would publish the same routes twice.
+#[test]
+fn a_party_declaring_one_family_twice_fails_validate() {
+    let world = World::new();
+    world.edit(FERROEHR_STATEMENT, |text| {
+        text.replace(
+            "\"served_extensions\": [\n",
+            "\"served_extensions\": [\n    \"health\",\n",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "served-extension-declaration",
+        "declares \"health\" more than once",
+    );
+}
+
+/// A guard may not restate the capability-scoping selection rule (#2378): the
+/// runner decides it globally from `capabilities:`, and a per-case prose copy
+/// is free to drift from what the runner does with nothing to catch it.
+#[test]
+fn a_guard_restating_capability_scoping_fails_validate() {
+    let world = World::new();
+    world.edit(SIGNING_CASE, |text| {
+        text.replace(
+            "applies: { rm: \">=1.0.2\" }",
+            "applies: { rm: \">=1.0.2\" }\nguards:\n  - \"not-applicable when the SUT declares \
+             no Signing capability — CNF profiles master03-profiles.adoc §Non-Functional\"",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "guard-scope",
+        "restates the capability-scoping rule for Signing",
+    );
+}
+
+/// …and a guard scoped to a capability the case does NOT gate states a rule
+/// nothing implements — the shape #2378 was opened on.
+#[test]
+fn a_guard_scoped_to_an_ungated_capability_fails_validate() {
+    let world = World::new();
+    world.edit(SIGNING_CASE, |text| {
+        text.replace(
+            "applies: { rm: \">=1.0.2\" }",
+            "applies: { rm: \">=1.0.2\" }\nguards:\n  - \"not-applicable when the SUT declares \
+             no AqlTerminology support — QUERY AQL master03-syntax §TERMINOLOGY\"",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "guard-scope",
+        "but the case does not gate that capability",
+    );
+}

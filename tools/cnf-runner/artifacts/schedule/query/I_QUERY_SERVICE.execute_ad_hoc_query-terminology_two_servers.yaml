@@ -38,7 +38,6 @@ spec_refs:
   - "ITS-REST query §200_Query (RESULT_SET)"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
 guards:
-  - "AqlTerminology (OPTIONS): terminology-backed AQL — QUERY Aql master03 §TERMINOLOGY; not-applicable when the SUT declares no terminology support"
   - "A deployment wired to a single terminology server is conformant: BASE master12 §Overview describes the multi-terminology ecosystem, it does not require every deployment to bind to more than one. Such a party declares one server and this case is not-applicable with that citation"
 requires:
   server: any

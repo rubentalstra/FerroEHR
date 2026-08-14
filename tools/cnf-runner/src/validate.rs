@@ -100,6 +100,19 @@ pub enum CheckId {
     /// even enter a run — the gate is at validate time, before any SUT is
     /// composed.
     ClaimCompleteness,
+    /// Guard scope (issue #2378): a `guards:` entry may not state a
+    /// CAPABILITY-scoped selection rule. That rule is global, implemented once
+    /// in the runner's selection over the case's own `capabilities:` list; a
+    /// prose restatement either duplicates it (free to drift, undetectably) or
+    /// names a capability the case does not gate, and then states a rule
+    /// nothing implements.
+    GuardScope,
+    /// A party statement's declared `served_extensions` families (issue
+    /// #2377): each resolves in the catalogue's outward wire-surface axis and
+    /// is declared once. A statement publishes the route families ITS OWN
+    /// party declares — never the catalogue's global table, which is one
+    /// product's own design and a false claim about any other vendor.
+    ServedExtensionDeclaration,
     /// Per-capability case-count floors (issue #622): one token case never
     /// certifies a capability. The capability matrix records each row's
     /// `min_cases`; a battery below its floor is a finding naming the
@@ -152,6 +165,8 @@ impl CheckId {
             Self::VocabDrift => "vocab-drift",
             Self::JourneyEnvelope => "journey-envelope",
             Self::ClaimCompleteness => "claim-completeness",
+            Self::GuardScope => "guard-scope",
+            Self::ServedExtensionDeclaration => "served-extension-declaration",
             Self::CapabilityDepth => "capability-depth",
             Self::WorkloadCoverage => "workload-coverage",
             Self::RealizationScope => "realization-scope",
@@ -259,6 +274,8 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     check_vocab_drift(ctx.set, &mut findings);
     check_journey_envelope(ctx.set, &mut findings);
     check_claim_completeness(ctx.set, &mut findings);
+    check_guard_scope(ctx.set, &mut findings);
+    check_served_extension_declarations(ctx.set, &mut findings);
     check_capability_depth(ctx.set, &mut findings);
     check_workload_coverage(ctx.set, &mut findings);
     check_realization_scope(ctx.set, &mut findings);
@@ -413,6 +430,129 @@ fn check_claim_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 ),
             ),
             (None, false) => {}
+        }
+    }
+}
+
+/// A `guards:` entry may not state a CAPABILITY-scoped selection rule.
+///
+/// Capability scoping is a GLOBAL law the runner implements once
+/// ([`crate::run`] selection: a case gating only capabilities the ICS does not
+/// claim is not-applicable with its citation, and the verdict pipeline selects
+/// on the same predicate), driven by the case's own `capabilities:` list. A
+/// per-case prose restatement of that law is either redundant — and then free
+/// to drift from what the runner does, undetectably, which is the defect this
+/// gate exists for — or it names a capability the case does not gate, in which
+/// case the rule it states is not implemented for this case at all.
+///
+/// Prose guards stay legal for every rule outside the typed shapes; the
+/// boundary is stated on the `guards` property of the published case-core
+/// schema.
+fn check_guard_scope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let Some((_, matrix)) = &set.matrix else {
+        return;
+    };
+    let scoping_phrases = [
+        "not-applicable",
+        "not applicable",
+        "applies only",
+        "only applies",
+        "apply only",
+        "unless the sut",
+        "when the sut declares no",
+        "when the sut does not",
+    ];
+    for (path, case) in &set.cases {
+        let who = path.display().to_string();
+        for guard in &case.guards {
+            let lowered = guard.to_lowercase();
+            if !scoping_phrases.iter().any(|p| lowered.contains(p)) {
+                continue;
+            }
+            for (name, _) in matrix.entries() {
+                if !mentions_word(guard, &name.to_string()) {
+                    continue;
+                }
+                let gated = case.capabilities.contains(name);
+                push(
+                    findings,
+                    CheckId::GuardScope,
+                    &who,
+                    if gated {
+                        format!(
+                            "guard {guard:?} restates the capability-scoping rule for {name}, \
+                             which the runner implements globally from the case's own \
+                             `capabilities:` list — drop the guard; a per-case restatement can \
+                             drift from the implemented rule with nothing to catch it"
+                        )
+                    } else {
+                        format!(
+                            "guard {guard:?} states a selection rule scoped to {name}, but the \
+                             case does not gate that capability — the runner selects on \
+                             `capabilities:` alone, so this rule is stated and not implemented; \
+                             declare the capability or drop the claim"
+                        )
+                    },
+                );
+            }
+        }
+    }
+}
+
+/// Whether `text` contains `word` as a standalone token (no alphanumeric or
+/// `_` neighbour), so a capability name is not matched inside a longer word.
+fn mentions_word(text: &str, word: &str) -> bool {
+    let boundary = |c: Option<char>| c.is_none_or(|c| !c.is_alphanumeric() && c != '_');
+    text.match_indices(word).any(|(at, _)| {
+        boundary(text.get(..at).and_then(|s| s.chars().next_back()))
+            && boundary(text.get(at + word.len()..).and_then(|s| s.chars().next()))
+    })
+}
+
+/// A party's declared `served_extensions` families resolve in the catalogue's
+/// outward wire-surface axis, and each is declared once.
+///
+/// The statement renders the route detail of exactly what the party declares,
+/// so an unresolvable family would publish a family name with no routes behind
+/// it, and a repeated one would publish the same family twice. The declaration
+/// is per party by construction: a route family is one product's own design
+/// (no openEHR specification governs it), so no party's statement may carry
+/// another's surface.
+fn check_served_extension_declarations(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let known: BTreeSet<&str> = set
+        .wire_surface
+        .as_ref()
+        .map_or_else(BTreeSet::new, |(_, w)| {
+            w.served_extensions
+                .iter()
+                .map(|e| e.family.as_str())
+                .collect()
+        });
+    for (party_path, statement) in &set.parties {
+        let who = party_path.display().to_string();
+        let mut seen: BTreeSet<&str> = BTreeSet::new();
+        for family in &statement.served_extensions {
+            if !seen.insert(family.as_str()) {
+                push(
+                    findings,
+                    CheckId::ServedExtensionDeclaration,
+                    &who,
+                    format!("served_extensions declares {family:?} more than once"),
+                );
+            }
+            if !known.contains(family.as_str()) {
+                push(
+                    findings,
+                    CheckId::ServedExtensionDeclaration,
+                    &who,
+                    format!(
+                        "served_extensions declares {family:?}, which is not a family of the \
+                         served_extensions axis of vocab/wire_surface.yaml — a declared family \
+                         must carry its routes and configuration gate there, or the statement \
+                         publishes a name with nothing behind it"
+                    ),
+                );
+            }
         }
     }
 }
