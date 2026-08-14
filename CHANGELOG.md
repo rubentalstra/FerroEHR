@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.6] - 2026-08-15
+
 ### Security
 
 - **The rsa advisory's published VEX statement was false, and is re-grounded.**
@@ -6673,7 +6675,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.5...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.6...HEAD
+[3.17.6]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.5...v3.17.6
 [3.17.5]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.4...v3.17.5
 [3.17.4]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.3...v3.17.4
 [3.17.3]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.2...v3.17.3
