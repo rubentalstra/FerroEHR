@@ -84,7 +84,7 @@ secrets: []
 #
 # The entries are per-CVE and path-scoped ON PURPOSE. A NEW advisory in gosu, or
 # any advisory in any other package of this image, still fails the gate; only
-# these fifteen, in this one binary, are adjudicated. Re-check on every
+# these sixteen, in this one binary, are adjudicated. Re-check on every
 # base-image bump: when upstream rebuilds gosu, these entries go.
 vulnerabilities:
   - id: CVE-2025-61726
@@ -118,6 +118,9 @@ vulnerabilities:
     paths:
       - usr/local/bin/gosu
   - id: CVE-2026-39820
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-39821
     paths:
       - usr/local/bin/gosu
   - id: CVE-2026-39822
