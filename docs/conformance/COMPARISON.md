@@ -19,14 +19,14 @@
 
 | | ferroehr | EHRbase |
 |---|---|---|
-| Product | ferroehr 3.17.3 | ehrbase 2.34.0 |
-| Run date | 2026-08-13 | 2026-08-07 |
+| Product | ferroehr 3.17.5 | ehrbase 2.34.0 |
+| Run date | 2026-08-14 | 2026-08-14 |
 | Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
 | Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (1052 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (1058 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (EHRbase declares no readonly principal), and the statement (the
@@ -58,8 +58,8 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-08-13) vs **EHRbase
-2.34.0** (run of 2026-08-07) — the SAME catalogue through the same
+Runs compared: **ferroehr** (run of 2026-08-14) vs **EHRbase
+2.34.0** (run of 2026-08-14) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
 declarations select), never the raw record: a raw count would book
@@ -68,8 +68,8 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ferroehr** | 1052 | 1014 | 1014 | 0 | 0 |
-| **EHRbase** | 614 | 568 | 151 | 146 | 271 |
+| **ferroehr** | 1058 | 1020 | 1020 | 0 | 0 |
+| **EHRbase** | 617 | 571 | 148 | 148 | 275 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused
@@ -95,7 +95,7 @@ columns, because the matrix is the profiles book as data, not a claim list.
 | Capability | ferroehr | EHRbase |
 |---|---|---|
 | ActivityReport | passed | not_claimed |
-| Adl14ArchetypeProvisioning | passed | inconclusive |
+| Adl14ArchetypeProvisioning | passed | failed |
 | Adl14OptProvisioning | passed | failed |
 | Adl2ArchetypeProvisioning | passed | not_claimed |
 | Adl2OptProvisioning | passed | not_claimed |
@@ -155,13 +155,11 @@ columns, because the matrix is the profiles book as data, not a claim list.
 | I_EHR_CONTRIBUTION | 13 |
 | I_EHR_DIRECTORY | 13 |
 | I_DEFINITION_QUERY | 10 |
-| I_DEFINITION_ADL14 | 7 |
-| I_DEFINITION_ADL2 | 7 |
-| I_EHR_SERVICE | 5 |
-| I_QUERY_SERVICE | 3 |
+| I_DEFINITION_ADL14 | 8 |
+| I_EHR_SERVICE | 4 |
+| I_QUERY_SERVICE | 4 |
 | I_EHR_COMPOSITION | 1 |
 | I_ITS_REST_REVISION_HISTORY | 1 |
-| SIG | 1 |
 
 <details><summary>Every EHRbase-failed case, with the ferroehr outcome on the identical case</summary>
 
@@ -234,6 +232,7 @@ columns, because the matrix is the profiles book as data, not a claim list.
 | CONT-OBS-state_ex_mand-protocol_ex_opt | — | expected `bad_request`, observed `validation_failed` | passed |
 | CONT-OBS-state_ex_opt-protocol_ex_mand | — | expected `bad_request`, observed `validation_failed` | passed |
 | CONT-OBS-state_ex_opt-protocol_ex_opt | — | expected `bad_request`, observed `validation_failed` | passed |
+| I_DEFINITION_ADL14.delete_archetype-clinical_forbidden | — | expected `forbidden`, observed `not_found` | passed |
 | I_DEFINITION_ADL14.upload_opt-invalid_opt | — | expected `validation_failed`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.upload_opt-largest_published | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.upload_opt-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
@@ -241,13 +240,6 @@ columns, because the matrix is the profiles book as data, not a claim list.
 | I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.validate_opt-invalid_opt | — | expected `validation_failed`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.validate_opt-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.get_artefact-example_unknown | — | expected `not_found`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.get_artefact-version_prefix | — | expected `created`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.upload_artefact-duplicate_conflict | — | expected `created`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.upload_artefact-invalid_artefacts | — | expected `validation_failed`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.upload_artefact-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.valid_artefact-invalid | — | expected `validation_failed`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.valid_artefact-valid | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_QUERY.list_queries-prefix_all_versions | — | [0]/name: path resolves to nothing | passed |
 | I_DEFINITION_QUERY.list_queries-version_get_xml_not_acceptable | — | expected `not_acceptable`, observed `ok` | passed |
 | I_DEFINITION_QUERY.list_queries-xml_not_acceptable | — | expected `not_acceptable`, observed `ok` | passed |
@@ -285,7 +277,6 @@ columns, because the matrix is the profiles book as data, not a claim list.
 | I_EHR_DIRECTORY.update_directory-empty_ehr | — | expected `not_found`, observed `precondition_failed` | passed |
 | I_EHR_DIRECTORY.update_directory-root_archetype_id_mismatch | — | expected `validation_failed`, observed `updated` | passed |
 | I_EHR_DIRECTORY.update_directory-stale_if_match | — | header ETag: expected the latest version uid, got none | passed |
-| I_EHR_SERVICE.create_ehr-bulk_load_population | — | expected `created`, observed `validation_failed` | passed |
 | I_EHR_SERVICE.create_ehr-committal_headers | — | commit_audit/description/value: path resolves to nothing | passed |
 | I_EHR_SERVICE.create_ehr-invalid_status | — | expected `validation_failed`, observed `created` | passed |
 | I_EHR_SERVICE.create_ehr-wrong_method | — | header Allow: expected a value matching ".*(GET.*POST\\|POST.*GET).*", got none | passed |
@@ -318,10 +309,10 @@ columns, because the matrix is the profiles book as data, not a claim list.
 | I_EHR_STATUS.set_ehr_queryable-rm_version_empty | — | expected `validation_failed`, observed `bad_request` | passed |
 | I_EHR_STATUS.set_ehr_queryable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-two_versions | canonical-json | expected `updated`, observed `precondition_missing` | passed |
-| I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr | — | row count 100 != expected 1 | passed |
+| I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_header | — | row count 100 != expected 1 | passed |
+| I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_param | — | row count 100 != expected 1 | passed |
 | I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope | — | expected `not_found`, observed `ok` | passed |
 | I_QUERY_SERVICE.execute_stored_query-fetch_with_top | — | expected `stored`, observed `bad_request` | passed |
-| SIG-VERSION-ehr_status_signature | — | signature: expected present, the ORIGINAL_VERSION envelope carries no signature | passed |
 
 </details>
 
