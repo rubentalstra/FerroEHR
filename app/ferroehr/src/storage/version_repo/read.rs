@@ -234,6 +234,92 @@ async fn stored_version(
     })
 }
 
+/// One version a batched `spec_profile` gate still has to decide on: the
+/// identity facts its refusal names, plus the root node's nested-set interval
+/// so the body can be batch-loaded.
+///
+/// No openEHR spec governs runtime generation selection — our own
+/// design/extension.
+#[derive(Debug, Clone)]
+pub struct ProfileGateCandidate {
+    /// The versioned object's id.
+    pub vo_id: VoId,
+    /// The per-vo storage commit ordinal.
+    pub sys_version: i32,
+    /// The `vo_version.kind` discriminator text.
+    pub kind: String,
+    /// The stored stamp: `Some(false)` (the released generations cannot express
+    /// the body) or `None` (nothing stamped the row).
+    pub stable_compatible: Option<bool>,
+    /// The version's immutable `creating_system_id`.
+    pub creating_system_id: String,
+    /// `VERSION_TREE_ID` first part.
+    pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
+    pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
+    pub branch_version: i32,
+    /// The root node's `[num, num_cap]` interval, or `None` for a logically
+    /// deleted version (no node rows — RM common master06 §Logical Deletion).
+    pub root_interval: Option<(i32, i32)>,
+}
+
+/// Read, in ONE statement, the versions among `versions` that are NOT stamped
+/// stable-compatible — the only ones a `stable`-profile gate has left to decide.
+///
+/// `versions` is a `(vo_id, sys_version)` pair list (the primary-key columns, so
+/// the join is a key lookup). A version stamped `true` is served on the stamp
+/// alone and never comes back here, which is what keeps the common page free of
+/// per-row work; the rows returned are ordered by `(vo_id, sys_version)` so a
+/// refusal names the same version on every execution.
+///
+/// AQL reads the primary tier only (an archived object leaves the queryable
+/// store), so no cold-tier retry applies here — unlike the point reads above.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver failure.
+pub async fn read_profile_gate_candidates(
+    pool: &PgPool,
+    versions: &[(VoId, i32)],
+) -> Result<Vec<ProfileGateCandidate>, StorageError> {
+    if versions.is_empty() {
+        return Ok(Vec::new());
+    }
+    let vo_ids: Vec<Uuid> = versions.iter().map(|(vo_id, _)| vo_id.0).collect();
+    let sys_versions: Vec<i32> = versions.iter().map(|(_, sv)| *sv).collect();
+    let rows = sqlx::query(
+        "SELECT v.vo_id, v.sys_version, v.kind, v.stable_compatible, v.creating_system_id, \
+                v.trunk_version, v.branch_number, v.branch_version, \
+                r.num AS root_num, r.num_cap AS root_num_cap \
+         FROM unnest($1::uuid[], $2::int[]) AS a(vo_id, sys_version) \
+         JOIN vo_version v ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
+         LEFT JOIN node r ON r.vo_id = v.vo_id AND r.sys_version = v.sys_version AND r.num = 0 \
+         WHERE v.stable_compatible IS NOT TRUE \
+         ORDER BY v.vo_id, v.sys_version",
+    )
+    .bind(&vo_ids)
+    .bind(&sys_versions)
+    .fetch_all(pool)
+    .await?;
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let root_num: Option<i32> = row.try_get("root_num")?;
+        let root_num_cap: Option<i32> = row.try_get("root_num_cap")?;
+        out.push(ProfileGateCandidate {
+            vo_id: row.try_get("vo_id")?,
+            sys_version: row.try_get("sys_version")?,
+            kind: row.try_get("kind")?,
+            stable_compatible: row.try_get("stable_compatible")?,
+            creating_system_id: row.try_get("creating_system_id")?,
+            trunk_version: row.try_get("trunk_version")?,
+            branch_number: row.try_get("branch_number")?,
+            branch_version: row.try_get("branch_version")?,
+            root_interval: root_num.zip(root_num_cap),
+        });
+    }
+    Ok(out)
+}
+
 /// Read the current TRUNK version of an object by id (any kind).
 ///
 /// `None` if it never existed (`latest_trunk_version`, master06 §Versioned

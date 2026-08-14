@@ -17,7 +17,8 @@
 //! * [`SqlError`] — IR→SQL lowering failures (a construct the planner accepted
 //!   but the SQL package cannot yet render), surfaced before execution.
 //! * [`ExecError`] — execution / `RESULT_SET` assembly failures (a database
-//!   error or a reassembly failure), surfaced during execution.
+//!   error, a reassembly failure, or a projected version body outside the
+//!   active `spec_profile`), surfaced during execution.
 
 use thiserror::Error;
 
@@ -343,6 +344,15 @@ pub enum ExecError {
     /// query (400). QUERY §Functions/Other functions/TERMINOLOGY.
     #[error("terminology expansion failed: {0}")]
     Terminology(String),
+
+    /// A whole-object `RESULT_SET` cell would have served a stored version
+    /// body the ACTIVE `spec_profile`'s generation set cannot express, so the
+    /// query is refused instead (`409`-class — the same refusal the resource
+    /// reads carry, `crate::versioning::profile::gate_result_bodies`). No
+    /// openEHR spec governs runtime generation selection — our own
+    /// design/extension.
+    #[error(transparent)]
+    Profile(crate::service::error::ServiceError),
 
     /// A `RESULT_SET` column spec reached the executor without one of the
     /// generated SQL aliases its [`super::sql::CellKind`] declares (a

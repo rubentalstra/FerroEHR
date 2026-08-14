@@ -206,6 +206,151 @@ async fn a_development_only_composition_is_a_conflict_under_the_stable_profile()
     assert_eq!(status, StatusCode::CONFLICT);
 }
 
+/// An AQL whole-object projection reaches the same stored body the version read
+/// reaches, so the query endpoint surfaces the same `409` — while a leaf
+/// projection over the identical rows still answers `200` (the honest boundary:
+/// it serves data values, not version bodies).
+#[tokio::test]
+async fn an_aql_whole_object_projection_is_a_conflict_under_the_stable_profile() {
+    let db = common::test_db().await;
+    let development = router_for(SpecProfile::Development, db.pool());
+
+    let (status, body) = send(
+        &development,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::ACCEPT, "application/json")
+            .header("Prefer", "return=representation")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "{body}");
+    let ehr_id = serde_json::from_str::<Value>(&body).expect("ehr body")["ehr_id"]["value"]
+        .as_str()
+        .expect("ehr_id")
+        .to_owned();
+
+    let (status, body) = send(
+        &development,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::ACCEPT, "application/json")
+            .header("Prefer", "return=representation")
+            .body(Body::from(development_only_composition().to_string()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "{body}");
+    let version_uid =
+        serde_json::from_str::<Value>(&body).expect("composition body")["uid"]["value"]
+            .as_str()
+            .expect("uid.value")
+            .to_owned();
+
+    let query = |aql: &str| {
+        format!(
+            "{BASE}/query/aql?ehr_id={ehr_id}&q={}",
+            urlencoding::encode(aql)
+        )
+    };
+    let whole_object = query("SELECT c FROM EHR e CONTAINS COMPOSITION c");
+    let leaf = query("SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c");
+
+    // The profile that accepted the body answers both projections.
+    for uri in [&whole_object, &leaf] {
+        let (status, body) = send(
+            &development,
+            Request::builder()
+                .method("GET")
+                .uri(uri)
+                .header(header::ACCEPT, "application/json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{uri}: {body}");
+    }
+
+    let stable = router_for(SpecProfile::Stable, db.pool());
+    let (status, body) = send(
+        &stable,
+        Request::builder()
+            .method("GET")
+            .uri(&whole_object)
+            .header(header::ACCEPT, "application/json")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert!(body.contains("spec_profile"), "{body}");
+    assert!(body.contains(&version_uid), "{body}");
+    assert!(body.contains("development"), "{body}");
+
+    let (status, body) = send(
+        &stable,
+        Request::builder()
+            .method("GET")
+            .uri(&leaf)
+            .header(header::ACCEPT, "application/json")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "a leaf projection serves values, not version bodies: {body}"
+    );
+}
+
+/// The served `OpenAPI` declares the same `409` on every query operation, which
+/// is where a whole-object projection can hit it.
+#[tokio::test]
+async fn the_served_openapi_declares_the_profile_conflict_on_the_query_operations() {
+    let (_db, app) = common::test_router().await;
+    let (status, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri("/ferroehr/rest/api-docs/openapi.json")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let doc: Value = serde_json::from_str(&body).expect("served openapi json");
+
+    for path in [
+        "/query/aql",
+        "/query/{qualified_query_name}",
+        "/query/{qualified_query_name}/{version}",
+    ] {
+        for method in ["get", "post"] {
+            let full = format!("{BASE}{path}");
+            let op = doc["paths"][&full][method]
+                .as_object()
+                .unwrap_or_else(|| panic!("{method} {full} is served"));
+            let description = op["responses"]["409"]["description"]
+                .as_str()
+                .unwrap_or_else(|| panic!("{method} {full} declares a 409"));
+            assert!(
+                description.contains("spec_profile"),
+                "{method} {full}: the 409 must name the spec_profile cause: {description}"
+            );
+            assert!(
+                description.contains("OUR OWN EXTENSION"),
+                "{method} {full}: the 409 must carry the extension flag: {description}"
+            );
+        }
+    }
+}
+
 /// The served `OpenAPI` declares the `409` on every version-read operation it
 /// can occur on, flagged as our own extension (the served document is the only
 /// one we publish — root `CLAUDE.md`).

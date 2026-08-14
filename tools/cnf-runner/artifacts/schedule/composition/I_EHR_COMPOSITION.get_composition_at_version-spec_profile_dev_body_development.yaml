@@ -1,0 +1,52 @@
+# ONE behaviour: a deployment on the DEVELOPMENT openEHR generation set
+# commits and serves a body only that set expresses. The refusal twin on the
+# released set is the -spec_profile_dev_body_stable_409 sibling; the
+# released-surface body served under both sets is
+# -spec_profile_stable_clean_served_under_both.
+#
+# Ground. No released openEHR text says which generation set a server runs or
+# governs runtime selection — register AMB-210 (fixed handling; our own
+# design/extension, the `spec_profile` key). The carrier is the SPECRM-18
+# retype: the development RM declares GENERIC_ENTRY.data as ITEM (a CLUSTER
+# is one), while released RM 1.1.0 types it ITEM_TREE — so the body below is
+# valid development-generation RM and inexpressible to the released set. The
+# generation set is an IXIT declaration (`requires.spec_profile`), so a party
+# declaring none is not-applicable with the citation, never driven.
+id: I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_development
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.get_composition_at_version
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+ambiguities: [AMB-210]
+test_purpose: >-
+  A deployment on the development generation set accepts a commit whose
+  content only that set expresses and serves the stored version body back
+  verbatim.
+description: "Development-only body committed and served under the development generation set"
+spec_refs:
+  - "SM openehr_platform §I_EHR_COMPOSITION.get_composition_at_version"
+  - "RM integration §master02 (GENERIC_ENTRY — a CONTENT_ITEM)"
+  - "RM common §change_control (master06 — a stored version is served verbatim, never rewritten)"
+applies: { rm: ">=1.2.0" }
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}
+  spec_profile: development              # register AMB-210 — an ixit declaration
+data_sets: [cnf.composition.generic_entry_dev_surface]
+flow:
+  - step: 1
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.generic_entry_dev_surface}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # the development-only construct is served back, not rewritten
+      - { assert: field, path: "content[0]/_type", equals: "GENERIC_ENTRY" }
+      - { assert: field, path: "content[0]/data/_type", equals: "CLUSTER" }

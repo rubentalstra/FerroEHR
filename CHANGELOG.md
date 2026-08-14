@@ -38,11 +38,26 @@ workflow refuses a tag that has no matching section here.
   stored version body leaves storage through refuses a stamped-incompatible
   version under `spec_profile = "stable"` with a `409` naming the profile,
   the version and the remedy — never a silent down-conversion. Rows from
-  before the column existed are assessed on the fly at read. AQL is
-  deliberately not covered by the stamp (the planning gate refuses
-  development-only surface in queries; the stamp governs served version
-  bodies) — the boundary is stated in the docs. Our own extension; no
-  openEHR spec governs runtime generation selection.
+  before the column existed are assessed on the fly at read. AQL takes the
+  same stamp wherever it serves a version body: a whole-object projection is
+  gated at result assembly, so a page reaching a version the released
+  generations cannot express refuses the whole query with that same `409` —
+  never a row silently elided from a `RESULT_SET`, which has no per-row
+  diagnostic channel. Leaf projections over the identical rows stay ungated
+  (they serve data values over paths the planning gate already bounded), and
+  under the default `development` profile the assembly gate costs nothing.
+  Our own extension; no openEHR spec governs runtime generation selection.
+- **The conformance pipeline exercises both generation sets in the one
+  record.** The `ferroehr` lane composes a third server of the same image
+  over the primary's database under `spec_profile = "stable"` (host port
+  8082), declared as the ixit's `sut_stable` instance, and the catalogue
+  drives the profile boundary end to end: the development server commits and
+  serves the development-only body, the stable server refuses it at the
+  version read and at whole-object AQL (`409`, register AMB-210), and a
+  released-surface body serves identically under both. The generation set a
+  deployment runs is a new ixit/case declaration (`spec_profile` /
+  `requires.spec_profile`), selected on at ISO/IEC 9646 selection time like
+  the signing and terminology postures.
 - **Archive restore is on the wire.** `POST /admin/archive/ehrs/restore` and
   `POST /admin/archive/parties/restore` (admin-gated, our own extension —
   the SM declares no un-archive call) bring archived records back from the
@@ -73,6 +88,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The ad-hoc-query scope cases are split per carrier, and every zero-row
+  scope assertion now has something to exclude.** The bundled bare-EHR case
+  becomes three one-behaviour cases (grammar acceptance with the released
+  `#0` column-naming rule; scope via the `ehr_id` query parameter; scope via
+  the `openehr-ehr-id` request header — the only released carriers), and the
+  scoped zero-row cases each first commit a composition into a SECOND EHR,
+  so a green row evidences the scope rather than an empty store. The
+  conformance records regenerate on the new case ids; the EHRbase record is
+  honestly redder where that server ignores the scope.
 - **The `openehr-*` crates move to `0.0.30`, and the published packages are
   self-consistent.** `openehr-term` ships openEHR's verbatim terminology XML
   (CC-BY-SA 3.0) but declared only `MIT AND Apache-2.0` — the expression now

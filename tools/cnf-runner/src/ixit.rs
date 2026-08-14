@@ -165,6 +165,42 @@ impl TerminologyPosture {
     }
 }
 
+/// Which openEHR specification GENERATION SET a deployment runs.
+///
+/// Not to be confused with the CNF conformance profiles a case lists under
+/// `profiles:` (CORE / STANDARD / OPTIONS): this is the openEHR RM/BASE
+/// generation set the server implements. The openEHR release strategy
+/// (<https://specifications.openehr.org/governance/release_strategy>) makes a
+/// minor release "significant additions that do not change the semantics of
+/// the existing part of the release", so a deployment on the RELEASED
+/// generations accepts strictly less surface than one on the development
+/// generations — and no released openEHR text says which of them a server
+/// runs, or what it does with stored content the running set cannot express.
+/// So the generation set is a deployment fact no released operation
+/// discloses, exactly like the signing mode and the terminology posture.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SpecProfile {
+    /// The latest RELEASED openEHR generations.
+    Stable,
+    /// The development generations, which admit surface no release defines yet.
+    Development,
+}
+
+impl SpecProfile {
+    /// All variants, in vocabulary order (schema emission derives from this).
+    pub const ALL: &'static [SpecProfile] = &[SpecProfile::Stable, SpecProfile::Development];
+
+    /// The declaration token.
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            Self::Stable => "stable",
+            Self::Development => "development",
+        }
+    }
+}
+
 /// One terminology server a deployment is wired to, and the terminology
 /// namespaces it answers for.
 ///
@@ -278,6 +314,15 @@ pub struct Instance {
     /// follows. Absent => the party default applies.
     #[serde(default)]
     pub terminology: Option<TerminologyLane>,
+    /// THIS instance's openEHR specification generation set, when it differs
+    /// from the party default ([`Ixit::spec_profile`]).
+    ///
+    /// One running deployment implements exactly one generation set, so a
+    /// party that claims both runs two deployments and declares each one's
+    /// set on its own instance — the same law [`Instance::signing`] and
+    /// [`Instance::terminology`] follow. Absent => the party default applies.
+    #[serde(default)]
+    pub spec_profile: Option<SpecProfile>,
 }
 
 /// The environment block — mandatory for performance runs, informative
@@ -388,6 +433,12 @@ pub struct Ixit {
     /// citation. An instance may override it ([`Instance::terminology`]).
     #[serde(default)]
     pub terminology: Option<TerminologyLane>,
+    /// The party's DEFAULT openEHR specification generation set (see
+    /// [`SpecProfile`]). Absent => the party declares none, and every case
+    /// whose expectation rests on a generation set is not-applicable with that
+    /// citation. An instance may override it ([`Instance::spec_profile`]).
+    #[serde(default)]
+    pub spec_profile: Option<SpecProfile>,
 }
 
 impl Ixit {
@@ -432,6 +483,15 @@ impl Ixit {
     #[must_use]
     pub fn terminology_of<'i>(&'i self, instance: &'i Instance) -> Option<&'i TerminologyLane> {
         instance.terminology.as_ref().or(self.terminology.as_ref())
+    }
+
+    /// The openEHR specification generation set in force for `instance`: its
+    /// own declaration wins, the party default ([`Ixit::spec_profile`]) fills
+    /// in — the same instance-first resolution [`Ixit::signing_of`] applies,
+    /// and for the same reason (the set is a deployment fact).
+    #[must_use]
+    pub fn spec_profile_of(&self, instance: &Instance) -> Option<SpecProfile> {
+        instance.spec_profile.or(self.spec_profile)
     }
 
     /// The default instance (`sut`) — required for every run.

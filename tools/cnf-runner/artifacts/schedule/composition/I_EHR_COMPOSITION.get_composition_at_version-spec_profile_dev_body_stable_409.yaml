@@ -1,0 +1,64 @@
+# ONE behaviour: a deployment on the RELEASED (stable) openEHR generation set
+# REFUSES to serve a stored version body that set cannot express — 409, never
+# a served body it does not implement and never a down-conversion. The
+# acceptance twin under the development set is
+# -spec_profile_dev_body_development; the released-surface body served under
+# both sets is -spec_profile_stable_clean_served_under_both.
+#
+# Ground. No released openEHR text says which generation set a server runs,
+# nor what it does with stored content a configured older set cannot express —
+# register AMB-210 fixes the handling (our own design/extension): the refusal
+# is 409 per RFC 9110 §15.5.10 (a conflict with the current state of the
+# target resource, resolvable by the named remedy), naming the profile and the
+# version.
+#
+# THE TWO-INSTANCE TOPOLOGY IS THE GROUND, not a convenience: the stable
+# deployment's own ingress refuses a development-only body at parse time, so
+# the only way a stable server can HOLD one is over a repository a
+# development-profile server also writes — exactly the deployment scenario the
+# `spec_profile` key exists for (one repository, the profile switched). The
+# ixit declares the two instances over the one repository
+# (docker/sut-spec-stable.yml); the commit lands through `sut` (development)
+# and the read is driven at `sut_stable` (stable). A party running no such
+# topology declares no `sut_stable` and the case is not-applicable with the
+# citation.
+id: I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_stable_409
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.get_composition_at_version
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+ambiguities: [AMB-210]
+test_purpose: >-
+  A version body only the development generation set expresses, reached
+  through a deployment on the released set over the same repository, is
+  refused 409 naming the profile — never served, never down-converted.
+description: "Development-only stored body is a 409 under the stable generation set"
+spec_refs:
+  - "SM openehr_platform §I_EHR_COMPOSITION.get_composition_at_version"
+  - "RM integration §master02 (GENERIC_ENTRY — a CONTENT_ITEM)"
+  - "RM common §change_control (master06 — a stored version is served verbatim, never rewritten)"
+applies: { rm: ">=1.2.0" }
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id} (on the default instance; the repository is shared)
+  instances:
+    sut: { spec_profile: development }   # the set that can commit the body
+    sut_stable: { spec_profile: stable } # the set that must refuse to serve it
+data_sets: [cnf.composition.generic_entry_dev_surface]
+flow:
+  - step: 1                              # precondition: the development server commits the body
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.generic_entry_dev_surface}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2                              # the behaviour under test: the stable server refuses it
+    call: get_composition_at_version
+    on: sut_stable
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: conflict
+    assert:
+      # AMB-210 fixed handling: the refusal names the profile and the remedy
+      - { assert: returns, matches: 'spec_profile' }
+      - { assert: returns, matches: 'development' }

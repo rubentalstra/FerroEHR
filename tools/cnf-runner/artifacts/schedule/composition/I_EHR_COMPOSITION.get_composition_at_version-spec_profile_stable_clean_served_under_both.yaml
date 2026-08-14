@@ -1,0 +1,58 @@
+# ONE behaviour: a released-surface body serves IDENTICALLY under both openEHR
+# generation sets — the profile boundary (register AMB-210) narrows nothing it
+# should not. The refusal direction is the -spec_profile_dev_body_stable_409
+# sibling; the development-only acceptance is
+# -spec_profile_dev_body_development.
+#
+# Ground. The openEHR release strategy makes a minor release a compatible
+# superset ("significant additions that do not change the semantics of the
+# existing part of the release"), so a body the RELEASED generation set
+# expresses is valid to both sets, and a deployment on either must serve it
+# (RM common master06 — a stored version is served verbatim). The two
+# instances share one repository (docker/sut-spec-stable.yml); a party running
+# no such topology declares no `sut_stable` and the case is not-applicable
+# with the citation.
+id: I_EHR_COMPOSITION.get_composition_at_version-spec_profile_stable_clean_served_under_both
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.get_composition_at_version
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+ambiguities: [AMB-210]
+test_purpose: >-
+  A version body the released generation set expresses is served by
+  deployments on both generation sets over the same repository — the profile
+  refusal reaches only bodies the released set cannot express.
+description: "Released-surface body served under both generation sets"
+spec_refs:
+  - "SM openehr_platform §I_EHR_COMPOSITION.get_composition_at_version"
+  - "RM common §change_control (master06 — a stored version is served verbatim, never rewritten)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id} (on the default instance; the repository is shared)
+  instances:
+    sut: { spec_profile: development }
+    sut_stable: { spec_profile: stable }
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2                              # the development server serves it ...
+    call: get_composition_at_version
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+  - step: 3                              # ... and so does the stable server, over the same repository
+    call: get_composition_at_version
+    on: sut_stable
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }

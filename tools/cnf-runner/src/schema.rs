@@ -175,6 +175,10 @@ fn requires_def() -> Value {
                     "distinct_servers": { "description": "How many DISTINCT reachable servers the `served` namespaces must be spread across — the N>=2 simultaneous-servers requirement (BASE master12 §Overview).", "type": "integer", "minimum": 1 }
                 }
             },
+            "spec_profile": {
+                "description": "The openEHR specification GENERATION SET the case's expectation rests on, matched against the addressed instance's ixit.spec_profile declaration at SELECTION time. No released operation discloses which set a deployment runs (the openEHR release strategy makes a minor release a compatible superset, so the sets differ only in accepted surface); a case needing one the party does not declare is not-applicable with that citation. A multi-instance case states a per-instance need under `instances`; this case-level form binds every addressed instance.",
+                "enum": tokens(crate::ixit::SpecProfile::ALL)
+            },
             "instances": { "type": "object",
                 "propertyNames": { "pattern": IDENT_PATTERN },
                 "additionalProperties": { "$ref": "#/$defs/requires" } }
@@ -287,7 +291,7 @@ pub fn case_core_schema() -> Value {
             "spec_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "applies": applies_def(),
             "guards": {
-                "description": "Non-version run conditions, each spec-cited; a failed guard makes the case not-applicable WITH that citation. Prose, and deliberately so — it carries the conditions no runner rule expresses. THE BOUNDARY: a condition the runner already implements structurally is never restated here, because a per-case restatement is free to drift from the implemented rule with nothing to catch it. Capability scoping is the typed shape and is expressed by `capabilities:` alone — selection excuses a case gating only capabilities the ICS does not claim, and the `guard-scope` validate gate refuses a guard that restates it (or that scopes to a capability the case does not gate, which would state a rule nothing implements).",
+                "description": "Non-version run conditions, each spec-cited; a failed guard makes the case not-applicable WITH that citation. Prose, and deliberately so — it carries the conditions no runner rule expresses. THE BOUNDARY: a condition the runner already implements structurally is never restated here, because a per-case restatement is free to drift from the implemented rule with nothing to catch it. Capability scoping is one typed shape, expressed by `capabilities:` alone — selection excuses a case gating only capabilities the ICS does not claim, and the `guard-scope` validate gate refuses a guard that restates it (or that scopes to a capability the case does not gate, which would state a rule nothing implements). INSTANCE scoping is the other typed shape, expressed by the flow's own `on:` addressing — selection excuses a case addressing an instance the party does not declare, with the citation, so a guard saying the party 'declares no' such instance restates it and is refused too; the same goes for a prose copy of a declared `requires.terminology` or `requires.spec_profile` block.",
                 "type": "array",
                 "items": { "type": "string", "minLength": 1 }
             },
@@ -965,6 +969,17 @@ fn signing_def(description: &str) -> Value {
     })
 }
 
+/// The openEHR specification generation set — declared party-wide (the
+/// default) and optionally per instance (the deployment running the other
+/// set). One definition, two placements, exactly like [`signing_def`], so the
+/// two can never drift apart.
+fn spec_profile_def(description: &str) -> Value {
+    json!({
+        "description": description,
+        "enum": tokens(crate::ixit::SpecProfile::ALL)
+    })
+}
+
 /// The terminology posture block — declared party-wide (the default) and
 /// optionally per instance (the deployment that runs the other
 /// unresolvable-value-set posture). One definition, two placements, exactly
@@ -1039,6 +1054,9 @@ pub fn ixit_schema() -> Value {
             "terminology": terminology_def(
                 "The party's DEFAULT terminology posture: the terminology query servers this deployment is wired to (BASE architecture_overview master12 §Binding Terminology Value-sets to Archetypes — the bound value set is resolved by a server outside the CDR), which namespaces each answers for, and the unresolvable-value-set branch it realizes. Declared here because released ITS-REST 1.1.0 surfaces no terminology resource, so nothing on the wire discloses any of it; absent => every terminology-dependent case is not-applicable with that citation."
             ),
+            "spec_profile": spec_profile_def(
+                "The party's DEFAULT openEHR specification generation set: `stable` = the latest RELEASED generations, `development` = the development generations, which admit surface no release defines yet. Declared here because no released operation discloses which set a deployment runs (the openEHR release strategy makes a minor release a compatible superset, so the sets differ only in accepted surface); absent => every case whose expectation rests on a generation set is not-applicable with that citation. An instance may override it."
+            ),
             "smart": ixit_smart_def()
         }
     })
@@ -1086,6 +1104,9 @@ fn ixit_instances_def() -> Value {
                 ),
                 "terminology": terminology_def(
                     "THIS instance's terminology posture, when it differs from the party default. The unresolvable-value-set branch is one switch per running deployment, so a party exercising both runs two deployments and declares each one's posture on its own instance — the same law the `signing` block follows. Absent => the top-level `terminology` applies."
+                ),
+                "spec_profile": spec_profile_def(
+                    "THIS instance's openEHR specification generation set, when it differs from the party default. One running deployment implements exactly one set, so a party claiming both runs two deployments and declares each one's set on its own instance — the same law the `signing` and `terminology` blocks follow. Absent => the top-level `spec_profile` applies."
                 )
             }
         }
