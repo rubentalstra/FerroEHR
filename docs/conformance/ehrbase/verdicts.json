@@ -3,7 +3,7 @@
   "capabilities": [
     [
       "Adl14ArchetypeProvisioning",
-      "inconclusive"
+      "failed"
     ],
     [
       "Adl14OptProvisioning",
@@ -179,9 +179,9 @@
       "Adl14ArchetypeProvisioning",
       {
         "passed": 4,
-        "failed": 0,
+        "failed": 1,
         "inconclusive": 6,
-        "unevidenced": 2
+        "unevidenced": 1
       }
     ],
     [
@@ -280,7 +280,7 @@
         "passed": 8,
         "failed": 3,
         "inconclusive": 50,
-        "unevidenced": 4
+        "unevidenced": 5
       }
     ],
     [
@@ -322,9 +322,9 @@
     [
       "AqlBasic",
       {
-        "passed": 7,
-        "failed": 2,
-        "inconclusive": 23,
+        "passed": 5,
+        "failed": 3,
+        "inconclusive": 26,
         "unevidenced": 0
       }
     ],
@@ -448,9 +448,9 @@
     [
       "QueryApi",
       {
-        "passed": 3,
-        "failed": 2,
-        "inconclusive": 14,
+        "passed": 2,
+        "failed": 4,
+        "inconclusive": 15,
         "unevidenced": 0
       }
     ],
@@ -591,10 +591,10 @@
     }
   ],
   "coverage": {
-    "selected": 614,
-    "driven": 568,
-    "passed": 151,
-    "failed": 146,
-    "inconclusive": 271
+    "selected": 617,
+    "driven": 571,
+    "passed": 148,
+    "failed": 148,
+    "inconclusive": 275
   }
 }

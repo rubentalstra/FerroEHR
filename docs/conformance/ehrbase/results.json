@@ -5,7 +5,7 @@
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.3",
+    "version": "3.17.5",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -48,19 +48,17 @@
     },
     {
       "case": "I_DEFINITION_ADL2.has_artefact-non_existing",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 501 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.list_opts-empty",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 501 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_QUERY.list_queries-empty",
@@ -984,7 +982,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_at_time-xml",
@@ -1018,6 +1016,27 @@
       "rows_total": 1,
       "failing_step": 0,
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_development",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.2.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_stable_409",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.2.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-spec_profile_stable_clean_served_under_both",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `spec_profile` — the case's expectation rests on the `development` generation set, and no released operation discloses which set a deployment runs (openEHR release strategy: a minor release is a compatible superset, so the sets differ only in accepted surface); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_at_version-xml",
@@ -1061,7 +1080,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_latest-xml",
@@ -1390,7 +1409,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-missing_if_match",
@@ -1470,7 +1489,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-unknown_preceding_version",
@@ -5557,6 +5576,21 @@
       "citation": "I_EHR_CONTRIBUTION.list_contributions: AMB-22"
     },
     {
+      "case": "I_DEFINITION_ADL14.delete_archetype-clinical_forbidden",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `forbidden`, observed `not_found`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `forbidden`, observed `not_found`"
+        }
+      ]
+    },
+    {
       "case": "I_DEFINITION_ADL14.delete_archetype-existing",
       "status": "errored",
       "rows_driven": 1,
@@ -5936,6 +5970,13 @@
       "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_DEFINITION_ADL2.delete_artefact-clinical_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEFINITION_ADL2.delete_artefact-existing",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -5965,72 +6006,52 @@
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-example",
-      "format": "canonical-json",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-example_unknown",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `not_found`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `not_found`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-retrieve",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-unknown",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-version_get",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-version_prefix",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.has_artefact-existing",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.list_archetypes-all",
@@ -6055,27 +6076,24 @@
     },
     {
       "case": "I_DEFINITION_ADL2.list_matching_artefacts-filter",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.list_opts-non_empty",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.list_templates-non_empty",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.opts_count-unrealized",
@@ -6093,117 +6111,73 @@
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-duplicate_conflict",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-invalid_artefacts",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `validation_failed`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-prefer_identifier",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-prefer_minimal",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 406 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEFINITION_ADL2.upload_artefact-readonly_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-unparseable_artefact",
-      "status": "errored",
-      "rows_driven": 2,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 2,
-      "failing_step": 1,
-      "reason": "status 406 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-valid_opt",
-      "status": "failed",
-      "rows_driven": 2,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 2,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `not_acceptable`"
-        },
-        {
-          "row": 1,
-          "step": 1,
-          "reason": "expected `created`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-wrong_media",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.valid_artefact-invalid",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `validation_failed`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.valid_artefact-valid",
-      "status": "failed",
-      "rows_driven": 2,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 2,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `not_acceptable`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `not_acceptable`"
-        },
-        {
-          "row": 1,
-          "step": 1,
-          "reason": "expected `created`, observed `not_acceptable`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_QUERY.delete_query-delete_existing",
@@ -6476,283 +6450,276 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-aaaa",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_node_id_mismatch",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_root_missing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetyped_content_accepted",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-bbbb",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-capabilities_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-client_supplied_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-cluster_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-contacts_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-identity_details_missing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-identity_details_wrong_type",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-inline_relationships_verbatim",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-item_tag_wrapper_headers",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_agent",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_group",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_organisation",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_role",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-paragraph_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-prefer_minimal",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_foreign_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_is_the_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation, PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationships_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-return_identifier",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_root_identity_mismatch",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-roles_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (DemographicArchetypeValidation) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-version_lifecycle",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-xml",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
@@ -6791,31 +6758,31 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party-aaaa",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party-already_deleted",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party-bbbb",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party-stale_version_conflict",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa",
@@ -6840,87 +6807,87 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party-aaaa",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party-bbbb",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party-wrong_kind_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party-xml",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-bbbb",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-deleted_current",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-xml",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_version-bbbb",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_version-xml",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa",
@@ -6966,240 +6933,234 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-aaaa",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_cluster_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_valid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-bbbb",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-case_variant_if_match",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-cluster_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-contacts_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_cluster_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_valid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-invalid_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-missing_if_match",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_cluster_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_valid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-paragraph_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_cluster_no_items",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_contact_addresses_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_valid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-root_identity_mismatch",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-unknown_preceding_version",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_accepted",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_stale",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-xml",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
@@ -7241,316 +7202,315 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_read",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_unknown",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_client_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_invalid_change_types",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 4,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_CONTRIBUTION.get_contribution-demographic_unknown",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-unknown_key",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.agent_tags_get-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.demographic_tags_get-space_wide_listing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-unknown_key",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.group_tags_get-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_delete-wrong_kind_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_get-wrong_kind_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_update-wrong_kind_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_delete-unknown_key",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_delete-version_container_disjoint",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_get-cross_space_composition_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_get-version_target_shape",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-empty_target_path_absent",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-version_container_disjoint",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-unknown_key",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.role_tags_get-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history-two_versions",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-container_shape",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations, DemographicApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml_not_acceptable",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option versioned-party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (PartyOperations) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-bad_ehr",
@@ -7614,14 +7574,14 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-item_tag_wrapper_header",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-items_by_value",
@@ -8187,63 +8147,24 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-bulk_load_depth",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (BulkEhrLoad) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-item_tag_wrapper_headers",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-bulk_load_population",
-      "status": "failed",
-      "rows_driven": 8,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 8,
-      "failing_step": 2,
-      "reason": "expected `created`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 1,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        },
-        {
-          "row": 2,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        },
-        {
-          "row": 3,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        },
-        {
-          "row": 4,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        },
-        {
-          "row": 5,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        },
-        {
-          "row": 6,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        },
-        {
-          "row": 7,
-          "step": 2,
-          "reason": "expected `created`, observed `validation_failed`"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (BulkEhrLoad) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-clone_system_id",
@@ -9016,189 +8937,189 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-second_delete_not_found",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-unknown_key",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-version_container_disjoint",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-container_target_shape",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-cross_space_party_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-supersession_does_not_move_tags",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-version_target_shape",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-xml_not_acceptable",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-duplicate_identity_last_wins",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_target_path_absent",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_value_invariant",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-key_target_path_identity",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-no_reversioning",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-prefer_identifier",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-version_container_disjoint",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-wrong_media",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-wrong_kind_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_get-wrong_kind_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-key_target_path_identity",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-wrong_kind_uid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_tags_get-ehr_wide_listing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_tags_get-unknown_ehr",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (ItemTags) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-bad_ehr",
@@ -9590,6 +9511,42 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_projection",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_header",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "row count 100 != expected 1",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "row count 100 != expected 1"
+        }
+      ]
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-bare_ehr_scope_param",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "row count 100 != expected 1",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "row count 100 != expected 1"
+        }
+      ]
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-contains_and_or",
       "status": "errored",
       "rows_driven": 1,
@@ -9661,30 +9618,19 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
-    },
-    {
-      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr",
-      "status": "failed",
+      "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "row count 100 != expected 1",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "row count 100 != expected 1"
-        }
-      ]
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes",
-      "status": "passed",
+      "status": "errored",
       "rows_driven": 2,
-      "rows_total": 2
+      "rows_total": 2,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-exists_predicate",
@@ -9788,9 +9734,11 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-result_set_etag",
-      "status": "passed",
+      "status": "errored",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-scalar_functions",
@@ -9809,53 +9757,60 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
-      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches",
-      "status": "errored",
-      "rows_driven": 1,
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-spec_profile_whole_object_409",
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "case version floor unmet (rm >=1.2.0, aql >=1.1) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_expand_filters",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_member",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_non_member",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_subsumes",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_two_servers",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ICS claims none of the capabilities this case gates (AqlTerminology) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-top_backward_rejected",
@@ -9912,9 +9867,11 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_stored_query-empty_db",
-      "status": "passed",
+      "status": "errored",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_stored_query-fetch_with_top",
@@ -9998,19 +9955,17 @@
     },
     {
       "case": "SEC-ANONYMOUS_EHRS-anonymous_lifecycle",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (AnonymousEhrs) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SEC-AUDIT_ACCOUNTABILITY-server_set_commit_audit",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (AuditAccountability) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep",
@@ -10039,35 +9994,31 @@
     },
     {
       "case": "SIG-VERSION-across_version_kinds",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-at_committal_attestation_signed",
-      "format": "canonical-json",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-client_supplied_verbatim-pgp",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-client_supplied_verbatim",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-directory_signature_present",
@@ -10088,587 +10039,574 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-distinct_per_version",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-ehr_status_signature-pgp",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-ehr_status_signature",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "signature: expected present, the ORIGINAL_VERSION envelope carries no signature",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "signature: expected present, the ORIGINAL_VERSION envelope carries no signature"
-        }
-      ]
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-signature_present",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-verifiable-pgp",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SIG-VERSION-verifiable",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+      "citation": "the ICS claims none of the capabilities this case gates (Signing) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CONTRIB-flat_commit",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CONTRIB-flat_read",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CONTRIB-structured_commit",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CONTRIB-structured_read",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CTX-composer_name",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CTX-composer_self",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CTX-missing_mandatory",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CTX-participation_missing_function",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CTX-participations_forms",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-CTX-vocabulary_mapping",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-accept_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-media_supported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-structured_accept_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-structured_media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-EXAMPLE-accept_forms",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-EXAMPLE-roundtrip",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-EXAMPLE-unsupported_accept",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FIELDID-structure",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-adl2_commit",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats, Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-adl2_reject_cardinality",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats, Adl2OptProvisioning) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-commit_roundtrip_ctx_defaults",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-malformed_path",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-missing_template_id",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-reject_cardinality",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-reject_datatype_mismatch",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-reject_other_closed_list",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-reject_other_with_code",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-reject_terminology_binding",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-FLAT-reject_unknown_field",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-INDEX-multi_event_commit",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-INDEX-semantics",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEGACY-nc_flat_accept_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEGACY-nc_flat_media_supported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEGACY-nc_flat_media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEGACY-tds2_accept_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEGACY-tds2_media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEVELS-collapsed_wrappers",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEVELS-container_attribute_elision",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEVELS-lab_panel_example",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-attribute_suffix_table",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-context",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-dv_ordinal_proportion_count",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-dv_quantity",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-dv_text_coded",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-entries",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-events_audit",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-instruction_details",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-interval_event",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-interval_reference_range",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-multimedia_parsable",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-party",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-simple_values",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-structure",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-MAP-temporal",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-NODEID-generation_rules",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-NODEID-web_template_ids",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-RAW-embedding",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-RAW-missing_type",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-RAW-structured_embedding",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-RMATTR-normal_range_commit",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-RMATTR-underscore_mapping",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-SCOPE-demographic_no_simplified",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-SCOPE-directory_no_simplified",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-SCOPE-ehr_status_no_simplified",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-STRUCT-arrays_single_cardinality",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-STRUCT-empty_object_omission",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-STRUCT-style_rules",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-STRUCTURED-commit_roundtrip",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-WT-web_template_get",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-WT-web_template_json_accept",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SimplifiedFormats) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SMART-DISCOVERY-document_shape",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "case version floor unmet (its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SmartAppLaunch) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SMART-RESOURCE_SCOPES-granted_scope_permits",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 3,
-      "citation": "case version floor unmet (its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SmartAppLaunch) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "SMART-RESOURCE_SCOPES-scope_deny_403",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 4,
-      "citation": "case version floor unmet (its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+      "citation": "the ICS claims none of the capabilities this case gates (SmartAppLaunch) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_SYSTEM.options-conformance_manifest",
-      "format": "canonical-json",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "the ICS claims none of the capabilities this case gates (SystemApi) — CNF profiles master02-overview.adoc §Overview (a profile IS the list of capabilities a solution specifies); ISO/IEC 9646 test selection"
     }
   ],
   "measurements": [
