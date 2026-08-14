@@ -37,10 +37,15 @@ count() { jq "[(.cases // .outcomes)[] | select(.status == \"$2\")] | length" "$
 # --follow --diff-filter=AM: a rename of the artifact directory (a lane rename)
 # must not restamp a measured run with the rename's date — only a commit that
 # ADDED or MODIFIED the record is a run.
+# The date is rendered in UTC, never the committer's own zone (%cs): a commit
+# made just past local midnight would otherwise regenerate a DIFFERENT day
+# than the one rendered before it was committed, and the regenerate-and-diff
+# gate turns that into a permanent drift failure baked into the tag's tree.
 run_date() {
   local d
-  d=$(git log --follow --diff-filter=AM -1 --format=%cs -- "$1/results.json" 2>/dev/null || true)
-  [ -n "$d" ] || d=$(date -r "$1/results.json" +%Y-%m-%d)
+  d=$(TZ=UTC git log --follow --diff-filter=AM -1 --date=format-local:%Y-%m-%d \
+    --format=%cd -- "$1/results.json" 2>/dev/null || true)
+  [ -n "$d" ] || d=$(TZ=UTC date -r "$1/results.json" +%Y-%m-%d)
   echo "$d"
 }
 rs_date=$(run_date "$RS")
