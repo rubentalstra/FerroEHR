@@ -166,12 +166,27 @@ extension: no openEHR specification governs runtime version selection, so the
 status follows HTTP itself (RFC 9110 §15.5.10 — a conflict with the current
 state of the target resource, whose resolution the response describes).
 
-**Queries are not covered by that refusal**, and the distinction matters: the
-profile gate on AQL is at *planning* time, over the query text. A query that
-names development-only surface is rejected; a generic projection that happens
-to traverse stored development-generation content still returns rows under
-`stable`. If you need those rows withheld as well, the profile is not the
-mechanism.
+**Queries take the same refusal wherever they serve a version body.** AQL is
+gated in two places, and they answer different questions. At *planning* time the
+query text is checked: a `FROM` class or path attribute the released generations
+do not declare is rejected. At *result assembly* the projection is checked: a
+whole-object projection — `SELECT c FROM EHR e CONTAINS COMPOSITION c` — returns
+stored version bodies, so if any row of the page comes from a version the
+released generations cannot express, the whole query answers `409 Conflict`
+naming that version. The row is never quietly dropped from the result set
+instead: a `RESULT_SET` is columns and rows of values with nowhere to explain a
+missing row, so silently eliding one would be an answer you could not tell from
+"no such data".
+
+A **leaf projection** over the very same rows — `SELECT c/name/value FROM EHR e
+CONTAINS COMPOSITION c` — still answers `200`. It serves data values rather than
+version bodies, over paths the planning gate has already bounded to the released
+generation's declared surface. That is the honest boundary: the profile is an
+acceptance boundary on what is served as an openEHR object, not a content filter
+over the values inside one.
+
+Under `development` none of this applies and it costs nothing — the assembly
+gate returns before it touches the database.
 
 The exact additive delta between the two generation sets is pinned in the
 build, so a future openEHR re-vendoring cannot silently widen or narrow what a

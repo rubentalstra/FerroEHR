@@ -157,6 +157,108 @@ pub(crate) fn gate(
     }
 }
 
+/// The AQL result-assembly profile gate: refuses the query when a whole-object
+/// (or subtree) `RESULT_SET` cell would serve content out of a stored version
+/// the ACTIVE profile's generations cannot express.
+///
+/// A whole-object projection serves a stored version body, so it answers the
+/// same question [`gate`] answers on the resource reads, keyed on the same
+/// per-VERSION stamp — a body the released generations cannot express is never
+/// served under `stable`, however it was reached. The refusal is the whole
+/// query, because the ITS-REST `RESULT_SET` is columns and rows of values with
+/// no per-row diagnostic channel (`docs/specs/openehr/SM/docs/UML/classes/
+/// result_set.adoc`; ITS-REST `specifications/responses/200_Query.yaml`), so
+/// the only per-row alternative would be dropping the row — a silent elision.
+///
+/// Scalar/leaf cells are NOT gated: they serve data VALUES over paths the
+/// planning gate already bounded to the active generation's declared surface
+/// ([`crate::aql::analyze`]), not version bodies.
+///
+/// Cost under the default `development` profile is zero — the first line
+/// returns. Under `stable` it is ONE key-lookup statement over the page's
+/// distinct `(vo_id, sys_version)` pairs that returns only versions NOT stamped
+/// compatible (the common case ends there), plus ONE batched body load for any
+/// it does return — never per row.
+///
+/// # Errors
+/// The `409`-class [`ServiceError::Conflict`] of [`refuse`], naming the first
+/// offending version in `(vo_id, sys_version)` order; a storage failure of the
+/// candidate read or the body load.
+pub(crate) async fn gate_result_bodies(
+    pool: &sqlx::PgPool,
+    profile: SpecProfile,
+    anchors: &[crate::storage::node_repo::SubtreeAnchor],
+) -> Result<(), ServiceError> {
+    if profile != SpecProfile::Stable || anchors.is_empty() {
+        return Ok(());
+    }
+    let versions: Vec<(crate::ids::VoId, i32)> = anchors
+        .iter()
+        .map(|a| (a.vo_id, a.sys_version))
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    let candidates =
+        crate::storage::version_repo::read::read_profile_gate_candidates(pool, &versions).await?;
+    if candidates.is_empty() {
+        return Ok(());
+    }
+    // The stamp is a per-VERSION fact, so the assessment reads the whole stored
+    // body — the projected subtree is a fragment of it and answers a narrower
+    // question than the stamp records.
+    let roots: Vec<crate::storage::node_repo::SubtreeAnchor> = candidates
+        .iter()
+        .filter_map(|c| {
+            c.root_interval
+                .map(|(num, num_cap)| crate::storage::node_repo::SubtreeAnchor {
+                    vo_id: c.vo_id,
+                    sys_version: c.sys_version,
+                    num,
+                    num_cap,
+                })
+        })
+        .collect();
+    let bodies = crate::storage::node_repo::read_subtrees_canonical(pool, &roots).await?;
+    for candidate in &candidates {
+        let kind = Kind::from_type(&candidate.kind).ok_or_else(|| {
+            ServiceError::exception(format!(
+                "vo_version.kind {:?} of versioned object {} is not an RM versioned type",
+                candidate.kind, candidate.vo_id
+            ))
+        })?;
+        let canonical = candidate
+            .root_interval
+            .and_then(|(num, num_cap)| {
+                bodies.get(&crate::storage::node_repo::SubtreeAnchor {
+                    vo_id: candidate.vo_id,
+                    sys_version: candidate.sys_version,
+                    num,
+                    num_cap,
+                })
+            })
+            .cloned()
+            .unwrap_or(Value::Null);
+        gate(
+            profile,
+            kind,
+            candidate.stable_compatible,
+            &canonical,
+            &|| {
+                crate::versioning::object_version_id::object_version_id(
+                    candidate.vo_id,
+                    &candidate.creating_system_id,
+                    crate::versioning::object_version_id::TreeId::from_columns(
+                        candidate.trunk_version,
+                        candidate.branch_number,
+                        candidate.branch_version,
+                    ),
+                )
+            },
+        )?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 #[expect(
     clippy::panic_in_result_fn,

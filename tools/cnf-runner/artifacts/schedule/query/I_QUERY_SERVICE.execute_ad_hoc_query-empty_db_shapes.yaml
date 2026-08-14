@@ -3,8 +3,17 @@
 # goldens are RM-1.0.x-era wire and are NOT derivable from AQL 1.1 spec text, so
 # the exact-row goldens are excluded (not derivable from AQL 1.1 spec text); the
 # spec-groundable core is carried here: representative valid AQL query shapes are
-# accepted by the grammar and, on an empty server, return zero rows. `ecc-` id
-# namespace pending upstream adoption.
+# accepted by the grammar and, scoped to an EHR that holds no COMPOSITION,
+# return zero rows. `ecc-` id namespace pending upstream adoption.
+#
+# THE ZERO-ROW GROUND IS LOAD-BEARING, not vacuous: each row first mints a
+# SECOND EHR and commits a COMPOSITION into it, so the server DOES hold
+# composition content when the query runs, and the fixtures are UNSCOPED
+# population queries (Query_types.md §"Population queries": "not referring or
+# using any `ehr_id` parameter to constrain the scope on a specific EHR"). The
+# `ehr_id` request parameter is therefore the only thing excluding that content
+# — a server that dropped it would answer one row. Without the second EHR the
+# row would pass on any server whenever provisioning had refused every template.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes
 kind: functional
 component: QUERY
@@ -28,9 +37,19 @@ parameters:
     - { data_set: cnf.aql.valid.where_predicate, expected: ok, defect: "CONTAINS chain with a WHERE predicate" }
 requires:
   server: any                              # emptiness scoped to a fresh EHR (Request.md ehr_id scope)
+  templates: [cnf.opt.minimal_event]       # the second EHR's content needs its OPT provisioned
   ehr: { commits: none }                   # mints ${ehr_id} with zero commits
+data_sets: [cnf.composition.minimal_event.v1]
 flow:
-  - step: 1
+  - step: 1                                # a SECOND EHR, so the zero-row answer has something to exclude
+    call: I_EHR_SERVICE.create_ehr
+    expect: created
+    capture: { second_ehr_id: created.ehr_id }
+  - step: 2                                # content in the second EHR — an unscoped answer would carry it
+    call: I_EHR_COMPOSITION.create_composition
+    with: { ehr_id: "${second_ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+  - step: 3
     call: execute_ad_hoc_query
     with:
       ehr_id: "${ehr_id}"                  # single-EHR execution context

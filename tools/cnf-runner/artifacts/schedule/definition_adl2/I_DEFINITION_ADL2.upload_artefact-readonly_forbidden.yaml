@@ -36,8 +36,6 @@ spec_refs:
   - "SM openehr_platform master02-overview §Functional Style"
   - "ITS-REST overview Requests_and_responses (HTTP status codes: 403 — forbidden)"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "addresses the ixit `readonly` instance — a party that declares no read-only principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
 requires: { server: any }
 data_sets: [cnf.adl2.opt.minimal]
 flow:

@@ -366,6 +366,24 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
                                       (`FERROEHR__QUERY__TIMEOUT_MS`); with no \
                                       budget configured only the global request \
                                       timeout applies.",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime \
+                                      specification-generation selection. A \
+                                      whole-object projection (`SELECT c FROM \
+                                      EHR e CONTAINS COMPOSITION c`) serves a \
+                                      stored version BODY, so it takes the \
+                                      same generation gate the version reads \
+                                      take: under `spec_profile = \"stable\"` \
+                                      a projected version the released \
+                                      generations cannot express refuses the \
+                                      query — never elided from the rows, \
+                                      never down-converted — naming the \
+                                      version and the remedy. Leaf/scalar \
+                                      projections over the same rows serve \
+                                      data values rather than version bodies \
+                                      and are NOT gated. Unreachable under the \
+                                      default `development` profile.",
          body = serde_json::Value)
     )
 )]
@@ -648,6 +666,24 @@ pub(crate) async fn query_execute_adhoc_query(
                                       Media Type`\"). The released operation \
                                       does not enumerate `415`; the MUST is \
                                       cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime \
+                                      specification-generation selection. A \
+                                      whole-object projection (`SELECT c FROM \
+                                      EHR e CONTAINS COMPOSITION c`) serves a \
+                                      stored version BODY, so it takes the \
+                                      same generation gate the version reads \
+                                      take: under `spec_profile = \"stable\"` \
+                                      a projected version the released \
+                                      generations cannot express refuses the \
+                                      query — never elided from the rows, \
+                                      never down-converted — naming the \
+                                      version and the remedy. Leaf/scalar \
+                                      projections over the same rows serve \
+                                      data values rather than version bodies \
+                                      and are NOT gated. Unreachable under the \
+                                      default `development` profile.",
          body = serde_json::Value)
     )
 )]
@@ -914,6 +950,24 @@ pub(crate) async fn query_execute_adhoc_query_body(
                                       `specifications/responses/408_Query.yaml`) \
                                       — here the configured per-query execution \
                                       budget (`FERROEHR__QUERY__TIMEOUT_MS`).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime \
+                                      specification-generation selection. A \
+                                      whole-object projection (`SELECT c FROM \
+                                      EHR e CONTAINS COMPOSITION c`) serves a \
+                                      stored version BODY, so it takes the \
+                                      same generation gate the version reads \
+                                      take: under `spec_profile = \"stable\"` \
+                                      a projected version the released \
+                                      generations cannot express refuses the \
+                                      query — never elided from the rows, \
+                                      never down-converted — naming the \
+                                      version and the remedy. Leaf/scalar \
+                                      projections over the same rows serve \
+                                      data values rather than version bodies \
+                                      and are NOT gated. Unreachable under the \
+                                      default `development` profile.",
          body = serde_json::Value)
     )
 )]
@@ -1212,6 +1266,24 @@ pub(crate) async fn query_execute_stored_query(
                                       payload as JSON format, it MUST respond \
                                       with HTTP status code `415 Unsupported \
                                       Media Type`\").",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime \
+                                      specification-generation selection. A \
+                                      whole-object projection (`SELECT c FROM \
+                                      EHR e CONTAINS COMPOSITION c`) serves a \
+                                      stored version BODY, so it takes the \
+                                      same generation gate the version reads \
+                                      take: under `spec_profile = \"stable\"` \
+                                      a projected version the released \
+                                      generations cannot express refuses the \
+                                      query — never elided from the rows, \
+                                      never down-converted — naming the \
+                                      version and the remedy. Leaf/scalar \
+                                      projections over the same rows serve \
+                                      data values rather than version bodies \
+                                      and are NOT gated. Unreachable under the \
+                                      default `development` profile.",
          body = serde_json::Value)
     )
 )]
@@ -1490,6 +1562,24 @@ pub(crate) async fn query_execute_stored_query_body(
                                       `specifications/responses/408_Query.yaml`) \
                                       — here the configured per-query execution \
                                       budget (`FERROEHR__QUERY__TIMEOUT_MS`).",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime \
+                                      specification-generation selection. A \
+                                      whole-object projection (`SELECT c FROM \
+                                      EHR e CONTAINS COMPOSITION c`) serves a \
+                                      stored version BODY, so it takes the \
+                                      same generation gate the version reads \
+                                      take: under `spec_profile = \"stable\"` \
+                                      a projected version the released \
+                                      generations cannot express refuses the \
+                                      query — never elided from the rows, \
+                                      never down-converted — naming the \
+                                      version and the remedy. Leaf/scalar \
+                                      projections over the same rows serve \
+                                      data values rather than version bodies \
+                                      and are NOT gated. Unreachable under the \
+                                      default `development` profile.",
          body = serde_json::Value)
     )
 )]
@@ -1806,6 +1896,24 @@ pub(crate) async fn query_execute_stored_query_version(
                                       payload as JSON format, it MUST respond \
                                       with HTTP status code `415 Unsupported \
                                       Media Type`\").",
+         body = serde_json::Value),
+        (status = 409, description = "OUR OWN EXTENSION — no openEHR spec \
+                                      governs runtime \
+                                      specification-generation selection. A \
+                                      whole-object projection (`SELECT c FROM \
+                                      EHR e CONTAINS COMPOSITION c`) serves a \
+                                      stored version BODY, so it takes the \
+                                      same generation gate the version reads \
+                                      take: under `spec_profile = \"stable\"` \
+                                      a projected version the released \
+                                      generations cannot express refuses the \
+                                      query — never elided from the rows, \
+                                      never down-converted — naming the \
+                                      version and the remedy. Leaf/scalar \
+                                      projections over the same rows serve \
+                                      data values rather than version bodies \
+                                      and are NOT gated. Unreachable under the \
+                                      default `development` profile.",
          body = serde_json::Value)
     )
 )]

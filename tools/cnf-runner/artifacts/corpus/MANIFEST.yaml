@@ -98,6 +98,12 @@ cnf.composition.dv_text_in_content:
     defect: "a DV_TEXT member inside COMPOSITION.content — the slot is declared List<CONTENT_ITEM>, and a DV_TEXT is not a CONTENT_ITEM"
     spec_ref: "RM ehr master05-composition_package (COMPOSITION content: List<CONTENT_ITEM>); overview Requests_and_responses §HTTP status codes, the 400 row"
   provenance: "authored 2026-08-03 from minimal_event — the declared-slot-type invalid twin (#1655): typed construction refuses the foreign member at parse (the 400 class per the owner ruling 2026-08-03)"
+cnf.composition.generic_entry_dev_surface:
+  source: fixtures/composition/generic_entry_dev_surface.json
+  format: canonical-json
+  rm_versions: [">=1.2.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-14 (#2383) as the development-generation-only carrier for the spec-profile cases: a bare-RM COMPOSITION whose one content item is a GENERIC_ENTRY (RM integration master02 — content is List<CONTENT_ITEM> and GENERIC_ENTRY is a CONTENT_ITEM) carrying data as a CLUSTER, the SPECRM-18 retype only the development RM generation declares (RM 1.1.0 types GENERIC_ENTRY.data ITEM_TREE), so the released generation set cannot express the stored body while the development set commits and serves it. No archetype_details.template_id on purpose: the carrier is bare-RM so template validation stays out of the behaviour under test"
 cnf.composition.minimal_event.comma_fraction:
   source: fixtures/composition/minimal_event.comma_fraction.json
   format: canonical-json

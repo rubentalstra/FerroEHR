@@ -1,0 +1,76 @@
+# ONE behaviour: an AQL WHOLE-OBJECT projection reaching a stored version body
+# the RELEASED (stable) generation set cannot express refuses the WHOLE query
+# 409 — never a row silently elided from the RESULT_SET — while a LEAF
+# projection over the identical rows still answers, because it serves data
+# values rather than version bodies. The resource-read refusal twin is
+# I_EHR_COMPOSITION.get_composition_at_version-spec_profile_dev_body_stable_409.
+#
+# Ground. Register AMB-210 fixes the handling (no released text governs
+# runtime generation-set selection — our own design/extension): a whole-object
+# projection serves stored version bodies, so it takes the same 409 the
+# version reads take (RFC 9110 §15.5.10); the refusal is the whole query
+# because the RESULT_SET (SM UML result_set.adoc; ITS-REST
+# specifications/responses/200_Query.yaml) is columns and rows of values with
+# no per-row diagnostic channel that could explain a dropped row. The leaf
+# branch stays ungated: it serves values over paths the planning gate already
+# bounded to the released generation's declared surface.
+#
+# The two instances share one repository (docker/sut-spec-stable.yml): the
+# development server commits the SPECRM-18 GENERIC_ENTRY carrier, the stable
+# server answers the queries. A party running no such topology declares no
+# `sut_stable` and the case is not-applicable with the citation.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-spec_profile_whole_object_409
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic]
+exercises: [QueryApi, Versioning]
+profiles: [STANDARD]
+ambiguities: [AMB-210]
+test_purpose: >-
+  A whole-object AQL projection over a version body only the development
+  generation set expresses refuses the whole query 409 on the stable
+  deployment, while a leaf projection over the identical rows answers its
+  value rows normally.
+description: "Whole-object AQL projection over a development-only body is a 409 under the stable generation set"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "QUERY AQL §SELECT, §FROM"
+  - "ITS-REST query §200_Query (RESULT_SET — columns and rows of values, no per-row diagnostic channel)"
+  - "RM common §change_control (master06 — a stored version is served verbatim, never rewritten)"
+applies: { rm: ">=1.2.0", aql: ">=1.1" }
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id} (on the default instance; the repository is shared)
+  instances:
+    sut: { spec_profile: development }   # the set that can commit the body
+    sut_stable: { spec_profile: stable } # the set that must refuse the projection
+data_sets: [cnf.composition.generic_entry_dev_surface]
+flow:
+  - step: 1                              # precondition: the development server commits the body
+    call: I_EHR_COMPOSITION.create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.generic_entry_dev_surface}" }
+    expect: created
+  - step: 2                              # whole-object projection: the stable server refuses the query
+    call: execute_ad_hoc_query
+    on: sut_stable
+    with:
+      ehr_id: "${ehr_id}"                # single-EHR execution context
+      q: "SELECT c FROM EHR e[ehr_id/value='${ehr_id}'] CONTAINS COMPOSITION c"
+      fetch: 100                          # fetch always explicit
+    expect: conflict
+    assert:
+      # AMB-210 fixed handling: the refusal names the profile and the remedy
+      - { assert: returns, matches: 'spec_profile' }
+  - step: 3                              # leaf projection over the same rows: values, not bodies — ungated
+    call: execute_ad_hoc_query
+    on: sut_stable
+    with:
+      ehr_id: "${ehr_id}"
+      q: "SELECT c/name/value FROM EHR e[ehr_id/value='${ehr_id}'] CONTAINS COMPOSITION c"
+      fetch: 100
+    expect: ok
+    assert:
+      - assert: result_set
+        match: count
+        count: 1                          # the committed carrier's one row

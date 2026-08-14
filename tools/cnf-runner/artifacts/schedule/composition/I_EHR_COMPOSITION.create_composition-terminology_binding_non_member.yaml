@@ -38,8 +38,6 @@ spec_refs:
   - "AM AOM1.4 §Reference Objects"
   - "ITS-REST ehr §422_Composition"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the party declares no terminology posture — the bound value set is resolved by an external terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses whether one is wired up"
 requires:
   server: any
   templates: [cnf.tpl.dv_coded_text_binding_sct]

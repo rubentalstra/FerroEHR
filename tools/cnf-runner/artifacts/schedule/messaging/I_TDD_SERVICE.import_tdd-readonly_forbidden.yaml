@@ -30,7 +30,6 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the /message/tdd/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-tdd) and adjudicated by register AMB-34. The row gates the Tds CAPABILITY verdict only, never ITS-REST wire conformance"
-  - "addresses the ixit `readonly` instance — a party that declares no read-only principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
 requires:
   ehr: { commits: none }                   # mints ${ehr_id} — a real target, so the refusal cannot be a 404 in disguise
   templates: [cnf.opt.minimal_persistent]  # …and a provisioned template, likewise

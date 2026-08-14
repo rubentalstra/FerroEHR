@@ -213,6 +213,13 @@
                 }
               }
             }
+          },
+          "spec_profile": {
+            "description": "THIS instance's openEHR specification generation set, when it differs from the party default. One running deployment implements exactly one set, so a party claiming both runs two deployments and declares each one's set on its own instance — the same law the `signing` and `terminology` blocks follow. Absent => the top-level `spec_profile` applies.",
+            "enum": [
+              "stable",
+              "development"
+            ]
           }
         }
       }
@@ -377,6 +384,13 @@
           }
         }
       }
+    },
+    "spec_profile": {
+      "description": "The party's DEFAULT openEHR specification generation set: `stable` = the latest RELEASED generations, `development` = the development generations, which admit surface no release defines yet. Declared here because no released operation discloses which set a deployment runs (the openEHR release strategy makes a minor release a compatible superset, so the sets differ only in accepted surface); absent => every case whose expectation rests on a generation set is not-applicable with that citation. An instance may override it.",
+      "enum": [
+        "stable",
+        "development"
+      ]
     },
     "smart": {
       "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",

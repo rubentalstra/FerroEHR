@@ -31,4 +31,9 @@ outcomes:
       Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   ok_empty: { status: 204 }               # deleted at requested time (composition_get.yaml)
   not_found: { status: 404 }
+  # NOTE: register AMB-210 — no openEHR spec governs runtime generation-set
+  # selection (our own design/extension); a stored version body the active
+  # `spec_profile` cannot express is refused 409 (RFC 9110 §15.5.10), never
+  # served or down-converted.
+  conflict: { status: 409 }
 server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks

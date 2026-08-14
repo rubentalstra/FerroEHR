@@ -40,7 +40,6 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the ADL 2 archetype/artefact routes (/definition/archetype/adl2*, /definition/artefact/adl2*); our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-37. The row gates the Adl2ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
-  - "addresses the ixit `readonly` instance — a party that declares no read-only principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
 requires: { server: any }
 flow:
   - step: 1

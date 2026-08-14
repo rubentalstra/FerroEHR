@@ -614,6 +614,54 @@ fn a_guard_restating_capability_scoping_fails_validate() {
     );
 }
 
+/// A guard may not restate the undeclared-INSTANCE selection rule either
+/// (#2389): the typed shape is the flow's own `on:` addressing, and the
+/// runner excuses a case addressing an instance the party does not declare —
+/// once, globally, with the citation.
+#[test]
+fn a_guard_restating_instance_scoping_fails_validate() {
+    let world = World::new();
+    world.edit(
+        "artifacts/schedule/security/SIG-VERSION-verifiable-pgp.yaml",
+        |text| {
+            text.replace(
+                "applies: { rm: \">=1.0.2\" }",
+                "applies: { rm: \">=1.0.2\" }\nguards:\n  - \"not-applicable when the party \
+                 declares no openPGP-posture instance (`sut_pgp`) — RM common §change_control \
+                 Digital Signature\"",
+            )
+        },
+    );
+    assert_gate(
+        &world.findings(),
+        "guard-scope",
+        "restates the undeclared-instance selection rule for `sut_pgp`",
+    );
+}
+
+/// …and neither may it restate a declared `requires.terminology` block — the
+/// requirement shape of the same disease.
+#[test]
+fn a_guard_restating_a_terminology_requirement_fails_validate() {
+    let world = World::new();
+    world.edit(
+        "artifacts/schedule/composition/I_EHR_COMPOSITION.create_composition-terminology_binding_member.yaml",
+        |text| {
+            text.replace(
+                "applies: { rm: \">=1.0.2\" }",
+                "applies: { rm: \">=1.0.2\" }\nguards:\n  - \"not-applicable when the party \
+                 declares no terminology posture — BASE architecture_overview §Terminology in \
+                 openEHR\"",
+            )
+        },
+    );
+    assert_gate(
+        &world.findings(),
+        "guard-scope",
+        "restates the terminology selection rule",
+    );
+}
+
 /// …and a guard scoped to a capability the case does NOT gate states a rule
 /// nothing implements — the shape #2378 was opened on.
 #[test]

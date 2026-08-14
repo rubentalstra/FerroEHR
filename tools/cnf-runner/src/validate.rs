@@ -462,10 +462,70 @@ fn check_guard_scope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
         "when the sut declares no",
         "when the sut does not",
     ];
+    // The DECLARATION-ABSENCE phrasings the instance/requirement shapes key
+    // on: a guard saying the party "declares no X" restates a selection the
+    // runner already decides from the case's own typed shape (`on:`
+    // addressing, `requires.terminology`, `requires.spec_profile`).
+    let declaration_phrases = ["declares no", "does not declare", "declaring no"];
     for (path, case) in &set.cases {
         let who = path.display().to_string();
         for guard in &case.guards {
             let lowered = guard.to_lowercase();
+            if declaration_phrases.iter().any(|p| lowered.contains(p)) {
+                // The INSTANCE shape (#2378's sibling, #2389): the typed shape
+                // is the flow's own `on:` addressing — `run.rs` excuses a case
+                // addressing an instance the party does not declare, with the
+                // citation, once and globally.
+                for name in crate::run::addressed_instances(case) {
+                    if mentions_word(guard, name.as_str()) {
+                        push(
+                            findings,
+                            CheckId::GuardScope,
+                            &who,
+                            format!(
+                                "guard {guard:?} restates the undeclared-instance selection \
+                                 rule for `{name}`, which the runner implements globally from \
+                                 the flow's own `on:` addressing — drop the guard and keep any \
+                                 spec citation in spec_refs"
+                            ),
+                        );
+                    }
+                }
+                // The REQUIREMENT shapes: `requires.terminology` and
+                // `requires.spec_profile` are matched at selection time by the
+                // same law, so a prose copy on a case that declares the typed
+                // block restates an implemented rule.
+                if case.requires.terminology.is_some() && lowered.contains("terminology") {
+                    push(
+                        findings,
+                        CheckId::GuardScope,
+                        &who,
+                        format!(
+                            "guard {guard:?} restates the terminology selection rule the \
+                             runner implements from this case's own `requires.terminology` — \
+                             drop the guard and keep any spec citation in spec_refs"
+                        ),
+                    );
+                }
+                let requires_profile = case.requires.spec_profile.is_some()
+                    || case
+                        .requires
+                        .instances
+                        .as_ref()
+                        .is_some_and(|map| map.values().any(|r| r.spec_profile.is_some()));
+                if requires_profile && lowered.contains("spec_profile") {
+                    push(
+                        findings,
+                        CheckId::GuardScope,
+                        &who,
+                        format!(
+                            "guard {guard:?} restates the generation-set selection rule the \
+                             runner implements from this case's own `requires.spec_profile` — \
+                             drop the guard and keep any spec citation in spec_refs"
+                        ),
+                    );
+                }
+            }
             if !scoping_phrases.iter().any(|p| lowered.contains(p)) {
                 continue;
             }

@@ -161,9 +161,11 @@ impl VersionRead {
 /// refusal, never a body served under a generation set that does not define
 /// it. The gate sits here rather than per handler precisely because every
 /// served kind (COMPOSITION / `EHR_STATUS` / `EHR_ACCESS` / FOLDER / the
-/// demographic parties) reaches the wire through this function. It does NOT
-/// cover AQL: the query engine reads `node` rows directly and has its own
-/// profile gate at planning time.
+/// demographic parties) reaches the wire through this function. AQL does not
+/// pass through here — the query engine reads `node` rows directly — so it
+/// carries the same gate twice over: on the query text at planning time
+/// ([`crate::aql::analyze`]) and on every projected version body at result
+/// assembly (`crate::versioning::profile::gate_result_bodies`).
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when an imported row's stored wrapped
