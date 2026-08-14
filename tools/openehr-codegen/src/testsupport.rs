@@ -583,6 +583,12 @@ pub struct Mirror {
     pub augmented_path: Option<String>,
 }
 
+/// One generation's declared model as `CLASS` → attribute name → signature.
+///
+/// The signature is [`attribute_signature`]'s canonical text, so a comparison
+/// over this map sees an attribute's TYPE and CARDINALITY, not only its name.
+pub type GenerationAttributeMap = BTreeMap<String, BTreeMap<String, String>>;
+
 /// The model delta between two generations of one crate, in BOTH directions.
 #[derive(Debug, Clone)]
 pub struct GenerationDelta {
@@ -596,14 +602,138 @@ pub struct GenerationDelta {
     /// `CLASS.attribute` pairs the older generation declares on classes both
     /// generations share, absent from the newer.
     pub attributes_removed: Vec<String>,
+    /// Attributes both generations declare on a shared class whose SIGNATURE
+    /// differs, as `CLASS.attribute: <older> -> <newer>`.
+    ///
+    /// The retype class an existence comparison cannot see —
+    /// `GENERIC_ENTRY.data: ITEM_TREE -> ITEM` (SPECRM-18) is one member.
+    pub attributes_changed: Vec<String>,
+}
+
+/// The canonical signature of one declared BMM property: its shape, its type,
+/// its existence and (for a container) its cardinality.
+///
+/// Rendered as `[?]<type>` for a single property and
+/// `[?]<container><item> [lower..upper]` for a container one, where a leading
+/// `?` marks an optional (`0..1`) property. Examples: `ITEM_TREE`,
+/// `?DV_TEXT`, `List<LINK> [0..*]`, `?Hash<String,String>`.
+#[must_use]
+fn attribute_signature(property: &crate::load::bmm::BmmProperty) -> String {
+    let existence = if property.is_mandatory { "" } else { "?" };
+    match &property.kind {
+        crate::load::bmm::BmmPropKind::Single(t) => format!("{existence}{}", type_text(t)),
+        crate::load::bmm::BmmPropKind::Container {
+            container_type,
+            item,
+            cardinality,
+        } => {
+            let bounds = cardinality.as_ref().map_or_else(
+                || " [unstated]".to_owned(),
+                |c| {
+                    let upper = c.upper.map_or_else(|| "*".to_owned(), |u| u.to_string());
+                    format!(" [{}..{upper}]", c.lower)
+                },
+            );
+            format!("{existence}{container_type}<{}>{bounds}", type_text(item))
+        }
+    }
+}
+
+/// A BMM type reference as text (`DV_INTERVAL<DV_QUANTITY>`).
+fn type_text(t: &crate::load::bmm::BmmType) -> String {
+    match t {
+        crate::load::bmm::BmmType::Simple(name) => name.clone(),
+        crate::load::bmm::BmmType::Generic { root, params } => {
+            let args: Vec<String> = params.iter().map(type_text).collect();
+            format!("{root}<{}>", args.join(","))
+        }
+    }
+}
+
+/// The declared attribute signatures of one generation of crate `key`.
+///
+/// Multi-unit generations fold their units' class maps last-wins (the
+/// crate-level naming view).
+///
+/// # Errors
+/// Returns an error if the composition or the generation fails to load.
+pub fn generation_attribute_map(key: &str, module: &str) -> Result<GenerationAttributeMap, Error> {
+    let c = compose(key)?;
+    let g = find_generation(&c, module)?;
+    let mut out = GenerationAttributeMap::new();
+    for u in &g.units {
+        for (name, class) in &u.schema.classes {
+            out.insert(
+                name.clone(),
+                class
+                    .properties
+                    .iter()
+                    .map(|p| (p.name.clone(), attribute_signature(p)))
+                    .collect(),
+            );
+        }
+    }
+    Ok(out)
+}
+
+/// Computes the model delta between two loaded generation maps.
+///
+/// The pure half of [`generation_attribute_delta`], so a mutation can be
+/// injected into a scratch model and the comparison exercised without
+/// re-vendoring a BMM.
+#[must_use]
+pub fn attribute_delta(
+    older: &GenerationAttributeMap,
+    newer: &GenerationAttributeMap,
+) -> GenerationDelta {
+    let classes_added: Vec<String> = newer
+        .keys()
+        .filter(|k| !older.contains_key(*k))
+        .cloned()
+        .collect();
+    let classes_removed: Vec<String> = older
+        .keys()
+        .filter(|k| !newer.contains_key(*k))
+        .cloned()
+        .collect();
+    let mut attributes_added = Vec::new();
+    let mut attributes_removed = Vec::new();
+    let mut attributes_changed = Vec::new();
+    for (class, new_attrs) in newer {
+        let Some(old_attrs) = older.get(class) else {
+            continue;
+        };
+        for (name, new_signature) in new_attrs {
+            match old_attrs.get(name) {
+                None => attributes_added.push(format!("{class}.{name}")),
+                Some(old_signature) if old_signature != new_signature => attributes_changed.push(
+                    format!("{class}.{name}: {old_signature} -> {new_signature}"),
+                ),
+                Some(_) => {}
+            }
+        }
+        for name in old_attrs.keys() {
+            if !new_attrs.contains_key(name) {
+                attributes_removed.push(format!("{class}.{name}"));
+            }
+        }
+    }
+    GenerationDelta {
+        classes_added,
+        attributes_added,
+        classes_removed,
+        attributes_removed,
+        attributes_changed,
+    }
 }
 
 /// Compute the model delta from generation `older` to `newer` of crate
 /// `key` — the acceptance-boundary ledger's input (#1943; the REMOVED
-/// direction #1961).
+/// direction #1961; the RETYPE direction #2382).
 ///
-/// Multi-unit generations fold their units' class maps last-wins before
-/// comparison (the crate-level naming view).
+/// The comparison is over attribute SIGNATURES ([`attribute_signature`]), so a
+/// changed type, existence or container cardinality lands in
+/// [`GenerationDelta::attributes_changed`] instead of passing as unchanged.
 ///
 /// # Errors
 /// Returns an error if the composition or either generation fails to load.
@@ -612,50 +742,10 @@ pub fn generation_attribute_delta(
     older: &str,
     newer: &str,
 ) -> Result<GenerationDelta, Error> {
-    let c = compose(key)?;
-    let classes = |module: &str| -> Result<BTreeMap<String, BTreeSet<String>>, Error> {
-        let g = find_generation(&c, module)?;
-        let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-        for u in &g.units {
-            for (name, class) in &u.schema.classes {
-                out.insert(
-                    name.clone(),
-                    class.properties.iter().map(|p| p.name.clone()).collect(),
-                );
-            }
-        }
-        Ok(out)
-    };
-    let old_map = classes(older)?;
-    let new_map = classes(newer)?;
-    let classes_added: Vec<String> = new_map
-        .keys()
-        .filter(|k| !old_map.contains_key(*k))
-        .cloned()
-        .collect();
-    let classes_removed: Vec<String> = old_map
-        .keys()
-        .filter(|k| !new_map.contains_key(*k))
-        .cloned()
-        .collect();
-    let mut attributes_added = Vec::new();
-    let mut attributes_removed = Vec::new();
-    for (class, new_attrs) in &new_map {
-        if let Some(old_attrs) = old_map.get(class) {
-            for a in new_attrs.difference(old_attrs) {
-                attributes_added.push(format!("{class}.{a}"));
-            }
-            for a in old_attrs.difference(new_attrs) {
-                attributes_removed.push(format!("{class}.{a}"));
-            }
-        }
-    }
-    Ok(GenerationDelta {
-        classes_added,
-        attributes_added,
-        classes_removed,
-        attributes_removed,
-    })
+    Ok(attribute_delta(
+        &generation_attribute_map(key, older)?,
+        &generation_attribute_map(key, newer)?,
+    ))
 }
 
 /// Find one generation of a composed crate by its module name.

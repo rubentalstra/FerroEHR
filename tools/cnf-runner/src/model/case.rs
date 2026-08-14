@@ -707,6 +707,11 @@ pub struct CaseCore {
     pub applies: Applies,
     /// Non-version run conditions, each spec-cited; a failed guard ⇒
     /// `not-applicable` with citation.
+    ///
+    /// Prose, for the conditions no runner rule expresses. A condition the
+    /// runner already decides structurally is never restated here — capability
+    /// scoping is [`CaseCore::capabilities`] alone, and the `guard-scope`
+    /// validate gate refuses a guard that states it.
     #[serde(default)]
     pub guards: Vec<String>,
     /// The verdict-bearing capability names — kept MINIMAL (a case failure

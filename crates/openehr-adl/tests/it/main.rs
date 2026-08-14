@@ -28,6 +28,7 @@ mod ckm_archetype_packs;
 mod ckm_conversion_breadth;
 mod corpus_coverage;
 mod corpus_definition_parse;
+mod corpus_definition_structure;
 mod corpus_lex;
 mod corpus_outer_parse;
 mod corpus_roundtrip;

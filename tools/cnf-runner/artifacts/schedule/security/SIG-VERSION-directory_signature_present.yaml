@@ -26,8 +26,6 @@ spec_refs:
   - "RM common §change_control (Digital Signature: each Version of any logical item)"
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 applies: { rm: ">=1.0.2" }
-guards:
-  - "not-applicable when the SUT declares no Signing capability — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 ambiguities: [AMB-24]
 requires:
   server: any

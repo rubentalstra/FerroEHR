@@ -29,8 +29,6 @@ spec_refs:
   - "QUERY AQL §TERMINOLOGY"
   - "ITS-REST query §400_Query"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
-guards:
-  - "AqlTerminology (OPTIONS): terminology-backed AQL — QUERY Aql master03 §TERMINOLOGY; not-applicable when the SUT declares no terminology support"
 parameters:
   iteration: reset_per_row
   fixture_set:

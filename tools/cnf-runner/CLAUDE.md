@@ -173,6 +173,27 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   an instance the party does not declare is not-applicable with the citation
   at SELECTION time (`run.rs`), never a drive-time transport error, and case
   preconditions provision on the deployment the flow addresses.
+- **A selection rule the runner implements is never ALSO written as prose**
+  (`guards:`). Capability scoping is the typed shape: a case gating only
+  capabilities the ICS does not claim is not-applicable with its citation,
+  decided once in `run.rs` from the case's own `capabilities:` list, and the
+  `guard-scope` gate refuses a guard that restates it — a per-case
+  restatement is free to drift from the implemented rule with nothing to
+  catch it, and one scoped to a capability the case does not gate states a
+  rule nothing implements (issue #2378). Prose guards stay legal for the
+  conditions no rule expresses, and the boundary is published on the
+  `guards` property of the case-core schema.
+- **A party STATEMENT publishes only what THAT party declares.** The
+  `served_extensions` axis of `vocab/wire_surface.yaml` carries the routes
+  and configuration gate of each extension family; which families a party
+  serves is the party's own `statement.served_extensions` declaration, and
+  the `SDoC` renders exactly that (a party declaring none says so). A route
+  family is one product's own design — publishing the catalogue's table in
+  every statement made a false claim about other vendors (issue #2377). The
+  derived party documents regenerate FROM the committed statement + results
+  + catalogue (`scripts/render/conformance-docs.sh`, CI regenerate-and-diff
+  guarded like the SVGs), so a catalogue change cannot leave a published
+  document stale.
 - **Cases speak SM + outcome kinds only** — nothing wire-level (no HTTP
   status, header, or media type) in a case core; wire lives in per-ITS
   operation bindings, each mapping cited to its source under the oracle
