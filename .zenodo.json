@@ -1,250 +1,103 @@
 {
-  "access": {
-    "record": "public",
-    "files": "public"
-  },
-  "custom_fields": {
-    "code:codeRepository": "https://github.com/rubentalstra/FerroEHR",
-    "code:programmingLanguage": [
-      {
-        "id": "rust",
-        "title": {
-          "en": "Rust"
-        }
-      },
-      {
-        "id": "sql",
-        "title": {
-          "en": "SQL"
-        }
-      }
-    ],
-    "code:developmentStatus": {
-      "id": "active",
-      "title": {
-        "en": "Active"
-      }
+  "upload_type": "software",
+  "access_right": "open",
+  "language": "eng",
+  "title": "FerroEHR",
+  "description": "<p>A pure-Rust, openEHR-specification-conformant clinical data repository (CDR): ITS-REST 1.1.0 REST API, AQL 1.1 query language, and the openEHR RM 1.2.0 reference model on PostgreSQL-18-native storage. The openEHR specification layer is generated from the official machine-readable specifications, and conformance is machine-verified per release by a built-in CNF conformance runner.</p>",
+  "publication_date": "2026-08-15",
+  "version": "3.17.6",
+  "creators": [
+    {
+      "name": "Talstra, Ruben",
+      "orcid": "0009-0009-2758-0141"
     }
-  },
-  "metadata": {
-    "resource_type": {
-      "id": "software"
+  ],
+  "license": "mit",
+  "keywords": [
+    "openEHR",
+    "clinical data repository",
+    "CDR",
+    "electronic health records",
+    "EHR",
+    "AQL",
+    "health informatics",
+    "healthcare interoperability",
+    "ITS-REST",
+    "Rust",
+    "PostgreSQL"
+  ],
+  "references": [
+    "openEHR Reference Model (RM) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/RM/Release-1.1.0",
+    "openEHR Archetype Query Language (AQL), QUERY Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/QUERY/Release-1.1.0",
+    "openEHR REST API (ITS-REST) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0",
+    "openEHR Archetype Model (AM) Release 2.3.0. openEHR International. https://specifications.openehr.org/releases/AM/Release-2.3.0"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://ferroehr.eu/",
+      "relation": "isDocumentedBy",
+      "resource_type": "publication-softwaredocumentation"
     },
-    "title": "FerroEHR",
-    "description": "<p>A pure-Rust, openEHR-specification-conformant clinical data repository (CDR): ITS-REST 1.1.0 REST API, AQL 1.1 query language, and the openEHR RM 1.2.0 reference model on PostgreSQL-18-native storage. The openEHR specification layer is generated from the official machine-readable specifications, and conformance is machine-verified per release by a built-in CNF conformance runner.</p>",
-    "publication_date": "2026-08-15",
-    "version": "3.17.6",
-    "creators": [
-      {
-        "person_or_org": {
-          "type": "personal",
-          "given_name": "Ruben",
-          "family_name": "Talstra",
-          "name": "Talstra, Ruben",
-          "identifiers": [
-            {
-              "scheme": "orcid",
-              "identifier": "0009-0009-2758-0141"
-            }
-          ]
-        }
-      }
-    ],
-    "languages": [
-      {
-        "id": "eng",
-        "title": {
-          "en": "English"
-        }
-      }
-    ],
-    "rights": [
-      {
-        "id": "mit"
-      }
-    ],
-    "subjects": [
-      {
-        "subject": "openEHR"
-      },
-      {
-        "subject": "clinical data repository"
-      },
-      {
-        "subject": "CDR"
-      },
-      {
-        "subject": "electronic health records"
-      },
-      {
-        "subject": "EHR"
-      },
-      {
-        "subject": "AQL"
-      },
-      {
-        "subject": "health informatics"
-      },
-      {
-        "subject": "healthcare interoperability"
-      },
-      {
-        "subject": "ITS-REST"
-      },
-      {
-        "subject": "Rust"
-      },
-      {
-        "subject": "PostgreSQL"
-      }
-    ],
-    "references": [
-      {
-        "reference": "openEHR Reference Model (RM) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/RM/Release-1.1.0"
-      },
-      {
-        "reference": "openEHR Archetype Query Language (AQL), QUERY Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/QUERY/Release-1.1.0"
-      },
-      {
-        "reference": "openEHR REST API (ITS-REST) Release 1.1.0. openEHR International. https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0"
-      },
-      {
-        "reference": "openEHR Archetype Model (AM) Release 2.3.0. openEHR International. https://specifications.openehr.org/releases/AM/Release-2.3.0"
-      }
-    ],
-    "related_identifiers": [
-      {
-        "identifier": "https://ferroehr.eu/",
-        "scheme": "url",
-        "relation_type": {
-          "id": "isdocumentedby"
-        },
-        "resource_type": {
-          "id": "publication-softwaredocumentation"
-        }
-      },
-      {
-        "identifier": "https://specifications.openehr.org/releases/RM/Release-1.1.0",
-        "scheme": "url",
-        "relation_type": {
-          "id": "isderivedfrom"
-        }
-      },
-      {
-        "identifier": "https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0",
-        "scheme": "url",
-        "relation_type": {
-          "id": "isderivedfrom"
-        }
-      },
-      {
-        "identifier": "https://specifications.openehr.org/releases/QUERY/Release-1.1.0",
-        "scheme": "url",
-        "relation_type": {
-          "id": "isderivedfrom"
-        }
-      },
-      {
-        "identifier": "https://specifications.openehr.org/releases/AM/Release-2.3.0",
-        "scheme": "url",
-        "relation_type": {
-          "id": "isderivedfrom"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-base",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-rm",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-am",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-term",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-lang",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-query",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-its",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      },
-      {
-        "identifier": "https://crates.io/crates/openehr-adl",
-        "scheme": "url",
-        "relation_type": {
-          "id": "haspart"
-        },
-        "resource_type": {
-          "id": "software"
-        }
-      }
-    ],
-    "additional_descriptions": [
-      {
-        "type": {
-          "id": "technical-info"
-        },
-        "description": "<p>Implements the openEHR specifications at these pinned versions: Reference Model 1.2.0, BASE 1.3.0, Archetype Model 1.4.0 and 2.4.0, Terminology 3.1.0, AQL (QUERY) 1.1.0, ITS-REST 1.1.0 and ITS-XML. The specification layer is generated from the official machine-readable specifications rather than hand-written, and conformance is measured per release by a built-in openEHR CNF conformance runner whose results are committed alongside the source. Requires PostgreSQL 18.</p>"
-      },
-      {
-        "type": {
-          "id": "notes"
-        },
-        "description": "<p>Licensing: the recorded licence covers this project&rsquo;s own code. Vendored third-party material keeps its upstream terms &mdash; Apache-2.0 for the openEHR machine-readable artifacts and test corpora, CC-BY-SA-3.0 for the openEHR specification text and CKM-derived clinical models &mdash; each recorded in the PROVENANCE.md of the tree that carries it.</p>"
-      }
-    ]
-  }
+    {
+      "identifier": "https://github.com/rubentalstra/FerroEHR",
+      "relation": "isSupplementTo"
+    },
+    {
+      "identifier": "https://specifications.openehr.org/releases/RM/Release-1.1.0",
+      "relation": "isDerivedFrom"
+    },
+    {
+      "identifier": "https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0",
+      "relation": "isDerivedFrom"
+    },
+    {
+      "identifier": "https://specifications.openehr.org/releases/QUERY/Release-1.1.0",
+      "relation": "isDerivedFrom"
+    },
+    {
+      "identifier": "https://specifications.openehr.org/releases/AM/Release-2.3.0",
+      "relation": "isDerivedFrom"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-base",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-rm",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-am",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-term",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-lang",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-query",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-its",
+      "relation": "hasPart",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://crates.io/crates/openehr-adl",
+      "relation": "hasPart",
+      "resource_type": "software"
+    }
+  ],
+  "notes": "Implements the openEHR specifications at these pinned versions: Reference Model 1.2.0, BASE 1.3.0, Archetype Model 1.4.0 and 2.4.0, Terminology 3.1.0, AQL (QUERY) 1.1.0, ITS-REST 1.1.0 and ITS-XML. The specification layer is generated from the official machine-readable specifications rather than hand-written, and conformance is measured per release by a built-in openEHR CNF conformance runner whose results are committed alongside the source. Requires PostgreSQL 18. Licensing: the recorded licence covers this project's own code; vendored third-party material keeps its upstream terms — Apache-2.0 for the openEHR machine-readable artifacts and test corpora, CC-BY-SA-3.0 for the openEHR specification text and CKM-derived clinical models — each recorded in the PROVENANCE.md of the tree that carries it."
 }

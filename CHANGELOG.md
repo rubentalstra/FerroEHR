@@ -15,7 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-## [3.17.6] - 2026-08-15
+### Added
+
+- **Releases archive to Zenodo with a citable DOI.** Every release tag now
+  deposits a snapshot under the concept DOI
+  [10.5281/zenodo.21940279](https://doi.org/10.5281/zenodo.21940279) (the
+  README badge; it always resolves to the latest archived version — v3.17.6
+  is 10.5281/zenodo.21940280). The deposit metadata is generated from
+  `CITATION.cff` in the flat legacy shape Zenodo's GitHub integration
+  documents, after the first deposit demonstrably ignored the
+  InvenioRDM-record-shape file and archived raw repository metadata instead;
+  the concept DOI is recorded in `CITATION.cff` for citation managers.
 
 ### Security
 

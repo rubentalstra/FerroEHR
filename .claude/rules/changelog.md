@@ -67,15 +67,23 @@ optional:
   overwrite a published chart version. GitHub releases are immutable by the
   platform; container tags are immutable only because our lane enforces it.
 
-- **The tag does NOT produce an archived artifact — Zenodo is not connected.**
-  Measured after the v3.17.4 cut: the Zenodo API returned zero records for this
-  project while a control query returned results, so the absence is real and
-  not an indexing lag. This entry previously asserted the integration as fact,
-  which is exactly how a cut passes believing it archived something when it did
-  not. `.zenodo.json` is generated and valid, so the metadata half is ready and
-  only the connection is missing. Two properties govern it if it is ever
-  enabled: a deposit is IMMUTABLE, so the metadata is verified before the cut
-  and never after; and enabling it archives the NEXT release, never a past one.
+- **The tag DOES produce an archived artifact — Zenodo is connected**
+  (measured 2026-08-15: the v3.17.6 release archived as version DOI
+  10.5281/zenodo.21940280 under concept DOI 10.5281/zenodo.21940279, the
+  README badge's target). Two properties govern every cut: the deposit's
+  FILES freeze at publication (record METADATA stays owner-editable in the
+  Zenodo UI, files never), so `.zenodo.json` is verified before the tag and
+  never after; and the metadata file only counts if Zenodo actually reads
+  it — the v3.17.6 deposit IGNORED the then-committed InvenioRDM-record-shape
+  file and archived GitHub's raw repo metadata (the full contributor list as
+  creators), so `.zenodo.json` is rendered in the FLAT LEGACY DEPOSIT shape
+  the help page documents
+  (<https://help.zenodo.org/docs/github/describe-software/zenodo-json/>),
+  generated from `CITATION.cff` by `scripts/render/zenodo-json.sh` and
+  drift-checked by the `citation-guard` job. Whether a given deposit honoured
+  the file is confirmed on the published record (its creators/title must be
+  ours, not GitHub's), not assumed. The v3.17.6 record's own wrong metadata
+  is only correctable by the owner in the Zenodo UI.
 - **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section

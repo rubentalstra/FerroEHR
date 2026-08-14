@@ -20,6 +20,10 @@ authors:
     orcid: "https://orcid.org/0009-0009-2758-0141"
 repository-code: "https://github.com/rubentalstra/FerroEHR"
 url: "https://ferroehr.eu/"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21940279
+    description: "The concept DOI of the Zenodo software archive; resolves to the latest archived release."
 license: MIT
 keywords:
   - openEHR
