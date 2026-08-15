@@ -45,7 +45,18 @@ run_date() {
   local d
   d=$(TZ=UTC git log --follow --diff-filter=AM -1 --date=format-local:%Y-%m-%d \
     --format=%cd -- "$1/results.json" 2>/dev/null || true)
-  [ -n "$d" ] || d=$(TZ=UTC date -r "$1/results.json" +%Y-%m-%d)
+  if [ -z "$d" ]; then
+    # The mtime fallback exists ONLY for a local, not-yet-committed
+    # regeneration. Under CI an empty git log means a SHALLOW checkout, and
+    # the fallback would stamp the checkout day — which the drift gate then
+    # reads as a one-line date change (#2402, red on both tag runs). Fail
+    # naming the cause instead.
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+      echo "::error::run_date: git log found no commit for $1/results.json — a shallow checkout; give the job fetch-depth: 0" >&2
+      exit 1
+    fi
+    d=$(TZ=UTC date -r "$1/results.json" +%Y-%m-%d)
+  fi
   echo "$d"
 }
 rs_date=$(run_date "$RS")
