@@ -130,9 +130,32 @@ pub async fn sample_flamegraph_svg(
     }
 }
 
+/// The collapsed-stack lines pprof's own `flamegraph` feature folds a report
+/// into (`thread;outer;…;leaf count`), reproduced from pprof 0.15's
+/// `Report::flamegraph_with_options` over the report's public fields.
+///
+/// NOTE: #2406 — pprof's `flamegraph` feature pins `inferno ^0.11` (quick-xml
+/// 0.26, RUSTSEC-2026-0194/0195); folding here and rendering through the
+/// direct `inferno` 0.12 dependency keeps that pair out of the graph.
+fn folded_lines(report: &pprof::Report) -> Vec<String> {
+    report
+        .data
+        .iter()
+        .map(|(frames, count)| {
+            let mut segments = vec![frames.thread_name_or_id()];
+            for frame in frames.frames.iter().rev() {
+                for symbol in frame.iter().rev() {
+                    segments.push(symbol.to_string());
+                }
+            }
+            format!("{} {count}", segments.join(";"))
+        })
+        .collect()
+}
+
 /// The synchronous profiling session: guard → sleep out the window → report →
 /// SVG bytes. Runs entirely on one blocking-pool thread.
-fn run_sample(plan: SamplePlan) -> Result<Vec<u8>, pprof::Error> {
+fn run_sample(plan: SamplePlan) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
     let guard = pprof::ProfilerGuardBuilder::default()
         .frequency(plan.frequency)
         // Frames inside these libraries are unwind hazards pprof's own
@@ -143,7 +166,14 @@ fn run_sample(plan: SamplePlan) -> Result<Vec<u8>, pprof::Error> {
     std::thread::sleep(Duration::from_secs(u64::from(plan.seconds)));
     let report = guard.report().build()?;
     let mut svg = Vec::new();
-    report.flamegraph(&mut svg)?;
+    let lines = folded_lines(&report);
+    if !lines.is_empty() {
+        inferno::flamegraph::from_lines(
+            &mut inferno::flamegraph::Options::default(),
+            lines.iter().map(String::as_str),
+            &mut svg,
+        )?;
+    }
     // A window that caught ZERO samples (an idle process) renders nothing —
     // pprof/inferno write no bytes for an empty frame set. Serving 0 bytes as
     // `image/svg+xml` would be a lie; answer with a well-formed SVG that says

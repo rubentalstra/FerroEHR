@@ -110,53 +110,6 @@ release beyond rsa 0.9 ships, or if the default signing mode changes.\
 """
 
 [[accepted]]
-id = "RUSTSEC-2026-0194"
-crate = "quick-xml"
-version = "0.26.0"
-carriers = ["inferno"]
-workspace_roots = ["ferroehr", "ferroehr-rest", "ferroehr-server", "testkit"]
-status = "not_affected"
-justification = "vulnerable_code_not_in_execute_path"
-impact = """
-Quadratic run time when a start tag is checked for duplicate attribute names \
-(denial of service), fixed in quick-xml 0.41.0. Every XML surface FerroEHR \
-parses is already on the fixed version: the canonical-XML codec that reads \
-client input uses quick-xml 0.41, and so does the S3 multimedia offload, since \
-`object_store` 0.14.1 requires `quick-xml 0.41`. One pre-fix version remains in \
-the dependency graph — quick-xml 0.26.0 — and `cargo tree -i \
-quick-xml@0.26.0` resolves exactly one path to it: `inferno`, the flamegraph \
-RENDERER reached through `pprof` (the opt-in `/management/flamegraph` endpoint \
-and the criterion bench profiler). inferno imports `quick_xml::Writer` and the \
-`Bytes*`/`Event` writer types and nothing else; it constructs no `Reader`, no \
-`NsReader`, and never iterates a start tag's attributes, so the affected code — \
-the `Attributes` iterator with duplicate checks enabled, and `NsReader` which \
-reaches it internally — is never executed. There is no XML INPUT anywhere on \
-that path: inferno turns collapsed stack text into an SVG document. \
-Re-evaluate when `pprof`/`inferno` bump quick-xml.\
-"""
-
-[[accepted]]
-id = "RUSTSEC-2026-0195"
-crate = "quick-xml"
-version = "0.26.0"
-carriers = ["inferno"]
-workspace_roots = ["ferroehr", "ferroehr-rest", "ferroehr-server", "testkit"]
-status = "not_affected"
-justification = "vulnerable_code_not_in_execute_path"
-impact = """
-Unbounded namespace-declaration allocation in `NsReader`, enabling \
-memory-exhaustion denial of service, fixed in quick-xml 0.41.0. Same \
-reachability as RUSTSEC-2026-0194 and the same argument: both XML surfaces that \
-parse anything — the client-facing canonical-XML codec and the S3 multimedia \
-offload via `object_store` 0.14.1 — are on quick-xml 0.41, and the one pre-fix \
-version left, quick-xml 0.26.0, is reached solely by `inferno` through `pprof` \
-(the flamegraph renderer). inferno only WRITES XML: it constructs a \
-`quick_xml::Writer` and emits SVG events, and never instantiates `NsReader` or \
-calls `NamespaceResolver::push`, which are the affected code paths this \
-advisory names. Re-evaluate when `pprof`/`inferno` bump quick-xml.\
-"""
-
-[[accepted]]
 id = "RUSTSEC-2026-0173"
 crate = "proc-macro-error2"
 carriers = [

@@ -1422,7 +1422,7 @@ dependencies = [
  "jsonschema",
  "jsonwebtoken",
  "pgp",
- "quick-xml 0.41.0",
+ "quick-xml",
  "rand 0.8.7",
  "regex",
  "reqwest 0.13.4",
@@ -2562,6 +2562,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_filter"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "900d271a03799a1ee8d1ca9b19893b48ca674a9284fefcfb85f05e74ed314217"
+dependencies = [
+ "log",
+ "regex",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de671bd27a75a797dc9ae289ba1e77276e75e2026408aab65185384e2d5cd3f6"
+dependencies = [
+ "env_filter",
+ "log",
+]
+
+[[package]]
 name = "equator"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2611,7 +2631,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2678,6 +2698,7 @@ dependencies = [
  "http",
  "http-body-util",
  "indexmap 2.14.0",
+ "inferno",
  "insta",
  "jiff",
  "jiff-sqlx",
@@ -2700,7 +2721,7 @@ dependencies = [
  "pgp",
  "pprof",
  "prometheus",
- "quick-xml 0.41.0",
+ "quick-xml",
  "rand 0.8.7",
  "regex",
  "reqwest 0.13.4",
@@ -2820,6 +2841,7 @@ dependencies = [
  "http-body-util",
  "hyper-util",
  "indexmap 2.14.0",
+ "inferno",
  "jiff",
  "jsonwebtoken",
  "moka",
@@ -4044,18 +4066,22 @@ dependencies = [
 
 [[package]]
 name = "inferno"
-version = "0.11.21"
+version = "0.12.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "232929e1d75fe899576a3d5c7416ad0d88dbfbb3c3d6aa00873a7408a50ddb88"
+checksum = "0c460d4fa06223667240720ab69a8045133755ae6dfbe100cf481b95e3a014f1"
 dependencies = [
  "ahash 0.8.12",
+ "clap",
+ "crossbeam-channel",
+ "crossbeam-utils",
+ "dashmap",
+ "env_logger",
  "indexmap 2.14.0",
- "is-terminal",
  "itoa",
  "log",
  "num-format",
  "once_cell",
- "quick-xml 0.26.0",
+ "quick-xml",
  "rgb",
  "str_stack",
 ]
@@ -4122,17 +4148,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a756c3fac73139e83f14c2d742155dd2b78d3ee56597b419a0579b7bdd6dd78"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "is-terminal"
-version = "0.4.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
-dependencies = [
- "hermit-abi",
- "libc",
- "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5351,7 +5366,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "getrandom 0.2.17",
  "http",
@@ -5408,7 +5423,7 @@ dependencies = [
  "nix 0.31.3",
  "parking_lot",
  "percent-encoding",
- "quick-xml 0.41.0",
+ "quick-xml",
  "rand 0.10.2",
  "reqwest 0.13.4",
  "rustls-pki-types",
@@ -5546,7 +5561,7 @@ dependencies = [
  "openehr-lang",
  "openehr-rm",
  "openehr-term",
- "quick-xml 0.41.0",
+ "quick-xml",
  "regex",
  "serde",
  "serde_json",
@@ -6054,7 +6069,7 @@ dependencies = [
  "aes-gcm",
  "aes-kw",
  "argon2",
- "base64 0.21.7",
+ "base64 0.22.1",
  "bitfields",
  "block-padding",
  "blowfish",
@@ -6319,7 +6334,6 @@ dependencies = [
  "backtrace",
  "cfg-if",
  "findshlibs",
- "inferno",
  "libc",
  "log",
  "nix 0.26.4",
@@ -6598,15 +6612,6 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f50b1c63b38611e7d4d7f68b82d3ad0cc71a2ad2e7f61fc10f1328d917c93cd"
-dependencies = [
- "memchr",
-]
-
-[[package]]
-name = "quick-xml"
 version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e660451e55124f798a69a5af3f49ccfbefbd41910eefd25caf2393e1f3473ec1"
@@ -6669,7 +6674,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -7352,7 +7357,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -7426,7 +7431,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -7655,7 +7660,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af2c6921c8ce48fb1b052b457619d008834039d80325992ed3bc55bbe6c155ad"
 dependencies = [
  "annotate-snippets",
- "base64 0.21.7",
+ "base64 0.23.1",
  "encoding_rs_io",
  "granit-parser",
  "nohash-hasher",
@@ -8138,7 +8143,7 @@ version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "287f59010008f0d7cf5e3b03196d666c1acc46c8d3e9cf34c28a1a7157601e72"
 dependencies = [
- "heck 0.4.1",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -8684,7 +8689,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -10030,7 +10035,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
