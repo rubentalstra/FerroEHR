@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Security
+
+- **The vulnerable quick-xml 0.26 is eliminated from the build, not ignored.**
+  pprof's `flamegraph` feature pinned `inferno ^0.11`, whose quick-xml 0.26
+  carried two DoS advisories (RUSTSEC-2026-0194/0195, fixed upstream in
+  0.41). The feature is now off and the flamegraph SVG (the
+  `/management/flamegraph` endpoint and the bench profiler) renders through a
+  direct `inferno` 0.12 dependency on quick-xml 0.41 — the two advisory
+  ignores and their VEX statements are deleted, and the only quick-xml in the
+  dependency graph is the fixed line. Every remaining advisory exception now
+  names the upstream event that deletes it; none of the remaining four has a
+  fixed release anywhere to upgrade to (rsa's Marvin advisory has no patched
+  release, two are unmaintained-crate notices on compile-time proc-macros via
+  latest-release carriers, and the rkyv pin exists only in the lock file with
+  zero resolved nodes).
+
 ## [3.17.7] - 2026-08-15
 
 ### Added
