@@ -141,10 +141,19 @@ rendered="$(
     "openEHR Archetype Model (AM) Release 2.3.0. openEHR International. https://specifications.openehr.org/releases/AM/Release-2.3.0"
   ],
   related_identifiers: (
+    # A supplied related_identifiers list REPLACES the ones the GitHub
+    # integration would add (measured on the v3.17.7 record, #2404), and the
+    # record page derives its "Available in GitHub" link from the
+    # isSupplementTo entry — so this entry must BE the stock tag-tree link,
+    # never the repo root. The version here is the tag by construction: the
+    # release cut bumps CITATION.cff in the PR the tag is cut from, and
+    # citation-guard pins it to the workspace version.
     [ { identifier: $site,
         relation: "isDocumentedBy",
         resource_type: "publication-softwaredocumentation" },
-      { identifier: $repo, relation: "isSupplementTo" } ]
+      { identifier: ($repo + "/tree/v" + $version),
+        relation: "isSupplementTo",
+        resource_type: "software" } ]
     + ($specs | map({ identifier: ., relation: "isDerivedFrom" }))
     + ($crates | map({ identifier: ("https://crates.io/crates/" + .),
                        relation: "hasPart",
