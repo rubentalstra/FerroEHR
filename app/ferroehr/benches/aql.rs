@@ -148,7 +148,30 @@ impl Profiler for FlamegraphProfiler {
         std::fs::create_dir_all(benchmark_dir).expect("the profile directory must be creatable");
         let path = benchmark_dir.join("flamegraph.svg");
         let file = File::create(&path).expect("the flamegraph file must be creatable");
-        report.flamegraph(file).expect("the flamegraph must render");
+        // NOTE: #2406 — pprof's `flamegraph` feature pins inferno ^0.11
+        // (quick-xml 0.26, RUSTSEC-2026-0194/0195); this is pprof 0.15's own
+        // fold, rendered through the direct inferno 0.12 dependency instead.
+        let lines: Vec<String> = report
+            .data
+            .iter()
+            .map(|(frames, count)| {
+                let mut segments = vec![frames.thread_name_or_id()];
+                for frame in frames.frames.iter().rev() {
+                    for symbol in frame.iter().rev() {
+                        segments.push(symbol.to_string());
+                    }
+                }
+                format!("{} {count}", segments.join(";"))
+            })
+            .collect();
+        if !lines.is_empty() {
+            inferno::flamegraph::from_lines(
+                &mut inferno::flamegraph::Options::default(),
+                lines.iter().map(String::as_str),
+                file,
+            )
+            .expect("the flamegraph must render");
+        }
         eprintln!("profiled {benchmark_id}: {}", path.display());
     }
 }
