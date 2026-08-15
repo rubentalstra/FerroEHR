@@ -44,6 +44,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Full history: the party-documents drift gate regenerates
+          # COMPARISON.md, whose run dates derive from the conformance
+          # artifacts' COMMIT dates (scripts/render/comparison.sh). On a
+          # shallow checkout that git log is empty and the mtime fallback
+          # stamps the CHECKOUT day — green only on the baseline's own UTC
+          # day, red every day after (#2402; it failed both the v3.17.6 and
+          # v3.17.7 tag runs).
+          fetch-depth: 0
       # The deployed site is rebuilt in the deploy job, which restores no build
       # cache; this job publishes only a pull-request diagnostic artifact.
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0 # zizmor: ignore[cache-poisoning]
