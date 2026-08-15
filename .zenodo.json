@@ -39,8 +39,9 @@
       "resource_type": "publication-softwaredocumentation"
     },
     {
-      "identifier": "https://github.com/rubentalstra/FerroEHR",
-      "relation": "isSupplementTo"
+      "identifier": "https://github.com/rubentalstra/FerroEHR/tree/v3.17.7",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
     },
     {
       "identifier": "https://specifications.openehr.org/releases/RM/Release-1.1.0",
