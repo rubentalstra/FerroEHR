@@ -25,6 +25,13 @@
 # below: an ignore for an advisory this tool never raises records nothing and
 # would silently start applying if the tool ever became lock-file-based.
 #
+# In the OTHER direction — an advisory that DOES fire here and is ignored with
+# an adjudication — the OSV-based scanners stay red anyway: they consume
+# neither this file nor the OpenVEX documents under security/vex/. That
+# visibility is a feature, not a false positive to silence (#2406): the public
+# warning stands until the advisory is truly ELIMINATED from the graph, which
+# is what every ignore's DELETING EVENT below is for.
+#
 # THAT RULE IS MACHINE-ENFORCED, and so is its mirror — an ignore kept after the
 # advisory stopped firing. cargo-deny raises `advisory-not-detected` for an
 # `ignore` entry no crate in the graph matches, and
@@ -35,30 +42,33 @@
 version = 2
 # Fail on any RustSec advisory. Add exceptions explicitly and dated.
 yanked = "deny"
+# EVERY ignore names the event that deletes it (#2406: adjudication is not
+# elimination — an ignore is a standing liability driven to zero, re-checked
+# at every dependency-bump cycle; the scheduled latest-deps lane is the
+# reminder). The quick-xml pair (RUSTSEC-2026-0194/0195) was ELIMINATED
+# rather than renewed: pprof's `flamegraph` feature (inferno ^0.11,
+# quick-xml 0.26) is off and the SVG renders through a direct inferno 0.12.
 ignore = [
   # 2026-08-13: Marvin attack timing sidechannel in `rsa`; no fixed release
-  # exists upstream. The dependency-path argument lives in ONE place — the
-  # RUSTSEC-2023-0071 statement in security/vex/rust-advisories.toml, whose
-  # carrier/root claims scripts/checks/vex-reachability.sh compares against
-  # the resolved graph — never restated here, where nothing checks it.
-  # Re-check when rsa > 0.9 ships. https://rustsec.org/advisories/RUSTSEC-2023-0071
+  # exists upstream (0.9.10 is the latest, re-verified 2026-08-15). The
+  # dependency-path argument lives in ONE place — the RUSTSEC-2023-0071
+  # statement in security/vex/rust-advisories.toml, whose carrier/root claims
+  # scripts/checks/vex-reachability.sh compares against the resolved graph —
+  # never restated here, where nothing checks it. DELETING EVENT: the rsa 0.10
+  # release (upgrade the day it ships).
+  # https://rustsec.org/advisories/RUSTSEC-2023-0071
   { id = "RUSTSEC-2023-0071", reason = "no fix upstream; RSA verification only in the OIDC path, and the pgp signing path is off by default (digest mode) and key-algorithm-agnostic" },
-  # 2026-08-13: two quick-xml DoS-class advisories (quadratic duplicate-attribute
-  # check; unbounded namespace allocation), both fixed in 0.41.0; the one
-  # pre-fix version left is 0.26.0. The dependency-path and never-invoked
-  # arguments live in the two statements in security/vex/rust-advisories.toml
-  # (machine-compared to the graph by scripts/checks/vex-reachability.sh) —
-  # never restated here. Re-check when pprof bumps it.
-  { id = "RUSTSEC-2026-0194", reason = "quick-xml 0.26.0 only via inferno (the pprof flamegraph renderer), which writes SVG and never constructs a reader" },
-  { id = "RUSTSEC-2026-0195", reason = "quick-xml 0.26.0 only via inferno (the pprof flamegraph renderer), which writes SVG and never constructs a reader" },
   # 2026-07-18: unmaintained-crate advisory only (no vulnerability); a
-  # build-time proc-macro dependency of leptos_macro 0.8 — goes away when
-  # leptos drops it upstream. Re-check at the next leptos bump.
+  # build-time proc-macro dependency of leptos_macro (0.8.20 is the latest
+  # leptos, re-verified 2026-08-15). DELETING EVENT: a leptos release that
+  # drops proc-macro-error2 — cargo's future-incompat report flags the crate
+  # too, so upstream has two reasons to move.
+  # https://rustsec.org/advisories/RUSTSEC-2026-0173
   { id = "RUSTSEC-2026-0173", reason = "unmaintained advisory; compile-time proc-macro via leptos_macro (admin console), no runtime exposure" },
   # 2026-07-15: `paste` (proc-macro) is archived/unmaintained — pulled in by
-  # utoipa-axum 0.2.0 (the LATEST release of the official utoipa axum
-  # bindings; no paste-free release exists). Compile-time-only token pasting,
-  # no runtime code, no attack surface. Re-check on the next utoipa-axum
+  # utoipa-axum 0.2.0 (still the LATEST release, re-verified 2026-08-15; no
+  # paste-free release exists). Compile-time-only token pasting, no runtime
+  # code, no attack surface. DELETING EVENT: the first paste-free utoipa-axum
   # release. https://rustsec.org/advisories/RUSTSEC-2024-0436
   { id = "RUSTSEC-2024-0436", reason = "compile-time proc-macro via utoipa-axum 0.2.0 (latest); no runtime surface" },
 ]

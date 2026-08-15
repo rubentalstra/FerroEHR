@@ -156,6 +156,7 @@ opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "testing"] }
 # criterion's `Profiler` trait over pprof directly — see the bench file).
 criterion.workspace = true
 pprof.workspace = true
+inferno.workspace = true
 
 [[bench]]
 name = "aql"
