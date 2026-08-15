@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.7] - 2026-08-15
+
 ### Added
 
 - **Releases archive to Zenodo with a citable DOI.** Every release tag now
@@ -26,6 +28,23 @@ workflow refuses a tag that has no matching section here.
   documents, after the first deposit demonstrably ignored the
   InvenioRDM-record-shape file and archived raw repository metadata instead;
   the concept DOI is recorded in `CITATION.cff` for citation managers.
+
+### Changed
+
+- **Helm chart `6.0.7`** — no template changes: the chart re-releases because
+  `appVersion` moves to `3.17.7` and the published `6.0.6` is immutable by
+  the publish lane's own refusal-to-overwrite.
+
+### Security
+
+- **The postgres image's scan gate is green again.** The new Go-stdlib
+  advisory CVE-2026-39821 (`golang.org/x/net/idna` Punycode via net/http)
+  matches `gosu`, the privilege-dropping helper the upstream
+  `docker-library/postgres` base ships unchanged; it joins the fifteen
+  already-adjudicated gosu entries as a per-CVE, path-scoped exception with
+  an OpenVEX `not_affected` statement (gosu resolves no hostnames and issues
+  no HTTP requests, so the IDNA path is never entered). The entries go when
+  upstream rebuilds gosu on a fixed Go line.
 
 ### Security
 
@@ -6685,7 +6704,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.6...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.7...HEAD
+[3.17.7]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.6...v3.17.7
 [3.17.6]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.5...v3.17.6
 [3.17.5]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.4...v3.17.5
 [3.17.4]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.3...v3.17.4
