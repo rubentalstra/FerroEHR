@@ -19,7 +19,11 @@
 # ITS-REST schema for the very same slot carries exactly that shape as its own
 # example: specifications/schemas/base_types/ObjectRef.yaml `example` is
 # `{id: {_type: OBJECT_VERSION_ID, value: 'fb458d9c-…::openEHRSys.example.com::1'},
-# namespace: local, type: COMPOSITION}` — the value this fixture uses verbatim.
+# namespace, type: COMPOSITION}` — the id value this fixture uses verbatim
+# (the namespace is `openEHRSys.example.com`, the creating system the id
+# itself names: re-adjudicated 2026-08-18, issue #1951, register AMB-211 —
+# a foreign reference's target stands free; a THIS-system claim must resolve,
+# pinned by create_directory-local_dangling_item).
 #
 # WHAT A NON-CONFORMANT SERVER DOES HERE, and why the case is worth its row:
 # the plausible narrow implementation stores a folder reference as a bare UUID

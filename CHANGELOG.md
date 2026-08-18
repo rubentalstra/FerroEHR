@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Directory folder references that claim this system must now resolve.**
+  A `FOLDER.items` `OBJECT_REF` whose `namespace` is `local` (or the
+  server's configured system id) and whose target is not a versioned object
+  of that EHR refuses the commit with `422`, naming each unresolvable
+  reference at its tree path — on the `/directory` routes and on folder
+  hierarchies committed through a CONTRIBUTION alike. References into
+  foreign namespaces (and `unknown`) are stored verbatim, unchecked: openEHR
+  object references are explicitly distributed, so only a reference that
+  claims *this* system and cannot resolve here is a client defect. No
+  released openEHR text assigns this behaviour in either direction (register
+  AMB-211, reported upstream); reported by an external user as a missing
+  safety net for mistyped composition references.
+
 ### Security
 
 - **The vulnerable quick-xml 0.26 is eliminated from the build, not ignored.**

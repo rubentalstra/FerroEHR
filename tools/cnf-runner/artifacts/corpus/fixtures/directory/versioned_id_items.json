@@ -8,7 +8,7 @@
   "items": [
     {
       "_type": "OBJECT_REF",
-      "namespace": "local",
+      "namespace": "openEHRSys.example.com",
       "type": "COMPOSITION",
       "id": {
         "_type": "OBJECT_VERSION_ID",

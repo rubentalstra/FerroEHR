@@ -840,8 +840,8 @@ pub(crate) async fn commit_version_set(
     .await
     .map_err(body_target_not_found_is_bad_request)?;
     // Every committed FOLDER's local-claiming item references must resolve,
-    // judged AFTER the set's own inserts so same-CONTRIBUTION targets count
-    // (RM ehr master04 §Folders); a violation rolls the whole set back.
+    // judged AFTER the set's own inserts so the verdict never depends on
+    // member order; a violation rolls the whole set back.
     if let Some(ehr_id) = ehr_id {
         for folder in &folder_commits {
             cx.check_folder_item_refs(&mut tx, ehr_id, folder).await?;

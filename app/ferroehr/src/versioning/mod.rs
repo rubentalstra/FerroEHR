@@ -246,9 +246,12 @@ pub(crate) trait CommitEnv {
     ) -> Result<(), ServiceError>;
     /// Check every FOLDER `items` reference that claims this system resolves
     /// in `ehr_id` — run AFTER the change set's inserts, inside the commit
-    /// transaction, so a folder may reference a sibling version of its own
-    /// CONTRIBUTION (RM ehr master04 §Folders: contemporaneous additions
-    /// "normally be included in the same Contribution").
+    /// transaction, so the verdict never depends on member order within the
+    /// set (RM ehr master04 §Folders groups contemporaneous folder and
+    /// content commits in one CONTRIBUTION; version identity is
+    /// repository-allocated here, so a same-set reference is only expressible
+    /// once an identity-echo mechanism exists — this placement is already
+    /// correct for it).
     async fn check_folder_item_refs(
         &self,
         tx: &mut sqlx::PgConnection,
