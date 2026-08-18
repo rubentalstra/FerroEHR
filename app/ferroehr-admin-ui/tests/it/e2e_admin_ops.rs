@@ -124,11 +124,14 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     if h.driver.find(By::Css(row_delete.clone())).await.is_ok() {
         return;
     }
-    // The file input's `on:change` is a hydrated listener, and the waits above
-    // only prove the SSR'd list rendered — so a `send_keys` landing before
-    // hydration is simply LOST, exactly like the login submit. Re-send until
-    // the row appears. A repeat after an upload that DID land cannot happen:
-    // the row is re-checked before every attempt.
+    // The file input's `on:change` is a hydrated listener, and a file set
+    // BEFORE it exists is unrecoverable by retrying: the value is already
+    // that path, so a re-send of the same file fires no change event
+    // (#2285 — proven by the input's value never clearing, which the
+    // handler always does). Wait for the shell's hydration marker so the
+    // FIRST send lands on a live listener; the bounded loop stays as a
+    // backstop only.
+    h.wait_hydrated().await;
     for _ in 0..4 {
         h.wait_css("input[type=file]")
             .await
@@ -246,6 +249,8 @@ async fn admin_saves_groups_and_deletes_a_stored_query() {
     // The namespace goes into its own field; the console composes the qualified
     // name from the two.
     h.goto("/queries/aql").await;
+    // Save/Run dispatch is hydrated behaviour (#2285's class).
+    h.wait_hydrated().await;
     let mut saved = false;
     for _ in 0..5 {
         // Clear before (re)typing: `send_keys` APPENDS, so a retry after a
@@ -323,6 +328,8 @@ async fn admin_versions_a_stored_query() {
     let (user, pass) = admin_credentials();
     login_basic_as(&h, &user, &pass).await;
     h.goto("/queries/aql").await;
+    // Save/Run dispatch is hydrated behaviour (#2285's class).
+    h.wait_hydrated().await;
 
     // Store version 1.0.0. The Save button also gates on the version being a
     // storable triple, so its enabling is the hydration + validity signal.
@@ -341,6 +348,8 @@ async fn admin_versions_a_stored_query() {
     // answers 409 and the console surfaces it inline (role="alert") beside the
     // editor. The listing must still hold exactly the one version.
     h.goto("/queries/aql").await;
+    // Save/Run dispatch is hydrated behaviour (#2285's class).
+    h.wait_hydrated().await;
     let retried = save_query_version(&h, "1.0.0", true).await;
     assert!(retried, "the Save button never enabled for the retry");
     h.wait_css("[role=\"alert\"]").await;
@@ -348,6 +357,8 @@ async fn admin_versions_a_stored_query() {
 
     // A different version stores beside it rather than replacing it.
     h.goto("/queries/aql").await;
+    // Save/Run dispatch is hydrated behaviour (#2285's class).
+    h.wait_hydrated().await;
     let bumped = save_query_version(&h, "1.1.0", true).await;
     assert!(bumped, "the Save button never enabled for version 1.1.0");
     h.wait_xpath("//*[contains(normalize-space(.), 'Query saved')]")
@@ -460,7 +471,10 @@ async fn admin_deletes_an_ehr() {
     login_basic_as(&h, &user, &pass).await;
 
     // Create an anonymous EHR; the console navigates to its detail route.
+    // The create dispatch + navigation are hydrated behaviour, and a click
+    // landing before hydration is silently lost (#2285's class).
     h.goto("/ehrs").await;
+    h.wait_hydrated().await;
     h.wait_css("#ehr-create-submit")
         .await
         .click()

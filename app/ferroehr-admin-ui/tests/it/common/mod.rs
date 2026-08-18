@@ -33,6 +33,10 @@ pub(crate) struct Harness {
     pub(crate) base: String,
     shots_dir: String,
     journey: &'static str,
+    /// Whether this session runs with JavaScript enabled — hydrated pages
+    /// only exist in that mode, so [`Harness::goto`] waits for the shell's
+    /// hydration marker exactly when one will ever appear.
+    js: bool,
 }
 
 /// Environment lookup for a journey credential/URL.
@@ -82,6 +86,7 @@ impl Harness {
             base,
             shots_dir,
             journey,
+            js: true,
         })
     }
 
@@ -120,6 +125,14 @@ impl Harness {
             .goto(format!("{}{path}", self.base))
             .await
             .expect("navigate");
+        // Every full navigation restarts hydration, and any first click or
+        // file selection landing before it completes is silently lost —
+        // unrecoverably for same-value re-sends (#2285). Waiting here makes
+        // every journey's first interaction land on live listeners; the
+        // no-JS sessions skip it, since their pages never hydrate.
+        if self.js {
+            self.wait_hydrated().await;
+        }
     }
 
     /// Explicit wait: the first element matching `css`, within 15 s.
@@ -190,6 +203,7 @@ impl Harness {
             base,
             shots_dir,
             journey,
+            js: false,
         })
     }
 
@@ -308,6 +322,15 @@ impl Harness {
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
         panic!("a toast never cleared (it would intercept the next click)");
+    }
+
+    /// Wait until client hydration has completed on the current page (the
+    /// shell stamps `data-hydrated` on `<body>` from a browser-only effect).
+    /// Required before driving any control whose handler exists only
+    /// hydrated — a click or file selection landing earlier is silently
+    /// lost, and a same-value re-send fires no later event (#2285).
+    pub(crate) async fn wait_hydrated(&self) {
+        self.wait_css("body[data-hydrated]").await;
     }
 
     /// Failure evidence at a journey-defined point, for a panic that would
