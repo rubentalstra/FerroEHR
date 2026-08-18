@@ -3,17 +3,30 @@
 # Preconfigured PostgreSQL 18 for ferroehr (mirrors the official
 # `ehrbase/ehrbase-v2-postgres` two-image model, built fresh for this stack).
 #
-# The stock postgres:18.4 image, plus init scripts that create the app login
+# The stock postgres:18.6 image, plus init scripts that create the app login
 # role, its owned database, the `ehr` + `ext` schemas it owns, and the required
 # extensions installed by the bootstrap superuser — so the app role never needs
 # superuser. Schema CONTENT is owned by the app's sqlx migrators at boot; this
 # image bakes NO migration state (see README.md).
 #
-# Digest-pinned (resolved 2026-07-24): a mutable tag can be re-pointed, a digest
+# Digest-pinned (resolved 2026-08-18): a mutable tag can be re-pointed, a digest
 # cannot (docs.docker.com/build/building/best-practices — "pinning to a digest
-# guarantees the same image version"). 18.4 is the latest PG 18 patch
-# (docs/VERSIONS.md); bump the tag AND the digest together.
-FROM postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+# guarantees the same image version"). 18.6 is the latest PG 18 patch
+# (docs/VERSIONS.md; 18.5 was never released upstream); bump the tag AND the
+# digest together — the full pin-site checklist is
+# .claude/rules/image-security.md.
+FROM postgres:18.6@sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
+
+# Debian security updates, applied at OUR build time (issue #2408). The
+# upstream image rebuilds on its own cadence, so a fix already published in
+# trixie-security can sit unpulled for weeks in the pinned base — postgres:18.6
+# (built 2026-08-13) still ships the util-linux packages whose CVE-2026-53615
+# fix trixie-security carries. Plain `upgrade`, never `dist-upgrade`: packages
+# are only patched, none added or removed.
+RUN set -eux; \
+    apt-get update; \
+    apt-get -y upgrade; \
+    rm -rf /var/lib/apt/lists/*
 
 # Init scripts run once, on an empty data directory, as the bootstrap superuser.
 COPY initdb/ /docker-entrypoint-initdb.d/
@@ -34,5 +47,5 @@ LABEL org.opencontainers.image.title="ferroehr-postgres" \
       org.opencontainers.image.vendor="FerroEHR" \
       org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
       org.opencontainers.image.licenses="MIT AND PostgreSQL" \
-      org.opencontainers.image.base.name="postgres:18.4" \
-      org.opencontainers.image.base.digest="sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636"
+      org.opencontainers.image.base.name="postgres:18.6" \
+      org.opencontainers.image.base.digest="sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941"

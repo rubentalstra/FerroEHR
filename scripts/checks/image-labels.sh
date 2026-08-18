@@ -120,6 +120,25 @@ for entry in $IMAGES; do
   fi
 done
 
+# The CI service containers must run the exact base the postgres image is
+# built on — a drifted service pin tests against different bytes than the
+# image ships (found as a checklist item in #2408/#2410, enforced here since).
+CI_WORKFLOW=.github/workflows/ci.yml
+pg_from=$(grep -E '^FROM postgres:' docker/postgres/Dockerfile | awk '{print $2}' || true)
+if [ -z "$pg_from" ]; then
+  report "image-labels: docker/postgres/Dockerfile has no 'FROM postgres:' pin"
+else
+  ci_pins=$(grep -Eo 'image: postgres:[^[:space:]]+' "$CI_WORKFLOW" | sed 's/^image: //' | sort -u || true)
+  if [ -z "$ci_pins" ]; then
+    report "image-labels: $CI_WORKFLOW declares no postgres service pins to check"
+  else
+    for pin in $ci_pins; do
+      [ "$pin" = "$pg_from" ] \
+        || report "image-labels: $CI_WORKFLOW pins service '$pin', but docker/postgres/Dockerfile FROM is '$pg_from'"
+    done
+  fi
+fi
+
 # Annotations must reach the INDEX, which is the only place GHCR reads a package
 # description from. Three lanes, three declarations.
 levels=$(grep -c 'DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest' "$WORKFLOW" || true)
