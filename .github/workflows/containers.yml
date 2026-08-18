@@ -647,8 +647,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # The app image, by digest — the artifact this run actually published.
+      # The published index is dual-arch and trivy reads ONE variant per
+      # invocation (`--platform`, default linux/amd64), so each variant is
+      # scanned explicitly (#2412) — the app image by its pushed digest, the
+      # postgres image from per-arch local builds (QEMU for the non-native
+      # one; its Dockerfile runs the Debian security upgrade, #2408).
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/amd64
+        with:
+          scan-type: image
+          image-ref: ${{ env.APP_IMAGE }}@${{ needs.app-image.outputs.digest }}
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/arm64
         with:
           scan-type: image
           image-ref: ${{ env.APP_IMAGE }}@${{ needs.app-image.outputs.digest }}
@@ -660,15 +681,29 @@ jobs:
 
       # `ferroehr-postgres` is the one image whose OS package set we do not
       # control — it is built on the upstream `postgres` image — so it is the
-      # image this gate exists for. Built locally here (a COPY-only Dockerfile,
-      # seconds) because the postgres-image job only runs when its inputs change.
-      - name: Build the postgres image for scanning
-        run: docker build -t ferroehr-postgres:scan docker/postgres
+      # image this gate exists for. Built locally here because the
+      # postgres-image job only runs when its inputs change.
+      - name: Build the postgres image for scanning (both platforms)
+        run: |
+          docker buildx build --platform linux/amd64 --load \
+            -t ferroehr-postgres:scan-amd64 docker/postgres
+          docker buildx build --platform linux/arm64 --load \
+            -t ferroehr-postgres:scan-arm64 docker/postgres
 
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
-          image-ref: ferroehr-postgres:scan
+          image-ref: ferroehr-postgres:scan-amd64
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ferroehr-postgres:scan-arm64
           scanners: vuln
           exit-code: '1'
           severity: HIGH,CRITICAL
