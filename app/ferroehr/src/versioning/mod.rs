@@ -244,6 +244,17 @@ pub(crate) trait CommitEnv {
         data: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError>;
+    /// Check every FOLDER `items` reference that claims this system resolves
+    /// in `ehr_id` — run AFTER the change set's inserts, inside the commit
+    /// transaction, so a folder may reference a sibling version of its own
+    /// CONTRIBUTION (RM ehr master04 §Folders: contemporaneous additions
+    /// "normally be included in the same Contribution").
+    async fn check_folder_item_refs(
+        &self,
+        tx: &mut sqlx::PgConnection,
+        ehr_id: EhrId,
+        folder: &Value,
+    ) -> Result<(), ServiceError>;
     /// the target EHR must exist before a CONTRIBUTION is committed to it.
     async fn ensure_ehr_exists(&self, ehr_id: EhrId) -> Result<(), ServiceError>;
     /// The `EHR_STATUS` `is_modifiable = False` content-write guard.

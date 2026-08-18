@@ -1,6 +1,6 @@
 ---
 name: directory-api-location
-description: Where the DIRECTORY (EHR FOLDER) 5-operation API + FOLDER RM + SM I_EHR_DIRECTORY + CNF live, and the enumerated released-text gaps
+description: Where the DIRECTORY (EHR FOLDER) 5-operation API + FOLDER RM + SM I_EHR_DIRECTORY + CNF live, and the enumerated released-text gaps (incl. FOLDER.items referential validity)
 metadata:
   type: reference
 ---
@@ -13,6 +13,8 @@ docs prose is a STUB — see [[ehr-status-ops-location]]).
   route, no `versioned_directory` route, no FOLDER `tags` route (only composition +
   ehr_status have `/tags`).
 - Operations: `operations/directory_{create,update,delete,get_at_time,get_by_version_id}.yaml`.
+  Built bundle mirror: `computable/OAS/ehr-{validation,codegen,html}.openapi.yaml` L570-674
+  (verified identical to the decomposed files).
 - Responses: `201_directory`, `200_directory_updated`, `204_version_updated` (SHARED with
   ehr_status/composition/demographic updates — it, not the 200, declares
   `Location_version` + the two item-tag headers), `204_deleted`, `204_deleted_at_time`,
@@ -44,12 +46,57 @@ create/update/delete_directory, get_directory, get_directory_at_time,
 has_directory_version, get_directory_at_version, get_versioned_directory);
 `uv_folder.adoc` (UV_FOLDER = UPDATE_VERSION<FOLDER>) + `update_version.adoc` +
 `openehr_platform/master03-common_package.adoc §Version Update Semantics`.
+`master05-ehr_service.adoc` is INCLUDE-ONLY (30 lines, zero directory prose).
+
+**SM validity predicates (the ONLY commit-time validation vocabulary):**
+`create_directory`/`update_directory` carry `Pre_definitions_valid: definitions_valid(...)`
++ `Pre_content_valid: valid_content(...)`, errors `definition_unknown`/`content_invalid`.
+Both predicates are DEFINED in `SM/docs/UML/classes/i_validity_checker.adoc`:
+`definitions_valid` = archetype/template ids known in the definitions service;
+`content_valid` = "content structure is a valid instance of the relevant RM classes".
+Neither covers OBJECT_REF resolvability. **DEFECT: the interface calls it
+`valid_content(...)`, I_VALIDITY_CHECKER declares `content_valid(...)`** — same mismatch in
+i_ehr_composition / i_party / i_party_relationship / i_demographic_service.
+
+**FOLDER.items referential validity = TOTAL SILENCE (verified first-hand, all 5 sources):**
+- ITS-REST directory_create declares ONLY 201/400/404; directory_update 200/204/400/404/412.
+  **NO 422 on any directory op** — `responses/422.yaml` is referenced ONLY by
+  composition_create/update + the 8 demographic party create/update ops (grep-verified).
+  No 409 on any directory op either.
+- RM FOLDER.items Meaning: "The list of references to other (usually) versioned objects
+  logically in this folder." FOLDER has no `Items_valid` invariant (SECTION, DV_PARAGRAPH,
+  ATTESTATION all DO declare one) — historically it had some, removed by SPEC-49
+  (`RM/docs/ehr/master00-amendment_record.adoc` L420).
+- Contrast anchors that show the RM states scope rules when it means them:
+  EHR class invariants (`org.openehr.rm.ehr.ehr.adoc` L57-77) constrain only `.type`, never
+  existence; `EHR.tags` Meaning (L55) DOES say "Tag `_target_` values can only be within the
+  same EHR" — no equivalent for folders/items. LINK class doc explicitly contemplates links
+  "which can be broken when the extract is created".
+- BASE OBJECT_REF Description: "may exist locally or be maintained outside the current
+  namespace, e.g. in another service" + `base_types/master05-identification_package.adoc
+  §References` (foreign-key analogy, distributed referencing).
+- CNF master09 has only 3 create_ + 3 update_ cases (empty_ehr / ehr_with_directory /
+  bad_ehr) — none about item refs; its §Tests of Reference FOLDER structure NOTE links a
+  Discourse thread "what's allowed in FOLDER items", i.e. openly unsettled.
+- **CNF Robot POSITIVE EVIDENCE for acceptance**: fixtures
+  `_resources/test_data_sets/directory/{empty,subfolders_in}_directory*_items.json` +
+  `update/3_add_items.json` all carry the SAME hardcoded, never-created uid
+  `d936409e-901f-4994-8d33-ed104d46015b`, namespace `my.system.id`, type
+  `VERSIONED_COMPOSITION`, and are used by delete_directory-ehr_with_directory (expects the
+  create to succeed then 204), get_directory-directory_with_structure,
+  get_directory_at_time-*, update_directory-ehr_with_directory (`validate PUT response - 200
+  updated`). The keyword `validate POST response - 400 invalid content`
+  (`directory_keywords.robot` L710) exists but is used by NO test and its own doc scopes it
+  to "could not be converted to a valid directory FOLDER".
+- ITS-REST `Requests_and_responses.md §Prefer resolving Object references` defines
+  `Prefer: return=representation, resolve_refs` for READ but says nothing about an
+  unresolvable ref.
 
 CNF (stalled guide): `CNF/docs/platform_test_schedule/master09-func_tc_ehr_directory.adoc`
 (cases C.1–L.3). Robot: `CNF/tests/platform/robot/I_EHR_DIRECTORY/**` +
-`_resources/keywords/directory_keywords.robot` (the validate-* keywords carry the concrete
-status codes; L730 literally says the 409-already-exists case "is not (yet) in the SPEC").
-Fixtures: `_resources/test_data_sets/directory/*.json`.
+`_resources/keywords/directory_keywords.robot` (1209 lines; the validate-* keywords carry the
+concrete status codes; L730 literally says the 409-already-exists case "is not (yet) in the
+SPEC"). Fixtures: `_resources/test_data_sets/directory/*.json`.
 
 RELEASED-TEXT GAPS for directory (all confirmed first-hand):
 create-on-existing-directory status; update/delete when EHR has no directory;
@@ -57,4 +104,5 @@ create-on-existing-directory status; update/delete when EHR has no directory;
 `path`-miss branch on a 204-deleted version; `EHR.directory`/`folders` never on the wire;
 committal + item-tag request headers absent from all 5 op files (docs text mandates them);
 is_modifiable rejection status; body-`uid`-vs-If-Match mismatch; DELETE 204 declares no
-headers at all.
+headers at all; **FOLDER.items referential validity (no rule, no status code, no test case);
+FOLDER.items `.type` value constraint (unlike EHR.compositions/folders, unconstrained)**.

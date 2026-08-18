@@ -53,6 +53,21 @@ impl CommitEnv for FerroEhrService {
         FerroEhrService::validate_for_commit(self, kind, data, incomplete).await
     }
 
+    async fn check_folder_item_refs(
+        &self,
+        tx: &mut sqlx::PgConnection,
+        ehr_id: EhrId,
+        folder: &Value,
+    ) -> Result<(), ServiceError> {
+        ehr::validation::check_folder_item_refs(
+            &mut *tx,
+            ehr_id,
+            &FerroEhrService::effective_system_id(self),
+            folder,
+        )
+        .await
+    }
+
     async fn ensure_ehr_exists(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         FerroEhrService::ensure_ehr_exists(self, ehr_id).await
     }
