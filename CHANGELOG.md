@@ -30,6 +30,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Security
 
+- **h2 0.4.16** — RUSTSEC-2026-0258: the HTTP/2 implementation under hyper
+  accepted and queued empty DATA frames without limit (low severity,
+  unbounded-memory class). In-range lock upgrade; no code change.
+
 - **The published `ferroehr-postgres` image is rebuilt clean of its 15
   fixable HIGH findings.** Nine were Debian `util-linux` packages
   (CVE-2026-53615) whose fix sits in trixie-security while the pinned
