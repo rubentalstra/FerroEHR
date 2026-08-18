@@ -142,8 +142,9 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
     }
+    let evidence = h.evidence_dump("upload-exhausted").await;
     panic!(
-        "`{template_id}` never appeared after uploading `{fixture}` (pre-hydration uploads exhausted)"
+        "`{template_id}` never appeared after uploading `{fixture}` (uploads exhausted; {evidence})"
     );
 }
 

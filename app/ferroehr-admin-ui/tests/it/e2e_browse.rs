@@ -96,7 +96,8 @@ async fn ensure_template_present(h: &Harness) -> bool {
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
     }
-    panic!("the fixture template never appeared after upload (pre-hydration uploads exhausted)");
+    let evidence = h.evidence_dump("upload-exhausted").await;
+    panic!("the fixture template never appeared after upload (uploads exhausted; {evidence})");
 }
 
 /// Expand every collapsed disclosure in the visible catalog tree so the deep

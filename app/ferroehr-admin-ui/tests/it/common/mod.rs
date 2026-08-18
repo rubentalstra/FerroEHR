@@ -310,6 +310,38 @@ impl Harness {
         panic!("a toast never cleared (it would intercept the next click)");
     }
 
+    /// Failure evidence at a journey-defined point, for a panic that would
+    /// otherwise preempt the next `goto`'s console sweep: a screenshot, the
+    /// DRAINED browser console printed to the test log (hydration errors and
+    /// panics land there), and any visible message-bar text — returned as one
+    /// line for the panic message.
+    pub(crate) async fn evidence_dump(&self, slug: &str) -> String {
+        let url = self
+            .driver
+            .current_url()
+            .await
+            .map(|u| u.to_string())
+            .unwrap_or_default();
+        let path = format!("{}/{}-{slug}.png", self.shots_dir, self.journey);
+        drop(self.driver.screenshot(std::path::Path::new(&path)).await);
+        let entries = self.driver.get_log("browser").await.unwrap_or_default();
+        let mut severe = 0usize;
+        for entry in &entries {
+            if entry.level == "SEVERE" {
+                severe += 1;
+            }
+            println!("console[{}]: {}", entry.level, entry.message);
+        }
+        let bar = match self.driver.find(By::Css(".thaw-message-bar")).await {
+            Ok(el) => el.text().await.unwrap_or_default(),
+            Err(_) => String::new(),
+        };
+        format!(
+            "at {url}; {} console entries ({severe} SEVERE — printed above); message bar: {bar:?}",
+            entries.len()
+        )
+    }
+
     /// Numbered step screenshot: `{journey}-{step}-{slug}.png`.
     ///
     /// # Panics
