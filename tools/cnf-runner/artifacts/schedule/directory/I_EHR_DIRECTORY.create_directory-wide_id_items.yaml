@@ -40,7 +40,10 @@
 # As in cnf.directory.with_items, nothing here asserts that the target exists:
 # BASE object_ref.adoc §Description states the referenced object "may exist
 # locally or be maintained outside the current namespace, e.g. in another
-# service" — which is precisely the situation a GENERIC_ID describes.
+# service" — which is precisely the situation a GENERIC_ID describes, and why
+# the reference claims a foreign system (`legacy.pas.example.org` — a scheme
+# openEHR does not model lives outside this system; re-adjudicated
+# 2026-08-18, issue #1951, register AMB-211).
 id: I_EHR_DIRECTORY.create_directory-wide_id_items
 kind: functional
 component: EHR_DIRECTORY

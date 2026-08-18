@@ -16,7 +16,7 @@
       "items": [
         {
           "_type": "OBJECT_REF",
-          "namespace": "local",
+          "namespace": "my.system.id",
           "type": "VERSIONED_COMPOSITION",
           "id": {
             "_type": "HIER_OBJECT_ID",
@@ -25,7 +25,7 @@
         },
         {
           "_type": "OBJECT_REF",
-          "namespace": "local",
+          "namespace": "my.system.id",
           "type": "VERSIONED_COMPOSITION",
           "id": {
             "_type": "HIER_OBJECT_ID",
@@ -44,7 +44,7 @@
       "items": [
         {
           "_type": "OBJECT_REF",
-          "namespace": "local",
+          "namespace": "my.system.id",
           "type": "VERSIONED_COMPOSITION",
           "id": {
             "_type": "HIER_OBJECT_ID",

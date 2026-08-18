@@ -4116,7 +4116,19 @@ pub(crate) async fn directory_get_at_time(
                                       `List<OBJECT_REF>`). A committal \
                                       `change_type`/`lifecycle_state` that is \
                                       not a member of its openEHR terminology \
-                                      group is `422` too.",
+                                      group is `422` too. An `items` OBJECT_REF \
+                                      whose `namespace` claims this system \
+                                      (`local`, or the configured system id) \
+                                      must resolve to a versioned object in \
+                                      this EHR; an unresolvable one is `422` \
+                                      naming each dangling reference at its \
+                                      tree path — no released text constrains \
+                                      reference targets, so this is our own \
+                                      extension, and foreign-namespace \
+                                      references pass unchecked (BASE \
+                                      `object_ref.adoc`: targets \"may exist \
+                                      locally or be maintained outside the \
+                                      current namespace\").",
          body = serde_json::Value)
     )
 )]
@@ -4406,7 +4418,19 @@ pub(crate) async fn directory_update(
                                       `List<OBJECT_REF>`). A committal \
                                       `change_type`/`lifecycle_state` that is \
                                       not a member of its openEHR terminology \
-                                      group is `422` too.",
+                                      group is `422` too. An `items` OBJECT_REF \
+                                      whose `namespace` claims this system \
+                                      (`local`, or the configured system id) \
+                                      must resolve to a versioned object in \
+                                      this EHR; an unresolvable one is `422` \
+                                      naming each dangling reference at its \
+                                      tree path — no released text constrains \
+                                      reference targets, so this is our own \
+                                      extension, and foreign-namespace \
+                                      references pass unchecked (BASE \
+                                      `object_ref.adoc`: targets \"may exist \
+                                      locally or be maintained outside the \
+                                      current namespace\").",
          body = serde_json::Value)
     )
 )]

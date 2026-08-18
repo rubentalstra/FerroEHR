@@ -436,10 +436,12 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
     .await?)
 }
 
-/// Which of `roots` exist as versioned objects in `ehr_id`, over the full
-/// physical store (`vo_version_all`: hot + cold, so an archived target still
-/// resolves), in any lifecycle state (a logically deleted object still
-/// resolves — its container remains, RM common master06 §Logical Deletion).
+/// Which of `roots` exist as versioned objects in `ehr_id`.
+///
+/// Reads the full physical store (`vo_version_all`: hot + cold, so an
+/// archived target still resolves), in any lifecycle state (a logically
+/// deleted object still resolves — its container remains, RM common
+/// master06 §Logical Deletion).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

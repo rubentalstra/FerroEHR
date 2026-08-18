@@ -240,6 +240,16 @@ curl -u ferroehr:ferroehr \
 - `GET /ehr/{ehr_id}/directory/{version_uid}` — a specific version, optionally
   `?path=`.
 
+Folder `items` are `OBJECT_REF`s, and the server validates the ones that claim
+**this system**: a reference whose `namespace` is `local` (or the server's
+configured system id) must resolve to a versioned object in that EHR, or the
+commit is refused with **422** naming each unresolvable reference at its tree
+path. References into other namespaces — another system's id, or `unknown` —
+are stored verbatim without a resolvability check, since openEHR object
+references are explicitly allowed to point outside the current system. The
+same rule applies to folder hierarchies committed through the CONTRIBUTION
+endpoint.
+
 ## CONTRIBUTION
 
 A **CONTRIBUTION** is an atomic change-set: a group of versioned-object changes

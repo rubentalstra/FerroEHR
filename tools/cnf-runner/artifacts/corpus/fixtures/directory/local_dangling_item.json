@@ -8,12 +8,11 @@
   "items": [
     {
       "_type": "OBJECT_REF",
-      "namespace": "legacy.pas.example.org",
-      "type": "ANY",
+      "namespace": "local",
+      "type": "VERSIONED_COMPOSITION",
       "id": {
-        "_type": "GENERIC_ID",
-        "value": "A2-4715-0099",
-        "scheme": "local_ehr_scheme"
+        "_type": "HIER_OBJECT_ID",
+        "value": "3d0c9a52-77aa-4c11-9b0d-6e1f2a3b4c5d"
       }
     }
   ]
