@@ -13,14 +13,19 @@ Run once, on an empty data directory, as the bootstrap superuser
 
 - a **non-superuser** login role (default `ferroehr`) and a **database it owns**
   (default `ferroehr`);
-- schemas **`ehr`** and **`ext`**, both owned by the app role;
+- the three NOLOGIN group roles of the layered role architecture —
+  **`ferroehr_migrator`**, **`ferroehr_app`**, **`ferroehr_reader`** — with the
+  login role granted `ferroehr_migrator` + `ferroehr_app`, so dev/compose has
+  the same grant topology as a hardened deployment;
+- schemas **`ehr`**, **`ext`** and **`audit`** (the local IHE ATNA Audit Record
+  Repository), all owned by the app role;
 - extensions installed **by the superuser** so the app role never needs one:
   `uuid-ossp`, `pgcrypto`, `pg_trgm`, and **`btree_gist`** (required by the
   temporal `vo_version` `PRIMARY KEY (... WITHOUT OVERLAPS)`), all in `ext`.
 
 This is exactly the set the application's migrator
 (`ferroehr::db::run_migrations`) expects to find when it connects as the app
-role: its bootstrap `CREATE SCHEMA IF NOT EXISTS {ehr,ext}` and
+role: its bootstrap `CREATE SCHEMA IF NOT EXISTS {ehr,ext,audit}` and
 `CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext` all become no-ops,
 and it then migrates the schema **content** into `ehr`/`ext`.
 

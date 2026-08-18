@@ -33,6 +33,12 @@ path-scoped adjudications), `security/vex/*.json` (the published arguments).
 Never tune a lane by giving it its own flags — a lane that diverges from the
 shared config silently changes what the gate means.
 
+Platforms are explicit everywhere (#2412): the published index is dual-arch
+(`linux/amd64` + `linux/arm64`) and trivy reads ONE variant per invocation
+(`--platform`, default `linux/amd64` — the Trivy container-image guide), so
+each lane scans both variants; a locally built `--candidate` is
+single-platform by construction and says so.
+
 ## The remediation law (per finding class)
 
 Attribute every finding to exactly one class BEFORE touching anything, from
