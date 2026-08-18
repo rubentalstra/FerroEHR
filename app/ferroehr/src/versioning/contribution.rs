@@ -791,6 +791,25 @@ pub(crate) async fn commit_version_set(
             _ => None,
         })
         .collect();
+    // The FOLDER bodies this set commits, for the post-insert item-reference
+    // check (the hook doc on `CommitEnv::check_folder_item_refs` carries the
+    // ordering rationale — a folder may reference a sibling of its own set).
+    let folder_commits: Vec<Value> = changes
+        .iter()
+        .filter_map(|(_, c)| match c {
+            Change::Create {
+                kind: Kind::Folder,
+                canonical,
+                ..
+            }
+            | Change::Modify {
+                kind: Kind::Folder,
+                canonical,
+                ..
+            } => Some(canonical.clone()),
+            _ => None,
+        })
+        .collect();
 
     let mut tx = cx.pool().begin().await?;
     // VERSIONED_COMPOSITION cross-version invariants (RM ehr
@@ -820,6 +839,14 @@ pub(crate) async fn commit_version_set(
     )
     .await
     .map_err(body_target_not_found_is_bad_request)?;
+    // Every committed FOLDER's local-claiming item references must resolve,
+    // judged AFTER the set's own inserts so same-CONTRIBUTION targets count
+    // (RM ehr master04 §Folders); a violation rolls the whole set back.
+    if let Some(ehr_id) = ehr_id {
+        for folder in &folder_commits {
+            cx.check_folder_item_refs(&mut tx, ehr_id, folder).await?;
+        }
+    }
     // Keep the EHR's promoted subject columns in sync after each committed
     // EHR_STATUS version (one EHR per subject — RM ehr master04 §EHR Status).
     if let Some(ehr_id) = ehr_id {

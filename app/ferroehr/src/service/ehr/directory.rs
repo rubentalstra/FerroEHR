@@ -50,7 +50,7 @@ use crate::versioning::object_version_id::{TreeId, components};
 use crate::versioning::read::{read_current, read_version, version_at};
 use crate::versioning::wire::versioned_object;
 
-use super::validation::validate_folder;
+use super::validation::{check_folder_item_refs, validate_folder};
 use super::{ensure_if_match, resolve_envelope};
 use crate::service::datetime::parse_at_time;
 
@@ -87,6 +87,7 @@ impl FerroEhrService {
         )?;
         self.ensure_ehr_exists(ehr_id).await?;
         validate_folder(&folder, incomplete)?;
+        check_folder_item_refs(&self.pool, ehr_id, &self.effective_system_id(), &folder).await?;
         // is_modifiable = False forbids content writes; the directory is EHR
         // content (RM ehr master04 §EHR Active Status).
         self.ensure_content_writable(ehr_id).await?;
@@ -293,6 +294,7 @@ impl FerroEhrService {
             &self.effective_system_id(),
         )?;
         validate_folder(&folder, incomplete)?;
+        check_folder_item_refs(&self.pool, ehr_id, &self.effective_system_id(), &folder).await?;
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — the directory is EHR content. Folded from the
         // standalone `ensure_content_writable` side-SELECT into the merged
