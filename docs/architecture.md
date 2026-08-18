@@ -223,7 +223,7 @@ issues for triage.
 
 ## PostgreSQL 18
 
-We target **PG 18** (18.4+): `uuidv7()`, temporal `WITHOUT OVERLAPS`
+We target **PG 18** (18.6+): `uuidv7()`, temporal `WITHOUT OVERLAPS`
 constraints, `RETURNING OLD/NEW`, `JSON_TABLE` + SQL/JSON functions and
 jsonpath item methods (PG 17), B-tree skip scan, async I/O, STORED generated
 columns for hot extractions. See `docs/postgres-features.md`.

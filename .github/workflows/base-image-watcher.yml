@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/workflows/base-image-watcher.yml
+#
+# Weekly check that the digest-pinned postgres base is still the newest bytes
+# upstream publishes for its major (issue #2410). Two staleness classes, both
+# invisible to the vulnerability scans until they surface as findings:
+#
+#   * a NEWER PATCH TAG on the pinned major (PostgreSQL quarterly/security
+#     releases — 18.4 → 18.6 sat unnoticed for days before #2408/#2409);
+#   * the PINNED TAG RE-POINTED upstream (a same-version respin — how
+#     docker-library ships base refreshes between PG releases; our build-time
+#     apt upgrade covers Debian packages, but a respin also carries rebuilt
+#     bundled binaries like gosu, which apt cannot touch).
+#
+# The other bases (the distroless runtime, the rust build image) are
+# deliberately out of scope: their tags move near-weekly (pure noise), their
+# CVE exposure surfaces through the image scans, and the rust image follows
+# the toolchain watcher's bumps.
+#
+# A finding files/updates ONE tracking issue (the image-scan.yml dedup
+# pattern); the run itself stays green — a newer base is actionable, not
+# broken. Remediation: the base-bump checklist in
+# .claude/rules/image-security.md.
+name: Base image watcher
+
+on:
+  schedule:
+    # Mondays 07:43 UTC — off the hour, after the 07:13 published-image scan,
+    # clear of the other scheduled lanes (05:17/05:23/05:37/06:17/06:47).
+    - cron: "43 7 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: base-image-watcher
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  watch:
+    name: compare pinned postgres base to upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write # file/update the one tracking issue below
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare the pinned base to upstream
+        id: check
+        run: |
+          set -euo pipefail
+          from=$(grep -E '^FROM postgres:' docker/postgres/Dockerfile | awk '{print $2}')
+          pinned_tag=${from#postgres:}; pinned_tag=${pinned_tag%@*}
+          pinned_digest=${from#*@}
+          major=${pinned_tag%%.*}
+
+          # Newest patch tag for the pinned major, from the Docker Hub API.
+          newest_tag=$(curl -fsSL --retry 3 \
+              "https://hub.docker.com/v2/repositories/library/postgres/tags?page_size=100&name=${major}." \
+            | jq -r --arg re "^${major}\\.[0-9]+$" \
+                '[.results[].name | select(test($re))] | sort_by(split(".") | map(tonumber)) | last // empty')
+
+          # What the pinned tag resolves to today (the manifest-list digest,
+          # the same form the FROM pins).
+          current_digest=$(docker buildx imagetools inspect "postgres:${pinned_tag}" \
+              --format '{{.Manifest.Digest}}')
+
+          stale=""
+          {
+            echo "Pinned: \`postgres:${pinned_tag}@${pinned_digest}\`"
+            if [ -n "$newest_tag" ] && [ "$newest_tag" != "$pinned_tag" ]; then
+              stale=1
+              echo "- a newer patch tag exists upstream: \`postgres:${newest_tag}\`"
+            fi
+            if [ "$current_digest" != "$pinned_digest" ]; then
+              stale=1
+              echo "- the pinned tag has been re-pointed upstream: \`postgres:${pinned_tag}\` now resolves to \`${current_digest}\` (a same-version respin: rebuilt base packages and bundled binaries)"
+            fi
+            if [ -z "$stale" ]; then
+              echo "- upstream has nothing newer; the pin is current"
+            fi
+          } > details.md
+          echo "stale=${stale:-0}" >> "$GITHUB_OUTPUT"
+          cat details.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: File or update the tracking issue
+        if: steps.check.outputs.stale == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          title="chore(images): the pinned postgres base is stale — newer upstream bytes exist"
+          existing=$(gh issue list --repo "$REPO" --state open --search "in:title \"$title\"" \
+                       --json number --jq '.[0].number // empty')
+          cat > body.md <<'PREAMBLE'
+          The weekly base-image watcher found the digest-pinned postgres base behind upstream.
+
+          PREAMBLE
+          cat details.md >> body.md
+          cat >> body.md <<'REMEDY'
+
+          Remedy: the base-bump pin-site checklist in `.claude/rules/image-security.md`,
+          verified with `scripts/security/scan-images.sh --candidate` before merge.
+          REMEDY
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPO" --body-file body.md
+            echo "commented on #$existing"
+          else
+            gh issue create --repo "$REPO" --title "$title" \
+              --label chore --label P2 --body-file body.md
+          fi

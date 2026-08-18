@@ -7,7 +7,7 @@ paths: ["app/ferroehr/**"]
 `ferroehr` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
 pool, migrations) + `sea-query` 1.0 + `sea-query-sqlx` (the dynamic SQL builder
 + binder; `sea-query-binder` is the obsolete sea-query-0.32 pairing — do not
-use it). **Not sea-orm.** Target PostgreSQL 18.4+.
+use it). **Not sea-orm.** Target PostgreSQL 18.6+.
 
 ## Migrations
 

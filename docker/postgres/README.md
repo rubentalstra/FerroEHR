@@ -2,7 +2,9 @@
 
 A preconfigured PostgreSQL 18 image for FerroEHR, mirroring the official
 `ehrbase/ehrbase-v2-postgres` two-image model built fresh for this stack
-(the greenfield PG18 storage design, `docs/architecture.md` §Storage). It is `postgres:18.4` plus one-time init scripts.
+(the greenfield PG18 storage design, `docs/architecture.md` §Storage). It is `postgres:18.6` plus Debian
+security updates applied at image build (the pinned upstream base rebuilds on its own cadence, so
+trixie-security fixes are pulled in at OUR build time) plus one-time init scripts.
 
 ## What the init scripts create
 

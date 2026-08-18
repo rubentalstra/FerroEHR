@@ -1,6 +1,6 @@
 # PostgreSQL 17 + 18 features FerroEHR leverages
 
-**Pin: PostgreSQL 18, target 18.4+** (`docs/VERSIONS.md`; CI runs `postgres:18.4`).
+**Pin: PostgreSQL 18, target 18.6+** (`docs/VERSIONS.md`; CI runs `postgres:18.6`).
 Upstream EHRbase targets **PG 15/16**; we target **18** to exploit two major
 releases of new capability for a JSONB-heavy openEHR CDR. This file is the
 reference the persistence, AQL-engine, and auth subsystems build against —
@@ -9,11 +9,11 @@ reference the persistence, AQL-engine, and auth subsystems build against —
 ## Versioning note (why the feature list is only 17.0 + 18.0)
 
 PostgreSQL adds features **only in major releases**. Every minor release —
-**18.1, 18.2, 18.3, 18.4** and all of **17.x** — is a cumulative **bugfix +
-security** rollup with **no new SQL features** (18.4, 2026-05-14, is purely
-CVE/bugfix; same-major upgrades need no dump/restore). So the feature delta over
-EHRbase's PG 16 is exactly the **PG 17.0** and **PG 18.0** feature sets below;
-we run the latest patch (18.4) for the fixes.
+**18.1 through 18.6** (18.5 was never released) and all of **17.x** — is a
+cumulative **bugfix + security** rollup with **no new SQL features** (18.6,
+2026-08-13, fixes 28 CVEs; same-major upgrades need no dump/restore). So the
+feature delta over EHRbase's PG 16 is exactly the **PG 17.0** and **PG 18.0**
+feature sets below; we run the latest patch (18.6) for the fixes.
 
 ## PG 17.0 — SQL/JSON + query performance
 

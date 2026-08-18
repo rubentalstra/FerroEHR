@@ -68,7 +68,7 @@ pub const TERM: &str = openehr_term::Generation::V3_1.spec_version();
 /// The `PostgreSQL` version this server targets. No openEHR spec governs the
 /// datastore — our own design; no crate carries this pin, so it stays
 /// hand-maintained here.
-pub const PG_TARGET: &str = "18.4+";
+pub const PG_TARGET: &str = "18.6+";
 /// The last machine-computed ECC conformance verdict — the highest profile
 /// obtained — advertised by the System Options manifest (`OPTIONS /`
 /// `conformance_profile`).

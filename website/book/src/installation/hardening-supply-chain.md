@@ -288,6 +288,15 @@ current Debian packages, changing nothing about FerroEHR itself. The distroless
 images carry almost no OS package surface, and when the lane was written none of
 the three published images carried a fixable HIGH or CRITICAL finding.
 
+The remediation side is standing machinery, not a per-incident scramble. The
+PostgreSQL image applies Debian security updates at its own build time, so an
+OS-package fix published between upstream base rebuilds reaches the image at
+the next release rather than waiting on someone else's cadence; a second
+weekly lane watches the pinned base itself and opens an issue when a newer
+PostgreSQL patch tag exists or the pinned tag is re-pointed upstream; and the
+exact published-image scan is reproducible locally against a rebuilt
+candidate, so a fix is proven clean before it merges.
+
 ## The supply-chain map
 
 Each cheat-sheet supply-chain control, and the artifact that satisfies it — so a
