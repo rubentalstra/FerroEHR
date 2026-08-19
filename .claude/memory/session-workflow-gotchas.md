@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-08-18T19:16:25.831Z
+  modified: 2026-08-19T21:24:11.753Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
@@ -75,7 +75,14 @@ commit-message wording; close/reopen for late labels.
 - **Changelog inserts:** a section (`### Fixed` etc.) may already exist in the target release block — ALWAYS merge the entry into the existing subsection header; blindly inserting a new header creates a duplicate (happened twice, owner-corrected 2026-08-01). Check `grep -n '^###' CHANGELOG.md` for the block first.
 - **`gh` comment bodies need heredocs:** backticks inside a double-quoted
   `--body` get shell-executed and silently mangle the posted comment. Use
-  `--body-file -` with a quoted heredoc (`<<'EOF'`).
+  `--body-file -` with a quoted heredoc (`<<'EOF'`). The SAME trap applies to
+  `git commit -m "..."` (hit 2026-08-19: a `` `up --wait` `` in the message
+  executed and vanished) — use `git commit -F -` with a quoted heredoc; and
+  the `block_dangerous` hook refuses ALL force-pushes (even feature branches),
+  so an already-pushed mangled message is not amendable — write it right the
+  first time. Pipes also mask exit codes (`cmd | tail -1 && next` runs `next`
+  even when `cmd` failed — bit twice on 2026-08-18/19): put the gate command
+  bare, never piped, when chaining with `&&`.
 - **Renaming a container-test module breaks nextest serialization:** the
   `containers` group in `.config/nextest.toml` matches those suites by module
   prefix (`binary(it) & test(/^(…)::/)`), so a module rename silently
