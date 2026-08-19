@@ -3283,3 +3283,84 @@ cnf.demographic.role.cluster_no_items:
     defect: "the CLUSTER's items list is present but empty"
     spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
   provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.role.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
+cnf.opt.invalid.description_empty_lifecycle_state:
+  source: fixtures/opt/invalid/description_empty_lifecycle_state.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the description's lifecycle_state is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants Lifecycle_state_valid (not lifecycle_state.is_empty)"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: <lifecycle_state> emptied, so the RM ch.8 row is the only defect"
+cnf.opt.invalid.description_empty_purpose:
+  source: fixtures/opt/invalid/description_empty_purpose.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the description detail's purpose is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants Purpose_valid (not purpose.is_empty)"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: the en detail's <purpose> emptied"
+cnf.opt.invalid.description_item_language_not_in_code_set:
+  source: fixtures/opt/invalid/description_item_language_not_in_code_set.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the description detail's language zz-none is not in the openEHR languages code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants Language_valid (code_set(Code_set_id_languages).has_code(language))"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: the en detail's language code_string swapped to zz-none"
+cnf.opt.invalid.template_language_not_in_code_set:
+  source: fixtures/opt/invalid/template_language_not_in_code_set.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the template's own language zz-none is not in the openEHR languages code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants Original_language_valid (code_set(Code_set_id_languages).has_code(original_language.as_string)); the OPT root is AUTHORED_RESOURCE-shaped (ITS-XML v1 AM Template.xsd, the OPERATIONAL_TEMPLATE annotation)"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: the root language code_string swapped to zz-none"
+cnf.opt.invalid.controlled_without_revision_history:
+  source: fixtures/opt/invalid/controlled_without_revision_history.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "is_controlled is true while no revision_history is carried"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants Revision_history_valid (is_controlled xor revision_history = Void)"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: <is_controlled>true</is_controlled> inserted before <description>, no revision_history added"
+cnf.opt.invalid.description_duplicate_detail_language:
+  source: fixtures/opt/invalid/description_duplicate_detail_language.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "two description details carry the same language en — details realize a Hash keyed by language, so a duplicate key is unrepresentable in the model"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.resource_description.adoc §Attributes (details: Hash<String, RESOURCE_DESCRIPTION_ITEM> keyed by language code) + §Invariants Details_valid"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: the en <details> block duplicated verbatim"
+cnf.opt.invalid.description_without_original_author:
+  source: fixtures/opt/invalid/description_without_original_author.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the description carries no original_author"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.resource_description.adoc §Attributes (original_author 1..1) + §Invariants Original_author_valid (not original_author.is_empty)"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: the <original_author> element removed"
+cnf.opt.invalid.description_without_details:
+  source: fixtures/opt/invalid/description_without_details.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the description carries no details"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.resource_description.adoc §Attributes (details 1..1) + §Invariants Details_valid (not details.is_empty)"
+  provenance: "derived 2026-08-19 from cnf.opt.obs_inst with exactly one edit: the <details> block removed"
+cnf.archetype.adl14.translation_restates_original:
+  source: fixtures/archetypes/adl14.medication.v1.translation_restates_original.adl
+  format: adl14-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a translations entry re-states the original language en"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants Translations_valid (not translations.has(orginal_language.code_string) — the spec's own spelling); the RM resource package governs AOM 1.4 meta-data (RM common master08-resource_package.adoc front-matter NOTE)"
+  provenance: "derived 2026-08-19 from cnf.archetype.adl14.medication with exactly one edit: an [\"en\"] entry inserted into the existing translations section"

@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Template and archetype uploads now validate the artefact's own meta-data
+  against the RM resource-package rules.** An OPT 1.4 whose header violates
+  the RM class invariants — a language outside the openEHR `languages` code
+  set, `is_controlled` without a revision history, a description without an
+  author or details, duplicate detail languages, an empty `lifecycle_state`
+  or `purpose` — is refused with a `422` naming the violated invariant, and
+  `validate` answers with the same catalogue as upload, so the two can no
+  longer disagree. ADL 1.4 source uploads refuse the structural and
+  language-code rows the same way; the empty-prose rows
+  (`purpose`/`use`/`misuse` as `<"">`) are reported as named warnings there,
+  because the empty string is how real-world 1.4 authoring spells absence
+  (adjudicated against the full vendored CKM library, which uploads
+  unchanged).
+
 ## [3.17.8] - 2026-08-19
 
 ### Fixed

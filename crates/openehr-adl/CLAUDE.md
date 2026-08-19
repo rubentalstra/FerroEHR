@@ -175,8 +175,14 @@ else; each helper has exactly ONE home.
   the message. The `V*`/`W*` VALIDITY space is the AOM2 `master08` catalogue
   plus a CLOSED set of three flagged local extensions (`VRDLA`, `WOUC`,
   `W14DEP` — each carrying the explicit "no openEHR spec defines this code"
-  flag at its variant); extending that set is an adjudicated decision, since
-  a new code is a new accepted/refused surface, never a convenience.
+  flag at its variant) plus the RM resource-meta family (`Rm*` variants whose
+  mnemonics ARE the RM class-table invariant names — spec-grounded in RM
+  common ch.8, adjudicated on issue #2447; the empty-prose rows
+  `Purpose_valid`/`Use_valid`/`misuse_valid` are Warning-severity on a 1.4
+  SOURCE because `<"">` is the 1.4 ecosystem's spelling of absence, pinned by
+  the `ckm_archetype_packs` sweep); extending either set is an adjudicated
+  decision, since a new code is a new accepted/refused surface, never a
+  convenience.
 - **1.4 defaults are EFFECTIVE-value accessors, never mutations** —
   `validate::conformance::effective_{existence,occurrences}_adl14` apply
   master05's `{1..1}` defaults (and the `use_node` inheritance rule) on read;
@@ -203,8 +209,10 @@ else; each helper has exactly ONE home.
   Corpus cases are the regression net — never delete/weaken one to get green;
   a defect goes through adjudication, not case edits, and every refusal keeps
   its accepting twin.
-- Dependencies point downward only: `openehr-am`, `openehr-base`, `openehr-lang`
-  (ODIN/BEL), `openehr-term`. No app-crate knowledge, no SQL, no REST.
+- Dependencies point downward only: `openehr-am`, `openehr-base`, `openehr-rm`
+  (the generated RM model oracle), `openehr-lang` (ODIN/BEL), `openehr-term`
+  (the languages code set for the resource-meta rows). No app-crate
+  knowledge, no SQL, no REST.
 - Spec pin: ADL/AOM 2.4.0 via `SPEC_VERSION`; the package version is the
   crate's own SemVer line (`.claude/rules/crates-publishing.md`).
 - Gates: `cargo clippy -p openehr-adl --all-targets` +

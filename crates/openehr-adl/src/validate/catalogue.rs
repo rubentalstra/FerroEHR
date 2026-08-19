@@ -327,12 +327,68 @@ pub enum ValidationCode {
     /// VTPIN — tuple invalidity against the parent node (`master08` §Phase 2; no
     /// full vendored text — NOTE-flagged).
     Vtpin,
+    /// `AUTHORED_RESOURCE.Translations_valid` — a present translations list is
+    /// non-empty and never re-states the original language (RM
+    /// `org.openehr.rm.common.authored_resource.adoc` §Invariants; the RM
+    /// resource package governs ADL 1.4 meta-data, `common/master08` NOTE).
+    RmArTranslations,
+    /// `AUTHORED_RESOURCE.Description_valid` — every description detail's
+    /// language is the original or a listed translation (RM
+    /// `org.openehr.rm.common.authored_resource.adoc` §Invariants).
+    RmArDescription,
+    /// `RESOURCE_DESCRIPTION.Original_author_valid` — `not
+    /// original_author.is_empty` (RM
+    /// `org.openehr.rm.common.resource_description.adoc` §Invariants).
+    RmRdOriginalAuthor,
+    /// `RESOURCE_DESCRIPTION.Lifecycle_state_valid` — `not
+    /// lifecycle_state.is_empty` (RM
+    /// `org.openehr.rm.common.resource_description.adoc` §Invariants).
+    RmRdLifecycleState,
+    /// `RESOURCE_DESCRIPTION.Details_valid` — a description carries at least
+    /// one detail (RM `org.openehr.rm.common.resource_description.adoc`
+    /// §Invariants, with `details` 1..1 in the RM class table).
+    RmRdDetails,
+    /// `RESOURCE_DESCRIPTION_ITEM.Purpose_valid` — `not purpose.is_empty` (RM
+    /// `org.openehr.rm.common.resource_description_item.adoc` §Invariants).
+    /// Warning on a 1.4 SOURCE: `purpose = <"">` is endemic real-world 1.4
+    /// authoring (61 CKM archetypes), and 1.4 tolerance is our own design —
+    /// the finding is named, never refused (the `ckm_archetype_packs` sweep
+    /// pins both halves).
+    RmRdiPurpose,
+    /// `RESOURCE_DESCRIPTION_ITEM.Use_valid` — a present `use` is non-empty
+    /// (RM `org.openehr.rm.common.resource_description_item.adoc`
+    /// §Invariants). Warning on a 1.4 SOURCE: `use = <"">` is the 1.4
+    /// ecosystem's spelling of absence (162 CKM archetypes).
+    RmRdiUse,
+    /// `RESOURCE_DESCRIPTION_ITEM.misuse_valid` — a present `misuse` is
+    /// non-empty (RM `org.openehr.rm.common.resource_description_item.adoc`
+    /// §Invariants; the spec's own lowercase name). Warning on a 1.4 SOURCE:
+    /// `misuse = <"">` is the 1.4 ecosystem's spelling of absence (873 CKM
+    /// archetypes).
+    RmRdiMisuse,
+    /// `AUTHORED_RESOURCE.Original_language_valid` — the original language is
+    /// in the openEHR `languages` code set (RM
+    /// `org.openehr.rm.common.authored_resource.adoc` §Invariants).
+    RmArOriginalLanguage,
+    /// `TRANSLATION_DETAILS.Language_valid` — a translation's language is in
+    /// the openEHR `languages` code set (RM
+    /// `org.openehr.rm.common.translation_details.adoc` §Invariants).
+    RmTdLanguage,
+    /// `RESOURCE_DESCRIPTION_ITEM.Language_valid` — a description detail's
+    /// language is in the openEHR `languages` code set (RM
+    /// `org.openehr.rm.common.resource_description_item.adoc` §Invariants).
+    RmRdiLanguage,
 }
 
 impl ValidationCode {
     /// The bare mnemonic (e.g. `"VARDT"`), as used in the spec catalogue and
     /// the conformance-corpus `regression` tags.
     #[must_use]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "a pure one-arm-per-code match table; splitting it would \
+                  scatter the catalogue"
+    )]
     pub fn mnemonic(self) -> &'static str {
         match self {
             Self::Vardt => "VARDT",
@@ -428,6 +484,17 @@ impl ValidationCode {
             Self::Vunk => "VUNK",
             Self::Vtpnc => "VTPNC",
             Self::Vtpin => "VTPIN",
+            Self::RmArTranslations => "AUTHORED_RESOURCE.Translations_valid",
+            Self::RmArDescription => "AUTHORED_RESOURCE.Description_valid",
+            Self::RmRdOriginalAuthor => "RESOURCE_DESCRIPTION.Original_author_valid",
+            Self::RmRdLifecycleState => "RESOURCE_DESCRIPTION.Lifecycle_state_valid",
+            Self::RmRdDetails => "RESOURCE_DESCRIPTION.Details_valid",
+            Self::RmRdiPurpose => "RESOURCE_DESCRIPTION_ITEM.Purpose_valid",
+            Self::RmRdiUse => "RESOURCE_DESCRIPTION_ITEM.Use_valid",
+            Self::RmRdiMisuse => "RESOURCE_DESCRIPTION_ITEM.misuse_valid",
+            Self::RmArOriginalLanguage => "AUTHORED_RESOURCE.Original_language_valid",
+            Self::RmTdLanguage => "TRANSLATION_DETAILS.Language_valid",
+            Self::RmRdiLanguage => "RESOURCE_DESCRIPTION_ITEM.Language_valid",
         }
     }
 
@@ -436,7 +503,12 @@ impl ValidationCode {
     #[must_use]
     pub fn severity(self) -> Severity {
         match self {
-            Self::Wacmcl | Self::Wouc | Self::W14dep => Severity::Warning,
+            Self::Wacmcl
+            | Self::Wouc
+            | Self::W14dep
+            | Self::RmRdiPurpose
+            | Self::RmRdiUse
+            | Self::RmRdiMisuse => Severity::Warning,
             _ => Severity::Error,
         }
     }

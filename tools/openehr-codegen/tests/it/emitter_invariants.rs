@@ -1498,3 +1498,64 @@ fn the_concrete_only_variant_reading_loses_no_document_shape() {
          document can present (or admit an abstract type as a variant)"
     );
 }
+
+/// The complex-invariant register's venue claims are real, exactly like the
+/// emitted register's: a citation names a vendored file, a realizing venue
+/// names an existing file that names the invariant, a non-realizing venue
+/// names no site — and the five RM resource-package adjudications the ch.8
+/// audit produced are pinned by name and venue.
+#[test]
+fn complex_register_venues_are_real() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let rows = testsupport::accounted_complex_invariants("rm").unwrap();
+    for a in rows.iter().filter(|a| a.venue != "UNACCOUNTED") {
+        let where_ = format!("{}.{}", a.class, a.name);
+        assert!(
+            repo.join(&a.citation).is_file(),
+            "{where_}: citation {} is not a vendored spec file",
+            a.citation,
+        );
+        match a.venue {
+            "Impl" | "Wire" | "App" => {
+                let path = repo.join(&a.site);
+                assert!(
+                    path.is_file(),
+                    "{where_}: realizing file {} is missing",
+                    a.site
+                );
+                let text = std::fs::read_to_string(&path).unwrap();
+                assert!(
+                    text.contains(&a.name),
+                    "{where_}: realizing file {} does not name the invariant",
+                    a.site,
+                );
+            }
+            "Excluded" | "Unrealized" => assert!(
+                a.site.is_empty(),
+                "{where_}: a non-realizing venue must name no site, got {}",
+                a.site,
+            ),
+            other => panic!("{where_}: unexpected complex venue {other}"),
+        }
+    }
+    let venue_of = |class: &str, name: &str| {
+        rows.iter()
+            .find(|a| a.class == class && a.name == name)
+            .map_or("MISSING", |a| a.venue)
+    };
+    assert_eq!(
+        venue_of("AUTHORED_RESOURCE", "Translations_valid"),
+        "App",
+        "the ch.8 ingest realization row is pinned"
+    );
+    assert_eq!(venue_of("AUTHORED_RESOURCE", "Description_valid"), "App");
+    assert_eq!(
+        venue_of("AUTHORED_RESOURCE", "Languages_available_valid"),
+        "Excluded"
+    );
+    assert_eq!(venue_of("RESOURCE_DESCRIPTION", "Language_valid"), "App");
+    assert_eq!(
+        venue_of("RESOURCE_DESCRIPTION", "Parent_resource_valid"),
+        "Excluded"
+    );
+}

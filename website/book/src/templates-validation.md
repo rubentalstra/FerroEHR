@@ -62,6 +62,19 @@ The upload runs two distinct gates, and they answer differently:
   archetype-model rule codes (`VCARM`, `VATID`, `VCORM`, `Pattern_validity`, …)
   in `validationErrors`, each with a human-readable detail.
 
+The 422 gate also validates the template's **own meta-data** against the RM
+resource-package invariants: the template's `language` (and every description
+detail's) must be in the openEHR `languages` code set, `is_controlled` must
+agree with the presence of a `revision_history`, and a `description` needs a
+non-empty `original_author`, `lifecycle_state`, and at least one detail with a
+non-empty `purpose`, with details keyed by distinct languages. Those refusals
+carry the RM invariant name (for example
+`RESOURCE_DESCRIPTION.Lifecycle_state_valid`) in `validationErrors`. ADL 1.4
+archetype source uploads enforce the same family; there, an empty
+`purpose`/`use`/`misuse` string is reported as a named warning rather than
+refused, because the empty string is how real-world 1.4 authoring spells
+absence.
+
 ## Uploading ADL 2 artefacts
 
 ADL 2 artefacts — archetypes, templates and operational templates — are accepted

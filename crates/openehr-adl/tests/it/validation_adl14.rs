@@ -130,6 +130,15 @@ concept
 language
 \toriginal_language = <[ISO_639-1::en]>
 description
+\toriginal_author = <
+\t\t[\"name\"] = <\"FerroEHR tests\">
+\t>
+\tdetails = <
+\t\t[\"en\"] = <
+\t\t\tlanguage = <[ISO_639-1::en]>
+\t\t\tpurpose = <\"Internal-reference validity fixture.\">
+\t\t>
+\t>
 \tlifecycle_state = <\"Initial\">
 definition
 \tCLUSTER[at0000] matches {{
@@ -252,5 +261,88 @@ fn use_node_target_leaving_the_archetype_raises_vdfpt() {
         errors(&bad).contains(&"VDFPT".to_owned()),
         "a use_node path outside the definition structure must raise VDFPT, got {:?}",
         errors(&bad)
+    );
+}
+
+// ── the RM resource-package meta-data rows (RM common ch.8) ──────────────────
+
+/// The RM resource-package invariants bind a 1.4 source's meta-data
+/// (`RM/docs/common/master08-resource_package.adoc` front-matter NOTE; the
+/// class tables' §Invariants). Each row refuses through its invariant-named
+/// code, and the valid fixture stays clean.
+#[test]
+fn resource_meta_rows_bind_a_14_source() {
+    let valid = use_node_archetype("ELEMENT");
+    assert!(adl14_codes(&valid).is_empty());
+
+    // RESOURCE_DESCRIPTION.Details_valid: a description with no details.
+    let no_details = valid.replace(
+        "\tdetails = <\n\t\t[\"en\"] = <\n\t\t\tlanguage = <[ISO_639-1::en]>\n\t\t\tpurpose = <\"Internal-reference validity fixture.\">\n\t\t>\n\t>\n",
+        "",
+    );
+    assert!(
+        adl14_codes(&no_details).contains(&"RESOURCE_DESCRIPTION.Details_valid".to_owned()),
+        "got {:?}",
+        adl14_codes(&no_details)
+    );
+
+    // RESOURCE_DESCRIPTION_ITEM.Purpose_valid: an empty purpose is a
+    // WARNING on a 1.4 source (`purpose = <"">` is endemic real-world 1.4
+    // authoring; 1.4 tolerance is our own design) — named, never refused.
+    let empty_purpose = valid.replace("Internal-reference validity fixture.", "");
+    assert!(
+        !adl14_codes(&empty_purpose)
+            .contains(&"RESOURCE_DESCRIPTION_ITEM.Purpose_valid".to_owned()),
+        "an empty 1.4 purpose must not be an Error"
+    );
+    let warning_codes: Vec<String> = openehr_adl::validate::validate_adl14_source(
+        &empty_purpose,
+        &openehr_adl::validate::rm::ProductionRmModel,
+    )
+    .expect("1.4 source parses")
+    .iter()
+    .filter(|i| i.severity == Severity::Warning)
+    .map(|i| i.code.mnemonic().to_owned())
+    .collect();
+    assert!(
+        warning_codes.contains(&"RESOURCE_DESCRIPTION_ITEM.Purpose_valid".to_owned()),
+        "an empty 1.4 purpose must be a named Warning, got {warning_codes:?}"
+    );
+
+    // RESOURCE_DESCRIPTION.Original_author_valid: an empty author map is not
+    // expressible in ODIN, so drop the section — assemble leaves it empty.
+    let no_author = valid.replace(
+        "\toriginal_author = <\n\t\t[\"name\"] = <\"FerroEHR tests\">\n\t>\n",
+        "",
+    );
+    assert!(
+        adl14_codes(&no_author).contains(&"RESOURCE_DESCRIPTION.Original_author_valid".to_owned())
+    );
+
+    // AUTHORED_RESOURCE.Translations_valid: a translation re-stating the
+    // original language.
+    let restated = valid.replace(
+        "description\n\toriginal_author",
+        "translations = <\n\t[\"en\"] = <\n\t\tlanguage = <[ISO_639-1::en]>\n\t\tauthor = <\n\t\t\t[\"name\"] = <\"FerroEHR tests\">\n\t\t>\n\t>\n>\ndescription\n\toriginal_author",
+    );
+    assert!(
+        adl14_codes(&restated).contains(&"AUTHORED_RESOURCE.Translations_valid".to_owned()),
+        "got {:?}",
+        adl14_codes(&restated)
+    );
+
+    // AUTHORED_RESOURCE.Description_valid: a description detail in a language
+    // that is neither the original nor a listed translation.
+    let orphan_language = valid.replace(
+        "description\n\toriginal_author",
+        "translations = <\n\t[\"de\"] = <\n\t\tlanguage = <[ISO_639-1::de]>\n\t\tauthor = <\n\t\t\t[\"name\"] = <\"FerroEHR tests\">\n\t\t>\n\t>\n>\ndescription\n\toriginal_author",
+    ).replace(
+        "\t\t[\"en\"] = <\n\t\t\tlanguage = <[ISO_639-1::en]>\n\t\t\tpurpose = <\"Internal-reference validity fixture.\">\n\t\t>\n",
+        "\t\t[\"en\"] = <\n\t\t\tlanguage = <[ISO_639-1::en]>\n\t\t\tpurpose = <\"Internal-reference validity fixture.\">\n\t\t>\n\t\t[\"nl\"] = <\n\t\t\tlanguage = <[ISO_639-1::nl]>\n\t\t\tpurpose = <\"Doel.\">\n\t\t>\n",
+    );
+    assert!(
+        adl14_codes(&orphan_language).contains(&"AUTHORED_RESOURCE.Description_valid".to_owned()),
+        "got {:?}",
+        adl14_codes(&orphan_language)
     );
 }

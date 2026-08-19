@@ -13,7 +13,14 @@ master04 generic chapter, the directory diagram IS vendored
 (`RM/docs/UML/diagrams/RM-common.directory.svg`, 148 KB) — but its text is in
 `<g>`-nested glyphs, so a naive `>text<` regex extracts nothing.
 
-**VERIFIED DEFECTS:**
+**SUPERSEDED 2026-08-19 (see [[rm-common-ch567-fix-verification]]): the
+`FOLDER.details` and `FOLDER.items` defects below are FIXED — the JSON write path
+is typed (`negotiate.rs:594 rm_value::<Folder>`), the model-driven
+`check_declared_slot_type` covers every slot, and the items battery
+(with_items / items_by_value / multiply_classified_items / versioned_id_items /
+wide_id_items) exists. The archie citation is purged.**
+
+**VERIFIED DEFECTS (as of 2026-08-02, most now closed):**
 - `FOLDER.details` has NO slot-type check anywhere: `validate_folder`
   (`app/ferroehr/src/service/ehr/validation.rs:684`) walks `_type`/`name`/
   `archetype_node_id`/`links`/`items`/`folders` and never inspects `details`,

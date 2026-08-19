@@ -23,7 +23,7 @@ pub struct ResourceDescription {
     pub other_contributors: Option<Vec<String>>,
     /// Lifecycle state of the resource, typically including states such as: initial, in_development, in_review, published, superseded, obsolete.
     pub lifecycle_state: TerminologyCode,
-    // NOTE: `parent_resource` (BMM-mandatory back-reference) omitted — BASE resource resource_description (parent_resource: Reference to owning resource). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    // NOTE: `parent_resource` (BMM-mandatory back-reference) omitted — BASE resource + RM common.resource resource_description (parent_resource: Reference to owning resource; the class name occurs in both components with the same back-reference). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
     /// Namespace in reverse internet id form, of current custodian organisation.
     pub custodian_namespace: Option<String>,
     /// Plain text name of current custodian organisation.
