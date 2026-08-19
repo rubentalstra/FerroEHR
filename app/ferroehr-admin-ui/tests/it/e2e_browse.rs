@@ -78,11 +78,12 @@ async fn ensure_template_present(h: &Harness) -> bool {
         return false;
     }
     let path = fixture_opt_path();
-    // The change event that drives the upload is a HYDRATED listener, and the
-    // waits above only prove the SSR'd list rendered — a `send_keys` landing
-    // before hydration is simply lost (the login-submit precedent). Re-send
-    // until the row's detail anchor appears; the anchor is re-checked before
-    // every attempt, so an upload that did land is never repeated.
+    // The change event that drives the upload is a HYDRATED listener, and a
+    // file set before it exists is unrecoverable by retrying — a re-send of
+    // the same path fires no change event (#2285). Wait for the shell's
+    // hydration marker so the first send lands on a live listener; the
+    // bounded loop stays as a backstop only.
+    h.wait_hydrated().await;
     for _ in 0..4 {
         h.wait_css("input[type=file]")
             .await
@@ -96,7 +97,8 @@ async fn ensure_template_present(h: &Harness) -> bool {
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
     }
-    panic!("the fixture template never appeared after upload (pre-hydration uploads exhausted)");
+    let evidence = h.evidence_dump("upload-exhausted").await;
+    panic!("the fixture template never appeared after upload (uploads exhausted; {evidence})");
 }
 
 /// Expand every collapsed disclosure in the visible catalog tree so the deep

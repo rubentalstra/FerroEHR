@@ -112,6 +112,8 @@ async fn results_chart_groups_series_and_toggles_them() {
     // Run the query from the raw editor (the results pane both query screens
     // share — the builder renders the same component).
     h.goto("/queries/aql").await;
+    // Save/Run dispatch is hydrated behaviour (#2285's class).
+    h.wait_hydrated().await;
     h.wait_css("#aql-editor")
         .await
         .send_keys(CHART_AQL)
