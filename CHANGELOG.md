@@ -42,8 +42,9 @@ workflow refuses a tag that has no matching section here.
   invalidation). Operators upgrading an existing cluster in place should note
   the upstream release notes advise checking (and possibly reindexing)
   `btree_gist` indexes — the temporal `vo_version` keys use `btree_gist`.
-- **Helm chart `6.0.8`** — no template changes: the chart README now states
-  the PostgreSQL floor as 18.6.
+- **Helm chart `6.0.9`** — no template changes: `appVersion` moves to
+  3.17.8 and the chart README states the PostgreSQL floor as 18.6 (6.0.8
+  was cut mid-cycle and never published; the publish lane ships 6.0.9).
 
 ### Security
 
