@@ -61,7 +61,7 @@ escape with `cargo build --ignore-rust-version`.
 
 | Item | Pin |
 |---|---|
-| PostgreSQL | 18, target 18.4 or newer (CI runs `postgres:18.4`) |
+| PostgreSQL | 18, target 18.6 or newer (CI runs `postgres:18.6`) |
 | Required extensions | `uuid-ossp`, `pgcrypto`, `pg_trgm` |
 
 PostgreSQL is the only component in the stack with a meaningful version delta
@@ -71,10 +71,11 @@ KEY`, `RETURNING OLD/NEW`, virtual generated columns, self-join elimination, and
 OR-to-`ANY` planning, plus `JSON_TABLE()` + the SQL/JSON functions inherited
 from PG 17. **See `docs/postgres-features.md`** for the full PG 17+18 feature
 delta over PG 16 and where each app phase (P09/P12/P16/P11/P20) uses it —
-"the best possible system" means exploiting these. Minor releases (18.1–18.4,
-17.x) are bugfix/security only (no new features); pin the latest patch (18.4,
-2026-05-14). Managed providers may lag on `io_uring`; still target PG 18 and let
-the AIO benefit follow.
+"the best possible system" means exploiting these. Minor releases (18.1–18.6,
+17.x) are bugfix/security only (no new features); pin the latest patch (18.6,
+2026-08-13 — a security release fixing 28 CVEs; 18.5 was never released, a
+regression was found post-wrap). Managed providers may lag on `io_uring`; still
+target PG 18 and let the AIO benefit follow.
 
 ## openEHR specification matrix
 

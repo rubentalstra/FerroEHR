@@ -2,7 +2,9 @@
 
 A preconfigured PostgreSQL 18 image for FerroEHR, mirroring the official
 `ehrbase/ehrbase-v2-postgres` two-image model built fresh for this stack
-(the greenfield PG18 storage design, `docs/architecture.md` §Storage). It is `postgres:18.4` plus one-time init scripts.
+(the greenfield PG18 storage design, `docs/architecture.md` §Storage). It is `postgres:18.6` plus Debian
+security updates applied at image build (the pinned upstream base rebuilds on its own cadence, so
+trixie-security fixes are pulled in at OUR build time) plus one-time init scripts.
 
 ## What the init scripts create
 
@@ -11,14 +13,19 @@ Run once, on an empty data directory, as the bootstrap superuser
 
 - a **non-superuser** login role (default `ferroehr`) and a **database it owns**
   (default `ferroehr`);
-- schemas **`ehr`** and **`ext`**, both owned by the app role;
+- the three NOLOGIN group roles of the layered role architecture —
+  **`ferroehr_migrator`**, **`ferroehr_app`**, **`ferroehr_reader`** — with the
+  login role granted `ferroehr_migrator` + `ferroehr_app`, so dev/compose has
+  the same grant topology as a hardened deployment;
+- schemas **`ehr`**, **`ext`** and **`audit`** (the local IHE ATNA Audit Record
+  Repository), all owned by the app role;
 - extensions installed **by the superuser** so the app role never needs one:
   `uuid-ossp`, `pgcrypto`, `pg_trgm`, and **`btree_gist`** (required by the
   temporal `vo_version` `PRIMARY KEY (... WITHOUT OVERLAPS)`), all in `ext`.
 
 This is exactly the set the application's migrator
 (`ferroehr::db::run_migrations`) expects to find when it connects as the app
-role: its bootstrap `CREATE SCHEMA IF NOT EXISTS {ehr,ext}` and
+role: its bootstrap `CREATE SCHEMA IF NOT EXISTS {ehr,ext,audit}` and
 `CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext` all become no-ops,
 and it then migrates the schema **content** into `ehr`/`ext`.
 

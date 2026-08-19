@@ -12,7 +12,7 @@
 //!
 //! 1. **`FERROEHR_TEST_PG_URL`** — a DSN to an existing `PostgreSQL` 18 server
 //!    whose role may `CREATE DATABASE` (CI provides the workflow's
-//!    `postgres:18.4` container; a local developer server works too).
+//!    `postgres:18.6` container; a local developer server works too).
 //! 2. Otherwise a **reusable named testcontainer**
 //!    (`ferroehr-testkit-pg18`, `postgres:18`) is started — or adopted if a
 //!    previous run left it — via `testcontainers`' reusable-containers
