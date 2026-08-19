@@ -26,7 +26,7 @@ version: 6.0.8
 # previous image. It is NOT a promise that this tag accepts the chart's current
 # `config` defaults: values track development between releases, so the publish
 # lane re-checks the pairing against the image itself.
-appVersion: "3.17.7"
+appVersion: "3.17.8"
 
 # A COMPATIBILITY floor, and a real one: 1.36 is the release where the newest
 # field this chart renders became stable.
@@ -136,7 +136,7 @@ annotations:
   # scan while leaving the false claim in place, so it is deliberately not used.
   artifacthub.io/images: |
     - name: ferroehr
-      image: ghcr.io/rubentalstra/ferroehr:3.17.7
+      image: ghcr.io/rubentalstra/ferroehr:3.17.8
       platforms:
         - linux/amd64
         - linux/arm64
@@ -145,7 +145,7 @@ annotations:
     # visible to anyone considering it. See #2193: this chart cannot deploy it
     # yet, so today the entry advertises intent rather than chart behaviour.
     - name: ferroehr-admin-ui
-      image: ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.7
+      image: ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.8
       platforms:
         - linux/amd64
         - linux/arm64
