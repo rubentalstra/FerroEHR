@@ -117,6 +117,9 @@ async fn wait_css_absent(h: &Harness, css: &str) {
 /// When the Save button never enables, or the save never reports an outcome.
 async fn store_query(h: &Harness, bare_name: &str, aql: &str) {
     h.goto("/queries/aql").await;
+    // The Save dispatch is hydrated behaviour; a click landing before
+    // hydration is silently lost (#2285's class).
+    h.wait_hydrated().await;
     let mut clicked = false;
     for _ in 0..5 {
         let editor = h.wait_css("#aql-editor").await;

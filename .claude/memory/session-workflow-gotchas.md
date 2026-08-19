@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-07-24T01:04:07.584Z
+  modified: 2026-08-18T19:16:25.831Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
@@ -106,3 +106,10 @@ commit-message wording; close/reopen for late labels.
   match the workflow pins). Any rendered date derives from the committed
   artifact in UTC (`TZ=UTC --date=format-local:%Y-%m-%d`), never `%cs`,
   never the wall clock.
+- **`gh pr merge --admin` is blocked by the harness permission classifier**
+  (hit 2026-08-18), and the repo has no auto-merge — so the merge path is:
+  wait for the run, rerun the flaky red (`gh run rerun <id> --failed`; while
+  #2285 is open, ui-e2e is red-on-develop and needs this), then plain
+  `gh pr merge --merge` behind the green-gate `if` (gotcha 6). `gh run
+  rerun` refuses while the run is `in_progress` — wait for `completed`
+  first.

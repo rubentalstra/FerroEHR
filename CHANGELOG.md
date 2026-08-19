@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Security
 
+- **h2 0.4.16** — RUSTSEC-2026-0258: the HTTP/2 implementation under hyper
+  accepted and queued empty DATA frames without limit (low severity,
+  unbounded-memory class). In-range lock upgrade; no code change.
+
 - **The vulnerable quick-xml 0.26 is eliminated from the build, not ignored.**
   pprof's `flamegraph` feature pinned `inferno ^0.11`, whose quick-xml 0.26
   carried two DoS advisories (RUSTSEC-2026-0194/0195, fixed upstream in
@@ -61,6 +65,8 @@ workflow refuses a tag that has no matching section here.
   an OpenVEX `not_affected` statement (gosu resolves no hostnames and issues
   no HTTP requests, so the IDNA path is never entered). The entries go when
   upstream rebuilds gosu on a fixed Go line.
+
+## [3.17.6] - 2026-08-15
 
 ### Security
 
