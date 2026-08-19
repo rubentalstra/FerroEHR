@@ -82,7 +82,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | EhrOperations | FAIL | 18 | 2 | 0 | 3 |
 | EhrStatus | FAIL | 14 | 26 | 3 | 5 |
 | CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 2 |
-| DirectoryOps | FAIL | 61 | 13 | 1 | 8 |
+| DirectoryOps | FAIL | 61 | 13 | 1 | 10 |
 | ChangeSets | FAIL | 7 | 12 | 58 | 7 |
 | Versioning | FAIL | 8 | 3 | 50 | 5 |
 | ArchetypeValidation | FAIL | 0 | 67 | 54 | 4 |
@@ -137,7 +137,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 571 of 617 selected cases driven.
+Coverage: 571 of 619 selected cases driven.
 
 Not-executed verdicts (each cited):
 
