@@ -1,5 +1,5 @@
 {
-  "latest": "v3.17.7",
+  "latest": "v3.17.8",
   "versions": [
     {
       "id": "dev",
@@ -10,10 +10,16 @@
     },
     {
       "id": "latest",
-      "label": "latest (v3.17.7)",
+      "label": "latest (v3.17.8)",
       "path": "/docs/latest/",
-      "released": "2026-08-15",
-      "aliasOf": "v3.17.7"
+      "released": "2026-08-19",
+      "aliasOf": "v3.17.8"
+    },
+    {
+      "id": "v3.17.8",
+      "label": "v3.17.8",
+      "path": "/docs/v3.17.8/",
+      "released": "2026-08-19"
     },
     {
       "id": "v3.17.7",
