@@ -34,6 +34,7 @@ workflow refuses a tag that has no matching section here.
   accepted and queued empty DATA frames without limit (low severity,
   unbounded-memory class). In-range lock upgrade; no code change.
 
+<<<<<<< HEAD
 - **The published `ferroehr-postgres` image is rebuilt clean of its 15
   fixable HIGH findings.** Nine were Debian `util-linux` packages
   (CVE-2026-53615) whose fix sits in trixie-security while the pinned
@@ -50,6 +51,8 @@ workflow refuses a tag that has no matching section here.
   `security/vex/postgres-gosu.openvex.json`, which upstream's next gosu
   rebuild deletes.
 
+=======
+>>>>>>> origin/develop
 - **The vulnerable quick-xml 0.26 is eliminated from the build, not ignored.**
   pprof's `flamegraph` feature pinned `inferno ^0.11`, whose quick-xml 0.26
   carried two DoS advisories (RUSTSEC-2026-0194/0195, fixed upstream in

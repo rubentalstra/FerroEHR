@@ -51,6 +51,17 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+    // Hydration-completion marker: effects run only in the browser (Leptos
+    // book, reactivity/14), so `data-hydrated` lands on `<body>` exactly when
+    // the client runtime is live and hydrated listeners exist. The E2E
+    // harness waits on it before driving hydration-dependent controls — a
+    // file set on the upload input BEFORE its listener exists fires no later
+    // event (#2285). Set post-hydration, it cannot mismatch the SSR document.
+    Effect::new(|_| {
+        if let Some(body) = document().body() {
+            drop(body.set_attribute("data-hydrated", "true"));
+        }
+    });
     view! {
         <Stylesheet id="leptos" href="/pkg/ferroehr-admin-ui.css" />
         <Title text="ferroehr-admin" />

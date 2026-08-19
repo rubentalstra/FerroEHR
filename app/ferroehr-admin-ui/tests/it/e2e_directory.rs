@@ -40,6 +40,9 @@ use common::{Harness, env, login_basic};
 /// returning the new EHR id (parsed from the navigated URL).
 async fn create_ehr(h: &Harness) -> String {
     h.goto("/ehrs").await;
+    // The create dispatch + navigation are hydrated behaviour; a click landing
+    // before hydration is silently lost (#2285's class).
+    h.wait_hydrated().await;
     h.wait_css("#ehr-create-submit")
         .await
         .click()
@@ -72,6 +75,9 @@ async fn create_ehr(h: &Harness) -> String {
 /// which is exactly what each journey below exercises.
 async fn create_empty_directory(h: &Harness, ehr_id: &str) {
     h.goto(&format!("/ehrs/{ehr_id}?tab=directory")).await;
+    // A full navigation restarts hydration; the create dispatch is hydrated
+    // behaviour, and a click landing earlier is silently lost (#2285's class).
+    h.wait_hydrated().await;
     h.wait_css("#directory-create")
         .await
         .click()
