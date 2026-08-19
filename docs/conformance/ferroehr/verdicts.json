@@ -259,7 +259,7 @@
     [
       "DirectoryOps",
       {
-        "passed": 75,
+        "passed": 77,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 8
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1058,
-    "driven": 1020,
-    "passed": 1020,
+    "selected": 1060,
+    "driven": 1022,
+    "passed": 1022,
     "failed": 0,
     "inconclusive": 0
   }

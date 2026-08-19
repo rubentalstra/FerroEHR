@@ -63,6 +63,7 @@ flow:
   - step: 2                              # nothing was created by the refused request
     call: has_directory
     with: { ehr_id: "${ehr_id}" }
-    expect: ok
-    assert:
-      - { assert: returns, equals: false }
+    expect: not_found
+postconditions:
+  - assert: state
+    text: "The EHR still has no directory: the refused create committed nothing (verified by step 2)"
