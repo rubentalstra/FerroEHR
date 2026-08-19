@@ -81,7 +81,7 @@
 
 services:
   ferroehr-postgres:
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:3.17.7}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:3.17.8}
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
     # memory segment … No space left on device`); measured runs share this
@@ -154,7 +154,7 @@ services:
       start_period: 10s
 
   ferroehr:
-    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:3.17.7}
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:3.17.8}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
@@ -252,7 +252,7 @@ services:
   # FERROEHR_ADMIN__AUTH__OIDC__* variables at your identity provider.
   ferroehr-admin-ui:
     profiles: [admin-ui]
-    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.7}
+    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.8}
     depends_on:
       ferroehr:
         condition: service_healthy
@@ -325,15 +325,26 @@ services:
     depends_on:
       seaweedfs:
         condition: service_healthy
-    # --fail-with-body: a non-2xx must fail the service loudly, with the
-    # gateway's own XML error, instead of exiting 0 on an error page.
-    entrypoint: ["curl"]
+    # Retry until the bucket is VERIFIABLY listable, not just until the PUT
+    # returns: the gateway's healthcheck only proves the S3 port answers,
+    # and the filer behind it can still be warming up — a single-shot
+    # CreateBucket against that window failed once and nothing retried
+    # (restart "no"), leaving every multimedia commit against a missing
+    # bucket (#2420; the create is idempotent per the AWS CreateBucket
+    # semantics cited above, so re-PUTting is a no-op). The trailing GET is
+    # the same 200-vs-404 read the deployment probe makes, so this service
+    # exits 0 only in a state the probe accepts, and `up --wait` gates on
+    # that exit.
+    entrypoint: ["sh", "-c"]
     command:
-      - "-sS"
-      - "--fail-with-body"
-      - "-X"
-      - "PUT"
-      - "http://seaweedfs:8333/${FERROEHR__MULTIMEDIA__BUCKET:-openehr-multimedia}"
+      - >-
+        bucket="http://seaweedfs:8333/${FERROEHR__MULTIMEDIA__BUCKET:-openehr-multimedia}";
+        i=0; while [ "$$i" -lt 30 ]; do
+        curl -sS -X PUT "$$bucket" >/dev/null;
+        if curl -sSf -o /dev/null "$$bucket/?max-keys=0"; then exit 0; fi;
+        i=$$((i+1)); sleep 2;
+        done;
+        echo "bucket never became listable after 30 attempts" >&2; exit 1
     restart: "no"
     cap_drop: [ALL]
     security_opt:
