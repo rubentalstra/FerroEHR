@@ -57,6 +57,9 @@ const BAD_PERMISSION: &str = "patient/composition-*.rx";
 /// Open the user menu and the access drawer behind it.
 async fn open_access_drawer(h: &Harness) {
     h.goto("/").await;
+    // The popover open is hydrated behaviour; a click landing before
+    // hydration is silently lost (#2285's class).
+    h.wait_hydrated().await;
     h.wait_css("#user-menu-trigger button")
         .await
         .click()
