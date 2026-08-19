@@ -28,7 +28,7 @@
 use crate::analyze::Model;
 use crate::analyze::invariants::{Bucket, classify};
 use crate::load::bmm::{BmmEnumValue, BmmSchema};
-use crate::plan::overrides::{InvariantVenue, RM_CLASS_DOCS, account_emitted};
+use crate::plan::overrides::{InvariantVenue, RM_CLASS_DOCS, account_complex, account_emitted};
 use crate::render::emit::GenFile;
 
 /// Emit the `validate/generated.rs` file for `openehr-rm` from the merged
@@ -208,6 +208,73 @@ fn realization_register(own_schema: &BmmSchema) -> String {
         b.push_str(
             "//!\n\
              //! ## UNACCOUNTED (classified emittable, no register row)\n\
+             //!\n",
+        );
+        for r in unaccounted {
+            b.push_str(&format!("//! - `{}.{}`.\n", r.class, r.name));
+        }
+    }
+    b.push_str(&complex_register(own_schema));
+    b
+}
+
+/// The complex-bucket register: every invariant the classifier judges NOT
+/// mechanically evaluable, with its adjudicated venue.
+///
+/// A complex rule is still normative — it is realized at a hand-written or
+/// application venue, or carries an adjudicated exclusion; one with no row
+/// renders under an explicit `UNACCOUNTED-COMPLEX` heading (the
+/// emitter-invariant suite fails on a non-empty one, the #1621 discipline
+/// extended to the whole tripartition).
+fn complex_register(own_schema: &BmmSchema) -> String {
+    let rows = account_complex(own_schema.classes.iter().flat_map(|(class, def)| {
+        def.invariants
+            .iter()
+            .map(move |(name, expr)| (class.as_str(), name.as_str(), expr.as_str()))
+    }));
+    let mut b = String::from(
+        "//!\n\
+         //! # Complex-invariant realization register\n\
+         //!\n\
+         //! Every RM class invariant the assertion-dialect classifier judges NOT\n\
+         //! mechanically evaluable (quantifiers, lambdas, cross-object\n\
+         //! navigation), with the venue that realizes it or the citation-pinned\n\
+         //! adjudication that excludes it — the complex bucket is accounted for\n\
+         //! in full, exactly like the emitted bucket above.\n",
+    );
+    for venue in [
+        InvariantVenue::Core,
+        InvariantVenue::Impl,
+        InvariantVenue::Wire,
+        InvariantVenue::App,
+        InvariantVenue::Excluded,
+        InvariantVenue::Unrealized,
+    ] {
+        let group: Vec<_> = rows
+            .iter()
+            .filter_map(|r| r.realization.filter(|reg| reg.venue == venue))
+            .collect();
+        if group.is_empty() {
+            continue;
+        }
+        b.push_str(&format!("//!\n//! ## {}\n//!\n", venue.heading()));
+        for reg in group {
+            let site = if reg.site.is_empty() {
+                String::new()
+            } else {
+                format!(" — `{}`", reg.site)
+            };
+            b.push_str(&format!(
+                "//! - `{}.{}`{site}: {} ({}/{} §Invariants).\n",
+                reg.class, reg.name, reg.reason, RM_CLASS_DOCS, reg.spec_file,
+            ));
+        }
+    }
+    let unaccounted: Vec<_> = rows.iter().filter(|r| r.realization.is_none()).collect();
+    if !unaccounted.is_empty() {
+        b.push_str(
+            "//!\n\
+             //! ## UNACCOUNTED-COMPLEX (classified complex, no register row)\n\
              //!\n",
         );
         for r in unaccounted {

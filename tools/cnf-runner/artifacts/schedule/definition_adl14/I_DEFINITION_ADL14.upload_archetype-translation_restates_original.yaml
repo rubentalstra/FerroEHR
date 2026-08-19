@@ -1,0 +1,29 @@
+# The Translations_valid arm of the RM common ch.8 family at the ADL 1.4
+# SOURCE seam — the seam that actually carries translations (the OPT root
+# declares no translations element). The valid twin is the untouched
+# cnf.archetype.adl14.medication source the round-trip case uploads.
+id: I_DEFINITION_ADL14.upload_archetype-translation_restates_original
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.upload_archetype
+capabilities: [Adl14ArchetypeProvisioning]
+profiles: [CORE]
+test_purpose: >-
+  An ADL 1.4 source whose translations re-state the original language is
+  refused as semantically invalid content, and nothing is stored.
+description: "upload an ADL 1.4 source with a translation re-stating the original language"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.upload_archetype"
+  - "RM common master08-resource_package.adoc (the resource package governs ADL 1.4 artefact meta-data)"
+  - "RM UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants Translations_valid"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /definition/archetype/adl1.4* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family adl14-archetype) and adjudicated by register AMB-41. The row gates the Adl14ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
+requires: { server: any }
+data_sets: [cnf.archetype.adl14.translation_restates_original]
+flow:
+  - step: 1
+    call: upload_archetype
+    with: { archetype_adl14: "${ds:cnf.archetype.adl14.translation_restates_original}" }
+    expect: validation_failed
+ambiguities: [AMB-41]

@@ -44,6 +44,7 @@
 mod interval;
 mod invariants;
 mod primitive;
+mod resource;
 mod rm_conformance;
 mod terminology;
 
@@ -197,6 +198,11 @@ fn check(opt: &OperationalTemplate) -> Result<(), RuleViolation> {
     for attr in &opt.definition.attributes {
         walk_attribute(attr, opt.definition.rm_type_name.as_str(), &ctx)?;
     }
+
+    // The RM resource-package invariants over the OPT's own meta-data header
+    // run last, so every existing AOM2 refusal keeps its code (the
+    // first-violation ordering is part of the behavioural contract).
+    resource::check_resource_meta(opt)?;
     Ok(())
 }
 

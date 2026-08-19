@@ -16,11 +16,15 @@
 //! in the generated register. The terminology-backed
 //! `Original_language_valid` stays with the terminology binding table;
 //! `Translations_valid`/`Description_valid` are cross-member map rules over
-//! `translations`, realized where a whole authored resource is ingested.
-//! `Languages_available_valid` (`languages_available.has (original_language)`)
-//! constrains the derived `languages_available()` function, which builds its
-//! result from `original_language` — so it holds by that function's own
-//! definition, the same venue as `Current_revision_valid`.
+//! `translations`, realized where a whole authored resource is ingested —
+//! the OPT 1.4 template upload's resource-meta pass
+//! (`app/ferroehr/src/validation/opt/resource.rs`) and the ADL 1.4 source
+//! catalogue (`openehr-adl` `validate/resource_meta.rs`); their rows live in
+//! the generated complex-invariant register. `Languages_available_valid`
+//! (`languages_available.has (original_language)`) constrains the derived
+//! `languages_available()` function, which builds its result from
+//! `original_language` — so it holds by that function's own definition, the
+//! same venue as `Current_revision_valid` (register-adjudicated).
 
 use crate::v1_2::common::resource::authored_resource::AuthoredResource;
 use openehr_base::validate::{InvariantViolation, Validate};
