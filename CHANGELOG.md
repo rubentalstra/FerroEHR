@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.8] - 2026-08-19
+
 ### Added
 
 - **Directory folder references that claim this system must now resolve.**
@@ -6770,7 +6772,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.7...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.8...HEAD
+[3.17.8]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.7...v3.17.8
 [3.17.7]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.6...v3.17.7
 [3.17.6]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.5...v3.17.6
 [3.17.5]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.4...v3.17.5
