@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [3.17.8] - 2026-08-19
 
+### Fixed
+
+- **The quickstart's S3 bucket initializer no longer races the gateway.**
+  `seaweedfs-init` retried nothing: the gateway's healthcheck only proves
+  the S3 port answers, and a single-shot CreateBucket against a still-warming
+  filer could fail once and never run again, leaving every multimedia commit
+  against a missing bucket. The initializer now retries until the bucket is
+  verifiably listable (the same read the deployment probe makes) and exits
+  loudly after 30 attempts — verified over repeated fresh-volume compose
+  cycles.
+
 ### Added
 
 - **Directory folder references that claim this system must now resolve.**
