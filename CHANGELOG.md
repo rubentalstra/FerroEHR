@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Directory folder references that claim this system must now resolve.**
+  A `FOLDER.items` `OBJECT_REF` whose `namespace` is `local` (or the
+  server's configured system id) and whose target is not a versioned object
+  of that EHR refuses the commit with `422`, naming each unresolvable
+  reference at its tree path — on the `/directory` routes and on folder
+  hierarchies committed through a CONTRIBUTION alike. References into
+  foreign namespaces (and `unknown`) are stored verbatim, unchecked: openEHR
+  object references are explicitly distributed, so only a reference that
+  claims *this* system and cannot resolve here is a client defect. No
+  released openEHR text assigns this behaviour in either direction (register
+  AMB-211, reported upstream); reported by an external user as a missing
+  safety net for mistyped composition references.
+
 ### Changed
 
 - **PostgreSQL 18.6 everywhere** — the `ferroehr-postgres` image base, the CI
@@ -34,7 +49,6 @@ workflow refuses a tag that has no matching section here.
   accepted and queued empty DATA frames without limit (low severity,
   unbounded-memory class). In-range lock upgrade; no code change.
 
-<<<<<<< HEAD
 - **The published `ferroehr-postgres` image is rebuilt clean of its 15
   fixable HIGH findings.** Nine were Debian `util-linux` packages
   (CVE-2026-53615) whose fix sits in trixie-security while the pinned
@@ -51,8 +65,6 @@ workflow refuses a tag that has no matching section here.
   `security/vex/postgres-gosu.openvex.json`, which upstream's next gosu
   rebuild deletes.
 
-=======
->>>>>>> origin/develop
 - **The vulnerable quick-xml 0.26 is eliminated from the build, not ignored.**
   pprof's `flamegraph` feature pinned `inferno ^0.11`, whose quick-xml 0.26
   carried two DoS advisories (RUSTSEC-2026-0194/0195, fixed upstream in

@@ -436,6 +436,29 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
     .await?)
 }
 
+/// Which of `roots` exist as versioned objects in `ehr_id`.
+///
+/// Reads the full physical store (`vo_version_all`: hot + cold, so an
+/// archived target still resolves), in any lifecycle state (a logically
+/// deleted object still resolves — its container remains, RM common
+/// master06 §Logical Deletion).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn existing_vo_roots<'e>(
+    executor: impl PgExecutor<'e>,
+    ehr_id: EhrId,
+    roots: &[Uuid],
+) -> Result<Vec<Uuid>, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1 AND vo_id = ANY($2)",
+    )
+    .bind(ehr_id)
+    .bind(roots)
+    .fetch_all(executor)
+    .await?)
+}
+
 /// Whether the EHR already has a LIVE folder hierarchy with that root identity.
 ///
 /// The root must carry the given `archetype_node_id` AND name — the LOCATABLE
