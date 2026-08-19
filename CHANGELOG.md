@@ -15,12 +15,44 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **PostgreSQL 18.6 everywhere** — the `ferroehr-postgres` image base, the CI
+  service containers, and every documented pin move from 18.4 to 18.6, the
+  latest PG 18 patch (2026-08-13; 18.5 was never released). 18.6 is itself a
+  security release fixing 28 CVEs, several in surface this CDR uses
+  (`pgcrypto`, `pg_trgm`, `to_char()`/regexp buffer overruns, plan-cache
+  invalidation). Operators upgrading an existing cluster in place should note
+  the upstream release notes advise checking (and possibly reindexing)
+  `btree_gist` indexes — the temporal `vo_version` keys use `btree_gist`.
+- **Helm chart `6.0.8`** — no template changes: the chart README now states
+  the PostgreSQL floor as 18.6.
+
 ### Security
 
 - **h2 0.4.16** — RUSTSEC-2026-0258: the HTTP/2 implementation under hyper
   accepted and queued empty DATA frames without limit (low severity,
   unbounded-memory class). In-range lock upgrade; no code change.
 
+<<<<<<< HEAD
+- **The published `ferroehr-postgres` image is rebuilt clean of its 15
+  fixable HIGH findings.** Nine were Debian `util-linux` packages
+  (CVE-2026-53615) whose fix sits in trixie-security while the pinned
+  upstream base rebuilds on its own cadence — the image now applies Debian
+  security updates at build time, so a published fix reaches the image at the
+  next rebuild instead of waiting for upstream. The other six are new
+  Go-standard-library advisories in `gosu`, the privilege-dropping helper the
+  upstream `postgres` image bundles (CVE-2026-33818, CVE-2026-56853,
+  CVE-2026-56858, CVE-2026-56859, CVE-2026-56860, CVE-2026-56862 —
+  `encoding/asn1`, `net/http`, `html/template`, `encoding/xml`, `net/url`,
+  `crypto/tls`): gosu sets uid/gid and execs, opening no socket and parsing
+  no untrusted input, so none of that code is reachable; they join the
+  per-CVE, path-scoped adjudication with published OpenVEX statements in
+  `security/vex/postgres-gosu.openvex.json`, which upstream's next gosu
+  rebuild deletes.
+
+=======
+>>>>>>> origin/develop
 - **The vulnerable quick-xml 0.26 is eliminated from the build, not ignored.**
   pprof's `flamegraph` feature pinned `inferno ^0.11`, whose quick-xml 0.26
   carried two DoS advisories (RUSTSEC-2026-0194/0195, fixed upstream in

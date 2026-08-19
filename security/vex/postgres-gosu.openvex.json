@@ -3,8 +3,8 @@
   "@id": "https://ferroehr.eu/vex/postgres-gosu-go-stdlib",
   "author": "FerroEHR project",
   "role": "vendor",
-  "timestamp": "2026-08-06T00:00:00Z",
-  "version": 2,
+  "timestamp": "2026-08-18T00:00:00Z",
+  "version": 3,
   "tooling": "hand-authored; see security/vex/README.md",
   "statements": [
     {
@@ -214,6 +214,84 @@
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
       "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, parses no mail, MIME or HTTP input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (net, net/http, net/mail, mime, os.Root) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-33818"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr-postgres"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, serves no HTTP, renders no templates and parses no ASN.1, XML or URL input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (encoding/asn1, net/http, html/template, encoding/xml, net/url, crypto/tls) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-56853"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr-postgres"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, serves no HTTP, renders no templates and parses no ASN.1, XML or URL input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (encoding/asn1, net/http, html/template, encoding/xml, net/url, crypto/tls) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-56858"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr-postgres"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, serves no HTTP, renders no templates and parses no ASN.1, XML or URL input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (encoding/asn1, net/http, html/template, encoding/xml, net/url, crypto/tls) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-56859"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr-postgres"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, serves no HTTP, renders no templates and parses no ASN.1, XML or URL input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (encoding/asn1, net/http, html/template, encoding/xml, net/url, crypto/tls) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-56860"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr-postgres"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, serves no HTTP, renders no templates and parses no ASN.1, XML or URL input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (encoding/asn1, net/http, html/template, encoding/xml, net/url, crypto/tls) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-56862"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr-postgres"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in /usr/local/bin/gosu, a Go binary the upstream docker-library/postgres image ships and which this image inherits unchanged. gosu's entire job is to set uid/gid and exec the server: it opens no network connection, serves no HTTP, renders no templates and parses no ASN.1, XML or URL input, and runs once at container start before PostgreSQL is listening. The Go standard-library packages these advisories concern (encoding/asn1, net/http, html/template, encoding/xml, net/url, crypto/tls) are therefore linked but never reached. Rebuilding gosu is upstream's to do; FerroEHR adds no Go code to this image."
     }
   ],
   "last_updated": "2026-08-15T00:00:00Z"

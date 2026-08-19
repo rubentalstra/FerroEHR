@@ -933,7 +933,7 @@ jobs:
       - name: Regenerate and diff
         run: bash scripts/checks/codegen-drift.sh
 
-  # ── Build + tests against PostgreSQL 18.4 (+ the CNF artifact validation) ───
+  # ── Build + tests against PostgreSQL 18.6 (+ the CNF artifact validation) ───
   # The CNF coverage guard lives here: its
   # `cargo nextest run -p cnf-runner` was a byte-for-byte subset of this job's
   # `--workspace` nextest run (cnf-runner is a workspace member — its ECC
@@ -956,7 +956,7 @@ jobs:
       contents: read
     services:
       postgres:
-        image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+        image: postgres:18.6@sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
@@ -1040,7 +1040,7 @@ jobs:
       contents: write
     services:
       postgres:
-        image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+        image: postgres:18.6@sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
