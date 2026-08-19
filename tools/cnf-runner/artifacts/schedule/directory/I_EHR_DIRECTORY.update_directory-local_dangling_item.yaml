@@ -1,0 +1,52 @@
+# The update-route sibling of create_directory-local_dangling_item (register
+# AMB-211, issue #1951): the this-system resolvability check binds every
+# directory commit, so a PUT whose replacement tree carries a `local`
+# reference that resolves to no versioned object in the EHR is refused as
+# invalid content — and the previously committed hierarchy is untouched.
+# The adjudication trail (what the released texts say on each side of the
+# boundary, and why the accepting twins reference foreign namespaces) lives
+# on the create sibling's header; this case adds the second wire branch of
+# the same behaviour rather than a second copy of the argument.
+id: I_EHR_DIRECTORY.update_directory-local_dangling_item
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.update_directory
+capabilities: [DirectoryOps]
+profiles: [STANDARD]
+test_purpose: >-
+  update_directory with a replacement FOLDER tree whose items reference
+  claims this system (namespace local) but resolves to no versioned object
+  in the EHR is refused as invalid content, leaving the existing directory
+  version in place.
+description: "Update a directory with a local-claiming item reference that does not resolve"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.update_directory"
+  - "RM common §folder (items: List<OBJECT_REF>, 0..1)"
+  - "BASE base_types §OBJECT_REF (namespace/type/id, 1..1)"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.directory.root_only, cnf.directory.invalid.local_dangling_item]
+flow:
+  - step: 1
+    call: create_directory
+    with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only}" }
+    expect: created
+    capture: { preceding_version_uid: created.version_uid }
+  - step: 2
+    call: update_directory
+    with:
+      ehr_id: "${ehr_id}"
+      directory: "${ds:cnf.directory.invalid.local_dangling_item}"
+      preceding_version_uid: "${preceding_version_uid}"
+    expect: validation_failed
+    assert:
+      - { assert: message_exemplar, text: "does not resolve to a versioned object" }
+  - step: 3                              # the refused update replaced nothing
+    call: get_directory
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    assert:
+      - { assert: equivalent, to: "${ds:cnf.directory.root_only}", ignoring: server_assigned }

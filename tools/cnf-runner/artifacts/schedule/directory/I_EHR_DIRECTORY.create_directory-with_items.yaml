@@ -14,14 +14,15 @@
 # (usually versioned) objects. A FOLDER structure is therefore like a directory
 # containing references to objects").
 #
-# The fixture's members are complete OBJECT_REFs: `namespace` "local", `type`
-# the referenced class, and `id` a HIER_OBJECT_ID (BASE base_types
-# UML/classes/org.openehr.base.base_types.object_ref.adoc §Attributes — the
-# three attributes are each 1..1, and `namespace` "local" is an ordinary match
-# of the namespace regex the same section states).
+# The fixture's members are complete OBJECT_REFs: `namespace` "my.system.id"
+# (a FOREIGN system — the namespace the CNF Robot corpus's own directory
+# fixtures carry), `type` the referenced class, and `id` a HIER_OBJECT_ID
+# (BASE base_types UML/classes/org.openehr.base.base_types.object_ref.adoc
+# §Attributes — the three attributes are each 1..1, and the value is an
+# ordinary match of the namespace regex the same section states).
 #
 # WHAT THIS CASE DOES NOT ASSERT: that the targets exist. No released sentence
-# makes target existence a precondition of a reference — SM
+# makes target existence a precondition of a FOREIGN reference — SM
 # i_ehr_directory.adoc §create_directory's precondition is
 # `Pre_content_valid: valid_content(a_dir_struct)`, and SM
 # i_validity_checker.adoc §content_valid is "Return `True` if the content
@@ -29,8 +30,12 @@
 # OBJECT_REF with all three attributes is regardless of what it points at. The
 # BASE OBJECT_REF description makes the point directly: the referenced object
 # "may exist locally or be maintained outside the current namespace, e.g. in
-# another service". So the fixture's ids stand free, and a server that
+# another service". So the fixture's foreign ids stand free, and a server that
 # dereferenced them and refused would be refusing something the release admits.
+# The refs claim a foreign system ON PURPOSE (re-adjudicated 2026-08-18, issue
+# #1951, register AMB-211): a reference claiming THIS system that does not
+# resolve here is outside the distributed-referencing sentence, and its
+# refusal is pinned by the twin create_directory-local_dangling_item.
 #
 # The acceptance is proved to have created, not just answered: step 2 asks
 # whether the EHR has a directory at all — the mirror of the refusal twin's

@@ -603,11 +603,120 @@ pub(in crate::service) fn validate_folder(
     validate_rm_invariants_for_commit(folder, "FOLDER", incomplete)
 }
 
+/// A `FOLDER.items` `OBJECT_REF` whose `namespace` claims THIS system,
+/// collected by [`collect_local_item_refs`] for target resolution.
+struct LocalItemRef {
+    path: String,
+    namespace: String,
+    id_value: String,
+}
+
+/// Collect every `items` reference in the FOLDER tree whose `namespace` is
+/// `local` or this server's own system id, with its RM instance path.
+fn collect_local_item_refs(folder: &Value, system_id: &str, at: &str, out: &mut Vec<LocalItemRef>) {
+    if let Some(items) = folder.get("items").and_then(Value::as_array) {
+        for (i, item) in items.iter().enumerate() {
+            let namespace = item
+                .get("namespace")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if namespace != "local" && namespace != system_id {
+                continue;
+            }
+            out.push(LocalItemRef {
+                path: format!("{at}/items[{i}]"),
+                namespace: namespace.to_owned(),
+                id_value: item
+                    .get("id")
+                    .and_then(|id| id.get("value"))
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+            });
+        }
+    }
+    if let Some(folders) = folder.get("folders").and_then(Value::as_array) {
+        for (i, sub) in folders.iter().enumerate() {
+            collect_local_item_refs(sub, system_id, &format!("{at}/folders[{i}]"), out);
+        }
+    }
+}
+
+/// The versioned-object root of an `OBJECT_REF.id` value — the uid before any
+/// `::` qualification — when it is a uid this store can hold.
+fn item_ref_root(id_value: &str) -> Option<uuid::Uuid> {
+    let root = id_value.split("::").next().unwrap_or(id_value);
+    // NOTE: `Result → Option` is the decision here (reliability.md class): a
+    // non-UUID root is a legitimately unresolvable id, reported by the caller
+    // as an unresolvable reference — not a swallowed defect.
+    uuid::Uuid::parse_str(root).ok()
+}
+
+/// Refuse a FOLDER commit whose `items` contain a reference that CLAIMS this
+/// system but does not resolve to a versioned object in `ehr_id`.
+///
+/// Applies to every lifecycle state — an unresolvable local reference is
+/// *wrong* data, not *missing* data, so the `553|incomplete|` relaxation (RM
+/// common master06 §Incomplete Content: "data may be missing, but it may not
+/// be wrong") never reaches it. The reference's `type` facet is deliberately
+/// not judged: BASE admits any ancestor name and `ANY` there.
+///
+/// # Errors
+/// [`ServiceError::ValidationFailed`] naming every unresolvable local
+/// reference at its tree path (→ 422).
+pub(in crate::service) async fn check_folder_item_refs<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
+    ehr_id: EhrId,
+    system_id: &str,
+    folder: &Value,
+) -> Result<(), ServiceError> {
+    // NOTE: no released openEHR text constrains FOLDER.items resolvability
+    // (BASE object_ref.adoc; no ITS-REST directory 422) — own-design safety
+    // net, register AMB-211: refs claiming this system must resolve.
+    let mut refs = Vec::new();
+    collect_local_item_refs(folder, system_id, "", &mut refs);
+    if refs.is_empty() {
+        return Ok(());
+    }
+    let roots: Vec<uuid::Uuid> = refs
+        .iter()
+        .filter_map(|item| item_ref_root(&item.id_value))
+        .collect();
+    let known: std::collections::HashSet<uuid::Uuid> =
+        crate::storage::ehr_repo::existing_vo_roots(executor, ehr_id, &roots)
+            .await?
+            .into_iter()
+            .collect();
+    let violations: Vec<InvariantViolation> = refs
+        .iter()
+        .filter(|item| !item_ref_root(&item.id_value).is_some_and(|root| known.contains(&root)))
+        .map(|item| {
+            InvariantViolation::at(
+                &item.path,
+                format!(
+                    "is an OBJECT_REF claiming this system (namespace {:?}) whose target \
+                     {:?} does not resolve to a versioned object in EHR {ehr_id}; a \
+                     reference into this system must resolve — foreign-namespace \
+                     references are accepted unchecked",
+                    item.namespace, item.id_value
+                ),
+            )
+        })
+        .collect();
+    if violations.is_empty() {
+        return Ok(());
+    }
+    Err(ServiceError::ValidationFailed(violations))
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::{Value, json};
 
-    use super::{validate_ehr_access, validate_ehr_status, validate_folder};
+    use super::{
+        collect_local_item_refs, item_ref_root, validate_ehr_access, validate_ehr_status,
+        validate_folder,
+    };
     use crate::service::ehr::access::initial_ehr_access;
     use crate::service::ehr::service::initial_ehr_status;
     use crate::service::error::ServiceError;
@@ -1151,5 +1260,69 @@ mod tests {
         );
         validate_folder(&with_feeder("legacy-lab-1"), false)
             .expect("a populated feeder-audit system_id is accepted");
+    }
+
+    /// The `items` walker collects exactly the THIS-system namespaces
+    /// (`local` + the configured system id), skips foreign and `unknown`
+    /// ones, and recurses with `/folders[i]/items[j]` paths.
+    #[test]
+    fn local_item_ref_walker_classifies_namespaces_and_paths() {
+        let item = |namespace: &str, id: &str| {
+            json!({
+                "_type": "OBJECT_REF",
+                "namespace": namespace,
+                "type": "VERSIONED_COMPOSITION",
+                "id": { "_type": "HIER_OBJECT_ID", "value": id }
+            })
+        };
+        let folder = json!({
+            "_type": "FOLDER",
+            "name": { "_type": "DV_TEXT", "value": "root" },
+            "items": [
+                item("local", "a"),
+                item("my.system.id", "b"),
+                item("unknown", "c"),
+                item("this.system", "d"),
+            ],
+            "folders": [{
+                "_type": "FOLDER",
+                "name": { "_type": "DV_TEXT", "value": "sub" },
+                "items": [ item("local", "e") ]
+            }]
+        });
+        let mut out = Vec::new();
+        collect_local_item_refs(&folder, "this.system", "", &mut out);
+        let collected: Vec<(&str, &str)> = out
+            .iter()
+            .map(|r| (r.path.as_str(), r.id_value.as_str()))
+            .collect();
+        assert_eq!(
+            collected,
+            [
+                ("/items[0]", "a"),
+                ("/items[3]", "d"),
+                ("/folders[0]/items[0]", "e"),
+            ]
+        );
+    }
+
+    /// `item_ref_root` takes the uid before any `::` qualification and only
+    /// accepts a uid this store can hold.
+    #[test]
+    fn item_ref_root_extracts_the_versioned_object_root() {
+        let root = "0192b1c2-aaaa-7bbb-8ccc-0123456789ab";
+        let versioned = format!("{root}::some.system::2");
+        assert_eq!(
+            item_ref_root(&versioned)
+                .expect("qualified uid resolves")
+                .to_string(),
+            root
+        );
+        assert_eq!(
+            item_ref_root(root).expect("bare uid resolves").to_string(),
+            root
+        );
+        assert_eq!(item_ref_root("not-a-uuid"), None);
+        assert_eq!(item_ref_root(""), None);
     }
 }

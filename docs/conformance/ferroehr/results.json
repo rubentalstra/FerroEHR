@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.17.5"
+    "version": "3.17.7"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.5",
+    "version": "3.17.7",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -4189,6 +4189,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-local_dangling_item",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-paragraph_no_items",
       "status": "passed",
       "rows_driven": 1,
@@ -4586,6 +4592,12 @@
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-invalid_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-local_dangling_item",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

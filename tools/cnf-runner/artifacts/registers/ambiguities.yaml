@@ -9160,3 +9160,54 @@ AMB-210:
     commits and serves the development-only body, the stable instance refuses
     it at read, and a released-surface body serves identically under both.
   disposition: fixed_handling
+AMB-211:
+  ambiguity: >-
+    No released text assigns the write-side referential validity of
+    FOLDER.items: ITS-REST's directory operations declare no semantic
+    branch (400 is parse/syntax by its own text; 422 is wired to the
+    composition and demographic operations only), FOLDER declares no
+    invariants at all (the amendment record shows its invariants edited out
+    under SPEC-49), the EHR class constrains its own reference lists on
+    .type only and states a same-scope rule solely for EHR.tags, and SM
+    Pre_content_valid reaches only RM-class structural validity
+    (i_validity_checker.adoc). BASE object_ref.adoc grounds ACCEPTANCE for
+    distributed references — the target "may exist locally or be maintained
+    outside the current namespace", and namespace "unknown" is legal — but
+    says nothing about a reference that CLAIMS the committing system and
+    does not resolve there. Whether such a reference is accepted or refused
+    is unassigned in every released component.
+  source: >-
+    ITS-REST specifications/operations/directory_create.yaml +
+    directory_update.yaml (declared response sets) +
+    specifications/responses/400.yaml + 422.yaml + overview
+    Requests_and_responses.md §HTTP status codes; RM common
+    UML/classes/org.openehr.rm.common.folder.adoc (no Invariants row) + ehr
+    master00-amendment_record.adoc (SPEC-49) +
+    UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants (+ the tags-only
+    scope sentence); BASE
+    UML/classes/org.openehr.base.base_types.object_ref.adoc §Description +
+    §Attributes; SM UML/classes/i_ehr_directory.adoc §create_directory /
+    §update_directory + UML/classes/i_validity_checker.adoc §content_valid.
+  handling: >-
+    Fixed handling (own-design extension, issue #1951): a FOLDER.items
+    OBJECT_REF whose namespace claims THIS system — the literal "local", or
+    the deployment's configured system id — must resolve to a versioned
+    object in the committing EHR (any lifecycle state; the lookup spans the
+    archival tier), judged on every folder commit path (the direct directory
+    routes, and the CONTRIBUTION path inside the commit transaction after
+    the set's inserts so the verdict never depends on member order). An
+    unresolvable this-system reference refuses the commit as invalid content
+    (422 — the overview status table's generic semantic-errors row plus its
+    "additional status codes MAY be used" clause), naming each dangling
+    reference at its tree path. References in foreign namespaces and
+    "unknown" are accepted verbatim, ids standing free — the BASE
+    distributed-referencing ground — so the accepting corpus twins reference
+    foreign systems, and the refusal twin (cnf.directory.invalid.local_
+    dangling_item) pins the boundary from the other side. The reference's
+    type facet is deliberately not judged (BASE admits any ancestor name and
+    ANY). The 553|incomplete| relaxation never reaches the check: a dangling
+    this-system claim is wrong data, not missing data (RM common master06
+    §Incomplete Content). EHR-Extract import and archive load replay
+    verbatim and are exempt by construction.
+  disposition: fixed_handling
+  upstream_issue: 2413
