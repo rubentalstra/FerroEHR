@@ -19,14 +19,14 @@
 
 | | ferroehr | EHRbase |
 |---|---|---|
-| Product | ferroehr 3.17.5 | ehrbase 2.34.0 |
-| Run date | 2026-08-14 | 2026-08-14 |
+| Product | ferroehr 3.17.7 | ehrbase 2.34.0 |
+| Run date | 2026-08-19 | 2026-08-14 |
 | Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
 | Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (1058 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (1060 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (EHRbase declares no readonly principal), and the statement (the
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-08-14) vs **EHRbase
+Runs compared: **ferroehr** (run of 2026-08-19) vs **EHRbase
 2.34.0** (run of 2026-08-14) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
@@ -68,8 +68,8 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ferroehr** | 1058 | 1020 | 1020 | 0 | 0 |
-| **EHRbase** | 617 | 571 | 148 | 148 | 275 |
+| **ferroehr** | 1060 | 1022 | 1022 | 0 | 0 |
+| **EHRbase** | 619 | 571 | 148 | 148 | 275 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused

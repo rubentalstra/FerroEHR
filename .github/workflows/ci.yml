@@ -1284,9 +1284,23 @@ jobs:
           target: runtime-prebuilt
           load: true
           tags: ferroehr:deploy-probe
+      # The database image THIS TREE defines, packaged like the app image —
+      # the compose fallback names the RELEASE tag, which a release PR flips
+      # before that tag's images exist (found on the v3.17.8 cut: every
+      # posture's stack sat on a manifest-unknown postgres pull until the
+      # probe timed out). Native amd64 build; the Dockerfile's security
+      # upgrade runs in minutes.
+      - name: Package the postgres image (base + security updates)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: docker/postgres
+          file: docker/postgres/Dockerfile
+          load: true
+          tags: ferroehr-postgres:deploy-probe
       - name: Probe the deployment
         env:
           FERROEHR_IMAGE: ferroehr:deploy-probe
+          FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:deploy-probe
         run: bash scripts/deploy-probe.sh
       # The RECORD, always — a failed run is exactly when the per-probe layer
       # attribution and the not-exercised ledger are worth reading.

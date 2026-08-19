@@ -109,10 +109,15 @@ fn dv_text(value: &str) -> Value {
 /// A FOLDER `items` member — an `OBJECT_REF` to a COMPOSITION (RM ehr master04
 /// §Folders: Folder structures hold references to `VERSIONED_OBJECT`s, never
 /// content by value).
+///
+/// NOTE: the namespace is a FOREIGN system (register AMB-211, issue #1951): a
+/// reference claiming THIS system must resolve, so a fabricated id rides a
+/// foreign namespace — this suite's subject is the wire mechanics, not
+/// referential validity (covered by `directory_item_refs` + the CNF twins).
 fn composition_ref(id: &str) -> Value {
     json!({
         "_type": "OBJECT_REF",
-        "namespace": "local",
+        "namespace": "another.system.example.org",
         "type": "COMPOSITION",
         "id": { "_type": "HIER_OBJECT_ID", "value": id }
     })

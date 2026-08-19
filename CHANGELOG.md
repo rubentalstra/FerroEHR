@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.8] - 2026-08-19
+
+### Fixed
+
+- **The quickstart's S3 bucket initializer no longer races the gateway.**
+  `seaweedfs-init` retried nothing: the gateway's healthcheck only proves
+  the S3 port answers, and a single-shot CreateBucket against a still-warming
+  filer could fail once and never run again, leaving every multimedia commit
+  against a missing bucket. The initializer now retries until the bucket is
+  verifiably listable (the same read the deployment probe makes) and exits
+  loudly after 30 attempts — verified over repeated fresh-volume compose
+  cycles.
+
 ### Added
 
 - **Directory folder references that claim this system must now resolve.**
@@ -40,8 +53,9 @@ workflow refuses a tag that has no matching section here.
   invalidation). Operators upgrading an existing cluster in place should note
   the upstream release notes advise checking (and possibly reindexing)
   `btree_gist` indexes — the temporal `vo_version` keys use `btree_gist`.
-- **Helm chart `6.0.8`** — no template changes: the chart README now states
-  the PostgreSQL floor as 18.6.
+- **Helm chart `6.0.9`** — no template changes: `appVersion` moves to
+  3.17.8 and the chart README states the PostgreSQL floor as 18.6 (6.0.8
+  was cut mid-cycle and never published; the publish lane ships 6.0.9).
 
 ### Security
 
@@ -6770,7 +6784,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.7...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.8...HEAD
+[3.17.8]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.7...v3.17.8
 [3.17.7]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.6...v3.17.7
 [3.17.6]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.5...v3.17.6
 [3.17.5]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.4...v3.17.5

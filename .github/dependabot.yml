@@ -22,17 +22,15 @@ updates:
       semver-major-days: 14
     open-pull-requests-limit: 10
     groups:
-      # Batch related ecosystems so lockstep crates bump together.
-      opentelemetry:
-        patterns: ["opentelemetry*", "tracing-opentelemetry"]
-      axum-tower:
-        patterns: ["axum*", "tower*", "hyper*"]
-      utoipa:
-        patterns: ["utoipa*"]
-      sea:
-        patterns: ["sea-query*"]
-      serde:
-        patterns: ["serde*"]
+      # ONE weekly PR for every minor/patch bump (#2434 — thirteen open
+      # single-crate PRs at once is review theatre, not review). Lockstep
+      # families (opentelemetry, serde, axum/tower, utoipa, sea-query) bump
+      # together inside it by construction. MAJORS stay individual: a semver
+      # major in shipped code is a real review, and burying one in a batch
+      # is how it gets rubber-stamped.
+      cargo-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     commit-message:
       prefix: "deps"          # plain conventional prefix; no attribution
   # The fuzz harnesses are their OWN Cargo workspace with their own lock file
@@ -56,6 +54,12 @@ updates:
       default-days: 7
       semver-major-days: 14
     open-pull-requests-limit: 5
+    groups:
+      # The harnesses are dev-only tooling in their own workspace: every
+      # update class rides one weekly PR (#2434) — the harnesses compile on
+      # the PR path, so a breaking bump fails that one PR visibly.
+      fuzz-all:
+        patterns: ["*"]
     commit-message:
       prefix: "deps"
   # The three container base images are pinned by digest, which is what earns
@@ -80,6 +84,11 @@ updates:
     cooldown:
       default-days: 5
     open-pull-requests-limit: 5
+    groups:
+      # The three base images move together in one weekly PR (#2434); each
+      # bump is still reviewed against a build and a Trivy scan before merge.
+      base-images:
+        patterns: ["*"]
     commit-message:
       prefix: "deps"
   - package-ecosystem: "github-actions"
@@ -90,5 +99,11 @@ updates:
     # and these are digest-pinned, so a bump is a reviewed change of digest.
     cooldown:
       default-days: 3
+    groups:
+      # One weekly PR for every action bump (#2434 — one codeql-action release
+      # alone used to open three PRs, one per sub-action). A breaking action
+      # major fails the lanes on that one PR, visibly.
+      actions-all:
+        patterns: ["*"]
     commit-message:
       prefix: "ci"
