@@ -98,27 +98,33 @@ jobs:
           done
           echo "VEX documents applied: ${#vex_args[@]} (2 args per document)"
 
+          # One platform per trivy invocation (the container-image guide's
+          # `--platform`, default linux/amd64) while the published index is
+          # dual-arch — so every variant is scanned explicitly (#2412).
           total=0
           : > findings.md
           for image in ferroehr ferroehr-postgres ferroehr-admin-ui; do
             ref="ghcr.io/${OWNER}/${image}:${SCAN_TAG}"
             digest=$(docker buildx imagetools inspect "$ref" --format '{{.Manifest.Digest}}')
-            echo "::group::${image} (${digest})"
-            trivy image --config trivy.yaml --scanners vuln \
-              "${vex_args[@]}" -f json -o "${image}.json" "$ref"
-            count=$(jq '[.Results[]?.Vulnerabilities // [] | .[]] | length' "${image}.json")
-            trivy image --config trivy.yaml --scanners vuln \
-              "${vex_args[@]}" -f table "$ref" || true
-            echo "::endgroup::"
-            echo "| \`${image}\` | \`${digest}\` | ${count} |" >> findings.md
-            total=$((total + count))
+            for platform in linux/amd64 linux/arm64; do
+              arch=${platform##*/}
+              echo "::group::${image} ${platform} (${digest})"
+              trivy image --config trivy.yaml --scanners vuln --platform "$platform" \
+                "${vex_args[@]}" -f json -o "${image}.${arch}.json" "$ref"
+              count=$(jq '[.Results[]?.Vulnerabilities // [] | .[]] | length' "${image}.${arch}.json")
+              trivy image --config trivy.yaml --scanners vuln --platform "$platform" \
+                "${vex_args[@]}" -f table "$ref" || true
+              echo "::endgroup::"
+              echo "| \`${image}\` | \`${platform}\` | \`${digest}\` | ${count} |" >> findings.md
+              total=$((total + count))
+            done
           done
           echo "total=$total" >> "$GITHUB_OUTPUT"
           {
             printf '## Published image scan\n\n'
             printf 'Tag `%s`, Trivy %s, HIGH/CRITICAL with a fix available, VEX applied.\n\n' \
               "$SCAN_TAG" "$TRIVY_VERSION"
-            printf '| image | digest | findings |\n|---|---|---|\n'
+            printf '| image | platform | digest | findings |\n|---|---|---|---|\n'
             cat findings.md
           } >> "$GITHUB_STEP_SUMMARY"
           echo "total findings: $total"
@@ -151,7 +157,7 @@ jobs:
                        --json number --jq '.[0].number // empty')
           {
             printf 'A scheduled scan of the PUBLISHED images found **%s** fixable HIGH/CRITICAL findings.\n\n' "$TOTAL"
-            printf '| image | digest | findings |\n|---|---|---|\n'
+            printf '| image | platform | digest | findings |\n|---|---|---|---|\n'
             cat findings.md
             printf '\nFull reports are attached to the run as `image-scan-reports`: %s\n' "$RUN_URL"
             printf '\nThese are findings **with a fix available**, so the remedy is a rebuild and'

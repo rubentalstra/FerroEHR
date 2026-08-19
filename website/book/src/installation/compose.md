@@ -24,7 +24,7 @@ FerroEHR publishes three container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary on a distroless, non-root, shell-less multi-arch base (amd64 + arm64). Configured by a mounted TOML file and/or `FERROEHR__*` environment variables. |
-| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.4` plus init scripts that pre-create the application login role, the three group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), the database, the schemas (`ehr`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the three group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), the database, the schemas (`ehr`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
 | `ghcr.io/rubentalstra/ferroehr-admin-ui` | The [admin console](../admin-ui/index.md) — a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `admin-ui` profile below. |
 
 Each image is published under several tags:
