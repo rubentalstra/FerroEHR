@@ -3448,3 +3448,50 @@ cnf.composition.history_open.empty_identifier_id:
     spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_identifier.adoc §Invariants Id_valid (not id.is_empty)"
   template_id: "history_open.en.v1"
   provenance: "derived 2026-08-20 (issue #2474) from cnf.composition.history_open.interval_events with exactly one defect: aperiodic, one POINT_EVENT whose single ELEMENT value is a DV_IDENTIFIER with id \"\" — the open ITEM_STRUCTURE slot admits the element, so Id_valid is the only violation (the missing-id branch is already pinned by the CONT-DV_IDENTIFIER matrix's rm_schema row; this is the present-but-empty twin)"
+cnf.composition.history_open.deprecated_text_forms:
+  source: fixtures/contribution/composition.history_open.deprecated_text_forms.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open.en.v1"
+  provenance: "authored 2026-08-20 (issue #2476): the three deprecated-but-legal Text forms in one committed instance — an ELEMENT valued DV_PARAGRAPH (master05 §Design: remains legal, should be supported in at least a basic way) whose first DV_TEXT item carries the legacy CSS formatting string and a hyperlink (both deprecated with continued legality, dv_text.adoc §Attributes) — the accepting twins of the paragraph_no_items refusal fixtures"
+cnf.composition.history_open.empty_formatting:
+  source: fixtures/contribution/composition.history_open.empty_formatting.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_TEXT with a present-but-empty formatting string"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants Formatting_valid (formatting /= void implies not formatting.is_empty)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2476) from cnf.composition.history_open.interval_events with exactly one defect: one DV_TEXT ELEMENT whose formatting is \"\""
+cnf.composition.history_open.bad_encoding:
+  source: fixtures/contribution/composition.history_open.bad_encoding.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_TEXT whose encoding code bogus-charset is no member of the character sets code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants Encoding_valid (encoding /= Void implies code_set(Code_set_id_character_sets).has_code(encoding))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2476) from cnf.composition.history_open.interval_events with exactly one defect: one DV_TEXT ELEMENT carrying encoding IANA_character-sets::bogus-charset"
+cnf.composition.history_open.bad_match:
+  source: fixtures/contribution/composition.history_open.bad_match.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a TERM_MAPPING whose match character # is outside < = > ?"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.term_mapping.adoc §Invariants Match_valid (is_valid_match_code: c = '>' or c = '=' or c = '<' or c = '?')"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2476) from cnf.composition.history_open.interval_events with exactly one defect: one DV_TEXT ELEMENT carrying a single mapping whose match is '#' (the target CODE_PHRASE is well-formed, so the match code is the only violation)"
+cnf.composition.history_open.empty_code_string:
+  source: fixtures/contribution/composition.history_open.empty_code_string.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a mapping target CODE_PHRASE whose code_string is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.code_phrase.adoc §Invariants Code_string_valid (not code_string.is_empty)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2476) from cnf.composition.history_open.interval_events with exactly one defect: one DV_TEXT ELEMENT carrying a single well-formed mapping (match '=') whose target code_string is \"\" — the target path carries no terminology-group check, so Code_string_valid is the only violation"
