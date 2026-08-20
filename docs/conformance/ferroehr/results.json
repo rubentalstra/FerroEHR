@@ -1804,8 +1804,8 @@
     {
       "case": "CONT-DV_URI-validate_open",
       "status": "passed",
-      "rows_driven": 11,
-      "rows_total": 11
+      "rows_driven": 13,
+      "rows_total": 13
     },
     {
       "case": "CONT-DV_URI-validate_pattern",
@@ -2192,6 +2192,18 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-encapsulated_family_invalid",
+      "status": "passed",
+      "rows_driven": 5,
+      "rows_total": 5
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-encapsulated_rich",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

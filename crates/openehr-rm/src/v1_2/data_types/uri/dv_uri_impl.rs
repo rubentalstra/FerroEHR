@@ -22,26 +22,14 @@ fn is_scheme(s: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
 }
 
-/// `true` when `value` is an absolute RFC-3986 reference — a scheme
-/// (`ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )`) followed by `:`.
-fn has_scheme(value: &str) -> bool {
-    matches!(value.split_once(':'), Some((s, _)) if is_scheme(s))
-}
-
 /// The DV_URI `Value_valid` core over the projected value — one source for the
 /// typed impl and the value-level fast path (`validate::fast`), mirroring the
 /// DV_EHR_URI sibling (`dv_ehr_uri_impl::push_dv_ehr_uri_invariants`).
 pub(crate) fn push_dv_uri_invariants(value: &str, out: &mut Vec<InvariantViolation>) {
-    // RM invariant `Value_valid: not value.is_empty` (the only DV_URI invariant).
+    // NOTE: `dv_uri.adoc` §Invariants + `master10-uri_package.adoc` §Design —
+    // the only invariant is non-emptiness, and plain-text (scheme-less) URIs
+    // are explicitly allowed, so no lexical-form refusal exists.
     crate::v1_2::validate::generated::dv_uri_core(value, out);
-    // NOTE: `dv_uri.adoc` §Description binds `value` to "the Universal Resource
-    // Identifier (URI) RFC-3986 standard", whose §3 `URI` production requires a
-    // scheme; the encoding of the remainder stays unenforced (plain-text URIs).
-    if !has_scheme(value) {
-        out.push(InvariantViolation::here(
-            "Invariant Value_valid failed on type DV_URI",
-        ));
-    }
 }
 
 impl DvUriData {
@@ -131,27 +119,23 @@ mod tests {
     /// admit. The refusal is reported under `Value_valid`, the class's only
     /// declared invariant.
     #[test]
-    fn scheme_required_for_absolute_reference() {
-        let value_valid = "Invariant Value_valid failed on type DV_URI".to_owned();
-        // Absolute references (scheme present) are accepted.
+    fn scheme_less_and_plain_text_values_are_accepted() {
+        // Absolute references are accepted.
         assert!(
             uri("ftp://ftp.is.co.za/rfc/rfc1808.txt")
                 .invariants()
                 .is_empty()
         );
-        assert!(
-            uri("http://example.com/path/resource")
-                .invariants()
-                .is_empty()
-        );
         assert!(uri("mailto:someone@example.org").invariants().is_empty());
-        // RM prose allows "plain-text URIs" with RFC-3986-forbidden characters
-        // (e.g. a space) — still accepted so long as a scheme is present.
+        // Plain-text URIs (RFC-3986-forbidden characters such as spaces) and
+        // scheme-less relative references are all admitted: the class's only
+        // invariant is non-emptiness, and the §Design plain-text allowance
+        // covers exactly these forms.
         assert!(uri("http://example.org/a b").invariants().is_empty());
-        // Bare relative references (no scheme) are rejected.
-        assert!(messages("xyz").contains(&value_valid));
-        assert!(messages("www.iana.org").contains(&value_valid));
-        assert!(messages("content/items").contains(&value_valid));
+        assert!(uri("see the attached guideline").invariants().is_empty());
+        assert!(uri("xyz").invariants().is_empty());
+        assert!(uri("www.iana.org").invariants().is_empty());
+        assert!(uri("content/items").invariants().is_empty());
     }
 
     #[test]

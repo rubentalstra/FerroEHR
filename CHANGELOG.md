@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`DV_URI` accepts scheme-less and plain-text values.** The validator
+  previously refused any `DV_URI.value` without an RFC 3986 scheme — a floor
+  the class does not declare: its only invariant is `Value_valid: not
+  value.is_empty`, and the RM's URI chapter explicitly allows "plain-text
+  URIs" (encoding is the consumer's duty at the point of use). Relative
+  references and plain text now commit; `DV_EHR_URI` is unchanged (its own
+  `Scheme_valid` invariant still requires the `ehr` scheme). The conformance
+  catalogue's URI cases carry the re-derived expectations.
+
 - **`ITEM_TABLE.as_hierarchy` produces the specified row encoding.** The
   `openehr-rm` function previously emitted a column transpose (following a
   contradictory one-line summary in the class table); it now encodes one
