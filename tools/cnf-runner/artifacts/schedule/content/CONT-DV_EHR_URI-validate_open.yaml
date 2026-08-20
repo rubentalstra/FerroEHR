@@ -4,11 +4,11 @@ component: CONTENT
 rm_class: DV_EHR_URI
 capabilities: [ArchetypeValidation]
 profiles: [CORE]
-test_purpose: "A committed DV_EHR_URI is accepted iff value is a present RFC 3986 URI whose scheme is 'ehr'."
-description: "DV_EHR_URI open: RFC3986 + scheme='ehr' invariant"
+test_purpose: "A committed DV_EHR_URI is accepted iff value is present and its scheme is 'ehr' (Scheme_valid) \u2014 a scheme-less value has no 'ehr' scheme and is refused by that invariant, not by any RFC-3986 lexical floor."
+description: "DV_EHR_URI open: the scheme='ehr' invariant"
 spec_refs:
   - "CNF platform_test_schedule master17.7 \u00a7CONT-DV_EHR_URI-validate_open"
-  - "RM data_types \u00a7DV_EHR_URI"
+  - "RM UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc \u00a7Invariants (Scheme_valid: scheme.is_equal(Ehr_scheme))"
   - "AM AOM1.4 \u00a7C_STRING"
 constraint_context:
   template: cnf.tpl.dv_ehr_uri_open
@@ -17,7 +17,10 @@ decision_table:
   columns: ["value", "expected", "violates"]
   rows:
     - [null, "rejected", ["rm_schema: value is mandatory"]]
-    - ["xyz", "rejected", ["rm_schema: value is not a valid RFC 3986 URI"]]
+    # Re-grounded 2026-08-20: a scheme-less value refuses on Scheme_valid (its
+    # scheme is not 'ehr'), never on an RFC-3986 lexical floor DV_URI does not
+    # declare (the DV_URI sibling case carries the acceptance adjudication).
+    - ["xyz", "rejected", ["rm_invariant(Scheme_valid): URI scheme is not 'ehr'"]]
     - ["ftp://ftp.is.co.za/rfc/rfc1808.txt", "rejected", ["rm_invariant(Scheme_valid): URI scheme is not 'ehr'"]]
     - ["http://www.ietf.org/rfc/rfc2396.txt", "rejected", ["rm_invariant(Scheme_valid): URI scheme is not 'ehr'"]]
     - ["ldap://[2001:db8::7]/c=GB?objectClass?one", "rejected", ["rm_invariant(Scheme_valid): URI scheme is not 'ehr'"]]

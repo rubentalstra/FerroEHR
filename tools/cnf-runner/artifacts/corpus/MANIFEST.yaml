@@ -3619,3 +3619,60 @@ cnf.composition.history_open.periodic_bad_formalism:
     spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_periodic_time_specification.adoc §Invariants Value_valid (value.formalism.is_equal(HL7:PIVL) or value.formalism.is_equal(HL7:EIVL))"
   template_id: "history_open.en.v1"
   provenance: "derived 2026-08-20 (issue #2480) from cnf.composition.history_open.time_specifications with exactly one defect: the periodic specification's formalism swapped to HL7:GTS (the parsable value itself stays well-formed, so Value_valid is the only violation)"
+cnf.composition.history_open.encapsulated_rich:
+  source: fixtures/contribution/composition.history_open.encapsulated_rich.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open.en.v1"
+  provenance: "authored 2026-08-20 (issue #2482): the encapsulated family's rich accepting instance — a DV_MULTIMEDIA carrying inline data + media_type + gzip compression + the SHA-256 integrity pair + a nested thumbnail + uri + charset/language + size, beside a DV_PARSABLE (text/html) with charset + language; the first committed compression/integrity/thumbnail/charset trimmings (the pre-existing attested_view instance carries only alternate_text/data/media_type/size)"
+cnf.composition.history_open.bad_compression:
+  source: fixtures/contribution/composition.history_open.bad_compression.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_MULTIMEDIA whose compression_algorithm code brotli is no member of the compression algorithms code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants Compression_algorithm_validity (code_set(Code_set_id_compression_algorithms).has_code(compression_algorithm))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2482) from cnf.composition.history_open.encapsulated_rich with exactly one defect: the compression code swapped to brotli, the other optionals removed"
+cnf.composition.history_open.orphan_integrity_check:
+  source: fixtures/contribution/composition.history_open.orphan_integrity_check.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_MULTIMEDIA carrying integrity_check bytes with no integrity_check_algorithm"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants Integrity_check_validity (integrity_check /= Void implies integrity_check_algorithm /= Void)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2482): exactly one defect — the algorithm deleted while the check bytes stay"
+cnf.composition.history_open.bad_integrity_algorithm:
+  source: fixtures/contribution/composition.history_open.bad_integrity_algorithm.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_MULTIMEDIA whose integrity_check_algorithm code CRC32 is no member of the integrity check algorithms code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants Integrity_check_algorithm_validity (code_set(Code_set_id_integrity_check_algorithms).has_code(integrity_check_algorithm))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2482): exactly one defect — the algorithm code swapped to CRC32 (the check bytes stay, so Integrity_check_validity holds)"
+cnf.composition.history_open.empty_formalism:
+  source: fixtures/contribution/composition.history_open.empty_formalism.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_PARSABLE whose mandatory formalism is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_parsable.adoc §Invariants Formalism_valid (not formalism.is_empty)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2482): exactly one defect — formalism \"\" on an otherwise well-formed parsable"
+cnf.composition.history_open.bad_charset:
+  source: fixtures/contribution/composition.history_open.bad_charset.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_PARSABLE whose charset code bogus-charset is no member of the character sets code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_encapsulated.adoc §Invariants Charset_valid (code_set(Code_set_id_character_sets).has_code(charset))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2482): exactly one defect — the charset code swapped to bogus-charset (language removed so the charset is the only code-set probe)"
