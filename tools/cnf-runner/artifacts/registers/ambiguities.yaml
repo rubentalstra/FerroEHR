@@ -9256,3 +9256,36 @@ AMB-212:
     ADL source seam, where translations exist. valid_opt answers with the
     same artefact catalogue upload_opt enforces, so the two never diverge.
   disposition: fixed_handling
+AMB-213:
+  ambiguity: >-
+    The RM data_structures document contradicts itself about
+    ITEM_TABLE.as_hierarchy's shape. §ISO 13606 Encoding Rules — ITEM_TABLE
+    defines the encoding by ROWS ("Each row is encoded as a Cluster
+    containing a number of ELEMENTs, each corresponding to the value of a
+    column in that row"; the ELEMENT names are the column names; "The names
+    of the containing CLUSTER of each row is the stringified number of the
+    row in the overall table"; a void cell is an ELEMENT with null_flavour
+    set), and both the class Description ("Implemented using Cluster-per-row
+    encoding") and the normative instance figure (three at0010|row| CLUSTERs)
+    corroborate rows — while the same class table's as_hierarchy Meaning
+    sentence alone says "a single CLUSTER containing the CLUSTERs
+    representing the columns of this table".
+  source: >-
+    RM docs/data_structures/master04-item_structure_package.adoc §ISO 13606
+    Encoding Rules — ITEM_TABLE + §Instance Structures
+    (diagrams/instance_item_table.svg); RM
+    UML/classes/org.openehr.rm.data_structures.item_table.adoc §Description +
+    §Functions as_hierarchy.
+  handling: >-
+    Fixed handling (issue #2464): the row encoding wins — the dedicated
+    encoding rules, corroborated by the Description's physical form and the
+    normative figure, against one summary sentence. as_hierarchy produces the
+    outer CLUSTER over per-row CLUSTERs, each row's ELEMENTs replicated
+    (names already the column names per the physical row regularity), each
+    row CLUSTER renamed to the stringified ONE-based row number (the base
+    ith_row already uses); the void-cell rule is guaranteed by the physical
+    Row_regularity check; an empty table yields no hierarchy
+    (CLUSTER.items 1..*). The Meaning sentence is treated as an editorial
+    defect and reported upstream.
+  disposition: fixed_handling
+  upstream_issue: 2465
