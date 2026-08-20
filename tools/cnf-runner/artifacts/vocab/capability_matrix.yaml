@@ -57,7 +57,10 @@ EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, so
 EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 49, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
 CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 85, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 89, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
+# Floor raised 89 -> 90: the third axis of the master06 §Logical Deletion
+# procedure — a delete member whose own declared lifecycle_state contradicts
+# the deletion it performs (the two data axes were already covered).
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 90, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 72, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
 # BINDING cases (member accepted / non-member refused / unresolvable under each
