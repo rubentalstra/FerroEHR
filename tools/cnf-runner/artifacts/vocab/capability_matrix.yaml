@@ -72,7 +72,9 @@ DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 85,
 # Raised 96 -> 98 (2026-08-20): the Quantity-package twins (issue #2478) —
 # the fully-trimmed DV_QUANTITY acceptance case plus the ten-invariant
 # refusal family.
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 98, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
+# Raised 98 -> 100 (2026-08-20): the time-specification twins (issue
+# #2480) — the PIVL/GTS acceptance case plus the formalism refusal.
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 100, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 72, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
 # BINDING cases (member accepted / non-member refused / unresolvable under each

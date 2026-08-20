@@ -1,0 +1,47 @@
+# The time-specification accepting twin (RM data_types ch.8, issue #2480):
+# the package's first committed instances — the chapter's own §Phase-linked
+# example as a DV_PERIODIC_TIME_SPECIFICATION (formalism HL7:PIVL) beside a
+# DV_GENERAL_TIME_SPECIFICATION (the same spec is a valid GTS factor). The
+# refusal direction lives in commit_contribution-periodic_bad_formalism.
+id: I_EHR_CONTRIBUTION.commit_contribution-time_specifications
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Committing a composition carrying a DV_PERIODIC_TIME_SPECIFICATION
+  (HL7:PIVL phase-linked value) and a DV_GENERAL_TIME_SPECIFICATION (HL7:GTS)
+  succeeds and creates version 1.
+description: "commit a composition carrying periodic + general time specifications"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "RM data_types/master08-time_specification_package.adoc §Phase-linked Time Specification Syntax (the [interval]/(difference)@alignment example) + §General Time Specification Syntax (a phase_linked_time_spec is a GTS factor)"
+  - "RM UML/classes/org.openehr.rm.data_types.dv_periodic_time_specification.adoc §Invariants (Value_valid satisfied: formalism HL7:PIVL)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.history_open.v1]
+  ehr: { commits: none }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.composition.history_open.time_specifications, expected: created, defect: "PIVL periodic + GTS general time specifications" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:fixture}", change_type: creation }
+    expect: "${fixture.expected}"
+    capture:
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: CREATE, uid_pattern: "<uuid>::<system>::1" }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR holds one new VERSION<COMPOSITION> whose time-specification
+      values (parsable value + formalism) are stored and served unchanged.
+    verified_by: I_EHR_COMPOSITION.get_composition_latest
