@@ -20,3 +20,5 @@ pub struct Cardinality {
     /// True if the members of the container attribute to which this cardinality refers are unique.
     pub is_unique: bool,
 }
+
+// TODO: verify the reviewer surfaces this comment
