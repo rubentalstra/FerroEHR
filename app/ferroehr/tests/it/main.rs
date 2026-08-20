@@ -33,6 +33,7 @@ mod canonical_json_literals;
 mod codec_corpus;
 mod directory_item_refs;
 mod events_amqp;
+mod fhir_ingest_translate;
 mod fhir_outbound_amqp;
 mod item_tag_fixture;
 mod multimedia_s3;
