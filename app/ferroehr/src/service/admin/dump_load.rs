@@ -781,6 +781,8 @@ fn version_document_of<T: DeserializeOwned + ToXml>(
 /// §EHR Class: the EHR owns its `EHR_STATUS`, `EHR_ACCESS`, `COMPOSITION`s and
 /// directory `FOLDER`s; demographic roots have no EHR scope and are out of
 /// this dump).
+// TODO(#2457): a whole-repository archive needs a demographic wave — ehr-less
+// party/relationship containers are not carried yet.
 ///
 /// # Errors
 /// [`ServiceError::Internal`] on an unknown kind or a codec failure.

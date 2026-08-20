@@ -31,6 +31,8 @@
 //! `component[1].valueQuantity.value`), never the full language (no functions,
 //! filters, `where()`, `resolve()`, unions, `$this`, arithmetic) — which is
 //! what the flat, single-value leaf extraction openEHR FLAT paths need.
+// TODO(#2458): richer FHIRPath support and cross-terminology code translation
+// (through the TerminologyService seam).
 //! `code_map` binds a FHIR system URL to an openEHR `terminology_id` and passes
 //! the code through unchanged; the built COMPOSITION's own terminology
 //! validation is the authority on the result.
