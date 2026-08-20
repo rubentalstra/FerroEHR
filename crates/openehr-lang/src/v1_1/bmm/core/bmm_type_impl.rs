@@ -46,18 +46,12 @@
 //! [`BmmType`]/[`crate::v1_1::bmm::core::bmm_classifier::BmmClassifier`] are pure
 //! dispatchers over them.
 //!
-//! NOTE (adjudicated divergence, v2 vs v3 `flattened_type_list`): the v2
-//! definition sits on `BMM_CLASSIFIER` alone — "Completely flattened list of
-//! type names, flattening out all generic parameters"
-//! (`org.openehr.lang.bmm.bmm_classifier.adoc` §Functions) — and no v2 subtype
-//! redefines it, so the whole type expression flattens, container class
-//! included (`Hash<String,Interval<Time>>` → `Hash`, `String`, `Interval`,
-//! `Time`). v3 narrows the container case to the item type only
-//! (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Functions,
-//! `Post_result: Result = item_type.flattened_type_list`). This surface is the
-//! v2 core, so the v2 reading is implemented. Duplicate names are collapsed:
-//! v2 is silent on duplicates, v3 states the intent for the composite types
-//! ("the logical set (i.e. unique items)",
+//! NOTE: v2's `flattened_type_list` flattens the WHOLE expression, container
+//! class included (`org.openehr.lang.bmm.bmm_classifier.adoc` §Functions,
+//! unredefined by any v2 subtype), where v3 narrows containers to the item
+//! type (`…bmm3.bmm_container_type.adoc` §Functions) — this surface is the v2
+//! core, so the v2 reading is implemented, with duplicates collapsed per v3's
+//! stated logical-set intent (v2 is silent on duplicates,
 //! `org.openehr.lang.bmm3.bmm_signature.adoc` §Functions).
 
 use crate::v1_1::bmm::core::bmm_class::BmmClass;

@@ -403,7 +403,7 @@ impl FerroEhrService {
             support::kind_of(current.kind),
             Some(current.tree),
             &audit,
-            WriteEnvelope::default(),
+            None,
             &ctx,
         )
         .await?;

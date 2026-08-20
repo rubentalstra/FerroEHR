@@ -1174,7 +1174,7 @@ fn present(rows: Vec<overrides::AccountedInvariant>) -> Vec<AccountedInvariant> 
                 venue,
                 site: a.realization.map(|r| r.site.to_owned()).unwrap_or_default(),
                 citation: a.realization.map_or_else(String::new, |r| {
-                    format!("{}/{}", overrides::RM_CLASS_DOCS, r.spec_file)
+                    format!("{}/{}", overrides::class_doc_dir(r.spec_file), r.spec_file)
                 }),
                 reason: a
                     .realization

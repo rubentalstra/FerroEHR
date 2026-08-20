@@ -18,17 +18,12 @@
 //! (`…/org.openehr.lang.bmm3.bmm_class.adoc` §Functions) states the same
 //! function with sharpened wording and is cited at the site it settles.
 //!
-//! NOTE: the persisted BMM graph is upward-complete but downward nominal — a
-//! class embeds its `ancestors` as full `BMM_CLASS` copies, while descendants
-//! are recorded only as names (`immediate_descendants`). The two downward
-//! functions ([`BmmClass::all_descendants`], [`BmmClass::supplier_closure`])
-//! and the primitive-type filter ([`BmmClass::suppliers_non_primitive`],
-//! which the class doc grounds "as defined in input schema") therefore take
-//! the owning [`BmmModel`] to resolve those names. The parameterless
-//! signatures in the class doc assume a live in-memory model with
-//! back-references, which the generated persistence-shaped types deliberately
-//! do not carry (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes:
-//! `immediate_descendants: List<String>`).
+//! NOTE: the persisted BMM graph is upward-complete but downward NOMINAL
+//! (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes:
+//! `immediate_descendants: List<String>`), so the downward functions and the
+//! supplier filter take the owning [`BmmModel`] to resolve names — the class
+//! doc's parameterless signatures assume the live back-references the
+//! generated persistence shapes deliberately do not carry.
 
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -192,16 +187,13 @@ impl BmmClass {
     /// over the embedded ancestors (the "inherited suppliers" clause). The
     /// result is deduped and sorted.
     ///
-    /// NOTE (recorded deviation): an *unconstrained* generic parameter
-    /// contributes nothing — `org.openehr.lang.bmm3.bmm_class.adoc` §Functions
-    /// states the rule the v2 prose leaves implicit ("Where generics are
-    /// unconstrained, no class name is added, since logically it would be `Any`
-    /// and this can always be assumed anyway"). The v2 clause "concrete
-    /// descendants of abstract statically defined types" needs the DOWNWARD
-    /// edges, which the persisted class shape records only as names; that
-    /// expansion is [`Self::all_descendants`] over a [`BmmModel`], and is
-    /// deliberately not folded in here so this function stays a pure function
-    /// of the class.
+    /// NOTE: an unconstrained generic parameter contributes nothing
+    /// (`org.openehr.lang.bmm3.bmm_class.adoc` §Functions: "no class name is
+    /// added, since logically it would be `Any`"), and the v2
+    /// concrete-descendants clause needs the downward edges the persisted
+    /// shape records only as names — that expansion is
+    /// [`Self::all_descendants`] over a [`BmmModel`], kept out so this stays
+    /// a pure function of the class.
     #[must_use]
     pub fn suppliers(&self) -> Vec<String> {
         let mut acc = BTreeSet::new();
@@ -357,15 +349,11 @@ impl BmmClass {
     /// `org.openehr.lang.bmm3.bmm_class.adoc` §Description: "Use `type_name()`
     /// to obtain the qualified type name").
     ///
-    /// NOTE (recorded deviation): the persisted `generic_parameters` is a
-    /// keyed map, so the FORMAL declaration order the class doc mandates for
-    /// `BMM_GENERIC_TYPE.generic_parameters` ("The order must match the order of
-    /// the owning class's formal generic parameter declarations") is not
-    /// recoverable here; parameters are rendered in the map's sorted key order.
-    /// `BMM_GENERIC_PARAMETER` invariant `Inv_generic_name`
-    /// (`name.count = 1 and name.is_upper`) keeps that order stable and,
-    /// for the conventional `T`, `U`, `V` naming, identical to declaration
-    /// order.
+    /// NOTE: the persisted `generic_parameters` is a keyed map, so the formal
+    /// declaration order the class doc mandates is not recoverable here —
+    /// parameters render in sorted key order, which `Inv_generic_name`
+    /// (single upper-case letters) keeps stable and, for conventional
+    /// `T`/`U`/`V` naming, identical to declaration order.
     #[must_use]
     pub fn type_name(&self) -> String {
         self.generic_form(|parameter| parameter.name.clone())

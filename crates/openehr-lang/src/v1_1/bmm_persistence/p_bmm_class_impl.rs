@@ -17,18 +17,12 @@
 //! read here reaches through all of them; the enumeration-specific attributes
 //! live in [`crate::v1_1::bmm_persistence::p_bmm_enumeration_impl`].
 //!
-//! NOTE (adjudicated): `P_BMM_INTERFACE` is a member of this slot because
-//! `LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual Approach says
-//! the model "can also represent pure interfaces via `P_BMM_INTERFACE`, i.e.
-//! class-like definitions that declare only functions and carry no state", and
-//! openEHR's own published schemas serialise them inside `class_definitions`,
-//! while `…p_bmm_interface.adoc` §Inherit records only `P_BMM_MODEL_ELEMENT` as
-//! its parent. Being a `P_BMM_MODEL_ELEMENT`, an interface declares exactly
-//! three of the attributes above — `documentation`, `name` and `functions` — so
-//! every OTHER accessor answers the absent value for an interface (an empty
-//! list, `None`, or the flag default), and the two attributes the reader stamps
-//! during processing (`source_schema_id`, `uid`) are `Option`-valued because an
-//! interface has no slot to stamp.
+//! NOTE: `P_BMM_INTERFACE` is a member of this slot
+//! (`LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual Approach;
+//! openEHR's own schemas serialise interfaces inside `class_definitions`)
+//! while inheriting only `P_BMM_MODEL_ELEMENT` — it declares just
+//! `documentation`/`name`/`functions`, so every other accessor answers the
+//! absent value for an interface.
 
 use std::collections::BTreeMap;
 

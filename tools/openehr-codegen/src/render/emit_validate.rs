@@ -28,7 +28,7 @@
 use crate::analyze::Model;
 use crate::analyze::invariants::{Bucket, classify};
 use crate::load::bmm::{BmmEnumValue, BmmSchema};
-use crate::plan::overrides::{InvariantVenue, RM_CLASS_DOCS, account_complex, account_emitted};
+use crate::plan::overrides::{InvariantVenue, account_complex, account_emitted};
 use crate::render::emit::GenFile;
 
 /// Emit the `validate/generated.rs` file for `openehr-rm` from the merged
@@ -45,8 +45,6 @@ pub(crate) fn emit_files(model: &Model, own_schema: &BmmSchema) -> Vec<GenFile> 
     body.push_str(IMPORTS);
     body.push('\n');
     body.push_str(&proportion_kind_consts(model));
-    body.push('\n');
-    body.push_str(&nonempty_list_rules(model));
     body.push('\n');
     body.push_str(CORES);
     vec![GenFile {
@@ -85,62 +83,6 @@ fn proportion_kind_consts(model: &Model) -> String {
             name.to_ascii_uppercase()
         ));
     }
-    b
-}
-
-/// The **present-implies-non-empty rule table**, derived from the vendored BMM.
-///
-/// The `x /= Void implies not x.is_empty` invariant family has one uniform
-/// assertion shape, so it is READ from the model rather than hand-listed: every
-/// class invariant whose expression is exactly that shape, and whose named
-/// attribute is a CONTAINER (a String-valued twin such as
-/// `PARTY_IDENTIFIED.Name_valid` is a different rule, realized by its own core),
-/// becomes a row `(class, attribute, invariant)`.
-///
-/// The evaluator (`openehr_rm::validate::nonempty_list_violations`) applies a
-/// row to the class itself and to its transitive concrete descendants, so an
-/// inherited rule (`LOCATABLE.Links_valid`, `DV_ORDERED.
-/// Other_reference_ranges_validity`, `ENTRY.Other_participations_valid`) covers
-/// every descendant without being restated — and a class the spec adds to the
-/// hierarchy is covered the moment the model is regenerated.
-fn nonempty_list_rules(model: &Model) -> String {
-    let mut rows: Vec<(String, String, String)> = Vec::new();
-    for (class_name, class) in &model.classes {
-        for (invariant, expression) in &class.invariants {
-            let Some(attribute) = crate::analyze::nonempty_list_attribute(expression) else {
-                continue;
-            };
-            // Only a container attribute: the same assertion shape also guards
-            // optional STRINGS, which are not this rule. An OPTIONAL container
-            // carrying the invariant emits `Option<NonEmptyVec<T>>` (#1730 —
-            // `analyze::nonempty_optional_lists`), so present-but-empty is
-            // unrepresentable and the row would be dead: only a MANDATORY
-            // container with the invariant (existence 1..1, cardinality lower
-            // bound 0) still needs a runnable rule.
-            if !class.properties.iter().any(|p| {
-                p.name == attribute
-                    && p.is_mandatory
-                    && matches!(p.kind, crate::load::bmm::BmmPropKind::Container { .. })
-            }) {
-                continue;
-            }
-            rows.push((class_name.clone(), attribute, invariant.clone()));
-        }
-    }
-    rows.sort();
-    let mut b = String::from(
-        "/// The `x /= Void implies not x.is_empty` rules, read from the vendored\n\
-         /// BMM class invariants: `(class, attribute, invariant)`. Applied to the\n\
-         /// class and its transitive concrete descendants by\n\
-         /// [`super::nonempty_list_violations`].\n\
-         pub(crate) const NONEMPTY_LIST_RULES: &[(&str, &str, &str)] = &[\n",
-    );
-    for (class, attribute, invariant) in rows {
-        b.push_str(&format!(
-            "    (\"{class}\", \"{attribute}\", \"{invariant}\"),\n"
-        ));
-    }
-    b.push_str("];\n");
     b
 }
 
@@ -199,7 +141,11 @@ fn realization_register(own_schema: &BmmSchema) -> String {
             };
             b.push_str(&format!(
                 "//! - `{}.{}`{site}: {} ({}/{} §Invariants).\n",
-                reg.class, reg.name, reg.reason, RM_CLASS_DOCS, reg.spec_file,
+                reg.class,
+                reg.name,
+                reg.reason,
+                crate::plan::overrides::class_doc_dir(reg.spec_file),
+                reg.spec_file,
             ));
         }
     }
@@ -266,7 +212,11 @@ fn complex_register(own_schema: &BmmSchema) -> String {
             };
             b.push_str(&format!(
                 "//! - `{}.{}`{site}: {} ({}/{} §Invariants).\n",
-                reg.class, reg.name, reg.reason, RM_CLASS_DOCS, reg.spec_file,
+                reg.class,
+                reg.name,
+                reg.reason,
+                crate::plan::overrides::class_doc_dir(reg.spec_file),
+                reg.spec_file,
             ));
         }
     }
@@ -396,9 +346,6 @@ const MODULE_DOC_INTRO: &str = "\
 //! - `archetyped_core` — ARCHETYPED `Rm_version_valid`.
 //! - `party_identified_core` — PARTY_IDENTIFIED / PARTY_RELATED `Basic_validity`,
 //!   `Name_valid`.
-//! - `nonempty_list_core` — the whole `x /= Void implies not x.is_empty`
-//!   family, decidable on the typed model now that an optional container emits
-//!   as `Option<Vec<T>>`.
 //! - `resource_description_core` — RESOURCE_DESCRIPTION `Original_author_valid`,
 //!   `Lifecycle_state_valid`, `Details_valid`.
 //! - `resource_description_item_core` — RESOURCE_DESCRIPTION_ITEM
@@ -718,36 +665,6 @@ pub(crate) fn party_identified_core(
     if name.is_some_and(str::is_empty) {
         out.push(InvariantViolation::here(format!(
             "Invariant Name_valid failed on type {ty}"
-        )));
-    }
-}
-
-/// The `x /= Void implies not x.is_empty` invariant family, shared by every RM
-/// class that declares one (`LOCATABLE.Links_valid`, `COMPOSITION.Content_valid`,
-/// `SECTION.Items_valid`, `ENTRY.Other_participations_valid`,
-/// `INSTRUCTION.Activities_valid`, `EVENT_CONTEXT.Participations_validity`,
-/// `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`,
-/// `PARTY_IDENTIFIED.Identifiers_valid`, `ACTOR.Roles_valid`,
-/// `ATTESTATION.Items_valid`, `ORIGINAL_VERSION.Attestations_valid` /
-/// `Other_input_version_uids_valid`, … — each `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*`
-/// §Invariants).
-///
-/// `present_and_empty` is the whole rule: the attribute is present on the
-/// instance AND holds zero members. It is decidable on the typed model because
-/// an optional container emits as `Option<Vec<T>>` — `Some(vec![])` is exactly
-/// the forbidden state — so callers pass
-/// `self.attr.as_ref().is_some_and(Vec::is_empty)`.
-pub(crate) fn nonempty_list_core(
-    ty: &str,
-    attribute: &str,
-    invariant: &str,
-    present_and_empty: bool,
-    out: &mut Vec<InvariantViolation>,
-) {
-    if present_and_empty {
-        out.push(InvariantViolation::here(format!(
-            "{ty}.{attribute} is present but empty — a present list must be \
-             non-empty ({ty}.{invariant})"
         )));
     }
 }

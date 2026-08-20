@@ -835,16 +835,12 @@ impl BmmGenericType {
     /// generic types have been substituted in this type"
     /// (`org.openehr.lang.bmm3.bmm_generic_type.adoc` §Functions).
     ///
-    /// NOTE (upstream naming slip, adjudicated to the class definition): the
-    /// function is NAMED `is_open` while its stated semantics are those of
-    /// CLOSURE, and `master06-core-types.adoc` §Generic Type calls the same
-    /// property "detected via the function `_is_closed_`" (L81) — a function no
-    /// class definition declares. This implementation follows the class
-    /// definition's SEMANTICS under its own name: `is_open()` is true when no
-    /// parameter is still a formal (open) parameter, i.e. when the type is fully
-    /// substituted. [`BmmGenericType::is_closed`] is the same predicate under the
-    /// chapter's name, so a caller can spell it either way without guessing which
-    /// reading it gets.
+    /// NOTE: the function is NAMED `is_open` while its stated semantics are
+    /// CLOSURE (the chapter calls the same property `is_closed` —
+    /// `master06-core-types.adoc` §Generic Type L81 — a function no class
+    /// declares); this follows the class definition's semantics under its own
+    /// name, with [`BmmGenericType::is_closed`] as the same predicate under
+    /// the chapter's name.
     #[must_use]
     pub fn is_open(&self) -> bool {
         !self

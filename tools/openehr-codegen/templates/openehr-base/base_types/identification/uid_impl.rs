@@ -13,21 +13,14 @@
 //! subtype, so the inherited attribute has no accessor on the parent; this
 //! sibling supplies it.
 //!
-//! NOTE (settled emission decision, not a defect): `UUID.value` is emitted as
-//! `uuid::Uuid` rather than `String` — the strong-typing rule of the root
-//! `CLAUDE.md` §Conventions ("strong types where unambiguous"). The spec's
-//! `String` view of that variant is therefore rendered, not borrowed, which is
-//! why [`Uid::value`](super::uid::Uid::value) returns a
-//! [`Cow`]: borrowed for `INTERNET_ID`/`ISO_OID`, owned for
-//! `UUID`. `uuid::Uuid`'s `Display` is the RFC 4122 lower-case hyphenated form
-//! (the form BASE `base_types`
-//! `master05-identification_package.adoc` §Syntaxes gives for `uuid`), so the
-//! rendered value is a legal `UID` lexical form — but it is a *normalised*
-//! rendering: a `UUID` written in upper case does not survive the round trip
-//! byte-for-byte. Callers that must honour the case-PRESERVING half of
-//! master05 §"Composite Identifiers and Case" (storing an identifier verbatim)
-//! must keep the original string; this accessor is for reading the identifier
-//! *value*, not for re-serialising a stored one.
+//! NOTE: `UUID.value` emits as `uuid::Uuid`, so the spec's `String` view is
+//! RENDERED (a [`Cow`], owned for `UUID`) in the RFC 4122 lower-case
+//! hyphenated form BASE `master05-identification_package.adoc` §Syntaxes
+//! gives — a legal but NORMALISED rendering: an upper-case-written `UUID`
+//! does not round-trip byte-for-byte, so callers honouring master05
+//! §"Composite Identifiers and Case" (verbatim storage) must keep the
+//! original string; this accessor reads the value, never re-serialises a
+//! stored one.
 
 use std::borrow::Cow;
 use std::str::FromStr;

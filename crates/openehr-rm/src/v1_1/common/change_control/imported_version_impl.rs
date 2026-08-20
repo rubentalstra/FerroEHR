@@ -23,18 +23,12 @@
 //! borrow rather than a clone: the delegation is identity, and a caller that
 //! needs an owned value clones at its own site.
 //!
-//! NOTE (the two `Option` returns): the class table types every one of these
-//! functions `1..1`, but two of them delegate to `ORIGINAL_VERSION` attributes
-//! the same specification declares `0..1` —
-//! `ORIGINAL_VERSION.preceding_version_uid` and `ORIGINAL_VERSION.data`
-//! (`…org.openehr.rm.common.original_version.adoc` §Attributes). The optional
-//! declarations are the ones with independent spec support: `VERSION`'s own
-//! `preceding_version_uid ()` is documented "Void if this is the first
-//! version", and a logically deleted version carries no data at all ("a new
-//! `ORIGINAL_VERSION` whose data attribute is set to Void", master06
-//! §Contributions). So both are returned as `Option`, which reports the Void
-//! the wrapped original may genuinely hold instead of fabricating a value for
-//! it.
+//! NOTE: two functions the class table types `1..1` delegate to
+//! `ORIGINAL_VERSION` attributes the same spec declares `0..1`
+//! (`…original_version.adoc` §Attributes; "Void if this is the first
+//! version"; a deleted version's data "set to Void", master06
+//! §Contributions) — so both return `Option`, reporting the Void the wrapped
+//! original may genuinely hold instead of fabricating a value.
 
 use crate::v1_1::common::change_control::imported_version::ImportedVersion;
 use crate::v1_1::data_types::text::dv_coded_text::DvCodedText;

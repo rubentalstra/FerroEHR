@@ -199,19 +199,12 @@ pub(super) struct ClassEntry<'a> {
 /// Every class index is keyed by the UPPER-CASED class name, and every
 /// name-based lookup upper-cases its argument.
 ///
-/// NOTE (adjudicated): class names in a BMM schema are case-flexible —
-/// `master04-syntax.adoc` §Non-primitive Classes says of `P_BMM_CLASS.name`
-/// "any capitalisation can be used, usually one of CamelCase or so-called
-/// UPPER_SNAKE_CASE" — so a type reference and the class definition it names may
-/// differ in capitalisation, as they do throughout the vendored openEHR schemas
-/// (`openEHR_aom_206.bmm` references `BOOLEAN` where `openehr_base_110.bmm`
-/// defines `Boolean`; `openehr_adltest_100.bmm` references `Iso8601_date` where
-/// `openehr_primitive_types_102.bmm` defines `ISO8601_DATE`). The BMM model
-/// itself takes the same approach for the one map whose keying it specifies:
-/// `BMM_PACKAGE_CONTAINER.packages` has "keys all in upper case for guaranteed
-/// matching" (`org.openehr.lang.bmm.bmm_package_container.adoc` §Attributes).
-/// Every name written into the produced `BMM_*` values is the class's OWN
-/// `name`, never the upper-cased key.
+/// NOTE: class names in a BMM schema are case-flexible
+/// (`master04-syntax.adoc` §Non-primitive Classes: "any capitalisation can be
+/// used"), and the model itself keys upper-case "for guaranteed matching"
+/// (`org.openehr.lang.bmm.bmm_package_container.adoc` §Attributes) — so
+/// resolution is case-insensitive while every name WRITTEN into the produced
+/// `BMM_*` values is the class's own `name`, never the upper-cased key.
 pub(super) struct Builder<'a> {
     /// The schema being materialised
     /// ([`crate::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema::schema_id`]) — the
@@ -329,32 +322,14 @@ impl<'a> Builder<'a> {
 
     /// Builds one `BMM_CLASS` at the given embedding depth.
     ///
-    /// NOTE (adjudicated): a persisted `P_BMM_INTERFACE` materialises as an
-    /// ABSTRACT class with no properties. An interface is a class-like
-    /// definition declaring only functions — "In addition to ordinary classes,
-    /// the model can also represent pure interfaces via `P_BMM_INTERFACE`, i.e.
-    /// class-like definitions that declare only functions and carry no state"
-    /// (`master02-overview.adoc` §Conceptual Approach) — and the `BMM_*` model
-    /// has no interface class at all (`org.openehr.lang.bmm.bmm_class.adoc` and
-    /// its descendants are the whole entity family), so the abstract-class
-    /// projection is the only faithful destination: it keeps every package
-    /// listing and every property type reference naming an interface
-    /// (`TERMINOLOGY_SERVICE.terminology: TERMINOLOGY_ACCESS` in the vendored
-    /// RM 1.2.0 schema) resolvable, while `is_abstract` records that an
-    /// interface is not instantiable. Its FUNCTIONS have no destination in the
-    /// generation being materialised, exactly as class functions do not: the
-    /// **v2.x** `BMM_CLASS` declares `properties` and no function map
-    /// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes), and this
-    /// materialisation targets the v2.x model because P_BMM is that generation's
-    /// persistence form (`LANG/docs/bmm/master06-persistence.adoc`). So
-    /// `P_BMM_CLASS.functions` is preserved in the P_BMM graph and carried no
-    /// further HERE. That is a boundary of the v2 model, NOT of the openEHR
-    /// specs: the **v3** `BMM_CLASS` declares `features`, `functions`,
-    /// `procedures`, `static_properties`, `invariants`, `creators` and
-    /// `converters` (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes), and
-    /// [`crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model`] lands the
-    /// routines and constants there (invariants excepted — they need an EL parse,
-    /// see that module's docs).
+    /// NOTE: a persisted `P_BMM_INTERFACE` materialises as an ABSTRACT class
+    /// with no properties — the v2 `BMM_*` model has no interface class
+    /// (`master02-overview.adoc` §Conceptual Approach;
+    /// `org.openehr.lang.bmm.bmm_class.adoc`), so the abstract-class
+    /// projection is the only faithful destination that keeps interface-typed
+    /// references resolvable. Its FUNCTIONS stay in the P_BMM graph — the
+    /// v2 `BMM_CLASS` declares no function map; the v3 target of
+    /// `create_bmm3_model` lands them.
     ///
     /// `BMM_CLASS.source_schema_id` is `1..1` ("Reference to original source
     /// schema defining this class", class doc §Attributes) while an interface
@@ -1111,21 +1086,13 @@ pub(super) fn qualify(prefix: &str, name: &str) -> String {
 /// Every inheritance parent a persisted class names, from `ancestors` and from
 /// the `root_type` of each `ancestor_defs` entry.
 ///
-/// NOTE (a boundary of the generation being materialised, not of the specs): the
-/// **v2.x** `BMM_CLASS.ancestors` is a `Hash<String, BMM_CLASS>`
-/// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes), i.e. a map of CLASSES, so
-/// the parameter substitution a generic ancestor states
-/// (`GENERIC_PARENT<T,SUPPLIER_B>`, `master04-syntax.adoc` §Inheritance) has
-/// nowhere to land in the v2 model: only the root class is carried in, and the
-/// binding stays readable in the `P_BMM_CLASS.ancestor_defs` of the persisted
-/// schema. The **v3** generation types the same attribute
-/// `ancestors: Hash<String, BMM_MODEL_TYPE>` and states in its §Description that
-/// it "contains a list of _types_ rather than classes"
-/// (`org.openehr.lang.bmm3.bmm_class.adoc`), which DOES carry the binding —
-/// `crate::v1_1::bmm3` emits that shape, and
-/// [`crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model`] carries the
-/// binding into it — so the loss is this transform's target generation, not the
-/// pipeline's.
+/// NOTE: the v2 `BMM_CLASS.ancestors` is a map of CLASSES
+/// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes), so a generic
+/// ancestor's parameter binding has nowhere to land here — only the root
+/// class is carried, the binding staying readable in `P_BMM_CLASS.
+/// ancestor_defs`; the v3 generation types `ancestors` as TYPES
+/// (`…bmm3.bmm_class.adoc`) and `create_bmm3_model` carries the binding into
+/// it — a boundary of this transform's target generation, not the pipeline.
 pub(super) fn ancestor_names(class: &PBmmClass) -> Vec<String> {
     let mut out: Vec<String> = class.ancestors().to_vec();
     out.extend(

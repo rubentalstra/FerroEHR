@@ -385,15 +385,12 @@ async fn subject_proxy_preconditions_and_reset() {
 ///
 /// NOTE: the deadlines are deliberately far longer than any loopback exchange
 /// needs, because no test in this file asserts timeout *behaviour* and a missed
-/// deadline here is silent rather than loud: a retrieve that fails after being
-/// dispatched is an unavailable `SAMPLE`
-/// (`SM/docs/UML/classes/sample.adoc` — "Every retrieval attempt will generate
-/// a new Sample object, regardless of whether data was actually available or
-/// not"), which `extract_value` maps to the empty `VARIABLE_VALUE`. A deadline
-/// short enough to be reachable under parallel-run host contention therefore
-/// turns a scheduling hiccup into a wrong-value assertion failure that passes
-/// on rerun. Deadlines that must actually fire belong in a test that delays the
-/// response on purpose.
+/// deadline is silent rather than loud: a retrieve that fails after dispatch is
+/// an unavailable `SAMPLE` (`SM/docs/UML/classes/sample.adoc` — "Every retrieval
+/// attempt will generate a new Sample object, regardless of whether data was
+/// actually available or not"), which `extract_value` maps to the empty
+/// `VARIABLE_VALUE`. Deadlines that must actually fire belong in a test that
+/// delays the response on purpose.
 fn service_with_fhir(pool: PgPool, name: &str, base_url: &str) -> FerroEhrService {
     let mut systems = std::collections::BTreeMap::new();
     systems.insert(

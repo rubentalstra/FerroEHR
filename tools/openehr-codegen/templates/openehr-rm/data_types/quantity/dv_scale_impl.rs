@@ -14,15 +14,11 @@
 //! NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
 //! is deferred to the composition validator + `openehr-term`.
 //!
-//! NOTE (spec tension, `dv_scale.adoc` symbol vs `code_phrase.adoc`
-//! `Code_string_valid`): `dv_scale.adoc` permits an UNCODED scale point — a
-//! symbol whose `defining_code.code_string` is blank — while the CODE_PHRASE
-//! invariant `Code_string_valid: not code_string.is_empty` forbids any empty
-//! code string. We enforce the CODE_PHRASE invariant (strict): neither the
-//! canonical corpus nor the CNF data sets carry a blank-symbol DV_SCALE
-//! (scanned 2026-07-11), and a blank code inside a `DV_CODED_TEXT` is
-//! unusable for terminology validation. Revisit if real uncoded scale data
-//! appears.
+//! NOTE: `dv_scale.adoc` permits an UNCODED scale point while
+//! `code_phrase.adoc` `Code_string_valid` forbids any empty code string — the
+//! CODE_PHRASE invariant is enforced (strict; no corpus or CNF data set
+//! carries a blank-symbol DV_SCALE, scanned 2026-07-11). Revisit if real
+//! uncoded scale data appears.
 
 use crate::v1_2::data_types::quantity::dv_ordered::DvOrdered;
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;

@@ -227,11 +227,11 @@ fn locatables_without_a_typed_impl(node_id: &str) -> Vec<Value> {
 
 /// `LOCATABLE.Archetype_node_id_valid` (`not archetype_node_id.is_empty`,
 /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-/// §Invariants) is inherited by **every** concrete LOCATABLE descendant — also
-/// the ones with no typed `Validate` impl and no fast-path evaluator
-/// (`ITEM_TREE`, `ITEM_LIST`, `ITEM_SINGLE`, `EHR_STATUS`, the demographic and
-/// `EHR_EXTRACT` LOCATABLEs), which reach only the generated structural decode.
-/// The refusing twin: an empty `archetype_node_id` violates it on each.
+/// §Invariants) fires with FULL fast-vs-typed equivalence on four
+/// representative untyped-impl fixtures (`ITEM_TREE`, `ITEM_LIST`,
+/// `ITEM_SINGLE`, `EHR_STATUS`) — the totality claim over the whole concrete
+/// closure lives in `node_id_totality_is_model_derived` (#2442), which
+/// derives its membership from the generated model.
 #[test]
 fn inherited_node_id_invariant_reaches_every_concrete_locatable() {
     for node in locatables_without_a_typed_impl("") {
@@ -1013,4 +1013,36 @@ fn value_less_elements(value: &Value) -> Vec<&Value> {
     let mut out = Vec::new();
     walk(value, &mut out);
     out
+}
+
+/// `Archetype_node_id_valid` reaches EVERY concrete LOCATABLE descendant of
+/// the generated model — the totality half the fixture-listed test above
+/// cannot carry (#2442).
+///
+/// The membership is the generated closure itself
+/// (`openehr_rm::v1_2::model::descendants("LOCATABLE")`), so an emitter
+/// regression that drops a class from the closure — silently ending its
+/// enforcement — fails here instead of going dark. The dispatcher's closeout
+/// reads the node's own `_type` + `archetype_node_id` off the JSON value, so
+/// a minimal node per class suffices; the class's other invariants firing
+/// beside it are irrelevant to the assertion.
+#[test]
+fn node_id_totality_is_model_derived() {
+    let concrete = openehr_rm::v1_2::model::descendants("LOCATABLE");
+    assert!(
+        concrete.len() >= 39,
+        "the concrete LOCATABLE closure shrank to {} — emitter regression?",
+        concrete.len()
+    );
+    for ty in concrete {
+        let node = json!({"_type": ty, "archetype_node_id": ""});
+        let violations = two_tier(&node);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.message
+                    == format!("Invariant Archetype_node_id_valid failed on type {ty}")),
+            "{ty}: an empty archetype_node_id must violate Archetype_node_id_valid, got {violations:?}"
+        );
+    }
 }

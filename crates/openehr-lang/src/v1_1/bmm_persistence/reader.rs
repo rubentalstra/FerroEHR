@@ -324,15 +324,12 @@ impl<'a> Block<'a> {
     /// A `String` attribute the class docs declare `1..1` but
     /// `master04-syntax.adoc` §Header Items treats as optional.
     ///
-    /// NOTE (adjudicated): `BMM_SCHEMA_CORE` declares `schema_revision`,
-    /// `schema_lifecycle_state`, `schema_author` and `schema_description` all
-    /// `1..1` (`org.openehr.lang.bmm.bmm_schema_core.adoc` §Attributes), yet the
-    /// §Header Items example omits `schema_author` altogether and most vendored
-    /// openEHR/CIMI schemas omit it too. Since the generated field is a plain
-    /// `String`, an absent documentation header reads as the empty string rather
-    /// than refusing published schema text; the four identifying headers
-    /// (`bmm_version`, `rm_publisher`, `schema_name`, `rm_release`) stay
-    /// mandatory, because `schema_id` is derived from three of them.
+    /// NOTE: `BMM_SCHEMA_CORE` declares the four documentation headers `1..1`
+    /// (`org.openehr.lang.bmm.bmm_schema_core.adoc` §Attributes) yet the
+    /// spec's own §Header Items example and most published schemas omit
+    /// `schema_author` — an absent documentation header reads as the empty
+    /// string rather than refusing published schema text; the four
+    /// IDENTIFYING headers stay mandatory (`schema_id` derives from them).
     fn documentation_string(&mut self, name: &'static str) -> Result<String, PBmmReadError> {
         Ok(self.optional_string(name)?.unwrap_or_default())
     }
@@ -1668,17 +1665,11 @@ fn read_generic_type(path: &str, value: &OdinValue) -> Result<PBmmGenericType, P
 /// list of string types" (`master04-syntax.adoc` §Generic Classes) — and reads
 /// into `P_BMM_GENERIC_TYPE.generic_parameters`.
 ///
-/// NOTE (adjudicated tolerance): the vendored openEHR AM 2.2.0/2.3.0/2.4.0 ODIN
-/// schemas also write it as an INTEGER-KEYED list whose members mix plain type
-/// names with type-marked blocks
-/// (`generic_parameters = < [1] = <"Boolean"> [2] = (P_BMM_GENERIC_TYPE) <…> >`
-/// on `ARCHETYPE_CONSTRAINT.c_conforms_to`). No openEHR spec governs that
-/// positional form; it collapses the chapter's two parameter lists into one. It
-/// is read entirely into `generic_parameter_defs` — the `List<P_BMM_TYPE>` half —
-/// with a bare type name promoted to a `P_BMM_SIMPLE_TYPE`, because that is the
-/// only shape that preserves the declaration ORDER the class doc requires ("The
-/// order must match the order of the owning class's formal generic parameter
-/// declarations").
+/// NOTE: the vendored openEHR AM schemas also write an INTEGER-KEYED list
+/// mixing plain names with type-marked blocks — no openEHR spec governs that
+/// positional form — and it is read entirely into `generic_parameter_defs`
+/// (bare names promoted to `P_BMM_SIMPLE_TYPE`), the only shape preserving
+/// the declaration ORDER the class doc requires.
 fn read_generic_parameters(
     block: &mut Block<'_>,
 ) -> Result<(Vec<String>, Vec<PBmmType>), PBmmReadError> {

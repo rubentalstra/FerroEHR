@@ -113,17 +113,11 @@ pub struct SourceArtefact {
     /// the archetype, and is expressed in dADL syntax. It is optional, and is
     /// included at the end of the archetype").
     ///
-    /// NOTE: it has no landing site in the assembled AOM2 model, and that is
-    /// deliberate upstream, not a generated-model gap —
-    /// `AM/docs/ADL2/master01-preface` §Changes from ADL 1.4: "the
-    /// `revision_history` section is removed, since the AOM2 uses the openEHR
-    /// Base Types version of the Resource package" (SPECAM-61 in that
-    /// specification's amendment record, and the mirroring "Remove
-    /// `revision_history` property" entry in the BASE resource amendment
-    /// record). So the section is read and preserved *here*, at the 1.4 source
-    /// level, where a caller that wants the audit history can reach it, and it
-    /// is not carried into the ADL2 artefact that
-    /// [`crate::adl14::convert`] produces.
+    /// NOTE: it has no landing site in the assembled AOM2 model — deliberate
+    /// upstream, not a generated-model gap (`AM/docs/ADL2/master01-preface`
+    /// §Changes from ADL 1.4: "the `revision_history` section is removed";
+    /// SPECAM-61) — so the section is read and preserved HERE at the 1.4
+    /// source level and never carried into the converted ADL2 artefact.
     pub revision_history: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `definition` (cADL) body as a raw span.
     pub definition: Option<RawSpan>,

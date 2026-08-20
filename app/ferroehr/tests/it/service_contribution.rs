@@ -1192,7 +1192,7 @@ async fn contribution_cannot_delete_the_ehr_status() {
                         "change_type": change_type("523", "deleted"),
                         "committer": committer("author")
                     },
-                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "523" },
+                    "lifecycle_state": lifecycle("523"),
                     "preceding_version_uid": { "value": status_uid }
                 }],
                 "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
