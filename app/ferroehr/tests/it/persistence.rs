@@ -325,7 +325,7 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
         VerbatimVersionRow {
             vo_id: VoId(vo),
             kind: "COMPOSITION",
-            ehr_id: EhrId(ehr_id),
+            ehr_id: Some(EhrId(ehr_id)),
             sys_version: ord,
             trunk_version: trunk,
             branch_number: branch,
@@ -441,7 +441,7 @@ async fn an_as_of_read_resolves_along_the_trunk() {
     let branch_row = |target: VoId, ord: i32| VerbatimVersionRow {
         vo_id: target,
         kind: "COMPOSITION",
-        ehr_id: EhrId(ehr_id),
+        ehr_id: Some(EhrId(ehr_id)),
         sys_version: ord,
         trunk_version: 1,
         branch_number: 1,
