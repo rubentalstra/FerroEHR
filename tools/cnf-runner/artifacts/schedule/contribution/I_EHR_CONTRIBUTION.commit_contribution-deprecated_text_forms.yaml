@@ -1,0 +1,51 @@
+# The deprecated-but-legal Text forms accepting twin (RM data_types ch.5,
+# issue #2476): DV_PARAGRAPH "remains legal, and should be supported in at
+# least a basic way" (master05 §Formatting and Hyperlinking WARNING), and the
+# legacy CSS formatting string and hyperlink field stay legal beside their
+# deprecation (dv_text.adoc §Attributes). The refusal direction is already
+# pinned by the paragraph_no_items strict-reader twins; this proves the
+# accepting direction commits. Acceptance IS the deprecation's exact wire
+# strength: the commit wire has no findings channel and I_VALIDITY_CHECKER
+# is Boolean by the SM signature, so no Warning channel exists to carry more.
+id: I_EHR_CONTRIBUTION.commit_contribution-deprecated_text_forms
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Committing a composition carrying the three deprecated-but-legal Text
+  forms — a DV_PARAGRAPH whose items include a DV_TEXT with a legacy CSS
+  formatting string and a hyperlink — succeeds and creates version 1.
+description: "commit a composition carrying DV_PARAGRAPH + legacy formatting + hyperlink"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "RM data_types/master05-text_package.adoc §Formatting and Hyperlinking (DV_PARAGRAPH remains legal, and should be supported in at least a basic way; the legacy CSS form remains legal; hyperlink deprecated at RM 1.0.4)"
+  - "RM UML/classes/org.openehr.rm.data_types.dv_paragraph.adoc §Invariants (Items_valid: not items.is_empty)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.history_open.v1]
+  ehr: { commits: none }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.composition.history_open.deprecated_text_forms, expected: created, defect: "DV_PARAGRAPH + legacy CSS formatting + hyperlink, all deprecated-but-legal" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:fixture}", change_type: creation }
+    expect: "${fixture.expected}"
+    capture:
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: CREATE, uid_pattern: "<uuid>::<system>::1" }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR holds one new VERSION<COMPOSITION> whose DV_PARAGRAPH, legacy
+      formatting string and hyperlink are stored and served unchanged.
+    verified_by: I_EHR_COMPOSITION.get_composition_latest

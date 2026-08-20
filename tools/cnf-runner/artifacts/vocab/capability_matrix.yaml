@@ -66,7 +66,10 @@ DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 85,
 # Raised 93 -> 94 (2026-08-20): the DV_IDENTIFIER empty-id refusal twin
 # (issue #2474, Id_valid — the present-but-empty branch beside the
 # CONT-DV_IDENTIFIER matrix's missing-id row).
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 94, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
+# Raised 94 -> 96 (2026-08-20): the Text-package twins (issue #2476) — the
+# deprecated-forms acceptance case (DV_PARAGRAPH + legacy formatting +
+# hyperlink) plus the four-invariant refusal family.
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 96, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 72, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
 # BINDING cases (member accepted / non-member refused / unresolvable under each

@@ -2149,6 +2149,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-deprecated_text_forms",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_not_modifiable",
       "status": "passed",
       "rows_driven": 1,
@@ -2408,6 +2414,12 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-text_family_invalid",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation",
