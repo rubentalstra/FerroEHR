@@ -197,22 +197,14 @@ fn unconstrained_structural_attribute_keeps_the_any_placeholder() {
 ///
 /// (`Falls care plan.opt` was here too — an archetyped `EVENT_CONTEXT` the walk
 /// wrongly required an `archetype_node_id` on; that was OUR validator defect, now
-/// fixed by matching non-`LOCATABLE` nodes structurally, so it validates clean.)
-///
-/// - `Testing.opt` — constrains a MANDATORY `DV_URI.value` with the anchored
-///   `C_STRING` pattern `abcdef`: no value matching it can carry a URI scheme,
-///   so no instance satisfies both the OPT constraint and the CNF-mandated
-///   absolute-reference rule for `DV_URI` (CNF `platform_test_schedule`
-///   master17.7 `xyz | rejected | value doesn't comply with RFC3986`; RM
-///   `data_types` `dv_uri` "structurally conforms to ... RFC-3986").
+/// fixed by matching non-`LOCATABLE` nodes structurally, so it validates clean.
+/// `Testing.opt` @ Medium was here too — its `C_STRING` pattern `abcdef` on a
+/// mandatory `DV_URI.value` collided with OUR invented RFC-3986 scheme floor;
+/// the class's only invariant is non-emptiness and master10 §Design allows
+/// plain-text URIs, so with the floor removed it validates clean.)
 ///
 /// (fixture, level) pairs: `None` = contradictory at every committable level.
-const CONTRADICTORY_FIXTURES: &[(&str, Option<DetailLevel>)] = &[
-    ("section_cardinality.opt", None),
-    // Only Medium populates the optional branch carrying the defective leaf;
-    // the Required skeleton omits it and rightly validates clean.
-    ("Testing.opt", Some(DetailLevel::Medium)),
-];
+const CONTRADICTORY_FIXTURES: &[(&str, Option<DetailLevel>)] = &[("section_cardinality.opt", None)];
 
 /// The full-validation bar: the committable levels (`Required` and `Medium`) of
 /// every vendored template produce a **fully valid** COMPOSITION —

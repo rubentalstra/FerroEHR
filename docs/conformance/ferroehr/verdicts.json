@@ -268,7 +268,7 @@
     [
       "ChangeSets",
       {
-        "passed": 95,
+        "passed": 97,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1076,
-    "driven": 1038,
-    "passed": 1038,
+    "selected": 1078,
+    "driven": 1040,
+    "passed": 1040,
     "failed": 0,
     "inconclusive": 0
   }
