@@ -504,11 +504,16 @@ impl FerroEhrService {
             if let sqlx::Error::Database(db) = &e
                 && db.constraint() == Some("uq_ehr_subject")
             {
-                return ServiceError::conflict(format!(
-                    "an EHR already exists for subject {}@{}",
-                    subject_id.unwrap_or("?"),
-                    namespace.unwrap_or("?"),
-                ));
+                // NOTE: SM ehr_call_status_type.adoc declares
+                // ehr_for_subject_already_exists for the one-EHR-per-subject rule.
+                return ServiceError::sm(
+                    CallStatusType::EhrForSubjectAlreadyExists,
+                    format!(
+                        "an EHR already exists for subject {}@{}",
+                        subject_id.unwrap_or("?"),
+                        namespace.unwrap_or("?"),
+                    ),
+                );
             }
             ServiceError::Database(e)
         })?;
@@ -555,10 +560,15 @@ impl FerroEhrService {
                 crate::storage::ehr_repo::ehr_id_by_subject(&mut *tx, subject_id, namespace).await?
             && owner != ehr_id
         {
-            return Err(ServiceError::conflict(format!(
-                "EHR {ehr_id} names subject {subject_id}@{namespace}, which EHR {owner} \
-                 already holds (one EHR per subject)"
-            )));
+            // NOTE: SM ehr_call_status_type.adoc declares
+            // ehr_for_subject_already_exists for the one-EHR-per-subject rule.
+            return Err(ServiceError::sm(
+                CallStatusType::EhrForSubjectAlreadyExists,
+                format!(
+                    "EHR {ehr_id} names subject {subject_id}@{namespace}, which EHR {owner} \
+                     already holds (one EHR per subject)"
+                ),
+            ));
         }
         self.sync_ehr_subject(tx, ehr_id, &status).await
     }

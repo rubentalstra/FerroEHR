@@ -106,7 +106,10 @@ impl FerroEhrService {
     ///   rule-code mnemonics carried as the validation detail.
     /// - A database failure (`exception` → `500`).
     pub async fn upload_archetype(&self, adl: String) -> Result<String, SmError> {
-        archetype_validate(&adl)?;
+        // NOTE: i_definition_adl14.adoc §upload_archetype .Errors declares
+        // invalid_archetype for a semantically invalid archetype.
+        archetype_validate(&adl)
+            .map_err(|e| invalid_artefact_status(e, CallStatusType::InvalidArchetype))?;
         Ok(self.archetype_upload(&adl).await?)
     }
 
@@ -302,7 +305,11 @@ impl FerroEhrService {
     ///   (`409`).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
-        self.store_template(&opt_xml).await?;
+        // NOTE: i_definition_adl14.adoc §upload_opt .Errors declares
+        // invalid_template for a semantically invalid operational template.
+        self.store_template(&opt_xml)
+            .await
+            .map_err(|e| invalid_artefact_status(e, CallStatusType::InvalidTemplate))?;
         Ok(())
     }
 
@@ -693,6 +700,22 @@ fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
 /// ITS-REST 1.1.0 surfaces no archetype route — the registered realization
 /// gap), so no released wire status attaches and the SM error is the whole
 /// contract.
+/// Promote the generic `content_invalid` of a [`ServiceError`] crossing an
+/// upload seam to the operation's declared artefact status.
+///
+/// `i_definition_adl14.adoc` declares `invalid_template` (§`upload_opt`
+/// `.Errors`) and `invalid_archetype` (§`upload_archetype` `.Errors`) for a
+/// semantically invalid artefact; every other status passes through
+/// unchanged, so a duplicate-artefact conflict or a storage fault keeps its
+/// own token.
+fn invalid_artefact_status(e: ServiceError, status: CallStatusType) -> SmError {
+    let mut sm = SmError::from(e);
+    if sm.status == CallStatusType::ContentInvalid {
+        sm.status = status;
+    }
+    sm
+}
+
 fn archetype_syntax_failure(errs: Vec<SyntaxError>) -> ServiceError {
     ServiceError::ValidationFailed(
         errs.into_iter()

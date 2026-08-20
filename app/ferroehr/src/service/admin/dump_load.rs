@@ -2136,13 +2136,18 @@ async fn insert_ehr_row(tx: &mut PgConnection, ehr: &EhrRow) -> Result<(), Servi
         if let sqlx::Error::Database(db) = &e
             && db.constraint() == Some("uq_ehr_subject")
         {
-            return ServiceError::conflict(format!(
-                "EHR {} names subject {}@{}, which another EHR in this repository already \
-                 holds (one EHR per subject)",
-                ehr.id,
-                ehr.subject_id.as_deref().unwrap_or("?"),
-                ehr.subject_namespace.as_deref().unwrap_or("?"),
-            ));
+            // NOTE: SM ehr_call_status_type.adoc declares
+            // ehr_for_subject_already_exists for the one-EHR-per-subject rule.
+            return ServiceError::sm(
+                CallStatusType::EhrForSubjectAlreadyExists,
+                format!(
+                    "EHR {} names subject {}@{}, which another EHR in this repository \
+                     already holds (one EHR per subject)",
+                    ehr.id,
+                    ehr.subject_id.as_deref().unwrap_or("?"),
+                    ehr.subject_namespace.as_deref().unwrap_or("?"),
+                ),
+            );
         }
         ServiceError::Database(e)
     })?;

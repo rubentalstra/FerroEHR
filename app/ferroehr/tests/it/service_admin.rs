@@ -416,7 +416,9 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
     );
 
     // Re-upload, then reference it from a committed version: the delete must be
-    // refused (409 = CompositionAlreadyExists) so a physical delete never
+    // refused (409; the generic SM `conflict` — a referenced-template conflict
+    // is not a COMPOSITION conflict and the SM names nothing more precise,
+    // #2151) so a physical delete never
     // orphans clinical data. Pointing an existing vo_version at the template
     // exercises the `vo_version.template_id` FK-reference guard directly (lighter
     // than a full validated composition commit, which the guard does not need).
@@ -441,7 +443,7 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
         matches!(
             res,
             Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             })
         ),
