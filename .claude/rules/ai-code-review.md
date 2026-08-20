@@ -36,13 +36,25 @@ The installed app does hold `code: write` — a GitHub App's permission set is
 declared by the app and cannot be narrowed by the installer — so this
 property is a configuration choice, not a capability boundary.
 
-## It does not gate a merge
+## It does not gate a merge — a measured decision, not a default
 
 No pre-merge check is at `error`, and `request_changes_workflow` is off. The
-app publishes a check run named `CodeRabbit`; it is **not required**, and
-making it required is a deliberate future step, not something to inherit by
-accident. Merge authority stays where it was: the local gates green, and the
-owner's call.
+app publishes a check run named `CodeRabbit`; it is **not required**. Merge
+authority stays where it was: the local gates green, and the owner's call.
+
+That standing was **measured, then kept** (issue #2148, 2026-08-20): over the
+25 merged PRs the reviewer actually reviewed under the committed
+configuration, its 137 actionable findings graded 82 true positives, 29
+false positives, 26 noise — ≈60% precision. The true positives included
+genuinely severe catches (an `f64` pre-rounding in `DvCount::multiply`, a
+fail-open Helm gate, an unchecked RSA signing key), which is why it is kept;
+the 40% FP+noise band is why it does not gate — a blocking check at that
+precision trains override-slapping, which also mutes the 60%. Two structural
+facts from the measurement shape how to read its comments: it fabricates
+citations for files excluded from its checkout (the vendored specs are
+path-filtered out), and it reviews only PRs open long enough to finish — a
+fast-merge cadence means most PRs get no review at all. Re-promotion is a
+future re-measurement, not a config toggle.
 
 A pre-merge check reported as a warning is information. It does not block,
 and it is not a reason to reword a PR description that is already correct.
