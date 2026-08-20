@@ -21,17 +21,13 @@
 //! versions to an existing one and answers `204`.
 //!
 //! NOTE (no openEHR spec governs role semantics on an unspecified route — our
-//! own design/extension): the shared authentication + RBAC layer answers
-//! before any handler here runs, so every route carries `401` (no valid
-//! principal) and the routes the coarse gate classifies as WRITES carry `403`
-//! for a principal holding the configured read-only role. `POST /message/export`
-//! is NOT one of them: it realizes SM
-//! `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`, a query over held versions
-//! whose selector is a whole `EXTRACT_SPEC` structure and which commits
-//! nothing, so it is pinned as a read for that gate
-//! (`ferroehr-rest::extensions::access::authz::EXTENSION_READ_ROUTES`) exactly
-//! as the released ad-hoc AQL `POST` read is. The import routes are the
-//! mutating half of the same interface and stay writes.
+//! own design/extension): the shared authentication + RBAC layer answers before
+//! any handler runs, so every route carries `401` and every route the coarse
+//! gate classifies as a WRITE carries `403` for the configured read-only role.
+//! `POST /message/export` is not one: SM `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`
+//! commits nothing, so it is pinned as a read
+//! (`ferroehr-rest::extensions::access::authz::EXTENSION_READ_ROUTES`), like the
+//! released ad-hoc AQL `POST`; the import routes stay writes.
 
 #![expect(
     clippy::disallowed_types,

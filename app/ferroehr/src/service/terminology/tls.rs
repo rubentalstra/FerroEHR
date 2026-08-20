@@ -15,21 +15,12 @@
 //! # The identity is per provider, not per process
 //!
 //! NOTE (settled design): the client identity is configured on each
-//! `[terminology.external.providers.<name>]`, not once for the whole process.
-//! A client certificate is a credential **issued by the peer's PKI**, exactly
-//! like the `OAuth2` client credentials a provider already names with
-//! `oauth2_client`: a deployment federating to a national SNOMED CT service, a
-//! commercial `ValueSet` server and an in-house HAPI server is enrolled
-//! separately in three trust domains and holds three certificates with three
-//! subjects. A single shared outbound identity could not express that at all,
-//! whereas the per-provider shape degenerates to a shared one by repeating the
-//! same paths. The same argument applies to the trust anchors: the CA that
-//! signs each server's certificate is a property of that server, not of this
-//! process. The one outbound-TLS precedent in the tree is scoped the same way
-//! (`[audit.syslog] tls_identity_cert_file` / `tls_identity_key_file`, the IHE
-//! ITI-19 node-authenticated connection to one Audit Record Repository);
-//! `[server.tls]` is inbound-only and cannot be reused for an outbound
-//! identity.
+//! `[terminology.external.providers.<name>]`, not once for the whole process,
+//! because a client certificate is a credential **issued by the peer's PKI** —
+//! exactly like the `OAuth2` client credentials a provider already names with
+//! `oauth2_client` — and so is the CA that signs each server's certificate. The
+//! per-provider shape degenerates to a shared one by repeating the same paths;
+//! `[server.tls]` is inbound-only and cannot be reused for an outbound identity.
 //!
 //! # Verification is never disabled
 //!

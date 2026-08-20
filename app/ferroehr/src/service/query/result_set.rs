@@ -121,10 +121,8 @@ fn render_param(value: &ParamValue) -> String {
 /// `ResultSet` schema (`crates/openehr-its/vendor/rest-oas/query-*.openapi.yaml`
 /// §`components.schemas.ResultSet`) declares exactly
 /// `meta`/`name`/`q`/`columns`/`rows` with `required: [rows]` and **no**
-/// `additionalProperties`, so the wire has no slot for it: an `id` key is an
-/// undeclared property on a closed object schema, and the REST wire is what
-/// this function produces. It is therefore dropped rather than emitted
-/// additively.
+/// `additionalProperties`, so on this wire an `id` key would be an undeclared
+/// property on a closed object schema.
 pub(super) fn result_set_json(
     aql: &str,
     executed: &str,

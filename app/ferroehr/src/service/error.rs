@@ -597,18 +597,14 @@ impl From<ServiceError> for SmError {
     /// generic. Only the `500`-class `Internal` row substitutes a curated
     /// status and message, because its detail must not reach a client.
     ///
-    /// NOTE (wire — settled, adjudicated divergence): the structured per-path
-    /// violations of `ValidationFailed` (the ITS-REST `Error.validationErrors[]`
-    /// array) do **not** survive the SM boundary. That is the SM's own shape,
-    /// not an omission here: `I_STATUS` returns a `CALL_STATUS`
-    /// (`SM/docs/UML/classes/i_status.adoc` — "Class status object for last
-    /// call"), and `CALL_STATUS`
+    /// NOTE (wire — settled): the structured per-path violations of
+    /// `ValidationFailed` (the ITS-REST `Error.validationErrors[]` array) do
+    /// **not** survive the SM boundary, because `CALL_STATUS`
     /// (`SM/docs/UML/classes/call_status.adoc` §Attributes) declares exactly
     /// `code` + `call_name` + `call_string` + `meaning` + `message` — five
-    /// scalars, with no slot for a per-path violation list. The violations are
-    /// therefore joined into `message` so the detail is not wholly lost, and an
-    /// SM-routed `422` renders as `{ error, message }` where the direct
-    /// `ApiError` route renders `{ message, validationErrors[] }`.
+    /// scalars, with no slot for a per-path violation list. They are joined into
+    /// `message` instead, so an SM-routed `422` renders as `{ error, message }`
+    /// where the direct `ApiError` route renders `{ message, validationErrors[] }`.
     ///
     /// The resulting route-dependence of the `422` BODY is spec-permitted:
     /// the ITS-REST docs text assigns the 422 row a meaning only ("The request

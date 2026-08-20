@@ -12,16 +12,17 @@
 //! on-disk archive format — the archive layout below is our own design
 //! (`0001_baseline.sql` is the source schema).
 //!
-//! NOTE (the archive CONTAINER — SM `compression_format.adoc` member `zip`):
-//! the entry set (`manifest.json`, `segment-NNNN.json`, `blobs/<hex>`,
-//! `versions/<version_uid>.xml`) is identical whichever container carries it.
-//! `compression_format` absent ⇒ the entries are loose files under
-//! `file_sys_loc`; `zip` ⇒ the identical entries are DEFLATE members of a
-//! single `archive.zip` there. `load_ehrs` takes only `file_sys_loc`
-//! (`i_admin_dump_load.adoc`), so it never receives the container choice and
-//! DETECTS it instead: a `manifest.json` in the directory is the loose form,
-//! else an `archive.zip`, else an `archive.7z`. No openEHR spec defines the
-//! archive layout or the detection rule — our own design/extension.
+//! The archive CONTAINER (SM `compression_format.adoc`): the entry set
+//! (`manifest.json`, `segment-NNNN.json`, `blobs/<hex>`,
+//! `versions/<version_uid>.xml`) is identical whichever container carries it —
+//! `compression_format` absent ⇒ loose files under `file_sys_loc`, `zip` ⇒ the
+//! same entries as DEFLATE members of one `archive.zip` there. `load_ehrs` takes
+//! only `file_sys_loc` (`i_admin_dump_load.adoc`), so it never receives the
+//! container choice and DETECTS it: a `manifest.json` in the directory is the
+//! loose form, else an `archive.zip`, else an `archive.7z`.
+//!
+//! NOTE: no openEHR spec defines the container set or the detection rule — our
+//! own design/extension.
 //!
 //! Export walks the greenfield storage and writes an archive to a file-system
 //! directory, split into segment entries no larger than `segment_split_size`
@@ -65,35 +66,34 @@
 //! manifest's own `format` member tells it which payload form the archive
 //! holds.
 //!
-//! NOTE (re-verify — `export_ehrs(an_ehr_id)` is EHR-scoped; the archive
-//! carries EHR-owned content only): `ehr`, `audit`, `contribution`,
-//! `vo_version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
-//! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers for the
-//! EHR's versioned objects. Global DEFINITION artefacts a version references
-//! (OPT 1.4 / ADL2 templates via `vo_version.template_id` → `template_ref`,
-//! `stored_query`) are NOT carried — they are provisioned through the
-//! DEFINITION API and must pre-exist (a COMPOSITION referencing an absent
-//! template fails its FK on load, reported per EHR). Demographic parties
-//! (ehr-less versioned objects) are out of this EHR-scoped dump; a
-//! whole-repository back-up would need a demographic dump wave (deferred).
-//! `vo_attestation` rows ARE carried, with their `at_committal` flag — an
-//! at-committal attestation is inside the version's signed canonical form
-//! (RM common master06 §Digital Signature: "serialising the entire Version
-//! object"), so a restored version's stored `signature` verifies only if its
-//! attestations restore with it.
-//! The verbatim version-row re-persist is a storage seam
+//! `export_ehrs(an_ehr_id)` is EHR-scoped, and the archive carries EHR-owned
+//! content only: `ehr`, `audit`, `contribution`, `vo_version`, `node`,
+//! `ehr_folder` (the `EHR.folders` membership rows — RM ehr master04 §Folders),
+//! `item_tag`, and any `vo_archive` markers for the EHR's versioned objects.
+//! Global DEFINITION artefacts a version references (OPT 1.4 / ADL2 templates
+//! via `vo_version.template_id` → `template_ref`, `stored_query`) are NOT
+//! carried — they are provisioned through the DEFINITION API and must pre-exist
+//! (a COMPOSITION referencing an absent template fails its FK on load, reported
+//! per EHR). Demographic parties (ehr-less versioned objects) are outside this
+//! EHR-scoped dump. The verbatim version-row re-persist is a storage seam
 //! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
 //! keeps the archive format and orchestration.
 //!
+//! NOTE: `vo_attestation` rows are carried with their `at_committal` flag,
+//! because an at-committal attestation is inside the version's signed canonical
+//! form (RM common master06 §Digital Signature: "serialising the entire Version
+//! object") — a restored version's stored `signature` verifies only if its
+//! attestations restore with it.
+//!
 //! NOTE (load is a RESTORE, not an EHR creation): the load re-persists exactly
-//! what the archive holds and never synthesizes content. In particular it does
-//! NOT mint a missing `EHR_ACCESS` the way the EHR-Extract clone does (RM ehr
-//! master04 §EHR Creation governs *creating* an EHR — an archive record is a
-//! previously-created one), because inventing a versioned object with a fresh
-//! uid and an extra CONTRIBUTION would break the archive⇒repository identity
-//! this format guarantees. The one thing the load re-derives rather than
-//! copies is the promoted `ehr` column projection (the subject + status-flag
-//! cache of the loaded `EHR_STATUS`), which is not content.
+//! what the archive holds and never synthesizes content — in particular it does
+//! NOT mint a missing `EHR_ACCESS` the way the EHR-Extract clone does, because
+//! RM ehr master04 §EHR Creation governs *creating* an EHR and an archive record
+//! is a previously-created one.
+//!
+//! The one thing the load re-derives rather than copies is the promoted `ehr`
+//! column projection (the subject + status-flag cache of the loaded
+//! `EHR_STATUS`), which is not content.
 
 #![expect(
     clippy::disallowed_types,
@@ -922,16 +922,14 @@ impl FerroEhrService {
     /// Returns a per-entity report; an empty list means every EHR was dumped
     /// successfully (the report carries only failures).
     ///
-    /// NOTE (`export_format.adoc` / `compression_format.adoc`): BOTH
-    /// enumerations are realized in FULL. `COMPRESSION_FORMAT` — absent (loose
-    /// files), `zip`, and `7z` (`sevenz-rust2`). `EXPORT_FORMAT` —
-    /// `openehr_canonical_json` (the default when `logical_format` is absent,
-    /// and translation-free: the storage IS verbatim canonical JSON) and
-    /// `openehr_canonical_xml`, which externalizes each version payload as an
-    /// `ORIGINAL_VERSION` document under the published ITS-XML `<version>`
-    /// root while the archive's own envelope stays JSON in both members (the
-    /// module docs derive why, from the ITS-XML bundles' published global
-    /// elements).
+    /// Both SM enumerations (`export_format.adoc` / `compression_format.adoc`)
+    /// are realized in full. `COMPRESSION_FORMAT` — absent (loose files), `zip`,
+    /// and `7z` (`sevenz-rust2`). `EXPORT_FORMAT` — `openehr_canonical_json`
+    /// (the default when `logical_format` is absent, and translation-free: the
+    /// storage IS verbatim canonical JSON) and `openehr_canonical_xml`, which
+    /// externalizes each version payload as an `ORIGINAL_VERSION` document under
+    /// the published ITS-XML `<version>` root while the archive's own envelope
+    /// stays JSON in both members.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a non-positive

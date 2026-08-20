@@ -23,15 +23,13 @@
 //! ITS-REST datetime-request-parameter decoder (`datetime`), and the SM
 //! validity checker ([`validity`]).
 //!
-//! NOTE (adjudicated 2026-08-04, #1845 — no openEHR spec governs the internal
-//! layering; the SM-chapter module map is our design):
-//! the ~90 one-expression `Ok(self.inner(...).await?)` methods across the SM
-//! modules are DELIBERATE, not dead weight. Each is the SM-named operation
+//! NOTE (no openEHR spec governs the internal layering — the SM-chapter module
+//! map is our design): the ~90 one-expression `Ok(self.inner(...).await?)`
+//! methods across the SM modules are DELIBERATE. Each is the SM-named operation
 //! of the platform service model (`docs/specs/openehr/SM/`) AND the error
-//! boundary where a `ServiceError` becomes the SM `SmError` the callers
-//! consume — collapsing them would delete the SM component map and scatter
-//! the conversion across every call site. Keep the layer; a new SM operation
-//! gets its SM-named method here even when the body is one expression.
+//! boundary where a `ServiceError` becomes the SM `SmError` callers consume, so
+//! a new SM operation gets its SM-named method here even when the body is one
+//! expression.
 
 #![expect(
     clippy::disallowed_types,

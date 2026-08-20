@@ -52,20 +52,12 @@ const EXAMPLE_FORMATS: &[WireFormat] = &[
 /// `application/openehr.wt+json` (and a bare `application/json`, the only JSON
 /// projection the server holds) return the Web Template document.
 ///
-/// NOTE: the released ITS-REST 1.1.0 source is internally inconsistent about
-/// `application/json` here. `operations/definition_template_adl1.4_get.yaml`
-/// names exactly two representations (canonical XML OPT and the
-/// `application/openehr.wt+json` web template), while
-/// `parameters/header/Accept_Template.yaml` and `headers/ContentType_Template.yaml`
-/// both enumerate `application/json` — for which the 200 response declares no
-/// schema. Settled handling: `application/json` is honoured (a `406` would
-/// contradict those two enumerations) and served with the only JSON template
-/// representation the spec defines, the Web Template document, under
-/// `Content-Type: application/json` — the type the client actually negotiated
-/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
-/// §JSON Format: "Proper header `Content-Type: application/json` MUST be
-/// present in the response of the service unless the response has no content
-/// body").
+/// NOTE: `application/json` is honoured — `parameters/header/Accept_Template.yaml`
+/// and `headers/ContentType_Template.yaml` both enumerate it, while
+/// `operations/definition_template_adl1.4_get.yaml` declares no schema for it —
+/// and served with the only JSON template representation the release defines,
+/// the Web Template document, under the `Content-Type` the client negotiated
+/// (ITS-REST `specifications/docs/overview/Resources.md` §JSON Format).
 const TEMPLATE_DEF_FORMATS: &[WireFormat] = &[
     WireFormat::CanonicalXml,
     WireFormat::WebTemplate,

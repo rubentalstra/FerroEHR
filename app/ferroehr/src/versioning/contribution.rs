@@ -275,16 +275,12 @@ const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION
 /// (`400_CONTRIBUTION`: "syntactically invalid header, parameter or content"),
 /// exactly as the sibling `other_input_version_uids` refusal is.
 ///
-/// NOTE: `_type` is the one of the three that has a LEGAL value here. The
-/// overview docs text makes it a general metadata attribute — "the `_type`
-/// attribute, which should be used to specify the RM type whenever
-/// polymorphism is involved … The value of this attribute MUST be the
-/// uppercase class name from the RM specification" (ITS-REST
-/// `specifications/docs/overview/Resources.md` §Resource representation) — and
-/// the docs text outranks the OAS, so a member MAY self-tag. It may only
-/// self-tag as a class this wire commits, though:
-/// [`COMMITTABLE_MEMBER_TYPES`]. Any other class name declares a shape the
-/// release never defined.
+/// NOTE: `_type` is the one of the three with a LEGAL value here — its value
+/// "MUST be the uppercase class name from the RM specification" (ITS-REST
+/// `specifications/docs/overview/Resources.md` §Resource representation), and
+/// the docs text outranks the OAS — but only a class this wire commits:
+/// [`COMMITTABLE_MEMBER_TYPES`]. Any other name declares a shape the release
+/// never defined.
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] naming the offending key.
@@ -1055,20 +1051,13 @@ fn parse_audit(
 /// demographic contribution (`party_only`) may carry only party roots +
 /// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither.
 ///
-/// NOTE:
-/// RM common `master05-directory_package.adoc` §Overview says a
-/// `VERSIONED_FOLDER` is "useful in the EHR, Demographics service or anywhere
-/// else where Folders are used". That sentence is aspirational prose, not a
-/// service definition, and neither released service surface admits a
-/// demographic folder: SM `UML/classes/i_demographic_service.adoc` declares
-/// exactly four functions — `create_party`, `create_party_relationship`,
-/// `i_party`, `i_party_relationship` — with no folder or directory operation
-/// and no folder-bearing type, and the ITS-REST demographic API defines no
+/// NOTE: `FOLDER` is EHR-scoped in both directions, because no released
+/// service surface admits a demographic folder — SM
+/// `UML/classes/i_demographic_service.adoc` declares exactly `create_party`,
+/// `create_party_relationship`, `i_party`, `i_party_relationship`, with no
+/// folder or directory operation, and the ITS-REST demographic API defines no
 /// folder path at all (every `directory_*` operation is mounted EHR-scoped at
-/// `/ehr/{ehr_id}/directory` in `specifications/ehr.openapi.yaml`). So
-/// `FOLDER` stays EHR-only in both directions of this check: the released
-/// scoping is the reality, and admitting a demographic folder here would
-/// invent a resource no released surface can address.
+/// `/ehr/{ehr_id}/directory` in `specifications/ehr.openapi.yaml`).
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] (`422`) on a scope mismatch in either

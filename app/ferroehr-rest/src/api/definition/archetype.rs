@@ -38,14 +38,11 @@
 //! ## The refusal classes every route here carries
 //!
 //! NOTE (no openEHR spec governs role semantics on an unspecified route — our
-//! own design/extension): these routes sit inside the API subtree, so the
-//! shared authentication + RBAC layer answers before any handler runs. A
-//! request carrying no valid principal is `401`; an authenticated principal
-//! carrying the configured read-only role is `403` on the WRITE routes (the
-//! upload and the deletes) and unaffected on the reads. Both branches are
-//! declared per operation below so the served `OpenAPI` names every refusal a
-//! client can meet — the coarse operation class is `Clinical` (the routes are
-//! not under `/admin/`, so no ADMIN role is required).
+//! own design/extension): the shared authentication + RBAC layer answers before
+//! any handler runs — no valid principal is `401`, the configured read-only role
+//! is `403` on the writes (the upload and the deletes) and unaffected on the
+//! reads, and the coarse operation class is `Clinical` (not under `/admin/`, so
+//! no ADMIN role). Both branches are declared per operation below.
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
