@@ -3676,3 +3676,24 @@ cnf.composition.history_open.bad_charset:
     spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_encapsulated.adoc §Invariants Charset_valid (code_set(Code_set_id_character_sets).has_code(charset))"
   template_id: "history_open.en.v1"
   provenance: "derived 2026-08-20 (issue #2482): exactly one defect — the charset code swapped to bogus-charset (language removed so the charset is the only code-set probe)"
+cnf.opt.history_open_cat.v1:
+  source: fixtures/opt/valid/history_open_cat.v1.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open_cat.en.v1"
+  provenance: "derived 2026-08-20 (issue #2486) from cnf.opt.history_open.v1 with the category constraint block removed and fresh template/uid identities: every other corpus OPT pins category with a C_CODE_PHRASE code_list, so only a category-unconstrained archetype lets a cross-version category flip refuse on VERSIONED_COMPOSITION.Persistent_validity alone"
+cnf.composition.history_open_cat.event:
+  source: fixtures/contribution/composition.history_open_cat.event.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open_cat.en.v1"
+  provenance: "derived 2026-08-20 (issue #2486) from cnf.composition.history_open.interval_events with only the template_id retargeted — the event-category first version of the Persistent_validity pair"
+cnf.composition.history_open_cat.persistent:
+  source: fixtures/contribution/composition.history_open_cat.persistent.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open_cat.en.v1"
+  provenance: "derived 2026-08-20 (issue #2486) from cnf.composition.history_open_cat.event with only the category swapped to openehr::431|persistent| — VALID standalone (431 is a composition_category member and the archetype leaves category unconstrained); the defect exists only relative to an event-category container's first version, which is exactly what the update-seam case exercises (VERSIONED_COMPOSITION.Persistent_validity)"
