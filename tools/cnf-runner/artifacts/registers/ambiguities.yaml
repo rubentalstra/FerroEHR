@@ -9289,3 +9289,27 @@ AMB-213:
     defect and reported upstream.
   disposition: fixed_handling
   upstream_issue: 2465
+AMB-214:
+  ambiguity: >-
+    INTERVAL_EVENT.width's declared existence and its own description
+    sentence contradict each other. The class table declares width:
+    DV_DURATION at existence 1..1, and every published RM BMM from 1.0.2
+    through 1.2.0 declares the attribute is_mandatory — yet the same Meaning
+    cell (class table and BMM documentation alike) still ends "Void if an
+    instantaneous event.", describing a state a mandatory attribute cannot
+    have.
+  source: >-
+    RM UML/classes/org.openehr.rm.data_structures.interval_event.adoc
+    §Attributes (width, existence 1..1); the vendored RM BMMs
+    openehr_rm_1.0.2 .. 1.2.0 (class INTERVAL_EVENT, width is_mandatory:
+    true); RM docs/data_structures/master06-history_package.adoc §Point
+    Events (instantaneous events are POINT_EVENTs).
+  handling: >-
+    Fixed handling (issue #2472): the existence column and the BMM agree
+    with each other and with the model's own design — POINT_EVENT is the
+    type for instantaneous events — so mandatory wins and the sentence is
+    treated as pre-1.0.2 residue with no normative force. The emission keeps
+    width mandatory and the strict reader refuses a width-less
+    INTERVAL_EVENT; the editorial defect is reported upstream.
+  disposition: fixed_handling
+  upstream_issue: 2472

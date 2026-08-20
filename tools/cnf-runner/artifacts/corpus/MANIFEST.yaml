@@ -3394,3 +3394,47 @@ cnf.composition.null_family.out_of_group_flavour:
     spec_ref: "RM UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants Inv_null_flavour_valid (terminology(Terminology_id_openehr).has_code_for_group_id(Group_id_null_flavour, null_flavour.defining_code))"
   template_id: "obs_admin.en.v2"
   provenance: "derived 2026-08-20 from cnf.composition.null_flavour with exactly one edit: the 271 code swapped to the out-of-group 999 (value text adjusted to avoid a rubric mismatch masking the group defect)"
+cnf.opt.history_open.v1:
+  source: fixtures/opt/valid/history_open.v1.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open.en.v1"
+  provenance: "authored 2026-08-20 for the ch.6 History-package wire twins (issue #2471): a minimal open template — abstract EVENT slot (0..*), abstract ITEM_STRUCTURE data — so each History invariant refusal is single-cause (every other corpus OPT narrows both slots to concrete types, making any divergent fixture multi-cause)"
+cnf.composition.history_open.interval_events:
+  source: fixtures/contribution/composition.history_open.interval_events.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open.en.v1"
+  provenance: "authored 2026-08-20 (issue #2471): the master06 §History Instance Structures blood-pressure figure as a committed instance — a periodic (PT5M) HISTORY of an initial POINT_EVENT plus two 5-minute mean INTERVAL_EVENTs (width, math_function 146|mean|, sample_count), offsets 0/300/600 s all whole multiples of the period; the corpus's first committed INTERVAL_EVENT and the accepting twin of cnf.composition.history_open.*_invalid"
+cnf.composition.history_open.mixed_structures:
+  source: fixtures/contribution/composition.history_open.mixed_structures.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the two events carry different ITEM_STRUCTURE subtypes in data (ITEM_TREE then ITEM_LIST) in one HISTORY"
+    spec_ref: "RM data_structures/master06-history_package.adoc §Basic Semantics (the generic types force the type of the data in each Event to be the same) + UML/classes/org.openehr.rm.data_structures.history.adoc (HISTORY<T>: each Event in the events of a given instance is of the same structural type)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 from cnf.composition.history_open.interval_events with exactly one defect: aperiodic, two POINT_EVENTs whose data subtypes diverge — the open ITEM_STRUCTURE slot admits each event individually, so the same-type rule is the only violation"
+cnf.composition.history_open.out_of_group_math_function:
+  source: fixtures/contribution/composition.history_open.out_of_group_math_function.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the INTERVAL_EVENT's math_function code 999 is outside the openEHR event math function group"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_structures.interval_event.adoc §Invariants Math_function_validity (terminology(Terminology_id_openehr).has_code_for_group_id(Group_id_event_math_function, math_function.defining_code))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 from cnf.composition.history_open.interval_events with exactly one defect: aperiodic, the single INTERVAL_EVENT's math_function swapped to the out-of-group 999 (rubric adjusted so the group defect is the only finding)"
+cnf.composition.history_open.off_period_offset:
+  source: fixtures/contribution/composition.history_open.off_period_offset.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a periodic (PT5M) HISTORY carries an event at +7 min — 420 s is not a whole multiple of the 300 s period"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants Period_consistency (is_periodic implies events.for_all(e | e.offset.to_seconds.mod(period.to_seconds) = 0))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 from cnf.composition.history_open.interval_events with exactly one defect: the period kept at PT5M and the second event retimed to 08:07:00 (both events POINT_EVENTs of the same ITEM_TREE shape, so the off-period offset is the only violation)"

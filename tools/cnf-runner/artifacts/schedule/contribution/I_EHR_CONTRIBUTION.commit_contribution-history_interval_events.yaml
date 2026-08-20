@@ -1,0 +1,49 @@
+# The History-package accepting twin (RM data_structures ch.6, issue #2471):
+# the master06 §History Instance Structures blood-pressure figure committed
+# verbatim — a periodic (PT5M) HISTORY mixing an initial POINT_EVENT with two
+# 5-minute mean INTERVAL_EVENTs (width + math_function 146|mean| +
+# sample_count), offsets 0/300/600 s. Pins on one wire exchange: the
+# INTERVAL_EVENT acceptance path, the §Basic Semantics subtype mixture, and
+# Period_consistency's accepting side.
+id: I_EHR_CONTRIBUTION.commit_contribution-history_interval_events
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Committing a periodic HISTORY that mixes a POINT_EVENT with well-formed
+  INTERVAL_EVENTs (width, in-group math_function, sample_count; every offset a
+  whole multiple of the period) succeeds and creates version 1.
+description: "commit a periodic HISTORY of POINT_EVENT + INTERVAL_EVENTs (the master06 instance figure)"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "RM data_structures/master06-history_package.adoc §History Instance Structures (5-minute Blood Pressure Averages) + §Basic Semantics (a History can contain any mixture of POINT_EVENT and INTERVAL_EVENT instances)"
+  - "RM UML/classes/org.openehr.rm.data_structures.interval_event.adoc §Attributes (width 1..1, math_function 1..1, sample_count 0..1)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.history_open.v1]
+  ehr: { commits: none }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.composition.history_open.interval_events, expected: created, defect: "periodic mixed POINT/INTERVAL history (the master06 BP-averages figure)" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:fixture}", change_type: creation }
+    expect: "${fixture.expected}"
+    capture:
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: CREATE, uid_pattern: "<uuid>::<system>::1" }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR holds one new VERSION<COMPOSITION> whose HISTORY carries the
+      committed POINT_EVENT and both INTERVAL_EVENTs unchanged.
+    verified_by: I_EHR_COMPOSITION.get_composition_latest
