@@ -250,7 +250,7 @@ pub(crate) fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Op
 /// (`cardinality == None` on a container).
 ///
 /// NOTE: VCORMT matches a stated generic argument against the RM parameter's
-/// BOUND, not the instantiated binding (`master04.2` §Rm_type_name and
+/// BOUND, not the instantiated binding (`master04.2` §`Rm_type_name` and
 /// Reference Model Type Matching) — a sound, never-false-firing
 /// approximation, since the binding subtypes the bound and the emitter erases
 /// the parameter name.
