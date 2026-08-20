@@ -1,0 +1,39 @@
+# The ELEMENT null-family refusal twins (RM data_structures ch.5): the
+# accepting twin is cnf.composition.null_flavour (a valid null ELEMENT,
+# driven by commit_contribution-valid_composition); these rows pin the three
+# refusals, one defect each. The invariants are per-node RM class rules, so
+# the refusal is the semantic 422 the composition seams answer for invalid
+# content.
+id: I_EHR_CONTRIBUTION.commit_contribution-element_null_family_invalid
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: "A committed ELEMENT violating the null family — a value beside a null_flavour, a null_reason on a valued node, or an out-of-group null_flavour code — is refused as invalid content, and no version is created."
+description: "commit compositions with ELEMENT null-family defects"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "RM UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants (Inv_null_flavour_indicated, Inv_null_reason_valid, Inv_null_flavour_valid)"
+  - "ITS-REST overview Requests_and_responses.md §HTTP status codes (the semantic 422 branch)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.obs_admin.v2]
+  ehr: { commits: none }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.composition.null_family.value_and_flavour, expected: validation_failed, defect: "value AND null_flavour on one ELEMENT (Inv_null_flavour_indicated)" }
+    - { data_set: cnf.composition.null_family.orphan_null_reason, expected: validation_failed, defect: "null_reason on a valued ELEMENT (Inv_null_reason_valid)" }
+    - { data_set: cnf.composition.null_family.out_of_group_flavour, expected: validation_failed, defect: "null_flavour code outside the openEHR null flavours group (Inv_null_flavour_valid)" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      versions: "${ds:fixture}"
+      audit: { change_type: creation, committer: { name: "conformance tester" } }
+    expect: "${fixture.expected}"
+postconditions:
+  - assert: version
+    count: 0
