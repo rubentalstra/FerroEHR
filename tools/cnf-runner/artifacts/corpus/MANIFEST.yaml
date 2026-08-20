@@ -3047,24 +3047,24 @@ cnf.version.attested.xml:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "codec-derived from cnf.version.attested via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair). The document root is <version xsi:type=\"ORIGINAL_VERSION\">: ITS-XML ALL/Version.xsd publishes exactly one global element for the change-control package, `<xs:element name=\"version\" type=\"VERSION\"/>` over an abstract complexType, and XML Schema Part 1 §2.6.1/§3.4.6 requires an instance of an abstract declared type to name its concrete subtype with xsi:type"
-cnf.composition.minimal_event.cluster_no_items:
-  source: fixtures/composition/minimal_event.cluster_no_items.json
+cnf.composition.lab_result.cluster_items_empty:
+  source: fixtures/composition/lab_result.cluster_items_empty.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
-    defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
-  provenance: "authored 2026-08-04 for the #1858 empty-mandatory-list matrix — cnf.composition.minimal_event.v1 with an added CLUSTER with exactly one list emptied; everything else valid. One defect per fixture: the case it drives names one thing"
-cnf.composition.minimal_event.paragraph_no_items:
-  source: fixtures/composition/minimal_event.paragraph_no_items.json
+    defect: "the OPT-constrained analyte CLUSTER's items list is present but empty"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
+  provenance: "re-authored 2026-08-20 (issue #1937, replacing the minimal_event derivative whose grafted at0900 CLUSTER the OPT refused as a second defect) from cnf.ckm.lab_result.example with exactly one edit: the OPT-constrained analyte CLUSTER's items emptied — the fill-the-list body IS cnf.ckm.lab_result.example itself, which commits green, so exactly one defect remains"
+cnf.composition.history_open.paragraph_items_empty:
+  source: fixtures/composition/history_open.paragraph_items_empty.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
     defect: "the DV_PARAGRAPH's items list is present but empty"
-    spec_ref: "RM data_types dv_paragraph.adoc §Attributes (items: List<DV_TEXT>, 1..1 — a mandatory list)"
-  provenance: "authored 2026-08-04 for the #1858 empty-mandatory-list matrix — cnf.composition.minimal_event.v1 with an added DV_PARAGRAPH leaf with exactly one list emptied; everything else valid. One defect per fixture: the case it drives names one thing"
+    spec_ref: "RM data_types dv_paragraph.adoc §Attributes (items: List<DV_TEXT>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container) + §Invariants Items_valid (not items.is_empty)"
+  provenance: "re-authored 2026-08-20 (issue #1937, replacing the minimal_event derivative whose grafted at0902 node the OPT refused as a second defect) from cnf.composition.history_open.deprecated_text_forms with exactly one edit: the DV_PARAGRAPH's items emptied — no OPT anywhere constrains a DV_PARAGRAPH (the deprecated type appears in no corpus template), so the open ITEM_STRUCTURE slot is the one archetype-admissible host, and the fill-the-list body IS deprecated_text_forms itself, which commits green"
 cnf.composition.minimal_event.composer_identifiers_empty:
   source: fixtures/composition/minimal_event.composer_identifiers_empty.json
   format: canonical-json
@@ -3081,7 +3081,7 @@ cnf.demographic.person.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 empty-mandatory-list matrix — cnf.demographic.person.v1 with an added CLUSTER in PARTY_IDENTITY.details with exactly one list emptied; everything else valid. One defect per fixture: the case it drives names one thing"
 cnf.demographic.person.paragraph_no_items:
   source: fixtures/demographic/person.paragraph_no_items.json
@@ -3189,7 +3189,7 @@ cnf.directory.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 empty-mandatory-list matrix — cnf.directory.root_only with a details ITEM_TREE added with exactly one list emptied; everything else valid. One defect per fixture: the case it drives names one thing"
 cnf.directory.paragraph_no_items:
   source: fixtures/directory/paragraph_no_items.json
@@ -3207,7 +3207,7 @@ cnf.ehr_status.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 empty-mandatory-list matrix — cnf.ehr_status.with_subject with an other_details ITEM_TREE added with exactly one list emptied; everything else valid. One defect per fixture: the case it drives names one thing"
 cnf.ehr_status.paragraph_no_items:
   source: fixtures/ehr/invalid/ehr_status.paragraph_no_items.json
@@ -3225,7 +3225,7 @@ cnf.messaging.ehr_extract.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 empty-mandatory-list matrix — cnf.messaging.ehr_extract.v1 (fresh identities) with an other_details ITEM_TREE on the imported EHR_STATUS with exactly one list emptied; everything else valid. One defect per fixture: the case it drives names one thing"
 cnf.messaging.ehr_extract.paragraph_no_items:
   source: fixtures/messaging/ehr_extract.paragraph_no_items.json
@@ -3273,7 +3273,7 @@ cnf.demographic.agent.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.agent.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
 cnf.demographic.group.cluster_no_items:
   source: fixtures/demographic/group.cluster_no_items.json
@@ -3282,7 +3282,7 @@ cnf.demographic.group.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.group.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
 cnf.demographic.organisation.cluster_no_items:
   source: fixtures/demographic/organisation.cluster_no_items.json
@@ -3291,7 +3291,7 @@ cnf.demographic.organisation.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.organisation.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
 cnf.demographic.role.cluster_no_items:
   source: fixtures/demographic/role.cluster_no_items.json
@@ -3300,7 +3300,7 @@ cnf.demographic.role.cluster_no_items:
   validity:
     verdict: invalid
     defect: "the CLUSTER's items list is present but empty"
-    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 with cardinality 1..* — the BMM-declared mandatory non-empty container; the released OAS Clstr.yaml declares required: [items] with no minItems, so the OAS is NOT the ground for refusing [])"
   provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.role.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
 cnf.opt.invalid.description_empty_lifecycle_state:
   source: fixtures/opt/invalid/description_empty_lifecycle_state.opt

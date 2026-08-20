@@ -275,3 +275,162 @@ async fn enabled_delete_all_missing_list_deletes_all() {
     assert!(!ehr_exists(&app, &a).await, "all EHRs deleted (a)");
     assert!(!ehr_exists(&app, &b).await, "all EHRs deleted (b)");
 }
+
+// ── the two admin-extension deletes (issue #2130) ────────────────────────────
+// DELETE /admin/template/{template_id} and
+// DELETE /admin/query/{qualified_query_name}/{version} realize NO SM
+// operation (vocab/wire_surface.yaml, family admin-extension-routes), so no
+// catalogue case can bind them; this battery is where their functional
+// branches are pinned. NOTE: no openEHR spec governs these routes — our own
+// design/extension; the outcome shapes mirror the released admin deletes.
+
+fn ips_opt_xml() -> String {
+    std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
+    )
+    .expect("ips.v0.opt vendored in openehr-its")
+}
+
+async fn upload_ips_template(app: &Router) {
+    let (status, body) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/definition/template/adl1.4"))
+            .header(header::CONTENT_TYPE, "application/xml")
+            .body(Body::from(ips_opt_xml()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
+}
+
+fn ips_template_path() -> String {
+    format!("{BASE}/admin/template/International%20Patient%20Summary")
+}
+
+#[tokio::test]
+async fn template_delete_is_204_and_the_template_is_gone() {
+    let (_pg, app) = app(true).await;
+    upload_ips_template(&app).await;
+    let (status, body) = send(&app, delete(ips_template_path())).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "template delete: {body}");
+    assert!(body.is_empty(), "204 carries no body, got {body:?}");
+    let (status, _body) = send(
+        &app,
+        get(format!(
+            "{BASE}/definition/template/adl1.4/International%20Patient%20Summary"
+        )),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "deleted template still served"
+    );
+}
+
+#[tokio::test]
+async fn template_delete_unknown_is_404() {
+    let (_pg, app) = app(true).await;
+    let (status, _body) = send(
+        &app,
+        delete(format!("{BASE}/admin/template/no-such-template")),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn template_delete_still_referenced_is_409() {
+    // A template referenced by a committed version is never orphaned: the
+    // committed COMPOSITION's archetype_details names the template, so the
+    // physical delete refuses with 409 and the template stays served.
+    let (_pg, app) = app(true).await;
+    upload_ips_template(&app).await;
+    let ehr_id = create_ehr(&app).await;
+    let composition = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
+        ),
+    )
+    .expect("ips_canonical.json vendored in openehr-its");
+    let (status, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(composition))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "referencing commit: {body}");
+    let (status, body) = send(&app, delete(ips_template_path())).await;
+    assert_eq!(
+        status,
+        StatusCode::CONFLICT,
+        "in-use template delete: {body}"
+    );
+    let (status, _body) = send(
+        &app,
+        get(format!(
+            "{BASE}/definition/template/adl1.4/International%20Patient%20Summary"
+        )),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "refused delete must leave the template served"
+    );
+}
+
+#[tokio::test]
+async fn query_version_delete_is_204_and_that_version_is_gone() {
+    let (_pg, app) = app(true).await;
+    let (status, body) = send(
+        &app,
+        Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/definition/query/cnf.admin::probe/1.0.0"))
+            .header(header::CONTENT_TYPE, "text/plain")
+            .body(Body::from("SELECT e/ehr_id/value FROM EHR e"))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "query store: {body}");
+    let (status, body) = send(
+        &app,
+        delete(format!("{BASE}/admin/query/cnf.admin::probe/1.0.0")),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "query version delete: {body}"
+    );
+    assert!(body.is_empty(), "204 carries no body, got {body:?}");
+    let (status, _body) = send(
+        &app,
+        get(format!("{BASE}/definition/query/cnf.admin::probe/1.0.0")),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "deleted query version still served"
+    );
+}
+
+#[tokio::test]
+async fn query_version_delete_unknown_is_404() {
+    let (_pg, app) = app(true).await;
+    let (status, _body) = send(
+        &app,
+        delete(format!("{BASE}/admin/query/cnf.admin::absent/9.9.9")),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}

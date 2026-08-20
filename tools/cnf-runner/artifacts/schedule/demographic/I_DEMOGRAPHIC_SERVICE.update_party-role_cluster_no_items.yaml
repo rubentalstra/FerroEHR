@@ -10,7 +10,7 @@
 # WHAT MAKES THE PAYLOAD INVALID (one defect, so a red row names one thing):
 # RM `UML/classes/org.openehr.rm.data_structures.cluster.adoc` §Attributes types
 # `CLUSTER.items: List<ITEM>` at 1..1 — a MANDATORY list — and ITS-REST OAS
-# `schemas/data_structures/Clstr.yaml` declares `required: [items]`, so a present-but-EMPTY list is the one shape the bound
+# the BMM declares `items` at cardinality 1..* (a mandatory NON-EMPTY container — the OAS `required` keyword alone would admit `[]`), so a present-but-EMPTY list is the one shape the bound
 # forbids — the way to say "none" is to omit an optional container, never
 # to send [].
 #
@@ -36,7 +36,7 @@ test_purpose: >-
   content, and no new VERSION is created.
 description: "Update a ROLE with an empty cluster list (400)"
 spec_refs:
-  - "ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+  - "RM data_structures cluster.adoc §Attributes (items 1..1, cardinality 1..* — the BMM-declared non-empty bound; the OAS required keyword does not state it)"
   - "RM data_structures §CLUSTER (items: List<ITEM>, 1..1)"
   - "ITS-REST OAS responses/400.yaml"
   - "ITS-REST OAS responses/422.yaml"
