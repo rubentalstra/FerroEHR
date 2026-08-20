@@ -136,8 +136,9 @@ pub struct VerbatimVersionRow<'a> {
     pub vo_id: VoId,
     /// The `vo_version.kind` discriminator text.
     pub kind: &'a str,
-    /// The owning EHR (an archive segment only carries EHR-scoped content).
-    pub ehr_id: EhrId,
+    /// The owning EHR, or `None` for the archive's demographic wave (ehr-less
+    /// party/relationship containers).
+    pub ehr_id: Option<EhrId>,
     /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
     /// `VERSION_TREE_ID` first part.

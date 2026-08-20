@@ -110,7 +110,11 @@ use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
 use openehr_its::xml::runtime::{FromXml, Namespace, ToXml};
-use openehr_rm::prelude::{Composition, EhrAccess, EhrStatus, Folder, OriginalVersion};
+use openehr_rm::prelude::{
+    Agent, Composition, EhrAccess, EhrStatus, Folder, Group, Organisation, OriginalVersion, Person,
+    Role,
+};
+use openehr_rm::v1_2::demographic::party_relationship::PartyRelationship;
 use serde::de::DeserializeOwned;
 
 use crate::ids::{EhrId, VoId};
@@ -153,6 +157,81 @@ struct Manifest {
     /// or no version references external media.
     #[serde(default)]
     blobs: Vec<String>,
+    /// The demographic wave's shared entry (`demographic-commons.json`) —
+    /// contribution rows + their audits for the ehr-less scope. Absent
+    /// (defaulted) for pre-wave archives and for repositories with no
+    /// standalone demographic content.
+    #[serde(default)]
+    demographic_commons: Option<String>,
+    /// The demographic wave's per-container segment files, in order. Empty
+    /// (and defaulted for pre-wave archives) when the repository holds no
+    /// ehr-less containers.
+    #[serde(default)]
+    demographic_segments: Vec<String>,
+}
+
+/// The demographic wave's shared rows: the ehr-less contributions and their
+/// commit audits (a demographic contribution may commit several containers,
+/// so these cannot live in any one container's record).
+#[derive(Debug, Serialize, Deserialize)]
+struct DemographicCommons {
+    audits: Vec<AuditRow>,
+    contributions: Vec<ContributionRow>,
+}
+
+/// One ehr-less demographic container's exported bundle (RM demographic
+/// master02 §Versioning Semantics: every Party is stored in its own Version
+/// container). Mirrors [`EhrRecord`] minus the EHR-scoped parts; the
+/// per-version commit audits ride the record so the XML externalization can
+/// build each `ORIGINAL_VERSION` envelope without the commons.
+#[derive(Debug, Serialize, Deserialize)]
+struct DemographicRecord {
+    vo_id: VoId,
+    kind: String,
+    audits: Vec<AuditRow>,
+    versions: Vec<VersionRecord>,
+    #[serde(default)]
+    attestations: Vec<AttestationRow>,
+    #[serde(default)]
+    item_tags: Vec<ItemTagRow>,
+    #[serde(default)]
+    archives: Vec<ArchiveRow>,
+}
+
+/// Insert one commit-audit row, identity-preserving on an existing id (the
+/// demographic wave's audits may already exist on a partial load).
+async fn insert_audit_row(tx: &mut PgConnection, a: &AuditRow) -> Result<(), ServiceError> {
+    sqlx::query(
+        "INSERT INTO audit (id, time_committed, system_id, change_type, description, \
+         committer, attestation) VALUES ($1, $2::timestamptz, $3, $4, $5, $6, $7) \
+         ON CONFLICT (id) DO NOTHING",
+    )
+    .bind(a.id)
+    .bind(&a.time_committed)
+    .bind(&a.system_id)
+    .bind(&a.change_type)
+    .bind(&a.description)
+    .bind(&a.committer)
+    .bind(&a.attestation)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
+/// One `audit` row into an [`AuditRow`].
+fn audit_row_of(r: &sqlx::postgres::PgRow) -> Result<AuditRow, ServiceError> {
+    Ok(AuditRow {
+        id: r.try_get("id")?,
+        time_committed: r
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff()
+            .to_string(),
+        system_id: r.try_get("system_id")?,
+        change_type: r.try_get("change_type")?,
+        description: r.try_get("description")?,
+        committer: r.try_get("committer")?,
+        attestation: r.try_get("attestation")?,
+    })
 }
 
 /// One EHR's full exported content bundle.
@@ -383,6 +462,8 @@ fn unreadable_archive_entry(path: &Path, entry: &str, err: &serde_json::Error) -
 
 /// The archive manifest entry name (both containers).
 const MANIFEST_ENTRY: &str = "manifest.json";
+/// The demographic wave's shared entry (contributions + their audits).
+const DEMOGRAPHIC_COMMONS_ENTRY: &str = "demographic-commons.json";
 /// The packed container's file name inside `file_sys_loc`.
 const ZIP_ENTRY_FILE: &str = "archive.zip";
 /// The packed 7z container entry (SM `COMPRESSION_FORMAT.7z`).
@@ -776,13 +857,12 @@ fn version_document_of<T: DeserializeOwned + ToXml>(
     .map_err(|e| ServiceError::internal("serializing the ORIGINAL_VERSION to XML", e))
 }
 
-/// [`version_document_of`] dispatched on the stored `vo_version.kind` — the
-/// EHR-scoped versioned-object roots this archive carries (RM ehr master04
-/// §EHR Class: the EHR owns its `EHR_STATUS`, `EHR_ACCESS`, `COMPOSITION`s and
-/// directory `FOLDER`s; demographic roots have no EHR scope and are out of
-/// this dump).
-// TODO(#2457): a whole-repository archive needs a demographic wave — ehr-less
-// party/relationship containers are not carried yet.
+/// [`version_document_of`] dispatched on the stored `vo_version.kind` —
+/// every versioned-object root the whole-repository archive carries: the
+/// EHR-scoped ones (RM ehr master04 §EHR Class) and the ehr-less demographic
+/// containers of the demographic wave (RM demographic master02 §Versioning
+/// Semantics: PARTY and its descendants are versioned in their own
+/// containers).
 ///
 /// # Errors
 /// [`ServiceError::Internal`] on an unknown kind or a codec failure.
@@ -792,6 +872,12 @@ fn version_document(kind: &str, envelope: &Value) -> Result<String, ServiceError
         "EHR_STATUS" => version_document_of::<EhrStatus>(envelope),
         "EHR_ACCESS" => version_document_of::<EhrAccess>(envelope),
         "FOLDER" => version_document_of::<Folder>(envelope),
+        "PERSON" => version_document_of::<Person>(envelope),
+        "ORGANISATION" => version_document_of::<Organisation>(envelope),
+        "GROUP" => version_document_of::<Group>(envelope),
+        "AGENT" => version_document_of::<Agent>(envelope),
+        "ROLE" => version_document_of::<Role>(envelope),
+        "PARTY_RELATIONSHIP" => version_document_of::<PartyRelationship>(envelope),
         other => Err(ServiceError::exception(format!(
             "no canonical-XML payload type for versioned-object kind {other}"
         ))),
@@ -834,6 +920,12 @@ fn version_payload(kind: &str, xml: &str) -> Result<Value, VersionPayloadError> 
         "EHR_STATUS" => version_payload_of::<EhrStatus>(xml),
         "EHR_ACCESS" => version_payload_of::<EhrAccess>(xml),
         "FOLDER" => version_payload_of::<Folder>(xml),
+        "PERSON" => version_payload_of::<Person>(xml),
+        "ORGANISATION" => version_payload_of::<Organisation>(xml),
+        "GROUP" => version_payload_of::<Group>(xml),
+        "AGENT" => version_payload_of::<Agent>(xml),
+        "ROLE" => version_payload_of::<Role>(xml),
+        "PARTY_RELATIONSHIP" => version_payload_of::<PartyRelationship>(xml),
         other => Err(VersionPayloadError::UnknownKind(other.to_owned())),
     }
 }
@@ -888,6 +980,50 @@ fn externalize_version_documents(
     Ok(())
 }
 
+/// [`externalize_version_documents`] for the demographic wave: the same
+/// per-version `ORIGINAL_VERSION` documents, with the commit audits read from
+/// each container's own record.
+///
+/// # Errors
+/// As [`externalize_version_documents`].
+fn externalize_demographic_documents(
+    archive: &mut ArchiveWriter,
+    records: &mut [DemographicRecord],
+) -> Result<(), SmError> {
+    for record in records {
+        let audits: std::collections::HashMap<Uuid, &AuditRow> =
+            record.audits.iter().map(|a| (a.id, a)).collect();
+        let all_attestations = &record.attestations;
+        for v in &mut record.versions {
+            if v.body.is_null() {
+                continue;
+            }
+            let attestation_rows: Vec<&AttestationRow> = all_attestations
+                .iter()
+                .filter(|a| a.vo_id == v.vo_id && a.sys_version == v.sys_version)
+                .collect();
+            let audit = audits.get(&v.audit_id).ok_or_else(|| {
+                SmError::exception(format!(
+                    "version {} of {} names commit audit {}, which the exported record does not \
+                     carry",
+                    v.sys_version, v.vo_id, v.audit_id
+                ))
+            })?;
+            let envelope = original_version_envelope(v, audit, &attestation_rows)?;
+            let document = version_document(&v.kind, &envelope)?;
+            let name = version_entry_name(&object_version_id(
+                v.vo_id,
+                &v.creating_system_id,
+                TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version),
+            ))?;
+            archive.write(&name, document.as_bytes())?;
+            v.body_entry = Some(name);
+            v.body = Value::Null;
+        }
+    }
+    Ok(())
+}
+
 /// Resolve an `openehr_canonical_xml` record's externalized payloads back into
 /// inline canonical JSON, BEFORE anything is written — so a record with an
 /// unreadable document is reported and skipped whole rather than half loaded.
@@ -899,7 +1035,29 @@ fn resolve_version_documents(
     archive: &mut ArchiveReader,
     record: &mut EhrRecord,
 ) -> Result<(), String> {
-    for v in &mut record.versions {
+    resolve_versions(archive, &mut record.versions)
+}
+
+/// [`resolve_version_documents`] for a demographic record.
+///
+/// # Errors
+/// As [`resolve_version_documents`].
+fn resolve_demographic_documents(
+    archive: &mut ArchiveReader,
+    record: &mut DemographicRecord,
+) -> Result<(), String> {
+    resolve_versions(archive, &mut record.versions)
+}
+
+/// The shared per-version resolution both record shapes use.
+///
+/// # Errors
+/// The failure as a human-readable message.
+fn resolve_versions(
+    archive: &mut ArchiveReader,
+    versions: &mut [VersionRecord],
+) -> Result<(), String> {
+    for v in versions {
         let Some(entry) = v.body_entry.clone() else {
             // A logically-deleted version legitimately has no document; a live
             // one without an entry reference is a truncated skeleton.
@@ -963,17 +1121,24 @@ impl FerroEhrService {
         let mut archive = ArchiveWriter::create(dir, spec.compression_format)?;
 
         let mut records = self.collect_ehr_records().await?;
+        // The demographic wave: ehr-less party/relationship containers, so a
+        // whole-repository archive really is the whole repository.
+        let (demographic_commons, mut demographic_records) =
+            self.collect_demographic_wave().await?;
 
         // Our own extension (no openEHR spec governs multimedia offload): carry
         // every externalized DV_MULTIMEDIA blob the exported versions reference
         // as `blobs/<hex>` entries, so a load into an empty target re-populates
         // the object store. This runs BEFORE the XML externalization below,
         // which moves the payloads the blob scan reads out of the records.
-        let blob_keys = self.export_referenced_blobs(&mut archive, &records).await?;
+        let blob_keys = self
+            .export_referenced_blobs(&mut archive, &records, &demographic_records)
+            .await?;
         let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
 
         if format == ExportFormat::OpenehrCanonicalXml {
             externalize_version_documents(&mut archive, &mut records)?;
+            externalize_demographic_documents(&mut archive, &mut demographic_records)?;
         }
 
         // Serialize each record once; the byte length drives segmenting.
@@ -1000,6 +1165,30 @@ impl FerroEhrService {
             segment_names.push(name);
         }
 
+        // The demographic wave's entries, only when the repository holds any
+        // ehr-less content (an absent wave keeps pre-wave loaders untouched).
+        let mut demographic_commons_entry = None;
+        let mut demographic_segment_names = Vec::new();
+        if !demographic_records.is_empty() {
+            let commons_bytes =
+                serde_json::to_vec(&demographic_commons).map_err(ServiceError::from)?;
+            archive.write(DEMOGRAPHIC_COMMONS_ENTRY, &commons_bytes)?;
+            demographic_commons_entry = Some(DEMOGRAPHIC_COMMONS_ENTRY.to_owned());
+
+            let mut serialized = Vec::with_capacity(demographic_records.len());
+            for record in &demographic_records {
+                serialized.push(serde_json::to_vec(record).map_err(ServiceError::from)?);
+            }
+            let sizes: Vec<usize> = serialized.iter().map(Vec::len).collect();
+            for (seg_no, range) in plan_segments(&sizes, limit).iter().enumerate() {
+                let name = format!("demographic-{seg_no:04}.json");
+                let slice = demographic_records.get(range.clone()).unwrap_or_default();
+                let bytes = serde_json::to_vec(slice).map_err(ServiceError::from)?;
+                archive.write(&name, &bytes)?;
+                demographic_segment_names.push(name);
+            }
+        }
+
         let manifest = Manifest {
             format: format.sm_name().to_owned(),
             archive_version,
@@ -1007,6 +1196,8 @@ impl FerroEhrService {
             ehr_count: records.len(),
             segments: segment_names,
             blobs: blob_keys,
+            demographic_commons: demographic_commons_entry,
+            demographic_segments: demographic_segment_names,
         };
         let manifest_bytes = serde_json::to_vec_pretty(&manifest).map_err(ServiceError::from)?;
         archive.write(MANIFEST_ENTRY, &manifest_bytes)?;
@@ -1126,6 +1317,49 @@ impl FerroEhrService {
                 }
             }
         }
+
+        // The demographic wave (absent in pre-wave archives): the shared
+        // contribution commons first, then each ehr-less container. Duplicate
+        // container ids are per-entity reports, never fatal — the same shape
+        // the SM gives duplicate EHR ids.
+        if let Some(commons_entry) = &manifest.demographic_commons {
+            let bytes = archive.read(commons_entry)?;
+            let commons: DemographicCommons = serde_json::from_slice(&bytes)
+                .map_err(|e| unreadable_archive_entry(dir, commons_entry, &e))?;
+            self.load_demographic_commons(&commons).await?;
+        }
+        for segment in &manifest.demographic_segments {
+            let bytes = archive.read(segment)?;
+            let records: Vec<DemographicRecord> = serde_json::from_slice(&bytes)
+                .map_err(|e| unreadable_archive_entry(dir, segment, &e))?;
+            for mut record in records {
+                if self.demographic_container_exists(record.vo_id).await? {
+                    reports.push(DumpLoadFailReport {
+                        entity_type: record.kind.clone(),
+                        entity_id: record.vo_id.to_string(),
+                        dump_status: false,
+                        error: Some(
+                            "a demographic container with this id already exists".to_owned(),
+                        ),
+                    });
+                    continue;
+                }
+                if format == ExportFormat::OpenehrCanonicalXml
+                    && let Err(message) = resolve_demographic_documents(&mut archive, &mut record)
+                {
+                    reports.push(DumpLoadFailReport {
+                        entity_type: record.kind.clone(),
+                        entity_id: record.vo_id.to_string(),
+                        dump_status: false,
+                        error: Some(format!(
+                            "the archive's canonical-XML version payload is unreadable: {message}"
+                        )),
+                    });
+                    continue;
+                }
+                self.load_one_demographic(&record).await?;
+            }
+        }
         Ok(reports)
     }
 
@@ -1138,6 +1372,7 @@ impl FerroEhrService {
         &self,
         archive: &mut ArchiveWriter,
         records: &[EhrRecord],
+        demographic: &[DemographicRecord],
     ) -> Result<Vec<String>, SmError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
@@ -1145,6 +1380,7 @@ impl FerroEhrService {
         let mut keys: Vec<String> = records
             .iter()
             .flat_map(|r| r.versions.iter())
+            .chain(demographic.iter().flat_map(|r| r.versions.iter()))
             .flat_map(|v| engine.referenced_keys(&v.body))
             .collect();
         keys.sort_unstable();
@@ -1169,6 +1405,7 @@ impl FerroEhrService {
         &self,
         _archive: &mut ArchiveWriter,
         _records: &[EhrRecord],
+        _demographic: &[DemographicRecord],
     ) -> Result<Vec<String>, SmError> {
         Ok(Vec::new())
     }
@@ -1237,6 +1474,85 @@ impl FerroEhrService {
         )
     }
 
+    /// Whether an ehr-less demographic container with `vo_id` already exists.
+    async fn demographic_container_exists(&self, vo_id: VoId) -> Result<bool, ServiceError> {
+        Ok(sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM vo_version_all WHERE vo_id = $1 AND ehr_id IS NULL)",
+        )
+        .bind(vo_id)
+        .fetch_one(&self.pool)
+        .await?)
+    }
+
+    /// Load the demographic wave's shared rows. Audits and contributions may
+    /// already exist on a partial load into a non-empty repository (one
+    /// demographic contribution can commit several containers), so both
+    /// inserts are identity-preserving no-ops on an existing id.
+    async fn load_demographic_commons(
+        &self,
+        commons: &DemographicCommons,
+    ) -> Result<(), ServiceError> {
+        let mut tx = self.pool.begin().await?;
+        for a in &commons.audits {
+            insert_audit_row(&mut tx, a).await?;
+        }
+        for c in &commons.contributions {
+            sqlx::query(
+                "INSERT INTO contribution (id, ehr_id, audit_id) VALUES ($1, NULL, $2) \
+                 ON CONFLICT (id) DO NOTHING",
+            )
+            .bind(c.id)
+            .bind(c.audit_id)
+            .execute(&mut *tx)
+            .await?;
+        }
+        tx.commit().await?;
+        Ok(())
+    }
+
+    /// Load one ehr-less demographic container: its per-version audits, every
+    /// version (`vo_version` + re-decomposed `node` rows, `ehr_id` NULL),
+    /// attestations, demographic tags and archive rows — one transaction, so
+    /// a failed container commits nothing.
+    async fn load_one_demographic(&self, record: &DemographicRecord) -> Result<(), ServiceError> {
+        let mut tx = self.pool.begin().await?;
+        for a in &record.audits {
+            insert_audit_row(&mut tx, a).await?;
+        }
+        for v in &record.versions {
+            insert_version(&mut tx, None, v).await?;
+        }
+        load_attestations(&mut tx, &record.attestations).await?;
+        for t in &record.item_tags {
+            sqlx::query(
+                "INSERT INTO item_tag (id, ehr_id, target_vo_id, target_type, key, value, \
+                 target_path, created_at) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7::timestamptz)",
+            )
+            .bind(t.id)
+            .bind(t.target_vo_id)
+            .bind(&t.target_type)
+            .bind(&t.key)
+            .bind(&t.value)
+            .bind(&t.target_path)
+            .bind(&t.created_at)
+            .execute(&mut *tx)
+            .await?;
+        }
+        for ar in &record.archives {
+            sqlx::query(
+                "INSERT INTO vo_archive (vo_id, archived_at, reason) \
+                 VALUES ($1, $2::timestamptz, $3) ON CONFLICT (vo_id) DO NOTHING",
+            )
+            .bind(ar.vo_id)
+            .bind(&ar.archived_at)
+            .bind(&ar.reason)
+            .execute(&mut *tx)
+            .await?;
+        }
+        tx.commit().await?;
+        Ok(())
+    }
+
     /// Read every EHR's content into export records (ordered by EHR id for a
     /// deterministic archive).
     async fn collect_ehr_records(&self) -> Result<Vec<EhrRecord>, ServiceError> {
@@ -1248,6 +1564,207 @@ impl FerroEhrService {
             records.push(self.collect_one_ehr(ehr_id).await?);
         }
         Ok(records)
+    }
+
+    /// Read the demographic wave: the ehr-less contribution commons plus one
+    /// record per standalone container (RM demographic master02 §Versioning
+    /// Semantics), ordered by container id for a deterministic archive.
+    /// NOTE: no openEHR spec governs the archive format — our own
+    /// design/extension; the wave keeps the format's archive ⇒ repository
+    /// identity over the demographic store.
+    async fn collect_demographic_wave(
+        &self,
+    ) -> Result<(DemographicCommons, Vec<DemographicRecord>), ServiceError> {
+        let audit_rows = sqlx::query(
+            "SELECT id, time_committed, system_id, change_type, \
+             description, committer, attestation FROM audit \
+             WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id IS NULL) \
+             ORDER BY id",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        let mut commons_audits = Vec::with_capacity(audit_rows.len());
+        for r in audit_rows {
+            commons_audits.push(audit_row_of(&r)?);
+        }
+        let contribution_rows =
+            sqlx::query("SELECT id, audit_id FROM contribution WHERE ehr_id IS NULL ORDER BY id")
+                .fetch_all(&self.pool)
+                .await?;
+        let mut contributions = Vec::with_capacity(contribution_rows.len());
+        for r in contribution_rows {
+            contributions.push(ContributionRow {
+                id: r.try_get("id")?,
+                audit_id: r.try_get("audit_id")?,
+            });
+        }
+        let commons = DemographicCommons {
+            audits: commons_audits,
+            contributions,
+        };
+
+        let container_rows = sqlx::query(
+            "SELECT DISTINCT vo_id, kind FROM vo_version_all WHERE ehr_id IS NULL \
+             ORDER BY vo_id",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        let mut records = Vec::with_capacity(container_rows.len());
+        for c in container_rows {
+            let vo_id: VoId = c.try_get("vo_id")?;
+            let kind: String = c.try_get("kind")?;
+            records.push(self.collect_one_demographic(vo_id, kind).await?);
+        }
+        Ok((commons, records))
+    }
+
+    /// Read one ehr-less container's versions, per-version audits,
+    /// attestations, tags and archive rows.
+    async fn collect_one_demographic(
+        &self,
+        vo_id: VoId,
+        kind: String,
+    ) -> Result<DemographicRecord, ServiceError> {
+        let audit_rows = sqlx::query(
+            "SELECT id, time_committed, system_id, change_type, \
+             description, committer, attestation FROM audit \
+             WHERE id IN (SELECT audit_id FROM vo_version_all \
+                          WHERE vo_id = $1 AND ehr_id IS NULL) \
+             ORDER BY id",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut audits = Vec::with_capacity(audit_rows.len());
+        for r in audit_rows {
+            audits.push(audit_row_of(&r)?);
+        }
+
+        let version_rows = sqlx::query(
+            "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
+             preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
+             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
+             template_id, signature, signature_client_supplied, creating_system_id, \
+             wrapped_original \
+             FROM vo_version_all WHERE vo_id = $1 AND ehr_id IS NULL \
+             ORDER BY sys_version",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut versions = Vec::with_capacity(version_rows.len());
+        for r in version_rows {
+            versions.push(self.version_record_of(&r).await?);
+        }
+
+        let attestation_rows = sqlx::query(
+            "SELECT id, vo_id, sys_version, contribution_id, time_committed, at_committal, \
+             data FROM vo_attestation_all WHERE vo_id = $1 \
+             ORDER BY sys_version, time_committed, id",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut attestations = Vec::with_capacity(attestation_rows.len());
+        for r in attestation_rows {
+            attestations.push(AttestationRow {
+                id: r.try_get("id")?,
+                vo_id: r.try_get("vo_id")?,
+                sys_version: r.try_get("sys_version")?,
+                contribution_id: r.try_get("contribution_id")?,
+                time_committed: r
+                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+                    .to_jiff()
+                    .to_string(),
+                at_committal: r.try_get("at_committal")?,
+                data: r.try_get("data")?,
+            });
+        }
+
+        let tag_rows = sqlx::query(
+            "SELECT id, target_vo_id, target_type, key, value, target_path, \
+             created_at::text AS created_at FROM item_tag \
+             WHERE ehr_id IS NULL AND target_vo_id = $1 ORDER BY id",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut item_tags = Vec::with_capacity(tag_rows.len());
+        for r in tag_rows {
+            item_tags.push(ItemTagRow {
+                id: r.try_get("id")?,
+                target_vo_id: r.try_get("target_vo_id")?,
+                target_type: r.try_get("target_type")?,
+                key: r.try_get("key")?,
+                value: r.try_get("value")?,
+                target_path: r.try_get("target_path")?,
+                created_at: r.try_get("created_at")?,
+            });
+        }
+
+        let archive_rows = sqlx::query(
+            "SELECT vo_id, archived_at::text AS archived_at, reason FROM vo_archive \
+             WHERE vo_id = $1 ORDER BY vo_id",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut archives = Vec::with_capacity(archive_rows.len());
+        for r in archive_rows {
+            archives.push(ArchiveRow {
+                vo_id: r.try_get("vo_id")?,
+                archived_at: r.try_get("archived_at")?,
+                reason: r.try_get("reason")?,
+            });
+        }
+
+        Ok(DemographicRecord {
+            vo_id,
+            kind,
+            audits,
+            versions,
+            attestations,
+            item_tags,
+            archives,
+        })
+    }
+
+    /// One `vo_version_all` row into a [`VersionRecord`], its body read
+    /// across both storage tiers (deleted versions keep a `null` body).
+    async fn version_record_of(
+        &self,
+        r: &sqlx::postgres::PgRow,
+    ) -> Result<VersionRecord, ServiceError> {
+        let vo_id: VoId = r.try_get("vo_id")?;
+        let sys_version: i32 = r.try_get("sys_version")?;
+        let lifecycle_state: String = r.try_get("lifecycle_state")?;
+        let body = if lifecycle_state == DELETED_LIFECYCLE {
+            Value::Null
+        } else {
+            node_repo::read_version_canonical_in(&self.pool, vo_id, sys_version, Tier::Both).await?
+        };
+        Ok(VersionRecord {
+            vo_id,
+            kind: r.try_get("kind")?,
+            sys_version,
+            trunk_version: r.try_get("trunk_version")?,
+            branch_number: r.try_get("branch_number")?,
+            branch_version: r.try_get("branch_version")?,
+            preceding_version_uid: r.try_get("preceding_version_uid")?,
+            other_input_version_uids: r.try_get("other_input_version_uids")?,
+            sys_period_lower: r.try_get("lo")?,
+            sys_period_upper: r.try_get("hi")?,
+            lifecycle_state,
+            contribution_id: r.try_get("contribution_id")?,
+            audit_id: r.try_get("audit_id")?,
+            template_id: r.try_get("template_id")?,
+            signature: r.try_get("signature")?,
+            signature_client_supplied: r.try_get("signature_client_supplied")?,
+            creating_system_id: r.try_get("creating_system_id")?,
+            wrapped_original: r.try_get("wrapped_original")?,
+            body,
+            body_entry: None,
+        })
     }
 
     /// Read one EHR's `ehr`/audit/contribution/version/tag/archive content. The
@@ -1492,7 +2009,7 @@ impl FerroEhrService {
         }
 
         for v in &record.versions {
-            insert_version(&mut tx, ehr_id, v).await?;
+            insert_version(&mut tx, Some(ehr_id), v).await?;
         }
 
         load_attestations(&mut tx, &record.attestations).await?;
@@ -1670,7 +2187,7 @@ async fn load_attestations(
 /// re-decomposed here through the shared codec.
 async fn insert_version(
     tx: &mut PgConnection,
-    ehr_id: EhrId,
+    ehr_id: Option<EhrId>,
     v: &VersionRecord,
 ) -> Result<(), ServiceError> {
     version_repo::import::insert_version_verbatim(
@@ -1704,7 +2221,7 @@ async fn insert_version(
         return Ok(());
     }
     let rows = decompose(v.body.clone())?;
-    node_repo::write_nodes(tx, v.vo_id, v.sys_version, Some(ehr_id), &rows).await?;
+    node_repo::write_nodes(tx, v.vo_id, v.sys_version, ehr_id, &rows).await?;
     Ok(())
 }
 
