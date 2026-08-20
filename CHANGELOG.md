@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **The whole-repository dump archives standalone demographic containers.**
+  `POST {base}/admin/dump` now writes a demographic wave beside the EHR wave:
+  parties and party relationships that live outside any EHR land in
+  `demographic-commons.json` (their shared audits and contributions) plus
+  `demographic-NNNN.json` segments, in every logical format and container
+  (loose, zip, 7z; canonical-XML exports externalize their versions as
+  `versions/*.xml` like the EHR wave). `POST {base}/admin/load` restores them
+  verbatim, reports an already-present container under its own kind
+  (`PERSON`, `ORGANISATION`, `GROUP`, `AGENT`, `ROLE`, `PARTY_RELATIONSHIP`)
+  instead of failing, and still reads archives written before the wave
+  existed.
+
 ### Fixed
 
 - **`DV_URI` accepts scheme-less and plain-text values.** The validator
