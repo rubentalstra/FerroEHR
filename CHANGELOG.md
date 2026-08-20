@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`ITEM_TABLE.as_hierarchy` produces the specified row encoding.** The
+  `openehr-rm` function previously emitted a column transpose (following a
+  contradictory one-line summary in the class table); it now encodes one
+  `CLUSTER` per row renamed to the stringified row number, as the RM's own
+  ISO 13606 encoding rules, class description and instance figure define
+  (the contradiction is reported upstream).
+
 - **`validate` and `upload` can no longer disagree about a template.** The
   ADL 1.4 OPT validation endpoint now answers with the same artefact-validity
   catalogue the upload enforces, so a template that would be refused on
