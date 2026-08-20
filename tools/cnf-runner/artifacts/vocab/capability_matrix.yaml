@@ -19,8 +19,8 @@
 # line per row. The nine unclaimed SM rows become re-claimable the day the
 # product serves their operations on declared extension routes (the
 # PartyRelationshipOperations pattern).
-Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 12, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
-Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 25, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
+Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 13, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
+Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 26, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
 # (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
 # definition.openapi.yaml surfaces only OPT wire under /definition/template/adl2
 # (list / upload / get / example / the deprecated version GET); there is no ADL 2

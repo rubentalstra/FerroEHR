@@ -981,11 +981,15 @@ pub(crate) const BACK_REFERENCES: &[BackReference] = &[
     BackReference {
         class: "RESOURCE_DESCRIPTION",
         field: "parent_resource",
-        citation: "BASE resource resource_description (parent_resource: Reference to owning resource)",
+        citation: "BASE resource + RM common.resource resource_description (parent_resource: \
+                   Reference to owning resource; the class name occurs in both components \
+                   with the same back-reference)",
         reason: "Back-pointer to the owning resource; forms the AUTHORED_RESOURCE ↔ \
                  RESOURCE_DESCRIPTION cycle. \
                  (docs/specs/openehr/BASE/docs/UML/classes/\
-                 org.openehr.base.resource.resource_description.adoc)",
+                 org.openehr.base.resource.resource_description.adoc; \
+                 docs/specs/openehr/RM/docs/UML/classes/\
+                 org.openehr.rm.common.resource_description.adoc)",
     },
     BackReference {
         class: "ARCHETYPE_ONTOLOGY",
@@ -2231,6 +2235,46 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         reason: "the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse.",
     },
     InvariantRealization {
+        class: "AUTHORED_RESOURCE",
+        name: "Languages_available_valid",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.common.authored_resource.adoc",
+        reason: "`languages_available.has (original_language)`: constrains the DERIVED `languages_available()` function (§Functions), which builds its result from `original_language` — satisfied by the function's own definition (`authored_resource_impl.rs`; the `Current_revision_valid` precedent).",
+    },
+    InvariantRealization {
+        class: "AUTHORED_RESOURCE",
+        name: "Translations_valid",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/validation/opt/resource.rs",
+        spec_file: "org.openehr.rm.common.authored_resource.adoc",
+        reason: "a cross-member map rule over `translations`, realized where a whole authored resource is ingested: the OPT 1.4 template upload's resource-meta pass (the named site) and the ADL 1.4 source catalogue (`openehr-adl` `validate/resource_meta.rs`) — a present translations list is non-empty and never re-states the original language.",
+    },
+    InvariantRealization {
+        class: "AUTHORED_RESOURCE",
+        name: "Description_valid",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/validation/opt/resource.rs",
+        spec_file: "org.openehr.rm.common.authored_resource.adoc",
+        reason: "realized at the same whole-resource ingest seams as `Translations_valid` (the named site plus `openehr-adl` `validate/resource_meta.rs`), as the `RESOURCE_DESCRIPTION.Language_valid` membership — the literal (details ⊆ translations keys) would refuse the original language's own description item, so membership is checked against the original plus the translations.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION",
+        name: "Language_valid",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/validation/opt/resource.rs",
+        spec_file: "org.openehr.rm.common.resource_description.adoc",
+        reason: "`details.for_all (d | parent_resource.languages_available.has (d.language.code_string))`: realized at the whole-resource ingest seams (the named site plus `openehr-adl` `validate/resource_meta.rs`), where the owner is in hand — each description detail's language must be the owner's original language or a listed translation.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION",
+        name: "Parent_resource_valid",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description.adoc",
+        reason: "`parent_resource /= Void implies parent_resource.description = self`: reads the OWNING `parent_resource` back-reference, which the generated model deliberately breaks (`BACK_REFERENCES` — a back-reference is not forward-owned data), so nothing stored exists for the rule to constrain; where the pair is in hand the identity holds by construction of ownership.",
+    },
+    InvariantRealization {
         class: "DV_PARAGRAPH",
         name: "Items_valid",
         venue: InvariantVenue::Excluded,
@@ -2318,6 +2362,29 @@ pub(crate) fn account_emitted<'a>(
 ) -> Vec<AccountedInvariant> {
     let mut out: Vec<AccountedInvariant> = invariants
         .filter(|(_, _, expr)| classify(expr) == Bucket::Emitted)
+        .map(|(class, name, _)| AccountedInvariant {
+            class: class.to_owned(),
+            name: name.to_owned(),
+            realization: invariant_realization(class, name),
+        })
+        .collect();
+    out.sort_by(|a, b| (&a.class, &a.name).cmp(&(&b.class, &b.name)));
+    out
+}
+
+/// Account every **complex-bucket** invariant among `invariants` — the rules
+/// the classifier judges NOT mechanically evaluable — against
+/// [`INVARIANT_REALIZATIONS`], sorted by `(class, name)`.
+///
+/// A complex invariant is still normative: it is realized at a hand-written
+/// or application venue, or carries an adjudicated exclusion — a complex rule
+/// with no register row is a silent enforcement gap, the same defect class
+/// the emitted-bucket accounting closes (#1621).
+pub(crate) fn account_complex<'a>(
+    invariants: impl Iterator<Item = (&'a str, &'a str, &'a str)>,
+) -> Vec<AccountedInvariant> {
+    let mut out: Vec<AccountedInvariant> = invariants
+        .filter(|(_, _, expr)| matches!(classify(expr), Bucket::Complex(_)))
         .map(|(class, name, _)| AccountedInvariant {
             class: class.to_owned(),
             name: name.to_owned(),

@@ -9,6 +9,12 @@ Verified 2026-08-02 against RM 1.2.0
 `RM/docs/UML/classes/org.openehr.rm.common.{folder,versioned_folder,versioned_object}.adoc`
 (the two §5.2 includes at `master05-directory_package.adoc:32,34`).
 
+**PARTLY SUPERSEDED 2026-08-19 (see [[rm-common-ch567-fix-verification]]): the
+lineage-content fact below still holds, but the SERVED default is now v2
+(`ferroehr-rest/src/overview/negotiate.rs:366`, owner ruling #1666) and the
+self-deriving XSD gate exists (`openehr-its/tests/it/xml_xsd_validity.rs`), so
+the "default-served XML is schema-invalid" half is closed.**
+
 **THE BIG ONE — ITS-XML lineage is NOT "namespace only":**
 `crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/Structure.xsd:34-43`
 types FOLDER as `folders` + `items` ONLY — **no `details` element** (RM

@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.17.7"
+    "version": "3.17.8"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.7",
+    "version": "3.17.8",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -2708,6 +2708,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_ADL14.upload_archetype-translation_restates_original",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.upload_archetype-unauthenticated",
       "status": "passed",
       "rows_driven": 1,
@@ -2742,6 +2748,12 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_opt-resource_meta_invalid",
+      "status": "passed",
+      "rows_driven": 8,
+      "rows_total": 8
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-unparseable_opt",

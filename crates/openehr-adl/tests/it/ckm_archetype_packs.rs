@@ -282,3 +282,58 @@ fn upstream_adl14_twins_parse() {
         expected_refusals(&files, ADJUDICATED_PAIRS),
     );
 }
+
+/// The RM resource-meta rows over the whole CKM 1.4 pack.
+///
+/// Enforcement of the RM common ch.8 invariants on 1.4 sources
+/// (`validate::resource_meta`) was audited clean against the vendored
+/// real-world library first, so it newly rejects no previously-accepted
+/// archetype — this sweep IS that record. Only the resource-meta codes are
+/// asserted: other validity findings on real-world content are the
+/// rule-code-keyed corpus' territory.
+#[test]
+fn ckm_adl14_pack_is_resource_meta_clean() {
+    let resource_codes = [
+        "AUTHORED_RESOURCE.Original_language_valid",
+        "AUTHORED_RESOURCE.Translations_valid",
+        "AUTHORED_RESOURCE.Description_valid",
+        "TRANSLATION_DETAILS.Language_valid",
+        "RESOURCE_DESCRIPTION.Original_author_valid",
+        "RESOURCE_DESCRIPTION.Lifecycle_state_valid",
+        "RESOURCE_DESCRIPTION.Details_valid",
+        "RESOURCE_DESCRIPTION_ITEM.Language_valid",
+        "RESOURCE_DESCRIPTION_ITEM.Purpose_valid",
+        "RESOURCE_DESCRIPTION_ITEM.Use_valid",
+        "RESOURCE_DESCRIPTION_ITEM.misuse_valid",
+    ];
+    let dir = artifacts_root().join("ckm/adl14");
+    let files = files_with_extension(&dir, "adl");
+    assert!(files.len() >= 900);
+    let mut offenders = Vec::new();
+    for path in &files {
+        let src = std::fs::read_to_string(path).expect("archetype is readable");
+        let Ok(issues) = openehr_adl::validate::validate_adl14_source(
+            &src,
+            &openehr_adl::validate::rm::ProductionRmModel,
+        ) else {
+            continue; // adjudicated parse refusals are ckm_adl14_pack_parses' claim
+        };
+        for issue in issues
+            .iter()
+            .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
+            .filter(|i| resource_codes.contains(&i.code.mnemonic()))
+        {
+            offenders.push(format!(
+                "{}: {} — {}",
+                file_name(path),
+                issue.code.mnemonic(),
+                issue.message
+            ));
+        }
+    }
+    assert!(
+        offenders.is_empty(),
+        "CKM archetypes refused by the resource-meta pass (adjudicate, never silence):\n{}",
+        offenders.join("\n")
+    );
+}

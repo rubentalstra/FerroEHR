@@ -178,7 +178,7 @@
     [
       "Adl14ArchetypeProvisioning",
       {
-        "passed": 12,
+        "passed": 13,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -187,7 +187,7 @@
     [
       "Adl14OptProvisioning",
       {
-        "passed": 20,
+        "passed": 21,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1060,
-    "driven": 1022,
-    "passed": 1022,
+    "selected": 1062,
+    "driven": 1024,
+    "passed": 1024,
     "failed": 0,
     "inconclusive": 0
   }

@@ -1121,12 +1121,44 @@ pub fn account_invariants(triples: &[(&str, &str, &str)]) -> Vec<AccountedInvari
     account(triples.iter().copied())
 }
 
+/// The complex-bucket analogue of [`accounted_emitted_invariants`].
+///
+/// Every invariant of `key`'s composed schemas the classifier judges NOT
+/// mechanically evaluable, accounted against the realization register.
+///
+/// # Errors
+///
+/// Whatever [`compose`] returns for an unknown `key` or unloadable inputs.
+pub fn accounted_complex_invariants(key: &str) -> Result<Vec<AccountedInvariant>, Error> {
+    let c = compose(key)?;
+    let triples: Vec<(String, String, String)> = c
+        .generations
+        .iter()
+        .flat_map(|g| &g.units)
+        .flat_map(|u| &u.schema.classes)
+        .flat_map(|(class, def)| {
+            def.invariants
+                .iter()
+                .map(move |(name, expr)| (class.clone(), name.clone(), expr.clone()))
+        })
+        .collect();
+    Ok(present(overrides::account_complex(
+        triples
+            .iter()
+            .map(|(c, n, e)| (c.as_str(), n.as_str(), e.as_str())),
+    )))
+}
+
 /// Shared body of [`accounted_emitted_invariants`] and [`account_invariants`].
 fn account<'a>(
     triples: impl Iterator<Item = (&'a str, &'a str, &'a str)>,
 ) -> Vec<AccountedInvariant> {
-    overrides::account_emitted(triples)
-        .into_iter()
+    present(overrides::account_emitted(triples))
+}
+
+/// Renders accounted rows into the test-facing [`AccountedInvariant`] shape.
+fn present(rows: Vec<overrides::AccountedInvariant>) -> Vec<AccountedInvariant> {
+    rows.into_iter()
         .map(|a| {
             let venue = a.realization.map_or("UNACCOUNTED", |r| match r.venue {
                 overrides::InvariantVenue::Core => "Core",
