@@ -2215,6 +2215,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-entry_family_invalid",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-event_composition",
       "status": "passed",
       "rows_driven": 1,
@@ -2276,6 +2282,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-incomplete_wrong_data",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-instruction_rich",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
