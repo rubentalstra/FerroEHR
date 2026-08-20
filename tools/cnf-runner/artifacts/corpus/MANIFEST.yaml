@@ -3364,3 +3364,33 @@ cnf.archetype.adl14.translation_restates_original:
     defect: "a translations entry re-states the original language en"
     spec_ref: "RM UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants Translations_valid (not translations.has(orginal_language.code_string) — the spec's own spelling); the RM resource package governs AOM 1.4 meta-data (RM common master08-resource_package.adoc front-matter NOTE)"
   provenance: "derived 2026-08-19 from cnf.archetype.adl14.medication with exactly one edit: an [\"en\"] entry inserted into the existing translations section"
+cnf.composition.null_family.value_and_flavour:
+  source: fixtures/contribution/composition.obs_admin.null_family.value_and_flavour.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the at0004 ELEMENT carries BOTH a value and a null_flavour"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants Inv_null_flavour_indicated (is_null() xor null_flavour = Void)"
+  template_id: "obs_admin.en.v2"
+  provenance: "derived 2026-08-20 from cnf.composition.null_flavour with exactly one edit: a template-legal DV_TEXT value added to the null ELEMENT, so the xor is the only defect"
+cnf.composition.null_family.orphan_null_reason:
+  source: fixtures/contribution/composition.obs_admin.null_family.orphan_null_reason.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a null_reason on a VALUED at0004 ELEMENT (is_null() is false)"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants Inv_null_reason_valid (null_reason /= Void implies is_null())"
+  template_id: "obs_admin.en.v2"
+  provenance: "derived 2026-08-20 from cnf.composition.obs_admin.coded_text_on_text with exactly one edit: a null_reason added beside the present value"
+cnf.composition.null_family.out_of_group_flavour:
+  source: fixtures/contribution/composition.obs_admin.null_family.out_of_group_flavour.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the null ELEMENT's null_flavour code 999 is outside the openEHR null flavours group"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants Inv_null_flavour_valid (terminology(Terminology_id_openehr).has_code_for_group_id(Group_id_null_flavour, null_flavour.defining_code))"
+  template_id: "obs_admin.en.v2"
+  provenance: "derived 2026-08-20 from cnf.composition.null_flavour with exactly one edit: the 271 code swapped to the out-of-group 999 (value text adjusted to avoid a rubric mismatch masking the group defect)"
