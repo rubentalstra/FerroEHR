@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.8 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 1043 |
+| passed | 1045 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 38 |
-| total | 1081 |
+| total | 1083 |
 
 ## By chapter
 
@@ -39,8 +39,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Parties | 85 | 0 | 0 | 3 |
 | — Party relationships | 19 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
-| **Messaging** | 48 | 0 | 0 | 0 |
-| — EHR Extract | 32 | 0 | 0 | 0 |
+| **Messaging** | 50 | 0 | 0 | 0 |
+| — EHR Extract | 34 | 0 | 0 | 0 |
 | — TDD | 16 | 0 | 0 | 0 |
 | **Admin** | 54 | 0 | 0 | 2 |
 | — Admin service | 24 | 0 | 0 | 2 |
@@ -101,7 +101,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
 | EhrArchive | pass | 7 | 0 | 0 | 0 |
 | DemographicArchive | pass | 8 | 0 | 0 | 0 |
-| EhrExtract | pass | 32 | 0 | 0 | 0 |
+| EhrExtract | pass | 34 | 0 | 0 | 0 |
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1043 of 1081 selected cases driven.
+Coverage: 1045 of 1083 selected cases driven.
 
 Not-executed verdicts (each cited):
 
