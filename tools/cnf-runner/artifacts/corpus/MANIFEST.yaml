@@ -3697,3 +3697,50 @@ cnf.composition.history_open_cat.persistent:
   validity: { verdict: valid }
   template_id: "history_open_cat.en.v1"
   provenance: "derived 2026-08-20 (issue #2486) from cnf.composition.history_open_cat.event with only the category swapped to openehr::431|persistent| — VALID standalone (431 is a composition_category member and the archetype leaves category unconstrained); the defect exists only relative to an event-category container's first version, which is exactly what the update-seam case exercises (VERSIONED_COMPOSITION.Persistent_validity)"
+cnf.composition.maximal.instruction_rich:
+  source: fixtures/contribution/composition.maximal.instruction_rich.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "test_all_types.en.v1"
+  provenance: "derived 2026-08-20 (issue #2488) from cnf.composition.maximal by adding every never-committed instruction-family trimming: ISM_TRANSITION.transition (536|plan step|, matching the planned state) + careflow_step (a local archetype term) + reason, ACTION.instruction_details (LOCATABLE_REF instruction_id + activity_id), INSTRUCTION.expiry_time and wf_definition (a DV_PARSABLE; the chapter fixes no formalism — master08 §Clinical Workflow Definition: any syntax may currently be used)"
+cnf.composition.maximal.bad_ism_state:
+  source: fixtures/contribution/composition.maximal.bad_ism_state.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an ISM_TRANSITION whose current_state code 999 is outside the instruction states group"
+    spec_ref: "RM UML/classes/org.openehr.rm.composition.ism_transition.adoc §Invariants Current_state_valid (has_code_for_group_id(Group_id_instruction_states, current_state.defining_code))"
+  template_id: "test_all_types.en.v1"
+  provenance: "derived 2026-08-20 (issue #2488) from cnf.composition.maximal with exactly one defect: the state code 526 swapped to 999 (the maximal OPT leaves the ISM state archetype-open, so the terminology invariant is the only violation)"
+cnf.composition.maximal.bad_ism_transition:
+  source: fixtures/contribution/composition.maximal.bad_ism_transition.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an ISM_TRANSITION whose transition code 999 is outside the instruction transitions group"
+    spec_ref: "RM UML/classes/org.openehr.rm.composition.ism_transition.adoc §Invariants Transition_valid (transition /= Void implies has_code_for_group_id(Group_id_instruction_transitions, transition.defining_code))"
+  template_id: "test_all_types.en.v1"
+  provenance: "derived 2026-08-20 (issue #2488): exactly one defect — an out-of-group transition added to the otherwise-valid ISM_TRANSITION"
+cnf.composition.maximal.empty_action_archetype_id:
+  source: fixtures/contribution/composition.maximal.empty_action_archetype_id.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an ACTIVITY whose mandatory action_archetype_id is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.composition.activity.adoc §Invariants Action_archetype_id_valid (not action_archetype_id.is_empty)"
+  template_id: "test_all_types.en.v1"
+  provenance: "derived 2026-08-20 (issue #2488): exactly one defect — action_archetype_id \"\""
+cnf.composition.maximal.empty_activity_id:
+  source: fixtures/contribution/composition.maximal.empty_activity_id.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an INSTRUCTION_DETAILS whose mandatory activity_id is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.composition.instruction_details.adoc §Invariants Activity_path_valid (not activity_id.is_empty)"
+  template_id: "test_all_types.en.v1"
+  provenance: "derived 2026-08-20 (issue #2488): exactly one defect — an otherwise-valid instruction_details (well-formed LOCATABLE_REF instruction_id) added to the ACTION with activity_id \"\""
