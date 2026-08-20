@@ -3438,3 +3438,13 @@ cnf.composition.history_open.off_period_offset:
     spec_ref: "RM UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants Period_consistency (is_periodic implies events.for_all(e | e.offset.to_seconds.mod(period.to_seconds) = 0))"
   template_id: "history_open.en.v1"
   provenance: "derived 2026-08-20 from cnf.composition.history_open.interval_events with exactly one defect: the period kept at PT5M and the second event retimed to 08:07:00 (both events POINT_EVENTs of the same ITEM_TREE shape, so the off-period offset is the only violation)"
+cnf.composition.history_open.empty_identifier_id:
+  source: fixtures/contribution/composition.history_open.empty_identifier_id.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an ELEMENT valued DV_IDENTIFIER whose mandatory id is the empty string"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_identifier.adoc §Invariants Id_valid (not id.is_empty)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2474) from cnf.composition.history_open.interval_events with exactly one defect: aperiodic, one POINT_EVENT whose single ELEMENT value is a DV_IDENTIFIER with id \"\" — the open ITEM_STRUCTURE slot admits the element, so Id_valid is the only violation (the missing-id branch is already pinned by the CONT-DV_IDENTIFIER matrix's rm_schema row; this is the present-but-empty twin)"
