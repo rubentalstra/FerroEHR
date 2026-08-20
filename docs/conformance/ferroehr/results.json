@@ -2404,6 +2404,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-quantity_family_invalid",
+      "status": "passed",
+      "rows_driven": 10,
+      "rows_total": 10
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-quantity_rich",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-return_identifier",
       "status": "passed",
       "rows_driven": 1,

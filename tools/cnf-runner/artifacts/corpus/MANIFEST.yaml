@@ -3495,3 +3495,110 @@ cnf.composition.history_open.empty_code_string:
     spec_ref: "RM UML/classes/org.openehr.rm.data_types.code_phrase.adoc §Invariants Code_string_valid (not code_string.is_empty)"
   template_id: "history_open.en.v1"
   provenance: "derived 2026-08-20 (issue #2476) from cnf.composition.history_open.interval_events with exactly one defect: one DV_TEXT ELEMENT carrying a single well-formed mapping (match '=') whose target code_string is \"\" — the target path carries no terminology-group check, so Code_string_valid is the only violation"
+cnf.composition.history_open.quantity_rich:
+  source: fixtures/contribution/composition.history_open.quantity_rich.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open.en.v1"
+  provenance: "authored 2026-08-20 (issue #2478): the quantity family's rich accepting instance — a DV_QUANTITY carrying every optional trimming (magnitude_status ~, percent accuracy 5, precision 1, units_system + units_display_name, normal_status N, a containing normal_range 90..130, an other_reference_ranges critical entry) beside a valid percent DV_PROPORTION — the accepting twin of the cnf.composition.history_open quantity refusal rows"
+cnf.composition.history_open.bad_magnitude_status:
+  source: fixtures/contribution/composition.history_open.bad_magnitude_status.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_QUANTITY whose magnitude_status !! is outside = < > <= >= ~"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_quantified.adoc §Invariants Magnitude_status_valid (valid_magnitude_status)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478) from cnf.composition.history_open.interval_events with exactly one defect: magnitude_status \"!!\""
+cnf.composition.history_open.accuracy_zero_percent:
+  source: fixtures/contribution/composition.history_open.accuracy_zero_percent.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_QUANTITY with accuracy 0 while accuracy_is_percent is true"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_amount.adoc §Invariants Accuracy_is_percent_validity (accuracy = 0 implies not accuracy_is_percent)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — accuracy 0.0 with accuracy_is_percent true (0 is a valid percentage, so Accuracy_validity stays quiet)"
+cnf.composition.history_open.accuracy_percent_out_of_range:
+  source: fixtures/contribution/composition.history_open.accuracy_percent_out_of_range.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_QUANTITY whose percent accuracy 250 is outside 0..100"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_amount.adoc §Invariants Accuracy_validity (accuracy_is_percent implies valid_percentage(accuracy))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — accuracy 250.0 with accuracy_is_percent true (non-zero, so Accuracy_is_percent_validity stays quiet)"
+cnf.composition.history_open.fraction_non_integral:
+  source: fixtures/contribution/composition.history_open.fraction_non_integral.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a pk_fraction DV_PROPORTION whose numerator 1.5 is not integral"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants Fraction_validity ((type = pk_fraction or type = pk_integer_fraction) implies is_integral)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — type 3 with numerator 1.5 (Is_integral_validity is register-excluded as the same defect, so the core reports Fraction_validity once)"
+cnf.composition.history_open.unitary_bad_denominator:
+  source: fixtures/contribution/composition.history_open.unitary_bad_denominator.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a pk_unitary DV_PROPORTION whose denominator is 2, not 1"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants Unitary_validity (type = pk_unitary implies denominator = 1)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — type 1 with denominator 2.0"
+cnf.composition.history_open.percent_bad_denominator:
+  source: fixtures/contribution/composition.history_open.percent_bad_denominator.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a pk_percent DV_PROPORTION whose denominator is 500, not 100"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants Percent_validity (type = pk_percent implies denominator = 100)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — type 2 with denominator 500.0"
+cnf.composition.history_open.zero_denominator:
+  source: fixtures/contribution/composition.history_open.zero_denominator.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_PROPORTION whose denominator is 0.0"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants Valid_denominator (denominator /= 0.0)"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — type 0 (ratio, any values legal) with denominator 0.0"
+cnf.composition.history_open.bad_normal_status:
+  source: fixtures/contribution/composition.history_open.bad_normal_status.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_QUANTITY whose normal_status code XX is no member of the normal statuses code set"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants Normal_status_validity (code_set(Code_set_id_normal_statuses).has_code(normal_status))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — normal_status openehr_normal_statuses::XX"
+cnf.composition.history_open.status_range_inconsistent:
+  source: fixtures/contribution/composition.history_open.status_range_inconsistent.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_QUANTITY of magnitude 50 declaring normal_status N beside a normal_range 100..200 that does not contain it"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants Normal_range_and_status_consistency ((normal_range /= Void and normal_status /= Void) implies (normal_status.code_string.is_equal(N) xor not normal_range.has(self)))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — the N status contradicts the out-of-range value (the status code is set-valid and the range limits are comparable and ordered, so the consistency xor is the only violation)"
+cnf.composition.history_open.nonsimple_reference_range:
+  source: fixtures/contribution/composition.history_open.nonsimple_reference_range.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an other_reference_ranges entry whose range lower limit itself carries a normal_range (a non-simple limit)"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.reference_range.adoc §Invariants Range_is_simple ((range.lower_unbounded or else range.lower.is_simple) and (range.upper_unbounded or else range.upper.is_simple))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2478): exactly one defect — the critical range's lower DV_QUANTITY carries its own (internally consistent, contained) normal_range, so Range_is_simple is the only violation"
