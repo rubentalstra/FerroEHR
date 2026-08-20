@@ -8,9 +8,12 @@
 
 language: en-US
 
+# The 250-char cap forces brevity; the full never-assert-unseen-content rule
+# rides the "**" path instruction below.
 tone_instructions: >-
   Terse and technical. Cite the governing .claude/rules file or vendored spec
-  section for each finding. No praise, no filler, no restating the diff.
+  section, quoting only text visible in this checkout — never assert what an
+  excluded file contains. No praise, no filler, no restating the diff.
 
 reviews:
   profile: chill
@@ -149,6 +152,15 @@ reviews:
   # The full standards live in the knowledge base (CLAUDE.md + .claude/rules).
   # These are the per-path reminders of what to actually look for.
   path_instructions:
+    - path: "**"
+      instructions: >-
+        The vendored spec trees (docs/specs/openehr/ and every other
+        path_filters exclusion, including Cargo.lock) are NOT in this
+        checkout. You may name the spec section or file a change should be
+        verified against, but never assert, quote, or paraphrase what an
+        excluded file contains — a claim that depends on unseen content is
+        unverifiable and must say so. The same applies to rule-file sections
+        you have not read: cite only text you can see.
     - path: "**/*.rs"
       instructions: >-
         Judgement, not lint: clippy at deny plus the comment-style, typed-status
@@ -161,9 +173,20 @@ reviews:
         derived `Error` (the smart pointer becomes the source hop and downcast
         breaks); HashMap/HashSet iteration feeding canonical output or SQL; an
         import renamed with `use X as Y`; a re-export; a `// TODO` without an
-        issue number; a `// NOTE:` longer than three lines or describing work
-        not yet done. Clinical payload must never reach a `Debug` impl or a
-        tracing field.
+        issue number; a LINE-comment `// NOTE:` longer than three lines or
+        describing work not yet done (a `NOTE:` inside a `///` doc comment has
+        an eight-line budget — do not flag doc-comment NOTEs of four to eight
+        lines). Clinical payload must never reach a `Debug` impl or a tracing
+        field.
+    - path: "crates/*/Cargo.toml"
+      instructions: >-
+        These crates publish to crates.io, so sibling openehr-* dependencies
+        are declared per-manifest as `path` plus an explicit `version`
+        requirement, bumped in lockstep (.claude/rules/crates-publishing.md).
+        There is deliberately NO openehr-* entry in the root
+        [workspace.dependencies] table — that table is for third-party pins.
+        Never propose converting an openehr-* sibling dependency to
+        `dep.workspace = true` or adding one to the workspace table.
     - path: "crates/openehr-{base,rm,am,term,lang,its}/**/*.rs"
       instructions: >-
         Most files here start with `// @generated ... DO NOT EDIT` or
