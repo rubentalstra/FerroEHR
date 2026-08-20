@@ -3602,3 +3602,20 @@ cnf.composition.history_open.nonsimple_reference_range:
     spec_ref: "RM UML/classes/org.openehr.rm.data_types.reference_range.adoc §Invariants Range_is_simple ((range.lower_unbounded or else range.lower.is_simple) and (range.upper_unbounded or else range.upper.is_simple))"
   template_id: "history_open.en.v1"
   provenance: "derived 2026-08-20 (issue #2478): exactly one defect — the critical range's lower DV_QUANTITY carries its own (internally consistent, contained) normal_range, so Range_is_simple is the only violation"
+cnf.composition.history_open.time_specifications:
+  source: fixtures/contribution/composition.history_open.time_specifications.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "history_open.en.v1"
+  provenance: "authored 2026-08-20 (issue #2480): the time_specification package's first committed instances — a DV_PERIODIC_TIME_SPECIFICATION whose DV_PARSABLE carries the chapter's own §Phase-linked example ([200004181100;200004181110]/(7d)@DW, formalism HL7:PIVL) beside a DV_GENERAL_TIME_SPECIFICATION (the same phase-linked spec is a valid GTS factor per §General Time Specification Syntax, formalism HL7:GTS)"
+cnf.composition.history_open.periodic_bad_formalism:
+  source: fixtures/contribution/composition.history_open.periodic_bad_formalism.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_PERIODIC_TIME_SPECIFICATION whose value.formalism is HL7:GTS, not HL7:PIVL or HL7:EIVL"
+    spec_ref: "RM UML/classes/org.openehr.rm.data_types.dv_periodic_time_specification.adoc §Invariants Value_valid (value.formalism.is_equal(HL7:PIVL) or value.formalism.is_equal(HL7:EIVL))"
+  template_id: "history_open.en.v1"
+  provenance: "derived 2026-08-20 (issue #2480) from cnf.composition.history_open.time_specifications with exactly one defect: the periodic specification's formalism swapped to HL7:GTS (the parsable value itself stays well-formed, so Value_valid is the only violation)"
