@@ -32,19 +32,12 @@
 //! `I_EHR_CONTRIBUTION` / change-control semantics,
 //! `docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`).
 //!
-//! NOTE: `commit_original_merged_version` has NO wire realization anywhere —
-//! deliberately. It is the merge commit whose `an_other_input_uids:
-//! List<OBJECT_VERSION_ID>[1]` becomes
-//! `ORIGINAL_VERSION.other_input_version_uids` (§Functions;
-//! `master06-change_control_package.adoc` §Version Merging), and the released
-//! REST wire declares no shape for it at all: `UpdateVersion.yaml` has no such
-//! property and `NewContribution.versions` items are `UpdateVersion` with no
-//! discriminator, so no client can ask for a merge commit. Merge provenance is
-//! PRODUCE-only — `OriginalVersion.yaml` declares it on reads, and it reaches
-//! storage only through the routes that reproduce a FOREIGN `ORIGINAL_VERSION`
-//! verbatim (§Copying: "the `ORIGINAL_VERSION` instance is never modified") —
-//! the imported-version path, not this one. The absence is the conformant
-//! behaviour, not a gap.
+//! NOTE: `commit_original_merged_version` has NO wire realization,
+//! deliberately — the released REST wire declares no merge-commit shape
+//! (`UpdateVersion.yaml` has no `other_input_version_uids` property), so
+//! merge provenance is PRODUCE-only (`OriginalVersion.yaml` on reads,
+//! reaching storage only through verbatim foreign reproduction — master06
+//! §Copying); the absence is the conformant behaviour, not a gap.
 //!
 //! This module exists so that fact is written down beside the class it belongs
 //! to, rather than left as an unexplained absence next to the sibling

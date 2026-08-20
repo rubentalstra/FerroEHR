@@ -704,11 +704,10 @@ fn realization_register_venues_are_real() {
                 assert!(
                     gen_file.contains(&format!("Invariant {} failed", a.name))
                         || gen_file.contains(&format!("invariant_failed(\"{}\"", a.name))
-                        // A parameterised core builds its message from a
-                        // generated rule table rather than a literal, so the
-                        // invariant's name appears as the table row that drives
-                        // it (`NONEMPTY_LIST_RULES`). Same property, same file:
-                        // generated.rs is still what produces the violation.
+                        // A parameterised core drives its message from an
+                        // inline (value, invariant-name) row table — the name
+                        // appears as that quoted row, same file, same
+                        // violation producer.
                         || gen_file.contains(&format!("\"{}\"),", a.name)),
                     "{where_}: no violation message for it in validate/generated.rs",
                 );
@@ -722,8 +721,10 @@ fn realization_register_venues_are_real() {
                 );
                 let text = std::fs::read_to_string(&path).unwrap();
                 assert!(
-                    text.contains(&a.name),
-                    "{where_}: realizing file {} does not name the invariant",
+                    names_in_a_string_literal(&text, &a.name),
+                    "{where_}: realizing file {} does not name the invariant inside a \
+                     violation-producing string literal — a comment mention is narration, \
+                     not enforcement (#2443)",
                     a.site,
                 );
             }
@@ -735,6 +736,34 @@ fn realization_register_venues_are_real() {
             other => panic!("{where_}: unexpected venue {other}"),
         }
     }
+}
+
+/// Whether `name` occurs on a NON-COMMENT line of `text` — the venue-claim
+/// predicate.
+///
+/// A realizing site names the invariant in its violation literal (spec
+/// spellings never occur as code identifiers), and a literal may wrap across
+/// continuation lines whose own line carries no quote — so the honest,
+/// wrap-robust rule is "named outside a comment". A doc-comment or prose
+/// mention — narration, the #2443 defect — never satisfies it.
+fn names_in_a_string_literal(text: &str, name: &str) -> bool {
+    text.lines()
+        .any(|line| !line.trim_start().starts_with("//") && line.contains(name))
+}
+
+/// The venue-claim predicate itself, mutation-proven in both directions: a
+/// prose/comment mention never satisfies it, a violation literal does — the
+/// name on a quote-less continuation line included.
+#[test]
+fn a_prose_mention_does_not_satisfy_a_venue_claim() {
+    let prose = "// The Details_valid rule is realized elsewhere.\nfn f() {}";
+    assert!(!names_in_a_string_literal(prose, "Details_valid"));
+    let doc = "/// Invariant Details_valid failed — see elsewhere.\nfn f() {}";
+    assert!(!names_in_a_string_literal(doc, "Details_valid"));
+    let quoted = "out.push(failed(\"Invariant Details_valid failed on type X\"));";
+    assert!(names_in_a_string_literal(quoted, "Details_valid"));
+    let wrapped = "return Err(precondition(\n    \"data excluded \\\n     Details_valid: revision-history-only\",\n));";
+    assert!(names_in_a_string_literal(wrapped, "Details_valid"));
 }
 
 /// The negative case of the accounting invariant: an invariant the classifier
@@ -1508,6 +1537,24 @@ fn the_concrete_only_variant_reading_loses_no_document_shape() {
 fn complex_register_venues_are_real() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let rows = testsupport::accounted_complex_invariants("rm").unwrap();
+    // The bucket is fully drained (#2454): every complex invariant carries a
+    // register row, and the accounted set spans the whole merged closure
+    // (BASE foundation classes included) — a shrink means rows fell out of
+    // the accounting, not out of the model.
+    assert!(
+        rows.len() >= 43,
+        "the complex bucket accounts only {} rows — closure drift?",
+        rows.len()
+    );
+    let unaccounted: Vec<String> = rows
+        .iter()
+        .filter(|a| a.venue == "UNACCOUNTED")
+        .map(|a| format!("{}.{}", a.class, a.name))
+        .collect();
+    assert!(
+        unaccounted.is_empty(),
+        "UNACCOUNTED-COMPLEX must stay empty (#2454) — adjudicate: {unaccounted:?}"
+    );
     for a in rows.iter().filter(|a| a.venue != "UNACCOUNTED") {
         let where_ = format!("{}.{}", a.class, a.name);
         assert!(
@@ -1525,7 +1572,7 @@ fn complex_register_venues_are_real() {
                 );
                 let text = std::fs::read_to_string(&path).unwrap();
                 assert!(
-                    text.contains(&a.name),
+                    names_in_a_string_literal(&text, &a.name),
                     "{where_}: realizing file {} does not name the invariant",
                     a.site,
                 );

@@ -525,15 +525,12 @@ pub enum Token {
     SymIvlSep,
     /// `.` — the namespace separator of a qualified ODIN type identifier.
     ///
-    /// NOTE: the vendored `odin.g4` has no such token, because its
-    /// `rm_type_id` rule admits only `ALPHA_UC_ID`. The docs text is the
-    /// oracle and allows the qualified form: "Namespaces are included by
-    /// prepending package names, separated by the '.' character, in the same
-    /// way as in most programming languages" (`LANG/docs/odin/master05-content`
-    /// §Adding Type Information, verbatim in `AM/docs/ADL1.4/master04-dadl`
-    /// §Adding Type Information). Every dotted composite above (`...`, `..`,
-    /// the code and identifier regexes, `REAL`) is a longer match, so logos
-    /// still prefers it.
+    /// NOTE: the vendored `odin.g4` `rm_type_id` admits only `ALPHA_UC_ID`,
+    /// but the docs text is the oracle and allows the qualified form
+    /// ("Namespaces are included by prepending package names, separated by
+    /// the '.' character" — `LANG/docs/odin/master05-content` §Adding Type
+    /// Information, verbatim in `AM/docs/ADL1.4/master04-dadl`); every dotted
+    /// composite is a longer match, so logos still prefers it.
     #[token(".")]
     SymDot,
     /// `|` (`SYM_IVL_DELIM`).

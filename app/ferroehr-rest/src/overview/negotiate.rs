@@ -50,18 +50,17 @@
 //! default a schema-validating client receives actually
 //! validates.
 //!
-//! NOTE: no openEHR spec governs this — our own design/extension. The
-//! ITS-REST text predates the dual bundles: `Resources.md` §XML Format
-//! requires conformance to "the [published XSDs]" without naming a lineage
-//! and says nothing about media-type parameters. What the released text DOES
-//! fix is the refusal shape once a service cannot serve what was asked, and
-//! both branches here are exactly those MUSTs — an unrecognized `version` on
-//! `Accept` is an aspect of the request the service cannot fulfill ("it MUST
-//! respond with HTTP status code `406 Not Acceptable`") and an unrecognized
-//! `version` on `Content-Type` is a payload it cannot process as XML ("it
-//! MUST respond with HTTP status code `415 Unsupported Media Type`").
-//! Selection applies to canonical RM documents only; the OPT 1.4 template
-//! representation is always v1 (`openehr_its::opt14`).
+//! NOTE: no openEHR spec governs the parameter — our own design/extension:
+//! `Resources.md` §XML Format requires conformance to "the [published XSDs]"
+//! without naming a lineage and says nothing about media-type parameters.
+//!
+//! What the released text does fix is the refusal shape, and both branches here
+//! are exactly those MUSTs: an unrecognized `version` on `Accept` is an aspect
+//! of the request the service cannot fulfill ("it MUST respond with HTTP status
+//! code `406 Not Acceptable`") and an unrecognized `version` on `Content-Type`
+//! is a payload it cannot process as XML ("it MUST respond with HTTP status code
+//! `415 Unsupported Media Type`"). Selection applies to canonical RM documents
+//! only; the OPT 1.4 template representation is always v1 (`openehr_its::opt14`).
 
 #![expect(
     clippy::disallowed_types,
@@ -345,16 +344,11 @@ fn best_xml_range(accept: &str) -> Option<&str> {
 /// service cannot fulfill this aspect of the request, it MUST respond with
 /// HTTP status code `406 Not Acceptable`").
 ///
-/// NOTE: the lineage is resolved AFTER the format, as a second gate, rather
-/// than folded into [`match_quality`] as an extra condition on the range. The
-/// two differ in exactly one case — an `Accept` naming an unserved lineage
-/// AND some other acceptable format
-/// (`application/json;q=0.5, application/xml;version=3`) — where folding it in
-/// would quietly serve JSON and this gate answers `406` instead. `406` is the
-/// deliberate choice: the parameter exists so a client can be specific about
-/// the representation it can consume, and substituting a different one
-/// defeats that. No openEHR spec governs the parameter — our own
-/// design/extension — so nothing released is bent either way.
+/// NOTE: the lineage is a second gate after the format, not a condition folded
+/// into [`match_quality`], so an `Accept` naming an unserved lineage beside an
+/// otherwise acceptable format (`application/json;q=0.5, application/xml;version=3`)
+/// answers `406` rather than quietly serving a format the client ranked lower.
+/// No openEHR spec governs the parameter — our own design/extension.
 pub(crate) fn accept_xml_namespace(headers: &HeaderMap) -> Option<Namespace> {
     let Some(accept) = header_str(headers, header::ACCEPT) else {
         return Some(Namespace::V2);

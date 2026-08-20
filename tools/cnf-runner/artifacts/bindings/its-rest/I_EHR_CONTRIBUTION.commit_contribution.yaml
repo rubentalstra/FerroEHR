@@ -87,10 +87,12 @@ outcomes:
     # invalid (e.g. malformed request URL syntax, missing required header or
     # parameter, or syntactically invalid header, parameter or content …)".
     # Distinct from `validation_failed`, which is the well-formed-but-
-    # semantically-unfollowable branch: this kind is for an envelope that does
-    # not match the released `NewContribution`/`UpdateVersion` schemas at all —
-    # a member missing a `required` property, or carrying one the schemas do
-    # not declare.
+    # semantically-unfollowable branch: this kind covers an envelope that does
+    # not match the released `NewContribution`/`UpdateVersion` schemas — a
+    # member missing a `required` property, or carrying one the schemas do not
+    # declare — AND the same response's change-control clause ("the
+    # modification type does not match the operation"), e.g. a delete member
+    # declaring a non-523 lifecycle_state (#2450).
     status: 400
     body: error_loose
   not_found: { status: 404 }              # 404_unknown_ehr_id.yaml — the EHR the route addresses does not exist

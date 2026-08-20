@@ -998,6 +998,10 @@ pub(crate) async fn update(
 /// Logically delete an object under its own contribution (master06 §Logical
 /// Deletion).
 ///
+/// Takes only the client `signature` rather than a whole [`WriteEnvelope`]:
+/// deletion fixes the lifecycle state at `523|deleted|` itself, so an
+/// envelope lifecycle here would be a silently dropped instruction (#2450).
+///
 /// # Errors
 /// [`ServiceError::NotFound`] when `(ehr_id, kind, vo_id)` does not address a
 /// stored object; [`ServiceError::VersionConflict`] when `expected` is not the
@@ -1014,7 +1018,7 @@ pub(crate) async fn delete(
     kind: Kind,
     expected: Option<TreeId>,
     audit: &AuditInput,
-    envelope: WriteEnvelope,
+    signature: Option<String>,
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
     let (committed, contribution_id) = apply_change(
@@ -1031,7 +1035,7 @@ pub(crate) async fn delete(
             vo_id,
             kind,
             expected,
-            signature: envelope.signature,
+            signature,
         },
     )
     .await?;

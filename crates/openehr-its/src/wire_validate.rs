@@ -129,8 +129,8 @@ pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<Invarian
 /// `LOCATABLE.Archetyped_valid`, the data-structure shape duties, and the
 /// archetype-conformance pass — are NOT relaxed here; only the
 /// mandatory-presence and cardinality-lower-bound layers are
-/// (`openehr_rm::v1_2::validate::check_mandatory_containers` /
-/// `nonempty_list_violations`, which the relaxed walker skips).
+/// (`openehr_rm::v1_2::validate::check_mandatory_containers`,
+/// which the relaxed walker skips).
 pub fn validate_rm_invariants_relaxed_as(
     ty: &str,
     value: &Value,
@@ -192,14 +192,13 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
     };
-    // The core path (fast/typed), then the three orthogonal layers — the
-    // model-driven mandatory-container lower bounds, the model-driven
-    // present-implies-non-empty family, and the terminology-backed invariants
+    // The core path (fast/typed), then the two orthogonal layers — the
+    // model-driven mandatory-container lower bounds and the
+    // terminology-backed invariants
     // (each dispatches on the same `_type`). The core tiers stay a pure pair so
     // the fast-vs-typed equivalence property holds exactly.
     validate_rm_invariants_as(ty, value, out);
     openehr_rm::v1_2::validate::check_mandatory_containers(ty, value, out);
-    openehr_rm::v1_2::validate::nonempty_list_violations(ty, value, out);
     openehr_rm::v1_2::validate::terminology::validate_rm_terminology(ty, value, out);
 }
 

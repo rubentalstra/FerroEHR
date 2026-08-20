@@ -122,17 +122,12 @@ impl BmmModel {
     ///
     /// Rendered `<rm_publisher>_<schema_name>_<rm_release>`, lower-cased.
     ///
-    /// NOTE (adjudicated): the v2 function states the three inputs but not the
-    /// join. Its v3 counterparts give it twice —
-    /// `org.openehr.lang.bmm3.bmm_model.adoc` §Functions `model_id`
-    /// ("Identifier of this model, lower-case, formed from:
-    /// `<rm_publisher>_<model_name>_<rm_release>`. E.g. `"openehr_ehr_1.0.4"`")
-    /// and `…bmm3.bmm_definitions.adoc` §Functions `create_schema_id`, whose
-    /// examples are `openehr_rm_1.0.3`, `openehr_test_1.0.1`,
-    /// `iso_13606_1_2008_2.1.2`. `create_schema_id`'s prose says the separator
-    /// is `'-'` while every one of its own examples uses `'_'`, and `model_id`'s
-    /// explicit template plus all five examples agree on `'_'`; the underscore
-    /// join therefore wins, and the `'-'` prose is read as an editorial slip.
+    /// NOTE: the v2 function states the inputs but not the join; the v3
+    /// counterpart's explicit template and all five examples agree on `'_'`
+    /// (`org.openehr.lang.bmm3.bmm_model.adoc` §Functions `model_id`:
+    /// `<rm_publisher>_<model_name>_<rm_release>`), so the underscore join
+    /// wins and `create_schema_id`'s lone `'-'` prose is read as an editorial
+    /// slip.
     #[must_use]
     pub fn schema_id(&self) -> String {
         compose_schema_id(&self.rm_publisher, &self.schema_name, &self.rm_release)
@@ -320,16 +315,12 @@ impl BmmModel {
     /// `class_definitions` is preferred over the copy embedded in the
     /// descendant's `ancestors` map.
     ///
-    /// NOTE: [`BmmClass::flat_properties`] is the pure class-level function the
-    /// class doc declares, and it can only see what the class embeds. A schema
-    /// whose embedded ancestor copies are shallow (`BMM_CLASS.ancestors` is a
-    /// keyed map that a loader may populate with reference-shaped stubs, and
-    /// `P_BMM_CLASS.ancestors` is a list of NAMES) would then hide inherited
-    /// properties. Since `BMM_MODEL.class_definitions` is "All classes in this
-    /// schema" (`org.openehr.lang.bmm.bmm_model.adoc` §Attributes), it is the
-    /// richer source, so the model-level flattening consults it — a strict
-    /// superset of the class-level result, with the same override precedence
-    /// (nearer class wins) and cycle-safe.
+    /// NOTE: the class-level [`BmmClass::flat_properties`] sees only what the
+    /// class embeds, and shallow ancestor copies would hide inherited
+    /// properties — so the model-level flattening consults
+    /// `BMM_MODEL.class_definitions` ("All classes in this schema",
+    /// `org.openehr.lang.bmm.bmm_model.adoc` §Attributes): a strict superset
+    /// with the same nearer-class-wins precedence, cycle-safe.
     fn flat_properties(&self, a_type_name: &str) -> Option<BTreeMap<&str, &BmmProperty<BmmType>>> {
         let class = self.class_definition(a_type_name)?;
         let mut out = BTreeMap::new();

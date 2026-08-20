@@ -779,7 +779,8 @@ fn version_selection(spec: &ExtractSpec) -> Result<VersionSelection, SmError> {
     if !vs.include_data && !vs.include_revision_history {
         return Err(SmError::precondition(
             "include_data = false requires include_revision_history = true \
-             (EXTRACT_VERSION_SPEC: data excluded ⇒ revision-history-only)",
+             (EXTRACT_VERSION_SPEC.Includes_revision_history_valid: data \
+             excluded ⇒ revision-history-only)",
         ));
     }
     Ok(VersionSelection {

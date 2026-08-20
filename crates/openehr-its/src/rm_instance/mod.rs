@@ -53,7 +53,7 @@ use std::fmt::Write as _;
 use openehr_rm::v1_2::model::declared_concrete_type;
 use openehr_rm::v1_2::validate::{
     check_archetyped_valid, check_cluster_items_present, check_data_structure_shapes,
-    check_mandatory_containers, nonempty_list_violations,
+    check_mandatory_containers,
 };
 
 use crate::flat::webtemplate::model::WebTemplate;
@@ -215,9 +215,8 @@ pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<Valid
 /// "respects the same template and archetype(s), but with all existence and
 /// cardinality lower limits set to zero".
 ///
-/// Concretely, exactly four things change relative to the strict entry point:
-/// [`openehr_rm::v1_2::validate::check_mandatory_containers`] and
-/// [`openehr_rm::v1_2::validate::nonempty_list_violations`] are not run, the
+/// Concretely, exactly three things change relative to the strict entry point:
+/// [`openehr_rm::v1_2::validate::check_mandatory_containers`] is not run, the
 /// `CLUSTER.items` presence duty
 /// ([`openehr_rm::v1_2::validate::check_cluster_items_present`]) is not run, and the
 /// class-invariant tier goes through
@@ -342,11 +341,6 @@ pub(crate) fn rm_invariant_pass(
             // equivalence property stays exact). Relaxed to zero on a
             // `553|incomplete|` commit (master06 §Incomplete Content).
             check_mandatory_containers(effective, v, &mut inv);
-            // The optional-container family (`x /= Void implies not x.is_empty`),
-            // over the BMM-derived rule table — the second orthogonal model-driven
-            // layer, kept outside the core pair for the same reason. Same
-            // relaxation: "container attributes may be empty".
-            nonempty_list_violations(effective, v, &mut inv);
         }
     }
     // The JSON-level per-node checks (`openehr-rm`'s own value semantics):

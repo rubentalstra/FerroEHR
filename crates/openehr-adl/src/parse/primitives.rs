@@ -199,17 +199,12 @@ impl Parser<'_> {
     /// single-character regex form (L827-841) needs no separate production —
     /// it is a `CONTAINED_REGEXP` and lands on the same carrier.
     ///
-    /// NOTE: there is no `C_CHARACTER` class to build. Neither vendored AOM
-    /// generation defines one — the AM 1.4.0 BMM's constraint model has
-    /// `C_BOOLEAN`/`C_STRING`/`C_INTEGER`/`C_REAL`/`C_DATE`/`C_TIME`/
-    /// `C_DATE_TIME`/`C_DURATION`/`C_ORDINAL`/`C_CODED_TEXT`/`C_QUANTITY` and
-    /// the AM 2.4.0 BMM's has the AOM2 successors of the same set, neither with
-    /// a character constrainer, and `cadl14_primitives.g4` `c_primitive_object`
-    /// likewise has no `c_character` alternative. The carrier is therefore
-    /// `C_STRING` — whose value space, a set of literal strings, contains the
-    /// single-character strings exactly — with the constrained RM type name
-    /// (`Character`) kept on the object so nothing downstream has to guess.
-    /// No openEHR spec governs this mapping — our own design/extension.
+    /// NOTE: neither vendored AOM generation defines a `C_CHARACTER` class
+    /// (the AM 1.4.0 and 2.4.0 BMM constraint models both lack a character
+    /// constrainer), so the carrier is `C_STRING` — whose value space
+    /// contains the single-character strings exactly — with the constrained
+    /// RM type name (`Character`) kept on the object. No openEHR spec governs
+    /// this mapping — our own design/extension.
     fn parse_c_character(&mut self, node_id: String) -> PResult<CObject> {
         let mut constraint = Vec::new();
         loop {

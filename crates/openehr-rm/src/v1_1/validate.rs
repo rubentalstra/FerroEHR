@@ -21,11 +21,12 @@
 //!    checks).
 //! 2. **The JSON-level per-node checks the typed model cannot express** —
 //!    [`check_mandatory_containers`] (model-driven container lower bounds),
-//!    [`nonempty_list_violations`] (the `x /= Void implies not x.is_empty`
-//!    family, over the BMM-derived rule table), [`check_archetyped_valid`] and
-//!    [`check_data_structure_shapes`]. Each is a pure function over the node's
-//!    own value, run as its own layer beside the fast/typed core pair so the
-//!    equivalence property between those two stays exactly the core property.
+//!    [`check_archetyped_valid`] and [`check_data_structure_shapes`]. Each is
+//!    a pure function over the node's own value, run as its own layer beside
+//!    the fast/typed core pair so the equivalence property between those two
+//!    stays exactly the core property. (The `x /= Void implies not x.is_empty`
+//!    family holds BY CONSTRUCTION — `Option<NonEmptyVec<T>>`/`NonEmptyVec<T>`
+//!    shapes make the forbidden state unrepresentable, #1730/#2445.)
 //! 3. **The terminology-backed invariants**, in the sibling [`terminology`]
 //!    module (they need the openEHR terminology bundle, not just the node).
 //! 4. **The `553|incomplete|` presence relaxation predicates**, in the sibling
@@ -183,9 +184,10 @@ pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantV
 /// array as an empty `Vec` (wire tolerance), so the omission is invisible to
 /// typed decoding — the lower bound is enforced HERE, from the model, for every
 /// class uniformly. The OPTIONAL-attribute family (`x /= Void implies not
-/// x.is_empty`, e.g. `COMPOSITION.content`) is a different rule with a different
-/// evaluator ([`nonempty_list_violations`]); this function only judges MANDATORY
-/// containers, so the two never double-report.
+/// x.is_empty`, e.g. `COMPOSITION.content`) needs no evaluator at all: those
+/// attributes emit as `Option<NonEmptyVec<T>>`, so the forbidden
+/// present-but-empty state is unrepresentable (#1730); this function judges
+/// MANDATORY containers only.
 /// `List<Octet>` is exempt by shape: canonical JSON renders it as an inline
 /// base64 string, which presence-checks as a non-array member.
 ///
@@ -220,48 +222,6 @@ pub fn check_mandatory_containers(ty: &str, value: &Value, out: &mut Vec<Invaria
     }
 }
 
-/// The `x /= Void implies not x.is_empty` invariant family for one node.
-///
-/// Every rule of the generated `NONEMPTY_LIST_RULES` table (in the private
-/// `generated` module) that applies to `ty` is evaluated against the node's own
-/// attributes.
-///
-/// The rule table is READ FROM THE BMM (every class invariant with that exact
-/// assertion shape over a container attribute), and a rule applies to its
-/// declaring class **and its transitive concrete descendants** — resolved from
-/// the generated static RM model ([`crate::v1_1::model::descendants`]), never from a
-/// hand-maintained list — so `LOCATABLE.Links_valid`,
-/// `DV_ORDERED.Other_reference_ranges_validity` and
-/// `ENTRY.Other_participations_valid` reach every descendant, and a class the
-/// spec adds to the hierarchy is covered the moment the model is regenerated.
-///
-/// The optional-container emission shape (`Option<Vec<T>>`) is what makes the
-/// family decidable at all: the forbidden state is the attribute PRESENT with
-/// zero members, which the canonical-JSON reader now preserves
-/// (`openehr_its::json_codec::runtime::optional_container_field`). This
-/// evaluator reads it off the node, which is the same value the typed model
-/// carries.
-///
-/// Kept OUTSIDE the fast/typed core pair (the caller runs it as its own layer,
-/// exactly like [`check_mandatory_containers`]), so the fast-vs-typed
-/// equivalence property stays exactly the core property and no rule can be
-/// reported twice.
-///
-/// Every violation is reported on the node itself (an empty
-/// [`InvariantViolation::path`]); the caller prefixes the absolute RM path.
-pub fn nonempty_list_violations(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    for (class, attribute, invariant) in generated::NONEMPTY_LIST_RULES {
-        if *class != ty && !crate::v1_1::model::descendants(class).contains(&ty) {
-            continue;
-        }
-        let present_and_empty = value
-            .get(*attribute)
-            .and_then(Value::as_array)
-            .is_some_and(Vec::is_empty);
-        generated::nonempty_list_core(ty, attribute, invariant, present_and_empty, out);
-    }
-}
-
 /// The declared-slot-type conformance rule, over the BMM-generated attribute
 /// model.
 ///
@@ -274,8 +234,7 @@ pub fn nonempty_list_violations(ty: &str, value: &Value, out: &mut Vec<Invariant
 /// the WRONGNESS half of slot typing — it never relaxes ("data may be
 /// missing, but it may not be wrong", RM common
 /// `master06-change_control_package.adoc` §Incomplete Content); the
-/// presence/lower-bound half lives in [`check_mandatory_containers`] /
-/// [`nonempty_list_violations`].
+/// presence/lower-bound half lives in [`check_mandatory_containers`].
 ///
 /// Returns `None` (no judgement) when the slot is unknown to the model, the
 /// declared type is not a modelled class (a primitive such as `String`), or
@@ -339,22 +298,12 @@ pub fn check_slot_member_is_object(parent_type: &str, field: &str) -> Option<Inv
 /// `archetype_details`.
 ///
 /// NOTE: the converse arm ("an archetype-HRID node must carry
-/// `archetype_details`") is NOT enforced, because the invariant's own
-/// operand is undefined: `locatable.adoc` §Functions gives
-/// `is_archetype_root ()` a Meaning sentence only ("True if this node is
-/// the root of an archetyped structure") — no postcondition, no derivation
-/// expression. Under the reference-object-model reading, where
-/// `is_archetype_root` IS the presence of `archetype_details`, the
-/// invariant is a tautology and the converse arm asserts nothing; only
-/// under the node-id reading would it mandate `archetype_details` on every
-/// archetype-HRID node, and the released text does not choose between the
-/// two. An arm that is underivable from the released text is not
-/// enforceable, so it is reported rather than gated. Corroboration, not the
-/// ground:
-/// the CNF valid data sets and the canonical-JSON corpus systematically
-/// omit `archetype_details` on nested archetype roots. The COMPOSITION
-/// root arm stays separately enforced (`composition_impl.rs`
-/// `Is_archetype_root`).
+/// `archetype_details`") is NOT enforced — `locatable.adoc` §Functions gives
+/// `is_archetype_root ()` no postcondition or derivation, so the arm is
+/// underivable from the released text (a tautology under the
+/// reference-object reading) and is reported rather than gated; the
+/// COMPOSITION root arm stays separately enforced
+/// (`composition_impl.rs` `Is_archetype_root`).
 ///
 /// The second arm is the root node-id **identity** rule: a node that DOES
 /// carry `archetype_details` is an archetype root, and

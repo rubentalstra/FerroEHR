@@ -24,7 +24,7 @@ fn composition_serializes_to_canonical_xml() {
     println!("{xml}");
     assert!(xml.starts_with("<composition"), "root element");
     assert!(
-        xml.contains("xmlns=\"http://schemas.openehr.org/v1\""),
+        xml.contains("xmlns=\"http://schemas.openehr.org/v2\""),
         "v1 namespace"
     );
     assert!(xml.contains("archetype_node_id="), "locatable attribute");

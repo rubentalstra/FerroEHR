@@ -7,40 +7,26 @@
 //! logic, built on the shared [`crate::versioning`] machinery with
 //! `ehr_id = None` (no EHR scope — our own design).
 //!
-//! NOTE: a relationship has TWO modelled representations and the released text
-//! reconciles them nowhere, so this module realizes the SM's. The RM makes a
-//! relationship compositional data of its source party — "`PARTY_RELATIONSHIPs`
-//! are stored as part of the data of the `PARTY` designated as the source. This
-//! means that the relationships attribute is by value" (RM demographic
-//! `docs/demographic/master02-demographic_package.adoc` §Party Relationships
-//! L44), versioned with that party ("A Version of a `PARTY` includes all the
-//! compositional parts, such as identities, contacts, Party relationships of
-//! which it is the source", §Versioning Semantics L48) — and declares no
-//! `VERSIONED_PARTY_RELATIONSHIP` class at all. The SM instead gives every
-//! relationship its own version container: all six `I_PARTY_RELATIONSHIP`
-//! operations are keyed by `a_versioned_party_rel_id`,
-//! `update_party_relationship` "Causes server-side creation of a new
-//! `ORIGINAL_VERSION` and `CONTRIBUTION`", and four operations declare
-//! `versioned_object_does_not_exist` (SM `UML/classes/i_party_relationship.adoc`).
-//! This module implements the SM reading — independently-versioned containers,
-//! addressed on the `versioned_party_relationship` read surface — while an
-//! inline `relationships` list in a committed PARTY body stays RM-valid data
-//! that is validated, stored and served verbatim. The two representations are
-//! DISJOINT: neither is auto-synchronized into the other — no released text
-//! relates them, and the container half has no released wire at all.
+//! NOTE: a relationship has TWO modelled representations the released text
+//! reconciles nowhere, and this module realizes the SM's — all six
+//! `I_PARTY_RELATIONSHIP` operations are keyed by `a_versioned_party_rel_id`, so
+//! every relationship gets its own version container (SM
+//! `UML/classes/i_party_relationship.adoc`) — where the RM instead makes it
+//! compositional data of its source party, versioned with that party and with no
+//! `VERSIONED_PARTY_RELATIONSHIP` class (RM demographic
+//! `docs/demographic/master02-demographic_package.adoc` §Party Relationships).
 //!
-//! NOTEs on the SM spec asymmetries this module normalizes to the PARTY
-//! pattern:
-//! - `i_party_relationship.adoc` gives **no** `has_party_relationship`
-//!   precondition on `get_party_relationship`, yet lists a
-//!   `versioned_object_does_not_exist` error — we treat an unknown id as `404`,
-//!   the same has-check the PARTY get performs, so the two demographic families
-//!   behave identically.
-//! - `update_party_relationship` retains the SM's `definitions_valid`
-//!   precondition (structural validity of the new version) rather than the
-//!   PARTY's `valid_content`; both reduce to the same structural check here
-//!   (`validate::relationship_check`), so the normalization is
-//!   behaviour-preserving.
+//! The two representations are DISJOINT: neither is auto-synchronized into the
+//! other, and an inline `relationships` list in a committed PARTY body stays
+//! RM-valid data that is validated, stored and served verbatim.
+//!
+//! NOTE: two SM asymmetries are normalized to the PARTY pattern —
+//! `i_party_relationship.adoc` gives no `has_party_relationship` precondition on
+//! `get_party_relationship` yet lists `versioned_object_does_not_exist`, so an
+//! unknown id is a `404` as on the PARTY get; and `update_party_relationship`'s
+//! `definitions_valid` precondition reduces to the same structural check as the
+//! PARTY's `valid_content` (`validate::relationship_check`), so the
+//! normalization is behaviour-preserving.
 
 #![expect(
     clippy::disallowed_types,
@@ -365,7 +351,7 @@ impl FerroEhrService {
             Kind::PartyRelationship,
             Some(current.tree),
             &audit,
-            WriteEnvelope::default(),
+            None,
             &ctx,
         )
         .await?;

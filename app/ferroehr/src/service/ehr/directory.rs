@@ -12,19 +12,14 @@
 //! [`crate::versioning`]; the FOLDER-tree commit validation lives in
 //! [`validation`](super::validation).
 //!
-//! NOTE (settled — owner adjudication 2026-08-03: raw-CONTRIBUTION-only): the
-//! read side is multi-hierarchy (the `ehr_summary` folder refs); the write
-//! side manages the single directory slot (= `folders[1]`) only, and that is
-//! the whole write surface. Additional `EHR.folders` hierarchies are
-//! committable through a CONTRIBUTION, which is the only committal path the
-//! release describes for them: ITS-REST and the SM bind a directory resource
-//! and nothing else (RM ehr `master04-ehr_package.adoc` §Folders declares
-//! `EHR.folders` `List<VERSIONED_FOLDER>` with `EHR.directory =
-//! folders.item(1)`, while `SM/docs/UML/classes/i_ehr_directory.adoc` keys
-//! every operation on the one directory). No openEHR spec governs a
-//! multi-hierarchy directory WRITE surface — there is no wire for one to
-//! implement, and this server does not invent an extension where no consumer
-//! needs one.
+//! NOTE: the read side is multi-hierarchy (the `ehr_summary` folder refs) while
+//! the write side manages the single directory slot (`folders[1]`) only —
+//! additional `EHR.folders` hierarchies are committable through a CONTRIBUTION,
+//! the only committal path the release describes for them (RM ehr
+//! `master04-ehr_package.adoc` §Folders declares `EHR.folders`
+//! `List<VERSIONED_FOLDER>` with `EHR.directory = folders.item(1)`, while
+//! `SM/docs/UML/classes/i_ehr_directory.adoc` keys every operation on the one
+//! directory). No openEHR spec governs a multi-hierarchy directory WRITE surface.
 
 #![expect(
     clippy::disallowed_types,
@@ -369,7 +364,7 @@ impl FerroEhrService {
             Kind::Folder,
             expected,
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            None,
             &self.signing_ctx(),
         )
         .await?;

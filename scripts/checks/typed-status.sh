@@ -58,15 +58,17 @@ cd "$(dirname "$0")/../.."
 # `StatusCode` in memory and applies `.as_u16()` only where a number is rendered
 # or serialized, with the committed artifacts proven byte-identical.
 #
-# Passing explicit paths (or `--all-really`) still checks anything, so the sweeps
-# can verify themselves as they land.
+# `--all-really` still checks anything, so the #2055 sweep can verify itself
+# as it lands. Explicit paths (the per-edit hook) honour the SAME parked-crate
+# exclusion as `--all` — the hook must never block an edit CI accepts (#2441's
+# QA pass hit exactly that on the console's u16 DTO fields).
 collect() {
   if [ "${1:-}" = "--all-really" ]; then
     git ls-files '*.rs'
   elif [ "${1:-}" = "--all" ]; then
     git ls-files '*.rs' | grep -v '^app/ferroehr-admin-ui/'
   elif [ "$#" -gt 0 ]; then
-    printf '%s\n' "$@"
+    printf '%s\n' "$@" | grep -v 'app/ferroehr-admin-ui/' || true
   else
     git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
   fi

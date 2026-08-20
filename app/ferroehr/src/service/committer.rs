@@ -28,15 +28,11 @@ pub struct CommitterIdentity {
     /// this deployment.
     ///
     /// NOTE: no openEHR spec governs the value — our own design/extension.
-    /// `AUDIT_DETAILS.committer` is a `PARTY_PROXY` and the RM only says the
-    /// identifying information may be "in the form of a system login
-    /// identifier" (RM common `master04-generic_package.adoc` §Audit Details);
     /// `DV_IDENTIFIER.issuer` is the "authority which issues the kind of id
     /// used in the id field of this object" (RM `data_types`
-    /// `UML/classes/org.openehr.rm.data_types.dv_identifier.adoc`
-    /// §Attributes) — for a subject minted by an identity provider that
-    /// authority is the provider, not this CDR. Which concrete string names it
-    /// is spec-silent.
+    /// `UML/classes/org.openehr.rm.data_types.dv_identifier.adoc` §Attributes);
+    /// for a subject minted by an identity provider that authority is the
+    /// provider, not this CDR, and which concrete string names it is spec-silent.
     pub issuer: Option<String>,
 }
 

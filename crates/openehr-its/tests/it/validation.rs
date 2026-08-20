@@ -19,17 +19,11 @@
 //! `*_invalid` pair plus mutations of valid corpus compositions) must be rejected
 //! with a sensible path + kind.
 //!
-//! NOTE — why the CNF `test_data_sets` are not vendored here: the openEHR
-//! `specifications-CNF` repository is licensed **CC BY-SA 3.0** (a copyleft /
-//! share-alike license — checked at vendoring time), which is incompatible with
-//! vendoring verbatim into this workspace's fixture tree the way the existing
-//! **Apache-2.0** `openEHR_SDK` corpus already is (see the `PROVENANCE.md` /
-//! `NOTICE.md` under `openehr-its/tests/vendor/` and
-//! `openehr-its/tests/fixtures/sdk/`). The SDK corpus is the same class of
-//! oracle (real openEHR canonical instances + their OPTs, including
-//! `nested.en.v1`, `cardinality_of_section`, `test_all_types`, IPS, …), it needs
-//! no network at test time, and it carries a real valid/invalid pair
-//! (`ips_canonical` / `ips_invalid`). This is the fallback the task sanctions.
+//! NOTE: the CNF `test_data_sets` are not vendored here — the
+//! `specifications-CNF` repository is CC BY-SA 3.0, incompatible with this
+//! fixture tree's Apache-2.0 vendoring — so the Apache-2.0 `openEHR_SDK`
+//! corpus (`openehr-its/tests/vendor/` + `tests/fixtures/sdk/`) serves as the
+//! same class of oracle, including a real valid/invalid pair.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

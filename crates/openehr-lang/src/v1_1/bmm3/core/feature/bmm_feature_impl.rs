@@ -13,22 +13,14 @@
 //! `…bmm3.bmm_property.adoc`, `…bmm3.bmm_constant.adoc`, all §Functions and
 //! §Invariants.
 //!
-//! NOTE (adjudicated boundary — the declared feature INVARIANTS are not
-//! enforced): `BMM_FUNCTION.Operator_validity` ("`operator_def /= Void implies
-//! arity in |1..2|`"), `BMM_FUNCTION.Inv_signature_has_result`,
-//! `BMM_FUNCTION.Inv_result_type` ("`type = Result.type`"),
-//! `BMM_PROCEDURE.Inv_signature_no_result`, `BMM_PROPERTY.Inv_signature_no_args`
-//! and `BMM_CONSTANT.Inv_not_nullable` are class-definition invariants of a
-//! meta-model this workspace only ever CONSTRUCTS from a vendored schema, never
-//! edits: the v3 generation has no materialisation source that could produce a
-//! violating instance (P_BMM is the v2.x persistence form,
-//! `LANG/docs/bmm/master06-persistence.adoc`, and its routine/constant
-//! attributes are opaque strings), and openEHR publishes no validation-report
-//! shape for a BMM model. Enforcement would therefore be a check with no input
-//! and no consumer. The functions the invariants are written against
-//! ([`crate::v1_1::bmm3::core::feature::bmm_feature_impl`]'s `signature`, `arity`) ARE
-//! implemented here, so an invariant pass becomes ordinary work the day a v3
-//! model is built from an editable source.
+//! NOTE: the declared feature invariants (`Operator_validity`,
+//! `Inv_signature_has_result`, `Inv_result_type`, and peers) are NOT enforced
+//! — this workspace only CONSTRUCTS v3 models from vendored schemas (P_BMM is
+//! the v2.x persistence form, `LANG/docs/bmm/master06-persistence.adoc`, its
+//! routine/constant attributes opaque strings), so no materialisation source
+//! can produce a violating instance; the functions they are written against
+//! (`signature`, `arity`) ARE implemented, so an invariant pass is ordinary
+//! work the day a v3 model is built from an editable source.
 
 use crate::v1_1::bmm3::core::bmm_formal_element::BmmFormalElement;
 use crate::v1_1::bmm3::core::entity::bmm_container_type::BmmContainerType;

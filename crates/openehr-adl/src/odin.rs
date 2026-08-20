@@ -321,16 +321,14 @@ pub(crate) enum OdinJsonError {
 /// design/extension. An `<>` / `<...>` empty block is a genuine "no value" and
 /// maps to `null`.
 ///
-/// NOTE: an ODIN interval (`|0..5|`) encodes as the object shape the canonical
+/// An ODIN interval (`|0..5|`) encodes as the object shape the canonical
 /// codec emits for a BASE `Interval<T>` — `_type` first, then the present
-/// bounds, then the four boundary flags (the emitted `ToJson` for
-/// `Point_interval`/`Proper_interval` in
-/// `crates/openehr-its/src/json_codec/generated/impls.rs`). The `_type` is
-/// `Point_interval` exactly when the interval denotes a single value (both
-/// sides bounded, both bounds included, both bounds equal) and
-/// `Proper_interval` otherwise — the same predicate
-/// [`crate::aom::interval::point_value_i32`] adjudicates for the constraint
-/// model.
+/// bounds, then the four boundary flags.
+///
+/// NOTE: `_type` is `Point_interval` exactly when the interval denotes a
+/// single value (both sides bounded, included, and equal) — the same
+/// predicate [`crate::aom::interval::point_value_i32`] adjudicates for the
+/// constraint model.
 ///
 /// # Errors
 /// [`OdinJsonError`] for an interval form the bound representation cannot

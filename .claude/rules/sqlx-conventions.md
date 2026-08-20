@@ -14,8 +14,15 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
 - The schema is **our own PG18-native design** (re-authored
   enterprise-grade): the unified `node` table, the temporal
   `vo_version` table, supporting tables, and our `ext` helper functions. It
-  is live and CNF-pipeline-verified — schema changes are migrations on top, never a
-  rewrite of shipped history.
+  is live and CNF-pipeline-verified.
+- **Greenfield migration policy (owner ruling 2026-08-20, issue #2452):**
+  while the product is greenfield — no installation upgrades a database in
+  place — the squashed baselines and existing migration files ARE edited in
+  place; deployments recreate. Do NOT add checksum-reconciliation machinery,
+  immutability guards, or upgrade-path repair for edited migrations, and do
+  not re-file the in-place edits as a defect. sqlx's applied-migration
+  immutability discipline arms only when the owner declares stabilization
+  (a future explicit ruling), at which point migrations become append-only.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,

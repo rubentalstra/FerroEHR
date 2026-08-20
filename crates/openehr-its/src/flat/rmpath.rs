@@ -69,19 +69,13 @@ pub(crate) fn navigate<'a>(roots: &[&'a Value], segs: &[PathSegment]) -> Vec<&'a
 
 /// One template-path step with a conditional name fallback.
 ///
-/// NOTE (template-name predicates): the paths fed here are
-/// **template-derived** (`WebTemplateNode.aqlPath`), so a `[atNNNN,'name']`
-/// name conjunct carries the *template's* term text. RM `LOCATABLE.name` is a
-/// runtime attribute an instance may legitimately redefine when the archetype
-/// does not constrain it (RM common, `LOCATABLE.name`), so a strict
-/// name-conjunct match (BASE `master11-paths` semantics — correct for
-/// instance-authored AQL/RM paths) can silently locate nothing and skip the
-/// downstream check. The fallback (retry by `archetype_node_id` alone when the
-/// strict match finds nothing) is only sound when the name is **redundant** —
-/// i.e. the archetype id is unique among the template siblings being matched
-/// (`allow_name_fallback`, computed by the caller from its sibling set). Where
-/// a template distinguishes same-id siblings *by name* (the corona-corpus
-/// shape), the fallback must stay off or it would claim the wrong siblings.
+/// NOTE: a template-derived `[atNNNN,'name']` conjunct carries the TEMPLATE's
+/// term text while an instance may legitimately redefine `LOCATABLE.name`
+/// (RM common), so the strict BASE `master11-paths` match can locate nothing;
+/// the id-only fallback is sound only when the name is REDUNDANT — the id
+/// unique among the matched siblings (`allow_name_fallback`, caller-computed)
+/// — and must stay off where a template distinguishes same-id siblings by
+/// name.
 pub(crate) fn select_children_matched<'a>(
     container: &'a Value,
     seg: &PathSegment,

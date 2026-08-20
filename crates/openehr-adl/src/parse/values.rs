@@ -60,19 +60,13 @@ impl Parser<'_> {
     /// `c_string_spec : … | string_list_value ',' SYM_LIST_CONTINUE`
     /// (`ADL1.4/master05-cadl.adoc` §Syntax L1244-1249).
     ///
-    /// NOTE: the marker adds no member and no openness flag. Its only normative
-    /// gloss in the vendored specs is a LIST INDICATOR — `ADL1.4/master04-dadl`
-    /// §Data of any primitive type L686 and `LANG/docs/odin/master07-leaf_data`
-    /// §Lists L208, both: "Lists which happen to have only one datum are
-    /// indicated by using a comma followed by a list continuation marker of
-    /// three dots". AOM 1.4's `C_STRING.list_open` ("the list … is not
-    /// considered exhaustive") is the only model property the marker could
-    /// otherwise set, but no vendored ADL 1.4 text binds the syntax to it, and
-    /// the AOM2 `C_STRING` this parser builds has no such property at all
-    /// (AM 2.4.0 BMM: `constraint` / `default_value` / `assumed_value` only).
-    /// Inferring openness from the marker would silently turn a stated
-    /// constraint into "any value"; the list-indicator reading is the one the
-    /// spec states, so the constraint is exactly the listed values.
+    /// NOTE: the marker adds no member and no openness flag — its only
+    /// normative gloss is a LIST INDICATOR (`ADL1.4/master04-dadl` §Data of
+    /// any primitive type L686; `LANG/docs/odin/master07-leaf_data` §Lists
+    /// L208), no vendored text binds it to AOM 1.4's `list_open`, and the
+    /// AOM2 `C_STRING` built here has no such property — so the constraint is
+    /// exactly the listed values (inferred openness would silently turn a
+    /// stated constraint into "any value").
     pub(crate) fn eat_list_continue(&mut self) -> bool {
         self.eat(|t| matches!(t, Token::SymListContinue))
     }

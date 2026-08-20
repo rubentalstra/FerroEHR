@@ -41,9 +41,6 @@
 //! - `archetyped_core` — ARCHETYPED `Rm_version_valid`.
 //! - `party_identified_core` — PARTY_IDENTIFIED / PARTY_RELATED `Basic_validity`,
 //!   `Name_valid`.
-//! - `nonempty_list_core` — the whole `x /= Void implies not x.is_empty`
-//!   family, decidable on the typed model now that an optional container emits
-//!   as `Option<Vec<T>>`.
 //! - `resource_description_core` — RESOURCE_DESCRIPTION `Original_author_valid`,
 //!   `Lifecycle_state_valid`, `Details_valid`.
 //! - `resource_description_item_core` — RESOURCE_DESCRIPTION_ITEM
@@ -129,8 +126,7 @@
 //! - `EHR_STATUS.Is_archetype_root` — `app/ferroehr/src/service/ehr/validation.rs`: unconditional (`is_archetype_root`), so every EHR_STATUS is a root LOCATABLE; the commit-time validator runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Invariants).
 //! - `EXTRACT_CONTENT_ITEM.Item_validity` — `app/ferroehr/src/service/message/import.rs`: `is_masked xor item /= Void`: realized on the EHR-Extract import path, which rejects a masked wrapper carrying an item and an unmasked one carrying none. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_content_item.adoc §Invariants).
 //! - `EXTRACT_VERSION_SPEC.Includes_revision_history_valid` — `app/ferroehr/src/service/message/export.rs`: `not include_data implies include_revision_history`: realized where an extract request's version spec is read, before any export runs. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_version_spec.adoc §Invariants).
-//! - `PARTY.Identities_valid` — `app/ferroehr/src/service/demographic/validate.rs`: `not identities.is_empty`: the demographic write boundary rejects a party body whose `identities` is absent or empty (422). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
-//! - `PARTY.Is_archetype_root` — `app/ferroehr/src/service/demographic/validate.rs`: unconditional (`is_archetype_root`), so every party body is a root LOCATABLE; the demographic write boundary runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Is_archetype_root` — `app/ferroehr/src/service/ehr/validation.rs`: unconditional (`is_archetype_root`), so every party body is a root LOCATABLE; the demographic write boundary (`service/demographic/validate.rs`) routes every party commit through the shared root-LOCATABLE validator at the named site, whose refusal names the invariant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
 //!
 //! ## Adjudicated out of the per-node invariant layer
 //!
@@ -159,6 +155,7 @@
 //! - `ORIGINAL_VERSION.Is_merged_validity`: `other_input_version_ids = Void xor is_merged`: `is_merged` is the DERIVED function `True if this Version was created from more than just the preceding (checked out) version` (§Functions), i.e. exactly the emptiness of `other_input_version_uids` — the invariant defines it rather than constraining stored data. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
 //! - `ORIGINAL_VERSION.Other_input_version_uids_valid`: the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
 //! - `PARTY.Contacts_valid`: the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Identities_valid`: `not identities.is_empty`: holds BY CONSTRUCTION — `identities` is a mandatory `1..*` list emitted as `NonEmptyVec<PartyIdentity>`, so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse (pinned by `demographic/validate.rs` `identities_valid_is_enforced`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
 //! - `PARTY.Type_valid`: `type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
 //! - `PARTY.Uid_mandatory`: `uid /= Void`: satisfied by construction, not by a check — a demographic party's `uid` is the version container's, which the server injects at the storage/read boundary (`app/ferroehr/src/service/demographic/support.rs`), so an inbound body legitimately carries none (`app/ferroehr/src/service/demographic/validate.rs`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
 //! - `PARTY_IDENTIFIED.Identifiers_valid`: the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
@@ -198,61 +195,61 @@
 //! adjudication that excludes it — the complex bucket is accounted for
 //! in full, exactly like the emitted bucket above.
 //!
+//! ## Realized in hand-written `openehr-rm` code
+//!
+//! - `DV_EHR_URI.Scheme_valid` — `crates/openehr-rm/src/v1_2/data_types/uri/dv_ehr_uri_impl.rs`: `scheme.is_equal (Ehr_scheme)`: the DV_EHR_URI core extends the shared DV_URI core with the `ehr:` scheme rule. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc §Invariants).
+//! - `DV_INTERVAL.Limits_consistent` — `crates/openehr-rm/src/v1_2/data_types/quantity/dv_interval_impl.rs`: both-bounded limits must compare and order (`lower <= upper`); evaluated on the typed interval, dispatched with a `DvOrdered` element type by `validate/typed_dispatch.rs`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_interval.adoc §Invariants).
+//! - `DV_ORDERED.Normal_range_and_status_consistency` — `crates/openehr-rm/src/v1_2/data_types/quantity/dv_ordered_impl.rs`: the cross-member xor of `normal_status = N` against `normal_range.has (self)`, evaluated where both members are typed. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
+//! - `DV_PERIODIC_TIME_SPECIFICATION.Value_valid` — `crates/openehr-rm/src/v1_2/data_types/time_specification/dv_periodic_time_specification_impl.rs`: `value.formalism` is `HL7:PIVL` or `HL7:EIVL`, checked with the inner syntax where the value is parsed. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_periodic_time_specification.adoc §Invariants).
+//! - `ELEMENT.Inv_null_flavour_indicated` — `crates/openehr-rm/src/v1_2/data_structures/representation/element_impl.rs`: `is_null() xor null_flavour = Void`: a value-less ELEMENT carries a null_flavour and a valued one does not. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants).
+//! - `ELEMENT.Inv_null_reason_valid` — `crates/openehr-rm/src/v1_2/data_structures/representation/element_impl.rs`: `null_reason /= Void implies is_null()`: a null_reason on a valued ELEMENT is refused. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants).
+//! - `HISTORY.Period_consistency` — `crates/openehr-rm/src/v1_2/data_structures/history/history_impl.rs`: every periodic history's event offset is a whole multiple of `period`, evaluated on the typed HISTORY where the event offsets are computable. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants).
+//! - `ITEM_TAG.Inv_key_valid` — `crates/openehr-rm/src/v1_2/common/tags/item_tag_impl.rs`: `not key.is_empty and key.is_justified`: the tag key rules, realized once and read by both service seams. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants).
+//! - `Interval.Limits_consistent` — `crates/openehr-base/src/v1_3/foundation_types/interval/point_interval_impl.rs`: both-bounded limits must order (`lower <= upper`), evaluated on the typed interval. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc §Invariants).
+//! - `Iso8601_date.Day_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_date_impl.rs`: `not day_unknown implies valid_day (year, month, day)`, reported on the owning type by the shared date-component check. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date.adoc §Invariants).
+//! - `Iso8601_date.Month_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_date_impl.rs`: `not month_unknown implies valid_month (month)`, reported on the owning type by the shared date-component check. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date.adoc §Invariants).
+//! - `Iso8601_date_time.Day_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_date_impl.rs`: `valid_day (year, month, day)`, reported on the owning type by the shared date-component check the date-time reader calls. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `Iso8601_date_time.Fractional_second_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: a fractional second requires a known second and a valid fraction, reported on the owning type by the shared time-component check. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `Iso8601_date_time.Hour_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: `valid_hour (hour, minute, second)`, reported on the owning type by the shared time-component check the date-time reader calls. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `Iso8601_date_time.Minute_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: `not minute_unknown implies valid_minute (minute)`, reported on the owning type by the shared time-component check. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `Iso8601_date_time.Month_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_date_impl.rs`: `valid_month (month)`, reported on the owning type by the shared date-component check the date-time reader calls. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `Iso8601_date_time.Second_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: `not second_unknown implies valid_second (second)`, reported on the owning type by the shared time-component check. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `Iso8601_time.Fractional_second_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: a fractional second requires a known second and a valid fraction, evaluated where the time value is parsed. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc §Invariants).
+//! - `Iso8601_time.Hour_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: `valid_hour (hour, minute, second)`, evaluated where the time value is parsed. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc §Invariants).
+//! - `Iso8601_time.Minute_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: `not minute_unknown implies valid_minute (minute)`, evaluated where the time value is parsed. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc §Invariants).
+//! - `Iso8601_time.Second_valid` — `crates/openehr-base/src/v1_3/foundation_types/time/iso8601_time_impl.rs`: `not second_unknown implies valid_second (second)`, evaluated where the time value is parsed. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc §Invariants).
+//!
 //! ## Realized at the application write boundary (`app/`)
 //!
 //! - `AUTHORED_RESOURCE.Description_valid` — `app/ferroehr/src/validation/opt/resource.rs`: realized at the same whole-resource ingest seams as `Translations_valid` (the named site plus `openehr-adl` `validate/resource_meta.rs`), as the `RESOURCE_DESCRIPTION.Language_valid` membership — the literal (details ⊆ translations keys) would refuse the original language's own description item, so membership is checked against the original plus the translations. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
 //! - `AUTHORED_RESOURCE.Translations_valid` — `app/ferroehr/src/validation/opt/resource.rs`: a cross-member map rule over `translations`, realized where a whole authored resource is ingested: the OPT 1.4 template upload's resource-meta pass (the named site) and the ADL 1.4 source catalogue (`openehr-adl` `validate/resource_meta.rs`) — a present translations list is non-empty and never re-states the original language. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
 //! - `RESOURCE_DESCRIPTION.Language_valid` — `app/ferroehr/src/validation/opt/resource.rs`: `details.for_all (d | parent_resource.languages_available.has (d.language.code_string))`: realized at the whole-resource ingest seams (the named site plus `openehr-adl` `validate/resource_meta.rs`), where the owner is in hand — each description detail's language must be the owner's original language or a listed translation. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `VERSIONED_COMPOSITION.Archetype_node_id_valid` — `app/ferroehr/src/service/ehr/validation.rs`: every version's root `archetype_node_id` equals the container's first version's — checked in the commit transaction on every composition update. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.versioned_composition.adoc §Invariants).
+//! - `VERSIONED_COMPOSITION.Persistent_validity` — `app/ferroehr/src/service/ehr/validation.rs`: every version's persistence (`category` = persistent, the derived `is_persistent`) equals the container's first version's — checked in the commit transaction on every composition update. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.versioned_composition.adoc §Invariants).
 //!
 //! ## Adjudicated out of the per-node invariant layer
 //!
 //! - `AUTHORED_RESOURCE.Languages_available_valid`: `languages_available.has (original_language)`: constrains the DERIVED `languages_available()` function (§Functions), which builds its result from `original_language` — satisfied by the function's own definition (`authored_resource_impl.rs`; the `Current_revision_valid` precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
+//! - `DV_PROPORTION.Is_integral_validity`: `is_integral implies (numerator.floor = numerator …)`: `is_integral` is derived from `type`, and the `dv_proportion_core`'s `Fraction_validity` arm already refuses a non-integral numerator/denominator for exactly the integral kinds — a separate evaluation would double-report the same defect. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `EHR.Compositions_valid`: a type facet of the store-maintained reference list: the container rows are typed by `kind` in storage, so a member of the wrong container type is unrepresentable, and the ITS-REST EHR representation serves no such list (the `EHR.Directory_valid` cross-object precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `EHR.Contributions_valid`: a type facet of the store-maintained reference list: contribution rows are their own storage relation, so a non-CONTRIBUTION member is unrepresentable, and the ITS-REST EHR representation serves no such list. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `EHR.Directory_in_folders`: `folders.item(1) = directory`: the store keeps ONE directory container per EHR and materializes no `folders` list, so the antecedent (`folders /= Void`) never holds on served data (the `EHR.Directory_valid` cross-object precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `EHR.Folders_valid`: a type facet of the store-maintained reference list: folder containers are typed by `kind` in storage, and the ITS-REST EHR representation serves no `folders` list. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `ELEMENT.Inv_is_null_valid`: `is_null() = (value = Void)`: `is_null()` is the DERIVED function defined as exactly that emptiness, so nothing stored can contradict it (the `ORIGINAL_VERSION.Is_merged_validity` precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc §Invariants).
+//! - `ENTRY.Subject_validity`: `subject_is_self implies subject.generating_type = PARTY_SELF`: `subject_is_self` is the DERIVED function defined by exactly that variant test (§Functions), so the rule restates its own definition. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
+//! - `EVENT.Offset_validity1`: `offset = time.diff (parent.origin)`: `offset` is the DERIVED function defined as that difference, over the `parent` back-reference the generated model deliberately breaks — nothing stored exists for the rule to constrain. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.event.adoc §Invariants).
+//! - `INTERVAL_EVENT.Interval_start_time_valid`: `interval_start_time = time - width`: `interval_start_time` is the DERIVED function defined as that subtraction (§Functions) — no stored attribute exists for the rule to refuse. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.interval_event.adoc §Invariants).
+//! - `ITEM_LIST.Valid_structure`: `items.forall (i | i.type = ELEMENT)`: holds BY CONSTRUCTION — the BMM types `items` `List<ELEMENT>`, emitted as `Vec<Element>`, so a non-ELEMENT member is unrepresentable and the strict readers refuse it at parse. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.item_list.adoc §Invariants).
+//! - `ITEM_TABLE.Valid_structure`: rows of ELEMENT-only CLUSTERs: the BMM types `rows` `List<CLUSTER>` emitted as typed CLUSTERs whose ELEMENT-only membership the table's own row semantics carry; a non-CLUSTER row is unrepresentable at parse. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.item_table.adoc §Invariants).
+//! - `Interval.Limits_comparable`: `lower.strictly_comparable_to (upper)`: holds BY CONSTRUCTION — the generic emits `Interval<T>` with one `T` for both limits and the ordering bound, so incomparable limits are unrepresentable. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc §Invariants).
+//! - `Iso8601_date.Year_valid`: `valid_year (year)`: holds at PARSE — the ISO-8601 lexical form admits only `yyyy` digit years and the reader validates through `time_definitions::valid_year` before a typed value exists. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date.adoc §Invariants).
+//! - `Iso8601_date_time.Year_valid`: `valid_year (year)`: holds at PARSE — the ISO-8601 lexical form admits only `yyyy` digit years and the reader validates through `time_definitions::valid_year` before a typed value exists. (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc §Invariants).
+//! - `PARTY.Relationships_validity`: reads the source-party aggregate the SM's independently-versioned relationship containers deliberately do not maintain (the two representations are DISJOINT — RM demographic master02 §Party Relationships vs SM i_party_relationship; the adjudication lives at `app/ferroehr/src/service/demographic/relationship.rs`); an inline `relationships` list in a committed PARTY body stays validated and served verbatim. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Reverse_relationships_validity`: quantifies over `repository (demographics).all_party_relationships` — a whole-repository aggregate no per-node evaluation can read; the SM's disjoint relationship containers carry the served representation. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY_RELATIONSHIP.Source_valid`: `source.relationships.has (self)` reads the source party's aggregate through the back-reference the generated model breaks; under the SM's disjoint containers the RM compositional linkage is deliberately not maintained (the `PARTY.Relationships_validity` adjudication). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc §Invariants).
+//! - `PARTY_RELATIONSHIP.Target_valid`: `not target.reverse_relationships.has (self)` reads the target party's aggregate through a broken back-reference; same disjoint-representation adjudication as `Source_valid`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc §Invariants).
 //! - `RESOURCE_DESCRIPTION.Parent_resource_valid`: `parent_resource /= Void implies parent_resource.description = self`: reads the OWNING `parent_resource` back-reference, which the generated model deliberately breaks (`BACK_REFERENCES` — a back-reference is not forward-owned data), so nothing stored exists for the rule to constrain; where the pair is in hand the identity holds by construction of ownership. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
-//!
-//! ## UNACCOUNTED-COMPLEX (classified complex, no register row)
-//!
-//! - `DV_EHR_URI.Scheme_valid`.
-//! - `DV_INTERVAL.Limits_consistent`.
-//! - `DV_ORDERED.Normal_range_and_status_consistency`.
-//! - `DV_PERIODIC_TIME_SPECIFICATION.Value_valid`.
-//! - `DV_PROPORTION.Is_integral_validity`.
-//! - `EHR.Compositions_valid`.
-//! - `EHR.Contributions_valid`.
-//! - `EHR.Directory_in_folders`.
-//! - `EHR.Folders_valid`.
-//! - `ELEMENT.Inv_is_null_valid`.
-//! - `ELEMENT.Inv_null_flavour_indicated`.
-//! - `ELEMENT.Inv_null_reason_valid`.
-//! - `ENTRY.Subject_validity`.
-//! - `EVENT.Offset_validity1`.
-//! - `HISTORY.Period_consistency`.
-//! - `INTERVAL_EVENT.Interval_start_time_valid`.
-//! - `ITEM_LIST.Valid_structure`.
-//! - `ITEM_TABLE.Valid_structure`.
-//! - `ITEM_TAG.Inv_key_valid`.
-//! - `Interval.Limits_comparable`.
-//! - `Interval.Limits_consistent`.
-//! - `Iso8601_date.Day_valid`.
-//! - `Iso8601_date.Month_valid`.
-//! - `Iso8601_date.Year_valid`.
-//! - `Iso8601_date_time.Day_valid`.
-//! - `Iso8601_date_time.Fractional_second_valid`.
-//! - `Iso8601_date_time.Hour_valid`.
-//! - `Iso8601_date_time.Minute_valid`.
-//! - `Iso8601_date_time.Month_valid`.
-//! - `Iso8601_date_time.Second_valid`.
-//! - `Iso8601_date_time.Year_valid`.
-//! - `Iso8601_time.Fractional_second_valid`.
-//! - `Iso8601_time.Hour_valid`.
-//! - `Iso8601_time.Minute_valid`.
-//! - `Iso8601_time.Second_valid`.
-//! - `PARTY.Relationships_validity`.
-//! - `PARTY.Reverse_relationships_validity`.
-//! - `PARTY_RELATIONSHIP.Source_valid`.
-//! - `PARTY_RELATIONSHIP.Target_valid`.
-//! - `VERSION.Owner_id_valid`.
-//! - `VERSIONED_COMPOSITION.Archetype_node_id_valid`.
-//! - `VERSIONED_COMPOSITION.Persistent_validity`.
+//! - `VERSION.Owner_id_valid`: `owner_id.value = uid.object_id.value`: `owner_id` is the DERIVED function realized as exactly `uid.object_id()` (`version_impl.rs`), so the rule restates its own definition (the `ORIGINAL_VERSION.Is_merged_validity` precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.version.adoc §Invariants).
 //!
 //! # Terminology-backed invariants (enforced in `validate::terminology`)
 //!
@@ -327,12 +324,6 @@ const PK_UNITARY: i32 = 1;
 const PK_PERCENT: i32 = 2;
 const PK_FRACTION: i32 = 3;
 const PK_INTEGER_FRACTION: i32 = 4;
-
-/// The `x /= Void implies not x.is_empty` rules, read from the vendored
-/// BMM class invariants: `(class, attribute, invariant)`. Applied to the
-/// class and its transitive concrete descendants by
-/// [`super::nonempty_list_violations`].
-pub(crate) const NONEMPTY_LIST_RULES: &[(&str, &str, &str)] = &[];
 
 /// CODE_PHRASE `Code_string_valid`: the code string must be non-empty.
 pub(crate) fn code_phrase_core(code_string: &str, out: &mut Vec<InvariantViolation>) {
@@ -625,36 +616,6 @@ pub(crate) fn party_identified_core(
     if name.is_some_and(str::is_empty) {
         out.push(InvariantViolation::here(format!(
             "Invariant Name_valid failed on type {ty}"
-        )));
-    }
-}
-
-/// The `x /= Void implies not x.is_empty` invariant family, shared by every RM
-/// class that declares one (`LOCATABLE.Links_valid`, `COMPOSITION.Content_valid`,
-/// `SECTION.Items_valid`, `ENTRY.Other_participations_valid`,
-/// `INSTRUCTION.Activities_valid`, `EVENT_CONTEXT.Participations_validity`,
-/// `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`,
-/// `PARTY_IDENTIFIED.Identifiers_valid`, `ACTOR.Roles_valid`,
-/// `ATTESTATION.Items_valid`, `ORIGINAL_VERSION.Attestations_valid` /
-/// `Other_input_version_uids_valid`, … — each `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*`
-/// §Invariants).
-///
-/// `present_and_empty` is the whole rule: the attribute is present on the
-/// instance AND holds zero members. It is decidable on the typed model because
-/// an optional container emits as `Option<Vec<T>>` — `Some(vec![])` is exactly
-/// the forbidden state — so callers pass
-/// `self.attr.as_ref().is_some_and(Vec::is_empty)`.
-pub(crate) fn nonempty_list_core(
-    ty: &str,
-    attribute: &str,
-    invariant: &str,
-    present_and_empty: bool,
-    out: &mut Vec<InvariantViolation>,
-) {
-    if present_and_empty {
-        out.push(InvariantViolation::here(format!(
-            "{ty}.{attribute} is present but empty — a present list must be \
-             non-empty ({ty}.{invariant})"
         )));
     }
 }

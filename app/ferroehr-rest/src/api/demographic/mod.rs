@@ -209,17 +209,12 @@ fn read_meta(versioned_object_uid: &str, body: &serde_json::Value) -> ResourceMe
 /// first audit (see [`read_meta`] for the citations).
 ///
 /// NOTE: the history branch mirrors the RM spec function
-/// `REVISION_HISTORY.most_recent_version_time_committed`
-/// (`RM/docs/UML/classes/org.openehr.rm.common.revision_history.adoc`
-/// §Functions —
-/// `Post: Result.is_equal (items.last.audits.first.time_committed.value)`),
-/// realized as
-/// [`openehr_rm::v1_2::common::generic::revision_history::RevisionHistory::most_recent_version_time_committed`].
-/// It is read off the JSON here rather than through that function because this
-/// seam holds an already-serialized body it only needs one leaf of: decoding a
-/// whole `REVISION_HISTORY` — every item, every audit, every committer — to
-/// read one instant would be disproportionate on a read path. The two must
-/// stay in step; the spec function is the authority for what the value is.
+/// `REVISION_HISTORY.most_recent_version_time_committed` (`RM/docs/UML/classes/org.openehr.rm.common.revision_history.adoc`
+/// §Functions — `Post: Result.is_equal (items.last.audits.first.time_committed.value)`),
+/// read off the already-serialized body for that one leaf rather than through
+/// its realization
+/// [`openehr_rm::v1_2::common::generic::revision_history::RevisionHistory::most_recent_version_time_committed`],
+/// which stays the authority for the value.
 fn commit_time(body: &serde_json::Value) -> Option<jiff::Timestamp> {
     let raw = body
         .get("commit_audit")

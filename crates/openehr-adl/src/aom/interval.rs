@@ -216,15 +216,11 @@ impl<T: Copy> IntervalFields<T> {
 ///   tagged `POINT_INTERVAL` — see [`IntervalFields::is_closed_bounded`] for
 ///   why the flags decide.
 ///
-/// NOTE: `Proper_interval`'s `Inv_not_point` (`lower /= upper`,
-/// `BASE/docs/UML/classes/org.openehr.base.foundation_types.proper_interval.adoc`)
-/// would reject the bounds-equal proper interval this function accepts. It is
-/// adjudicated AGAINST: BASE itself relies on bounds-equal proper intervals —
-/// `Multiplicity_interval` inherits `Proper_interval` yet defines
-/// `is_mandatory()` as `{1..1}` and `is_prohibited()` as `{0..0}`
-/// (`…foundation_types.multiplicity_interval.adoc`), so the invariant cannot be
-/// read as forbidding them. The three sources above state the semantics
-/// positively, so they win.
+/// NOTE: `Proper_interval`'s `Inv_not_point` (`lower /= upper`, BASE
+/// `…foundation_types.proper_interval.adoc`) is adjudicated AGAINST here:
+/// BASE's own `Multiplicity_interval` inherits `Proper_interval` yet defines
+/// `is_mandatory()` as `{1..1}` (`…multiplicity_interval.adoc`), so the
+/// invariant cannot be read as forbidding bounds-equal proper intervals.
 pub(crate) fn point_value_i32(iv: &Interval<i32>) -> Option<i32> {
     let f = IntervalFields::read(iv);
     if !f.is_closed_bounded() {

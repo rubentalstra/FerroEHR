@@ -47,24 +47,14 @@ use openehr_base::containers::present;
 
 /// The P_BMM generation this reader implements, as its major version.
 ///
-/// NOTE (adjudicated): `BMM_DEFINITIONS.Bmm_internal_version` is the constant
-/// `SCHEMA_DESCRIPTOR.is_bmm_compatible` is meant to compare against — "Current
-/// internal version of BMM meta-model, used to determine if a given schema can
-/// be processed by a given implementation of the model" — but the pinned LANG
-/// generation declares it with NO VALUE
-/// (`org.openehr.lang.bmm.bmm_definitions.adoc` §Constants:
-/// `Bmm_internal_version: String = `, empty), so it cannot serve as the
-/// comparison operand on its own. This is the generation the P_BMM reader
-/// implements: `master04-syntax.adoc` §Header Items writes
-/// `bmm_version = <"2.3">` and every schema openEHR publishes writes `"2.4"`.
-/// Compatibility is judged on the MAJOR component only, because within a major
-/// line an openEHR release is a compatible superset of its predecessors
-/// (<https://specifications.openehr.org/governance/release_strategy>: a minor
-/// release makes "significant additions that do not change the semantics of the
-/// existing part of the release", while a major one carries "changes to the
-/// semantics or large changes"). Where the constant DOES state a version it
-/// wins; the empty-constant fallback is our own design/extension — no openEHR
-/// spec governs it.
+/// NOTE: `BMM_DEFINITIONS.Bmm_internal_version` — the intended comparison
+/// operand — is declared with NO VALUE in the pinned generation
+/// (`org.openehr.lang.bmm.bmm_definitions.adoc` §Constants), so compatibility
+/// is judged on the MAJOR component only (within a major line a release is a
+/// compatible superset —
+/// <https://specifications.openehr.org/governance/release_strategy>); where
+/// the constant does state a version it wins, and the empty-constant fallback
+/// is our own design/extension.
 pub const P_BMM_GENERATION: &str = "2";
 
 /// The `meta_data` key holding the schema file's path.
@@ -304,18 +294,13 @@ impl SchemaDescriptor {
     /// `SCHEMA_DESCRIPTOR.validate`: "Validate entire schema" (class doc
     /// §Functions).
     ///
-    /// NOTE (adjudicated): the class doc states no check list, and the P_BMM
-    /// well-formedness rules are enforced by the reader itself (a strict read —
-    /// see [`crate::v1_1::bmm_persistence::reader`]) and by the transform (every
-    /// symbolic reference resolved — see
-    /// [`crate::v1_1::bmm_persistence::create_model`]). What is left for the
-    /// descriptor, and what this checks, is the descriptor-level agreement the
-    /// other two stages cannot see: the schema is loaded, its declared BMM
-    /// version is one this software processes
-    /// ([`SchemaDescriptor::is_bmm_compatible`]), and the loaded schema renders
-    /// the id the descriptor's metadata claimed (which a file edited between the
-    /// metadata read and the load would break). No openEHR spec governs this
-    /// check list — our own design/extension.
+    /// NOTE: the class doc states no check list; the reader and the transform
+    /// own the P_BMM well-formedness rules, so what this checks is the
+    /// descriptor-level agreement only they cannot see — loaded, a BMM
+    /// version this software processes
+    /// ([`SchemaDescriptor::is_bmm_compatible`]), and a rendered id matching
+    /// the metadata's claim. No openEHR spec governs this check list — our
+    /// own design/extension.
     ///
     /// # Errors
     /// Returns [`RmAccessError::NotLoaded`],

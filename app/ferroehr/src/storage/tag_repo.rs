@@ -34,17 +34,14 @@ pub struct TagRow {
     pub value: Option<String>,
     /// The path within the target the tag applies to, if it is not whole-object.
     ///
-    /// NOTE: stored and served **opaque** — never parsed, never resolved
-    /// against the target's content. RM common
-    /// `UML/classes/org.openehr.rm.common.item_tag.adoc` types `target_path` as
-    /// a plain `String` and admits BOTH dialects for it in one attribute
-    /// ("archetype (i.e. AQL) or RM path") with no discriminator, no grammar
-    /// reference, and no statement about when — or whether — it resolves. A
-    /// server that guessed a dialect would reject one of the two the RM
-    /// explicitly allows, and one that resolved paths at commit would invent a
-    /// precondition no released text states. So the value round-trips
-    /// byte-for-byte and participates only in the (`key`, `target_path`)
-    /// identity.
+    /// NOTE: stored and served **opaque** — never parsed, never resolved against
+    /// the target's content. RM common
+    /// `UML/classes/org.openehr.rm.common.item_tag.adoc` types `target_path` as a
+    /// plain `String` admitting BOTH dialects in one attribute ("archetype (i.e.
+    /// AQL) or RM path"), with no discriminator and no statement about when it
+    /// resolves, so guessing a dialect would reject one of the two the RM allows
+    /// and resolving at commit would invent an unstated precondition. The value
+    /// round-trips byte-for-byte and participates only in the identity.
     pub target_path: Option<String>,
 }
 
@@ -252,16 +249,14 @@ pub async fn replace_tags(
 /// `target_path`) pair — so a key delete removes EVERY tag under that key in
 /// the addressed collection, a set delete.
 ///
-/// NOTE: the delete is PHYSICAL — the row goes. No openEHR spec governs this;
-/// it is our own design, and the alternative is unrepresentable rather than
-/// merely unchosen. "Logical delete" is a change-control concept (a new VERSION
-/// in lifecycle state `523|deleted|`, RM common
-/// `master06-change_control_package.adoc`), and RM ehr
+/// NOTE: the delete is PHYSICAL — no openEHR spec governs this, our own design,
+/// and the alternative is unrepresentable: "logical delete" is a change-control
+/// concept (a new VERSION in lifecycle state `523|deleted|`, RM common
+/// `master06-change_control_package.adoc`), while RM ehr
 /// `master04-ehr_package.adoc` §Tags puts `ITEM_TAG` outside change control
-/// entirely: an `ITEM_TAG` is unversioned, carries no `uid` and no lifecycle
-/// state, so there is no object for a tombstone to be a version OF. The
-/// released wire agrees by omission — the tag DELETE's only success branch is
-/// `204`, with no deleted-but-readable form anywhere.
+/// entirely — unversioned, no `uid`, no lifecycle state, so there is no object
+/// for a tombstone to be a version OF. The released wire agrees by omission: the
+/// tag DELETE's only success branch is `204`.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

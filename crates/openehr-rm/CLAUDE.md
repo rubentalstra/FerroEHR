@@ -20,13 +20,14 @@ the package version is the crate's own SemVer line
   (`docs/specs/openehr/RM/docs/`). Behavioural back-references
   (`PATHABLE.parent()`) use `Weak`/index, never an owning reference.
 - **`src/v1_2/validate.rs` is the hand-written value-level validation layer** (the
-  one non-`*_impl.rs` exception): the allocation-free fast path, the shared
-  invariant helpers, and the model-driven per-node checks run as their own
-  layers beside the fast/typed core pair (`check_mandatory_containers`,
-  `nonempty_list_violations` — the `x /= Void implies not x.is_empty` family,
-  evaluated over the BMM-derived `generated::NONEMPTY_LIST_RULES` table and its
-  descendant closure —, `check_archetyped_valid`,
-  `check_cluster_items_present`, `check_data_structure_shapes`), plus
+  one non-`*_impl.rs` exception; a generation-twin TEMPLATE at
+  `tools/openehr-codegen/templates/openehr-rm/validate.rs`): the
+  allocation-free fast path, the shared invariant helpers, and the
+  model-driven per-node checks run as their own layers beside the fast/typed
+  core pair (`check_mandatory_containers`, `check_archetyped_valid`,
+  `check_cluster_items_present`, `check_data_structure_shapes`; the
+  `x /= Void implies not x.is_empty` family needs no evaluator — those
+  attributes emit `Option<NonEmptyVec<T>>`, #1730/#2445), plus
   `validate::incomplete` — the two pure model-driven predicates
   (`mandatory_data_present` / `contradicts_rm_type`) that split a node's
   structural judgement into "is anything missing?" and "is anything wrong?"

@@ -25,6 +25,7 @@ mod aom2_model_xml;
 mod aom2_xml;
 mod attested_version;
 mod canonical_contract;
+mod canonical_json_literals;
 mod ckm_archetype_xml;
 mod ckm_full_pack;
 mod cnf_vitals_template;
