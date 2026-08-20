@@ -4,16 +4,17 @@
 //! The transport-agnostic audit **event model** for the SM System Log
 //! component (`I_SYSTEM_LOG`).
 //!
-//! NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub —
-//! `docs/specs/openehr/SM/docs/UML/classes/i_system_log.adoc` names the
-//! interface with no methods and no description; the only normative statement
-//! is the platform overview's one line "System Log | IHE ATNA-compliant system
-//! log" (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`
-//! §Overview). This event model — the minimal shape the ITS-REST audit
-//! middleware needs to hand a resolved operation record to the platform's ATNA
-//! emitter — is therefore entirely our own design. Nothing here depends on
-//! `openehr-its`, HTTP, or DICOM; the DICOM / RFC-3881 renderings of these
-//! enums live in [`super::codes`], the wire model in [`super::message`].
+//! NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub
+//! (`docs/specs/openehr/SM/docs/UML/classes/i_system_log.adoc` names it with no
+//! methods and no description), the only normative statement being the platform
+//! overview's "System Log | IHE ATNA-compliant system log"
+//! (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`
+//! §Overview), so this event model is entirely our own design.
+//!
+//! It is the minimal shape the ITS-REST audit middleware needs to hand a
+//! resolved operation record to the platform's ATNA emitter. Nothing here
+//! depends on `openehr-its`, HTTP, or DICOM; the DICOM / RFC-3881 renderings of
+//! these enums live in [`super::codes`], the wire model in [`super::message`].
 
 use jiff::Timestamp;
 

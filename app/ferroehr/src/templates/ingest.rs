@@ -13,16 +13,17 @@
 //! §Meta-data), carries the meta-data (original language +
 //! translations, `RESOURCE_DESCRIPTION`, revision history).
 //!
-//! NOTE (OPT 1.4 has no prose master): there is **no normative
-//! prose chapter** for the OPT 1.4 wire structure (the OPT2 masters describe the
-//! ADL2 successor). The OPT
-//! 1.4 canonical XML this module ingests is governed by the **ITS-XML v1
-//! Template XSD** plus AOM 1.4 — cite those, never the OPT2 masters, for
-//! structure conformance. The tolerant [`openehr_its::opt14`] codec decodes it;
-//! the structural well-formedness gate closing the leniency the codec would
-//! otherwise accept is owned by the artefact-validity area
-//! (`crate::validation::structure::validate_opt_structure`) — the store calls
-//! it before every ingest (see [`crate::templates::store`]).
+//! NOTE (OPT 1.4 has no prose master): there is **no normative prose chapter**
+//! for the OPT 1.4 wire structure (the OPT2 masters describe the ADL2
+//! successor), so the canonical XML this module ingests is governed by the
+//! **ITS-XML v1 Template XSD** plus AOM 1.4 — cite those, never the OPT2
+//! masters, for structure conformance.
+//!
+//! The tolerant [`openehr_its::opt14`] codec decodes it; the structural
+//! well-formedness gate closing the leniency that codec would otherwise accept
+//! is owned by the artefact-validity area
+//! (`crate::validation::structure::validate_opt_structure`) — the store calls it
+//! before every ingest (see [`crate::templates::store`]).
 //!
 //! NOTE (meta-data parsed, not surfaced): the
 //! meta-data (`language` / `description` / `translations` / `revision_history`)

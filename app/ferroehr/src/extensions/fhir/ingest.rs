@@ -24,15 +24,12 @@ use ferroehr_ext::fhir::mapping::FhirMappingDefinition;
 /// template in scope. The template id binds as a parameter (no string
 /// interpolation → no AQL injection).
 ///
-/// NOTE: the query selects the synthesized VERSION uid `v/uid/value`
-/// (`<vo_id>::<system>::<ver>`) via a `CONTAINS VERSION v CONTAINS
-/// COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is a
-/// (null) RM leaf on the AQL read path (the reassembled body carries no uid),
-/// whereas the VERSION variable's uid is the engine-synthesized object-version
-/// id. The COMPOSITION body is then loaded through the GATED versioned read
-/// seam ([`crate::versioning::read::read_version_by_ordinal`]) by that uid,
-/// keeping the façade on the query seam and reusing the same read seam the
-/// outbound emitter uses.
+/// NOTE: the engine-synthesized VERSION uid is selected (`v/uid/value`,
+/// `<vo_id>::<system>::<ver>`) because a COMPOSITION variable's own
+/// `c/uid/value` is a null RM leaf on the AQL read path — the reassembled body
+/// carries no uid. The body is then loaded by that uid through the gated
+/// versioned read seam ([`crate::versioning::read::read_version_by_ordinal`]),
+/// the same seam the outbound emitter uses.
 const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
      CONTAINS VERSION v CONTAINS COMPOSITION c \
      WHERE c/archetype_details/template_id/value = $templateId";

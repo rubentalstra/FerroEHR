@@ -26,16 +26,13 @@
 //! here; the orchestration (mapping-store lookup, EHR resolution, commit)
 //! lives in the parent [`super`] module on `FerroEhrService`.
 //!
-//! NOTE: the FHIR side is a deliberate **subset** of `FHIRPath` —
-//! object-field navigation and array indexing only
-//! (`code.coding[0].code`, `component[1].valueQuantity.value`) — NOT the full
-//! `FHIRPath` language (no functions, filters, `where()`, `resolve()`, unions,
-//! `$this`, arithmetic). That subset is sufficient for the flat, single-value
-//! leaf extraction openEHR FLAT paths need; anything richer is out of the
-//! starter scope. Cross-terminology *code-value* translation is likewise
-//! deferred: `code_map` binds a FHIR system URL to an openEHR `terminology_id`
-//! and passes the code through (the `TerminologyService` seam is where value
-//! translation would plug in) — the built COMPOSITION's own terminology
+//! The FHIR side is a deliberate **subset** of `FHIRPath`: object-field
+//! navigation and array indexing only (`code.coding[0].code`,
+//! `component[1].valueQuantity.value`), never the full language (no functions,
+//! filters, `where()`, `resolve()`, unions, `$this`, arithmetic) — which is
+//! what the flat, single-value leaf extraction openEHR FLAT paths need.
+//! `code_map` binds a FHIR system URL to an openEHR `terminology_id` and passes
+//! the code through unchanged; the built COMPOSITION's own terminology
 //! validation is the authority on the result.
 
 #![expect(

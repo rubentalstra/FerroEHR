@@ -44,16 +44,14 @@
 //! All `sqlx` execution for the `vo_version` / `audit` / `contribution` /
 //! `vo_attestation` rows is delegated to a storage-owned repository.
 //!
-//! NOTE: decomposing a `VERSIONED_OBJECT` into relational rows instead of
-//! storing the container as one physical object is EXPLICITLY sanctioned, not
-//! merely spec-silent: RM common `master06-change_control_package.adoc`
-//! §Overview says of the containment the model draws, "Although the figure
+//! NOTE: decomposing a `VERSIONED_OBJECT` into relational rows is EXPLICITLY
+//! sanctioned, not merely spec-silent — RM common
+//! `master06-change_control_package.adoc` §Overview: "Although the figure
 //! implies physical containment of Versions by a Versioned object, this is only
 //! one possible implementation. Other implementations (e.g. using orthodox
 //! relational structures) might use references, separate compressed copies, or
-//! any other mechanism." The row shapes themselves — the temporal
-//! `sys_period`, the exclusion/partial-index machinery, the nested-set `node`
-//! index — are our own design; no openEHR spec governs the SQL.
+//! any other mechanism." The row shapes themselves are our own design; no
+//! openEHR spec governs the SQL.
 //!
 //! The concrete row-I/O contract lives in [`crate::storage::version_repo`] (the
 //! `vo_version` / `audit` / `contribution` / `vo_attestation` spine plus the

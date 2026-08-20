@@ -113,16 +113,12 @@ impl std::str::FromStr for CompressionFormat {
 /// (`docs/specs/openehr/SM/docs/UML/classes/export_spec.adoc`): "the details for
 /// an export operation".
 ///
-/// NOTE: `EXPORT_SPEC` carries `logical_format [0..1]`,
-/// `compression_format [0..1]`, `encoding: ENCODING_FORMAT [0..1]`, and
-/// `segment_split_size: Integer [1..1]` (kb). The `I_ADMIN_DUMP_LOAD.export_ehrs`
-/// signature instead passes the three format enums *loose* and omits
-/// `segment_split_size` entirely — `EXPORT_SPEC` is the SM's own richer bundle
-/// for exactly this operation, so `export_ehrs` takes an `ExportSpec` (the
-/// strictly more expressive form) and the loose params map onto its fields.
-/// `ENCODING_FORMAT` is an **empty enumeration** (no values in
-/// `encoding_format.adoc`), so the SM `encoding` attribute has no representable
-/// value and is dropped here.
+/// NOTE: `export_ehrs` takes an `ExportSpec` rather than the loose format enums
+/// its `I_ADMIN_DUMP_LOAD` signature passes, because `EXPORT_SPEC` is the SM's
+/// own richer bundle for exactly this operation (it also carries the mandatory
+/// `segment_split_size [1..1]` the signature omits). `ENCODING_FORMAT` is an
+/// **empty enumeration** (no values in `encoding_format.adoc`), so the SM
+/// `encoding` attribute has no representable value and is dropped here.
 #[derive(Debug, Clone)]
 pub struct ExportSpec {
     /// Logical format to use, i.e. flavour of XML, JSON etc.

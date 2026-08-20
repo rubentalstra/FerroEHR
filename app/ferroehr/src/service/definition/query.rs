@@ -34,20 +34,11 @@ use super::{compile_pattern, page_bounds, paginate};
 /// (`definition_query_store.yaml`), so it upserts at this default version.
 ///
 /// NOTE: **no openEHR spec governs the minted value — our own design.** No
-/// released ITS-REST sentence says which version a version-less store creates.
-/// The one candidate rule does not reach it: ITS-REST
-/// `specifications/docs/query/Qualified_query_name.md` says "when `version` is
-/// not supplied at all, the system must use the latest `version` with the
-/// supplied prefix", but reading that into the STORE would (a) overwrite the
-/// name's latest EXISTING version — silently replacing a version-addressed
-/// definition that the versioned sibling protects with a `409` — and (b)
-/// assign nothing on a first store, when no latest version exists. So it is a
-/// rule for USING a stored query, as its chapter states ("Stored queries are
-/// identified by their name … and an optional `version` number"), and the
-/// constant slot below is ours: it is the lowest SEMVER a first store can
-/// carry, it needs no minting rule, and it keeps the version-less form
-/// idempotent — a second no-version store updates the same slot rather than
-/// accumulating versions no client asked for and none can predict.
+/// released ITS-REST sentence says which version a version-less store creates;
+/// `specifications/docs/query/Qualified_query_name.md`'s "the system must use
+/// the latest `version` with the supplied prefix" is a rule for USING a stored
+/// query, not for storing one. The slot below is the lowest SEMVER a first store
+/// can carry, which keeps the version-less form idempotent.
 const DEFAULT_QUERY_VERSION: &str = "1.0.0";
 
 // ── SM Definitions native API (I_DEFINITION_QUERY) — the catalog contract ────
