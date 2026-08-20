@@ -719,11 +719,13 @@ fn issue_to_validation_error(i: &ValidationIssue) -> InvariantViolation {
     )
 }
 
-/// `valid_opt` core — the OPT parses (`opt14::from_xml`) and passes the
-/// templates seam's structural check.
+/// `valid_opt` core — the OPT parses (`opt14::from_xml`), passes the
+/// templates seam's structural check, and passes the same artefact-validity
+/// catalogue `upload_opt` enforces, so the two answers never diverge.
 fn valid_opt_xml(opt_xml: &str) -> bool {
-    openehr_its::opt14::from_xml(opt_xml).is_ok()
-        && crate::validation::validate_opt_structure(opt_xml).is_ok()
+    crate::validation::validate_opt_structure(opt_xml).is_ok()
+        && openehr_its::opt14::from_xml(opt_xml)
+            .is_ok_and(|opt| crate::validation::validate_opt_artefact(&opt).is_ok())
 }
 
 /// Parse an OPT id UUID string; an unparseable value is a `400`.

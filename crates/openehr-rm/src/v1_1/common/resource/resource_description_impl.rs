@@ -10,9 +10,12 @@
 //! `Details_valid` (the own non-empty rules, evaluated by the generated
 //! core). `Language_valid` and `Parent_resource_valid` read the OWNING
 //! `parent_resource` back-reference, which the generated data model
-//! deliberately does not carry (back-references are broken at emission) —
-//! they are aggregate rules of the resource pair, adjudicated in the
-//! generated register.
+//! deliberately does not carry (back-references are broken at emission):
+//! `Language_valid` is realized at the whole-resource ingest seams, where
+//! the owner is in hand (`app/ferroehr/src/validation/opt/resource.rs`;
+//! `openehr-adl` `validate/resource_meta.rs`), and `Parent_resource_valid`
+//! is excluded — both rows live in the generated complex-invariant
+//! register.
 
 use crate::v1_1::common::resource::resource_description::ResourceDescription;
 use openehr_base::validate::{InvariantViolation, Validate};

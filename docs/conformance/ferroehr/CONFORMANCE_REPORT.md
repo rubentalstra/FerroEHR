@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ferroehr 3.17.7 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.17.7 · verification pack: passed
+SUT: ferroehr 3.17.8 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.17.8 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 1022 |
+| passed | 1024 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 38 |
-| total | 1060 |
+| total | 1062 |
 
 ## By chapter
 
@@ -28,8 +28,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — CONTRIBUTION | 91 | 0 | 0 | 5 |
 | — Item tags | 59 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
-| **Definitions** | 95 | 0 | 0 | 10 |
-| — ADL 1.4 templates | 35 | 0 | 0 | 5 |
+| **Definitions** | 97 | 0 | 0 | 10 |
+| — ADL 1.4 templates | 37 | 0 | 0 | 5 |
 | — ADL 2 artefacts | 32 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
 | **Query** | 59 | 0 | 0 | 0 |
@@ -76,8 +76,8 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | pass | 12 | 0 | 0 | 0 |
-| Adl14OptProvisioning | pass | 20 | 0 | 0 | 5 |
+| Adl14ArchetypeProvisioning | pass | 13 | 0 | 0 | 0 |
+| Adl14OptProvisioning | pass | 21 | 0 | 0 | 5 |
 | Adl2ArchetypeProvisioning | pass | 10 | 0 | 0 | 0 |
 | Adl2OptProvisioning | pass | 28 | 0 | 0 | 2 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1022 of 1060 selected cases driven.
+Coverage: 1024 of 1062 selected cases driven.
 
 Not-executed verdicts (each cited):
 

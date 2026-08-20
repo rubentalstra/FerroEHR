@@ -22,7 +22,7 @@ pub struct ResourceDescription {
     pub resource_package_uri: Option<String>,
     /// Additional non language-sensitive resource meta-data, as a list of name/value pairs.
     pub other_details: Option<std::collections::BTreeMap<String, String>>,
-    // NOTE: `parent_resource` (BMM-mandatory back-reference) omitted — BASE resource resource_description (parent_resource: Reference to owning resource). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    // NOTE: `parent_resource` (BMM-mandatory back-reference) omitted — BASE resource + RM common.resource resource_description (parent_resource: Reference to owning resource; the class name occurs in both components with the same back-reference). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
     /// Details of all parts of resource description that are natural language-dependent, keyed by language code.
     pub details: std::collections::BTreeMap<String, ResourceDescriptionItem>,
 }

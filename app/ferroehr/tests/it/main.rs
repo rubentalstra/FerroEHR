@@ -36,6 +36,7 @@ mod events_amqp;
 mod fhir_outbound_amqp;
 mod item_tag_fixture;
 mod multimedia_s3;
+mod opt_resource_meta;
 mod persistence;
 mod service_admin;
 mod service_aql;

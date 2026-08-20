@@ -67,6 +67,7 @@ pub mod catalogue;
 pub mod conformance;
 mod flat;
 mod identification;
+mod resource_meta;
 pub mod rm;
 pub mod slots;
 mod source_level;
@@ -356,6 +357,9 @@ pub fn validate_adl14_source(
         &mut issues,
     );
     issues.extend(flat::validate_definition_paths_adl14(&archetype));
+    // The RM resource package governs AOM 1.4 meta-data (RM common
+    // `master08-resource_package.adoc` front-matter NOTE) — 1.4 sources only.
+    resource_meta::check(&view(&archetype), &mut issues);
     if issues.iter().all(|i| i.severity != Severity::Error) {
         issues.extend(rm::validate_rm_conformance(&archetype, rm, Dialect::Adl14));
     }

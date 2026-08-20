@@ -190,6 +190,70 @@
 //! - `Iso8601_duration.Years_valid`.
 //! - `Iso8601_time.Partial_validity`.
 //!
+//! # Complex-invariant realization register
+//!
+//! Every RM class invariant the assertion-dialect classifier judges NOT
+//! mechanically evaluable (quantifiers, lambdas, cross-object
+//! navigation), with the venue that realizes it or the citation-pinned
+//! adjudication that excludes it — the complex bucket is accounted for
+//! in full, exactly like the emitted bucket above.
+//!
+//! ## Realized at the application write boundary (`app/`)
+//!
+//! - `AUTHORED_RESOURCE.Description_valid` — `app/ferroehr/src/validation/opt/resource.rs`: realized at the same whole-resource ingest seams as `Translations_valid` (the named site plus `openehr-adl` `validate/resource_meta.rs`), as the `RESOURCE_DESCRIPTION.Language_valid` membership — the literal (details ⊆ translations keys) would refuse the original language's own description item, so membership is checked against the original plus the translations. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
+//! - `AUTHORED_RESOURCE.Translations_valid` — `app/ferroehr/src/validation/opt/resource.rs`: a cross-member map rule over `translations`, realized where a whole authored resource is ingested: the OPT 1.4 template upload's resource-meta pass (the named site) and the ADL 1.4 source catalogue (`openehr-adl` `validate/resource_meta.rs`) — a present translations list is non-empty and never re-states the original language. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Language_valid` — `app/ferroehr/src/validation/opt/resource.rs`: `details.for_all (d | parent_resource.languages_available.has (d.language.code_string))`: realized at the whole-resource ingest seams (the named site plus `openehr-adl` `validate/resource_meta.rs`), where the owner is in hand — each description detail's language must be the owner's original language or a listed translation. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//!
+//! ## Adjudicated out of the per-node invariant layer
+//!
+//! - `AUTHORED_RESOURCE.Languages_available_valid`: `languages_available.has (original_language)`: constrains the DERIVED `languages_available()` function (§Functions), which builds its result from `original_language` — satisfied by the function's own definition (`authored_resource_impl.rs`; the `Current_revision_valid` precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Parent_resource_valid`: `parent_resource /= Void implies parent_resource.description = self`: reads the OWNING `parent_resource` back-reference, which the generated model deliberately breaks (`BACK_REFERENCES` — a back-reference is not forward-owned data), so nothing stored exists for the rule to constrain; where the pair is in hand the identity holds by construction of ownership. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//!
+//! ## UNACCOUNTED-COMPLEX (classified complex, no register row)
+//!
+//! - `DV_EHR_URI.Scheme_valid`.
+//! - `DV_INTERVAL.Limits_consistent`.
+//! - `DV_ORDERED.Normal_range_and_status_consistency`.
+//! - `DV_PERIODIC_TIME_SPECIFICATION.Value_valid`.
+//! - `DV_PROPORTION.Is_integral_validity`.
+//! - `EHR.Compositions_valid`.
+//! - `EHR.Contributions_valid`.
+//! - `EHR.Directory_in_folders`.
+//! - `EHR.Folders_valid`.
+//! - `ELEMENT.Inv_is_null_valid`.
+//! - `ELEMENT.Inv_null_flavour_indicated`.
+//! - `ELEMENT.Inv_null_reason_valid`.
+//! - `ENTRY.Subject_validity`.
+//! - `EVENT.Offset_validity1`.
+//! - `HISTORY.Period_consistency`.
+//! - `INTERVAL_EVENT.Interval_start_time_valid`.
+//! - `ITEM_LIST.Valid_structure`.
+//! - `ITEM_TABLE.Valid_structure`.
+//! - `ITEM_TAG.Inv_key_valid`.
+//! - `Interval.Limits_comparable`.
+//! - `Interval.Limits_consistent`.
+//! - `Iso8601_date.Day_valid`.
+//! - `Iso8601_date.Month_valid`.
+//! - `Iso8601_date.Year_valid`.
+//! - `Iso8601_date_time.Day_valid`.
+//! - `Iso8601_date_time.Fractional_second_valid`.
+//! - `Iso8601_date_time.Hour_valid`.
+//! - `Iso8601_date_time.Minute_valid`.
+//! - `Iso8601_date_time.Month_valid`.
+//! - `Iso8601_date_time.Second_valid`.
+//! - `Iso8601_date_time.Year_valid`.
+//! - `Iso8601_time.Fractional_second_valid`.
+//! - `Iso8601_time.Hour_valid`.
+//! - `Iso8601_time.Minute_valid`.
+//! - `Iso8601_time.Second_valid`.
+//! - `PARTY.Relationships_validity`.
+//! - `PARTY.Reverse_relationships_validity`.
+//! - `PARTY_RELATIONSHIP.Source_valid`.
+//! - `PARTY_RELATIONSHIP.Target_valid`.
+//! - `VERSION.Owner_id_valid`.
+//! - `VERSIONED_COMPOSITION.Archetype_node_id_valid`.
+//! - `VERSIONED_COMPOSITION.Persistent_validity`.
+//!
 //! # Terminology-backed invariants (enforced in `validate::terminology`)
 //!
 //! These BMM class invariants bind a coded value to an openEHR terminology

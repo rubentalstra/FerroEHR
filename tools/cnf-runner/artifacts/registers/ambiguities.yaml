@@ -9211,3 +9211,48 @@ AMB-211:
     verbatim and are exempt by construction.
   disposition: fixed_handling
   upstream_issue: 2413
+AMB-212:
+  ambiguity: >-
+    RM common master08's front-matter NOTE says THIS Resource-package
+    version "is used only in ADL 1.4 archetypes, i.e. via the AOM 1.4
+    archetype model", but the released machine-readable AM 1.4 BMM
+    (openehr_am_1.4.0.bmm.json) declares no resource classes of its own and
+    includes openehr_base_1.3.0 — upstream's own retro-model binds AOM 1.4
+    meta-data to the NEWER BASE resource form the same NOTE presents as the
+    successor. The RM ch.8 shape's only machine-readable carrier is the
+    ITS-XML v1 bundle (Resource.xsd + Template.xsd: original_author /
+    lifecycle_state / details / parent_resource, no title/licence), i.e.
+    the OPT 1.4 wire. No released text says which model form governs a 1.4
+    artefact's meta-data VALIDATION, and none assigns the RM ch.8 class
+    invariants an enforcement seam.
+  source: >-
+    RM common master08-resource_package.adoc (front-matter NOTE) + RM
+    UML/classes/org.openehr.rm.common.{authored_resource,
+    translation_details,resource_description,resource_description_item}.adoc
+    §Invariants; the vendored AM 1.4 BMM
+    (tools/openehr-codegen/vendor/bmm/components/AM/json/
+    openehr_am_1.4.0.bmm.json — includes: openehr_base_1.3.0, no resource
+    classes); ITS-XML v1 AM Release-1.4 Template.xsd (the
+    OPERATIONAL_TEMPLATE annotation: the template "will inherit" from
+    AUTHORED_RESOURCE) + ALL/Resource.xsd.
+  handling: >-
+    Fixed handling (issues #2446/#2447): the RM ch.8 classes stay
+    emitted-complete in openehr-rm (the completeness rule); typed AOM-1.4
+    meta-data flows through the BASE-shaped model per the released AM BMM
+    includes; and the RM ch.8 invariants are enforced at the two ADL
+    1.4-era ingest seams — the OPT 1.4 template upload (the RM-ch.8-shaped
+    canonical XML wire; the full family as invariant-named 422 refusals,
+    audited clean against the vendored OPT corpus first) and the ADL 1.4
+    source catalogue (openehr-adl validate/resource_meta.rs; the
+    structural + language rows as Errors, and the empty-prose rows
+    Purpose_valid/Use_valid/misuse_valid as WARNING-severity findings,
+    because "" is the 1.4 ecosystem's spelling of absence — 61/162/873
+    occurrences across the vendored CKM library, pinned by the
+    ckm_archetype_packs sweep; 1.4-source tolerance is our own design, so
+    the downgrade lives at that seam only). Translations_valid /
+    Description_valid are vacuous at the OPT ROOT (Template.xsd declares no
+    translations element, and the invariants' antecedent is
+    `translations /= Void`); they bind on an embedded ARCHETYPE and at the
+    ADL source seam, where translations exist. valid_opt answers with the
+    same artefact catalogue upload_opt enforces, so the two never diverge.
+  disposition: fixed_handling
