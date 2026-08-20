@@ -582,15 +582,11 @@ pub(crate) fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
 /// type `P_AUTHORED_ARCHETYPE` (`P_C_COMPLEX_OBJECT`, `P_C_ATTRIBUTE`, …), so it
 /// is the shape a real AOM2 XML document actually takes.
 ///
-/// NOTE: the bundle ALSO publishes `Archetype.xsd` (the non-persistent AOM2
-/// model form: `ARCHETYPE`, `C_COMPLEX_OBJECT`, `C_ATTRIBUTE`). It is a SECOND,
-/// independent serialization with its own closure ([`AOM2_MODEL_FILES`]) and its
-/// own emitted module, NOT part of this one: the two declare the same top-level
-/// element name (`archetype`) with different root types
-/// (`P_Archetype.xsd`: `<xs:element name="archetype" type="P_AUTHORED_ARCHETYPE"/>`
-/// vs `Archetype.xsd`: `<xs:element name="archetype" type="ARCHETYPE"/>`), so
-/// merging them into one `XsdModel` yields a model whose abstract slots resolve
-/// inconsistently.
+/// NOTE: the bundle's `Archetype.xsd` (the AOM2 model form) is a SECOND
+/// independent serialization with its own closure ([`AOM2_MODEL_FILES`]) and
+/// emitted module — both declare the top-level element `archetype` with
+/// DIFFERENT root types, so merging them into one `XsdModel` resolves
+/// abstract slots inconsistently.
 ///
 /// `Resource.xsd` / `BaseTypes.xsd` overlap the RM-instance set and resolve to
 /// the already-generated `openehr-base`/`openehr-rm` XML impls.

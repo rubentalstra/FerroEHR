@@ -456,12 +456,26 @@ fn build_link(node: &SimNode, path: &str, index: usize) -> Result<Value, FlatErr
                 key: format!("{path}/_link:{index}|{suffix}"),
             })
     };
-    Ok(json!({
-        "_type": "LINK",
-        "type": {"_type": "DV_TEXT", "value": required("type")?},
-        "meaning": {"_type": "DV_TEXT", "value": required("meaning")?},
-        "target": {"_type": "DV_EHR_URI", "value": required("target")?},
-    }))
+    let text = |value: &str| {
+        openehr_rm::v1_2::data_types::text::dv_text::DvText::DvText(
+            openehr_rm::v1_2::data_types::text::dv_text::DvTextData {
+                value: value.to_owned(),
+                hyperlink: None,
+                formatting: None,
+                mappings: None,
+                language: None,
+                encoding: None,
+            },
+        )
+    };
+    let link = openehr_rm::v1_2::common::archetyped::link::Link {
+        meaning: text(required("meaning")?),
+        r#type: text(required("type")?),
+        target: openehr_rm::v1_2::data_types::uri::dv_ehr_uri::DvEhrUri {
+            value: required("target")?.to_owned(),
+        },
+    };
+    Ok(crate::json::to_canonical_value(&link))
 }
 
 /// FEEDER_AUDIT (master05 §FEEDER_AUDIT).

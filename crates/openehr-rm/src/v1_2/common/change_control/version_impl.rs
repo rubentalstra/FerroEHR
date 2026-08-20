@@ -22,17 +22,12 @@
 //!   attributes except signature, suitable for generating reliable hashes and
 //!   signatures."
 //!
-//! NOTE: the spec leaves the exact serialization `[.tbd]` ("not yet defined by
-//! openEHR; ODIN might be preferred"). We serialise the Version to canonical
-//! openEHR JSON (the native ITS-JSON codec's encoding — `_type`-tagged,
-//! nulls/empties omitted) with the top-level `signature` attribute removed, then
-//! canonicalise per RFC 8785 (JSON Canonicalization Scheme, `serde_jcs`) so the
-//! signed bytes are deterministic (key ordering, number formatting, string
-//! escaping pinned by the RFC). This is the single source of the signed bytes
-//! for both signing and verification. That choice is OUR OWN extension — no
-//! released openEHR text licenses it, which is exactly what the `[.tbd]` says;
-//! the adjudication is recorded on the tracker, including why RFC 8785 over
-//! the served JSON is preferred to the ODIN the spec speculates about.
+//! NOTE: the spec leaves the exact serialization `[.tbd]`, so the signed
+//! bytes are OUR OWN extension: canonical openEHR JSON with the top-level
+//! `signature` removed, canonicalised per RFC 8785 (`serde_jcs`) so the bytes
+//! are deterministic — the single source for both signing and verification;
+//! the adjudication (including RFC 8785 over the ODIN the spec speculates
+//! about) is recorded on the tracker.
 //!
 //! The signed input is always assembled as a `serde_json::Value` (the shape the
 //! versioning service and the wire boundary already hold), so this module works

@@ -884,22 +884,13 @@ impl Parser<'_> {
     /// c_complex_object_proxy | archetype_slot | c_regular_primitive_object`.
     /// One object inside an attribute body.
     ///
-    /// NOTE: the `=~` / `!~` regex-match operators the chapter's prose shows
-    /// (`ADL1.4/master05-cadl.adoc` §Regular Expression L691-693:
-    /// `string_attr matches {=~ /regular expression}` …
-    /// `{!~ /regular expression}`) are refused here, because no normative
-    /// grammar defines them and the prose that does is itself malformed — both
-    /// example regexes are UNTERMINATED (opening `/` with no closing `/`),
-    /// while the sentence that follows says the first two forms are "identical",
-    /// i.e. `=~` adds nothing. The chapter's own §Syntax gives
-    /// `c_string_spec : V_STRING | string_list_value | string_list_value ','
-    /// SYM_LIST_CONTINUE | V_REGEXP` (L1244-1249) with `V_REGEXP` the bare
-    /// delimited form (L1471-1476), its §Symbols lexer has no `=~`/`!~` token,
-    /// and `cadl14_primitives.g4` `c_string` is `( string_value |
-    /// string_list_value | regex_constraint )` with `regex_constraint :
-    /// SLASH_REGEX | CARET_REGEX`. Guessing a negated-regex semantics from
-    /// defective prose would be a silent wrong answer, so the operator is a
-    /// typed refusal naming the defect.
+    /// NOTE: the `=~` / `!~` operators appear only in defective prose
+    /// (`ADL1.4/master05-cadl.adoc` §Regular Expression L691-693 — both
+    /// example regexes unterminated) while the chapter's own §Syntax
+    /// `c_string_spec` (L1244-1249) and §Symbols lexer define no such token,
+    /// so the operator is a typed refusal naming the defect — guessing a
+    /// negated-regex semantics from defective prose would be a silent wrong
+    /// answer.
     fn parse_c_regular_object(&mut self) -> PResult<CObject> {
         if self.at_regex_match_operator() {
             return self.err(

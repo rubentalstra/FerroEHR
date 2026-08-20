@@ -26,20 +26,14 @@
 //! resolving to an archetype-local value set). This module carries the
 //! `v2_4`-specific `build`/`inputs` half; the tree shaping is shared.
 //!
-//! NOTE: the `v2_4` front end populates the node **shape** + `inputs` the example
-//! generator and FLAT/STRUCTURED codecs consume **and** the validation-only
-//! constraint fields (`existence`/`card_all`/`closed_attributes`/
-//! `structural_stubs`; the hoisted-wrapper `slots` are added by the shared
-//! `shape` compaction) the archetype-conformance walk
-//! ([`crate::flat::validation::validate_archetype_conformance`]) reads — from the
-//! AOM2 constraint model (`C_ATTRIBUTE.existence`/`.cardinality`, node-identified
-//! `C_OBJECT` alternatives, `ARCHETYPE_SLOT`; AOM2
-//! `AM/docs/AOM2/master03-archetype_package.adoc` §C_ATTRIBUTE, §ARCHETYPE_SLOT).
-//! So the archetype-conformance walk runs against an ADL2 template exactly as it
-//! does against an OPT 1.4 template (the shared dialect-neutral seam is the Web
-//! Template layer). No openEHR spec governs the Web Template model itself — our
-//! own design/extension; the walk *semantics* the captured fields serve cite AOM2
-//! / RM common.
+//! NOTE: this front end populates both the consumer-facing node shape +
+//! `inputs` AND the validation-only constraint fields the
+//! archetype-conformance walk reads, from the AOM2 constraint model
+//! (`AM/docs/AOM2/master03-archetype_package.adoc` §C_ATTRIBUTE,
+//! §ARCHETYPE_SLOT) — so the walk runs against an ADL2 template exactly as
+//! against an OPT 1.4 one, the Web Template layer being the dialect-neutral
+//! seam. No openEHR spec governs the Web Template model itself — our own
+//! design/extension.
 
 #![expect(
     clippy::disallowed_types,

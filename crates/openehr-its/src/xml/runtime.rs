@@ -319,15 +319,11 @@ impl_to_xml_display!(bool, i32, i64, u8, char, f32);
 ///   `NaN` — `inf`/`-inf`/`NAN`, which `f64::to_string` produces, are not in
 ///   the lexical space at all.
 ///
-/// NOTE (the #1453 fidelity-corpus revisit, settled): the finite half is
-/// corpus-proven — every `Real` in the vendored canonical-JSON corpus is
-/// finite, and `xml_roundtrip` + the XSD-validity gate exercise them — so no
-/// change was warranted there. The non-finite half is unreachable from
-/// canonical JSON (RFC 8259 admits no infinity or NaN literal) but IS
-/// reachable by constructing an RM value in Rust, and `f64::to_string` would
-/// have emitted a schema-invalid document; that is corrected here rather than
-/// left to the number-parity marker. The READ direction already accepted the
-/// XSD spellings: `f64::from_str` parses `INF`/`-INF`/`NaN` case-insensitively
+/// NOTE: the non-finite spellings are unreachable from canonical JSON
+/// (RFC 8259 admits no infinity/NaN literal) but reachable from a Rust-built
+/// RM value, where `f64::to_string` would emit a schema-invalid document —
+/// corrected here to the XSD spellings, which `f64::from_str` already parses
+/// case-insensitively
 /// (<https://doc.rust-lang.org/std/primitive.f64.html#method.from_str>).
 fn xsd_double_lexical(v: f64) -> String {
     if v.is_nan() {

@@ -11,16 +11,12 @@
 //! `…bmm3.bmm_primitive_value.adoc`, `…bmm3.bmm_container_value.adoc`,
 //! `…bmm3.bmm_indexed_container_value.adoc`, `…bmm3.bmm_interval_value.adoc`.
 //!
-//! NOTE (adjudicated boundary — nothing in this workspace EVALUATES a BMM
-//! literal): the package's nine classes are the meta-types of literal values
-//! declared inside a BMM model ("constant values (e.g. `Real Pi = 3.1415926`),
-//! default values …", §General Model). No component consumes them: `openehr-lang`
-//! materialises models from P_BMM, whose persistence form carries constant values
-//! as opaque strings (`P_BMM_CONSTANT`,
-//! `LANG/docs/bmm_persistence/master04-syntax.adoc`), and no other crate
-//! interprets a BMM model at runtime. The classes therefore exist as the complete
-//! emitted model (the emitter never trims) with data accessors only, which is an
-//! honest maturity boundary rather than a gap in the model.
+//! NOTE: nothing in this workspace EVALUATES a BMM literal — P_BMM carries
+//! constant values as opaque strings (`P_BMM_CONSTANT`,
+//! `LANG/docs/bmm_persistence/master04-syntax.adoc`) and no crate interprets
+//! a BMM model at runtime — so the package's nine classes exist as the
+//! complete emitted model with data accessors only: an honest maturity
+//! boundary, not a model gap.
 //!
 //! What that boundary defers is exactly one behaviour, named here so a future
 //! evaluator does not have to re-derive it:

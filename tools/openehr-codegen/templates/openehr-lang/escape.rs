@@ -39,18 +39,12 @@
 //! would make the whole §File Encoding provision dead text. Both sections are
 //! cited here because both are normative as published.
 //!
-//! NOTE: **no openEHR spec governs which UTF-16 spelling the eight digits
-//! carry — our own design/extension.** The chapter says "`\u` escaped UTF-16"
-//! and defers the algorithm to RFC 2781, which is a surrogate-pair
-//! specification; but the code-point gloss ("the same … as the unicode
-//! code-point number expressed in hexadecimal") is stated only for the 4-digit
-//! form, so a zero-filled scalar reading is also defensible. Both are decoded,
-//! disambiguated by the first four digits, which are disjoint by construction:
-//! a UTF-16 high surrogate opens `D800`-`DBFF` (RFC 2781 §2.1), while the
-//! zero-filled spelling of `U+10000`-`U+1FFFF` opens `0000`-`0001`. Eight hex
-//! digits opening with anything else are read as the 4-digit form followed by
-//! literal hex text, so a plain `A` never changes meaning because hex
-//! characters happen to follow it.
+//! NOTE: no openEHR spec governs which UTF-16 spelling the eight digits carry
+//! — our own design/extension: both the surrogate-pair (RFC 2781) and the
+//! zero-filled scalar readings are decoded, disambiguated by the first four
+//! digits (a high surrogate opens `D800`-`DBFF`, the zero-filled spelling of
+//! `U+10000`-`U+1FFFF` opens `0000`-`0001` — disjoint by construction);
+//! anything else reads as the 4-digit form followed by literal hex text.
 //!
 //! NOTE: `master03-basics.adoc` is byte-identical in Release-1.0.0 (verified
 //! first-hand 2026-08-05), so one decoder is correct for every generation.

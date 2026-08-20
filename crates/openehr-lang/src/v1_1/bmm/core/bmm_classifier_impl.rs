@@ -92,18 +92,12 @@ impl BmmClassifier {
     /// properties etc can be extracted" (class doc §Functions), projected to the
     /// class NAME.
     ///
-    /// NOTE (projection, recorded deviation): the class doc's signature returns
-    /// a `BMM_CLASS`, which this enum cannot yield by reference across all its
-    /// variants — a `BMM_GENERIC_TYPE` embeds a bare `BMM_GENERIC_CLASS` struct
-    /// rather than a `BMM_CLASS` enum value, and the built-in meta-types
-    /// (`BMM_SIGNATURE`, `BMM_STATUS_TYPE`, `BMM_TUPLE_TYPE`,
-    /// `BMM_PARAMETER_TYPE`) have no defining model class at all
+    /// NOTE: the class doc's signature returns a `BMM_CLASS`, which the
+    /// built-in meta-types have none of
     /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Description: built-in
-    /// types "are treated as being primitive and non-abstract"). Synthesising a
-    /// `BMM_CLASS` for those would be a shadow type, so the enum-level surface
-    /// is the name; the typed fields
-    /// (`BmmSimpleType::base_class`, `BmmGenericType::base_class`,
-    /// `BmmClass` itself) stay directly accessible for the variants that have
+    /// types "are treated as being primitive and non-abstract") — synthesising
+    /// one would be a shadow type, so the enum-level surface is the NAME and
+    /// the typed `base_class` fields stay reachable on the variants that have
     /// one.
     #[must_use]
     pub fn base_class_name(&self) -> String {
@@ -120,21 +114,14 @@ impl BmmClassifier {
     /// `BMM_CLASSIFIER.type_category`: "Generate a type category of main target
     /// type from Type_category_xx values" (class doc §Functions).
     ///
-    /// NOTE (adjudicated docs silence): the v2 `Type_category_xx` constant set
-    /// is DANGLING in the vendored inputs — neither
-    /// `org.openehr.lang.bmm.bmm_definitions.adoc` §Constants (which defines
-    /// only `Bmm_internal_version`, `Schema_name_delimiter`,
-    /// `Package_name_delimiter`, `Bmm_schema_file_extension`) nor any other v2
-    /// class definition declares a single `Type_category_*` value, so the v2
-    /// vocabulary cannot be quoted. Its successor IS declared:
-    /// `org.openehr.lang.bmm3.bmm_entity_metatype.adoc` §Constants enumerates
-    /// `Entity_metatype_simple`, `…_generic`, `…_generic_parameter`,
-    /// `…_range_constrained`, `…_enumeration`, `…_container` — the same
-    /// category axis, generated as
-    /// [`BmmEntityMetatype`](crate::v1_1::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype).
-    /// This function returns those wire strings, and the
-    /// agreement between the literals below and that generated vocabulary is
-    /// pinned by a unit test in this module.
+    /// NOTE: the v2 `Type_category_xx` constant set is DANGLING (no v2 class
+    /// declares a single value), so this function returns the declared
+    /// successor vocabulary —
+    /// `org.openehr.lang.bmm3.bmm_entity_metatype.adoc` §Constants, generated
+    /// as
+    /// [`BmmEntityMetatype`](crate::v1_1::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype)
+    /// — with the literal/vocabulary agreement pinned by a unit test in this
+    /// module.
     ///
     /// The mapping: a generic class or generic type is `…_generic`; a generic
     /// parameter, open type or parameter type is `…_generic_parameter`; an

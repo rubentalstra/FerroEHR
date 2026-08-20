@@ -8,8 +8,8 @@
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc`
 //! §Invariants — `Overall_validity`
 //! (`repeat_period /= Void or trigger_events /= Void`), evaluated by the
-//! generated core; `Trigger_events_validity` is the generated
-//! `NONEMPTY_LIST_RULES` row. `Send_changes_only_validity` invokes
+//! generated core; `Trigger_events_validity` holds by construction
+//! (`Option<NonEmptyVec>`, the #1730 shape). `Send_changes_only_validity` invokes
 //! `send_changes_only`, an attribute the class does NOT declare (the class
 //! carries `update_method: CODE_PHRASE`; only the intro prose speaks of "the
 //! `send_changes_only` flag") — an upstream defect, adjudicated `Excluded`

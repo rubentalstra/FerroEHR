@@ -130,37 +130,20 @@ fn run<T: DeserializeOwned + Validate>(ty: &str, value: &Value, out: &mut Vec<In
 /// Like [`run`], but deserialize `T` from a copy of `value` whose nested
 /// RM-node child collections have been emptied ([`prune_child_nodes`]).
 ///
-/// NOTE (settled perf design — no openEHR spec governs validation-pass
-/// mechanics; our own design): the RM-invariant pass
-/// (`openehr_its::wire_validate::validate_rm_value`) is called once per
-/// `_type` node while the composition validator recurses the live JSON tree, so
-/// deserializing each node's *whole* subtree re-parses every descendant once per
-/// ancestor — O(Σ subtree sizes) for overlapping subtrees. This shallow variant
-/// is used for
-/// the LOCATABLE structural containers whose own class invariants inspect only
-/// scalar / single-object attributes (never a child collection): with the child
-/// arrays emptied, each node deserializes only its own immediate shape, so the
-/// pass is O(total nodes) instead of O(Σ subtree sizes). The node's own
-/// single-valued attributes are KEPT (only collections are emptied), so its
-/// mandatory-attribute presence and single-object type conformance are still
-/// enforced on deserialize — the missing-mandatory-attribute rejection
-/// (`422_COMPOSITION`, e.g. a dropped `COMPOSITION.composer [1]`) and every class
-/// invariant result are unchanged. Types whose own invariants DO read a child
-/// collection (`HISTORY.events`, `ITEM_TABLE.rows`) keep the full [`run`]
-/// deserialize.
+/// NOTE: no openEHR spec governs validation-pass mechanics — our own perf
+/// design: for LOCATABLE containers whose own invariants never read a child
+/// collection, the child arrays are emptied before deserialize, making the
+/// per-node pass O(total nodes) instead of O(Σ subtree sizes); single-valued
+/// attributes are KEPT, so mandatory-presence and type conformance are
+/// unchanged, and collection-reading types (`HISTORY.events`,
+/// `ITEM_TABLE.rows`) keep the full [`run`] deserialize.
 ///
-/// NOTE: emptying a child *collection* here means a malformation *inside*
-/// an array element is no longer reported at this ancestor's path — it is
-/// reported at that element's own recursion step instead (each collection member
-/// is a separate `_type` node the composition validator visits and dispatches).
-/// For array-element types the dispatcher does not cover (embedded non-LOCATABLE
-/// helpers such as `LINK` / `PARTICIPATION`, which carry no class invariant), a
-/// structural malformation that the full ancestor deserialize used to surface is
-/// no longer surfaced. This narrows only the redundant ancestor-cascade reporting
-/// on already-invalid input; the valid path and every test-pinned rejection are
-/// byte-identical, and the ITS-JSON schema gate remains the exhaustive
-/// structural oracle where one is required (this pass is the RM class-invariant
-/// check, not a schema validator — `422_COMPOSITION.yaml`).
+/// NOTE: emptying a child collection moves an element's malformation report
+/// from the ancestor's path to the element's own recursion step; only the
+/// redundant ancestor-cascade reporting on already-invalid input narrows —
+/// the valid path and every test-pinned rejection stay byte-identical, and
+/// the ITS-JSON schema gate remains the exhaustive structural oracle (this
+/// pass is the RM class-invariant check, not a schema validator).
 fn run_shallow<T: DeserializeOwned + Validate>(
     ty: &str,
     value: &Value,

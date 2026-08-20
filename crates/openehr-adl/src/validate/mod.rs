@@ -482,21 +482,12 @@ fn run_flat_form_checks(
 /// §Overview phase gate), the parent-conformance checks, and the flat-form
 /// checks.
 ///
-/// NOTE: this entry runs the flat-form checks even for a top-level archetype. The V-codes
-/// are unconditional — `master03-archetype_package.adoc` §Validity Rules opens
-/// "apply to all varieties of ARCHETYPE object", and VUNP/VACMCO
-/// (`master04.5-constraint_model-class_definitions.adoc` §Validity Rules) carry
-/// no phase or specialisation precondition — while `master08`'s three-phase
-/// sequence describes itself as "a guide … based on the ADL workbench reference
-/// compiler". AOM2 defines no partial-validation profile, so there is exactly
-/// one notion of validity and a source-level entry may not omit a phase. The
-/// flat-form pass is always evaluable: `ADL2/master09.02-spec_concepts.adoc` §Differential
-/// and Flat Forms — "For a top-level archetype, the flat-form is the same as
-/// its differential form" — and VACMCO is unsound on differential source
-/// anyway, because `ADL2/master09.04-spec_attrib_redef.adoc` requires the
-/// cardinality/occurrences relation over "all the contained items (including
-/// those inherited unchanged, and therefore not mentioned in the specialised
-/// archetype)".
+/// NOTE: the flat-form checks run even for a top-level archetype — the
+/// V-codes are unconditional (`master03-archetype_package.adoc` §Validity
+/// Rules: "apply to all varieties of ARCHETYPE object"), AOM2 defines no
+/// partial-validation profile, and a top-level archetype's flat form IS its
+/// differential form (`ADL2/master09.02-spec_concepts.adoc` §Differential
+/// and Flat Forms), so no phase may be omitted.
 ///
 /// `resolver` verifies external term bindings (VETDF); pass
 /// [`bindings::NoTerminologyResolver`] when no terminology service is

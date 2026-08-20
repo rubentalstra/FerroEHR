@@ -87,6 +87,11 @@ for f in "${files[@]}"; do
         printf ":%d: comment run is %d lines (max %d) — long prose belongs in doc comments or on the PR/issue, not in code\n", run_start, run_len, RUN_MAX
       run_len = 0
     }
+    function flush_doc_note() {
+      if (doc_note_len > RUN_MAX)
+        printf ":%d: NOTE paragraph in a doc comment is %d lines (max %d) — an adjudication essay lives on the PR/issue, not in rustdoc\n", doc_note_start, doc_note_len, RUN_MAX
+      doc_note_len = 0
+    }
     {
       line = $0
       sub(/^[[:space:]]+/, "", line)
@@ -128,9 +133,29 @@ for f in "${files[@]}"; do
         }
         next
       }
-      flush_note(); flush_run()
+      # 6. the NOTE budget inside doc comments (`/// NOTE:` / `//! NOTE:`) —
+      # a doc-relocated essay is the same essay (#2441). The paragraph ends
+      # at a blank doc line, per rustdoc paragraph semantics.
+      if (is_doc) {
+        if (line ~ /^\/\/[\/!][[:space:]]*NOTE/) {
+          flush_doc_note()
+          doc_note_start = NR; doc_note_len = 1
+        } else if (doc_note_len > 0) {
+          # The paragraph ends at a blank doc line (rustdoc paragraph
+          # semantics) or at the next list item (a NOTE inside a list does
+          # not swallow its sibling items).
+          if (line ~ /^\/\/[\/!][[:space:]]*$/ \
+              || line ~ /^\/\/[\/!][[:space:]]+([-*][[:space:]]|[0-9]+\.[[:space:]])/ \
+              || line ~ /^\/\/[\/!][[:space:]]*#/)
+            flush_doc_note()
+          else doc_note_len++
+        }
+        flush_note(); flush_run()
+        next
+      }
+      flush_note(); flush_run(); flush_doc_note()
     }
-    END { flush_note(); flush_run() }
+    END { flush_note(); flush_run(); flush_doc_note() }
   ' "$f")"
   if [ -n "$out" ]; then
     printf '%s\n' "$out" | sed "s|^|$f|"

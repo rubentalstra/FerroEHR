@@ -45,17 +45,18 @@ fn fixture() -> Composition {
     openehr_its::json::from_canonical_json(json).expect("deserialize composition JSON")
 }
 
-/// The default entry point is unchanged by the namespace parameterization:
-/// v1 stays what `to_canonical_xml` emits.
+/// The default entry point emits the v2 lineage — the only vendored bundle
+/// whose schemas describe every RM 1.2.0 class this model emits, matching the
+/// served default (#2453, aligning with the #1666 ruling).
 #[test]
-fn default_entry_point_still_emits_the_v1_lineage() {
+fn default_entry_point_emits_the_v2_lineage() {
     let xml = to_canonical_xml(&fixture(), "composition").expect("serialize default");
-    assert!(xml.contains(V1_NS), "default lineage is v1: {xml:.200}");
-    assert!(!xml.contains(V2_NS), "default lineage is not v2");
+    assert!(xml.contains(V2_NS), "default lineage is v2: {xml:.200}");
+    assert!(!xml.contains(V1_NS), "default lineage is not v1");
     assert_eq!(
         xml,
-        to_canonical_xml_ns(&fixture(), "composition", Namespace::V1).expect("serialize v1"),
-        "to_canonical_xml is to_canonical_xml_ns(.., V1)"
+        to_canonical_xml_ns(&fixture(), "composition", Namespace::V2).expect("serialize v2"),
+        "to_canonical_xml is to_canonical_xml_ns(.., V2)"
     );
 }
 

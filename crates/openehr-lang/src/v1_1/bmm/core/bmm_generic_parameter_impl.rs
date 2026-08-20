@@ -63,15 +63,13 @@ impl BmmGenericParameter {
     /// conformance type, which is either from `conforms_to_type` or if not set,
     /// 'Any'" (class doc §Functions).
     ///
-    /// NOTE (projection): the class doc's function returns a `BMM_CLASS`, and
-    /// the `Any` fallback is a class object the schema need not define
-    /// (`org.openehr.lang.bmm3.bmm_definitions.adoc` §Functions `Any_class`:
-    /// "built-in class definition corresponding to the top `Any` class … if
-    /// not, use `BMM_DEFINITIONS._any_class_`"). The generated model carries no
-    /// such built-in singleton, and synthesising one here would be a shadow
-    /// type, so this surface returns the type NAME; the typed constraint stays
-    /// directly reachable through [`Self::flattened_conforms_to_class`] and the
-    /// `conforms_to_type` field.
+    /// NOTE: the class doc's function returns a `BMM_CLASS` with an `Any`
+    /// fallback the schema need not define
+    /// (`org.openehr.lang.bmm3.bmm_definitions.adoc` §Functions `Any_class`);
+    /// the generated model carries no such singleton and synthesising one
+    /// would be a shadow type, so this surface returns the type NAME, the
+    /// typed constraint staying reachable via
+    /// [`Self::flattened_conforms_to_class`].
     #[must_use]
     pub fn effective_conforms_to_type_name(&self) -> String {
         self.flattened_conforms_to_type()

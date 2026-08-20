@@ -53,7 +53,7 @@
 //! `xml_ehrbase`/`xml_roundtrip`.
 
 use openehr_its::xml::runtime::from_xml;
-use openehr_its::xml::to_canonical_xml;
+use openehr_its::xml::to_canonical_xml_ns;
 use openehr_rm::prelude::Composition;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -188,7 +188,14 @@ fn composition_c14n_matches_cnf_canonical_fixtures() {
                 continue;
             }
         };
-        let ours = to_canonical_xml(&compo, "composition").expect("serialize");
+        // The CNF reference corpus is v1-era, so parity is judged in the
+        // fixtures' own lineage (the crate default is v2, #2453).
+        let ours = to_canonical_xml_ns(
+            &compo,
+            "composition",
+            openehr_its::xml::runtime::Namespace::V1,
+        )
+        .expect("serialize");
         let ref_c14n = c14n(&fixture, &format!("{stem}_ref")).expect("c14n fixture");
         let our_c14n = c14n(&ours, &format!("{stem}_ours")).expect("c14n ours");
 
