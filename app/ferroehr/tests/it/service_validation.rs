@@ -724,7 +724,7 @@ async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
         matches!(
             &in_use,
             SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             }
         ) && in_use

@@ -29,6 +29,7 @@
               fragment the seam produced once; stored-content serving"
 )]
 
+use crate::service::status::CallStatusType;
 use openehr_base::validate::InvariantViolation;
 use serde_json::Value;
 use sqlx::PgConnection;
@@ -87,11 +88,17 @@ impl FerroEhrService {
                 && is_persistent(&read.canonical)
                 && composition_template_id(&read.canonical) == Some(template_id)
             {
-                return Err(ServiceError::conflict(format!(
-                    "EHR {ehr_id} already has a persistent COMPOSITION for template \
-                     {template_id}; only one create is allowed (subsequent commits must \
-                     be modifications)"
-                )));
+                // NOTE: SM ehr_call_status_type.adoc declares
+                // composition_already_exists; this refusal is precisely a
+                // COMPOSITION-exists conflict.
+                return Err(ServiceError::sm(
+                    CallStatusType::CompositionAlreadyExists,
+                    format!(
+                        "EHR {ehr_id} already has a persistent COMPOSITION for template \
+                         {template_id}; only one create is allowed (subsequent commits \
+                         must be modifications)"
+                    ),
+                ));
             }
         }
         Ok(())

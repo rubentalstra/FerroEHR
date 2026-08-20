@@ -92,7 +92,7 @@ async fn template_upload_list_get_roundtrip() {
         matches!(
             conflict,
             SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             }
         ),
@@ -157,7 +157,7 @@ async fn invalid_opt_xml_is_rejected() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::InvalidTemplate,
                 ..
             }
         ),

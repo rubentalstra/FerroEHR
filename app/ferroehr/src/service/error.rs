@@ -488,19 +488,18 @@ impl ServiceError {
         ServiceError::BadRequest(SmError::precondition(message))
     }
 
-    /// A state-conflict refusal (`409`) reporting the SM
-    /// `composition_already_exists` status.
+    /// A state-conflict refusal (`409`) reporting the generic SM `conflict`
+    /// status.
     ///
-    /// That is the representative `409` of `ehr_call_status_type.adoc`; a
-    /// conflict the SM names more precisely
-    /// (`ehr_create_fail_duplicate_id`, `ehr_for_subject_already_exists`) is
+    /// This is the honest token where the SM declares nothing more precise
+    /// (a duplicate template, a referenced-artefact delete, an extension
+    /// surface); a conflict the SM names
+    /// (`composition_already_exists`, `ehr_create_fail_duplicate_id`,
+    /// `ehr_for_subject_already_exists` — `ehr_call_status_type.adoc`) is
     /// built with [`ServiceError::sm`] instead.
     #[must_use]
     pub fn conflict(message: impl Into<String>) -> Self {
-        ServiceError::Conflict(SmError::new(
-            CallStatusType::CompositionAlreadyExists,
-            message,
-        ))
+        ServiceError::Conflict(SmError::new(CallStatusType::Conflict, message))
     }
 
     /// An optimistic-concurrency refusal (`412`) — the SM `version_mismatch`

@@ -151,11 +151,8 @@ async fn archetype_errors() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
-    // Invalid ADL → 422. The ADL 1.4 engine refuses the source first and
-    // reports the generic `content_invalid` with its rule code, where
-    // `i_definition_adl14.adoc` §`upload_archetype` declares
-    // `invalid_archetype`; the wire status is `422` either way.
-    // TODO(#2151): name `invalid_archetype` at the 1.4 validation sites.
+    // Invalid ADL → 422 reporting invalid_archetype (i_definition_adl14.adoc
+    // §upload_archetype .Errors).
     let bad = svc
         .upload_archetype("this is not an archetype".to_owned())
         .await
@@ -164,7 +161,7 @@ async fn archetype_errors() {
         matches!(
             bad,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::InvalidArchetype,
                 ..
             }
         ),
@@ -247,7 +244,7 @@ async fn archetype_semantic_validity_runs_the_14_engine() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::InvalidArchetype,
                 ..
             }
         ),
@@ -356,7 +353,7 @@ async fn opt_upload_has_get_list_match_delete() {
         matches!(
             conflict,
             SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             }
         ),
@@ -406,7 +403,7 @@ async fn opt_delete_refuses_while_referenced() {
     let res = svc.delete_opt(uuid.clone()).await;
     match res {
         Err(SmError {
-            status: CallStatusType::CompositionAlreadyExists,
+            status: CallStatusType::Conflict,
             ref message,
             ..
         }) => {
@@ -705,10 +702,8 @@ async fn opt_errors() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
-    // Invalid OPT → 422. The OPT ingestion path reports the generic
-    // `content_invalid`, where `i_definition_adl14.adoc` §`upload_opt`
-    // declares `invalid_template`; the wire status is `422` either way.
-    // TODO(#2151): name `invalid_template` at the OPT ingestion sites.
+    // Invalid OPT → 422 reporting invalid_template (i_definition_adl14.adoc
+    // §upload_opt .Errors).
     let bad = svc
         .upload_opt("<not-a-template/>".to_owned())
         .await
@@ -717,7 +712,7 @@ async fn opt_errors() {
         matches!(
             bad,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::InvalidTemplate,
                 ..
             }
         ),
