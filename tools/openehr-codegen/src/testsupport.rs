@@ -1128,7 +1128,7 @@ pub fn account_invariants(triples: &[(&str, &str, &str)]) -> Vec<AccountedInvari
 ///
 /// # Errors
 ///
-/// Whatever [`compose`] returns for an unknown `key` or unloadable inputs.
+/// Returns an error for an unknown `key` or unloadable BMM inputs.
 pub fn accounted_complex_invariants(key: &str) -> Result<Vec<AccountedInvariant>, Error> {
     let c = compose(key)?;
     let triples: Vec<(String, String, String)> = c
