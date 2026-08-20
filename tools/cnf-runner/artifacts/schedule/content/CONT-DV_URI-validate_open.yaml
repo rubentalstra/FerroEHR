@@ -4,11 +4,12 @@ component: CONTENT
 rm_class: DV_URI
 capabilities: [ArchetypeValidation]
 profiles: [CORE]
-test_purpose: "A committed DV_URI is accepted iff value is present and is an RFC 3986-compliant URI."
-description: "DV_URI open: only non-RFC3986 or missing values are rejected"
+test_purpose: "A committed DV_URI is accepted iff value is present and non-empty \u2014 scheme-less relative references and plain-text URIs included (the class's only invariant is Value_valid: not value.is_empty, and master10 \u00a7Design explicitly allows plain-text URIs, placing the RFC-3986 encoding duty on downstream use)."
+description: "DV_URI open: only missing or empty values are rejected"
 spec_refs:
   - "CNF platform_test_schedule master17.7 \u00a7CONT-DV_URI-validate_open"
-  - "RM data_types \u00a7DV_URI"
+  - "RM UML/classes/org.openehr.rm.data_types.dv_uri.adoc \u00a7Invariants (Value_valid: not value.is_empty \u2014 the only declared invariant) + \u00a7Description (plain-text URIs allowed)"
+  - "RM data_types/master10-uri_package.adoc \u00a7Design (plain-text URIs \u2026 are allowed \u2026 must be RFC-3986 encoded prior to use)"
   - "AM AOM1.4 \u00a7C_STRING"
 constraint_context:
   template: cnf.tpl.dv_uri_open
@@ -17,7 +18,13 @@ decision_table:
   columns: ["value", "expected", "violates"]
   rows:
     - [null, "rejected", ["rm_schema: value is mandatory"]]
-    - ["xyz", "rejected", ["rm_schema: value is not a valid RFC 3986 URI"]]
+    - ["", "rejected", ["rm_invariant(Value_valid): value must be non-empty"]]
+    # Adjudicated 2026-08-20 (the fix issue carries the derivation): the former
+    # rejected row enforced an RFC-3986 floor the class does not declare \u2014 the
+    # only invariant is non-emptiness and the plain-text allowance admits
+    # scheme-less values, so relative references and plain text accept.
+    - ["xyz", "accepted", []]
+    - ["see the attached guideline", "accepted", []]
     - ["ftp://ftp.is.co.za/rfc/rfc1808.txt", "accepted", []]
     - ["http://www.ietf.org/rfc/rfc2396.txt", "accepted", []]
     - ["ldap://[2001:db8::7]/c=GB?objectClass?one", "accepted", []]

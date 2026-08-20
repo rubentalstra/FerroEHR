@@ -9108,11 +9108,19 @@ AMB-209:
     it has no stopping point — every format-constrained leaf (ISO 8601
     durations, terminology codes, archetype ids) would migrate to 400 with
     it, collapsing the 422 branch that `responses/422.yaml` explicitly
-    provides for content that converted. Pinned by row 1 of
-    `CONT-DV_URI-validate_open` and row 1 of `CONT-DV_EHR_URI-validate_open`,
-    whose authored `violates` clause is a `rm_schema:` entry about a VALUE's
-    form and therefore does NOT carry the `mandatory` word the
-    content-table refusal split keys on (schedule/content/README.md).
+    provides for content that converted. RE-GROUNDED (issue #2484): the
+    DV_URI lexical-refusal class this entry originally pinned no longer
+    exists — the ch.10 audit found the RFC-3986 floor was an invented
+    prohibition (the class's only invariant is `Value_valid: not
+    value.is_empty` and master10 §Design explicitly allows scheme-less
+    plain-text URIs), so `CONT-DV_URI-validate_open` now ACCEPTS those
+    values and `CONT-DV_EHR_URI-validate_open` refuses a scheme-less value
+    on its real `Scheme_valid` invariant. The convertibility boundary this
+    entry fixes SURVIVES for every value-form refusal that genuinely exists
+    (the `iso8601(...)`, `rm_invariant(...)` and terminology-code rows all
+    refuse 422, never 400), and the runner's parse/semantic discriminator
+    (`run.rs::refused_at_parse`, keying `rm_schema:` + `mandatory`) keeps
+    exactly that line.
   disposition: fixed_handling
 
 AMB-210:
@@ -9313,3 +9321,26 @@ AMB-214:
     INTERVAL_EVENT; the editorial defect is reported upstream.
   disposition: fixed_handling
   upstream_issue: 2472
+AMB-215:
+  ambiguity: >-
+    The Encapsulated-package chapter's own examples table names an
+    integrity-check algorithm code the terminology code set does not
+    define: the "inline JPG with SHA-2 hash" row sets
+    integrity_check_algorithm = "openehr::SHA-2", while the integrity
+    check algorithms code set enumerates the SHA-2 FAMILY members
+    (SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, ...) and has no SHA-2
+    member — so an instance following the example is refused by the
+    class's own Integrity_check_algorithm_validity.
+  source: >-
+    RM docs/data_types/master09-encapsulated_package.adoc §Examples; RM
+    UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants
+    Integrity_check_algorithm_validity; the openEHR terminology integrity
+    check algorithms code set (crates/openehr-term/assets).
+  handling: >-
+    Fixed handling (issue #2483): the invariant + code set win — SHA-2 is
+    refused as out-of-set, the example row is illustrative prose with no
+    normative force against the invariant, and the catalogue commits
+    SHA-256 in the accepting instance while pinning the out-of-set refusal
+    (issue #2482). The example defect is reported upstream.
+  disposition: fixed_handling
+  upstream_issue: 2483
