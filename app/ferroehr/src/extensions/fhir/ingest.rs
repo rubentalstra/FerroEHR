@@ -559,6 +559,70 @@ impl FerroEhrService {
         Ok(self.delete_mapping(a_mapping_id).await?)
     }
 
+    /// Resolve every cross-terminology translation `def` requests for
+    /// `a_resource` through the terminology seam (`ConceptMap/$translate`),
+    /// keyed for [`ferroehr_ext::fhir::mapping::build_flat`].
+    ///
+    /// Fail-closed: a mapping that declares `translate` on a deployment with
+    /// no terminology provider for the route is a configuration fault (500),
+    /// never a silent pass-through of the untranslated code. A provider that
+    /// ANSWERS "no translation" is not a fault — the entry's own
+    /// `required` flag decides between refusal and skip in `build_flat`.
+    ///
+    /// # Errors
+    /// `precondition` when the mapping's translate entries are malformed
+    /// against the resource; `Exception` when no provider serves a request's
+    /// route or the provider call fails.
+    async fn resolve_code_translations(
+        &self,
+        a_resource: &Value,
+        def: &FhirMappingDefinition,
+    ) -> Result<ferroehr_ext::fhir::mapping::CodeTranslations, SmError> {
+        let requests = ferroehr_ext::fhir::mapping::collect_translations(a_resource, def)
+            .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
+        let mut translations = ferroehr_ext::fhir::mapping::CodeTranslations::default();
+        if requests.is_empty() {
+            return Ok(translations);
+        }
+        let Some(router) = &self.terminology else {
+            return Err(internal_fault(
+                "translate a FHIR mapping's codes",
+                &"the mapping declares translate but no terminology provider is configured",
+            ));
+        };
+        for request in requests {
+            let provider = request
+                .route_terminology
+                .as_deref()
+                .and_then(|t| router.provider_for(t))
+                .or_else(|| router.default_provider())
+                .ok_or_else(|| {
+                    internal_fault(
+                        "translate a FHIR mapping's codes",
+                        &format_args!(
+                            "no terminology provider serves route '{}'",
+                            request.route_terminology.as_deref().unwrap_or("default")
+                        ),
+                    )
+                })?;
+            if let Some(translated) = provider
+                .translate(
+                    &request.system,
+                    &request.code,
+                    &request.target_system,
+                    request.concept_map.as_deref(),
+                )
+                .await?
+            {
+                translations.0.insert(
+                    (request.system, request.code, request.target_system),
+                    translated,
+                );
+            }
+        }
+        Ok(translations)
+    }
+
     /// Ingest a FHIR resource: resolve the enabled mapping for
     /// `resource_type` + `profile`, resolve-or-create the target EHR from the
     /// resource's subject, build the COMPOSITION (FLAT → canonical), stamp
@@ -600,11 +664,14 @@ impl FerroEhrService {
             .ensure_ehr_for_subject(SubjectRef::person(subject.id, subject.namespace))
             .await?;
 
-        // 3. Build the FLAT map + the canonical COMPOSITION. `now` supplies the
-        //    ctx/time default (ITS-REST simplified_formats master04 §Context) and
-        //    the FEEDER_AUDIT provenance instant — one ingestion instant for both.
+        // 3. Resolve the mapping's cross-terminology translations through the
+        //    terminology seam (FHIR ConceptMap/$translate), then build the
+        //    FLAT map + the canonical COMPOSITION. `now` supplies the ctx/time
+        //    default (ITS-REST simplified_formats master04 §Context) and the
+        //    FEEDER_AUDIT provenance instant — one ingestion instant for both.
+        let translations = self.resolve_code_translations(&a_resource, &def).await?;
         let wt = self.web_template_for(&def.template_id).await?;
-        let flat = ferroehr_ext::fhir::mapping::build_flat(&a_resource, &def)
+        let flat = ferroehr_ext::fhir::mapping::build_flat(&a_resource, &def, &translations)
             .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
         let now = ferroehr_ext::fhir::feeder_audit::now_iso();
         let mut composition = openehr_its::flat::convert::composition_from_flat(&flat, &wt, &now)

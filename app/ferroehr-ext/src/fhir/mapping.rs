@@ -26,16 +26,25 @@
 //! here; the orchestration (mapping-store lookup, EHR resolution, commit)
 //! lives in the parent [`super`] module on `FerroEhrService`.
 //!
-//! The FHIR side is a deliberate **subset** of `FHIRPath`: object-field
-//! navigation and array indexing only (`code.coding[0].code`,
-//! `component[1].valueQuantity.value`), never the full language (no functions,
-//! filters, `where()`, `resolve()`, unions, `$this`, arithmetic) — which is
-//! what the flat, single-value leaf extraction openEHR FLAT paths need.
-// TODO(#2458): richer FHIRPath support and cross-terminology code translation
-// (through the TerminologyService seam).
-//! `code_map` binds a FHIR system URL to an openEHR `terminology_id` and passes
-//! the code through unchanged; the built COMPOSITION's own terminology
-//! validation is the authority on the result.
+//! The FHIR side is a deliberate **subset** of `FHIRPath`
+//! (<https://hl7.org/fhirpath/>): object-field navigation, array indexing,
+//! `first()`, and single-condition `where(path = literal)` filters
+//! (`code.coding.where(system = 'http://loinc.org').code`,
+//! `component.where(code.coding[0].code = '8480-6').valueQuantity.value`) —
+//! never the full language (no other functions, unions, `$this`, arithmetic).
+//! `FHIRPath` defines `where()` over collections; this single-value subset
+//! takes the FIRST matching element, which is what the flat, single-value
+//! leaf extraction openEHR FLAT paths need.
+//!
+//! `code_map` binds a FHIR system URL to an openEHR `terminology_id` and
+//! passes the code through unchanged. A `coded` entry may additionally
+//! declare `translate`, requesting cross-terminology code translation: the
+//! orchestrator resolves each [`TranslationRequest`] (from
+//! [`collect_translations`]) through the platform's terminology seam (FHIR
+//! `ConceptMap/$translate`) and hands the answers back as
+//! [`CodeTranslations`] — this module stays pure and never talks to a
+//! server. The built COMPOSITION's own terminology validation remains the
+//! authority on the result.
 
 #![expect(
     clippy::disallowed_types,
@@ -145,7 +154,70 @@ pub enum Transform {
         /// `FHIRPath`-lite path to the human-readable display text.
         #[serde(default)]
         display_path: Option<String>,
+        /// Cross-terminology translation of the code before it is written
+        /// (resolved by the orchestrator through the terminology seam).
+        #[serde(default)]
+        translate: Option<CodeTranslate>,
     },
+}
+
+/// A `coded` entry's translation request: translate the source code into
+/// `target_system` before writing it, via FHIR `ConceptMap/$translate`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CodeTranslate {
+    /// The FHIR code-system URL to translate INTO (the `targetsystem`
+    /// parameter; also the `code_map` key that names the leaf's
+    /// `terminology_id`).
+    pub target_system: String,
+    /// An explicit `ConceptMap` canonical URL (the `url` parameter); absent =
+    /// the terminology server picks from its registered maps.
+    #[serde(default)]
+    pub concept_map: Option<String>,
+}
+
+/// One code the orchestrator must translate before [`build_flat`] can apply a
+/// `translate`-declaring entry: the source coding, the target system, and the
+/// openEHR terminology token the entry's `code_map` binds the target to (the
+/// routing key for the terminology seam).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TranslationRequest {
+    /// The source code's system URL (from the entry's `system_path`).
+    pub system: String,
+    /// The source code.
+    pub code: String,
+    /// The FHIR system URL to translate into.
+    pub target_system: String,
+    /// The explicit `ConceptMap` URL, when the entry pins one.
+    pub concept_map: Option<String>,
+    /// The openEHR `terminology_id` the entry's `code_map` resolves
+    /// `target_system` to (`None` when the map has no binding — the
+    /// orchestrator then routes to its default provider).
+    pub route_terminology: Option<String>,
+}
+
+/// A resolved translation: the target code (and display, when the server
+/// returned one).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TranslatedCode {
+    /// The translated code in the target system.
+    pub code: String,
+    /// The target concept's display text.
+    pub display: Option<String>,
+}
+
+/// The resolved answers [`build_flat`] reads, keyed by
+/// `(system, code, target_system)`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CodeTranslations(pub BTreeMap<(String, String, String), TranslatedCode>);
+
+impl CodeTranslations {
+    /// Looks up the translation for one source coding into one target system.
+    #[must_use]
+    pub fn get(&self, system: &str, code: &str, target_system: &str) -> Option<&TranslatedCode> {
+        self.0
+            .get(&(system.to_owned(), code.to_owned(), target_system.to_owned()))
+    }
 }
 
 /// A FHIR→openEHR mapping transform failure.
@@ -176,6 +248,26 @@ pub enum FhirMapError {
     /// A `coded` entry was declared without a `fhir_path`.
     #[error("coded mapping entry for '{0}' has no fhir_path")]
     CodedWithoutSource(String),
+    /// A `translate`-declaring entry's source coding had no system to
+    /// translate from (no `system_path`, or nothing at it).
+    #[error("coded mapping entry for '{0}' declares translate but resolves no source system")]
+    TranslateWithoutSystem(String),
+    /// A required entry's code could not be translated into the target
+    /// system (the terminology seam returned no equivalent concept).
+    #[error(
+        "required code '{code}' ({system}) has no translation into '{target_system}' \
+         (→ '{openehr_path}')"
+    )]
+    Untranslatable {
+        /// The source code's system URL.
+        system: String,
+        /// The source code.
+        code: String,
+        /// The FHIR system URL the entry translates into.
+        target_system: String,
+        /// The FLAT target path.
+        openehr_path: String,
+    },
     /// The reverse transform could not flatten the COMPOSITION (its
     /// `WebTemplate` walk failed) — a server-side error (the stored
     /// COMPOSITION should always flatten).
@@ -190,32 +282,110 @@ pub enum FhirMapError {
 
 /// Resolve a **`FHIRPath`-lite** dot-path against a JSON value.
 ///
-/// Grammar (a deliberate subset of `FHIRPath` — see the module NOTE):
+/// Grammar (a deliberate subset of `FHIRPath`,
+/// <https://hl7.org/fhirpath/> §5.1 `first()` / §5.2 `where()`):
 ///
 /// ```text
 /// path    := segment ('.' segment)*
-/// segment := name index? | index
+/// segment := name index? | index | 'first()' | 'where(' path '=' literal ')'
 /// name    := [A-Za-z_][A-Za-z0-9_]*
 /// index   := '[' digits ']'
+/// literal := '\'' chars '\'' | digits ('.' digits)? | 'true' | 'false'
 /// ```
 ///
-/// A `name` selects an object field; an `index` selects an array element. So
-/// `component[0].valueQuantity.value`, `code.coding[0].code`,
-/// `subject.reference`, and `meta.profile[0]` all resolve. Anything richer
-/// (functions, filters, unions) is out of scope and yields `None`.
+/// A `name` selects an object field; an `index` selects an array element;
+/// `first()` selects an array's first element; `where(path = literal)` on an
+/// array selects the FIRST element whose `path` equals the literal (on an
+/// object, the object itself when it matches). `FHIRPath` proper evaluates
+/// `where()` over collections — this single-value subset takes the first
+/// match, because a FLAT leaf is one value. So
+/// `component.where(code.coding[0].code = '8480-6').valueQuantity.value`,
+/// `code.coding.where(system = 'http://loinc.org').code`, and
+/// `meta.profile[0]` all resolve. Anything richer (other functions, unions,
+/// arithmetic) is out of scope and yields `None`.
 #[must_use]
 pub fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
     let mut cur = root;
-    for seg in path.split('.') {
-        let (name, index) = parse_segment(seg)?;
-        if !name.is_empty() {
-            cur = cur.get(name)?;
-        }
-        if let Some(i) = index {
-            cur = cur.get(i)?;
+    for seg in split_steps(path)? {
+        if seg == "first()" {
+            cur = cur.as_array()?.first()?;
+        } else if let Some(inner) = seg.strip_prefix("where(").and_then(|r| r.strip_suffix(')')) {
+            let (lhs, rhs) = parse_condition(inner)?;
+            cur = match cur {
+                Value::Array(items) => items
+                    .iter()
+                    .find(|item| resolve(item, lhs).is_some_and(|v| *v == rhs))?,
+                other if resolve(other, lhs).is_some_and(|v| *v == rhs) => other,
+                _ => return None,
+            };
+        } else {
+            let (name, index) = parse_segment(seg)?;
+            if !name.is_empty() {
+                cur = cur.get(name)?;
+            }
+            if let Some(i) = index {
+                cur = cur.get(i)?;
+            }
         }
     }
     Some(cur)
+}
+
+/// Splits a path on `.` at depth zero — dots inside `where(…)` parentheses or
+/// single-quoted literals do not split. `None` on unbalanced parens/quotes.
+fn split_steps(path: &str) -> Option<Vec<&str>> {
+    let mut steps = Vec::new();
+    let mut depth = 0_u32;
+    let mut in_quote = false;
+    let mut start = 0;
+    for (i, c) in path.char_indices() {
+        match c {
+            '\'' => in_quote = !in_quote,
+            '(' if !in_quote => depth += 1,
+            ')' if !in_quote => depth = depth.checked_sub(1)?,
+            '.' if !in_quote && depth == 0 => {
+                steps.push(path.get(start..i)?);
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 || in_quote {
+        return None;
+    }
+    steps.push(path.get(start..)?);
+    Some(steps)
+}
+
+/// Parses a `where()` condition body — `path = literal` — into the comparison
+/// path and the literal's JSON value.
+fn parse_condition(inner: &str) -> Option<(&str, Value)> {
+    // The `=` split must ignore any `=` inside the quoted literal, so scan at
+    // quote depth zero.
+    let mut in_quote = false;
+    let eq = inner.char_indices().find_map(|(i, c)| match c {
+        '\'' => {
+            in_quote = !in_quote;
+            None
+        }
+        '=' if !in_quote => Some(i),
+        _ => None,
+    })?;
+    let lhs = inner.get(..eq)?.trim();
+    let raw = inner.get(eq + 1..)?.trim();
+    if lhs.is_empty() || raw.is_empty() {
+        return None;
+    }
+    let rhs = if let Some(s) = raw.strip_prefix('\'').and_then(|r| r.strip_suffix('\'')) {
+        Value::String(s.to_owned())
+    } else if raw == "true" || raw == "false" {
+        Value::Bool(raw == "true")
+    } else {
+        serde_json::from_str::<serde_json::Number>(raw)
+            .ok()
+            .map(Value::Number)?
+    };
+    Some((lhs, rhs))
 }
 
 /// Splits one path segment into its `(name, index)` parts.
@@ -236,28 +406,89 @@ pub fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
 }
 
 /// Build the FLAT map for a resource under a mapping definition: the seed
-/// `context` keys, then each entry's produced leaf(s).
+/// `context` keys, then each entry's produced leaf(s). `translations` carries
+/// the orchestrator's resolved [`TranslationRequest`] answers (empty when no
+/// entry declares `translate`).
 /// # Errors
 /// Returns [`FhirMapError`] when a mapping entry cannot be applied to the
-/// resource (missing/mistyped member, unresolvable path).
+/// resource (missing/mistyped member, unresolvable path, an untranslatable
+/// required code).
 pub fn build_flat(
     resource: &Value,
     def: &FhirMappingDefinition,
+    translations: &CodeTranslations,
 ) -> Result<Map<String, Value>, FhirMapError> {
     let mut flat = Map::new();
     for (key, value) in &def.context {
         flat.insert(key.clone(), value.clone());
     }
     for entry in &def.entries {
-        apply_entry(resource, entry, &mut flat)?;
+        apply_entry(resource, entry, translations, &mut flat)?;
     }
     Ok(flat)
+}
+
+/// Enumerate the translations `def` needs for `resource`: one request per
+/// `translate`-declaring coded entry whose source code + system resolve.
+/// Deduplicated and ordered; the orchestrator resolves each through the
+/// terminology seam and hands the answers to [`build_flat`].
+/// # Errors
+/// Returns [`FhirMapError::TranslateWithoutSystem`] when a `translate` entry
+/// resolves a code but no source system, and
+/// [`FhirMapError::MissingField`] when a required entry's code is absent —
+/// the same refusals [`build_flat`] would reach, surfaced before any
+/// terminology call.
+pub fn collect_translations(
+    resource: &Value,
+    def: &FhirMappingDefinition,
+) -> Result<Vec<TranslationRequest>, FhirMapError> {
+    let mut requests = std::collections::BTreeSet::new();
+    for entry in &def.entries {
+        let Transform::Coded {
+            system_path,
+            translate: Some(translate),
+            ..
+        } = &entry.transform
+        else {
+            continue;
+        };
+        if entry.constant.is_some() {
+            continue;
+        }
+        let fhir_path = entry
+            .fhir_path
+            .as_deref()
+            .ok_or_else(|| FhirMapError::CodedWithoutSource(entry.openehr_path.clone()))?;
+        let Some(code) = resolve(resource, fhir_path).and_then(Value::as_str) else {
+            if entry.required {
+                return Err(FhirMapError::MissingField {
+                    fhir_path: fhir_path.to_owned(),
+                    openehr_path: entry.openehr_path.clone(),
+                });
+            }
+            continue;
+        };
+        let system = system_path
+            .as_deref()
+            .and_then(|p| resolve(resource, p))
+            .and_then(Value::as_str)
+            .ok_or_else(|| FhirMapError::TranslateWithoutSystem(entry.openehr_path.clone()))?;
+        requests.insert(TranslationRequest {
+            system: system.to_owned(),
+            code: code.to_owned(),
+            target_system: translate.target_system.clone(),
+            concept_map: translate.concept_map.clone(),
+            route_terminology: entry.code_map.get(&translate.target_system).cloned(),
+        });
+    }
+    Ok(requests.into_iter().collect())
 }
 
 /// Apply one entry, writing zero or more FLAT leaves into `flat`.
 fn apply_entry(
     resource: &Value,
     entry: &MappingEntry,
+    translations: &CodeTranslations,
     flat: &mut Map<String, Value>,
 ) -> Result<(), FhirMapError> {
     // A constant short-circuits any source read (any transform).
@@ -290,6 +521,7 @@ fn apply_entry(
         Transform::Coded {
             system_path,
             display_path,
+            translate,
         } => {
             let fhir_path = entry
                 .fhir_path
@@ -304,11 +536,51 @@ fn apply_entry(
                 }
                 return Ok(());
             };
-            flat.insert(format!("{}|code", entry.openehr_path), json!(code));
             let system = system_path
                 .as_deref()
                 .and_then(|p| resolve(resource, p))
                 .and_then(Value::as_str);
+            if let Some(translate) = translate {
+                let system = system.ok_or_else(|| {
+                    FhirMapError::TranslateWithoutSystem(entry.openehr_path.clone())
+                })?;
+                let Some(translated) = translations.get(system, code, &translate.target_system)
+                else {
+                    // No equivalent concept: writing the SOURCE code under the
+                    // TARGET terminology would be a silently wrong clinical
+                    // value, so a required entry refuses and an optional one
+                    // writes nothing.
+                    if entry.required {
+                        return Err(FhirMapError::Untranslatable {
+                            system: system.to_owned(),
+                            code: code.to_owned(),
+                            target_system: translate.target_system.clone(),
+                            openehr_path: entry.openehr_path.clone(),
+                        });
+                    }
+                    return Ok(());
+                };
+                flat.insert(
+                    format!("{}|code", entry.openehr_path),
+                    json!(translated.code),
+                );
+                let terminology = entry
+                    .code_map
+                    .get(&translate.target_system)
+                    .or_else(|| entry.code_map.get("*"))
+                    .map_or("local", String::as_str);
+                flat.insert(
+                    format!("{}|terminology", entry.openehr_path),
+                    json!(terminology),
+                );
+                // The translated concept's own display wins; the source
+                // resource's display_path text names the SOURCE concept.
+                if let Some(display) = &translated.display {
+                    flat.insert(format!("{}|value", entry.openehr_path), json!(display));
+                }
+                return Ok(());
+            }
+            flat.insert(format!("{}|code", entry.openehr_path), json!(code));
             let terminology = system
                 .and_then(|s| entry.code_map.get(s))
                 .or_else(|| entry.code_map.get("*"))
@@ -476,7 +748,7 @@ mod tests {
                 { "valueQuantity": { "value": 80 } }
             ]
         });
-        let flat = build_flat(&resource, &d).expect("build_flat");
+        let flat = build_flat(&resource, &d, &CodeTranslations::default()).expect("build_flat");
         assert_eq!(
             flat["encounter_training_sample/blood_pressure_training_sample:0/systolic|magnitude"],
             json!(120)
@@ -515,7 +787,7 @@ mod tests {
             "resourceType": "Condition",
             "code": { "coding": [{ "system": "http://snomed.info/sct", "code": "73211009", "display": "Diabetes mellitus" }] }
         });
-        let flat = build_flat(&resource, &d).expect("build_flat");
+        let flat = build_flat(&resource, &d, &CodeTranslations::default()).expect("build_flat");
         assert_eq!(flat["x/problem|code"], json!("73211009"));
         assert_eq!(flat["x/problem|terminology"], json!("SNOMED-CT"));
         assert_eq!(flat["x/problem|value"], json!("Diabetes mellitus"));
@@ -533,7 +805,7 @@ mod tests {
         }));
         let resource =
             json!({ "code": { "coding": [{ "system": "http://unknown", "code": "z" }] } });
-        let flat = build_flat(&resource, &d).expect("build_flat");
+        let flat = build_flat(&resource, &d, &CodeTranslations::default()).expect("build_flat");
         assert_eq!(flat["x/problem|terminology"], json!("local"));
     }
 
@@ -544,7 +816,7 @@ mod tests {
             "subject": { "reference_path": "id", "namespace": "fhir" },
             "entries": [ { "openehr_path": "x/y", "fhir_path": "absent.here", "required": true } ]
         }));
-        let err = build_flat(&json!({}), &d).unwrap_err();
+        let err = build_flat(&json!({}), &d, &CodeTranslations::default()).unwrap_err();
         assert!(matches!(err, FhirMapError::MissingField { .. }));
     }
 
@@ -621,7 +893,7 @@ mod tests {
             ]
         });
 
-        let flat = build_flat(&resource, &d).expect("build_flat");
+        let flat = build_flat(&resource, &d, &CodeTranslations::default()).expect("build_flat");
         // Fixed ctx/time (ITS-REST simplified_formats master04 §Context) so the
         // built composition is deterministic under test.
         let mut comp = composition_from_flat(&flat, &wt, "2024-01-01T00:00:00Z")
@@ -652,5 +924,167 @@ mod tests {
         let s = comp.to_string();
         assert!(s.contains("118"), "systolic magnitude present");
         assert!(s.contains("76"), "diastolic magnitude present");
+    }
+
+    // ── `FHIRPath`-lite: where() + first() ───────────────────────────────────
+    #[test]
+    fn resolve_where_filters_and_first_selects() {
+        let r = json!({
+            "code": { "coding": [
+                { "system": "http://loinc.org", "code": "8480-6" },
+                { "system": "http://snomed.info/sct", "code": "271649006" }
+            ]},
+            "component": [
+                { "code": { "coding": [{ "code": "8480-6" }] },
+                  "valueQuantity": { "value": 120 } },
+                { "code": { "coding": [{ "code": "8462-4" }] },
+                  "valueQuantity": { "value": 80 } }
+            ]
+        });
+        assert_eq!(
+            resolve(
+                &r,
+                "code.coding.where(system = 'http://snomed.info/sct').code"
+            )
+            .and_then(Value::as_str),
+            Some("271649006")
+        );
+        assert_eq!(
+            resolve(
+                &r,
+                "component.where(code.coding[0].code = '8462-4').valueQuantity.value"
+            )
+            .and_then(Value::as_i64),
+            Some(80),
+            "the filter picks by content, not position"
+        );
+        assert_eq!(
+            resolve(&r, "code.coding.first().code").and_then(Value::as_str),
+            Some("8480-6")
+        );
+        assert!(
+            resolve(
+                &r,
+                "component.where(code.coding[0].code = 'absent').valueQuantity"
+            )
+            .is_none()
+        );
+        // A numeric literal compares as a number, not a string.
+        assert!(
+            resolve(
+                &r,
+                "component.where(valueQuantity.value = 120).code.coding[0].code"
+            )
+            .is_some()
+        );
+        // Malformed paths yield None, never a panic.
+        assert!(resolve(&r, "code.where(system = 'unterminated").is_none());
+        assert!(resolve(&r, "code.where(system 'no-eq')").is_none());
+        assert!(resolve(&r, "code.coding.where()").is_none());
+    }
+
+    // ── translate: collect + apply through CodeTranslations ─────────────────
+    fn translate_def(required: bool) -> FhirMappingDefinition {
+        def(json!({
+            "resource_type": "Condition", "template_id": "t",
+            "subject": { "reference_path": "id", "namespace": "fhir" },
+            "entries": [
+                { "openehr_path": "x/problem",
+                  "fhir_path": "code.coding[0].code",
+                  "required": required,
+                  "transform": { "kind": "coded",
+                    "system_path": "code.coding[0].system",
+                    "display_path": "code.coding[0].display",
+                    "translate": { "target_system": "http://snomed.info/sct" } },
+                  "code_map": { "http://snomed.info/sct": "SNOMED-CT" } }
+            ]
+        }))
+    }
+
+    fn loinc_condition() -> Value {
+        json!({ "code": { "coding": [{
+            "system": "http://loinc.org", "code": "8480-6", "display": "Systolic BP"
+        }] } })
+    }
+
+    #[test]
+    fn collect_translations_enumerates_the_route() {
+        let requests =
+            collect_translations(&loinc_condition(), &translate_def(false)).expect("collect");
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].system, "http://loinc.org");
+        assert_eq!(requests[0].code, "8480-6");
+        assert_eq!(requests[0].target_system, "http://snomed.info/sct");
+        assert_eq!(requests[0].route_terminology.as_deref(), Some("SNOMED-CT"));
+    }
+
+    #[test]
+    fn build_flat_translated_code_wins_over_source() {
+        let mut translations = CodeTranslations::default();
+        translations.0.insert(
+            (
+                "http://loinc.org".to_owned(),
+                "8480-6".to_owned(),
+                "http://snomed.info/sct".to_owned(),
+            ),
+            TranslatedCode {
+                code: "271649006".to_owned(),
+                display: Some("Systolic blood pressure".to_owned()),
+            },
+        );
+        let flat =
+            build_flat(&loinc_condition(), &translate_def(false), &translations).expect("build");
+        assert_eq!(flat["x/problem|code"], json!("271649006"));
+        assert_eq!(flat["x/problem|terminology"], json!("SNOMED-CT"));
+        assert_eq!(
+            flat["x/problem|value"],
+            json!("Systolic blood pressure"),
+            "the translated concept's display wins over display_path"
+        );
+    }
+
+    #[test]
+    fn build_flat_untranslated_required_refuses_and_optional_writes_nothing() {
+        let err = build_flat(
+            &loinc_condition(),
+            &translate_def(true),
+            &CodeTranslations::default(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, FhirMapError::Untranslatable { .. }));
+
+        let flat = build_flat(
+            &loinc_condition(),
+            &translate_def(false),
+            &CodeTranslations::default(),
+        )
+        .expect("build");
+        assert!(
+            !flat.contains_key("x/problem|code"),
+            "an untranslatable optional entry writes NO leaf — never the source code \
+             under the target terminology"
+        );
+    }
+
+    #[test]
+    fn translate_without_source_system_refuses() {
+        let d = def(json!({
+            "resource_type": "Condition", "template_id": "t",
+            "subject": { "reference_path": "id", "namespace": "fhir" },
+            "entries": [
+                { "openehr_path": "x/problem", "fhir_path": "code.coding[0].code",
+                  "transform": { "kind": "coded",
+                    "translate": { "target_system": "http://snomed.info/sct" } } }
+            ]
+        }));
+        let resource = json!({ "code": { "coding": [{ "code": "8480-6" }] } });
+        assert!(matches!(
+            collect_translations(&resource, &d).unwrap_err(),
+            FhirMapError::TranslateWithoutSystem(_)
+        ));
+        assert!(matches!(
+            build_flat(&resource, &d, &CodeTranslations::default()).unwrap_err(),
+            FhirMapError::TranslateWithoutSystem(_)
+        ));
     }
 }
