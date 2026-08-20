@@ -34,7 +34,9 @@ use crate::versioning::audit::{
     validate_commit_audit,
 };
 use crate::versioning::change::{Change, CommittedContribution};
-use crate::versioning::lifecycle::{lifecycle_state_code, state};
+use crate::versioning::lifecycle::{
+    lifecycle_rubric, lifecycle_state_code, resolve_lifecycle, state,
+};
 use crate::versioning::object_version_id::{self, TreeId};
 use crate::versioning::signature::signer::Signer;
 use crate::versioning::wire::version_envelope;
@@ -521,6 +523,9 @@ pub(crate) async fn commit_version_set(
                  under required)"
                     .to_owned(),
             ));
+        }
+        if action == Action::Delete {
+            reject_contradictory_delete_lifecycle(lifecycle_state.as_deref())?;
         }
         // A `553|incomplete|` version gets relaxed content validation
         // (master06 §Incomplete Content).
@@ -1112,7 +1117,9 @@ fn coded_value(dv: &Value) -> Option<String> {
 /// `schemas/common/UpdateVersion.yaml`); this raw-body lane also accepts the
 /// SM `Terminology_code` spelling (`{terminology_id, code_string}`,
 /// `UML/classes/update_version.adoc`), a bare `{value}`, or a plain string.
-/// `None` → the commit path defaults to `532|complete|`.
+/// `None` is legal only on a `666|attestation|` member, which commits no
+/// version; every other member is refused without one
+/// ([`commit_version_set`]).
 fn lifecycle_of(version: &Value) -> Option<String> {
     let ls = version.get("lifecycle_state")?;
     if let Some(s) = ls.as_str() {
@@ -1127,6 +1134,46 @@ fn lifecycle_of(version: &Value) -> Option<String> {
         })
         .or_else(|| ls.get("value").and_then(Value::as_str))
         .map(str::to_owned)
+}
+
+/// Refuse a delete member whose declared `lifecycle_state` is not the
+/// `523|deleted|` its own change type commits.
+///
+/// RM common `master06-change_control_package.adoc` §Logical Deletion states
+/// the deletion as ONE procedure whose third step is "set the
+/// `_lifecycle_state_` value to the code for `deleted`", so a member pairing
+/// change type `523|deleted|` with any other state asks for two contradictory
+/// things at once. Discarding the declared state would tell the client its
+/// instruction was followed when it was not; the direct DELETE wire refuses
+/// the same contradiction on its committal header. The code is the released
+/// `400_CONTRIBUTION` change-control trigger — "the modification type does
+/// not match the operation" (`responses/400_CONTRIBUTION.yaml`), the clause
+/// [`classify`]'s sibling mismatches already answer.
+///
+/// An absent state is not this function's business — [`commit_version_set`]
+/// requires one on every non-attest member.
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] when `declared` resolves to a
+/// `version_lifecycle_state` other than `523|deleted|`;
+/// [`ServiceError::Unprocessable`] when it names no member of that group at
+/// all (`ORIGINAL_VERSION.Lifecycle_state_valid`).
+fn reject_contradictory_delete_lifecycle(declared: Option<&str>) -> Result<(), ServiceError> {
+    let Some(declared) = declared else {
+        return Ok(());
+    };
+    let code = resolve_lifecycle(Some(declared.to_owned()))?;
+    if code == state::DELETED {
+        return Ok(());
+    }
+    Err(ServiceError::precondition(format!(
+        "lifecycle_state {code}|{}| contradicts change_type 523|deleted| — logical \
+         deletion deletes the version's data and sets the state to the code for \
+         deleted in one act, so a delete member commits a 523|deleted| version (RM \
+         common master06 §Logical Deletion; ITS-REST contribution 400: the \
+         modification type does not match the operation)",
+        lifecycle_rubric(&code)
+    )))
 }
 
 /// The versioned-object kind of a VERSION's `data`, from its `_type`.
@@ -1690,5 +1737,52 @@ mod tests {
         assert_eq!((action, code.as_str()), (Action::Create, "249"));
         let (action, code) = classify(None, true, true).unwrap();
         assert_eq!((action, code.as_str()), (Action::Modify, "251"));
+    }
+
+    /// A delete member states the `523|deleted|` its change type commits, in
+    /// any accepted spelling; every other state of the group contradicts the
+    /// deletion procedure and is the 400, and a token outside the group keeps
+    /// the shared out-of-group 422.
+    #[test]
+    fn a_delete_member_states_the_deleted_lifecycle_or_nothing() {
+        // The accepting twins: the code, its rubric, and the absent state the
+        // required-lifecycle check owns instead.
+        for accepted in ["523", "deleted", "Deleted"] {
+            assert!(
+                reject_contradictory_delete_lifecycle(Some(accepted)).is_ok(),
+                "{accepted} is the deleted state"
+            );
+        }
+        assert!(reject_contradictory_delete_lifecycle(None).is_ok());
+
+        // Every other member of the group contradicts the change type.
+        for contradicting in [
+            state::COMPLETE,
+            state::INCOMPLETE,
+            state::INACTIVE,
+            state::ABANDONED,
+            "complete",
+        ] {
+            match reject_contradictory_delete_lifecycle(Some(contradicting)) {
+                Err(ServiceError::BadRequest(e)) => {
+                    assert!(e.message.contains("Logical Deletion"), "{e:?}");
+                    assert!(e.message.contains("contradicts change_type"), "{e:?}");
+                }
+                other => panic!("{contradicting} must be a 400, got {other:?}"),
+            }
+        }
+
+        // An out-of-group token is the same 422 every other member's state
+        // gets (ORIGINAL_VERSION.Lifecycle_state_valid).
+        match reject_contradictory_delete_lifecycle(Some("999")) {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
+                assert_eq!(v.path(), Some("lifecycle_state"));
+                assert_eq!(
+                    v.invariant(),
+                    Some("ORIGINAL_VERSION.Lifecycle_state_valid")
+                );
+            }
+            other => panic!("an out-of-group delete state must be 422, got {other:?}"),
+        }
     }
 }
