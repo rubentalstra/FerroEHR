@@ -2215,6 +2215,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-history_family_invalid",
+      "status": "passed",
+      "rows_driven": 3,
+      "rows_total": 3
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-history_interval_events",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_member",
       "status": "passed",
       "rows_driven": 1,
