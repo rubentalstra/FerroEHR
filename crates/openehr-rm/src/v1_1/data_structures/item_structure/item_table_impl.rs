@@ -195,41 +195,48 @@ impl ItemTable {
     /// This table as a CEN EN13606-compatible hierarchy, or `None` for a table
     /// with no cells.
     ///
-    /// Spec: `item_table.adoc` §Functions `as_hierarchy` — "Generate a CEN
-    /// EN13606-compatible hierarchy consisting of a single `CLUSTER` containing
-    /// the `CLUSTERs` representing the COLUMNS of this table."
+    /// Spec: `master04-item_structure_package.adoc` §ISO 13606 Encoding Rules
+    /// — ITEM_TABLE: "Each row is encoded as a Cluster containing a number of
+    /// `ELEMENTs`, each corresponding to the value of a column in that row";
+    /// the `ELEMENT` names are the column names (already true of the physical
+    /// rows, which `Row_regularity` pins); "The names of the containing
+    /// `CLUSTER` of each row is the stringified number of the row in the
+    /// overall table" (one-based, matching [`Self::ith_row`]).
     ///
-    /// The hierarchy is therefore a TRANSPOSE of the stored form, which is
-    /// row-per-`CLUSTER`: one `CLUSTER` per column, named with the column name,
-    /// holding that column's cell from each row in row order. An empty table
-    /// has no columns to build from, and `CLUSTER.items` is `1..*`, so there is
-    /// no hierarchy to return rather than an ill-formed one.
+    /// NOTE: the class table's `as_hierarchy` Meaning sentence says "the
+    /// `CLUSTERs` representing the columns", contradicting §ISO 13606
+    /// Encoding Rules, §Description ("Cluster-per-row encoding") and the
+    /// normative instance figure — the row encoding those three define wins;
+    /// the void-cell rule is guaranteed by the physical row regularity.
+    ///
+    /// An empty table has no rows to encode, and `CLUSTER.items` is `1..*`,
+    /// so there is no hierarchy to return rather than an ill-formed one.
     #[must_use]
     pub fn as_hierarchy(&self) -> Option<Cluster> {
         let rows = self.rows.as_deref()?;
-        let names = self.column_names();
-        let columns: Vec<Item> = names
-            .into_iter()
+        let encoded: Vec<Item> = rows
+            .iter()
             .enumerate()
-            .filter_map(|(index, name)| {
-                let cells: Vec<Item> = rows
-                    .iter()
-                    .filter_map(|row| row.items.get(index).cloned())
-                    .collect();
-                Some(Item::Cluster(column_cluster(
-                    name,
-                    &self.archetype_node_id,
-                    cells,
-                )?))
+            .map(|(index, row)| {
+                let mut renamed = row.clone();
+                renamed.name = DvText::DvText(crate::v1_1::data_types::text::dv_text::DvTextData {
+                    value: (index + 1).to_string(),
+                    hyperlink: None,
+                    formatting: None,
+                    mappings: None,
+                    language: None,
+                    encoding: None,
+                });
+                Item::Cluster(renamed)
             })
             .collect();
-        column_cluster(self.name.clone(), &self.archetype_node_id, columns)
+        row_cluster(self.name.clone(), &self.archetype_node_id, encoded)
     }
 }
 
 /// A `CLUSTER` over `items`, or `None` when there are none — `CLUSTER.items` is
 /// `1..*`, so an empty one is not a `CLUSTER`.
-fn column_cluster(name: DvText, archetype_node_id: &str, items: Vec<Item>) -> Option<Cluster> {
+fn row_cluster(name: DvText, archetype_node_id: &str, items: Vec<Item>) -> Option<Cluster> {
     Some(Cluster {
         name,
         archetype_node_id: archetype_node_id.to_owned(),
@@ -667,25 +674,42 @@ mod tests {
         assert!(acuity.element_at_cell_ij(3, 1).is_none());
     }
 
-    /// `as_hierarchy` is a TRANSPOSE: "a single CLUSTER containing the CLUSTERs
-    /// representing the COLUMNS of this table", while the stored form is one
-    /// CLUSTER per row.
+    /// §ISO 13606 Encoding Rules — ITEM_TABLE: each row a `CLUSTER` of the
+    /// row's `ELEMENTs`, renamed to the stringified one-based row number;
+    /// the row-vs-column contradiction with the class table's Meaning
+    /// sentence is adjudicated to this encoding (the Description's
+    /// "Cluster-per-row" and the normative instance figure corroborate).
     #[test]
-    fn as_hierarchy_transposes_rows_into_columns() {
+    fn as_hierarchy_encodes_rows_with_stringified_names() {
         let hierarchy = acuity().as_hierarchy().expect("a table with cells");
         assert_eq!(text_of(&hierarchy.name), "table");
-        assert_eq!(hierarchy.items.len(), 2, "one CLUSTER per column");
+        assert_eq!(hierarchy.items.len(), 2, "one CLUSTER per row");
 
-        let Item::Cluster(site) = &hierarchy.items[0] else {
-            panic!("a column is a CLUSTER");
+        let Item::Cluster(first) = &hierarchy.items[0] else {
+            panic!("a row is a CLUSTER");
         };
-        assert_eq!(text_of(&site.name), "site");
-        assert_eq!(site.items.len(), 2, "one cell per row");
         assert_eq!(
-            site.items.iter().filter_map(cell_text).collect::<Vec<_>>(),
-            ["left eye", "right eye"],
-            "in row order"
+            text_of(&first.name),
+            "1",
+            "stringified one-based row number"
         );
+        assert_eq!(first.items.len(), 2, "the row's ELEMENTs, one per column");
+        assert_eq!(
+            first
+                .items
+                .iter()
+                .map(|item| match item {
+                    Item::Element(element) => text_of(&element.name),
+                    Item::Cluster(cluster) => text_of(&cluster.name),
+                })
+                .collect::<Vec<_>>(),
+            ["site", "result"],
+            "ELEMENT names are the column names"
+        );
+        let Item::Cluster(second) = &hierarchy.items[1] else {
+            panic!("a row is a CLUSTER");
+        };
+        assert_eq!(text_of(&second.name), "2");
 
         assert!(
             table(vec![]).as_hierarchy().is_none(),
