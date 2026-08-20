@@ -1,0 +1,49 @@
+# The instruction family's rich accepting twin (RM EHR ch.8, issue #2488):
+# the never-committed trimmings in one instance — ISM_TRANSITION.transition +
+# careflow_step + reason, ACTION.instruction_details, INSTRUCTION.expiry_time
+# + wf_definition. The refusal directions live in
+# commit_contribution-entry_family_invalid.
+id: I_EHR_CONTRIBUTION.commit_contribution-instruction_rich
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Committing a composition whose instruction family carries every optional
+  trimming — a full ISM_TRANSITION (state, in-group transition, local
+  careflow step, reasons), an ACTION with INSTRUCTION_DETAILS, and an
+  INSTRUCTION with expiry_time and a parsable wf_definition — succeeds and
+  creates version 1.
+description: "commit a composition with the full instruction-family trimmings"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "RM UML/classes/org.openehr.rm.composition.ism_transition.adoc §Attributes (transition, careflow_step, reason) + org.openehr.rm.composition.instruction_details.adoc §Attributes (instruction_id, activity_id)"
+  - "RM ehr/master08-entry_package.adoc §Clinical Workflow Definition (wf_definition: any syntax may currently be used) + §Careflow Process to State Machine Mapping"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.composition.maximal.instruction_rich, expected: created, defect: "full ISM_TRANSITION + INSTRUCTION_DETAILS + expiry_time + wf_definition" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:fixture}", change_type: creation }
+    expect: "${fixture.expected}"
+    capture:
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: CREATE, uid_pattern: "<uuid>::<system>::1" }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR holds one new VERSION<COMPOSITION> whose instruction-family
+      trimmings are stored and served unchanged.
+    verified_by: I_EHR_COMPOSITION.get_composition_latest
