@@ -76,15 +76,15 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | FAIL | 4 | 1 | 6 | 1 |
-| Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 5 |
+| Adl14ArchetypeProvisioning | FAIL | 4 | 1 | 6 | 2 |
+| Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 6 |
 | QueryProvisioning | FAIL | 15 | 10 | 1 | 0 |
 | EhrOperations | FAIL | 18 | 2 | 0 | 3 |
 | EhrStatus | FAIL | 14 | 26 | 3 | 5 |
 | CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 2 |
 | DirectoryOps | FAIL | 61 | 13 | 1 | 10 |
-| ChangeSets | FAIL | 7 | 12 | 58 | 7 |
-| Versioning | FAIL | 8 | 3 | 50 | 5 |
+| ChangeSets | FAIL | 7 | 12 | 58 | 23 |
+| Versioning | FAIL | 8 | 3 | 50 | 6 |
 | ArchetypeValidation | FAIL | 0 | 67 | 54 | 4 |
 | AqlBasic | FAIL | 5 | 3 | 26 | 0 |
 | AqlAdvanced | INCONCLUSIVE (errored rows — never green by absorption) | 0 | 0 | 3 | 0 |
@@ -137,7 +137,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 571 of 619 selected cases driven.
+Coverage: 571 of 638 selected cases driven.
 
 Not-executed verdicts (each cited):
 

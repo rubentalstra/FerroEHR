@@ -295,7 +295,7 @@
     [
       "PartyOperations",
       {
-        "passed": 86,
+        "passed": 87,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 4
@@ -439,7 +439,7 @@
     [
       "DemographicApi",
       {
-        "passed": 62,
+        "passed": 63,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 1
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1084,
-    "driven": 1046,
-    "passed": 1046,
+    "selected": 1085,
+    "driven": 1047,
+    "passed": 1047,
     "failed": 0,
     "inconclusive": 0
   }

@@ -31,13 +31,13 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 requires:
   server: any
-  templates: [cnf.opt.minimal_event]
+  templates: [cnf.opt.history_open.v1]
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_event.paragraph_no_items]
+data_sets: [cnf.composition.history_open.deprecated_text_forms, cnf.composition.history_open.paragraph_items_empty]
 flow:
   - step: 1
     call: create_composition
-    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.history_open.deprecated_text_forms}" }
     expect: created
     capture:
       preceding_version_uid: created.version_uid
@@ -46,7 +46,7 @@ flow:
     call: update_composition
     with:
       ehr_id: "${ehr_id}"
-      composition: "${ds:cnf.composition.minimal_event.paragraph_no_items}"
+      composition: "${ds:cnf.composition.history_open.paragraph_items_empty}"
       versioned_object_uid: "${versioned_object_uid}"
       preceding_version_uid: "${preceding_version_uid}"
     expect: bad_request

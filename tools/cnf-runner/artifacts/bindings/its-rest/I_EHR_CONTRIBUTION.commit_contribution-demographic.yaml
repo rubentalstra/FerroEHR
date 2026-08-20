@@ -74,6 +74,14 @@ outcomes:
     status: 422
     alt_status: [400]
     body: error_loose
+  bad_request:
+    # The parse-refusal class, as on the EHR-scoped commit binding: a body
+    # that never converts to the resource (e.g. a mandatory 1..* container
+    # sent present-but-empty) is 400, distinct from validation_failed's
+    # well-formed-but-semantically-invalid 422 (issue #1939 pins the split
+    # on this lane).
+    status: 400
+    body: error_loose
 captures:
   contribution_uid:
     from: body "uid.value"

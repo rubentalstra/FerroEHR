@@ -3952,6 +3952,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_invalid_change_types",
       "status": "passed",
       "rows_driven": 4,

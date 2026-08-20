@@ -31,16 +31,16 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 requires:
   server: any
-  templates: [cnf.opt.minimal_event]
+  templates: [cnf.opt.history_open.v1]
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.composition.minimal_event.paragraph_no_items]
+data_sets: [cnf.composition.history_open.paragraph_items_empty]
 flow:
   - step: 1
     call: commit_contribution
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - data: "${ds:cnf.composition.minimal_event.paragraph_no_items}"
+        - data: "${ds:cnf.composition.history_open.paragraph_items_empty}"
           change_type: creation
       audit:
         change_type:
