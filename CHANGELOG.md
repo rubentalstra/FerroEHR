@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Error responses name the SM call status the service model actually
+  declares.** Several refusals previously reported a neighbouring generic
+  status: a duplicate EHR id now reports `ehr_create_fail_duplicate_id`, a
+  subject another EHR already holds reports `ehr_for_subject_already_exists`
+  (on create, status update, EHR-Extract import and archive load alike), an
+  invalid uploaded template reports `invalid_template`, an invalid uploaded
+  archetype reports `invalid_archetype`, and conflicts the service model
+  names nothing more precise for (duplicate templates or stored queries,
+  referenced-artefact deletes, directory and modifiability conflicts) report
+  the honest generic `conflict` instead of `composition_already_exists`. No
+  HTTP status moves — only the `error` token in the body becomes accurate.
+
 ## [3.18.0] - 2026-08-20
 
 ### Added

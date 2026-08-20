@@ -98,17 +98,23 @@ impl FerroEhrService {
         crate::validation::validate_opt_artefact(&opt)?;
 
         let template_id = opt.template_id.value;
+        // NOTE: i_definition_adl14.adoc §upload_opt .Errors declares
+        // invalid_template for a semantically invalid operational template.
         if template_id.trim().is_empty() {
-            return Err(ServiceError::content_invalid(
-                Violation::new("is missing from the operational template").with_path("template_id"),
-            ));
+            return Err(ServiceError::Unprocessable {
+                status: crate::service::status::CallStatusType::InvalidTemplate,
+                violation: Violation::new("is missing from the operational template")
+                    .with_path("template_id"),
+            });
         }
         // `concept` is a mandatory `OPERATIONAL_TEMPLATE` attribute; an empty one
         // is a malformed OPT (CNF `removed_mandatory_elements/…removed_concept_value`).
         if opt.concept.trim().is_empty() {
-            return Err(ServiceError::content_invalid(
-                Violation::new("of the operational template is empty").with_path("concept"),
-            ));
+            return Err(ServiceError::Unprocessable {
+                status: crate::service::status::CallStatusType::InvalidTemplate,
+                violation: Violation::new("of the operational template is empty")
+                    .with_path("concept"),
+            });
         }
         let concept = Some(opt.concept);
         let root_archetype = {

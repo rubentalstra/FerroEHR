@@ -117,14 +117,20 @@ impl FerroEhrService {
         {
             Ok(Some(t)) => t,
             Ok(None) => {
-                return Err(ServiceError::conflict(format!(
-                    "EHR {ehr_id} already exists"
-                )));
+                // NOTE: SM ehr_call_status_type.adoc declares
+                // ehr_create_fail_duplicate_id for this exact refusal.
+                return Err(ServiceError::sm(
+                    CallStatusType::EhrCreateFailDuplicateId,
+                    format!("EHR {ehr_id} already exists"),
+                ));
             }
             Err(crate::storage::error::StorageError::SubjectInUse(id, ns)) => {
-                return Err(ServiceError::conflict(format!(
-                    "an EHR already exists for subject {id}@{ns}"
-                )));
+                // NOTE: SM ehr_call_status_type.adoc declares
+                // ehr_for_subject_already_exists for the one-EHR-per-subject rule.
+                return Err(ServiceError::sm(
+                    CallStatusType::EhrForSubjectAlreadyExists,
+                    format!("an EHR already exists for subject {id}@{ns}"),
+                ));
             }
             Err(e) => return Err(e.into()),
         };
