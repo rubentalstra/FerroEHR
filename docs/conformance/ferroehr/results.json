@@ -5534,6 +5534,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-version_spec_contradiction",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing",
       "status": "passed",
       "rows_driven": 1,
@@ -5631,6 +5637,12 @@
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-manifest_no_entities",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-masked_with_item",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

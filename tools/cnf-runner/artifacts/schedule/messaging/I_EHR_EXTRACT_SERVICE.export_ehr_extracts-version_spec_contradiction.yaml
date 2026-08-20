@@ -1,0 +1,60 @@
+# An EXTRACT_SPEC whose version_spec contradicts its own invariant is
+# refused at the export seam (RM ehr_extract ch.4):
+# `Includes_revision_history_valid: not include_data implies
+# include_revision_history` (extract_version_spec.adoc §Invariants) — a spec
+# excluding BOTH the data and the revision history asks for nothing a
+# version can carry. The spec body is otherwise the accepted by_spec shape,
+# so the contradiction is the single defect; the route's refusal vocabulary
+# is bad_request (its own adjudicated set, register AMB-34 — the
+# unknown_extract_type precedent).
+id: I_EHR_EXTRACT_SERVICE.export_ehr_extracts-version_spec_contradiction
+kind: functional
+component: MESSAGING
+sm_operation: I_EHR_EXTRACT_SERVICE.export_ehr_extracts
+capabilities: [EhrExtract]
+profiles: [OPTIONS]
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /message/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-extract) and adjudicated by register AMB-34. The row gates the CAPABILITY verdicts only, never ITS-REST wire conformance"
+test_purpose: >-
+  An export whose version_spec sets include_data false without
+  include_revision_history is refused — the spec violates its own RM
+  invariant and selects nothing a version can carry.
+description: "EXTRACT_SPEC with a self-contradictory version_spec refused (the export seam)"
+spec_refs:
+  - "RM UML/classes/org.openehr.rm.ehr_extract.extract_version_spec.adoc §Invariants (Includes_revision_history_valid: not include_data implies include_revision_history)"
+  - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.export_ehr_extracts"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: any }
+flow:
+  - step: 1
+    call: export_ehr_extracts
+    with:
+      extract_spec:
+        _type: EXTRACT_SPEC
+        extract_type:
+          _type: DV_CODED_TEXT
+          value: openehr-ehr
+          defining_code:
+            _type: CODE_PHRASE
+            terminology_id: { _type: TERMINOLOGY_ID, value: openehr }
+            code_string: openehr-ehr
+        include_multimedia: false
+        priority: 0
+        link_depth: 0
+        criteria: []
+        version_spec:
+          _type: EXTRACT_VERSION_SPEC
+          include_all_versions: false
+          include_revision_history: false
+          include_data: false
+        manifest:
+          _type: EXTRACT_MANIFEST
+          entities:
+            - _type: EXTRACT_ENTITY_MANIFEST
+              extract_id_key: "${ehr_id}"
+              ehr_id: "${ehr_id}"
+              other_ids: []
+              item_list: []
+    expect: bad_request

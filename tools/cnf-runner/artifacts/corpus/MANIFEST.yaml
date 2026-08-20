@@ -2042,6 +2042,15 @@ cnf.messaging.ehr_extract.folder:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-29 (#659) for the import-into-an-EXISTING-EHR case (RM common master06 §Copying Case 2): it carries an X_VERSIONED_FOLDER rather than an EHR_STATUS, because an EHR holds at most one EHR_STATUS (EHR.ehr_status 1..1, RM ehr master04) while EHR.folders is unbounded (§Folders), so a received hierarchy genuinely lands where a second status could only be refused"
+cnf.messaging.ehr_extract.masked_with_item:
+  source: fixtures/messaging/ehr_extract.masked_with_item.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "an OPENEHR_CONTENT_ITEM declaring is_masked true while its item is present"
+    spec_ref: "RM UML/classes/org.openehr.rm.ehr_extract.extract_content_item.adoc §Invariants Item_validity (is_masked xor item /= Void)"
+  provenance: "derived 2026-08-20 from cnf.messaging.ehr_extract.folder with exactly one defect: is_masked flipped to true while the item stays — the xor's both-sides state"
 cnf.messaging.ehr_extract.append_trunk_v1:
   source: fixtures/messaging/ehr_extract.append_trunk_v1.json
   format: canonical-json
