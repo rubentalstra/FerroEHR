@@ -439,7 +439,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     // (Compositions, Folders); "the EHR_STATUS object itself is always
     // modifiable" (§"EHR Creation"), which is how the EHR is reactivated.
     // Wire code for a blocked content write is underdetermined by ITS-REST →
-    // we return 409 Conflict (SM `CompositionAlreadyExists`).
+    // we return 409 Conflict (the generic SM `conflict` — no SM status names an is_modifiable block, #2151).
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
@@ -480,7 +480,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .await
         .expect("deactivating EHR_STATUS is allowed");
 
-    // A blocked EHR-content write is 409 Conflict (SM `CompositionAlreadyExists`
+    // A blocked EHR-content write is 409 Conflict (the generic SM `conflict`
     // → `ServiceError::Conflict` on the composition write path; the directory
     // write path still surfaces the raw `SmError`).
     let comp_blocked =
@@ -489,7 +489,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         matches!(
             r,
             Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             })
         )
@@ -548,7 +548,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         matches!(
             content_contrib,
             Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             })
         ),
@@ -1764,7 +1764,7 @@ async fn duplicate_subject_ehr_creation_conflicts() {
         matches!(
             dup,
             Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::EhrForSubjectAlreadyExists,
                 ..
             })
         ),
@@ -2112,7 +2112,7 @@ async fn directory_endpoint_rejects_a_second_directory_create() {
         matches!(
             second,
             Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::Conflict,
                 ..
             })
         ),
@@ -2655,7 +2655,7 @@ async fn subject_identity_is_matched_exactly_and_never_case_folded() {
         matches!(
             dup,
             Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::EhrForSubjectAlreadyExists,
                 ..
             })
         ),

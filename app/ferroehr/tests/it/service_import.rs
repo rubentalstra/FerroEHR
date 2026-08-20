@@ -420,7 +420,7 @@ async fn import_ehr_promotes_the_subject_for_lookup_and_uniqueness() {
         matches!(
             dup,
             Err(ferroehr::service::status::SmError {
-                status: CallStatusType::CompositionAlreadyExists,
+                status: CallStatusType::EhrForSubjectAlreadyExists,
                 ..
             })
         ),
@@ -458,7 +458,7 @@ async fn import_ehr_conflicting_subject_is_rejected_and_rolled_back() {
         .import_ehr(None, extract)
         .await
         .expect_err("importing a subject the target already holds must be rejected");
-    assert_eq!(err.status, CallStatusType::CompositionAlreadyExists);
+    assert_eq!(err.status, CallStatusType::EhrForSubjectAlreadyExists);
     assert!(
         err.message.contains("patient-import-2") && err.message.contains(&owner.to_string()),
         "the error must name the subject and the EHR that holds it, got: {}",
@@ -626,7 +626,7 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
         .import_ehr_extract(tgt_ehr, folder_extract)
         .await
         .expect_err("re-import of the same version must be rejected");
-    assert_eq!(err.status, CallStatusType::CompositionAlreadyExists);
+    assert_eq!(err.status, CallStatusType::Conflict);
 }
 
 /// The `IMPORTED_VERSION` semantics of RM common master06 §Committal and Audits:
