@@ -403,7 +403,7 @@
     [
       "EhrExtract",
       {
-        "passed": 32,
+        "passed": 34,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1081,
-    "driven": 1043,
-    "passed": 1043,
+    "selected": 1083,
+    "driven": 1045,
+    "passed": 1045,
     "failed": 0,
     "inconclusive": 0
   }
