@@ -2391,6 +2391,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-periodic_bad_formalism",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
       "status": "passed",
       "rows_driven": 1,
@@ -2432,6 +2438,12 @@
       "status": "passed",
       "rows_driven": 4,
       "rows_total": 4
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-time_specifications",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation",
