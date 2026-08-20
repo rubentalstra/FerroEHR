@@ -1,0 +1,40 @@
+# The Entry-package refusal twins (RM EHR ch.8, issue #2488): four
+# falsifiable instruction-family invariants with no prior wire case, one
+# defect per row (the maximal OPT leaves the ISM nodes archetype-open, so
+# each named RM rule is the only violation). The accepting twin is
+# commit_contribution-instruction_rich.
+id: I_EHR_CONTRIBUTION.commit_contribution-entry_family_invalid
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: "A committed instruction-family value violating its invariants — an out-of-group ISM state or transition code, an empty action_archetype_id, or an empty INSTRUCTION_DETAILS activity_id — is refused as invalid content, and no version is created."
+description: "commit compositions with Entry-package instruction-family defects"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "RM UML/classes/org.openehr.rm.composition.ism_transition.adoc §Invariants (Current_state_valid, Transition_valid)"
+  - "RM UML/classes/org.openehr.rm.composition.activity.adoc §Invariants (Action_archetype_id_valid) + org.openehr.rm.composition.instruction_details.adoc §Invariants (Activity_path_valid)"
+  - "ITS-REST overview Requests_and_responses.md §HTTP status codes (the semantic 422 branch)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.composition.maximal.bad_ism_state, expected: validation_failed, defect: "ISM state code 999 outside the instruction states group (Current_state_valid)" }
+    - { data_set: cnf.composition.maximal.bad_ism_transition, expected: validation_failed, defect: "ISM transition code 999 outside the instruction transitions group (Transition_valid)" }
+    - { data_set: cnf.composition.maximal.empty_action_archetype_id, expected: validation_failed, defect: "empty ACTIVITY.action_archetype_id (Action_archetype_id_valid)" }
+    - { data_set: cnf.composition.maximal.empty_activity_id, expected: validation_failed, defect: "empty INSTRUCTION_DETAILS.activity_id (Activity_path_valid)" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      versions: "${ds:fixture}"
+      audit: { change_type: creation, committer: { name: "conformance tester" } }
+    expect: "${fixture.expected}"
+postconditions:
+  - assert: version
+    count: 0
