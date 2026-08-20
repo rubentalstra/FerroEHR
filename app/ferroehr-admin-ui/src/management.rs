@@ -11,12 +11,7 @@
 //! product extension. The vendored ITS-REST System API defines exactly one
 //! operation (`OPTIONS {base_path}`, the conformance manifest —
 //! `docs/specs/openehr/ITS-REST/specifications/docs/system/`) and no health,
-//! metrics, config or logging resource at all. The shape of the two surfaces the
-//! console reads here was adjudicated on issues #305 (the management surface
-//! slimmed to ops introspection: info / prometheus / metrics / env / loggers,
-//! default-off, per-route access levels, optionally on a separate internal
-//! port) and #307 (health is the always-on public `/health` family; the console
-//! keeps ONE reader per health claim).
+//! metrics, config or logging resource at all.
 //!
 //! **Two health readers would be one too many.** The application shell's status
 //! pill polls the product status document (`/ferroehr/rest/status`: is the API

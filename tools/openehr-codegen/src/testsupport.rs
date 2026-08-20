@@ -1128,7 +1128,7 @@ pub fn account_invariants(triples: &[(&str, &str, &str)]) -> Vec<AccountedInvari
 ///
 /// # Errors
 ///
-/// Whatever [`compose`] returns for an unknown `key` or unloadable inputs.
+/// Returns an error for an unknown `key` or unloadable BMM inputs.
 pub fn accounted_complex_invariants(key: &str) -> Result<Vec<AccountedInvariant>, Error> {
     let c = compose(key)?;
     let triples: Vec<(String, String, String)> = c
@@ -1174,7 +1174,7 @@ fn present(rows: Vec<overrides::AccountedInvariant>) -> Vec<AccountedInvariant> 
                 venue,
                 site: a.realization.map(|r| r.site.to_owned()).unwrap_or_default(),
                 citation: a.realization.map_or_else(String::new, |r| {
-                    format!("{}/{}", overrides::RM_CLASS_DOCS, r.spec_file)
+                    format!("{}/{}", overrides::class_doc_dir(r.spec_file), r.spec_file)
                 }),
                 reason: a
                     .realization

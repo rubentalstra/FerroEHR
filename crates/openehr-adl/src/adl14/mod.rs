@@ -36,14 +36,12 @@
 //!    `C_TERMINOLOGY_CODE.constraint` string; inline dADL `C_DV_QUANTITY`/
 //!    `C_DV_ORDINAL` lowered to `DV_QUANTITY`/`DV_ORDINAL` with an attribute
 //!    tuple). The converter core takes the assembled `Archetype`, not raw text.
-//!    NOTE: stored 1.4 *operational templates* (the OPT-1.4 object model) are
-//!    also converted by feeding this same core: an OPT-1.4 front end in the
-//!    application service layer decomposes a specialisation-flattened OPT into
-//!    one 1.4-shaped source `Archetype` per embedded archetype root and runs
-//!    each through [`convert::convert`]. That front end lives in the application
-//!    (not here) because the OPT-1.4 DTOs are in `openehr-its` and this crate's
-//!    contract is "no REST"; it is a service-only capability. No openEHR spec
-//!    governs 1.4 → 2 conversion — our own design/extension.
+//!    NOTE: stored 1.4 operational templates convert through this same core —
+//!    an application-side front end (the OPT-1.4 DTOs live in `openehr-its`,
+//!    outside this crate's contract) decomposes a flattened OPT into one
+//!    1.4-shaped source `Archetype` per embedded root and runs each through
+//!    [`convert::convert`]. No openEHR spec governs 1.4 → 2 conversion — our
+//!    own design/extension.
 //! 2. **Converter core** ([`convert`]) — node-id renumbering (the `+1`
 //!    first-segment shift, separate id-/at-code spaces, `0.`-prefixed
 //!    new-at-level codes kept, missing ids synthesised in document order),

@@ -47,15 +47,12 @@
 //! mutually consistent. No openEHR spec governs the rounding — our own
 //! design/extension.
 //!
-//! NOTE: the openEHR spec gives NO date comparison algorithm (`Ordered` is
-//! abstract, no `magnitude`), so the ordering here is our own design/extension:
-//! a partial date denotes the interval of its completions, and `X < Y` holds
-//! only when every completion of `X` precedes every completion of `Y` (decided
-//! component-by-component on the shared prefix, undecidable once an unknown
-//! component is reached). `partial_cmp` returns `Some(Equal)` ONLY for equal
-//! raw strings — consistent with the derived `PartialEq` — so two
-//! semantically-equal but differently-written values (compact `20200615` vs
-//! extended `2020-06-15`) are reported as incomparable (`None`), never equal.
+//! NOTE: the spec gives NO date comparison algorithm (`Ordered` is abstract),
+//! so the ordering is our own design/extension: a partial date denotes the
+//! interval of its completions and `X < Y` holds only when every completion
+//! of `X` precedes every completion of `Y`; `Some(Equal)` only for equal raw
+//! strings, so differently-written equal values (`20200615` vs `2020-06-15`)
+//! report incomparable, never equal.
 
 use std::cmp::Ordering;
 

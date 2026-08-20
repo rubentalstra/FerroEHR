@@ -826,8 +826,9 @@ async fn contribution_honors_the_five_lifecycle_states() {
         "expected content_invalid naming version_lifecycle_state, got {err:?}"
     );
 
-    // (4) The delete path is still forced to 523, regardless of any lifecycle
-    // hint, and the latest read is then the deleted (204/null) path.
+    // (4) The delete path commits 523 — the state the member itself declares,
+    // the only one it may — and the latest read is then the deleted (204/null)
+    // path.
     svc.create_ehr_contribution(
         ehr_id.parse().expect("ehr uuid"),
         json!({
@@ -1191,7 +1192,7 @@ async fn contribution_cannot_delete_the_ehr_status() {
                         "change_type": change_type("523", "deleted"),
                         "committer": committer("author")
                     },
-                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "523" },
+                    "lifecycle_state": lifecycle("523"),
                     "preceding_version_uid": { "value": status_uid }
                 }],
                 "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
@@ -1314,6 +1315,111 @@ async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
         .expect("the same content commits as 532|complete|")
         .version_uid();
     assert!(v2.ends_with("::2"), "the accepted twin is trunk version 2");
+}
+
+/// A delete member declares the `523|deleted|` state its own change type
+/// commits; a contradictory state is refused rather than silently dropped.
+///
+/// RM common master06 §Logical Deletion states deletion as ONE procedure —
+/// "create a new Version in the normal way; delete its `_data_` …; set the
+/// `_lifecycle_state_` value to the code for `deleted`; commit in the normal
+/// way" — so a `523|deleted|` member declaring `532|complete|` asks for two
+/// contradictory things at once, and committing it would tell the client its
+/// instruction was followed when it was discarded. The code is the released
+/// `400_CONTRIBUTION` change-control trigger ("the modification type does not
+/// match the operation"), the same refusal family the direct DELETE wire's
+/// committal header carries.
+///
+/// Three outcomes are asserted: the contradictory state refused (nothing
+/// committed), an out-of-group state refused as the invariant violation it is,
+/// and the `523`-declaring twin committing the deletion.
+#[tokio::test]
+async fn a_delete_member_with_a_contradictory_lifecycle_state_is_refused() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let v1 = svc
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
+        .await
+        .expect("create")
+        .version_uid();
+    let vo_uuid: ferroehr::ids::VoId = v1
+        .split("::")
+        .next()
+        .expect("vo id part")
+        .parse()
+        .expect("vo uuid");
+
+    // One data-less 523 delete member, differing only in the state it declares.
+    let delete_member = |state: Value| {
+        json!({
+            "versions": [{
+                "commit_audit": {
+                    "change_type": change_type("523", "deleted"),
+                    "committer": committer("author")
+                },
+                "preceding_version_uid": { "value": v1 },
+                "lifecycle_state": state
+            }],
+            "audit": { "change_type": change_type("523", "deleted"), "committer": committer("author") }
+        })
+    };
+
+    // (1) The contradiction: a deletion claiming the complete state.
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, delete_member(lifecycle("532")))
+        .await
+        .expect_err("a delete member declaring 532|complete| is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ) && err.message.contains("Logical Deletion")
+            && err.message.contains("contradicts change_type"),
+        "expected the 400 naming §Logical Deletion, got {err:?}"
+    );
+
+    // (2) An out-of-group state on the same member: the invariant 422.
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, delete_member(lifecycle("999")))
+        .await
+        .expect_err("a delete member declaring an out-of-group state is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ) && err.message.contains("version_lifecycle_state"),
+        "expected the 422 naming version_lifecycle_state, got {err:?}"
+    );
+
+    // Neither refusal committed anything: the composition is still live at v1.
+    let live = svc
+        .get_composition_latest(ehr_uuid, vo_uuid)
+        .await
+        .expect("still live");
+    assert_eq!(live["name"]["value"], "v1");
+
+    // (3) The accepting twin: the same member declaring 523|deleted| commits,
+    // and the latest read is then the deleted (204/null) path.
+    svc.create_ehr_contribution(ehr_uuid, delete_member(lifecycle("523")))
+        .await
+        .expect("the 523-declaring delete member commits");
+    let del = svc
+        .get_composition_latest(ehr_uuid, vo_uuid)
+        .await
+        .expect("composition_get deleted");
+    assert!(
+        del.is_null(),
+        "a deleted composition reads as an empty body (204), got {del:?}"
+    );
 }
 
 /// A `553|incomplete|` COMPOSITION missing mandatory data commits; the

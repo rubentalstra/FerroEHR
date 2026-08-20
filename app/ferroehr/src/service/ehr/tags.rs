@@ -67,21 +67,14 @@ impl FerroEhrService {
     /// an already-verified target (an existing target with no tags is an
     /// empty list, never an error).
     ///
-    /// NOTE (supersession): a CONTAINER-addressed tag survives every new
-    /// version of its target, and a VERSION-addressed tag stays pinned to the
-    /// version it names — it neither follows the latest version nor disappears
-    /// when superseded. No openEHR spec governs this; it is our own design,
-    /// forced by what the RM does say. `ITEM_TAG.target` is a `UID_BASED_ID`
-    /// that "may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`" (RM common
-    /// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Attributes), and the
-    /// two arities are the whole point of the attribute: a container tag names
-    /// the thing that outlives its versions, a version tag names one immutable
-    /// snapshot. Migrating either on a commit would collapse that distinction —
-    /// and RM ehr `master04-ehr_package.adoc` §Tags forbids the commit from
-    /// touching tags at all ("they do not cause re-versioning of the content";
-    /// "tags … have no direct association with the objects they annotate"). The
-    /// released wire is silent on supersession, so nothing there decides it
-    /// either.
+    /// NOTE (supersession): a CONTAINER-addressed tag survives every new version
+    /// of its target and a VERSION-addressed tag stays pinned to the version it
+    /// names, migrated by nothing — the two arities are the point of
+    /// `ITEM_TAG.target`, a `UID_BASED_ID` that "may be a `VERSIONED_OBJECT<T>`
+    /// or a `VERSION<T>`" (RM common
+    /// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Attributes), and RM ehr
+    /// `master04-ehr_package.adoc` §Tags forbids a commit from touching tags at
+    /// all ("they do not cause re-versioning of the content"). Our own design.
     ///
     /// # Errors
     /// [`ServiceError::Database`] if the tag listing fails.
@@ -275,20 +268,14 @@ impl FerroEhrService {
     /// bytes are then the generated canonical-JSON encoding of this instance,
     /// produced at the protocol edge.
     ///
-    /// NOTE: two shape decisions, both register-adjudicated rather than
-    /// settled by any single released sentence.
-    /// `_type: "ITEM_TAG"` IS on the wire: the released
-    /// `ItemTag.yaml` is `additionalProperties: false` without declaring
-    /// `_type`, while the same group's `discriminator.propertyName` names that
-    /// member — an OAS-internal self-contradiction, reported upstream, whose
-    /// two readings we resolve in favour of the discriminator, since an
-    /// `ITEM_TAG` carries no `uid` and no archetype id and `_type` is its only
-    /// self-description.
-    /// `target` is a BARE `UID_BASED_ID`, the RM's shape, not the OAS's
-    /// `OBJECT_REF` wrapper: the OAS is the wire projection
-    /// of a model and the RM is the released definition of the model being
-    /// projected, so where the projection disagrees with its subject about what
-    /// an attribute IS, the subject decides.
+    /// NOTE: `_type: "ITEM_TAG"` IS on the wire — the released `ItemTag.yaml` is
+    /// `additionalProperties: false` without declaring `_type` while the same
+    /// group's `discriminator.propertyName` names that member, and that
+    /// contradiction resolves in favour of the discriminator, since an `ITEM_TAG`
+    /// carries no `uid` and no archetype id to identify itself by. `target` is a
+    /// BARE `UID_BASED_ID`, the RM's shape, not the OAS's `OBJECT_REF` wrapper:
+    /// where a wire projection disagrees with the released model it projects
+    /// about what an attribute IS, the model decides.
     fn stored_item_tag(
         ehr_id: EhrId,
         row: &crate::storage::tag_repo::TagRow,

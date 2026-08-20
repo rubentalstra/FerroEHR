@@ -18,15 +18,11 @@
 //! (a seeded arrival schedule, never closed-loop users) so coordinated
 //! omission cannot hide stalls.
 //!
-//! NOTE: no openEHR spec governs measured performance — the CNF guide
-//! excludes it (CNF guide master03-overview.adoc §Product Scope:
-//! "Non-functional conformance (performance, etc) is not addressed by this
-//! guide") — our own design/extension. The journey decomposition keeps the
-//! population-anchored envelope: `arrival_rate` stays aggregate OPERATION
-//! arrivals (the class floor's unit), and the catalogue's expanded
-//! read:write share must stay inside the derivation band (the 10:1
-//! read-heavy OLTP convention per YCSB/OLTP-Bench as the floor, ~50:1 as
-//! the audit-log-evidenced ceiling).
+//! NOTE: no openEHR spec governs measured performance (CNF guide
+//! `master03-overview.adoc` §Product Scope excludes it) — our own
+//! design/extension; the journey decomposition keeps the population-anchored
+//! envelope (`arrival_rate` = aggregate operation arrivals, the read:write
+//! share inside the 10:1–~50:1 derivation band).
 
 #![allow(
     clippy::disallowed_types,

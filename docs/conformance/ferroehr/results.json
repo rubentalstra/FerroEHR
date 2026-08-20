@@ -2131,6 +2131,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-delete_member_contradictory_lifecycle",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-deleted_lifecycle_with_data",
       "status": "passed",
       "rows_driven": 1,
@@ -5253,7 +5259,28 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-non_string_target_path",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-non_string_value",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-prefer_identifier",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-undeclared_member",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,

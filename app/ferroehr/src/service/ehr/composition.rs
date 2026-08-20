@@ -595,7 +595,7 @@ impl FerroEhrService {
             Kind::Composition,
             Some(expected),
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            None,
             &self.signing_ctx(),
         )
         .await?;

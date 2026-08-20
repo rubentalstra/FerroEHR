@@ -331,21 +331,13 @@ impl StructureScan<'_> {
     /// from zero-width intervals and the rule would never see a real archetype's
     /// child set.
     ///
-    /// NOTE (adjudication): the sum-LOWER half of the literal containment — that
-    /// `cardinality.lower <= Σ occurrences.lower` — is NOT raised, because
-    /// openEHR's own regression corpus contradicts it: `aa.v1.adl`,
-    /// `dimensions.v1.adl` and their siblings are tagged `regression = "PASS"`
-    /// while pairing `items cardinality {1..*}` with a single child of
-    /// `occurrences {0..1}` (Σ lower = 0 < 1). AOM 2, where this rule's successor
-    /// lives, splits VCOC the same way: the upper-bound half is the ERROR VACMCU
-    /// and the lower-bound half is the WARNING WACMCL
-    /// (`AOM2/master04.5-constraint_model-class_definitions.adoc` §Validity Rules:
-    /// `C_ATTRIBUTE`). What IS raised is every part of the containment failure that
-    /// is a genuine defect and corpus-consistent: a sum whose maximum exceeds the
-    /// cardinality upper (the child set can overfill the container) and a sum whose
-    /// maximum cannot reach the cardinality lower (the container's minimum is
-    /// unsatisfiable). Both are strict cases of "not inside the interval of the
-    /// cardinality".
+    /// NOTE: the sum-LOWER half of the containment (`cardinality.lower <= Σ
+    /// occurrences.lower`) is NOT raised — AOM2 itself downgrades that half
+    /// to the WARNING WACMCL while the upper half is the ERROR VACMCU
+    /// (`AOM2/master04.5-constraint_model-class_definitions.adoc` §Validity
+    /// Rules: `C_ATTRIBUTE`), and openEHR's own regression corpus passes
+    /// archetypes violating it; the two genuine-defect halves (overfillable
+    /// upper, unsatisfiable lower) are raised.
     fn check_vcoc(&mut self, attr_path: &str, attr: &CAttribute) {
         let Some(card) = attr.cardinality.as_ref() else {
             return; // no cardinality ⇒ not a container ⇒ VCOC does not apply.

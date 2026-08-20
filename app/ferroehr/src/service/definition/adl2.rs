@@ -280,16 +280,12 @@ impl FerroEhrService {
     /// was engine-validated at its own upload) is skipped rather than failing
     /// the whole build.
     ///
-    /// NOTE (settled shape): the repository is rebuilt — re-parsed from the
-    /// stored sources — on every call, deliberately. It is built only when an
-    /// ADL2 artefact is uploaded or an OPT is projected, both administrative
-    /// acts; no clinical read or write path reaches it. A memoized repository
-    /// would have to be invalidated by every ADL2 write (upload, replace,
-    /// delete) and by every specialisation-parent edit that changes what a
-    /// child flattens to — a correctness liability taken on for a path that
-    /// runs at admin frequency, where the parse is a per-artefact scan of text
-    /// the same request already validated. No openEHR spec governs this — our
-    /// own design/extension.
+    /// NOTE: the repository is re-parsed from the stored sources on every call,
+    /// deliberately — it is reached only when an ADL2 artefact is uploaded or an
+    /// OPT is projected, both administrative acts, so a memoized copy would add
+    /// invalidation on every ADL2 write and every specialisation-parent edit for
+    /// no clinical-path gain. No openEHR spec governs this — our own
+    /// design/extension.
     async fn adl2_repository(&self) -> Result<ArchetypeRepository, ServiceError> {
         let sources: Vec<String> = sqlx::query_scalar("SELECT adl FROM adl2_artefact")
             .fetch_all(&self.pool)
@@ -632,14 +628,11 @@ impl FerroEhrService {
     /// 1.4 commit is.
     ///
     /// NOTE: the entry is cached under a dialect-namespaced key
-    /// ([`ADL2_CACHE_NS`]) in the shared `WebTemplate` cache, so an OPT 1.4 and an
-    /// ADL2 template that happen to share a `template_id` can never collide there —
-    /// the namespace prefix uses an ASCII control separator that no
-    /// grammar-legal archetype/template id can contain
-    /// (`docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
-    /// §Archetype Identifiers — ids are printable ASCII). No openEHR spec governs
-    /// the internal resolver wiring or the derived-runtime cache — our own
-    /// design/extension.
+    /// ([`ADL2_CACHE_NS`]) in the shared `WebTemplate` cache, so an OPT 1.4 and
+    /// an ADL2 template sharing a `template_id` cannot collide there: the prefix
+    /// uses an ASCII control separator no grammar-legal id can contain (BASE
+    /// `docs/base_types/master05-identification_package.adoc` §Archetype
+    /// Identifiers). No openEHR spec governs the cache — our own design/extension.
     ///
     /// # Errors
     ///

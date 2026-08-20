@@ -34,3 +34,14 @@ Only a finding that genuinely cannot land now (needs an idle box, an
 upstream answer, a separate exclusive run) stays open past the branch,
 with the blocker stated on the issue. "It needs its own adjudication" is
 NOT a blocker — adjudicate it now.
+
+**Sharpened again (owner, 2026-08-20, the #2441–#2454 correction):**
+within an audit/QA program, the fix-first cadence covers SELF-FILED
+issues too — verification-pass findings, guard gaps, en-route defects I
+file while auditing a chapter are all FIXED AND MERGED before the next
+chapter/unit starts, exactly like the chapter's own section findings.
+Filing them and moving on to the next chapter is the violation the owner
+called out on 2026-08-20 ("solve all these issues you create before you
+are allowed to go to the next chapter"). A program-wide drain issue
+(e.g. a register sweep) is no exception: it is worked NOW, not parked
+behind a blocked-by edge on the program parent.

@@ -326,15 +326,11 @@ impl BmmGenericClass {
     /// (`BMM_PARAMETER_TYPE`), not a substitution — the `Interval<T>` form of
     /// `master06-core-types.adoc` §Generic Type.
     ///
-    /// NOTE (recorded deviation): parameter ORDER follows the keyed map's sorted
-    /// keys. openEHR keys `generic_parameters` by name (same §Attributes) while
-    /// `BMM_GENERIC_TYPE.generic_parameters` is an ordered list whose "order must
-    /// match the order of the owning class's formal generic parameter
-    /// declarations" (`…bmm3.bmm_generic_type.adoc` §Attributes) — a keyed map
-    /// does not preserve declaration order, and for the single-upper-case-letter
-    /// names the model mandates (`…bmm3.bmm_parameter_type.adoc`
-    /// `Inv_generic_name`: "`name.count = 1 and name.is_upper`") sorted order IS
-    /// declaration order for the conventional `T`, `U`, `V`.
+    /// NOTE: parameter order follows the keyed map's sorted keys — the
+    /// declaration order `…bmm3.bmm_generic_type.adoc` §Attributes mandates
+    /// is not recoverable from a name-keyed map, and for the
+    /// single-upper-case-letter names `Inv_generic_name` mandates, sorted
+    /// order IS declaration order for the conventional `T`/`U`/`V`.
     /// # Panics
     /// Never in practice: see the `expect` reason below — a `BMM_GENERIC_CLASS`
     /// with no formal generic parameter cannot arise from a valid schema.

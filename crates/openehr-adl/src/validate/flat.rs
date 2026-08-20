@@ -328,20 +328,13 @@ fn walk_flat(
 /// VCOSU: an identified (non-primitive) object node's id must be unique across
 /// the flat form — judged per NODE IDENTITY, not per materialisation.
 ///
-/// NOTE: raw id counting is unsound on a flat form. `master08-validation.adoc`
-/// §Flattening: "overlays with cloning: where more than one child
-/// specialisation node exists for a single parent complex structure, the parent
-/// structure will be cloned before each overlay" — so redefining one parent node
-/// into several specialised children duplicates that node's whole subtree, ids
-/// included, and `ADL2/master09.05-spec_object_redef.adoc` §Flattening adds that
-/// under cloning "the original parent node survives in its original form in the
-/// child archetype". Every such duplicate is the SAME node identity
-/// materialised more than once, which is why `master08` §Phase 3 lists only
-/// VUNP and VACMCO for the flat form. Two occurrences are therefore compared on
-/// their SPECIALISATION-ROOT paths (every redefined code reduced to the code it
-/// specialises): equal root paths mean clones of one node and are legal;
-/// different root paths are two distinct nodes wearing one id — the VCOSU
-/// violation.
+/// NOTE: raw id counting is unsound on a flat form — flattening CLONES a
+/// parent subtree per specialised child, ids included
+/// (`master08-validation.adoc` §Flattening;
+/// `ADL2/master09.05-spec_object_redef.adoc` §Flattening) — so two
+/// occurrences are compared on their SPECIALISATION-ROOT paths: equal root
+/// paths are clones of one node (legal), different root paths are two nodes
+/// wearing one id (the VCOSU violation).
 fn check_node_id_unique(
     obj: &CObject,
     path: &str,

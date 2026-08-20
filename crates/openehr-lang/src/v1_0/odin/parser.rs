@@ -505,22 +505,13 @@ fn plug_in<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
 /// type_id )* '>' )?`, reconstructed as a flat string (e.g.
 /// `Interval<Quantity>`, `org.openehr.rm.ehr.content.ENTRY`).
 ///
-/// NOTE: the Release-1.0.0 `base_patterns.g4` writes this rule as bare
-/// `type_id : ALPHA_UC_ID ( '<' type_id ( ',' type_id )* '>' )?` — no
-/// namespace form. The docs text, which is the oracle where it and a grammar artefact
-/// disagree, allows the qualified spelling on any type identifier:
-/// "Type identifiers can also include namespace information, which is
-/// necessary when same-named types appear in different packages of a model.
-/// Namespaces are included by prepending package names, separated by the '.'
-/// character, in the same way as in most programming languages, as in the
-/// qualified type names `org.openehr.rm.ehr.content.ENTRY` and
-/// `Core.Abstractions.Relationships.Relationship`"
-/// (`LANG/docs/odin/master05-content` §Adding Type Information, verbatim in
-/// `AM/docs/ADL1.4/master04-dadl` §Adding Type Information, whose principle
-/// box restates it normatively: "Type Information can be included optionally
-/// on any node immediately before the opening '<' of any block, in the form
-/// of a UML-style type identifier in parentheses. Dot-separated namespace
-/// identifiers and template parameters may be used.").
+/// NOTE: the Release-1.0.0 `base_patterns.g4` writes `type_id` with no
+/// namespace form, but the docs text is the oracle where a grammar artefact
+/// disagrees and allows the qualified spelling on any type identifier
+/// ("Namespaces are included by prepending package names, separated by the
+/// '.' character … as in `org.openehr.rm.ehr.content.ENTRY`" —
+/// `LANG/docs/odin/master05-content` §Adding Type Information, restated
+/// normatively in `AM/docs/ADL1.4/master04-dadl`'s principle box).
 ///
 /// Two consequences of that wording are honoured here. The package segments
 /// take either case — the chapter's own two examples are a lowercase package

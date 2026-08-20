@@ -287,16 +287,12 @@ fn assemble_translations_of(
 /// The old-form ontology `primary_language` lifted into `original_language`
 /// (`AM/docs/ADL1.4/master08-adl` §Ontology Header Statements).
 ///
-/// NOTE: the upgrade is the spec's own instruction, stated twice — §Language
-/// Section and Language Translation: "some non-conforming ADL tools in the past
-/// created archetypes without a `language` section, relying on the `ontology`
-/// section to provide the `original_language` (there called `primary_language`)
-/// and list of languages (`languages_available`). In the interests of backward
-/// compatibility, tool builders should consider accepting archetypes of the old
-/// form and upgrading them when parsing to the correct form, which should then
-/// be used for serialising/saving" — and §Ontology Header Statements, in the
-/// same words for `primary_language`/`languages_available`. It runs on the 1.4
-/// path only: ADL2 has no old form.
+/// NOTE: the upgrade is the spec's own instruction (ADL1.4 `master08-adl.adoc`
+/// §Language Section + §Ontology Header Statements: tools "should consider
+/// accepting archetypes of the old form and upgrading them when parsing" —
+/// `primary_language`/`languages_available` in the ontology standing in for
+/// the missing `language` section); it runs on the 1.4 path only, ADL2 has no
+/// old form.
 fn old_form_primary_language(art: &SourceArtefact) -> Option<TerminologyCode> {
     let map = art.terminology.as_ref().and_then(as_object)?;
     let value = map.get("primary_language")?;

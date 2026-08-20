@@ -92,18 +92,13 @@ pub fn declared_abstract_root_type(element: &str) -> Option<&'static str> {
 }
 
 /// Serialize an RM value to canonical openEHR XML in the **default** wire
-/// lineage, namespace `http://schemas.openehr.org/v1`. `root_tag` is the root
+/// lineage, namespace `http://schemas.openehr.org/v2`. `root_tag` is the root
 /// element name (e.g. `"composition"`).
 ///
-/// NOTE: this LIBRARY default is the RELEASED-STABLE ITS-XML lineage (the
-/// upstream repository README marks the 2.0.0 schemas *TRIAL* and directs
-/// stable consumers to `Release-1.0.2` —
-/// `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions").
-/// The REST layer chooses its lineage explicitly per request via
-/// [`to_canonical_xml_ns`] and SERVES v2 by default (owner ruling 2026-08-03,
-/// #1666: the v1 bundle cannot describe the RM 1.2.0 the server emits);
-/// this function is the fixed-lineage convenience for
-/// gates and tools, not the wire default.
+/// NOTE: the default is the v2 lineage — the only vendored bundle whose
+/// schemas can describe every RM 1.2.0 class this model emits (#2453,
+/// matching the served default of #1666); the v1 lineage stays reachable
+/// through [`to_canonical_xml_ns`].
 ///
 /// # Errors
 /// Propagates serialization errors.
@@ -111,7 +106,7 @@ pub fn to_canonical_xml<T: runtime::ToXml + ?Sized>(
     value: &T,
     root_tag: &str,
 ) -> Result<String, runtime::XmlError> {
-    to_canonical_xml_ns(value, root_tag, runtime::Namespace::V1)
+    to_canonical_xml_ns(value, root_tag, runtime::Namespace::V2)
 }
 
 /// Serialize an RM value to canonical openEHR XML in an explicitly chosen wire

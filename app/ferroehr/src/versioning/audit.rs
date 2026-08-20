@@ -511,12 +511,10 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
 /// NOTE: the dispatcher's whole surface — the fast path, the typed tier, the
 /// mandatory-container bounds and the terminology-backed invariants — is
 /// canonical-JSON-valued ([`openehr_its::wire_validate::validate_rm_value`]
-/// takes a `&Value`), so a typed committer is serialized here to be judged. The
-/// alternative, running only [`openehr_base::validate::Validate`] on the typed
-/// value, would silently drop the terminology tier that decides
-/// `PARTY_RELATED.Relationship_valid` (RM
-/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants) — a
-/// weakening, not a simplification.
+/// takes a `&Value`), so a typed committer is serialized here to be judged;
+/// running only [`openehr_base::validate::Validate`] on the typed value would
+/// drop the terminology tier that decides `PARTY_RELATED.Relationship_valid` (RM
+/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants).
 fn validate_committer(committer: &PartyProxy) -> Result<(), ServiceError> {
     let mut violations = Vec::new();
     openehr_its::wire_validate::validate_rm_value(

@@ -24,15 +24,13 @@
 //! Redefinition); and the section-level merges (`master09.06`–`master09.10`).
 //! Multi-level lineage is flattened top-down and memoised by [`flat_form`].
 //!
-//! NOTE: this is *plain* archetype flattening. The spec normatively defines
-//! *removal* of deleted nodes, inlining of all `use_node`, and dropping of
-//! closed slots only for the OPERATIONAL TEMPLATE (`docs/specs/openehr/AM/docs/
-//! OPT2/master03-opt_raw.adoc` §Flattening) — that is A8. Plain flattening's
-//! treatment of a prohibited node is spec-silent (master08 §Flattening defers to
-//! the Workbench), so here a prohibited (`occurrences {0}`) node is KEPT visible
-//! in the flat form stripped of its sub-structure, and un-overridden proxies /
-//! open slots are retained — our own design/extension for a lossless plain flat
-//! form.
+//! NOTE: plain flattening's treatment of prohibited nodes is spec-silent (the
+//! normative removal/inlining rules are OPT-only —
+//! `docs/specs/openehr/AM/docs/OPT2/master03-opt_raw.adoc` §Flattening;
+//! `master08` §Flattening defers to the Workbench): a prohibited
+//! (`occurrences {0}`) node is KEPT stripped of its sub-structure, and
+//! un-overridden proxies / open slots are retained — our own design/extension
+//! for a lossless plain flat form.
 
 use std::collections::BTreeMap;
 

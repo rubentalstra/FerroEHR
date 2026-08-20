@@ -51,16 +51,14 @@
 //! (`FHIR_CHILD_PROPERTY`) — an `external_code` relation
 //! (`terminology_relation.adoc` `Inv_valid_definition`).
 //!
-//! NOTE (errors): a value set / terminology / code the server does not
-//! know (HTTP `404`, or `$validate-code result=false` with no membership) is
-//! a `Pre_has_*` precondition failure →
-//! [`CallStatusType::VersionedObjectDoesNotExist`] (the `404` reading,
-//! matching the bundle provider in `super::bundle`). A transport fault
+//! NOTE (errors): a value set / terminology / code the server does not know
+//! (HTTP `404`, or `$validate-code result=false` with no membership) is a
+//! `Pre_has_*` precondition failure → [`CallStatusType::VersionedObjectDoesNotExist`],
+//! matching the bundle provider in `super::bundle`; a transport fault
 //! (connect/read timeout, `5xx`, malformed body) → [`SmError::exception`]
-//! (`500`); the fail-open vs fail-closed decision belongs to the caller (the
-//! composition-validation walker,
-//! [`config::ExternalTerminologyConfig::fail_on_error`](super::config::ExternalTerminologyConfig::fail_on_error)), never to the raw
-//! provider.
+//! (`500`). The fail-open vs fail-closed choice belongs to the caller
+//! ([`config::ExternalTerminologyConfig::fail_on_error`](super::config::ExternalTerminologyConfig::fail_on_error)),
+//! never to the raw provider.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

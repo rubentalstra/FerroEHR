@@ -249,15 +249,11 @@ pub(crate) fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Op
 /// container cardinality for the rare attribute the BMM leaves un-cardinalitied
 /// (`cardinality == None` on a container).
 ///
-/// NOTE: a formal generic parameter is resolved to its bound in the generated
-/// model (`HISTORY.events` reads `EVENT<ITEM_STRUCTURE>`, not `EVENT<T>`), so
-/// VCORMT matches a stated generic argument against the RM parameter's *bound*
-/// rather than the instantiated binding (e.g. `EVENT<ITEM_LIST>` implied by
-/// `HISTORY<ITEM_LIST>`). This is a sound (never false-firing) approximation —
-/// the instantiated binding is a subtype of the bound, so conformance to it
-/// implies conformance to the bound; the emitter erases the parameter name, so a
-/// tighter check is not derivable (`master04.2` §`Rm_type_name` and Reference
-/// Model Type Matching).
+/// NOTE: VCORMT matches a stated generic argument against the RM parameter's
+/// BOUND, not the instantiated binding (`master04.2` §`Rm_type_name` and
+/// Reference Model Type Matching) — a sound, never-false-firing
+/// approximation, since the binding subtypes the bound and the emitter erases
+/// the parameter name.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProductionRmModel;
 

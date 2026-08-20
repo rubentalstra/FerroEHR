@@ -42,15 +42,16 @@ impl FerroEhrService {
     /// atomically and return the stored `CONTRIBUTION` with its resource
     /// metadata (the `contribution_uid` for the `201` `ETag`/`Location`).
     ///
-    /// NOTE: the SM native `commit_contribution(Vec<UpdateVersion>,
-    /// UpdateAudit)` is a *typed subset* of the wire CONTRIBUTION —
-    /// `UPDATE_VERSION` mandates `data` + `lifecycle_state` (SM
-    /// `update_version.adoc`, both 1..1) and a committer, so it cannot
-    /// represent an attestation-only (`666`) member, a delete (`523`) member,
-    /// or a member inheriting `committer`/`system_id` from the CONTRIBUTION
-    /// audit (RM common master06 §Committal m4). This raw-body seam carries
-    /// the full-fidelity EHR CONTRIBUTION commit; all RM `change_control`
-    /// semantics stay in `crate::versioning::contribution::commit_version_set` (over the
+    /// NOTE: the SM native `commit_contribution(Vec<UpdateVersion>, UpdateAudit)`
+    /// is a *typed subset* of the wire CONTRIBUTION — `UPDATE_VERSION` mandates
+    /// `data` + `lifecycle_state` (SM `update_version.adoc`, both 1..1) and a
+    /// committer, so it cannot represent an attestation-only (`666`) member, a
+    /// delete (`523`) member, or a member inheriting `committer`/`system_id` from
+    /// the CONTRIBUTION audit (RM common master06 §Committal m4). This raw-body
+    /// seam carries the full-fidelity EHR CONTRIBUTION commit instead.
+    ///
+    /// All RM `change_control` semantics stay in
+    /// `crate::versioning::contribution::commit_version_set` (over the
     /// `crate::versioning::CommitEnv` impl `FerroEhrService` provides).
     ///
     /// # Errors
@@ -200,17 +201,17 @@ impl FerroEhrService {
     /// `{ "rows": [ { uid, time_committed, committer, change_type,
     /// change_type_rubric } ], "total" }`.
     ///
-    /// NOTE: OUR OWN EXTENSION — no openEHR spec governs it. The ITS-REST
+    /// NOTE: OUR OWN EXTENSION — no openEHR spec governs it; the ITS-REST
     /// contract defines only the by-uid CONTRIBUTION GET
-    /// (`operations/contribution_get.yaml`); a paged contribution list is not
-    /// part of the openEHR REST API. `committer` is the audit committer
-    /// `PARTY_PROXY`'s `name` — the name OF the party the by-uid GET returns in
-    /// full (a summary string, not the same rendering); `change_type` is the
-    /// stored `audit.change_type` code and `change_type_rubric` its display
-    /// rubric from the `audit_change_type` group (the same bundle mapping the
-    /// by-uid GET's `DV_CODED_TEXT.value` carries — one rubric source,
-    /// consumers never map codes locally). `offset`/`fetch` are already clamped
-    /// by the protocol adapter (defaults 0/20, `fetch` capped at 100).
+    /// (`operations/contribution_get.yaml`).
+    ///
+    /// `committer` is the audit committer `PARTY_PROXY`'s `name` (a summary
+    /// string, not the full rendering the by-uid GET returns); `change_type` is
+    /// the stored `audit.change_type` code and `change_type_rubric` its display
+    /// rubric from the `audit_change_type` group — the same bundle mapping the
+    /// by-uid GET's `DV_CODED_TEXT.value` carries, so consumers never map codes
+    /// locally. `offset`/`fetch` are already clamped by the protocol adapter
+    /// (defaults 0/20, `fetch` capped at 100).
     ///
     /// # Errors
     /// [`SmError`] — `Pre_has_ehr` fails (unknown EHR → 404), or a read fails.

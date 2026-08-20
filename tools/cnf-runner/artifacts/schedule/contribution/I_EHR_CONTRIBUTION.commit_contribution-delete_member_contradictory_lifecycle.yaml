@@ -1,0 +1,82 @@
+# The THIRD axis of the deletion shape rule: a delete member whose own
+# declared lifecycle_state contradicts the deletion it performs.
+#
+# RM common master06-change_control_package.adoc §Logical Deletion states
+# deletion as ONE procedure, verbatim: "create a new Version in the normal way;
+# delete its `_data_` (which will by default be a copy of the data of the
+# previous Version); set the `_lifecycle_state_` value to the code for
+# `deleted`; commit in the normal way". The state is fixed BY the procedure, so
+# a member pairing change_type 523|deleted| with lifecycle_state 532|complete|
+# asks for two contradictory things at once — and a server that commits it
+# anyway discards the client's stated instruction with no diagnostic, leaving
+# the client to believe the version it asked for is the version that was
+# stored.
+#
+# THE CODE is the released 400_CONTRIBUTION.yaml, whose trigger list closes
+# with the change-control clause this defect falls in, verbatim: "or the
+# modification type does not match the operation - i.e. first version of a
+# MODIFICATION". The declared change kind and the declared version state do
+# not describe the same act, which is that family — not the 422 half of
+# AMB-93-style body reasoning, since nothing here is a well-formed instruction
+# awaiting semantic evaluation: the instruction contradicts itself.
+#
+# The two SIBLINGS pin the other axes of the same procedure, both on data:
+# -deleted_member_with_data (a 523 change type shipping content) and
+# -deleted_lifecycle_with_data (a content-carrying member claiming the deleted
+# STATE). The accepting twin of THIS axis is the ordinary -delete case, whose
+# member declares the 523|deleted| state the procedure fixes — and step 3 here
+# re-proves it on the same target, so the refusal is shown to be about the
+# contradiction and nothing else.
+id: I_EHR_CONTRIBUTION.commit_contribution-delete_member_contradictory_lifecycle
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+test_purpose: >-
+  A CONTRIBUTION delete member declaring a lifecycle_state other than
+  523|deleted| is refused as a change-control mismatch, nothing is committed,
+  and the same member declaring 523|deleted| then deletes the target.
+description: "Commit CONTRIBUTION whose delete member declares a contradictory lifecycle_state"
+spec_refs:
+  - "RM common §change_control (master06 §Logical Deletion — delete its data, set lifecycle_state to the code for deleted, one procedure)"
+  - "SM openehr_platform master03 §Version Update Semantics (the lifecycle_state must be supplied in all cases)"
+  - "ITS-REST OAS responses/400_CONTRIBUTION.yaml"
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.minimal_event.v1}", change_type: creation }
+    expect: created
+    capture:
+      v1_uid: created.first_version_uid
+      vo_uid: created.first_versioned_object_uid
+  - step: 2                              # 523|deleted| change type, 532|complete| state
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - change_type: deleted           # data-less, as the procedure requires
+          lifecycle_state: complete      # …but the state contradicts the deletion
+          preceding_version_uid: "${v1_uid}"
+    expect: bad_request
+  - step: 3                              # the target is untouched, and still deletable
+    call: I_EHR_COMPOSITION.get_composition_latest
+    with: { ehr_id: "${ehr_id}", versioned_object_uid: "${vo_uid}" }
+    expect: ok
+postconditions:
+  - assert: state
+    text: >-
+      No version was committed from the contradictory delete member: the
+      composition is still live at its first version (verified by step 3)
+  - { assert: version, count: 1 }

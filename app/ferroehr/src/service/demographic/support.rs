@@ -253,20 +253,13 @@ impl FerroEhrService {
     /// `VERSIONED_OBJECT.time_created` is the commit time of the earliest held
     /// version (for a locally-created object, v1).
     ///
-    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner for a
-    /// demographic versioned object — RM common
-    /// `UML/classes/org.openehr.rm.common.versioned_object.adoc` §Attributes
-    /// types it `OBJECT_REF` 1..1 and says only that it references "the id of
-    /// the containing EHR or other relevant owning entity", while RM
-    /// demographic `master02-demographic_package.adoc` §Versioning Semantics
-    /// keeps parties in their own containers outside any EHR. The one concrete
-    /// released shape is the `VersionedParty` example in the vendored ITS-REST
-    /// OAS (`crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
-    /// `components.schemas.VersionedParty.example`), an `OBJECT_REF`
-    /// `{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}` — the "other
-    /// relevant owning entity" limb read as the serving system. This server
-    /// emits exactly that, with the configured system identifier as the `id`,
-    /// for every ehr-less demographic container.
+    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1 `OBJECT_REF`) has no EHR owner for
+    /// a demographic versioned object, so it names the serving system — the
+    /// "other relevant owning entity" limb of RM common
+    /// `UML/classes/org.openehr.rm.common.versioned_object.adoc` §Attributes — in
+    /// the shape the released `VersionedParty` example fixes in the vendored
+    /// demographic OAS (`{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}`),
+    /// with the configured system identifier as the `id`.
     ///
     /// The body is constructed as the generated [`VersionedObject`] subtype and
     /// serialized through the native codec, so it carries `_type` first and the
