@@ -78,7 +78,9 @@ DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 85,
 # #2482) — the rich multimedia/parsable acceptance case plus the
 # five-invariant refusal family.
 ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 102, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
-Versioning: { family: Platform, tier: CORE, required: true, min_cases: 72, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
+# Raised 72 -> 73 (2026-08-20): the Persistent_validity cross-version
+# category-flip refusal (issue #2486).
+Versioning: { family: Platform, tier: CORE, required: true, min_cases: 73, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
 # BINDING cases (member accepted / non-member refused / unresolvable under each
 # declared posture). BASE architecture_overview master12 §"Binding Terminology

@@ -1107,6 +1107,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-category_flip",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-cluster_no_items",
       "status": "passed",
       "rows_driven": 1,
