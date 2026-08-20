@@ -411,3 +411,144 @@ async fn repeated_operations_are_served_from_the_cache() {
         );
     }
 }
+
+// ── ConceptMap/$translate (the FHIR-mapping code-translation seam) ───────────
+
+#[tokio::test]
+async fn translate_takes_the_first_strictly_equivalent_match() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ConceptMap/$translate"))
+        .and(query_param("system", "http://loinc.org"))
+        .and(query_param("code", "8480-6"))
+        .and(query_param("targetsystem", "http://snomed.info/sct"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Parameters",
+            "parameter": [
+                {"name": "result", "valueBoolean": true},
+                {"name": "match", "part": [
+                    {"name": "equivalence", "valueCode": "wider"},
+                    {"name": "concept", "valueCoding": {
+                        "system": "http://snomed.info/sct", "code": "75367002"}}
+                ]},
+                {"name": "match", "part": [
+                    {"name": "equivalence", "valueCode": "equivalent"},
+                    {"name": "concept", "valueCoding": {
+                        "system": "http://snomed.info/sct", "code": "271649006",
+                        "display": "Systolic blood pressure"}}
+                ]}
+            ]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let p = provider(&server.uri(), FhirOperation::ValidateCode);
+    let hit = p
+        .translate("http://loinc.org", "8480-6", "http://snomed.info/sct", None)
+        .await
+        .expect("call")
+        .expect("a strictly equivalent match translates");
+    assert_eq!(hit.code, "271649006", "the wider match is skipped");
+    assert_eq!(hit.display.as_deref(), Some("Systolic blood pressure"));
+}
+
+#[tokio::test]
+async fn translate_without_a_strict_match_is_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ConceptMap/$translate"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Parameters",
+            "parameter": [
+                {"name": "result", "valueBoolean": true},
+                {"name": "match", "part": [
+                    {"name": "equivalence", "valueCode": "narrower"},
+                    {"name": "concept", "valueCoding": {"code": "x"}}
+                ]}
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    let p = provider(&server.uri(), FhirOperation::ValidateCode);
+    let hit = p
+        .translate("http://loinc.org", "8480-6", "http://snomed.info/sct", None)
+        .await
+        .expect("call");
+    assert!(hit.is_none(), "narrower is never taken");
+}
+
+#[tokio::test]
+async fn translate_result_false_and_404_are_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ConceptMap/$translate"))
+        .and(query_param("code", "unmapped"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Parameters",
+            "parameter": [{"name": "result", "valueBoolean": false}]
+        })))
+        .mount(&server)
+        .await;
+
+    let p = provider(&server.uri(), FhirOperation::ValidateCode);
+    assert!(
+        p.translate(
+            "http://loinc.org",
+            "unmapped",
+            "http://snomed.info/sct",
+            None
+        )
+        .await
+        .expect("call")
+        .is_none(),
+        "result=false is no translation"
+    );
+    assert!(
+        p.translate(
+            "http://loinc.org",
+            "no-map-at-all",
+            "http://snomed.info/sct",
+            None
+        )
+        .await
+        .expect("call")
+        .is_none(),
+        "an unmatched route (404) is no translation, not a fault"
+    );
+}
+
+#[tokio::test]
+async fn translate_pins_the_concept_map_url() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ConceptMap/$translate"))
+        .and(query_param("url", "http://example.org/ConceptMap/bp"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Parameters",
+            "parameter": [
+                {"name": "result", "valueBoolean": true},
+                {"name": "match", "part": [
+                    {"name": "equivalence", "valueCode": "equal"},
+                    {"name": "concept", "valueCoding": {"code": "target-1"}}
+                ]}
+            ]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let p = provider(&server.uri(), FhirOperation::ValidateCode);
+    let hit = p
+        .translate(
+            "http://loinc.org",
+            "8480-6",
+            "http://snomed.info/sct",
+            Some("http://example.org/ConceptMap/bp"),
+        )
+        .await
+        .expect("call")
+        .expect("equal is strict too");
+    assert_eq!(hit.code, "target-1");
+}

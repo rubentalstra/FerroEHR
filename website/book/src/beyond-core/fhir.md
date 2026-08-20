@@ -113,11 +113,43 @@ with `*` as the fallback for any unmatched system. An entry can be marked
 required, which turns an absent source value into an error instead of a skipped
 field.
 
-The FHIR-path support is a deliberate subset: object-field navigation and
-zero-based array indexing (for example `code.coding[0].code`,
-`component[0].valueQuantity.value`), not the full FHIRPath language. The mapping
+A coded transform can also declare `translate`, asking for **cross-terminology
+code translation** at ingest time:
+
+```json
+{ "openehr_path": "…/problem",
+  "fhir_path": "code.coding[0].code",
+  "transform": { "kind": "coded",
+    "system_path": "code.coding[0].system",
+    "translate": { "target_system": "http://snomed.info/sct",
+                   "concept_map": "http://example.org/ConceptMap/my-map" } },
+  "code_map": { "http://snomed.info/sct": "SNOMED-CT" } }
+```
+
+The server resolves each such code through a configured FHIR terminology
+server's `ConceptMap/$translate` (routed by the openEHR terminology the
+`code_map` binds the target system to; `concept_map` optionally pins one map).
+Only a **strictly equivalent** match is taken — a `wider`, `narrower`, or
+`relatedto` mapping is treated as no translation, because writing a
+non-equivalent code would silently change clinical meaning. When no
+translation exists, a required entry refuses the ingest and an optional one
+writes nothing — the untranslated source code is never passed through under
+the target terminology. A mapping that declares `translate` on a deployment
+with no terminology server configured is refused as a server configuration
+error rather than silently skipped.
+
+The FHIR-path support is a deliberate subset of
+[FHIRPath](https://hl7.org/fhirpath/): object-field navigation, zero-based
+array indexing, `first()`, and single-condition `where(path = literal)`
+filters — for example `code.coding[0].code`,
+`code.coding.where(system = 'http://loinc.org').code`, and
+`component.where(code.coding[0].code = '8480-6').valueQuantity.value` — not
+the full FHIRPath language (no other functions, unions, or arithmetic).
+FHIRPath's `where()` filters a collection; because a FLAT leaf holds a single
+value, this subset takes the first matching element. The mapping
 is symmetric — the same definition drives inbound ingest, the read façade, and
-outbound emission — so a field you can ingest is a field you can serve back.
+outbound emission — so a field you can ingest is a field you can serve back
+(a translated entry serves back the stored, translated coding).
 
 Each mapping also carries an `enabled` flag (default on). Only enabled mappings
 resolve, for ingest, for the façade, and for outbound emission, which makes
