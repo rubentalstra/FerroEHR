@@ -1,278 +1,50 @@
 # The capability -> family -> tier matrix: CNF profiles master03-profiles.adoc
 # capability x tier tables as data, plus the CNF 2.0 Security family proposal
-# (our own extension). OPTIONS = the book's catch-all pseudo-profile =>
-# required: false on OPTIONS rows.
-#
-# Claim-completeness columns (owner 2026-07-28; all enforced by `cnf-runner
-# validate`, never by review):
+# (our own extension). OPTIONS rows are required: false.
+# Columns (all enforced by cnf-runner validate):
 #   min_cases          verdict-bearing case-count FLOOR; ratchets UP only.
-#   realization        released-wire (default) | extension (routes no openEHR
-#                      spec governs — never `required`).
+#   realization        released-wire (default) | extension (never required).
 #   evidence_exception register entry adjudicating an all-excused capability.
 #   workload_exclusion register entry adjudicating a claimed capability the
 #                      measured hospital simulation does not exercise.
-# Workload exclusions are PERMANENT reasons of two kinds only: destructive
-# mid-measurement, or no-request-to-send (no wire, no served route); a stale
-# exclusion is a `workload-coverage` finding.
-# Derivation narratives live in the ambiguity register entries each row
-# points at (and the owner rulings on the tracker); comments here stay one
-# line per row. The nine unclaimed SM rows become re-claimable the day the
-# product serves their operations on declared extension routes (the
-# PartyRelationshipOperations pattern).
+# Derivation narratives live in the ambiguity register and on the tracker.
 Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 13, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
 Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 26, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
-# (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
-# definition.openapi.yaml surfaces only OPT wire under /definition/template/adl2
-# (list / upload / get / example / the deprecated version GET); there is no ADL 2
-# archetype-provisioning path and the docs text names none. AND NO SERVED ROUTE:
-# this product mounts nothing for artefact-generic ADL 2 provisioning. Claim
-# withdrawn from the ferroehr statement.
-# REALIZED ON THE EXTENSION SURFACE (#637, 2026-07-29) — the row carried an
-# evidence_exception while ITS-REST 1.1.0 surfaced no ADL 2 archetype/artefact
-# wire AND this product served none either. It now serves five routes
-# (/definition/archetype/adl2[/count], /definition/artefact/adl2[/count],
-# DELETE /definition/artefact/adl2/{id}; the `adl2-archetype` served_extensions
-# family), the five SM operations carry EXTENSION bindings onto them, and the
-# battery is EXECUTED. The exception is therefore GONE.
-#
-# The row carries NO `realization: extension` marker, and that is a derived
-# fact rather than an oversight: `delete_artefact-existing` verifies its own
-# postcondition by reading the artefact back through the RELEASED
-# get_artefact (GET /definition/template/adl2/{id} -> 404), so the battery is
-# genuinely MIXED — four cases drive extension routes only, two touch released
-# wire — and `check_realization_markers` reserves the marker for a battery
-# whose every case is extension-only. Weakening that read-back to an
-# extension-only probe to earn the marker would trade real evidence for a
-# label.
-#
-# The workload_exclusion is gone too: the `integration_poll` journey now polls
-# the ADL 2 archetype store (`archetype_adl2_list`), so the measured
-# hospital simulation exercises the capability.
 Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
 Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 30, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
-# Example generation split from OPT provisioning (#545, 2026-07-28): the /example sub-resource is SHOULD-level surface — the CNF profiles book has no ex (register: AMB-115).
 TemplateExamples: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml NOTE + register AMB-115 (no CNF profiles row exists for example generation)" }
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }
 EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
 EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 49, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
 CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 85, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
-# Floor raised 89 -> 90: the third axis of the master06 §Logical Deletion
-# procedure — a delete member whose own declared lifecycle_state contradicts
-# the deletion it performs (the two data axes were already covered).
-# Floor raised 91 -> 93 (2026-08-20): the History-package twins (issue
-# #2471) — the master06 instance-figure acceptance case plus the
-# three-invariant refusal family under the open history template.
-# Raised 93 -> 94 (2026-08-20): the DV_IDENTIFIER empty-id refusal twin
-# (issue #2474, Id_valid — the present-but-empty branch beside the
-# CONT-DV_IDENTIFIER matrix's missing-id row).
-# Raised 94 -> 96 (2026-08-20): the Text-package twins (issue #2476) — the
-# deprecated-forms acceptance case (DV_PARAGRAPH + legacy formatting +
-# hyperlink) plus the four-invariant refusal family.
-# Raised 96 -> 98 (2026-08-20): the Quantity-package twins (issue #2478) —
-# the fully-trimmed DV_QUANTITY acceptance case plus the ten-invariant
-# refusal family.
-# Raised 98 -> 100 (2026-08-20): the time-specification twins (issue
-# #2480) — the PIVL/GTS acceptance case plus the formalism refusal.
-# Raised 100 -> 102 (2026-08-20): the Encapsulated-package twins (issue
-# #2482) — the rich multimedia/parsable acceptance case plus the
-# five-invariant refusal family.
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 102, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
-# Raised 72 -> 73 (2026-08-20): the Persistent_validity cross-version
-# category-flip refusal (issue #2486).
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 104, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 73, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
-# Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
-# BINDING cases (member accepted / non-member refused / unresolvable under each
-# declared posture). BASE architecture_overview master12 §"Binding Terminology
-# Value-sets to Archetypes" makes the bound query's result the permitted value
-# set, so resolving it at ingestion is archetype-constraint validation like any
-# other — it just reaches an external terminology query server to do it.
 ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 125, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
 PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 90, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
-# REALIZATION DERIVED FIRST-HAND 2026-07-28 (#623), outcome (b): the RELEASED
-# wire does not exist — the ITS-REST docs text never names a PARTY_RELATIONSHIP
-# resource and specifications/demographic.openapi.yaml declares no
-# /demographic/party_relationship* path (PartyRelationship.yaml is a schema
-# only, the by-value member of PARTY.relationships) — but this product SERVES
-# all six SM relationship operations on its own declared extension routes, so
-# the battery is EXECUTED there instead of excused. The evidence_exception is
-# therefore GONE and the row is `realization: extension`, which the matrix model
-# forbids from ever being `required`: the capability is certified as product
-# function, and no openEHR profile tier or ITS-REST wire-conformance claim rests
-# on it (owner ruling 2026-07-28).
 PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 19, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Relationship Operations)" }
-# REALIZED ON RELEASED WIRE (#624, 2026-07-28) — the row carried `min_cases: 0`
-# and no battery. The realization is the party commit seam: the released
-# demographic create operations validate the committed PARTY against the
-# archetyped demographic model, and a violation is the released 422
-# (ITS-REST overview Requests_and_responses.md §HTTP status codes: "The request
-# was well-formed but was unable to be followed due to semantic errors"). The
-# battery is the demographic twin of the CONT- family: the archetype-root rules
-# (RM demographic party.adoc §Is_archetype_root + RM common locatable.adoc
-# §Archetyped_valid and §archetype_node_id), the present-implies-non-empty
-# cardinality rules on PARTY/ACTOR/ROLE, the PARTY_IDENTITY value-type and
-# mandatory-attribute rules, and the accept case that proves the validator
-# passes fully archetyped content rather than refusing what it does not
-# recognize. Exercised by the measured workload through the demographic
-# admission journey's party commits — the validator runs on every commit, the
-# same reasoning that maps ArchetypeValidation onto CompositionCommit.
 DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 11, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
-# Floor raised 19 -> 30 (2026-07-30): the AQL master03 language battery — LIKE wildcards, EXISTS/NOT EXISTS, NOT CONTAINS, the AND/OR containment operat (register: AMB-174).
 AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 35, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
-# Floor raised 2 -> 3 (2026-07-30): the DISTINCT x LIMIT ordering case
-# (duplicates filtered before LIMIT applies — master03-syntax §LIMIT) joins the
-# two LIMIT cases.
 AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
-# Floor raised 1 -> 5 (2026-07-29): the four EXTERNAL-terminology-server cases (Boolean validate resolving true and false, the expand filter over commit (register: AMB-30).
 AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 6, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
-# (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
-# admin.openapi.yaml declares exactly two paths, /admin/ehr/{ehr_id} and
-# /admin/ehr/all{?ehr_id*}, so none of the SM I_ADMIN_SERVICE reporting
-# operations (list_contributions / contribution_count /
-# versioned_composition_count / composition_version_count) has a wire. AND NO
-# SERVED ROUTE: the product's admin extension family is exactly template
-# delete, stored-query-version delete and the redacted config read (declared in
-# vocab/wire_surface.yaml `admin-extension-routes`) — the statistics methods are
-# service-layer only (`ferroehr::service::admin::statistics`). Claim withdrawn.
-# REALIZED ON THE EXTENSION SURFACE (#637, 2026-07-29) — ITS-REST 1.1.0
-# realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface,
-# but this product serves the four SM reporting calls under /admin/report/
-# (the `admin-activity-report` served_extensions family) and the whole battery
-# is EXECUTED there. The evidence_exception is GONE and the row is
-# `realization: extension`, which may never be `required`.
-# The workload_exclusion is gone too: the `audit_review` journey now reads the
-# contribution count (`admin_contribution_report`), so the measured hospital
-# simulation exercises the capability.
 ActivityReport: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 15, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Activity Report)" }
 PhysicalDeletion: { family: Platform, tier: OPTIONS, required: false, min_cases: 11, workload_exclusion: { register: AMB-170, reason: "destructive mid-measurement: the released admin operations erase an EHR and its whole version history outright, so every arrival would shrink the population-anchored corpus the measured window is bound to and the earned class would no longer describe the declared volumetric class" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Physical Deletion)" }
-# REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29) — the LAST admin excuse standing after the #637 wave, and for a reason of its own rather than "no (register: AMB-33).
 EhrDumpLoad: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 15, workload_exclusion: { register: AMB-170, reason: "one-shot by nature: export_ehrs dumps the WHOLE repository to a file system and load_ehrs reads a whole archive back, so neither is a per-patient interaction a hospital simulation could sustain - a repeated arrival would re-dump the entire population-anchored corpus the measured window is bound to, and the load half would additionally grow it. The exclusion is about the SHAPE of the operation, not about routing, so it stands now that the routes exist" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Dump/Load)" }
-# REALIZED ON RELEASED WIRE (#624, 2026-07-28) — the row carried `min_cases: 0`
-# and no battery. Derived first-hand: the SM Admin chapter
-# (SM openehr_platform master15-admin_service.adoc — I_ADMIN_SERVICE,
-# I_ADMIN_ARCHIVE, I_ADMIN_DUMP_LOAD) declares NO bulk-load operation (the only
-# load-shaped one, I_ADMIN_DUMP_LOAD.load_ehrs, is the separate EhrDumpLoad
-# book row and reads a file-system archive), and the released admin API
-# declares only /admin/ehr/{ehr_id} and /admin/ehr/all. So the load itself is
-# the realization, and it is entirely RELEASED wire: a population created and
-# filled through the ordinary EHR + COMPOSITION operations — the same path this
-# runner seeds its scale corpora on. The battery covers the two axes of a
-# loaded corpus (population breadth, per-EHR depth) and the two ways a bulk
-# load fails (identity collision, content bleed), asserting count + integrity
-# through the query surface and per-container reads. N stays small: this is the
-# FUNCTIONAL catalogue, not the measured instrument.
 BulkEhrLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, workload_exclusion: { register: AMB-170, reason: "the bulk load IS every measured run's own seeding phase: the scale corpus is loaded strictly through the public API before the window opens, so the capability is exercised per-run by the seeder - as a sustained ARRIVAL it would be a second population grower distorting the population-anchored envelope, the same one-shot family as a whole-server dump/load" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Bulk EHR load)" }
-# (c) NO RELEASED WIRE (the two-path admin API above) and NO SERVED ROUTE — the
-# SM I_ADMIN_ARCHIVE archive_ehrs operation is service-layer only
-# (`ferroehr::service::admin::archive`). Claim withdrawn 2026-07-28 (#623).
-# REALIZED ON THE EXTENSION SURFACE (#637, 2026-07-29) — the product serves
-# POST /admin/archive/ehrs (the `admin-archive` served_extensions family), the
-# SM archive_ehrs carries an EXTENSION binding onto it, and both cases are
-# EXECUTED. The evidence_exception is GONE and the row is
-# `realization: extension`. The workload_exclusion SURVIVES but its reason is
-# re-derived: the old one ("no request exists to send") lapsed the day the
-# route landed; the live reason is the destructive/one-shot family.
 EhrArchive: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 7, workload_exclusion: { register: AMB-170, reason: "destructive mid-measurement: archiving is a lifecycle transition applied to a named set of EHRs, so every arrival would move part of the population-anchored corpus the measured window is bound to into the archival tier - the earned class would no longer describe the declared volumetric class. The same one-shot/destructive family as physical deletion, and unlike the read-only extension routes the simulation now polls" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Archive)" }
-# (c) NO RELEASED WIRE (the two-path admin API above) and NO SERVED ROUTE — the
-# SM I_ADMIN_ARCHIVE archive_parties operation is service-layer only
-# (`ferroehr::service::admin::archive`). Claim withdrawn 2026-07-28 (#623).
-# REALIZED ON THE EXTENSION SURFACE (#637, 2026-07-29) — the product serves
-# POST /admin/archive/parties (the `admin-archive` served_extensions family),
-# the SM archive_parties carries an EXTENSION binding onto it, and both cases
-# are EXECUTED (the success case provisions its party through the new
-# `requires.party` precondition, so its FLOW stays extension-only). The
-# evidence_exception is GONE, the row is `realization: extension`, and the
-# workload_exclusion reason is re-derived to the destructive/one-shot family.
 DemographicArchive: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 8, workload_exclusion: { register: AMB-170, reason: "destructive mid-measurement: archiving is a lifecycle transition applied to a named set of parties, so every arrival would move part of the demographic population the measured window is bound to into the archival tier - the same one-shot/destructive family as physical deletion and the EHR archive half" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Demographic Archive)" }
-# REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29). The released absence is
-# CONFIRMED unchanged first-hand: seven API groups (overview, system, ehr,
-# demographic, query, definition, admin) and no message/extract/tdd group in
-# either the docs text or the OAS. What changed is OUR side — the product serves
-# the four SM EHR-Extract operations under /message/ (the `message-extract`
-# served_extensions family), they carry EXTENSION bindings, and the whole
-# battery is EXECUTED. The evidence_exception is GONE and the row is
-# `realization: extension`, which may never be `required`.
-#
-# The battery also stopped being documentary in a second sense. Its corpus was
-# spec-SHAPED but semantically unexecutable — a manifest naming neither ehr_id
-# nor subject_id, an EXTRACT with empty chapters and no EHR_STATUS container —
-# so it could never have been posted anywhere. Every fixture is re-authored
-# EXECUTABLE (corpus/MANIFEST.yaml §MESSAGING), and the cases whose subject is
-# a runner-minted id build their EXTRACT_SPEC inline, because a corpus entry is
-# static bytes with no reference substitution.
-#
-# The workload_exclusion is GONE: the `integration_poll` journey now exports an
-# EHR as EXTRACTs (`ehr_extract_export`), so the measured hospital simulation
-# exercises the capability.
 EhrExtract: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 32, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
-# REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29) — no MESSAGE group exists
-# in the release (CONFIRMED unchanged first-hand), but the product serves
-# import_tdd + import_tdds under /message/tdd/ (the `message-tdd`
-# served_extensions family) and the battery is EXECUTED. The evidence_exception
-# is GONE and the row is `realization: extension`.
-#
-# Its corpus is now the OFFICIAL CNF TDD data set rather than a hand-shaped
-# stand-in naming a template no corpus entry provisions: the two valid
-# documents are the vendored persistent_minimal / nested instances (root `uid`
-# removed — a version identifier is the committing system's, RM common master06
-# §Version Identification), and each owning case provisions the naming template
-# through `requires.templates`.
-#
-# The workload_exclusion is GONE: the `documentation` journey now imports a TDD
-# (`tdd_import`), so the measured simulation exercises the capability.
 Tds: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 16, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: TDS)" }
 DefinitionApi: { family: Platform, tier: CORE, required: true, min_cases: 1, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEFINITION API)" }
 EhrApi: { family: Platform, tier: CORE, required: true, min_cases: 2, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: EHR API)" }
-# REPORTING QUALIFIER, release-pinned (group-12 audit, 2026-07-27) — carried on
-# the capability row because the report/statement renderers take their scope
-# text from this matrix and no other artifact carries per-API scope wording.
-# It qualifies REPORTING only: it is never a verdict modifier, and it is not an
-# ambiguity (requirement force is unaffected — the BCP-14 clause of ITS-REST
-# `docs/overview/Preface.md` §Requirements is not state-qualified, so every
-# MUST/SHOULD on this API binds exactly as elsewhere).
 DemographicApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 63, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEMOGRAPHIC API). SCOPE: the openEHR DEMOGRAPHIC API is DEVELOPMENT-state in the pinned release — ITS-REST docs/demographic/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and derived from the released operation/RM/SM text, not from a conformance clause" }
 QueryApi: { family: Platform, tier: STANDARD, required: true, min_cases: 22, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: QUERY API)" }
 AdminApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, workload_exclusion: { register: AMB-170, reason: "destructive mid-measurement: the released ADMIN API of ITS-REST 1.1.0 is exactly admin_ehr_delete and admin_ehr_delete_all, so the only wire this claim covers is the same corpus-erasing pair PhysicalDeletion excludes (the further /admin routes this server mounts are extensions no claim rests on)" }, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: ADMIN API). SCOPE: the openEHR ADMIN API is DEVELOPMENT-state in the pinned release — ITS-REST docs/admin/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and cover exactly the two released operations (admin_ehr_delete, admin_ehr_delete_all), derived from the released operation/RM/SM text, not from a conformance clause; the further /admin routes this server mounts are our own extensions and no claim rests on them" }
-# REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29). The CNF Profiles book
-# lists a MESSAGE API row and ITS-REST 1.1.0 publishes no such API group, so
-# there is still NO released API to conform to — but this product now mounts a
-# message resource of its own (`/message/**`, the `message-extract` +
-# `message-tdd` served_extensions families), so the row has something real to
-# gate. The evidence_exception is GONE and the row is `realization: extension`:
-# what it certifies is that the product answers on the message surface it
-# DECLARES, never that it conforms to an openEHR MESSAGE API — there is none.
-#
-# The workload_exclusion goes with EhrExtract's: the `integration_poll` journey
-# drives the same extension surface.
 MessageApi: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 4, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: MESSAGE API)" }
-# TIER BY ANALOGY, release-pinned — the CNF Profiles book has NO SYSTEM row (its
-# REST-APIs table lists six: DEFINITION, EHR, DEMOGRAPHIC, QUERY, ADMIN,
-# MESSAGE), so the tier below is ours, not a book row — the same footing as
-# SmartAppLaunch. OPTIONS and required:false because no released MUST binds a
-# service to serve the API: the one released sentence about the method is the
-# descriptive §HTTP Methods table row, carrying no RFC 2119 keyword. The API's
-# STABLE state does not change that (a stable specification of a descriptive
-# row is still descriptive), so the capability may never gate CORE or STANDARD.
 SystemApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, source: "ITS-REST docs/system/Description.md §Status (\"This specification is in the `STABLE` state\") + docs/overview/Requests_and_responses.md §HTTP Methods (\"OPTIONS | Describe the communication options for the target resource\"). SCOPE: the CNF Profiles book has no SYSTEM row, so the tier is ours by analogy with the other non-book API capabilities, and the claim covers exactly what the released docs text assigns — a 200 answer carrying Allow on the API base path. The manifest BODY and the resource path are described by no released sentence (register AMB-160), so no claim rests on them" }
-# TIER BY THE RELEASE'S OWN WORDS — the ITEM_TAG surface is OPTIONAL, stated
-# outright: ITS-REST docs/overview/Requests_and_responses.md §openehr-item-tag
-# and openehr-version-item-tag, "If the server does not support ITEM_TAGs,
-# these headers will also be unsupported." A capability a conformant service
-# may simply not have can never gate CORE or STANDARD, so OPTIONS +
-# required:false — the same footing SystemApi and SmartAppLaunch sit on (the
-# CNF Profiles book has no ITEM_TAG row either; its REST-APIs table lists six
-# API groups and its Functional table no tag capability). The tag routes live
-# INSIDE the EHR and DEMOGRAPHIC API groups, so this capability is deliberately
-# NOT EhrApi/DemographicApi: a service that answers every EHR-API operation and
-# no tag route is conformant, and folding tags into EhrApi (CORE, required)
-# would claim otherwise.
-# Floor raised 63 -> 66: the three UpdateItemTag write-schema strictness cases
-# (an undeclared member; a non-string `value`; a non-string `target_path` —
-# register AMB-205).
 ItemTags: { family: Platform, tier: OPTIONS, required: false, min_cases: 66, source: "ITS-REST docs/overview/Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag (\"Both headers act as convenient wrappers around the dedicated ITEM_TAG operations\"; \"If the server does not support ITEM_TAGs, these headers will also be unsupported\") + the twenty-three released tag operations (specifications/operations/{ehr,demographic}_tags_get.yaml, {composition,ehr_status}_tags_{get,update,delete}.yaml, {person,agent,group,organisation,role}_tags_{get,update,delete}.yaml) + RM common master07-tags.adoc (the ITEM_TAG class the routes serve). SCOPE: the CNF Profiles book has no ITEM_TAG row, so the tier is ours by analogy with the other non-book capabilities; the operations have no SM interface at all (register AMB-161) and the catalogue anchors them under the reserved I_ITS_REST_ITEM_TAGS pseudo-interface. The editorial defects of the released tag surface are registered (AMB-91..97, AMB-137, AMB-138) and no claim rests on anything they leave unassigned" }
 Signing: { family: Platform, tier: STANDARD, required: false, min_cases: 13, source: "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing); RM common (ORIGINAL_VERSION.signature)" }
 SimplifiedFormats: { family: Platform, tier: OPTIONS, required: false, min_cases: 75, source: "ITS-REST simplified_formats (SHOULD-level: OPTIONS profile, never gates CORE/STANDARD)" }
-# REPORTING QUALIFIER, release-pinned (group-15 audit) — the same DEVELOPMENT-state scope wording DemographicApi/AdminApi carry, plus the two facts uniq (register: AMB-151).
 SmartAppLaunch: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "ITS-REST docs/smart_app_launch (SMART on openEHR). SCOPE: the specification is DEVELOPMENT-state in the pinned release — manifest_vars.adoc verbatim: \":spec_status: DEVELOPMENT\" — it is prose-only (no OpenAPI group, no schemas), it carries exactly ONE RFC 2119 uppercase keyword in all nine chapters (master06 §Deprecated Flows, \"MUST NOT be used\"), the vendored CNF corpus never mentions it, and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for it. Claims here are pinned to ITS-REST Release-1.1.0, are config-gated on the SMART resource-server role being enabled, and cover exactly the CDR's enforceable share — the /.well-known/smart-configuration document (master04 §Service Discovery + §Services + §Capabilities), the master08 §Resource Scopes grammar, and the 403-on-scope-deny discipline (overview Requests_and_responses.md §Authentication and authorization). The launch flows (master07), token issuance and grant prohibitions (master06), registration (master03) and the application typology (master05) are Authorization-Server behaviour and no claim rests on them" }
 EhrDemographicSeparation: { family: Security, tier: SEC-BASIC, required: true, min_cases: 1, source: "CNF 2.0 proposal (Security family; 2017 schedule Security BASIC lineage); RM ehr (EHR_STATUS.subject external refs / PARTY_SELF)" }
 AuthenticatedAccess: { family: Security, tier: SEC-BASIC, required: true, min_cases: 2, source: "CNF 2.0 proposal (Security family; 2017 schedule Security BASIC lineage); ITS-REST overview Requests_and_responses (HTTP status codes: 401)" }
