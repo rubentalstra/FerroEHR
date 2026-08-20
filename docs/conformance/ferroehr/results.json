@@ -2179,6 +2179,12 @@
       "rows_total": 12
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-element_null_family_invalid",
+      "status": "passed",
+      "rows_driven": 3,
+      "rows_total": 3
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-empty",
       "status": "passed",
       "rows_driven": 1,
