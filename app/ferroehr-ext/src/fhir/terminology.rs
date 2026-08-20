@@ -38,6 +38,23 @@ pub struct ParametersView {
     pub codes: BTreeMap<String, String>,
     /// `valueString` parameters (e.g. `$lookup` `display`).
     pub strings: BTreeMap<String, String>,
+    /// `ConceptMap/$translate` `match` parameters, in response order.
+    pub matches: Vec<TranslateMatch>,
+}
+
+/// One `match` of a `ConceptMap/$translate` response: the `equivalence` code
+/// plus the target `concept` Coding's members
+/// (<https://hl7.org/fhir/R4B/conceptmap-operation-translate.html>).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TranslateMatch {
+    /// The match's `equivalence` (`equivalent`, `equal`, `wider`, …).
+    pub equivalence: Option<String>,
+    /// The target concept's code system URL.
+    pub system: Option<String>,
+    /// The target concept's code.
+    pub code: Option<String>,
+    /// The target concept's display text.
+    pub display: Option<String>,
 }
 
 /// One member of a `ValueSet.expansion`, with its nested members.
@@ -61,6 +78,10 @@ pub fn decode_parameters(body: &[u8]) -> Result<ParametersView, TerminologyDecod
     let parameters: Parameters = serde_json::from_slice(body)?;
     let mut view = ParametersView::default();
     for parameter in parameters.parameter.iter().flatten() {
+        if parameter.name == "match" {
+            view.matches.push(translate_match(parameter));
+            continue;
+        }
         match &parameter.value {
             Some(ParametersParameterValue::Boolean(value)) => {
                 view.booleans.insert(parameter.name.clone(), *value);
@@ -75,6 +96,26 @@ pub fn decode_parameters(body: &[u8]) -> Result<ParametersView, TerminologyDecod
         }
     }
     Ok(view)
+}
+
+/// Reads one `$translate` `match` parameter's parts (`equivalence` +
+/// `concept`).
+fn translate_match(parameter: &fhir_model::r4b::resources::ParametersParameter) -> TranslateMatch {
+    let mut m = TranslateMatch::default();
+    for part in parameter.part.iter().flatten() {
+        match (part.name.as_str(), &part.value) {
+            ("equivalence", Some(ParametersParameterValue::Code(value))) => {
+                m.equivalence = Some(value.clone());
+            }
+            ("concept", Some(ParametersParameterValue::Coding(coding))) => {
+                m.system.clone_from(&coding.0.system);
+                m.code.clone_from(&coding.0.code);
+                m.display.clone_from(&coding.0.display);
+            }
+            _ => {}
+        }
+    }
+    m
 }
 
 /// Decodes a FHIR `ValueSet` `$expand` response into its expansion members.

@@ -17,6 +17,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **FHIR mapping definitions gained `where()`/`first()` paths and
+  cross-terminology code translation.** The connector's FHIRPath subset now
+  supports single-condition `where(path = literal)` filters and `first()`
+  (picking, say, a component by its code instead of its position), and a
+  `coded` entry can declare `translate` to convert codes between
+  terminologies at ingest time via a configured FHIR terminology server's
+  `ConceptMap/$translate`. Only strictly equivalent matches are taken; an
+  untranslatable required entry refuses the ingest, an optional one writes
+  nothing, and a translate mapping without a configured terminology server
+  is a configuration error — the untranslated code is never passed through
+  under the target terminology.
+
 - **The whole-repository dump archives standalone demographic containers.**
   `POST {base}/admin/dump` now writes a demographic wave beside the EHR wave:
   parties and party relationships that live outside any EHR land in

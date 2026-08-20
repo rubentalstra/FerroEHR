@@ -396,6 +396,63 @@ impl FhirTerminologyProvider {
         Ok(expansion.into_extract(value_set_code))
     }
 
+    /// Cross-terminology code translation → FHIR `ConceptMap/$translate`
+    /// (<https://hl7.org/fhir/R4B/conceptmap-operation-translate.html>):
+    /// `system`/`code` name the source coding, `target_system` the FHIR
+    /// `targetsystem`, and `concept_map` (when pinned) the `url`.
+    ///
+    /// `Ok(None)` when no translation exists — the server answered `404`, the
+    /// response's `result` is `false`, or no match is STRICTLY equivalent
+    /// (`equivalence` ∈ {`equivalent`, `equal`}; the looser relations —
+    /// `wider`, `narrower`, `relatedto`, `inexact` — are deliberately not
+    /// taken: no openEHR spec governs FHIR conversion, and writing a
+    /// non-equivalent code would be a silently wrong clinical value).
+    ///
+    /// # Errors
+    ///
+    /// Precondition on an empty `code`; exception on a transport fault or a
+    /// malformed response.
+    #[cfg(feature = "fhir")]
+    pub async fn translate(
+        &self,
+        system: &str,
+        code: &str,
+        target_system: &str,
+        concept_map: Option<&str>,
+    ) -> Result<Option<ferroehr_ext::fhir::mapping::TranslatedCode>, SmError> {
+        if code.is_empty() {
+            return Err(SmError::precondition("code must not be empty"));
+        }
+        let mut query = vec![
+            ("system", system),
+            ("code", code),
+            ("targetsystem", target_system),
+        ];
+        if let Some(url) = concept_map {
+            query.push(("url", url));
+        }
+        let Some(values) = self.parameters("/ConceptMap/$translate", &query).await? else {
+            return Ok(None);
+        };
+        if values.booleans.get("result") != Some(&true) {
+            return Ok(None);
+        }
+        Ok(values
+            .matches
+            .iter()
+            .find(|m| {
+                matches!(m.equivalence.as_deref(), Some("equivalent" | "equal")) && m.code.is_some()
+            })
+            .and_then(|m| {
+                m.code
+                    .clone()
+                    .map(|code| ferroehr_ext::fhir::mapping::TranslatedCode {
+                        code,
+                        display: m.display.clone(),
+                    })
+            }))
+    }
+
     /// `subsumes` → FHIR `CodeSystem/$subsumes` (`codeA` = `ref_code`,
     /// `codeB` = `candidate_child_code`). True iff the outcome is `subsumes`
     /// — the SM's *strict* subsumption (`equivalent` is excluded).
@@ -586,6 +643,21 @@ struct ParameterValues {
     codes: BTreeMap<String, String>,
     /// `valueString` parameters (`$lookup` `display`).
     strings: BTreeMap<String, String>,
+    /// `$translate` `match` parameters, in response order.
+    #[cfg(feature = "fhir")]
+    matches: Vec<TranslateMatchValues>,
+}
+
+/// One `$translate` match: the equivalence code + the target concept.
+#[cfg(feature = "fhir")]
+#[derive(Debug, Clone, Default)]
+struct TranslateMatchValues {
+    /// The match's `equivalence` (`equivalent`, `equal`, `wider`, …).
+    equivalence: Option<String>,
+    /// The target concept's code.
+    code: Option<String>,
+    /// The target concept's display text.
+    display: Option<String>,
 }
 
 /// A `$expand` expansion reduced to the extract's membership + hierarchy.
@@ -662,6 +734,15 @@ fn decode(kind: ResponseKind, body: &[u8]) -> Result<DecodedResponse, DecodeErro
                 booleans: view.booleans,
                 codes: view.codes,
                 strings: view.strings,
+                matches: view
+                    .matches
+                    .into_iter()
+                    .map(|m| TranslateMatchValues {
+                        equivalence: m.equivalence,
+                        code: m.code,
+                        display: m.display,
+                    })
+                    .collect(),
             }))
         }
         ResponseKind::ValueSet => {

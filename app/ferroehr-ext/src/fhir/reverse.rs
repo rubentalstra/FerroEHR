@@ -105,9 +105,13 @@ fn reverse_entry(flat: &impl FlatLookup, entry: &MappingEntry, resource: &mut Va
                 set_at(resource, up, u.clone());
             }
         }
+        // NOTE: no openEHR spec governs FHIR conversion — our own design: a
+        // `translate` entry reverses to the stored (translated) coding, whose
+        // `|code`/`|terminology` pair is internally consistent.
         Transform::Coded {
             system_path,
             display_path,
+            translate: _,
         } => {
             if let Some(code) = flat.lookup(&format!("{}|code", entry.openehr_path)) {
                 set_at(resource, fhir_path, code.clone());
@@ -226,7 +230,7 @@ mod tests {
     use openehr_its::opt14;
     use serde_json::json;
 
-    use super::super::mapping::build_flat;
+    use super::super::mapping::{CodeTranslations, build_flat};
     use super::*;
 
     fn def(v: Value) -> FhirMappingDefinition {
@@ -330,7 +334,7 @@ mod tests {
 
         // FHIR → inbound build → COMPOSITION. Fixed ctx/time (ITS-REST
         // simplified_formats master04 §Context) keeps the build deterministic.
-        let flat = build_flat(&original, &d).expect("build_flat");
+        let flat = build_flat(&original, &d, &CodeTranslations::default()).expect("build_flat");
         let comp = composition_from_flat(&flat, &wt, "2024-01-01T00:00:00Z").expect("from_flat");
 
         // COMPOSITION → reverse → FHIR (subject id is the post-strip subject).
