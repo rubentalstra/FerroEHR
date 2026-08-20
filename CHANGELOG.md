@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`validate` and `upload` can no longer disagree about a template.** The
+  ADL 1.4 OPT validation endpoint now answers with the same artefact-validity
+  catalogue the upload enforces, so a template that would be refused on
+  upload is reported invalid by validation too.
+- **A CONTRIBUTION delete member with a contradictory `lifecycle_state` is
+  refused.** Declaring `deleted` as the change type while stating a non-deleted
+  lifecycle previously committed with the instruction silently dropped; it is
+  now a `400` naming the contradiction, matching the header-seam behaviour.
+- **The `openehr-its` crate's default XML lineage is v2.** The convenience
+  serializer previously emitted the v1 namespace, whose published schema
+  bundle cannot describe every RM 1.2.0 class this model emits; the v1
+  lineage stays available by explicit selection.
+
 ### Added
 
 - **Template and archetype uploads now validate the artefact's own meta-data
