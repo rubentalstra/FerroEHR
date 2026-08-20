@@ -183,8 +183,9 @@ everything succeeded.
 
 ### `POST {base}/admin/dump`
 
-Writes an archive of every EHR. The body is `{"file_sys_loc": "…"}` plus the
-optional export settings:
+Writes an archive of every EHR **and of every standalone demographic
+container** — the parties and party relationships that live outside any EHR.
+The body is `{"file_sys_loc": "…"}` plus the optional export settings:
 
 | Field | Values | Default |
 |---|---|---|
@@ -204,8 +205,13 @@ the archive is packaged:
 
 The archive is a directory holding a `manifest.json`, one or more
 `segment-NNNN.json` files, and a `blobs/` subdirectory for any externalized
-multimedia. With `compression_format` set, those same entries are packed into
-a single `archive.zip` or `archive.7z` inside the location instead. The
+multimedia. When the repository holds standalone demographic containers, the
+archive additionally carries a `demographic-commons.json` (their shared
+audits and contributions) and one or more `demographic-NNNN.json` segments —
+one record per party or relationship, in the same version-record shape the
+EHR segments use. With `compression_format` set, those same entries are
+packed into a single `archive.zip` or `archive.7z` inside the location
+instead. The
 archive's own bookkeeping — the manifest and the segment skeleton — stays JSON
 in both logical formats, because openEHR publishes no XML document form for
 it.
@@ -216,11 +222,15 @@ Populates the repository from an archive. It takes the location and nothing
 else: the container (loose files, a single `archive.zip`, or a single
 `archive.7z`) is detected from what the location holds, and the logical format
 is read from the archive's own manifest — so a load never has to be told how
-the dump was written.
+the dump was written. Archives written before the demographic wave existed
+simply carry no demographic entries and load unchanged.
 
 The repository being loaded into **need not be empty**. An EHR whose id is
 already present is reported and skipped rather than failing the load, so the
-response array names each one:
+response array names each one — and a standalone demographic container that
+already exists is reported the same way, under its own kind (`PERSON`,
+`ORGANISATION`, `GROUP`, `AGENT`, `ROLE`, or `PARTY_RELATIONSHIP`) as the
+`entity_type`:
 
 ```json
 [ { "entity_type": "EHR",

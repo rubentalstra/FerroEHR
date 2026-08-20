@@ -1362,3 +1362,267 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+// ── the demographic wave (issue #2457) ───────────────────────────────────────
+
+/// A minimal PERSON body for the wave round-trip.
+fn wave_person(name: &str) -> Value {
+    json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0" },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "family" },
+                    "value": { "_type": "DV_TEXT", "value": name }
+                }]
+            }
+        }]
+    })
+}
+
+/// A minimal `PARTY_RELATIONSHIP` body between two party containers.
+fn wave_relationship(name: &str, source: &str, target: &str) -> Value {
+    json!({
+        "_type": "PARTY_RELATIONSHIP",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1" },
+            "rm_version": "1.1.0" },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "source": { "_type": "PARTY_REF",
+            "id": { "_type": "HIER_OBJECT_ID", "value": source },
+            "namespace": "demographic", "type": "PERSON" },
+        "target": { "_type": "PARTY_REF",
+            "id": { "_type": "HIER_OBJECT_ID", "value": target },
+            "namespace": "demographic", "type": "PERSON" }
+    })
+}
+
+/// The wire-shaped commit envelope for a demographic create.
+fn wave_uv<T: serde::de::DeserializeOwned>(data: &Value) -> UpdateVersion<T> {
+    let v = json!({
+        "lifecycle_state": {
+            "value": "complete",
+            "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": "532" }
+        },
+        "data": data,
+        "commit_audit": {
+            "change_type": {
+                "value": "creation",
+                "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": "249" }
+            },
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "wave tester" }
+        }
+    });
+    openehr_its::json::from_canonical_value(&v).expect("UpdateVersion")
+}
+
+#[tokio::test]
+async fn demographic_wave_round_trips_standalone_party_and_relationship() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let dst_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(src_db.pool());
+    let target = FerroEhrService::new(dst_db.pool());
+
+    // Seed an EHR (so the archive carries both waves), a standalone person and
+    // a relationship whose source is that person's container.
+    let ehr = seed_full_ehr(&source).await;
+    let person_vo = Box::pin(source.create_party(wave_uv(&wave_person("Wava"))))
+        .await
+        .expect("create_party");
+    let rel_vo = source
+        .create_party_relationship(wave_uv(&wave_relationship(
+            "parent-of",
+            &person_vo.to_string(),
+            "33333333-3333-4333-8333-333333333333",
+        )))
+        .await
+        .expect("create_party_relationship");
+
+    let src_person = source.get_party(person_vo).await.expect("source party");
+    let src_rel = source
+        .get_party_relationship(rel_vo)
+        .await
+        .expect("source relationship");
+    let src_ehr_snapshot = canonical_snapshot(&source, ehr).await;
+
+    let dir = archive_dir();
+    let export_reports = source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(64))
+        .await
+        .expect("export");
+    assert!(
+        export_reports.is_empty(),
+        "clean export: {export_reports:?}"
+    );
+
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(
+        load_reports.is_empty(),
+        "loading into an empty repo reports no failures, got {load_reports:?}"
+    );
+
+    // The EHR wave still round-trips, and the demographic wave restores the
+    // standalone containers verbatim (the archive ⇒ repository identity the
+    // module documents).
+    assert_eq!(canonical_snapshot(&target, ehr).await, src_ehr_snapshot);
+    assert_eq!(
+        target.get_party(person_vo).await.expect("loaded party"),
+        src_person,
+        "the standalone PARTY must round-trip verbatim"
+    );
+    assert_eq!(
+        target
+            .get_party_relationship(rel_vo)
+            .await
+            .expect("loaded relationship"),
+        src_rel,
+        "the PARTY_RELATIONSHIP must round-trip verbatim"
+    );
+
+    // A second load reports the demographic duplicates per entity, not fatally.
+    let dup_reports = target.load_ehrs(dir.clone()).await.expect("re-load");
+    assert!(
+        dup_reports
+            .iter()
+            .any(|r| r.entity_id == person_vo.to_string() && !r.dump_status),
+        "the duplicate standalone party is reported: {dup_reports:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn demographic_wave_round_trips_in_canonical_xml() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let dst_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(src_db.pool());
+    let target = FerroEhrService::new(dst_db.pool());
+
+    let person_vo = Box::pin(source.create_party(wave_uv(&wave_person("Xara"))))
+        .await
+        .expect("create_party");
+    let rel_vo = source
+        .create_party_relationship(wave_uv(&wave_relationship(
+            "cares-for",
+            &person_vo.to_string(),
+            "44444444-4444-4444-8444-444444444444",
+        )))
+        .await
+        .expect("create_party_relationship");
+    let src_person = source.get_party(person_vo).await.expect("source party");
+    let src_rel = source
+        .get_party_relationship(rel_vo)
+        .await
+        .expect("source relationship");
+
+    let dir = archive_dir();
+    let spec = ExportSpec {
+        logical_format: Some(ExportFormat::OpenehrCanonicalXml),
+        compression_format: None,
+        segment_split_size: 1,
+    };
+    let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
+    assert!(reports.is_empty(), "clean export: {reports:?}");
+    assert!(
+        std::fs::read_dir(std::path::Path::new(&dir).join("versions"))
+            .expect("versions dir")
+            .count()
+            >= 2,
+        "the demographic versions are externalized as versions/*.xml"
+    );
+
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
+
+    assert_eq!(
+        target.get_party(person_vo).await.expect("loaded party"),
+        src_person,
+        "the canonical-XML demographic wave must round-trip the PARTY verbatim"
+    );
+    assert_eq!(
+        target
+            .get_party_relationship(rel_vo)
+            .await
+            .expect("loaded relationship"),
+        src_rel,
+        "the canonical-XML demographic wave must round-trip the relationship verbatim"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn demographic_wave_round_trips_inside_a_7z_container() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let dst_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(src_db.pool());
+    let target = FerroEhrService::new(dst_db.pool());
+
+    let ehr = seed_full_ehr(&source).await;
+    let person_vo = Box::pin(source.create_party(wave_uv(&wave_person("Zena"))))
+        .await
+        .expect("create_party");
+    let rel_vo = source
+        .create_party_relationship(wave_uv(&wave_relationship(
+            "employs",
+            &person_vo.to_string(),
+            "55555555-5555-4555-8555-555555555555",
+        )))
+        .await
+        .expect("create_party_relationship");
+    let src_person = source.get_party(person_vo).await.expect("source party");
+    let src_rel = source
+        .get_party_relationship(rel_vo)
+        .await
+        .expect("source relationship");
+    let src_ehr_snapshot = canonical_snapshot(&source, ehr).await;
+
+    let dir = archive_dir();
+    let spec = ExportSpec {
+        logical_format: None,
+        compression_format: Some(CompressionFormat::SevenZip),
+        segment_split_size: 1,
+    };
+    let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
+    assert!(reports.is_empty(), "clean export: {reports:?}");
+    let root = std::path::Path::new(&dir);
+    assert!(root.join("archive.7z").is_file(), "archive.7z written");
+    assert!(
+        !root.join("manifest.json").exists(),
+        "the compressed container holds every entry — no loose manifest"
+    );
+
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
+
+    assert_eq!(canonical_snapshot(&target, ehr).await, src_ehr_snapshot);
+    assert_eq!(
+        target.get_party(person_vo).await.expect("loaded party"),
+        src_person,
+        "the demographic wave must round-trip through the 7z container verbatim"
+    );
+    assert_eq!(
+        target
+            .get_party_relationship(rel_vo)
+            .await
+            .expect("loaded relationship"),
+        src_rel,
+        "the relationship must round-trip through the 7z container verbatim"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
