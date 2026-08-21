@@ -71,8 +71,10 @@ components in `SM-platform.definition.svg` and rows in master02's service table.
   `versioned_composition_count` vs `composition_version_count`.
 - `.Parameters` blocks document only `a_service` (list_contributions) and
   `file_sys_loc` (export_ehrs); the 3 count calls document nothing.
-- PLATFORM_SERVICE literals are Capitalised while every other SM enumeration is
-  lower_snake.
+- PLATFORM_SERVICE is one of exactly TWO SM enumerations with Capitalised
+  literals (the other is RESOURCE_INSTANCE_TYPE, resource_instance_type.adoc
+  L16-24); the remaining seven are lower_snake — never claim uniqueness
+  (census 2026-08-21, the #2510 correction).
 
 ## CNF anchors
 `CNF/docs/platform_test_schedule/master12-func_tc_admin.adoc` (160 L): 9
