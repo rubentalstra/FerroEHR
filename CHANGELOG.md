@@ -28,6 +28,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The from-source server image build (`docker compose --build`, the
+  conformance stack, the repo-dev posture) now keeps the whole cargo target
+  directory in a persistent BuildKit cache mount — the official Docker Rust
+  pattern — instead of the cargo-chef dependency layer. Cargo's own
+  freshness now decides what recompiles, so an app-only edit no longer
+  recompiles the eight generated `openehr-*` spec crates (previously every
+  edit paid the full 20+ minute workspace compile; cargo-chef documents that
+  local workspace crates cannot ride its layer). The first build on a
+  machine seeds the cache; every later build compiles only what changed.
 - The entire outbound upstream-report corpus — all 215 reports of defects,
   contradictions, and silences in the released openEHR specifications — was
   re-verified first-hand against the vendored spec text in one adversarial
