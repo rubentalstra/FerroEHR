@@ -43,22 +43,17 @@ text only in `overview/Specifications.md` (the API list),
   `/admin/ehr/{ehr_id}` for the literal token `all`.
 
 ## SM grounding — `SM/docs/openehr_platform/master15-admin_service.adoc`
-Includes `UML/classes/{i_admin_service,i_admin_archive,i_admin_dump_load,
-dump_load_fail_report,export_spec}.adoc`. 10 operations total:
-- `I_ADMIN_SERVICE`: list_contributions, contribution_count,
-  versioned_composition_count, composition_version_count, physical_ehr_delete
-  (`Pre_has_ehr`, error `ehr_id_does_not_exist`), physical_party_delete
-  (NO precondition, error `party_id_does_not_exist`).
-- `I_ADMIN_ARCHIVE`: archive_ehrs, archive_parties.
-- `I_ADMIN_DUMP_LOAD`: export_ehrs, load_ehrs.
-**SM defects (confirmed first-hand):** `ENCODING_FORMAT` enum has ZERO members;
-`PLATFORM_SERVICE`/`EXPORT_FORMAT`/`COMPRESSION_FORMAT`/`ENCODING_FORMAT` class
-files exist but are `include::`d by NO chapter (dangling `<<_..._enumeration>>`
-anchors, incl. from master03's own bullet list); `EXPORT_SPEC` +
-`DUMP_LOAD_FAIL_REPORT` are defined but referenced by no signature;
-`load_ehrs` error is `file_not_writable` (a read op); `physical_ehr_delete`'s
-`Pre_has_ehr` names an `I_EHR_SERVICE` function. **`I_EHR_SERVICE` declares NO
-delete at all** — `physical_ehr_delete` is the SM's only EHR deletion.
+Full ch.15 map (calls, args, diagram-only features, the 11-orphan census, the
+duplicate-name pairs) now lives in [[sm-admin-service-ch15-location]] — extend
+that file, not this one. 10 operations across `I_ADMIN_SERVICE` (6),
+`I_ADMIN_ARCHIVE` (2), `I_ADMIN_DUMP_LOAD` (2).
+**Corrections to earlier notes:** the orphaned enumerations are FOUR, not three
+(`platform_service` too — it types 4 of the 6 `I_ADMIN_SERVICE` calls);
+`DUMP_LOAD_FAIL_REPORT` IS referenced, but only by a **diagram-only** attribute
+`I_ADMIN_DUMP_LOAD.export_fail_list : DUMP_LOAD_FAIL_REPORT [*] {readOnly}` that
+the class table omits; `EXPORT_SPEC` is the one genuinely referenced by nothing.
+**`I_EHR_SERVICE` declares NO delete at all** — `physical_ehr_delete` is the SM's
+only EHR deletion (grep-verified over every `delete*` in the SM class set).
 
 ## RM tension (the load-bearing one)
 `RM/docs/common/master06-change_control_package.adoc` §Logical Deletion:

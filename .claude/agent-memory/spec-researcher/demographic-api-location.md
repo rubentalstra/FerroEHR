@@ -92,8 +92,10 @@ server-side creation of a new VERSIONED_OBJECT, ORIGINAL_VERSION and new
 CONTRIBUTION" — the SM-side proof that a party write emits CONTRIBUTION+AUDIT.
 **SM defects:** `i_party`/`i_party_relationship` factory params are UNTYPED;
 `get_party_at_version` precondition calls `has_party_version(...)` but the
-declared function is `has_party_version_id`; preconditions call `valid_content`
-while `i_validity_checker.adoc` declares `content_valid`; `create_party_relationship`
+declared function is `has_party_version_id`; `i_demographic_service` preconditions (L21+L37 ONLY) call `valid_content`
+while `i_validity_checker.adoc:22` declares `content_valid` (`i_party` /
+`i_party_relationship` have NO such precondition at all, yet still declare the
+`content_invalid` error); `create_party_relationship`
 lists error `definition_unknown` with no `definitions_valid` precondition;
 all ids typed `UUID` incl. the version ids; `delete_party` postcondition
 `not has_party(...)` contradicts RM logical deletion. **SM has NO versioned-party
