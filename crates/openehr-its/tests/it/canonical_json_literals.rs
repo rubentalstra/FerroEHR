@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 
 //! Regression gate: canonical RM shapes are BUILT from the generated
 //! `openehr-*` types, never hand-written as `json!` literals.
