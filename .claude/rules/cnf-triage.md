@@ -118,15 +118,24 @@ ledger file. One issue per defect; the register entry points at it via
   behaviour the OAS DEFINES is not a reportable silence; a "defect" that
   exists only because a stalled guide source (CNF schedule, Robot data) is
   wrong has no released-component ground and is not reportable.
-- **Lifecycle**: a NEW report is created UNVERIFIED — it enters the current
-  verification milestone with the re-verification acceptance checklist.
-  Once RE-VERIFIED first-hand as genuine, it gains `upstream-confirmed`
-  and leaves the milestone (awaiting-upstream promises no release); when it
-  was a docs misreading, it is CLOSED, its register entry removed or
-  re-grounded, and the affected case made gating. When a confirmed report
-  is filed on an openEHR channel (Jira / spec repo), the returned key
-  (SPECPR-…/SPECQUERY-…) is recorded on the issue; when upstream resolves
-  it, close the issue and file the inbound `spec-update`.
+- **Lifecycle (owner ruling 2026-08-21 — verification is TERMINAL)**: a NEW
+  report is created UNVERIFIED and enters the current verification
+  milestone. Once RE-VERIFIED first-hand as genuine, it gains
+  `upstream-confirmed` and — when its divergence is fully adjudicated
+  in-repo (the implementation, register entry or NOTE its own
+  implementation section names), with nothing further pending on our side —
+  it is **CLOSED as the standing outbound record**: the closed issue stays
+  the durable, linkable target of the register's `upstream_issue` (nothing
+  is silently absorbed by closing), and the open set stays near zero by
+  design. A confirmed report stays OPEN only while something in-repo is
+  genuinely blocked on it (a native `blocked-by` edge). When it was a docs
+  misreading, it is CLOSED as refuted, its register entry removed or
+  re-grounded, and the affected case made gating. When a report is filed on
+  an openEHR channel (Jira / spec repo), the returned key
+  (SPECPR-…/SPECQUERY-…) is recorded on the issue — reopen-free; when
+  upstream later resolves one, file the inbound `spec-update` (the closed
+  report is its provenance) and reopen only if the resolution requires
+  in-repo changes.
 - **Labels**: `upstream-report` + `spec:<component>` (+ `upstream-confirmed`
   once verified). `blocked-upstream` is NOT for reports — it keeps its
   narrower spec-update meaning (resolved in Jira, normative text not yet
