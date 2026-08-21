@@ -72,8 +72,9 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         // The supplied EHR_STATUS must be a structurally valid RM instance
         // before the EHR is created (CNF master06 §Test Data Sets INVALID
-        // class 2).
-        super::validation::validate_ehr_status(&status)?;
+        // class 2). The EHR-create wire carries no lifecycle channel, so the
+        // first status version is complete — full strictness.
+        super::validation::validate_ehr_status(&status, false)?;
 
         // The creation commit's AUDIT_DETAILS: the server default, or — when the
         // request carried committal headers — the merge of the client's

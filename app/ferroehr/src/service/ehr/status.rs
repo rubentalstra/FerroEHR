@@ -125,15 +125,15 @@ impl FerroEhrService {
         let super::CommitParts {
             audit,
             envelope,
+            incomplete,
             canonical: body,
-            ..
         } = super::resolve_envelope(
             version,
             change_type::MODIFICATION,
             "EHR_STATUS update",
             &self.effective_system_id(),
         )?;
-        super::validation::validate_ehr_status(&body)?;
+        super::validation::validate_ehr_status(&body, incomplete)?;
         let expected = expected_from_if_match(if_match)?;
 
         let mut tx = self.pool.begin().await?;
