@@ -71,7 +71,7 @@ text { fill: #c3c2b7; }
 <line x1="3" y1="0" x2="3" y2="6" class="na-line"/>
 </pattern>
 </defs>
-<text x="24" y="28" class="title">Schedule outcomes by chapter — ferroehr 3.17.8</text>
+<text x="24" y="28" class="title">Schedule outcomes by chapter — ferroehr 3.19.0</text>
 <rect x="24" y="38" width="14" height="14" rx="3" class="bar-passed"/><text x="31" y="49" class="seg-label" text-anchor="middle">✓</text><text x="44" y="49" class="muted">passed</text><rect x="103.2" y="38" width="14" height="14" rx="3" class="bar-failed"/><text x="110.2" y="49" class="seg-label" text-anchor="middle">✕</text><text x="123.2" y="49" class="muted">FAILED</text><rect x="182.4" y="38" width="14" height="14" rx="3" class="bar-errored"/><text x="189.4" y="49" class="seg-label-dim" text-anchor="middle">?</text><text x="202.4" y="49" class="muted">errored</text><rect x="268.8" y="38" width="14" height="14" rx="3" fill="url(#na-hatch)"/><text x="275.8" y="49" class="seg-label-dim" text-anchor="middle">○</text><text x="288.8" y="49" class="muted">cited N/A (not executed)</text><text x="884" y="49" class="muted" text-anchor="end">this chart's scale: 138 cases = full bar</text>
 <rect x="24" y="66" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="80.5" class="chap-name">EHR</text><text x="700" y="80.5" class="muted" text-anchor="end">482 cases</text>
 <text x="752" y="80.5" class="count count-passed count-strong" text-anchor="end">✓ 464</text><text x="878" y="80.5" class="count count-na count-strong" text-anchor="end">○ 18</text>
