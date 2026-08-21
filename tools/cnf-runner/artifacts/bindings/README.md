@@ -21,8 +21,10 @@ one order:
    (BASE `base_types` master05 §Syntaxes: `object_id = uid`,
    `creating_system_id = uid`), `<n>` (the same section's
    `version_tree_id = trunk_version, [ '.', branch_number, '.',
-   branch_version ]`), and `<template_id>` (AM Identification master03
-   §Human-readable Identifier (HRID) + master04 §Artefact Versioning).
+   branch_version ]`), and `<template_hrid>` (AM Identification master03
+   §Human-readable Identifier (HRID) + master04 §Artefact Versioning — the
+   ADL2 identity; an ADL 1.4 OPT `template_id` is a free string, so that
+   name stays case-variable space).
    A structural token **outranks** a same-named case variable.
 2. **Case variables** — any other name resolves to the same-named capture or
    `with:` argument, regex-escaped, asserting an identity.

@@ -32,5 +32,5 @@ outcomes:
     status: 200                                    # 200_Template_adl2_retrieved.yaml
     headers:
       Content-Type: negotiated
-      ETag: { match: 'pattern:W/"<template_id>"', applies: { its_rest: ">=1.1.0" } }  # the resolved ARCHETYPE_HRID
+      ETag: { match: 'pattern:W/"<template_hrid>"', applies: { its_rest: ">=1.1.0" } }  # the resolved ARCHETYPE_HRID
   not_found: { status: 404 }                       # 404_unknown_template_id.yaml

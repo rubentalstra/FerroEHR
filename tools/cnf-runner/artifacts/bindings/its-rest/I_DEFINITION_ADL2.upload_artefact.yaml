@@ -40,7 +40,7 @@ outcomes:
   created:
     status: 201                                   # 201_Template_adl2_upload.yaml
     headers:
-      ETag: { match: 'pattern:W/"<template_id>"', applies: { its_rest: ">=1.1.0" } }  # the stored ARCHETYPE_HRID
+      ETag: { match: 'pattern:W/"<template_hrid>"', applies: { its_rest: ">=1.1.0" } }  # the stored ARCHETYPE_HRID
       Location: present
   already_exists: { status: 409 }                 # 409_template_already_exists.yaml — duplicate template_id
   # Mapped so a server that will not serve the declared Accept is JUDGED, not
