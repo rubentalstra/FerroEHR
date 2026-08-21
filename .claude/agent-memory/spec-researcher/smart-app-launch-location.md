@@ -100,9 +100,22 @@ anchors + two anti-drift corrections worth keeping:
 - `master08` **L55 DOES assign the letter**: "`s` - Search or execute (e.g., for
   AQL queries)", and L72 glosses `patient/aql-<queryName>.rs` as "Execute and
   read". So "the spec never says executing a query is `s`" is refutable; what is
-  genuinely absent is any scope→REST-route/method/operation mapping (grep: ZERO
-  `GET|POST|PUT|DELETE|PATCH|HEAD` and zero openEHR route/operationId in all
-  9 chapters).
+  genuinely absent is any scope→REST-route/method/operation mapping (zero openEHR
+  route path and zero operationId in all 9 chapters).
+- **CORRECTION to an earlier "ZERO HTTP methods" claim (2026-08-21):** the tree
+  contains **exactly ONE** HTTP-method mention — `master07` **L21** "… by
+  POSTing to the Platform’s `token_endpoint`". A `\bPOST\b` grep misses it
+  (`POSTing`); use `\b(GET|POST|PUT|DELETE|PATCH|HEAD)` with no trailing `\b`.
+  It targets the OAuth token endpoint, so it still supplies no openEHR
+  operation — but a blanket "no HTTP method appears" claim is falsifiable.
+- **`master04` L153 ASSIGNS the patient-compartment binding value**:
+  `context-openehr-ehr` — "Indicates support for EHR-level launch context,
+  requested via `launch/patient` scope and conveyed via the **`ehrId` token
+  claim**" — which with `master08` L19/L27 (`patient`: "Access is limited to the
+  current EHR") and `master07` L47-52 (the `ehrId` token-response row) means
+  "nothing says by what value the `patient` compartment is matched" is an
+  OVER-claim. What stays open: the no-`ehrId`-claim fallback and multi-scope
+  composition.
 - Exhaustive greps over `*.adoc` only (the `diagrams/*.svg` pollute a tree-wide
   grep with coordinate digits): **zero** status codes, zero
   `cache|max-age|etag|freshness`, zero `error`, exactly ONE uppercase RFC2119

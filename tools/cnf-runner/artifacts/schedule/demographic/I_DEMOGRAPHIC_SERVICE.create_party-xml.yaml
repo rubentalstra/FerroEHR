@@ -42,7 +42,7 @@ component: DEMOGRAPHIC
 sm_operation: I_DEMOGRAPHIC_SERVICE.create_party
 capabilities: [PartyOperations]
 profiles: [OPTIONS]
-option: party-xml-unsupported     # AMB-167 option_select branch (the refusal arm)
+option: party-xml-write-refused     # AMB-167 option_select branch (the refusal arm)
 ambiguities: [AMB-167]
 formats: [canonical-xml]               # tech-profile axis: XML-less parties are not judged by this row
 guards:

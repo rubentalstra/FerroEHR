@@ -5,10 +5,20 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-08-19T21:24:11.753Z
+  modified: 2026-08-21T22:38:53.884Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
+
+0. **Docker image build OOMs at 2 cargo jobs when cold** (hit twice:
+   2026-08-21 during #2530, again 2026-08-21 after the 0.0.35 crate bump —
+   an `openehr-*` lockstep version bump invalidates the BuildKit target-cache
+   fingerprints for all eight crates, so the next image build is COLD for
+   them and two concurrent heavy crate compiles (ferroehr-ext + openehr-adl)
+   SIGKILL inside the Docker VM). After any crate-version bump or Dockerfile
+   cache invalidation, run the pipeline as
+   `CARGO_BUILD_JOBS=1 bash scripts/conformance.sh` (docker/sut-ferroehr.yml
+   forwards the env var); warm rebuilds are fine at the default 2.
 
 1. **Long background Bash tasks get killed (~30 min)** — for multi-hour runs
    (benchmark ladders, seeds), launch detached: `nohup caffeinate -is

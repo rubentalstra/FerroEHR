@@ -201,7 +201,7 @@ fn judge(
                     return Some(format!(
                         "header {name}: pattern {pattern:?} names <{missing}>, which is \
                          neither a captured/with-supplied case variable nor a structural \
-                         token (<n>, <system_id>, <versioned_object_uid>, <template_id>) — \
+                         token (<n>, <system_id>, <versioned_object_uid>, <template_hrid>) — \
                          refusing the vacuous wildcard (#1852)"
                     ));
                 }
@@ -302,10 +302,10 @@ pub fn structural_token(name: &str) -> Option<&'static str> {
         // `creating_system_id` are BOTH `uid`, and neither is spelled by a
         // request argument (server-assigned / a deployment fact).
         "system_id" | "versioned_object_uid" => Some(UID),
-        // NOTE: AM Identification master03 §Human-readable Identifier (HRID)
-        // — the stored template identity is the RESOLVED HRID, which no
-        // request argument (a possibly partial prefix) spells.
-        "template_id" => Some(ARCHETYPE_HRID),
+        // NOTE: AM Identification master03 §HRID — the stored ADL2 template
+        // identity is the RESOLVED HRID no request argument spells; an ADL 1.4
+        // `template_id` is a free string, so that name stays case-variable.
+        "template_hrid" => Some(ARCHETYPE_HRID),
         _ => None,
     }
 }
@@ -545,13 +545,13 @@ mod tests {
         assert!(evaluate(&e, &ok, &ctx(), &vars).is_empty());
     }
 
-    /// `<template_id>` is the AM Identification master03 §Human-readable
+    /// `<template_hrid>` is the AM Identification master03 §Human-readable
     /// Identifier form (with the master04 release version), so the ADL2
     /// upload/read `ETag` asserts the RESOLVED HRID rather than the possibly
     /// partial prefix the request addressed.
     #[test]
-    fn template_id_token_is_the_archetype_hrid_grammar() {
-        let e = expectation(&serde_json::json!({ "ETag": "pattern:W/\"<template_id>\"" }));
+    fn template_hrid_token_is_the_archetype_hrid_grammar() {
+        let e = expectation(&serde_json::json!({ "ETag": "pattern:W/\"<template_hrid>\"" }));
         for hrid in [
             "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0",
             "org.openehr::openEHR-EHR-OBSERVATION.blood_pressure.v2.1.0",

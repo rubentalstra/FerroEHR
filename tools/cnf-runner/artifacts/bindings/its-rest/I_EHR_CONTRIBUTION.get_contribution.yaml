@@ -48,7 +48,7 @@ formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
 # different response on a different channel, so this is a real cross-response
 # identity assertion, not a header compared with itself. `contribution_uid` is
 # NOT one of the structural grammar tokens (`<versioned_object_uid>`,
-# `<template_id>`, `<n>`, `<system_id>`), which resolve BEFORE case variables;
+# `<template_hrid>`, `<n>`, `<system_id>`), which resolve BEFORE case variables;
 # a placeholder that is neither resolves to nothing and the row FAILS LOUD
 # (#1865) — it never degrades to a `.*` wildcard. See bindings/README.md.
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a

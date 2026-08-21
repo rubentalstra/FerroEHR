@@ -3418,7 +3418,7 @@ mod matcher_placeholder_tests {
     #[test]
     fn structural_tokens_need_no_capture() {
         assert!(findings_for("versioned_object_uid", false).is_empty());
-        assert!(findings_for("template_id", false).is_empty());
+        assert!(findings_for("template_hrid", false).is_empty());
     }
 
     /// A `requires`-minted handle and a `with:` argument are both in scope —

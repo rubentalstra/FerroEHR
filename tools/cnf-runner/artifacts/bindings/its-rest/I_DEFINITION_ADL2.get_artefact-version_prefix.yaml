@@ -19,7 +19,7 @@
 # identifier, which for an ADL2 operational template is its versioned
 # ARCHETYPE_HRID (AM am24 — `release_version` is the artefact's SEMVER), so the
 # tag names the RESOLVED HRID and not the addressed prefix. The case captures
-# that HRID from the upload of the higher member and the `<template_id>`
+# that HRID from the upload of the higher member and the `<resolved_hrid>`
 # placeholder resolves against it, so a server that resolved to the LOWER
 # member fails the row.
 #

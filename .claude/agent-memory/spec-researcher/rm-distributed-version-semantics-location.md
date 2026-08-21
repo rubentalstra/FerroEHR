@@ -71,3 +71,12 @@ uid/preceding/lifecycle/data all *effected*).
   while the signatures declare `a_preceding_version_id`/`a_version_uid`.
 - Editorial: L271 "Users in system B an also make"; L327 code-font plural
   `VERSIONED_OBJECTS`; L248 "a `OBSERVATION`".
+
+## Cross-entry use: the state-at-time anchor
+§6.4.1.2 **L278** ("the commit times always reflect the local … act of committal
+… a query for the state of a Version container at earlier commit times correctly
+returns what information existed at that time") together with §6.2.5 **L90**
+("`_time_committed_` … should reflect the time of committal to an EHR server,
+i.e. the time of availability to other users in the same system") is the ONLY
+released grounding for the extancy anchor of `VERSIONED_OBJECT.version_at_time`.
+Cite these before calling at-time semantics wholly unassigned.

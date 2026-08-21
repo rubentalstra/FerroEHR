@@ -13,8 +13,8 @@
 # mechanism attached. So which lineage a service serves — and whether a client
 # may choose — is implementation-defined: register AMB-169, option_select.
 # This case is the `xml-namespace-negotiated` branch; a party declaring
-# `xml-namespace-fixed` is not judged by it. Profile OPTIONS: no CORE or
-# STANDARD verdict rests on it.
+# `xml-namespace-fixed` is not judged by it — deselection rides the AMB-169
+# option gate plus the canonical-xml format axis, not the tier.
 #
 # WHAT THE ROW ASSERTS is deliberately the narrowest thing that is true of the
 # declared branch and of nothing else: that the response document declares the

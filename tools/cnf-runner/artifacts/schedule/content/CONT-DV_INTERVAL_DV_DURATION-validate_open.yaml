@@ -1,6 +1,7 @@
 # Re-adjudicated 2026-07-22 twice (issue #228): (1) bounded-flag-with-absent-
-# limits rows are spec-silent — BASE foundation_types §Interval has no
-# bound-value-required-when-not-unbounded invariant — and go through the
+# limits rows are spec-silent — the BASE and RM interval Limits_consistent
+# invariants are underivable on Void limits (AMB-43, re-grounded 2026-08-21)
+# — and go through the
 # register (AMB-43: accepted); (2) the inverted-limits rows (lower > upper,
 # both bounded) ARE invalid under the BASE §Interval Limits_consistent
 # invariant ("(not upper_unbounded and not lower_unbounded) implies

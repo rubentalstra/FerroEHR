@@ -19,7 +19,7 @@
 //! `archetyped.adoc` (`Rm_version_valid`), `link.adoc` (meaning/type/target
 //! 1..1) and `feeder_audit_details.adoc` (`System_id_valid`); RM common
 //! master06 §Incomplete Content (the `553|incomplete|` relaxation); ITS-REST
-//! `responses/422_COMPOSITION.yaml`; CNF `master06 §Test Data Sets`
+//! `responses/422.yaml`; CNF `master06 §Test Data Sets`
 //! (INVALID class 2) + `master07-func_tc_ehr_composition.adoc` (the
 //! persistent-cardinality convention).
 
@@ -110,7 +110,7 @@ impl FerroEhrService {
     /// unconditionally (template-independent); the archetype-conformance pass
     /// is gated on a declared+resolved template. A
     /// declared-but-failing template, or any RM/terminology violation, is a
-    /// `422` (ITS-REST `responses/422_COMPOSITION.yaml`); syntactic parse
+    /// `422` (ITS-REST `responses/422.yaml`); syntactic parse
     /// failures are `400` and caught earlier at the REST negotiation edge.
     ///
     /// `incomplete` (a `553|incomplete|` commit, RM common master06

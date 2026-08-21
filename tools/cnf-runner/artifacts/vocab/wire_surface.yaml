@@ -48,8 +48,9 @@ sm_operations:
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
     note: *adl14_archetype_extension_note
   - operation: I_DEFINITION_ADL14.valid_opt
-    reason: off_wire
-    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
+    reason: variant_of
+    source: "SM i_definition_adl14.adoc + register AMB-108 — valid_opt realizes via upload_opt (commit-time validation), the same shape as the ADL2 twin below"
+    note: "realized via I_DEFINITION_ADL14.upload_opt (I_DEFINITION_ADL14.validate_opt-valid_opt drives it)"
   - operation: I_DEFINITION_ADL2.valid_artefact
     reason: variant_of
     source: "SM i_definition_adl2.adoc + register AMB-37 — valid_artefact realizes via upload_artefact (commit-time validation), no separate validate wire"
@@ -1090,7 +1091,7 @@ elements:
       - I_EHR_COMPOSITION.create_composition-wrong_media
   - id: negotiation-json-accept-on-template-get
     description: "Accept: application/json on the ADL 1.4 OPT GET is fulfilled with the Web Template JSON document (the only JSON template representation the released text defines), not refused."
-    source: "ITS-REST Resources.md §JSON Format (an Accept the service cannot fulfil is 406, so a fulfilled one returns a body) + §Simplified Formats (application/openehr.wt+json = the Operational Template as Web Template JSON); the representation itself rests on register AMB-58 (the released source enumerates application/json on this operation without declaring a schema for it)"
+    source: "ITS-REST Resources.md §JSON Format (an Accept the service cannot fulfill is 406, so a fulfilled one returns a body) + §Simplified Formats (application/openehr.wt+json = the Operational Template as Web Template JSON); the representation itself rests on register AMB-58 (the released source enumerates application/json on this operation without declaring a schema for it)"
     covered_by: [SF-WT-web_template_json_accept]
   - id: negotiation-response-content-type-mirrors-accept
     description: "The response Content-Type is the media type the client negotiated — a read accepted as application/json is answered application/json, never in another type the client did not accept."
@@ -1224,7 +1225,7 @@ elements:
     exception:
       reason: coverage_gap
       register: AMB-60
-      note: "the deviation is registered, not silent, and the 405-with-Allow answer it shares with the recognized-method branch IS now gated (I_EHR_SERVICE.create_ehr-wrong_method, the method-405-allow-header element). What stays uncased is this element's own subject — an UNRECOGNIZED method — and the reason is the one closed-vocabulary blocker that survives the 2026-07-28 schedule release (#544): the binding request model's method vocabulary is the six-method subset the overview §HTTP Methods tabulates (tools/cnf-runner/src/vocab.rs `HttpMethod`), which by construction admits no token outside it, so a request the service cannot recognize cannot be authored. Its server behaviour is HTTP-tested (app/ferroehr-rest/tests/http.rs `unrecognized_method_is_405_with_allow`). The 501 half that IS realized — a recognized but unimplemented operation — has no ITS-REST 1.1.0 operation on this SUT that reaches it, since every mounted operation is implemented. Closes when the method vocabulary gains an unrecognized-token form (extension only by schedule release)."
+      note: "the deviation is registered, not silent, and the 405-with-Allow answer it shares with the recognized-method branch IS now gated (I_EHR_SERVICE.create_ehr-wrong_method, the method-405-allow-header element). What stays uncased is this element's own subject — an UNRECOGNIZED method — and the reason is the one closed-vocabulary blocker that survives the 2026-07-28 schedule release (#544): the binding request model's method vocabulary is the six-method subset the overview §HTTP Methods tabulates (tools/cnf-runner/src/vocab.rs `HttpMethod`), which by construction admits no token outside it, so a request the service cannot recognize cannot be authored. Its server behaviour is HTTP-tested (app/ferroehr-rest/tests/it/http.rs `unrecognized_method_is_405_with_allow`). The 501 half that IS realized — a recognized but unimplemented operation — has no ITS-REST 1.1.0 operation on this SUT that reaches it, since every mounted operation is implemented. Closes when the method vocabulary gains an unrecognized-token form (extension only by schedule release)."
   # Authentication challenge (ITS-REST Requests_and_responses.md §Authentication
   # and authorization).
   - id: header-www-authenticate-401
@@ -1739,7 +1740,7 @@ elements:
     exception:
       reason: statement_declared
       register: AMB-151
-      note: "The ABSENCE of a surface has no wire to drive: a case asserting a 404 would be asserting the router's fallback, not a released behaviour, and no released clause assigns the disabled state a status. Proven instead by app/ferroehr-rest/tests/smart_http.rs — `discovery_absent_when_disabled` and `smart_disabled_leaves_families_ungated` (the zero-drift disabled state, both halves). The positive direction IS executed: SMART-DISCOVERY-document_shape drives the document in the SMART lane, and it is not-applicable — never failed — on the default lane, so the two lanes together are the honest statement."
+      note: "The ABSENCE of a surface has no wire to drive: a case asserting a 404 would be asserting the router's fallback, not a released behaviour, and no released clause assigns the disabled state a status. Proven instead by app/ferroehr-rest/tests/it/smart_http.rs — `discovery_absent_when_disabled` and `smart_disabled_leaves_families_ungated` (the zero-drift disabled state, both halves). The positive direction IS executed: SMART-DISCOVERY-document_shape drives the document in the SMART lane, and it is not-applicable — never failed — on the default lane, so the two lanes together are the honest statement."
   - id: smart-resource-scope-grammar
     description: "A token's `scope` claim is parsed by the master08 resource-scope grammar — <compartment>/<resource>.<permission> — and a granted scope narrows access to exactly what it names: the operation the scope grants succeeds, and one whose permission letters do not cover the operation is refused. An identity scope (`openid`) presented alongside neither widens nor narrows the resource decision."
     source: "ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the syntax line `<compartment>/<resource>.<permission>`; the three compartments and their meanings; \"The following openEHR REST APIs `<resource>` types are supported for use in scopes\" with its closed three-noun list; the five-row `<templateId>`/`<queryName>` pattern table; the permission letters `c`/`r`/`u`/`d`/`s`; the eight-row maximal table) + §Scopes (\"The _Platform_ must validate requested scopes …\"; the three scope purposes, of which `openid` is an Identity Claim). The discovery example advertises two forms this grammar cannot parse — register AMB-145; `**` is named twice and never defined — AMB-147; the placeholder and validation sentences are defective — AMB-148; no scope-to-operation mapping, no tail well-formedness rule, no composition rule and no compartment-matching rule exist anywhere — AMB-150"

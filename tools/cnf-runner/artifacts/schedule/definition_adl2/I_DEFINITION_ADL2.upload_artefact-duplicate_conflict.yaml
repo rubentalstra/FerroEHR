@@ -35,4 +35,4 @@ postconditions:
     text: "The originally uploaded OPT remains loaded (verified via retrieval)"
     verified_by: I_DEFINITION_ADL2.get_artefact-retrieve
 verified_by: [I_DEFINITION_ADL2.get_artefact-retrieve]
-ambiguities: [AMB-37]
+ambiguities: [AMB-37, AMB-105]

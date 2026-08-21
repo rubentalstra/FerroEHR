@@ -60,8 +60,9 @@ impl Cells<'_> {
 /// AMB-42 realizability gate.
 ///
 /// A rejected-expected row whose EVERY violated
-/// constraint axis is unserializable on the OPT 1.4 wire (ITS-XML 1.0.2
-/// `Archetype.xsd`: `C_TIME`/`C_DATE_TIME` carry no `millisecond_validity`
+/// constraint axis is unserializable on the OPT 1.4 wire (ITS-XML
+/// `Archetype.xsd`, identical in both published lineages:
+/// `C_TIME`/`C_DATE_TIME` carry no `millisecond_validity`
 /// element; `C_DURATION` carries only pattern+range, so the AOM-1.4
 /// `seconds_allowed` vs `fractional_seconds_allowed` distinction collapses
 /// into the single pattern `S` slot) cannot be driven — its ground OPT

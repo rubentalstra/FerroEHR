@@ -87,9 +87,10 @@ AMB-4:
     (responses 201/400/409; parameters Prefer + Accept_Template +
     Content-Type — no version parameter) + responses/409_template_already_exists.yaml
     ("`409 Conflict` is returned when a template with same `template_id`
-    already exists") + AM ADL 1.4 master02-overview.adoc §Templates (templates
-    are defined at a local level in the dADL formalism and "do not introduce
-    any new semantics to archetypes"; no template versioning) + ITS-REST
+    already exists") + AM ADL 1.4 master02-overview.adoc §Computational
+    Context (templates "do not introduce any new semantics to archetypes";
+    the file has no §Templates — re-cited 2026-08-21) and §What is ADL? ("The
+    formalism of templates is dADL"; no template versioning) + ITS-REST
     docs/overview/Amendment_record.md SPECITS-87 ("Deprecate ADL2 'Get
     template at version' and the version query parameter from upload
     template") — all CONFIRMED first-hand.
@@ -118,13 +119,25 @@ AMB-4:
   disposition: fixed_handling
   upstream_issue: 1483
 AMB-5:
-  ambiguity: "Persistent-COMPOSITION uniqueness per EHR is under SEC debate."
+  ambiguity: >-
+    Whether a SECOND persistent COMPOSITION under the SAME template/OPT is
+    permitted in one EHR is unassigned by the released text (re-grounded
+    2026-08-21: the RM affirmatively admits multiple persistent COMPOSITIONs
+    per EHR in general — "even with the possibility of more than one
+    instance of some, e.g. multiple condition-specific problem lists" — so
+    only the same-template case is open; the "under SEC debate" provenance
+    is the stalled CNF guide's own note, not released text).
   source: >-
     RM ehr COMPOSITION class §Invariants (Category_validity / Territory_valid /
     Language_valid / Content_valid / Is_archetype_root — no invariant requires a
     persistent COMPOSITION to be unique per EHR) + RM ehr
-    master05-composition_package.adoc §Persistent Compositions (silent on
-    uniqueness) — silence CONFIRMED first-hand
+    master04-ehr_package.adoc §Persistent Compositions (admits multiple
+    instances of some; silent on the same-template case) + CNF
+    master07-func_tc_ehr_composition.adoc (the GUIDE's own criterion and its
+    "This is under debate in the openEHR SEC … due to the lack of
+    information in the openEHR specifications" note — cited as the stalled
+    guide, never authority) — silence on the same-template case CONFIRMED
+    first-hand
   handling: >-
     Affected cases carry the flag; verdicts on them are reported but excluded
     from profile computation until resolved.
@@ -152,12 +165,15 @@ AMB-10:
     EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also
     be **permanently** and physically deleted, in compliance with applicable
     data protection regulations (e.g., the GDPR in the European Union)". That
-    justification is the ONLY invocation of a data-protection regulation
-    anywhere in the vendored spec tree — grep-verified: exactly two sentences,
-    in `operations/admin_ehr_delete.yaml` and `operations/admin_ehr_delete_all.yaml`
+    justification is the ONLY PROSE invocation of a data-protection
+    regulation in the vendored spec tree, and the only one that justifies an
+    operation — grep-verified (re-run 2026-08-21): exactly two sentences, in
+    `operations/admin_ehr_delete.yaml` and `operations/admin_ehr_delete_all.yaml`
     (plus the three assembled `computable/OAS/admin-*.openapi.yaml` bundles,
-    which carry those same two sentences verbatim), and nowhere else in RM,
-    BASE, AM, QUERY, TERM, SM, CNF or the rest of ITS-REST. So the RM's
+    which carry those same two sentences verbatim); the sole other mention is
+    a "Consent (GDPR)" LABEL in the BASE architecture-overview figure
+    `diagrams/shared_ehr.svg` (included by master03-aims.adoc §Deployment
+    Environments), which assigns no deletion behaviour. So the RM's
     indelibility principle — stated as a medicolegal requirement — is overridden
     by an aside in an ITS operation description, and no released text reconciles
     the two. RE-ADJUDICATED 2026-07-27 (group-14 audit): the earlier framing,
@@ -307,21 +323,28 @@ AMB-24:
 AMB-27:
   ambiguity: >-
     BASE-grounded correction: the master17.3 DV_INTERVAL<DV_TIME> range table
-    verdicts a domain-constraint rejection (C_TIME.range on lower) for a row
-    whose lower bound is absent with lower_unbounded=true — underivable, since
-    BASE Interval carries no invariant making a bound-value constraint bite on
-    an absent optional limit (the four-invariant set does not require a bound
-    value when *_unbounded is false). Guide-quality CNF-internal table typos
-    recorded WITHOUT an upstream report: the accepted/[] contradiction near the
-    proportion tables; the millisecond-validity column omission; the "different
-    limit types" unitary wording on a type=0 (ratio) row; the integer_fraction
-    prose type [3] vs data column [4]; the forum-style "IMO should fail" notes.
+    (L768) verdicts a domain-constraint rejection (C_TIME.range on lower) for
+    a row whose lower bound is absent with lower_unbounded=true —
+    underivable, since the only interval invariants that reference a bound
+    value are GUARDED by "(not upper_unbounded and not lower_unbounded)
+    implies …", so no invariant can bite while a *_unbounded flag is TRUE
+    (polarity corrected 2026-08-21; the mirror row L769 verdicts `accepted`
+    while still naming C_TIME.range (upper) as a violation). Guide-quality
+    CNF-internal table typos recorded WITHOUT an upstream report: the
+    `reejcted` misspellings (L278/293/323/338); the headerless
+    validate_fraction table (its header row sits above `[options="header"]`,
+    L304-306); the "different limit types" unitary wording on a type=0
+    (ratio) row (L1017-1025); the integer_fraction prose type [3] vs data
+    column [4] (L1290); the forum-style "IMO should fail" notes (L783-785).
   source: >-
     BASE foundation_types interval.adoc §Invariants (the four-invariant set —
     Lower_included_valid / Upper_included_valid / Limits_consistent /
-    Limits_comparable — none requires a bound value on an absent
-    unbounded-flagged limit); the master17.3 quantity decision tables are the
-    stalled guide where the defect appears
+    Limits_comparable — the bound-referencing pair is guarded by "(not
+    upper_unbounded and not lower_unbounded) implies", so none bites on an
+    unbounded-flagged limit) + RM data_types dv_interval.adoc §Invariants
+    (DV_INTERVAL's own Limits_consistent, the same guarded shape — added
+    2026-08-21); the master17.3 quantity decision tables are the stalled
+    guide where the defect appears
   handling: >-
     Rows are encoded verbatim where the verdict is unambiguous; the
     contradiction rows follow the data column (verdict cell wins over
@@ -365,19 +388,24 @@ AMB-29:
     RM leaves open.
   source: >-
     RM data_types date_time classes (DV_DATE_TIME/DV_DATE/DV_TIME each Effect
-    is_strictly_comparable_to = "True, for any two Date/times" and each
-    REDEFINES less_than over magnitude()) + RM data_types
-    master07-date_time_package.adoc §Partial Date/Times (Value_valid admits
-    reduced-accuracy partials per ISO 8601, while magnitude() defines no value
-    for a partial) — the order EXISTS by the Effects; what the released text
-    leaves open is magnitude()'s value for reduced-precision values, so the
-    defined order is incomputable for partials. Re-grounded first-hand
-    2026-08-21 (the earlier "no mixed-precision ordering semantics defined"
-    framing understated what the Effects define).
+    is_strictly_comparable_to = "True, for any two Date/times" / "… Dates" /
+    "… Times" respectively, and each REDEFINES less_than over magnitude())
+    + each class table's own Value_valid invariant (valid_iso8601_* over the
+    value) with RM data_types master07-date_time_package.adoc §Partial
+    Date/Times (the DESIGN section: partials satisfied "by the semantics of
+    ISO 8601:2004 for 'reduced accuracy' date/times"), while magnitude()
+    defines no value for a partial — the order EXISTS by the Effects; what
+    the released text leaves open is magnitude()'s value for
+    reduced-precision values, so the defined order is incomputable for
+    partials. Re-grounded first-hand 2026-08-21 (the earlier "no
+    mixed-precision ordering semantics defined" framing understated what the
+    Effects define).
   handling: >-
-    Affected rows carry guards quoting the chapter NOTEs; verdicts on
-    mixed-precision comparisons are reported but excluded from profile
-    computation until the SEC resolves the magnitude-for-partials question.
+    Affected rows carry guards quoting the stalled guide's own
+    mixed-precision comment cells (CNF master17.3 — the RM chapter's only
+    NOTE is about extended-vs-basic syntax); verdicts on mixed-precision
+    comparisons are reported but excluded from profile computation until the
+    SEC resolves the magnitude-for-partials question.
   disposition: report_only
   upstream_issue: 1493
 AMB-30:
@@ -390,8 +418,12 @@ AMB-30:
     not mandate it.
   source: >-
     QUERY AQL (grammar; §TERMINOLOGY; Amendment Record SPECQUERY-20 — no clause
-    mandates rejecting a dialect superset) + released ITS-REST query Response.md
-    (400 defined only for invalid AQL, not for a dialect superset)
+    mandates rejecting a dialect superset) + the released OAS
+    responses/400_Query.yaml, cited AS the OAS ("returned when the server was
+    unable to execute the query due to invalid input" — a trigger conditioned
+    on the server being UNABLE to execute, which a server executing a
+    superset never reaches; the docs-text query/Response.md carries no status
+    code at all — re-cited 2026-08-21)
   handling: >-
     Dialect-extension rejection cases carry this entry and are report_only:
     verdicts are reported per SUT but never gate profile computation, until
@@ -565,7 +597,7 @@ AMB-33:
     realized in FULL and the `-compression_7z` case drives the member. The
     EXPORT_FORMAT member `openehr_canonical_xml` stays unrealized and answers
     `501 Not Implemented` (RFC 9110 §15.6.2 — "the server does not support
-    the functionality required to fulfil the request"), never `400`: a valid
+    the functionality required to fulfill the request"), never `400`: a valid
     SM enumeration member is not a malformed request. Its boundary is now
     DESIGN-shaped rather than dependency-shaped: the archive envelope
     (manifest/segments/records) is this product's own design with no XML
@@ -624,11 +656,15 @@ AMB-33:
     the top-level `xs:element` declarations across BOTH vendored ITS-XML
     lineages (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1` @ tag
     Release-1.0.2v2 `f7a93777` and `its-xml-2.0.0-nsv2` @ `de8b37ba`, which is
-    upstream HEAD) finds document roots ONLY for `composition`, `extract`,
+    upstream HEAD) finds document roots for `composition`, `extract`,
     `extract_request`, `versioned_object` (the Extract-flavoured
-    X_VERSIONED_OBJECT), `items` and `version` — there is no global element for
-    `EHR`, for `CONTRIBUTION`, or for a standalone `AUDIT_DETAILS` in either
-    lineage. An XML envelope could therefore only be INVENTED, which is worse
+    X_VERSIONED_OBJECT), `items` and `version`, plus `template` and
+    `archetype` in BOTH lineages and additionally `result_set` and
+    `query_request` in the v2 lineage (enumeration corrected 2026-08-21) —
+    but there is no global element for `EHR`, for `CONTRIBUTION`, or for a
+    standalone `AUDIT_DETAILS` in either lineage, i.e. none for the
+    archive's own envelope types. An XML envelope could therefore only be
+    INVENTED, which is worse
     than this entry's standing position that no openEHR spec defines an on-disk
     archive format at all. Our own design/extension, unchanged in both members.
     (b) THE PAYLOADS DO HAVE A PUBLISHED FORM, so they follow the member.
@@ -767,7 +803,11 @@ AMB-37:
     Archetype provisioning, generic listing, delete, and counts are declared
     unrealized on its-rest (cases not-applicable WITH CITATION, activating on a
     later ITS release). valid_artefact realizes via upload_artefact; has_artefact
-    and list_matching_artefacts realize via the ADL2 list (filter); list_templates
+    and list_matching_artefacts realize via the ADL2 list (filter) — a STRICTLY
+    WEAKER realization than the SM operation, which demands a REGEX match
+    ("List all artefacts whose identifiers match a regex pattern", error
+    invalid_id_pattern) while the released filter supports wildcards only
+    (parameters/query/filter_template_id.yaml — recorded 2026-08-21); list_templates
     conflates with list_opts on the one list endpoint; example generation and the
     deprecated version GET anchor to get_artefact (the closest SM op). SM/ITS alignment candidate: add ADL2 archetype provisioning + delete +
     count + generic-list + example-generation operations to the released ITS.
@@ -800,14 +840,21 @@ AMB-37:
   upstream_issue: 1498
 AMB-39:
   ambiguity: >-
-    Support for the deprecated pre-1.1.0 "Simplified Data Template (SDT)"-era
-    simplified-format media types is not mandated: ITS-REST simplified_formats
-    master02 defines only the current application/openehr.wt.flat+json and
-    application/openehr.wt.structured+json MIME types, and the master02 NOTE
-    records that "Simplified Data Template (SDT)" was superseded by "Simplified
-    Formats" at Release 1.1.0. Whether a server still accepts the legacy media
-    types is implementation-defined.
-  source: "ITS-REST simplified_formats master02-overview.adoc §MIME Types + §Overview (SDT rename NOTE)"
+    Support for the deprecated `*.schema+json` simplified-format media types
+    is not mandated: the release's own Alternative-data-formats list
+    deprecates application/openehr.wt.flat.schema+json and
+    …wt.structured.schema+json "in favour of" the current wt.flat/
+    wt.structured types and says such formats "might not be supported once
+    they become obsolete or superseded" — deprecation without a support or
+    refusal mandate (re-grounded 2026-08-21: the earlier "SDT-era"
+    provenance was false — the SDT NOTE renamed the SPECIFICATION, and the
+    retired SDT chapter never mentions .schema+json).
+  source: >-
+    ITS-REST specifications/docs/overview/Resources.md §Alternative data
+    formats (the deprecation list + the optionality sentence) + ITS-REST
+    simplified_formats master02-overview.adoc §MIME Types (only the two
+    current types defined; its Introduction NOTE records the SDT→Simplified
+    Formats specification rename)
   handling: >-
     Sibling cases carry option tags; the ICS options declaration selects which
     applies — the declared behaviour MUST pass, the undeclared sibling is
@@ -818,7 +865,7 @@ AMB-39:
     sf-deprecated-types-unsupported branch also expects not_acceptable (406)
     when a deprecated media type is requested via Accept and the server does
     not support it (ITS-REST overview Resources.md §Simplified Formats — "If
-    the service cannot fulfil this aspect of the request, it MUST respond with
+    the service cannot fulfill this aspect of the request, it MUST respond with
     HTTP status code 406 Not Acceptable").
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
@@ -841,7 +888,8 @@ AMB-41:
     CLAIM RE-DERIVED 2026-07-28 (#623), and the last clause of the original
     handling — "never a CORE failure the ITS cannot avoid" — is WITHDRAWN as
     the wrong remedy. The missing released wire is CONFIRMED unchanged
-    first-hand: specifications/definition.openapi.yaml declares eleven paths,
+    first-hand: specifications/definition.openapi.yaml declares nine path
+    items (thirteen operations — count corrected 2026-08-21),
     all under /definition/template/** or /definition/query/**, and no ITS-REST
     docs chapter names an archetype resource. What was wrong was excusing a
     CLAIMED capability: ISO/IEC 9646 test selection legitimizes "not
@@ -868,9 +916,11 @@ AMB-41:
     and GET/DELETE /definition/archetype/adl1.4/{archetype_id} (the
     `adl14-archetype` served_extensions family). RE-ADJUDICATED 2026-07-29 —
     both former blockers are RESOLVED and the bindings are FLIPPED to
-    extension realizations with an executed six-case battery
-    (upload round-trip / unparseable-source refusal / list / get+delete
-    non-existing / delete round-trip):
+    extension realizations with an executed battery (thirteen cases as of
+    2026-08-21: the original upload round-trip / unparseable-source refusal /
+    list / get+delete non-existing / delete round-trip, plus wrong-media,
+    authz/authn refusals, malformed-id, replaces-existing and
+    translation-restates-original):
     (1) THE OWNER ADJUDICATED `required`. The CNF Profiles book marks the row
     CORE/REQUIRED, but the released ITS-REST gives the capability no wire and
     an extension-realization row may never be `required`
@@ -892,8 +942,10 @@ AMB-42:
   ambiguity: >-
     The AOM 1.4 object model defines millisecond_validity on
     C_TIME/C_DATE_TIME and the separate seconds_allowed /
-    fractional_seconds_allowed booleans on C_DURATION, but the ITS-XML 1.0.2
-    OPT serialization (Archetype.xsd) carries NO millisecond_validity element
+    fractional_seconds_allowed booleans on C_DURATION, but the ITS-XML OPT
+    serialization (Archetype.xsd — IDENTICAL in both published lineages,
+    1.0.2-nsv1 and 2.0.0-nsv2; widened 2026-08-21) carries NO
+    millisecond_validity element
     (C_TIME/C_DATE_TIME sequence is pattern, timezone_validity, range,
     assumed_value) and NO per-field duration booleans (C_DURATION is pattern,
     range, assumed_value), and the ADL 1.4 pattern grammar ends at the seconds
@@ -902,8 +954,8 @@ AMB-42:
     AM aom14 c_time.adoc + c_date_time.adoc (millisecond_validity) +
     c_duration.adoc (seconds_allowed / fractional_seconds_allowed) + AM ADL1.4
     master05-cadl.adoc §Patterns (V_ISO8601_TIME_CONSTRAINT_PATTERN ends at
-    seconds) vs ITS-XML 1.0.2 Archetype.xsd (C_TIME/C_DATE_TIME/C_DURATION
-    sequences — no such elements)
+    seconds) vs ITS-XML Archetype.xsd in BOTH published lineages
+    (C_TIME/C_DATE_TIME/C_DURATION sequences — no such elements)
   handling: >-
     Content rows whose expected rejection rests SOLELY on these
     unserializable axes (millisecond_validity, or a seconds_allowed /
@@ -917,25 +969,41 @@ AMB-42:
   upstream_issue: 1501
 AMB-43:
   ambiguity: >-
-    BASE 1.3.0 Interval<T> declares lower/upper as optional (0..1) and
-    carries exactly four invariants (Lower_included_valid,
-    Upper_included_valid, Limits_consistent, Limits_comparable) — none of
-    which requires a bound VALUE to be present when the corresponding
-    *_unbounded flag is false. An instance {lower_unbounded: false, no
-    lower; upper_unbounded: false, no upper} therefore violates no RM
-    invariant, while the CNF content lineage expects such an interval to be
-    rejected as malformed. (Older openEHR revisions carried such an
-    invariant; the vendored 1.3.0 does not.)
+    What an interval invariant MEANS on absent limits is unassigned
+    (re-grounded 2026-08-21): BASE Interval<T> declares lower/upper 0..1,
+    and BOTH the BASE Limits_consistent and RM DV_INTERVAL's own
+    Limits_consistent fire exactly when both *_unbounded flags are false —
+    "(not upper_unbounded and not lower_unbounded) implies
+    (lower.is_strictly_comparable_to(upper) and lower <= upper)" — with
+    UNGUARDED feature calls on both limits. On an instance {both flags
+    false, both limits absent} the consequent calls features on Void, and
+    the released text nowhere states how such an expression evaluates: the
+    RM guards Void-calls explicitly where it means partiality (e.g.
+    HISTORY's "events /= Void and then …"), but an unguarded call could
+    equally presuppose presence. So the CNF content lineage's rejected
+    verdict and an acceptance are BOTH derivable, on rival readings the
+    released text never arbitrates. (The earlier framing — "no invariant
+    requires a bound value when *_unbounded is false", with a parenthetical
+    that older revisions carried such an invariant — was doubly wrong: the
+    RM invariant's antecedent is exactly that configuration, and no BASE or
+    RM generation ever carried a bound-presence invariant.)
   source: >-
     BASE foundation_types interval.adoc §Attributes (lower/upper 0..1) +
-    §Invariants (the four-invariant set — none requires a bound value when
-    *_unbounded is false)
+    §Invariants (Limits_consistent, guarded by "(not upper_unbounded and
+    not lower_unbounded) implies") + RM data_types dv_interval.adoc
+    §Invariants (its own Limits_consistent, the same shape, calling
+    lower.is_strictly_comparable_to(upper) unguarded) + RM common
+    history.adoc Events_valid ("events /= Void and then …" — the explicit
+    Void-guard idiom the interval invariants do NOT use) — the
+    Void-evaluation silence CONFIRMED first-hand
   handling: >-
-    The framework adopts the RM-invariant reading: a bounded-flag interval
-    with absent limits is ACCEPTED (no invariant violated; the flags are
-    then vacuous). The affected content rows expect accepted with this
-    citation. The rows flip to rejected if a future BASE release restores
-    the bound-required invariant.
+    The framework adopts ACCEPTANCE as the fixed handling: an invariant
+    whose consequent cannot be evaluated (a feature call on a Void limit)
+    has no released evaluation rule, and refusing on an underivable
+    violation would invent a prohibition. The affected content rows expect
+    accepted with this citation. The rows flip to rejected if a future
+    release either states Void-call semantics that fail the invariant or
+    adds a bound-presence invariant.
   disposition: fixed_handling
   upstream_issue: 1502
 AMB-44:
@@ -961,15 +1029,18 @@ AMB-44:
   upstream_issue: 1503
 AMB-45:
   ambiguity: >-
-    The master17.4 DV_DATE_TIME range table's T-precision block tests values
-    anchored at 2021-10-24 (e.g. 2021-10-24T10) against ranges anchored at
-    1900-03-13 yet expects accepted — arithmetically impossible under BASE
-    Interval total-order containment.
+    The master17.4 DV_DATE_TIME range table's T-precision block (L975-1000)
+    tests values anchored at 2021-10-24 (e.g. 2021-10-24T10) against ranges
+    anchored at 1900-03-13, making EIGHT of its 24 rows arithmetically
+    underivable under BASE Interval total-order containment (widened
+    2026-08-21): the four bounded 1900-anchored rows expecting `accepted`
+    AND the four ">=1900-03-13T11…" rows expecting `rejected`, where
+    2021-10-24T10 >= 1900-03-13T11 plainly holds.
   source: >-
-    BASE foundation_types interval.adoc §has() (total-order containment — the
-    master17.4 DV_DATE_TIME T-precision block is arithmetically underivable);
-    the master17.4 temporal range table is the stalled guide where the defect
-    appears
+    BASE foundation_types interval.adoc §Functions `has` (total-order
+    containment via its Post_result ordering expression — a Functions-table
+    row, not a heading); the master17.4 temporal range table is the stalled
+    guide where the defect appears
   handling: >-
     The catalogue re-anchors the block's values to the ranges' 1900-03-13
     date (preserving each row's precision axis and verdict), making every
@@ -990,14 +1061,23 @@ AMB-46:
     AM AOM1.4 master04-constraint_model_package.adoc §Reference Objects
     (C_REFERENCE_OBJECT / CONSTRAINT_REF — the constraint definition is external
     to the archetype; no commit-time terminology-binding enforcement defined)
+    + BASE architecture_overview master12-terminology.adoc §Binding
+    Terminology Value-sets to Archetypes ("bound to queries to one or more
+    external terminologies, whose result would be a (possibly structured)
+    value set" — it defines what a binding MEANS, still without assigning a
+    commit-time outcome for an instance no binding covers; cited 2026-08-21)
   handling: >-
     The unmatched-terminology row asserts acceptance with the AOM citation
-    (rejection is not derivable). Instrument note: the declared
-    constraint_bindings axis is not yet realized by the OPT synthesizer
-    (no binding is emitted into the synthesized template) — the axis is
-    declarative until the terminology-binding synthesis lands; the rm_schema
-    rows are unaffected. Flips to rejected only if a future AM release defines
-    commit-time binding enforcement.
+    (rejection is not derivable) — scoped to the UNBOUND template
+    (cnf.tpl.dv_coded_text_constraint_ref, the unbound twin): where a
+    binding RESOLVES and answers "not a member", AMB-172 adjudicates the
+    OPPOSITE direction and gates rejection, because the bound query's
+    result IS the permitted value set. The binding-carrying twins
+    (dt_coded_text_binding_{sct,tsdown,undefined_ac}.opt) exist in the
+    corpus since 2026-07-29, so this entry's acceptance and AMB-172's
+    rejection are complementary halves of one adjudication, not a
+    contradiction. Flips to rejected only if a future AM release defines
+    commit-time enforcement for the UNBOUND case.
   disposition: fixed_handling
   upstream_issue: 1505
 AMB-51:
@@ -1047,7 +1127,15 @@ AMB-54:
     Fixed handling: (a) creation-with-preceding and (c) out-of-group tokens
     are 422 (well-formed envelopes whose change-control semantics cannot be
     followed — the general 422 row); (b) a stale/unknown
-    preceding_version_uid is 412; the response beyond the status is
+    preceding_version_uid is 412, chosen over the two rival released rows
+    (derivation recorded 2026-08-21): the docs-text 412 row scopes itself to
+    "conditions given in the request HEADER FIELDS" while this precondition
+    is body-borne — but the CONDITION is the same optimistic-concurrency
+    test the header carries elsewhere, whereas the operation's declared 409
+    is defined for "a resource with same identifier(s) already exists" /
+    duplicate-or-conflict generation, which a stale pointer is not — 409
+    stays reserved for the duplicate-uid and is_modifiable conflicts
+    (AMB-82). The response beyond the status is
     UNCONSTRAINED on this branch — the §If-Match ETag SHOULD is conditioned
     on the service RECEIVING If-Match ("If a service receives this header
     …"), which this operation has no parameter for, and CONTRIBUTION.versions
@@ -1097,23 +1185,29 @@ AMB-56:
   ambiguity: >-
     Accept quality-factor (q-value) negotiation strictness is not spec-defined.
     ITS-REST content negotiation states only that a client SHOULD use Accept to
-    specify the expected representation and that a service that cannot fulfil it
+    specify the expected representation and that a service that cannot fulfill it
     MUST respond 406 Not Acceptable; nothing in the ITS-REST corpus defines
     q-value weighting, preference ordering across multiple acceptable types, or
-    */* wildcard resolution (grep: no "q=", "quality", or "weight"). RFC 7231
+    */* wildcard resolution (grep: no "q=", "quality", or "weight"). RFC 9110 —
+    the HTTP authority the release itself names in Requests_and_responses.md —
     defines q-values generically, but ITS-REST assigns them no
-    conformance-visible behaviour.
+    conformance-visible behaviour (RFC citation aligned 2026-08-21).
   source: >-
     ITS-REST overview Resources.md §Data representation ("The client SHOULD use
     the Accept ... request header to specify the expected ... response format.
-    If the service cannot fulfil this aspect of the request, it MUST respond
+    If the service cannot fulfill this aspect of the request, it MUST respond
     with HTTP status code 406 Not Acceptable") + Requests_and_responses.md
     §Representation details negotiation (Prefer verbosity only; no q-value text)
     — silence across the ITS-REST corpus CONFIRMED first-hand
   handling: >-
     No normative cases: a server's handling of a weighted or multi-type Accept
     (q-value ordering, wildcard resolution) is statement-declared, not gated.
-    The one documented rule — an Accept the service cannot fulfil yields 406 —
+    HONESTY NOTE (2026-08-21): no statement or ixit field CARRIES such a
+    declaration today — no options pair, capability, or ixit key expresses an
+    Accept-negotiation posture — so in practice this entry records the
+    behaviour as unassessed; the disposition names the mechanism a future
+    declaration field would use, not one that exists.
+    The one documented rule — an Accept the service cannot fulfill yields 406 —
     is already exercised by the unsupported-Accept case
     (SF-EXAMPLE-unsupported_accept). Activates as gating cases only if a future
     ITS-REST release defines q-value semantics.
@@ -1123,13 +1217,16 @@ AMB-57:
   ambiguity: >-
     CORRECTED 2026-07-27 (the prior text claimed no simplified-format wire
     exists for commit_contribution — STALE: SPECITS-84, Release-1.1.0,
-    defines it in four places). The RESIDUAL conflict is read-side:
-    contribution_get's §Simplified Formats paragraph and the released
-    200_CONTRIBUTION response text both promise that "each versions[i].data
-    payload is serialized in the requested FLAT or STRUCTURED form", but the
-    declared 200 body (the CONTRIBUTION schema) carries versions as
-    OBJECT_REFs — there is NO versions[i].data in the read shape at all —
-    and the operation declares no Prefer parameter, leaving the generic
+    defines it in four places), WIDENED 2026-08-21: the conflict covers
+    EVERY RESPONSE body, not the read only. contribution_get's §Simplified
+    Formats paragraph and the released 200_CONTRIBUTION response text
+    promise that "each versions[i].data payload is serialized in the
+    requested FLAT or STRUCTURED form" — and 201_CONTRIBUTION carries the
+    IDENTICAL promise for the create's return=representation body — while
+    the declared body in BOTH is the CONTRIBUTION schema, whose versions are
+    OBJECT_REFs with NO versions[i].data member at all (the only place
+    versions[i].data exists is the REQUEST's NewContribution/UpdateVersion).
+    The get declares no Prefer parameter, leaving the generic
     "Prefer: return=representation, resolve_refs" mechanism unbound.
   source: >-
     ITS-REST specifications/operations/contribution_{create,get}.yaml
@@ -1140,10 +1237,11 @@ AMB-57:
     ObjectRefOfObjectVersionId, no data); Requests_and_responses.md §Prefer
     resolving Object references — confirmed first-hand.
   handling: >-
-    Fixed handling: the create side is implemented exactly as released
+    Fixed handling: the create REQUEST is implemented exactly as released
     (envelope canonical, each versions[i].data in the negotiated
-    FLAT/STRUCTURED form, both request and Prefer-representation response).
-    On the GET, inner serialization binds to "Prefer:
+    FLAT/STRUCTURED form); the create's return=representation RESPONSE and
+    the GET response face the same schema hole, and both resolve the same
+    way. On the GET, inner serialization binds to "Prefer:
     return=representation, resolve_refs": with it, versions inline as full
     ORIGINAL_VERSIONs and COMPOSITION data serializes in the requested wt
     form (non-COMPOSITION inner payloads 406); without it, the OBJECT_REF
@@ -1177,12 +1275,12 @@ AMB-58:
     for `application/xml` and `application/openehr.wt+json` ONLY — there is no
     application/json response body anywhere in the operation — while the same
     operation declares a `'406'` response. So tier 2 offers the request and
-    defines neither a body for it nor an obligation to fulfil it, leaving both
+    defines neither a body for it nor an obligation to fulfill it, leaving both
     answers exactly as conformant as before.
   source: >-
     ITS-REST overview Resources.md §JSON Format ("The client SHOULD use the
     Accept: application/json request header to specify the expected JSON
-    response format. If the service cannot fulfil this aspect of the request,
+    response format. If the service cannot fulfill this aspect of the request,
     it MUST respond with HTTP status code 406 Not Acceptable"; "Proper header
     Content-Type: application/json MUST be present in the response of the
     service unless the response has no content body") + §Simplified Formats
@@ -1272,7 +1370,9 @@ AMB-60:
     following subset is used in this specification", followed by the two
     quoted SHOULD sentences, with no precedence, no unknown-path rule, and no
     MUST on either branch) + §HTTP status codes (rows 404 "The origin service
-    did not find the target resource", 405 "The method received in the
+    did not find the target resource or is not willing to disclose that one
+    exists" — the disclosure clause restored 2026-08-21, since it bears on
+    the 404-vs-405/501 choice —, 405 "The method received in the
     request-line is known by the origin service but not supported by the target
     resource", 501 "The service does not support the functionality required to
     fulfill the request", and "Additional status codes MAY be used as long as
@@ -1317,7 +1417,7 @@ AMB-60:
     request the service cannot recognize cannot be authored — and is carried
     as the cited vocab/wire_surface.yaml element
     method-501-unrecognized-method-deviation, whose server behaviour is
-    HTTP-tested (app/ferroehr-rest/tests/http.rs
+    HTTP-tested (app/ferroehr-rest/tests/it/http.rs
     `unrecognized_method_is_405_with_allow`).
     Revisits if a future ITS-REST release raises either sentence to a MUST or
     states a precedence.
@@ -1345,27 +1445,32 @@ AMB-61:
     well") + §Simplified Formats ("If the service cannot process the request
     payload as the simplified format is not supported, it MUST respond with
     HTTP status code 415 Unsupported Media Type"; "If the service cannot
-    fulfil this aspect of the request, it MUST respond with HTTP status code
+    fulfill this aspect of the request, it MUST respond with HTTP status code
     406 Not Acceptable") + §XML Format / §JSON Format (the same 415/406 MUSTs
     for the canonical types) — MAY-level support and MUST-level refusal shape
     CONFIRMED first-hand.
   handling: >-
     Sibling cases carry option tags; the ICS options declaration selects which
     applies — the declared behaviour MUST pass, the undeclared sibling is
-    not-applicable. The legacy-alt-formats-unsupported branch is executable
-    today: SF-LEGACY-nc_flat_media_unsupported expects unsupported_media (415)
-    for a commit declaring application/openehr.nc.flat+json, and
-    SF-LEGACY-tds2_accept_unsupported expects not_acceptable (406) for an
-    Accept of application/openehr.tds2+xml. The legacy-alt-formats-supported
-    branch has no case: the released text defines neither a canonical mapping
-    nor a schema for either legacy representation ("based on the ECISFLAT
+    not-applicable. The legacy-alt-formats-unsupported branch carries FOUR
+    cases (census corrected 2026-08-21):
+    SF-LEGACY-{nc_flat_media,tds2_media}_unsupported expect
+    unsupported_media (415) on the request side and
+    SF-LEGACY-{nc_flat_accept,tds2_accept}_unsupported expect
+    not_acceptable (406) on the Accept side. The
+    legacy-alt-formats-supported branch HAS its accepting twin —
+    SF-LEGACY-nc_flat_media_supported (OPTIONS-tier), required so a server
+    answering 415 to everything cannot pass the unsupported battery
+    vacuously — which asserts a successful exchange for a media type whose
+    mapping/schema the released text does not define ("based on the ECISFLAT
     format" / "see this wiki page" are the only pointers, both outside the
-    specification), so there is nothing spec-grounded to assert about a
-    successful exchange — the tag exists so a supporting SUT declares itself
-    out of the unsupported branch rather than failing it. Distinct from AMB-39,
-    which governs the DEPRECATED pre-1.1.0 SDT-era .schema+json types
+    specification): the assertion is therefore exchange-level only (the
+    commit succeeds), never a wire-shape check, and that tension is
+    recorded here on purpose. Distinct from AMB-39,
+    which governs the DEPRECATED .schema+json types
     (superseded equivalents of a CURRENT format, not legacy formats of their
-    own).
+    own) — both entries draw on the same Resources.md §Alternative data
+    formats list.
   disposition: option_select
   options: [legacy-alt-formats-supported, legacy-alt-formats-unsupported]
 AMB-62:
@@ -1536,10 +1641,14 @@ AMB-63:
     `'409'`). That settles the two halves the entry used to call open — the
     key IS the (id, namespace) pair, and `PARTY_REF.type` is NOT part of it —
     and it also states the precondition under which the refusal bites (an
-    EHR_STATUS was supplied). What NO source states is HOW the pair is
-    compared: byte-for-byte or folded. BASE gives a case rule for composite
-    IDENTIFIERS, not for a demographic id borne inside a PARTY_SELF, so the
-    comparison discipline remains ours. (b) THE SCOPE: SM i_ehr_service.adoc
+    EHR_STATUS was supplied). On HOW the pair is compared, a released rule
+    EXISTS at SHOULD strength and points the other way (re-grounded
+    2026-08-21): BASE base_types master05 §Composite Identifiers and Case
+    binds case-insensitivity to "all composite identifiers" over the whole
+    OBJECT_ID hierarchy — whose first sentence covers every identifier type
+    used within openEHR systems, PARTY_REF.id included. The byte-exact key
+    below is therefore a DELIBERATE DEVIATION from that SHOULD, not a
+    spec-silent choice. (b) THE SCOPE: SM i_ehr_service.adoc
     declares the error
     `ehr_for_subject_already_exists` on `create_ehr_for_subject` but NOT on
     `create_ehr_for_subject_with_id`, whose error list carries only
@@ -1583,16 +1692,21 @@ AMB-63:
     part of it — and that much is now RELEASED-GROUNDED rather than ours, on
     the OAS `409_EHR.yaml` sentence above ("the same subject id, namespace
     pair"), as is the "whenever EHR_STATUS is supplied" precondition the
-    catalogue's cases already satisfy. What stays OURS is only the COMPARISON
+    catalogue's cases already satisfy. What stays OURS is the COMPARISON
     DISCIPLINE: the pair is matched EXACTLY, byte-for-byte, with no case
-    folding and no normalization. No openEHR spec governs that — our own
-    design/extension: a demographic identifier is opaque to the CDR, so two
+    folding and no normalization — a DELIBERATE DEVIATION from the BASE
+    SHOULD (base_types master05 §Composite Identifiers and Case:
+    case-insensitivity for "all composite identifiers", a rule whose §opening
+    sentence spans the whole OBJECT_ID hierarchy, PARTY_REF.id included;
+    scope corrected 2026-08-21 — the earlier claim that the rule governs only
+    OBJECT_VERSION_ID-shaped ids was false). The safety rationale: a
+    demographic identifier is opaque to the CDR, so two
     spellings a demographic service might reconcile are two different subjects
     here, and folding them would silently merge two patients' records, the
-    wrong-clinical-answer failure mode. Explicitly NOT the BASE
-    composite-identifier case rule (base_types master05 §Composite Identifiers
-    and Case), which governs OBJECT_VERSION_ID-shaped ids, not a demographic
-    id. The type EXCLUSION is now CASED, not merely recorded:
+    wrong-clinical-answer failure mode — a SHOULD admits a reasoned
+    departure, and this one is recorded here and reported upstream as a
+    candidate (blanket case-insensitivity vs demographic-id folding safety).
+    The type EXCLUSION is now CASED, not merely recorded:
     I_EHR_SERVICE.create_ehr-subject_key_ignores_type commits two EHRs whose
     subject external_ref differs ONLY in `type` (same id cnf-subject-11, same
     namespace cnf; both values legal under BASE `PARTY_REF.Type_validity`) and
@@ -1617,6 +1731,7 @@ AMB-63:
     states the comparison discipline, carries the refusal to the with-id path,
     or admits several EHRs per subject.
   disposition: fixed_handling
+  upstream_issue: 2544
 AMB-64:
   ambiguity: >-
     Whether the `Last-Modified` SHOULD reaches the EHR resource is left open by
@@ -1624,7 +1739,7 @@ AMB-64:
     VERSIONED_OBJECT, or other resources that have versioning or unique state
     identifiers" — and an EHR is neither a VERSION nor a VERSIONED_OBJECT: it
     is a root object that is not versioned at all (RM ehr EHR class carries no
-    uid/version attributes, only `ehr_id` and `time_created`). Whether it
+    uid/version attributes — no uid, no version identity, not change-controlled). Whether it
     qualifies under the open-ended third limb turns on reading "unique state
     identifiers", which the document never defines. The companion sentence
     compounds it: the value "should be derived from
@@ -1842,7 +1957,9 @@ AMB-69:
     type: SYSTEM}` (ITS-REST
     specifications/schemas/demographic/VersionedParty.yaml `example`, vendored
     at crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml
-    `components.schemas.VersionedParty.example`) — the "other relevant owning
+    `components.schemas.VersionedParty.example`; note the example's own
+    `type: SYSTEM` violates OBJECT_REF's attribute definition — no RM class
+    is named SYSTEM — the standing report is #2524) — the "other relevant owning
     entity" limb read as the serving system, with the same BASE namespace token
     the EHR side uses. WHAT THAT EXAMPLE IS WORTH, under the oracle order: the
     same as AMB-137's five `ItemTagOf<T>` examples — nothing as an assignment.
@@ -1881,22 +1998,31 @@ AMB-69:
 
 AMB-70:
   ambiguity: >-
-    "The version extant at time T" has no released algorithm. RM gives only
-    the signature `version_at_time (a_time): VERSION` with
-    `Pre: has_version_at_time (a_time)`; nothing released states (a) which
-    instant anchors a version's extancy interval (commit_audit.time_committed
-    is cited only as the Last-Modified source), (b) whether the interval is
-    closed or open at the commit instant, (c) how branch versions
-    participate, (d) what a future-dated T returns, or (e) which function
-    "latest" means for the no-parameter read — `latest_version()` ("most
-    recently added … on trunk or any branch") vs `latest_trunk_version()`
-    are both defined and neither ITS-REST nor SM picks one.
+    "The version extant at time T" has only a PARTIAL released algorithm
+    (re-grounded 2026-08-21). The ANCHOR is released: RM common master06
+    §Committal and Audits binds time_committed to "the time of committal to
+    an EHR server, i.e. the time of availability to other users in the same
+    system", and §Subsequent Local Modifications states that a query "at
+    earlier commit times correctly returns what information existed at that
+    time in that container" — so (a) is answered (the local commit instant),
+    and its availability framing supports the inclusive-at-commit reading of
+    (b). What remains unassigned: (b) interval closedness as a FORMAL rule,
+    (c) how branch versions participate, (d) what a future-dated T returns,
+    and (e) which function "latest" means for the no-parameter read —
+    `latest_version()` ("most recently added … on trunk or any branch") vs
+    `latest_trunk_version()` are both defined and neither ITS-REST nor SM
+    picks one.
   source: >-
-    RM common UML/classes/org.openehr.rm.common.versioned_object.adoc
+    RM common master06-change_control_package.adoc §Committal and Audits
+    (the time_committed anchor) + §Subsequent Local Modifications (the
+    earlier-commit-times query sentence) + RM common
+    UML/classes/org.openehr.rm.common.versioned_object.adoc
     §Functions (version_at_time, latest_version, latest_trunk_version); SM
     UML/classes/i_ehr_status.adoc get_ehr_status_at_time ("If no time
     supplied, get the latest."); ITS-REST overview Resources.md §Datetime
-    format (offset-less values resolve in the local timezone) — confirmed
+    format (offset-less values resolve in the local timezone); the
+    no-version-at-time 404 is OAS-grounded
+    (responses/404_unknown_ehr_id_or_no_version_at_time.yaml) — confirmed
     first-hand.
   handling: >-
     Fixed handling: extancy anchors on the version's commit instant,
@@ -1945,9 +2071,11 @@ AMB-72:
     OBJECT_VERSION_ID (three-part); (4) get_ehr_status_at_time /
     get_ehr_status_at_version return EHR_STATUS while the ITS-REST
     versioned_ehr_status/version routes serve the VERSION envelope, so the
-    mappings are approximate; (5) clear_ehr_modifiable's meaning reads
+    mappings are approximate; (5a) clear_ehr_modifiable's meaning reads
     "this ensures it is treated as active", contradicting its own
-    postcondition `not …is_modifiable` (and misspells `_is_modifable_`).
+    postcondition `not …is_modifiable`; (5b) it is SET_ehr_modifiable (L80)
+    that misspells the attribute as `_is_modifable_` — the SM's only such
+    site (attribution corrected 2026-08-21).
     None of these change conformant wire behaviour; they distort the
     SM-operation vocabulary the case cores speak.
   source: >-
@@ -2255,10 +2383,20 @@ AMB-79:
   handling: >-
     Fixed handling: this server answers 409 Conflict (the row's own text —
     "the request could not be processed because it might generate a
-    duplicate or a conflict") when a LIVE directory occupies the slot; a
-    logically deleted directory vacates it (the container survives, RM
-    master06 §Logical Deletion) so a re-create opens a new hierarchy. The
-    create-conflict case gates on 409. Reported upstream (#1523): bind
+    duplicate or a conflict") when a LIVE directory occupies the slot. The
+    DELETED-then-recreate branch is its own recorded silence (re-grounded
+    2026-08-21 — the earlier citation of RM master06 §Logical Deletion for
+    "vacates the slot" was wrong: that section is only the four-step delete
+    procedure and says nothing about EHR.directory occupancy): the released
+    texts lean BOTH ways — indelibility (master06 §Contributions) plus RM
+    ehr.adoc's `directory` = "a reference to the first member of folders"
+    (Directory_in_folders) can be read as the deleted container still
+    occupying the slot, while the delete's own wire (the directory read
+    serving 204 for a deleted head) reads as the directory being gone. No
+    released sentence arbitrates, so the choice is OURS: a logically
+    deleted directory does not block a re-create — create opens a new
+    hierarchy — pinned by the create-after-delete accepting twin beside the
+    live-conflict case. Reported upstream (#1523): bind
     the branch.
   disposition: fixed_handling
   upstream_issue: 1523
@@ -2267,22 +2405,35 @@ AMB-80:
   ambiguity: >-
     Updating or deleting the directory of an EHR that has NONE has no
     assigned wire outcome: both operations' only 404 file is scoped "when
-    an EHR with ehr_id does not exist"; 412 is scoped to an If-Match
-    mismatch against the latest version — and there is no latest version.
-    SM has Pre_has_directory on both with no error code
+    an EHR with ehr_id does not exist". The 412 question is SHARPER than an
+    OAS scope note (re-grounded 2026-08-21): the docs text MUSTs 412 on a
+    false If-Match ("it MUST NOT perform the requested method. Instead, it
+    MUST respond with … 412", §If-Match and accidental overwrites) and the
+    If-Match parameter is required: true, so a conformant client ALWAYS
+    sends one here — with no latest version, the condition cannot evaluate
+    true. SM has Pre_has_directory on both with no error code
     (delete_directory's only error is ehr_id_does_not_exist).
   source: >-
     ITS-REST specifications/operations/directory_{update,delete}.yaml +
     responses/404_unknown_ehr_id.yaml (the scoping) +
-    responses/412_directory.yaml; SM UML/classes/i_ehr_directory.adoc
+    responses/412_directory.yaml + Requests_and_responses.md §If-Match and
+    accidental overwrites (the MUST) + parameters/header/If-Match.yaml
+    (required: true); SM UML/classes/i_ehr_directory.adoc
     (Pre_has_directory without an error code) — confirmed first-hand.
   handling: >-
     Fixed handling: this server answers 404 Not Found — the directory
     resource the request addresses does not exist, the closest released
-    semantics (the 404 row: "the resource … does not exist"). The
-    no-directory update/delete cases gate on 404. Reported upstream
-    (#1524): scope the 404 files to cover the missing-directory case or
-    bind another branch.
+    semantics (the 404 row: "the resource … does not exist"). What KEEPS
+    404 legal against the §If-Match MUST is the HTTP authority the same
+    section designates: RFC 9110 §13.2.1 — "A server MUST ignore all
+    received preconditions if its response to the same request without
+    those conditions … would have been a status code other than a 2xx
+    (Successful) or 412 (Precondition Failed)" — and without the
+    precondition this request is a 404, so the precondition is ignored by
+    HTTP's own rule (derivation lifted from the case files into the
+    register, 2026-08-21). The no-directory update/delete cases gate on
+    404. Reported upstream (#1524): scope the 404 files to cover the
+    missing-directory case or bind another branch.
   disposition: fixed_handling
   upstream_issue: 1524
 
@@ -2326,8 +2477,12 @@ AMB-82:
     text never mentions is_modifiable outside the EHR-creation defaults,
     and no composition/directory operation declares a branch for it.
   source: >-
-    RM ehr master04-ehr_package.adoc §EHR Active Status (the refusal rule,
-    naming Compositions and Folders); ITS-REST specifications/ (grep:
+    RM UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Attributes ("True if
+    the EHR, other than the EHR_STATUS object, is allowed to be written to.
+    The EHR_STATUS object itself can always be written to." — the
+    PERMISSION rule; citation added 2026-08-21) + RM ehr
+    master04-ehr_package.adoc §EHR Active Status (the scope, naming
+    Compositions and Folders); ITS-REST specifications/ (grep:
     is_modifiable appears only in ehr_create*.yaml defaults and the
     EhrStatus schema) — confirmed first-hand.
   handling: >-
@@ -2336,7 +2491,14 @@ AMB-82:
     CONTRIBUTION commit — the primary write route; scope extended
     2026-07-27) into an EHR with
     is_modifiable = false — the request conflicts with the resource's
-    current state; EHR_STATUS itself stays always-writable (RM: "The
+    current state. The 409 is an ADDITIONAL status on these operations
+    (none declares it; composition_create declares 422, responses/409.yaml
+    is identifier-scoped), taken under the status table's own permission —
+    "Additional status codes MAY be used as long as they do not conflict
+    with the predefined codes" — and preferred over the declared 422
+    because the body is semantically VALID content refused for the
+    resource's STATE, not for its semantics (recorded 2026-08-21).
+    EHR_STATUS itself stays always-writable (RM: "The
     EHR_STATUS object itself can always be written to"), which is how a
     deactivated EHR is reactivated. Cases exercising the deactivated-EHR
     refusal gate on 409. Reported upstream (#1526): assign the branch.
@@ -2346,7 +2508,9 @@ AMB-82:
 AMB-83:
   ambiguity: >-
     The SM I_EHR_DIRECTORY interface carries editorial defects in the
-    AMB-72/77 pattern: five operations declare their parameter as `ehr_id`
+    AMB-72/77 pattern: SIX operations declare their parameter as `ehr_id`
+    (has_directory, has_path, create_directory, get_directory,
+    update_directory, delete_directory — count corrected 2026-08-21)
     while their preconditions read `an_ehr_id` (the interface mixes both
     spellings); version identifiers and ehr ids are typed UUID where the
     wire values are OBJECT_VERSION_ID/HIER_OBJECT_ID; the preconditions
@@ -2363,12 +2527,17 @@ AMB-83:
     no return type; no SM error corresponds to the wire 412; and the three
     boolean probes (has_directory, has_path, has_directory_version) have
     no ITS-REST route (inferable only from GET status codes — AMB-24
-    covers only get_versioned_directory). Two released ITS-REST
+    covers only get_versioned_directory). THREE released ITS-REST
     response-file contract defects travel with the same report: the
     update's 200 and 204 branches select DIFFERENT Location/ETag header
     contracts (Location_directory+ETag_FOLDER vs
-    Location_version+generic ETag) for one operation's success, and
-    412_directory declares a Location header solely to deprecate it.
+    Location_version+generic ETag) for one operation's success;
+    412_directory declares a Location header solely to deprecate it; and
+    the update's 204 (the shared 204_version_updated.yaml) advertises the
+    openehr-item-tag/openehr-version-item-tag response headers while
+    directory_update declares NO item-tag request parameter (only
+    composition_update does) and its own 200 omits them (added
+    2026-08-21).
   source: >-
     SM UML/classes/i_ehr_directory.adoc (all interface defects) +
     i_validity_checker.adoc; ITS-REST
@@ -2401,7 +2570,11 @@ AMB-84:
     Fixed handling: this server rejects an empty (or missing) versions
     list 422 — a well-formed envelope that commits nothing cannot be
     followed as a change set (a CONTRIBUTION exists to list "the affected
-    VERSION objects", master06 §Contributions). Reported upstream
+    VERSION objects", master06 §Contributions). The 422 is an ADDITIONAL
+    status on this route (contribution_create declares 201/400/404/409
+    only), taken under the status table's "Additional status codes MAY be
+    used as long as they do not conflict with the predefined codes"
+    (permission recorded 2026-08-21). Reported upstream
     (#1528): add the minItems to the commit schema or an invariant to the
     RM class.
     SCOPE 2026-07-27 (group-12 audit): the entry is CONTRIBUTION-scoped, not
@@ -2430,7 +2603,11 @@ AMB-85:
   handling: >-
     Fixed handling: this server follows the RM — a 523|deleted| member
     MUST omit data (or carry JSON null, treated as absent) and a
-    523|deleted| member CARRYING data is rejected 422; the stalled
+    523|deleted| member CARRYING data is rejected 422 — an ADDITIONAL
+    status on this route (contribution_create declares 201/400/404/409
+    only), taken under the status table's "Additional status codes MAY be
+    used as long as they do not conflict with the predefined codes"
+    (permission recorded 2026-08-21); the stalled
     schema's required-data is not enforced for deletion members. Reported
     upstream (#1531): give the commit schema a deletion shape.
     SCOPE 2026-07-27 (group-12 audit): the same handling reaches the
@@ -2559,10 +2736,13 @@ AMB-89:
     `uid` (a locally committed version's identifier is allocated by this
     repository), and a `_type` naming any class other than
     UPDATE_VERSION / ORIGINAL_VERSION. A `_type` of one of those two IS
-    accepted: the overview docs text makes `_type` a general metadata
-    attribute whose value "MUST be the uppercase class name from the RM
-    specification" (specifications/docs/overview/Resources.md §Resource
-    representation), and the docs text outranks the OAS. Both names denote
+    accepted: the overview docs text says `_type` "should be used to
+    specify the RM type whenever polymorphism is involved" — the licensing
+    sentence — with its VALUE form pinned by "MUST be the uppercase class
+    name from the RM specification"
+    (specifications/docs/overview/Resources.md §JSON Format — the section
+    corrected 2026-08-21; the file has no §Resource representation), and
+    the docs text outranks the OAS. Both names denote
     the SAME wire shape — the six-property commit-wire PARTIAL
     UpdateVersion.yaml declares — so admitting ORIGINAL_VERSION names the
     class the member BECOMES, never a licence to post a complete RM
@@ -2728,7 +2908,10 @@ AMB-94:
     and repeat the same sentence verbatim. The description says "filtered
     by the given one or more `tag_key`, `tag_value`, `tag_target_path`"
     while all three params are scalar strings
-    (explode:true on a non-array schema is meaningless); how repeats of
+    (explode:true on a non-array schema is meaningless — the same
+    explode-on-scalar shape recurs on parameters/query/ehr_id_Admin.yaml,
+    where the `multiple` example is an ARRAY its own scalar schema forbids,
+    and on ehr_id_Query.yaml; scope extended 2026-08-21); how repeats of
     one param combine and how different params combine is unsaid; the
     match mode (exact/prefix/substring, case sensitivity) is unsaid; and
     matching tag_target_path against a tag with no target_path is unsaid.
@@ -2778,9 +2961,12 @@ AMB-96:
     spelling is the released MAJORITY, not an outlier: the EHR_STATUS
     example and ALL FIVE demographic examples (Person, Agent, Group,
     Organisation, Role) carry it; only the COMPOSITION example uses a real
-    path, and no released example anywhere omits the attribute — so a
-    client reading the examples would emit "" for an unpathed tag as a
-    matter of course.
+    path, and no released JSON-SCHEMA example omits the attribute (scope
+    corrected 2026-08-21: the WRAPPER-HEADER examples at
+    Requests_and_responses.md §openehr-item-tag DO omit it for unpathed
+    tags — which corroborates the ""-means-absent normalization below) —
+    so a client reading the schema examples would emit "" for an unpathed
+    tag as a matter of course.
   source: >-
     RM UML/classes/org.openehr.rm.common.item_tag.adoc (target_path 0..1;
     invariants cover key and value only) vs ITS-REST
@@ -2816,7 +3002,8 @@ AMB-97:
     200_PERSON_ItemTagList_retrieved for a response spanning all five party
     kinds (no 200_DEMOGRAPHIC_ItemTagList file exists either), so a
     conformant ROLE tag in that list contradicts the declared schema;
-    the demographic space-wide list's own description ends "...associated
+    the demographic space-wide list's own description carries, as its
+    third paragraph, "...associated
     with any target within given EHR" — a copy-paste from ehr_tags_get
     onto the one tag route that has no EHR at all, and the only sentence
     in the whole demographic tag surface naming a resource the route
@@ -2846,9 +3033,12 @@ AMB-97:
     ITEM_TAGs...") scopes only the headers and no
     tag route declares a refusal branch; nothing states tag persistence
     across new target versions, container-tag reach, or cascade on target
-    deletion; and the whole class is development-RM-only (SPECRM-87) —
-    the one surface in the released ITS-REST whose class link points at
-    RM/development.
+    deletion; and the whole class is development-RM-only (SPECRM-87, dated above the
+    RM Release 1.1.0 separator in the amendment record) — the only ITS-REST
+    class link whose TARGET CLASS post-dates the released RM (scope
+    corrected 2026-08-21: RM/development links number three, but
+    Requests_and_responses.md L152's DV_EHR_URI points at a released
+    class).
   source: >-
     RM UML/classes/org.openehr.rm.common.item_tag.adoc + BASE
     foundation_types string.adoc; ITS-REST specifications/
@@ -2958,7 +3148,10 @@ AMB-101:
     assigned outcome — an SM-to-ITS realization gap. (What the scope DOES
     is NOT part of this entry: SM defines `_ehr_ids_` as "Specific set of
     EHRs on which to execute the query. If none supplied, a full
-    population query will be performed", and the ITS-REST query chapter
+    population query will be performed on all EHRs whose status has the
+    `_is_queryable_` flag set to `True`" (quote completed 2026-08-21 —
+    the dropped clause is a released population-scope constraint), and
+    the ITS-REST query chapter
     states the same effect from the other side, calling population
     queries the ones "not referring or using any `ehr_id` parameter to
     constrain the scope on a specific EHR".)
@@ -2992,14 +3185,23 @@ AMB-102:
     org.openehr::aql form.
   source: >-
     ITS-REST specifications/parameters/path/version.yaml (the two legal
-    forms) + responses/404_Query_version.yaml (the trigger);
+    forms) + responses/404_Query_version.yaml (the trigger) +
+    responses/400_Query.yaml (the COMPETING released candidate on the same
+    operations — "at least one of the parameters has an invalid syntax";
+    cited 2026-08-21) + Requests_and_responses.md §HTTP status codes (the
+    tie-breaker: 400 is "used when no other 4xx error code is
+    appropriate");
     docs/query/Qualified_query_name.md (the class + the reserved-name
     NOTE) — confirmed first-hand.
   handling: >-
     Fixed handling: an unmatchable selector IS "a version that does not
     exist" — 404 under the released trigger's own wording (a selector
     matching nothing), covering malformed versions, out-of-class names,
-    and the reserved name alike. This entry is the READ side only; the
+    and the reserved name alike. 404 wins over the operation's declared
+    400 because the docs text makes 400 the residual code ("when no other
+    4xx error code is appropriate") and a more specific released trigger
+    exists — the same derivation AMB-122 applies on the write side, where
+    no addressable resource exists and 400 therefore stands. This entry is the READ side only; the
     corresponding WRITE-side branches are AMB-122 (a version segment the
     versioned store cannot write) and AMB-123 (a store under the reserved
     name), both 400 rather than 404, because a write cannot address a
@@ -3025,15 +3227,24 @@ AMB-103:
     wrapped object ({values: [...]}) vs the released bare array; the
     flattened wire descriptor loses version/formalism/registration_time —
     the EXECUTED STORED VERSION IS UNOBSERVABLE on the wire, weakening the
-    prefix-matching contract; result_set.adoc carries "Rox data.", an
-    empty Meaning cell, and a left-in authoring TODO. Released doc
+    prefix-matching contract; result_set.adoc carries "Rox data." and an
+    empty Meaning cell (the authoring TODO is i_definition_query.adoc L56
+    — attribution corrected 2026-08-21). Released doc
     defects: Request.md's headline example uses the non-existent FETCH
-    keyword and a malformed at-code node predicate; the vendored AQL
-    grammar files (AqlParser/AqlLexer.g4) are MISSING from the QUERY
-    component; the adjacent definition store operationIds carry a literal
-    .yaml suffix; 400_Query declares no error body; the OAS is JSON-only
-    against the canonical-format MUST while the ITS-XML RESULT_SET is a
-    6-line draft stub; the glossary defines no query term; the CNF
+    keyword (confirmed against the vendored grammar —
+    QUERY/docs/AQL/grammar/AqlParser.g4+AqlLexer.g4, include::'d by
+    master07; the earlier "grammar files MISSING" claim was false) and a
+    malformed at-code node predicate (AqlLexer.g4 CODE_STR refuses at0.63;
+    the quoting rule the Hash<String,String> typing breaks is
+    master03-syntax.adoc §Where L113); the adjacent definition store
+    operationIds carry a literal
+    .yaml suffix; 400_Query declares no error body; the query surface is
+    JSON-only — spec-LEGAL under Resources.md §Data representation ("at
+    least one of the openEHR XML or JSON canonical formats"), the honest
+    defect being the missing XML OPTION on a resource for which ITS-XML
+    ships NO schema at all (the QUERY component holds only a 6-line draft
+    README, no .xsd; framing corrected 2026-08-21); the glossary defines
+    no query term; the CNF
     querying schedule links the demographic service model and is
     otherwise TBD/xx throughout.
   source: >-
@@ -3085,7 +3296,7 @@ AMB-66:
     have anything to read, and the only one reachable over the released wire.
     Every subject-keyed case in the catalogue supplies its subject exactly that
     way (I_EHR_SERVICE.create_ehr-two_ehrs_same_patient,
-    -existing_ehr_by_subject_id, -with_ehr_id_subject_taken), so the deviation
+    get_ehr-existing_ehr_by_subject_id, create_ehr-with_ehr_id_subject_taken), so the deviation
     is exercised rather than merely declared. No case asserts the
     precondition's rejection branch — a conformant server refusing a
     subject-bearing create would satisfy the SM sentence while failing the RM
@@ -3119,9 +3330,13 @@ AMB-104:
     route that consumes it) CONTRASTED with
     parameters/path/template_id_adl2.yaml (HRID examples only) and
     parameters/path/version.yaml (the SEMVER prefix rule, which exists only for
-    ADL2) + AM ADL 1.4 master02-overview.adoc §Templates (templates "do not
-    introduce any new semantics to archetypes"; no template identification or
-    versioning defined) — the absence of a legacy template_id grammar CONFIRMED
+    ADL2) + AM ADL 1.4 master02-overview.adoc §Computational Context
+    (templates "do not
+    introduce any new semantics to archetypes"; the file has no §Templates —
+    re-cited 2026-08-21; AM/docs carries ZERO template_id occurrences, and
+    Identification master02-overview.adoc explicitly scopes its HRID scheme
+    away from non-ADL2 templates) — the absence of a legacy template_id
+    grammar CONFIRMED
     first-hand.
   handling: >-
     Sibling cases carry option tags; the ICS options declaration selects.
@@ -3179,7 +3394,8 @@ AMB-105:
 AMB-106:
   ambiguity: >-
     The SM keys ADL 1.4 OPTs by a UUID the released wire never carries.
-    `has_opt`, `get_opt` and `delete_opt` all take `an_opt_id: UUID`, and
+    `has_opt` and `get_opt` take `an_opt_id: UUID` and `delete_opt` takes
+    `an_id: UUID` (spelling per the released file, corrected 2026-08-21), and
     `list_opts` returns `List<UUID>`; the odd sibling `list_matching_opts`
     returns `List<ARCHETYPE_ID>` instead, so the interface disagrees with
     itself about what an OPT is even called. The ITS-REST surface knows neither
@@ -3190,7 +3406,8 @@ AMB-106:
     element inside the canonical XML the GET serves, but no released sentence
     connects it to the SM key or makes it addressable.)
   source: >-
-    SM i_definition_adl14.adoc §has_opt / §get_opt / §delete_opt (`an_opt_id:
+    SM i_definition_adl14.adoc §has_opt / §get_opt (`an_opt_id: UUID [1]`) /
+    §delete_opt (`an_id:
     UUID [1]`), §list_opts (`List<UUID>`), §list_matching_opts
     (`List<ARCHETYPE_ID>`) vs ITS-REST
     specifications/parameters/path/template_id.yaml (the only ADL 1.4 key),
@@ -3294,7 +3511,11 @@ AMB-108:
 AMB-109:
   ambiguity: >-
     The TEMPLATE surface carries an editorial defect bundle. (1) The released
-    ADL2 upload's request example is not a legal OPT: its second clause is a
+    ADL2 upload's request example — AND the retrieval's 200 example, which
+    carries the identical body (scope widened 2026-08-21:
+    responses/200_Template_adl2_retrieved.yaml, so the defect also lands on
+    the retrieval contract AMB-111 declares verbatim) — is not a legal OPT:
+    its second clause is a
     `specialize` statement (`specialize openEHR-EHR-COMPOSITION.discharge.v1`)
     in a body the operation types as an `OperationalTemplateV2`, while AM says
     an OPT has "no specialisation statement - an OPT is considered a
@@ -3303,11 +3524,12 @@ AMB-109:
     production at all — so the example cannot parse against the grammar it
     illustrates. (2) The Web Template metadata example in the Simplified
     Formats chapter carries a `semVer` member the released `WebTemplate` schema
-    does not declare — the schema requires templateId / version /
-    defaultLanguage / languages / tree and lists no `semVer` property — so the
-    one worked example of the format shows a member no schema admits, and
-    nothing says whether `semVer` and `version` are two spellings of one fact
-    or two different facts.
+    does not DECLARE — the schema requires templateId / version /
+    defaultLanguage / languages / tree and lists no `semVer` property, though
+    it also sets no additionalProperties: false, so under OAS 3.0 defaults
+    the member is undeclared-but-admitted (over-claim corrected 2026-08-21) —
+    and nothing says whether `semVer` and `version` are two spellings of one
+    fact or two different facts.
   source: >-
     ITS-REST specifications/operations/definition_template_adl2_upload.yaml
     (the requestBody example, second clause `specialize`) vs AM
@@ -3315,7 +3537,9 @@ AMB-109:
     statement - an OPT is considered a 'top-level' standalone artefact") and
     docs/OPT2/master03-opt_raw.adoc §Artefact Structure (the
     `adl_operational_template` Antlr4 rule: `'operational_template' '('
-    qualifiers? ')' ARCHETYPE_HRID 'language' … — no specialize production) +
+    qualifiers? ')' ARCHETYPE_HRID 'language' … — no specialize production;
+    its own prose is decisive too: "Since an OPT is considered a 'top-level'
+    standalone artefact, there is no specialisation statement") +
     ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §Web Template
     Metadata (the example's `"semVer": "0.2.0"` beside `"version": "2.3"`) vs
     specifications/schemas/web_template/WebTemplate.yaml (required
@@ -3347,10 +3571,14 @@ AMB-110:
     `valid_artefact(an_arch)`, errors `invalid_template` / `invalid artefact`)
     but assigns no code, being transport-neutral. (b) The `Prefer:
     return=minimal` branch — also the assumed default when no Prefer is sent —
-    IS assigned by the operations' own 201 text ("If the `Prefer` header is
-    missing or set to `return=minimal`, the body is empty"), while the overview
-    says the opposite for the same exchange ("If no response body is returned,
-    the service SHOULD use `204 No Content`").
+    is an INTRA-docs-text contradiction (re-framed 2026-08-21): the overview's
+    own single bullet reads "The response SHOULD include a Location header
+    pointing to the newly created or updated resource. The HTTP status is
+    typically 201 Created. If no response body is returned, the service
+    SHOULD use 204 No Content" — naming 201 and SHOULD-204 for the same
+    no-body exchange in adjacent sentences — and the operations' own 201
+    text ("If the `Prefer` header is missing or set to `return=minimal`,
+    the body is empty") corroborates the bullet's primary sentence.
   source: >-
     ITS-REST specifications/operations/definition_template_adl1.4_upload.yaml
     and definition_template_adl2_upload.yaml (responses 201/400/409 only) +
@@ -3393,10 +3621,12 @@ AMB-110:
     -invalid_artefacts fixture sweeps. Defects the two AM catalogues BOTH claim
     — a missing mandatory SECTION is a missing grammar production and a named
     validation check at once — are AMB-116 and are pinned by no case.
-    (b) The minimal branch is **201 with an empty body**: the operation-level
-    201 text is specific to these two operations and states the outcome
-    directly, while the SHOULD-204 sentence is a general default in the
-    overview and a SHOULD in any case; the specific released statement governs.
+    (b) The minimal branch is **201 with an empty body**: the overview
+    bullet's own primary sentence names 201 for the created resource, its
+    trailing SHOULD-204 contradicts it within the same bullet, and the
+    docs text resolves on its own primary statement — with the
+    operation-level 201 files as corroboration, never as the deciding
+    source (the oracle order stays docs-text-first; re-derived 2026-08-21).
     SCOPE ADJUDICATED 2026-07-28 (#543): the specific-over-general reading is
     NOT Definition-scoped — the same shape holds wherever an operation family's
     own released response text assigns the minimal outcome, which the AMB-62
@@ -3456,41 +3686,49 @@ AMB-111:
 
 AMB-112:
   ambiguity: >-
-    Whether the conditional-request headers apply to a TEMPLATE resource is
-    left open. The overview scopes them by resource kind — "Both `ETag` and
-    `Last-Modified` SHOULD be included in responses for VERSION,
-    VERSIONED_OBJECT, or other resources that have versioning or unique state
-    identifiers" — and a template is neither of the two named kinds, so the
-    question turns entirely on the undefined trailing clause. A template does
-    have a unique IDENTITY (its template_id, or the ARCHETYPE_HRID for ADL2)
-    but no state that changes: the released uploads mint templates and neither
-    route offers an update, so nothing a `Last-Modified` would track ever
-    moves. No released sentence resolves either half, and no template operation
-    declares a `Last-Modified` header or an `If-Match` / `If-None-Match`
-    parameter.
+    RE-GROUNDED 2026-08-21: ETag on templates is NOT open — the released OAS
+    assigns it (dedicated components headers/ETag_Template_adl1_4.yaml and
+    ETag_Template_adl2.yaml, DECLARED on 201_Template_adl1_4_upload,
+    201_Template_adl2_upload and 200_Template_adl1_4_retrieved; the docs
+    text is silent on templates, so the OAS grounds the presence). What
+    stays open: (i) `Last-Modified` — no headers/Last-Modified* component
+    exists anywhere in the OAS tree and no response declares it, so it is
+    both-tier silent; (ii) the OAS's own ASYMMETRY —
+    200_Template_adl2_retrieved, both 200_TemplateList_* and
+    200_Template_example_retrieved declare Content-Type only, so serving
+    ETag there is OUR extension of the release's declared pattern; (iii) no
+    template operation declares an If-Match / If-None-Match parameter, so
+    no conditional precondition exists on these routes. A template has a
+    unique IDENTITY (template_id / ARCHETYPE_HRID) but no state that
+    changes after creation.
   source: >-
-    ITS-REST docs/overview/Requests_and_responses.md §"ETag and Last-Modified"
-    (the SHOULD sentence; "The `ETag` value is usually taken from e.g.
-    VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc. It
-    changes as soon as the resource changes"; "Servers MAY add additional
-    `ETag` response headers"; the weak-`W/` MUST) +
-    specifications/responses/201_Template_adl1_4_upload.yaml and
-    201_Template_adl2_upload.yaml (Location + ETag + Content-Type; no
-    Last-Modified) + 200_Template_adl1_4_retrieved.yaml and
-    200_Template_adl2_retrieved.yaml + the template operations' parameter lists
-    (no conditional-request headers) — CONFIRMED first-hand.
+    ITS-REST specifications/headers/ETag_Template_adl1_4.yaml +
+    ETag_Template_adl2.yaml ("identifier of Template"), declared on
+    responses/201_Template_adl1_4_upload.yaml, 201_Template_adl2_upload.yaml
+    and 200_Template_adl1_4_retrieved.yaml (cited AS the OAS; the docs-text
+    §"ETag and Last-Modified" SHOULD names only VERSION/VERSIONED_OBJECT
+    "or other resources that have versioning or unique state identifiers")
+    + 200_Template_adl2_retrieved.yaml / 200_TemplateList_*.yaml /
+    200_Template_example_retrieved.yaml (Content-Type only — the asymmetry)
+    + the template operations' parameter lists (no conditional-request
+    headers) + Requests_and_responses.md §Deprecated headers (the
+    weak-`W/` MUST: "all ETag headers that hold a resource identifier MUST
+    include a weakness indicator W/" — §attribution corrected 2026-08-21;
+    §ETag and Last-Modified's own sentence is a lowercase "should") —
+    CONFIRMED first-hand.
   handling: >-
-    Fixed handling, both halves. A template DOES carry a unique state
-    identifier for the purposes of the trailing clause — its resolved identity,
-    `template_id` for ADL 1.4 and the resolved ARCHETYPE_HRID for ADL2 — so an
-    `ETag` is served on the template responses, weak-prefixed per the
-    §Deprecated-headers MUST and naming the RESOLVED identity rather than the
-    (possibly partial) addressed one. `Last-Modified` is NOT served: it reports
-    when a resource last changed, and a released template resource never
-    changes after creation, so any value would be an invention. No
+    Fixed handling. ETag is served on ALL template responses — OAS-assigned
+    where declared, our extension of that declared pattern on the responses
+    the OAS leaves Content-Type-only — weak-prefixed per the
+    §Deprecated-headers MUST and naming the RESOLVED identity rather than
+    the (possibly partial) addressed one. `Last-Modified` is NOT served: it
+    reports when a resource last changed, and a released template resource
+    never changes after creation, so any value would be an invention. No
     conditional-request precondition is honoured on the template routes,
-    because none is declared there. The ETag declarations execute on the upload
-    and retrieval bindings; nothing asserts the ABSENCE of Last-Modified, which
+    because none is declared there. The ETag expectations execute on the
+    ADL2 bindings and (since 2026-08-21) the ADL 1.4 upload/get bindings —
+    the release declares the header on exactly those ADL 1.4 responses;
+    nothing asserts the ABSENCE of Last-Modified, which
     stays a documented boundary rather than a claim. Reported upstream
     (#1558): say whether templates fall under the conditional-header SHOULD,
     and if so what `Last-Modified` means for an immutable resource.
@@ -3627,8 +3865,12 @@ AMB-115:
     and the released text names 400 as the code for that branch. An out-of-enum
     value is 400 under the released 400 trigger directly (a syntactically
     invalid parameter), independently of the either/or, so
-    I_DEFINITION_ADL14.get_opt-example_invalid_detail_level gates for every
-    server: a value outside the enum has no "closest supported level" to fall
+    I_DEFINITION_ADL14.get_opt-example_invalid_detail_level gates that 400 —
+    within the OPTIONS-tier TemplateExamples capability it rides, i.e. for
+    every server CLAIMING example generation, exactly like its
+    example-branch siblings (the earlier "gates for every server"
+    contradicted the #545 paragraph below; corrected 2026-08-21): a value
+    outside the enum has no "closest supported level" to fall
     back to, which makes the fall-back branch unreachable there.
     RESIDUAL RESOLVED (#545, 2026-07-28): example generation is its own
     OPTIONS-tier capability (TemplateExamples — the CNF profiles book has no
@@ -3656,8 +3898,16 @@ AMB-116:
     phase; but the AOM2 validation catalogue's very first list also owns the
     same defect — "any missing mandatory parts, e.g. `terminology` section
     (STCNT)" appears under Phase 1 Basic checks, alongside genuinely semantic
-    checks like VARDT — which puts it in the VALIDATION phase. AM never says
-    which phase reports it, and the two phases carry different wire statuses
+    checks like VARDT — which puts it in the VALIDATION phase. For the
+    terminology section AM in fact says BOTH (re-grounded 2026-08-21): the
+    ADL2 syntax-code catalogue itself owns STCNT — master04.6 §Syntax
+    Validity Rules, `["STCNT"] = <"Syntax error: terminology not
+    specified">`, beside SALAN (no language section) and SAON — so the two
+    released AM catalogues CONTRADICT each other about the same code rather
+    than staying silent; for a missing description or definition section the
+    syntax catalogue offers only in-section codes (SADS/SADF) and no absence
+    code, so those remain genuinely unassigned. The two phases carry
+    different wire statuses
     (AMB-110: syntax → the released 400 branch, semantics → the adjudicated
     422). The same question covers the ADL 1.4 side for any defect an XML
     parser could reject as schema-invalid but an OPT validator could equally
@@ -3671,8 +3921,13 @@ AMB-116:
     productions, not optional decorations) vs AM
     docs/AOM2/master08-validation.adoc §Phase 1 - Basic Integrity §Basic checks
     ("any missing mandatory parts, e.g. `terminology` section (STCNT)"),
-    listed among the validation checks; neither says which phase reports a
-    missing section, and AM defines no phase-assignment rule — CONFIRMED
+    listed among the validation checks, AGAINST AM
+    docs/ADL2/master04.6-cadl_validity_rules.adoc §Syntax Validity Rules
+    (the syntax_errors catalogue owning the same STCNT code as "Syntax
+    error: terminology not specified") — a released-vs-released
+    contradiction for terminology, a genuine silence for
+    description/definition (no absence code exists), and AM defines no
+    phase-assignment rule — CONFIRMED
     first-hand.
   handling: >-
     Fixed handling: the wire status follows the phase in which the artefact
@@ -3690,7 +3945,7 @@ AMB-116:
     cnf.adl2.opt.invalid.missing_definition) stay in the corpus, referenced by
     no case, precisely because pinning them would author a status the released
     text does not settle. Reported upstream (#1562): say which phase owns a
-    missing mandatory section, or make the two catalogues disjoint.
+    missing mandatory section — the master04.6 syntax catalogue and the master08 Phase-1 list both own STCNT — or make the two catalogues disjoint.
   disposition: fixed_handling
   upstream_issue: 1562
 
@@ -4004,8 +4259,14 @@ AMB-122:
     SEMVER style (i.e. `major.minor.patch`)") +
     specifications/parameters/path/version.yaml (the quoted description,
     shared by definition_query_version_store.yaml,
-    definition_query_version_get.yaml and the query-execution routes) +
-    operations/definition_query_version_store.yaml (responses 200/400/409) +
+    definition_query_version_get.yaml, the query-execution routes AND
+    definition_template_adl2_version_get.yaml — the fifth consumer, added
+    2026-08-21, so the prefix-resolution rule spans the ADL2 template
+    surface too) +
+    operations/definition_query_version_store.yaml (responses 200/400/409;
+    NOTE it omits the ContentType_text parameter its unversioned sibling
+    definition_query_store.yaml declares over the same text/plain body — a
+    released parameter-list asymmetry) +
     responses/409_StoredQuery_version.yaml (the duplicate-pair trigger) +
     responses/400.yaml ("the request could not be parsed or is invalid (e.g.
     malformed request URL syntax, missing required header or parameter, or
@@ -4061,9 +4322,11 @@ AMB-123:
     three released sources that never meet. SM makes it a precondition:
     `store_query` carries `Pre_valid_query: is_valid_query(a_query_text)`,
     and `valid_query` "Return True if the provided query text is a valid
-    instance of the formalism" — the precondition names a function
-    `is_valid_query` the interface does not declare (the declared operation
-    is `valid_query`), an editorial defect that leaves the precondition
+    instance of the formalism" — the precondition is wrong in name AND
+    ARITY (widened 2026-08-21): it names `is_valid_query(a_query_text)`
+    while the declared operation is `valid_query(a_query_text, a_type)`
+    with a MANDATORY second argument, so renaming alone would leave it
+    still malformed — an editorial defect that leaves the precondition
     formally dangling. ITS-REST declares only the general syntactic 400 on
     both stores and never mentions validity. QUERY 1.1.0 is silent on stored
     queries entirely — the component specifies AQL, not a query registry — so
@@ -4250,7 +4513,8 @@ AMB-126:
 AMB-127:
   ambiguity: >-
     The stored-query sub-surface has realization gaps in BOTH directions.
-    SM→ITS: of the nine `I_DEFINITION_QUERY` operations the released wire
+    SM→ITS: of the EIGHT `I_DEFINITION_QUERY` operations (count corrected
+    2026-08-21) the released wire
     realizes two — `store_query` (in its version-less and versioned forms)
     and `list_queries` (the prefix list). Four have no endpoint at all:
     `delete_query` (with `Pre_has_query`: `has_query(a_query_name)` and
@@ -4265,7 +4529,7 @@ AMB-127:
     operation, because the interface declares no get-a-query function at all;
     a released wire behaviour with no service-model anchor to name it by.
   source: >-
-    SM UML/classes/i_definition_query.adoc (all nine operations, incl.
+    SM UML/classes/i_definition_query.adoc (all eight operations, incl.
     §delete_query's pre/postconditions and §store_query_set's "TODO:
     determine details.") vs the released ITS-REST 1.1.0 definition API —
     specifications/definition.openapi.yaml (only
@@ -4314,9 +4578,14 @@ AMB-128:
     committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified
     Format which does not support TEMPLATE_ID value under an equivalent
     `LOCATABLE.archetype_details.template_id` attribute of contained data."
-    None of the ten party create/update operations declares an
-    `openehr-template-id` parameter, so a FLAT party commit has no channel for
-    the template its field identifiers would have to be generated from. What a
+    That MUST is SCOPED to committing COMPOSITION, and no released PARTY
+    shape exists in the format at all — the decisive ground, re-stated
+    2026-08-21: NO operation anywhere declares an openehr-template-id
+    parameter (the header lives only in the docs text), so its absence from
+    the party routes distinguishes nothing; what does is the scope of the
+    MUST plus the mapping chapter. A FLAT party commit therefore has no
+    channel for the template its field identifiers would have to be
+    generated from, and what a
     service does with the two MIME types it is nevertheless offered on those
     routes is stated nowhere.
   source: >-
@@ -4333,8 +4602,11 @@ AMB-128:
     characteristic) and §"Relationship to Other Specifications" ("__Operational
     Templates (OPT)__: field identifiers are generated from OPT definitions";
     "serialized instances represent valid RM structures (e.g. COMPOSITION)") +
-    master05-rm_mapping.adoc (the chapter's top-level mapping is `== COMPOSITION`;
-    no demographic PARTY root mapping exists) + docs/overview/Resources.md
+    master05-rm_mapping.adoc (43 class sections with exactly ONE
+    versioned-object root among them, `== COMPOSITION` — enumeration
+    corrected 2026-08-21; no demographic PARTY root mapping exists, and no
+    PERSON/ORGANISATION/ROLE/AGENT/GROUP/PARTY section exists anywhere in
+    the simplified_formats chapters) + docs/overview/Resources.md
     §Simplified Formats (the negotiation rules and their 415/406 MUSTs) and
     §"Data representation" ("Services MUST support at least one of the openEHR
     **XML** or **JSON** canonical formats for resource representation.
@@ -4360,7 +4632,9 @@ AMB-128:
     forbids. Nothing is silently narrowed — the refusal is a declared,
     exercised branch. Gated by
     I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type (415) and
-    I_PARTY.get_party-simplified_accept (406). Reported upstream (#1574):
+    SF-SCOPE-demographic_no_simplified (406 — the gate name corrected
+    2026-08-21; no I_PARTY.get_party-simplified_accept case exists).
+    Reported upstream (#1574):
     either give the Simplified Formats a demographic shape and the party
     commits a template-naming channel, or drop the two Simplified MIME types
     from the party routes' negotiation enums.
@@ -4489,8 +4763,13 @@ AMB-131:
     class, and neither of the two ways a request can name the wrong one has an
     assigned branch. (a) A body whose `_type` is a DIFFERENT concrete PARTY
     subtype than the route's — a `ROLE` posted to `/demographic/person` — is
-    well-formed JSON and a well-formed RM object; the create declares
-    400/404/422 and no sentence says which of them covers it. (b) A
+    well-formed JSON and a well-formed RM object, but NOT schema-clean
+    against the operation's own declared request schema (Person.yaml pins
+    `_type` to `enum: [PERSON]` with x-discriminator-value — the released
+    element added 2026-08-21, which the 400 row's "syntactically invalid
+    content" could be read to cover); the create declares
+    400/404/422 and no sentence says which of them covers it, so BOTH 400
+    and 422 have a defensible released reading. (b) A
     `uid_based_id` naming a version container that EXISTS but holds another
     kind — a PERSON's `versioned_object_uid` addressed through
     `/demographic/organisation/{uid_based_id}` — is a well-formed identifier
@@ -4498,7 +4777,9 @@ AMB-131:
     says whether that is a miss or something else.
   source: >-
     ITS-REST specifications/operations/person_create.yaml (responses
-    201/400/422/404) and organisation_get.yaml (responses 200/204/404), with
+    201/400/422/404 — the 404 UNTRIGGERABLE on a create with no path
+    parameter at all, a released declaration defect noted 2026-08-21) and
+    organisation_get.yaml (responses 200/204/404), with
     their four siblings each declaring the identical sets +
     docs/overview/Requests_and_responses.md §HTTP status codes (row 422 "The
     request was well-formed but was unable to be followed due to semantic
@@ -4513,20 +4794,33 @@ AMB-131:
     silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, one position per branch, each landing on a row the status
-    table already describes. (a) WRONG SUBTYPE IN THE BODY is 422: the request
-    parses and carries a valid RM object, so the 400 row — malformed syntax,
-    syntactically invalid content — does not describe it; what cannot be
-    followed is the SEMANTIC contradiction between the resource the route
-    creates and the class the body declares, which is the 422 row verbatim.
+    table already describes. (a) WRONG SUBTYPE IN THE BODY is 422, chosen
+    over the schema-grounded 400 reading (re-argued 2026-08-21): the
+    Person.yaml `_type` enum makes a 400 defensible, but the defect is not
+    the BYTES — the identical body is perfectly valid one route over — it
+    is the SEMANTIC contradiction between the resource the route
+    creates and the class the body declares, which is the 422 row verbatim;
+    the status stays OUR pick on an unassigned branch, with both readings
+    recorded.
     (b) WRONG KIND BEHIND THE UID is 404: §Typing makes a version container
     single-typed, so an ORGANISATION container with that uid does not exist and
     the request addresses no target resource — the 404 row verbatim. Neither is
     409: nothing is duplicated and no resource state conflicts. The pair is
     deliberately split rather than merged, because they fail at different
     layers — one is a body the route cannot mean, the other an address that
-    names nothing. Gated by
-    I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body (422) and
-    I_PARTY.get_party-wrong_kind_container (404). Reported upstream (#1577):
+    names nothing. SCOPE EXTENDED 2026-08-21 to the CONTRIBUTION routes'
+    KIND refusal: the released schemas ASSIGN the refusal itself —
+    schemas/demographic/UVersionable.yaml discriminator-maps exactly the
+    five party types ("use only demographic types", its own comment) and
+    schemas/ehr/UVersionable.yaml exactly COMPOSITION/EHR_STATUS/FOLDER,
+    with SM uv_party.adoc typing demographic version content "specific to
+    PARTY" — so only the STATUS rides this entry's (a) position: a member
+    whose data names the other route family's kind is 422 by the same
+    body-the-route-cannot-mean reasoning. Gated by
+    I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body (422),
+    I_PARTY.get_party-wrong_kind_container (404), and the contribution
+    kind pair I_EHR_CONTRIBUTION.commit_contribution-ehr_kind_in_demographic
+    / -demographic_kind_in_ehr (both 422). Reported upstream (#1577):
     assign both branches on the typed demographic routes.
   disposition: fixed_handling
   upstream_issue: 1577
@@ -4697,13 +4991,20 @@ AMB-135:
     interface. (2) `I_PARTY.get_party_at_version` carries
     `Pre_has_party_version: has_party_version (a_party_version_id)`, naming a
     function the interface does not declare; the declared probe is
-    `has_party_version_id`. (3) The `I_PARTY_RELATIONSHIP` twin of that
-    operation, `get_party_relationship_at_version`, declares NO precondition at
-    all, although `has_party_relationship` exists and every other read on the
-    interface is guarded. (4) The create/update preconditions call
+    `has_party_version_id`. (3) NONE of `I_PARTY_RELATIONSHIP`'s three reads
+    (get_party_relationship / _at_time / _at_version) is guarded — its only
+    preconditions sit on update and delete — and the cross-interface
+    asymmetry is that `I_PARTY` guards get_party and get_party_at_version
+    while leaving get_party_at_time unguarded (corrected 2026-08-21: the
+    earlier "every other read on the interface is guarded" was false). (4)
+    The CREATE preconditions (create_party, create_party_relationship —
+    the two `valid_content` sites in the chapter; scope corrected
+    2026-08-21) call
     `valid_content (a_version)` while `I_VALIDITY_CHECKER` declares
     `content_valid` — the same naming defect AMB-77 records on
-    `I_EHR_COMPOSITION`. (5) `I_DEMOGRAPHIC_SERVICE.create_party_relationship`
+    `I_EHR_COMPOSITION`; the two UPDATES declare the error `content_invalid`
+    with NO content-validity precondition at all — the defect-(5) shape,
+    unguarded rather than misnamed. (5) `I_DEMOGRAPHIC_SERVICE.create_party_relationship`
     lists the error `definition_unknown` but carries only `Pre_content_valid` —
     no `definitions_valid` precondition to raise it, where its `create_party`
     sibling carries both. (6) Every identifier on both interfaces is typed bare
@@ -4713,7 +5014,8 @@ AMB-135:
     (RM common master06 §Version Identification) and whose wire form is exactly
     that. (7) `I_PARTY.delete_party` postulates `Post_party_deleted: not
     has_party (a_versioned_party_id)` — a PHYSICAL delete — which the RM
-    forbids for a versioned repository.
+    forbids for a versioned repository; `delete_party_relationship` carries
+    the identical postcondition shape (twin added 2026-08-21).
   source: >-
     SM UML/classes/i_demographic_service.adoc (§i_party / §i_party_relationship
     — the untyped parameters; §create_party's `Pre_party_definitions_valid` +
@@ -4984,9 +5286,12 @@ AMB-139:
     bodyless success — but which also means a case expecting `ok_empty` passes
     on either code and no case can require or distinguish the asynchronous
     branch. That is a deliberate, recorded limit of the instrument, not
-    coverage. The vocabulary obstacle behind it is GONE: the 2026-07-28
-    schedule release added the `accepted` kind, so the branch is now nameable
-    and the absorption is a pending migration rather than a hard boundary (the
+    coverage. The vocabulary obstacle behind it is GONE and the MIGRATION
+    LANDED (status corrected 2026-08-21): outcomes.yaml defines the
+    `accepted` kind and both admin bindings declare it beside the 204 —
+    what remains, permanently, is that the release gives the asynchronous
+    arm no client-selectable TRIGGER, so the branch is declared and
+    nameable but unreachable by construction (the
     `admin-delete-async-acceptance-branch` wire-surface element carries it).
     This SUT is synchronous and always answers `204`.
     Reported upstream (#1585).
@@ -5029,7 +5334,10 @@ AMB-140:
     appropriate") — the silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, three positions, each landing on released ground and none
-    inventing a status the operation does not declare. (a) A SUBSET LIST IS
+    CONFLICTING with a predefined code (corrected 2026-08-21: position (c)'s
+    400 is NOT among the operation's declared 202/204/404/405 — it is an
+    ADDITIONAL status under the table's "Additional status codes MAY be
+    used" clause, the same device AMB-139 relies on). (a) A SUBSET LIST IS
     DELETE-WHAT-EXISTS → `204`. Every id the caller named that resolves to an
     EHR is deleted; an id that resolves to nothing contributes nothing and does
     not fail the call. Grounds: the operation's only stated purpose is to delete
@@ -5202,9 +5510,12 @@ AMB-143:
     operations describe the deletion and stop: no sentence states that a
     subsequent read of the deleted `ehr_id` is a 404 rather than, say, a 410 or
     a tombstone; none states whether the same `ehr_id` may be created again
-    (`ehr_create_with_id` declares its 409 for "a conflict with an already
-    existing EHR with the same subject id, namespace pair", which says nothing
-    about an id that used to exist); and none states whether a deleted EHR's
+    (`ehr_create_with_id` declares 409_EHR_with_id.yaml — "the supplied
+    `ehr_id` is already used by an EXISTING EHR"; the subject-pair wording
+    belongs to the id-less create's 409_EHR.yaml — file corrected
+    2026-08-21, and the correction STRENGTHENS re-creation: the only
+    conflict trigger is conditioned on an existing EHR, which a physically
+    deleted one is not); and none states whether a deleted EHR's
     ids may be reused by the server. The cascade itself is given by EXAMPLE, not
     by extension: "All resources associated with or owned by the specified EHR
     (**such as** COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their
@@ -5219,8 +5530,8 @@ AMB-143:
     post-delete or re-creation statement in either) +
     specifications/responses/204_deleted_hard.yaml (the hard-delete sentence,
     which describes the response and not the subsequent state) +
-    operations/ehr_create_with_id.yaml + responses/409_EHR.yaml (the quoted
-    subject-conflict wording — the only 409 the create declares) +
+    operations/ehr_create_with_id.yaml + responses/409_EHR_with_id.yaml (the
+    already-used-ehr_id wording — the only 409 the with-id create declares) +
     responses/404_unknown_ehr_id.yaml ("`404 Not Found` is returned when an EHR
     with `ehr_id` does not exist") + SM UML/classes/i_admin_service.adoc
     §physical_ehr_delete (`Pre_has_ehr` and the error `ehr_id_does_not_exist` —
@@ -5228,7 +5539,8 @@ AMB-143:
     SM i_definition_query.adoc §delete_query, which does state
     `Post_query_deleted`) + RM UML/classes/org.openehr.rm.ehr.ehr.adoc
     §Attributes (the aggregate the delete destroys: `compositions`,
-    `ehr_status`, `directory`, `contributions`, `tags`, `ehr_access`) — the
+    `ehr_status`, `directory`, `folders`, `contributions`, `tags`,
+    `ehr_access` — `folders` added 2026-08-21) — the
     silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, derived from what the delete IS rather than from a missing
@@ -5400,10 +5712,12 @@ AMB-146:
     its own attribute list. The sentence reads "The following attributes in the
     `.well-known/openid-configuration` must match those defined in the OAuth
     2.0 + OpenID Connect Discovery specification as well as the FHIR SMART
-    metadata specification", and the list it introduces ends with
-    `capabilities` — which is not an OpenID Provider Metadata member at all but
+    metadata specification", and the 14-item list it introduces includes
+    `capabilities` (item 13; the last is code_challenge_methods_supported —
+    positions corrected 2026-08-21) — which is not an OpenID Provider
+    Metadata member at all but
     a SMART-configuration member, defined by master04's OWN §Capabilities
-    section three sections later ("The `capabilities` section advertises
+    section two sections later ("The `capabilities` section advertises
     supported SMART features as an array value"). Everything around the
     sentence is about the other document: the chapter opens by extending "the
     FHIR `.well-known/smart-configuration` endpoint definition", the example
@@ -5414,8 +5728,8 @@ AMB-146:
     a different document than the one the whole chapter defines.
   source: >-
     ITS-REST docs/smart_app_launch/master04-service_discovery.adoc
-    §Authentication Endpoints (the quoted sentence and its 14-item list, whose
-    last item is `capabilities`) vs the same file's §Service Discovery ("The
+    §Authentication Endpoints (the quoted sentence and its 14-item list,
+    carrying `capabilities` as item 13) vs the same file's §Service Discovery ("The
     *SMART Service Discovery* mechanism extends the FHIR
     `.well-known/smart-configuration` endpoint definition"; "Responses to
     `/.well-known/smart-configuration` endpoint must be served with the
@@ -5581,7 +5895,7 @@ AMB-149:
     absolute-URL requirement itself is NOT part of this silence — it is stated,
     and this server satisfies it from the operator-supplied external origin
     (`smart.public_base_url`, boot-required when SMART is enabled), wire-tested
-    in `app/ferroehr-rest/tests/smart_http.rs`. Reported upstream (#1595).
+    in `app/ferroehr-rest/tests/it/smart_http.rs`. Reported upstream (#1595).
   disposition: fixed_handling
   upstream_issue: 1595
 
@@ -5610,10 +5924,15 @@ AMB-150:
     ("the following openEHR-specific parameters may be included in the token
     response"), so a token can hold `patient/composition-*.r` and carry no
     resolvable EHR at all, and nothing says what the Platform then does.
-    (6) MULTI-SCOPE COMPOSITION AND COMPARTMENT MATCHING. Nothing says how
-    several granted scopes combine when more than one could permit a request,
-    and nothing says by what value the `patient` compartment is matched to a
-    request's EHR.
+    (6) MULTI-SCOPE COMPOSITION. Nothing says how
+    several granted scopes combine when more than one could permit a
+    request. The compartment-MATCHING half of the old (6) is RELEASED after
+    all (narrowed 2026-08-21): master04 §Capabilities binds the EHR-level
+    launch context to the `ehrId` token claim ("context-openehr-ehr: …
+    requested via launch/patient scope and conveyed via the ehrId token
+    claim"), which with master08's "restricted to data within that
+    patient's EHR" fixes the match value — only the FHIR-`patient`-claim
+    FALLBACK and the composition rule stay ours.
   source: >-
     ITS-REST docs/smart_app_launch/master08-scopes.adoc §Scopes (second
     paragraph: "The _Platform_ must validate requested scopes against …") +
@@ -5623,7 +5942,10 @@ AMB-150:
     operation) + master07-authorization.adoc §Context Selection (the token
     response table and its introducing sentence "the following openEHR-specific
     parameters may be included in the token response") + the whole
-    smart_app_launch tree, grep-verified to contain no HTTP method, no openEHR
+    smart_app_launch tree, grep-verified to contain no HTTP method AGAINST AN
+    OPENEHR ROUTE (the single method mention is master07's "POSTing to the …
+    token_endpoint" — the OAuth endpoint; claim narrowed 2026-08-21), no
+    openEHR
     route path, no status code, and no operation identifier + ITS-REST
     docs/overview/Requests_and_responses.md §"Authentication and authorization"
     ("If authentication and authorization are required, services MUST properly
@@ -5671,10 +5993,15 @@ AMB-150:
     broadest permitting compartment decides (System over User over Patient), so
     a `system/` grant is not narrowed by the coincidental presence of a
     `patient/` one (`broaden` in `enforce.rs`); and when the patient
-    compartment does decide, the token's claim is compared to the target EHR's
+    compartment does decide, the RELEASED half is honoured first — the
+    `ehrId` token claim master04 §Capabilities binds the launch context to
+    (`launch_context_ehr_id` in `enforce.rs` prefers `ehrId`; ownership
+    split recorded 2026-08-21) — and only past it does the comparison fall
+    back to the FHIR `patient` claim and the target EHR's
     `EHR_STATUS.subject.external_ref` (`subject_gate` in
     `app/ferroehr-rest/src/extensions/access/pep.rs`), the only value the RM
-    gives an EHR that identifies its patient. Both are our own design where the
+    gives an EHR that identifies its patient. The fallback and the
+    composition rule are our own design where the
     spec is silent. Reported upstream (#1596).
   disposition: fixed_handling
   upstream_issue: 1596
@@ -5791,7 +6118,7 @@ AMB-151:
     and its launch-context binding, the `composition-`/`aql-` nouns, the four
     non-`*` pattern rows, the inert demotion), a coverage gap that now shrinks
     case by case because the machinery exists. Both stay proven meanwhile by
-    the server's own tests — `app/ferroehr-rest/tests/smart_http.rs` and the
+    the server's own tests — `app/ferroehr-rest/tests/it/smart_http.rs` and the
     grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs` —
     which is evidence about the server and the parser, never about the wire.
     THE POSTURE IS THE BASELINE (re-adjudicated for PR #611; the earlier
@@ -6141,7 +6468,7 @@ AMB-154:
     whenever a DV_CODED_TEXT is emitted, the CODE_PHRASE row's unconditional
     reading, since an undefined "external terminologies" exemption cannot narrow
     a stated MUST (D-07). Each of these is proven row-by-row by the master05
-    semantic battery (`crates/openehr-its/tests/master05_tables.rs`), which
+    semantic battery (`crates/openehr-its/tests/it/master05_tables.rs`), which
     asserts the Flat Path, Flat type and RM landing of every mapping row rather
     than the published cell. Reported upstream (#1600) as one editorial
     docket.
@@ -6172,11 +6499,14 @@ AMB-155:
     (indexed AND suffixed AND indexed again), `ctx/link:0|type` (indexed +
     suffixed) and `ctx/health_care_facility|name` (suffixed). No example, rule or
     algorithm step says how any of those nest inside the `ctx` object. (3) `|raw`
-    IN STRUCTURED. §"Raw canonical JSON" defines the `|raw` bypass with a FLAT
-    example only, and never says whether the bypass exists in STRUCTURED, nor —
-    if it does — whether the embedded canonical object sits under a `"|raw"`
-    property of the leaf's array element or somewhere else. The §"Conversion
-    Between Formats" algorithms do not mention `|raw` in either direction.
+    IN STRUCTURED — the EXISTENCE half is ASSIGNED (re-grounded 2026-08-21):
+    §"Raw canonical JSON" states the bypass "enables direct embedding of
+    pre-serialized openEHR canonical JSON into flat OR STRUCTURED format
+    inputs", so the variant applies by released text; what stays open is
+    only the STRUCTURED PLACEMENT — whether the embedded canonical object
+    sits under a `"|raw"` property of the leaf's array element or somewhere
+    else (the section's one example is FLAT) — and the §"Conversion
+    Between Formats" algorithms' silence about `|raw` in either direction.
   source: >-
     ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §"Structured
     format" (the six Syntax Rules and the single worked example: nested objects,
@@ -6185,7 +6515,7 @@ AMB-155:
     algorithms; Flat-to-Structured step 3c/3d speaks only of the case where "an
     attribute suffix exists", Structured-to-Flat step 3 only of "properties with
     a pipe prefix" — neither names the suffix-less part) + §"Raw canonical JSON"
-    (the `|raw` bypass, FLAT example only, no STRUCTURED form) + the same file's
+    (the `|raw` bypass — "flat or structured format inputs", the one example FLAT) + the same file's
     §"Field Identifiers" (the six-component list introduced as what "The
     Simplified Formats use", item 6 being the `|raw` bypass — variant-neutral) +
     master03-design_rationale.adoc §"Structured format" (the second worked
@@ -6324,18 +6654,24 @@ AMB-157:
     listed resources are the whole permitted surface" and "the listed resources
     are the openEHR part of a possibly larger surface" — are consistent with
     every released sentence, and no released clause permits, forbids, or bounds
-    additional routes. This server takes the second reading and serves
-    FOURTEEN extension families beside the released groups.
+    additional routes. This server takes the second reading and serves the
+    extension families the wire_surface served_extensions axis enumerates
+    beside the released groups (the count lives THERE, never here — a prose
+    copy rots; corrected 2026-08-21).
   source: >-
-    ITS-REST specifications/docs/overview/Resources.md §Resources ("For the
+    ITS-REST specifications/docs/overview/Resources.md preamble (the document
+    opens — before its first heading — with "For the
     openEHR API, a **resource** is an instance object of a specific openEHR
     class (type) that can be identified, addressed, handled or managed by the
     service", followed by the resource-kind list and "For a complete list of
     available types, refer to the class index") — a definition of the openEHR
-    resource set, never a constraint on the URI space around it. The overview's
-    only "Additional … MAY" sentence is about STATUS CODES, not routes
+    resource set, never a constraint on the URI space around it. The
+    overview's two "Additional/other … MAY" sentences concern STATUS CODES
+    and DATA FORMATS, not routes
     (Requests_and_responses.md §HTTP status codes: "Additional status codes MAY
-    be used as long as they do not conflict with the predefined codes"). Silence
+    be used as long as they do not conflict with the predefined codes";
+    Resources.md §Data representation: "other alternative formats MAY be
+    supported as well" — enumeration corrected 2026-08-21). Silence
     CONFIRMED first-hand: a grep of specifications/docs/** for an
     additional/vendor/proprietary/custom endpoint clause returns ZERO hits, and
     the overview chapter set contains no "extension" sentence at all. The
@@ -6387,8 +6723,10 @@ AMB-158:
   source: >-
     ITS-REST specifications/docs/system/Description.md — the whole System API
     chapter, a STUB carrying only Purpose, Related Documents and Status; it
-    contains no endpoint list, no manifest field list and no "endpoints"
-    occurrence. Plus docs/overview/Requests_and_responses.md §HTTP Methods
+    contains no endpoint list and no manifest FIELD list (its purpose
+    sentence does say "describes service endpoints, resources and
+    operations" — absence claim corrected 2026-08-21). Plus
+    docs/overview/Requests_and_responses.md §HTTP Methods
     (OPTIONS: "Describe the communication options for the target resource"),
     the only released sentence about the method's meaning. The `endpoints`
     member itself appears ONLY in the RELEASED OAS
@@ -6459,8 +6797,13 @@ AMB-159:
   source: >-
     ITS-REST specifications/docs/overview/Requests_and_responses.md §"HTTP
     status codes", row `408 Request Timeout` ("Request maximum execution time is
-    reached, therefore the server aborted the request") — the sole released
-    mention of the branch. Silence CONFIRMED first-hand across the entire
+    reached, therefore the server aborted the request") — plus, cited AS the
+    OAS, responses/408_Query.yaml, which all SIX query-execute operations
+    declare with the same server-side cause ("maximum query execution time
+    reached, therefore the server aborted the execution of the query") —
+    so the branch is declared on both tiers while neither supplies a client
+    TRIGGER (sole-mention claim corrected 2026-08-21). Silence on the
+    trigger CONFIRMED first-hand across the entire
     released QUERY chapter: docs/query/Request.md, Response.md, Query_types.md
     and Qualified_query_name.md contain no occurrence of `408`, "timeout" or any
     execution-time concept (grep-verified), and §"Common Headers and Query
@@ -6552,9 +6895,11 @@ AMB-161:
     read ("a released wire behaviour with no service-model anchor to name it
     by"), here in its complete form: not one operation missing from an
     interface, but an entire API with no interface at all. NOT a one-off: the
-    ITEM_TAG surface is the second and larger instance — the whole vendored
-    docs/specs/openehr/SM/docs/ tree contains ZERO occurrences of "tag"
-    (grep-verified: no interface, no class, no attribute), while the released
+    ITEM_TAG surface is the second and larger instance — no SM interface,
+    class or attribute models ITEM_TAG (grep claim narrowed 2026-08-21: the
+    bare string "tag" does occur in SM as the query-parameter "tagged String
+    values" prose and an RFC 5646 language-region tag — none of it a tag
+    MODEL), while the released
     ITS-REST defines twenty-three tag operations
     (specifications/operations/{ehr,demographic}_tags_get.yaml, the EHR-side
     {composition,ehr_status}_tags_{get,update,delete}.yaml and the demographic
@@ -6575,7 +6920,11 @@ AMB-161:
     abstract counterpart being the RM's own VERSIONED_OBJECT.revision_history();
     I_ITS_REST_VERSIONED_PARTY.versioned_party_get for the demographic container
     read, whose two EHR-side twins DO have SM anchors while I_PARTY declares no
-    container read at all — the last two extended 2026-07-28 when AMB-136 was
+    container read at all; and I_ITS_REST_SMART.discovery for the SMART
+    well-known document, the SM modelling no Platform interface and SMART
+    having no OpenAPI group — the FIFTH family, added to this enumeration
+    2026-08-21 (the pinned table spans 29 operations across five
+    pseudo-interfaces) — the VERSIONED_PARTY and REVISION_HISTORY pair extended 2026-07-28 when AMB-136 was
     re-adjudicated against this mechanism), whose
     operation name is the RELEASED operationId verbatim so every row traces to
     exactly one specifications/operations/<operationId>.yaml, which is a
@@ -6847,7 +7196,7 @@ AMB-167:
     negotiated `Content-Type` and an XML document entity — never a root
     name), `<family>-xml-unsupported` gates the mirror
     `-xml_not_acceptable` row (the §XML Format 406 MUST, the release's own
-    designated answer for an Accept it cannot fulfil). The undeclared
+    designated answer for an Accept it cannot fulfill). The undeclared
     sibling is not-applicable, never a failure. Families: `ehr`,
     `ehr-status`, `directory`, `party` (one seam for all five PARTY types —
     the demographic routes share one binding family and one document
@@ -6913,16 +7262,26 @@ AMB-167:
     keep their codec-derived fixtures for exactly that reason: choosing
     the generic `items`+`xsi:type` spelling instead would be the
     catalogue endorsing a wire form for these resources, which is the
-    invention this entry forbids. Affected rows, all now
-    `<family>-xml-unsupported` + `unsupported_media`:
+    invention this entry forbids. Affected rows, all now on their OWN
+    per-direction pair `<family>-xml-write-refused` (+ `unsupported_media`)
+    — SPLIT from the read pair 2026-08-21, because a single per-family arm
+    made the read-offered/write-refused posture (which this entry itself
+    calls conformant) UNREPRESENTABLE: a party declaring `-supported` for
+    its XML reads silently deselected every write-refusal row. The
+    `-write-accepted` sibling is DECLARATION-ONLY by construction (the
+    AMB-61 tag-without-a-case pattern): no accepting write case can exist,
+    since the only document a case could send is one no published XSD
+    admits, and a conformant XSD-validating server MUST refuse it — an
+    accepting party declares the tag so the refusal rows deselect honestly
+    rather than failing it. The rows:
     I_EHR_SERVICE.create_ehr-xml (whose payload is an EHR_STATUS, so it is
     the EHR_STATUS document question wearing the EHR family's tag),
     I_EHR_DIRECTORY.{create,update}_directory-xml,
     I_EHR_STATUS.{set,clear}_ehr_{queryable,modifiable}-xml_body,
     I_DEMOGRAPHIC_SERVICE.create_party-xml and
     I_DEMOGRAPHIC_SERVICE.update_party-xml (SM `I_PARTY.update_party`).
-    The `-supported` tags are unaffected as ICS declarations: every one of
-    them still gates READ rows, which is all this entry ever grounded.
+    The READ `-supported`/`-unsupported` pair is unaffected: it gates the
+    read rows, which is all it ever grounded.
     DOCUMENTED families are untouched — COMPOSITION writes keep their
     `<composition>` payload because Composition.xsd declares that global
     element in BOTH bundles, so the request payload conforms as the MUST
@@ -6942,7 +7301,7 @@ AMB-167:
     AMB-165 report_only and unexercised (its shape, not merely its root
     name, is withheld). ICS-COMPLETENESS CAVEAT: the verdict pipeline's
     option_select review is satisfied by ANY one declared option of an
-    entry, so this entry's ten tags are checked as a set, not per family; a
+    entry, so this entry's twenty tags are checked as a set, not per family; a
     statement that declares no arm for a family silently deselects both of
     its rows rather than being flagged. Reported upstream (#1607):
     reconcile the XSD document-element inventory with the REST resource
@@ -6964,14 +7323,26 @@ AMB-167:
     - versioned-party-xml-unsupported
     - contribution-xml-supported
     - contribution-xml-unsupported
+    - ehr-xml-write-accepted
+    - ehr-xml-write-refused
+    - ehr-status-xml-write-accepted
+    - ehr-status-xml-write-refused
+    - directory-xml-write-accepted
+    - directory-xml-write-refused
+    - party-xml-write-accepted
+    - party-xml-write-refused
   upstream_issue: 1607
 AMB-169:
   ambiguity: >-
     NOT an openEHR ambiguity in the operative sense — a DECLARATION of an
     implementation-defined choice the released text leaves entirely open (the
     AMB-157 treatment, applied to a media-type parameter instead of a route
-    space). openEHR publishes canonical XML in TWO wire lineages that differ
-    only by the namespace a document declares — `http://schemas.openehr.org/v1`
+    space). openEHR publishes canonical XML in TWO wire lineages whose ELEMENT
+    NAMES and xsi:type spellings coincide while the bundles differ in
+    CONTENT (AMB-185 pins 50 absent classes and 23 attribute divergences —
+    the earlier "differ only by the namespace" premise corrected
+    2026-08-21); the WIRE choice this entry declares is the root namespace —
+    `http://schemas.openehr.org/v1`
     (Release-1.0.2, which the schema repository still presents as the STABLE
     release) and `http://schemas.openehr.org/v2` (Release-2.0.0, marked TRIAL
     upstream). Released ITS-REST names neither: §XML Format requires
@@ -7031,9 +7402,12 @@ AMB-169:
     PARAMETER IS NOT SPEC-DERIVED — it is the declaring party's own
     design/extension, and this register entry exists precisely so it can never
     be mistaken for a released mechanism; the case
-    I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2 asserts only that
-    the requested lineage is what comes back, on the declared branch, under
-    profile OPTIONS, so no CORE or STANDARD verdict rests on it. What IS
+    PAIR I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v1/_v2 asserts
+    only that the requested lineage is what comes back, on the declared
+    branch — deselection rides the option gate plus the canonical-xml format
+    axis, NOT the tier: both cases are profiles [CORE] (tier claim corrected
+    2026-08-21), and three lineage-agnostic root cases cite this entry for
+    asserting neither lineage. What IS
     released and therefore NOT part of this entry: the refusal shapes a service
     owes once it cannot serve what was asked — an unfulfillable `Accept` is 406
     and an unprocessable XML payload is 415 (§XML Format, both MUSTs) — which
@@ -7048,29 +7422,37 @@ AMB-170:
   ambiguity: >-
     NOT an openEHR ambiguity — a DECLARATION, in the AMB-157 style, so the
     measured workload's capability coverage can never be mistaken for a
-    spec-derived obligation. No released openEHR component says anything about
-    a MEASURED workload at all: it does not define one, does not say which
-    capabilities a load simulation must touch, and does not say what follows
-    when a claimed capability is never exercised under load. The whole
+    spec-derived obligation. The released ground is STRONGER than mere
+    omission (re-grounded 2026-08-21): the CNF guide's own §Product Scope
+    EXCLUDES the area — "Non-functional conformance (performance, etc) is
+    not addressed by this guide" — so no released component defines a
+    measured workload, which capabilities a load simulation must touch, or
+    what follows when a claimed capability is never exercised under load.
+    The whole
     measured-performance instrument — the hospital simulation, its journeys,
     its arrival shapes, the volumetric classes it earns — is our own
     design/extension, and so is the decision that a particular claimed
-    capability sits outside it. Exactly two kinds of capability sit outside a
-    sustained open-loop measurement, and both reasons are ours, not
-    openEHR's: (1) DESTRUCTIVE MID-MEASUREMENT — the arrival would erase part
+    capability sits outside it. The exclusions the matrix carries today
+    (enumeration corrected 2026-08-21: seven workload_exclusion rows in
+    FOUR kinds) are all DECISIONS of ours, not openEHR's:
+    (1) DESTRUCTIVE MID-MEASUREMENT — the arrival would erase part
     of the population-anchored corpus the measured window is bound to, so the
     class the run earns would no longer describe the declared volume
-    (physical deletion, and the released two-operation ADMIN API that IS that
-    erase pair); (2) NO REQUEST TO SEND — the capability has neither a
-    released ITS-REST wire nor a served extension route, so a black-box load
-    instrument has nothing to drive at all (the same nine capabilities whose
-    `evidence_exception` records the identical absence; both lapse together
-    the day the product serves the routes). "Not reached yet" is NOT a
-    legitimate third kind and no longer appears: every other claimed
-    capability is exercised by the simulation. Both surviving kinds are
+    (physical deletion, the archive pair, and the released two-operation
+    ADMIN API that IS that erase pair); (2) DEFINITION ADMINISTRATION — not
+    a sustainable per-patient arrival (the ADL 1.4 archetype family); (3)
+    ONE-SHOT BY NATURE (the dump/load pair); (4) THE BULK LOAD IS EVERY
+    MEASURED RUN'S OWN SEEDING PHASE (BulkEhrLoad). No evidence_exception
+    survives anywhere in the artifact tree — the earlier "same nine
+    capabilities whose evidence_exception records the identical absence"
+    clause described a state that no longer exists. "Not reached yet" is
+    NOT a legitimate kind and does not appear: every other claimed
+    capability is exercised by the simulation. All four kinds are
     DECISIONS and must read as decisions.
   source: >-
-    CNF guide master03-overview.adoc §Product Scope — the assessment table
+    CNF guide master03-overview.adoc §Product Scope — the DECISIVE sentence
+    (cited 2026-08-21): "Non-functional conformance (performance, etc) is
+    not addressed by this guide" — plus the assessment table, which
     enumerates exactly what conformance covers for a Platform Component: "API
     conformance" ("Conformance of the _implemented APIs_ to the published
     APIs, in a concrete API technology") and "Data Validation conformance"
@@ -7173,7 +7555,9 @@ AMB-172:
     the archetype and outside openEHR's own specification, and never states an
     outcome for a query that cannot be answered. Confirmed first-hand in the
     two other places the question could have been settled: AM docs/AOM2/
-    master08-validation.adoc §Phase 2 lists the terminology-binding checks
+    master08-validation.adoc §Phase 1 - Basic Integrity ==== Basic
+    Terminology Validation (section corrected 2026-08-21) lists the
+    terminology-binding checks
     (VTTBK, VTCBK, VETDF) as ARCHETYPE-validation rules over the binding's own
     well-formedness, saying nothing about instance data or about server
     availability; and AM docs/AOM1.4/master04-constraint_model_package.adoc
@@ -7230,8 +7614,10 @@ AMB-173:
     shortcut equivalence); BASE
     docs/architecture_overview/master10-archetypes.adoc §Design-time
     Relationships between Archetypes (parent-archetype queries retrieve
-    specialisation-child data); AM docs/AOM1.4/master07 §Querying /
-    §Supporting Archetype-based Querying (the archetype-based matching set).
+    specialisation-child data); AM docs/Identification/master07-referencing.adoc
+    §Supporting Archetype-based Querying (the archetype-based matching set —
+    file corrected 2026-08-21: AOM1.4's master07 is the Terminology Package
+    and carries no §Querying).
   handling: >-
     The subsumption reading is normative for a full archetype-HRID
     predicate: a predicate naming archetype X matches data whose root
@@ -7273,9 +7659,13 @@ AMB-174:
   source: >-
     QUERY docs/AQL/master03-syntax.adoc §TOP (deprecated; the direction is
     described only as "where to start") + §ORDER BY (default ordering
-    "undefined") + docs/AQL/master07-grammar §grammar (`top` still admits the
-    direction) + released ITS-REST query Response.md (400 defined for an
-    invalid query, not for an under-defined one) — silence CONFIRMED
+    "undefined") + the released AqlParser.g4 `top` rule, reaching released
+    status through master07-grammar.adoc's include (`top` still admits the
+    direction) + the released OAS responses/400_Query.yaml, cited AS the
+    OAS ("unable to execute the query due to invalid input … invalid
+    syntax" — a trigger a GRAMMATICAL `TOP n BACKWARD` never reaches; the
+    docs-text query Response.md carries no status code at all — re-cited
+    2026-08-21) — silence CONFIRMED
     first-hand.
   handling: >-
     The TOP-BACKWARD case carries this entry and is report_only: the outcome
@@ -7288,21 +7678,27 @@ AMB-174:
 AMB-175:
   ambiguity: >-
     SPEC SILENCE on the version SCOPE a VERSION standard predicate filters
-    within. The released grammar (QUERY master07 / AqlParser.g4
-    `versionPredicate: LATEST_VERSION | ALL_VERSIONS | standardPredicate`)
+    within. The released grammar (AqlParser.g4
+    `versionPredicate: LATEST_VERSION | ALL_VERSIONS | standardPredicate`,
+    reaching released status ONLY through master07-grammar.adoc's include —
+    the VERSION/LATEST_VERSION/ALL_VERSIONS tokens appear in NO QUERY prose
+    chapter; scope corrected 2026-08-21, the chapter's own embedded
+    normative grammar being the sanctioned ground)
     admits a standard predicate over version metadata as the third
-    alternative of the version class expression, and QUERY master03
-    §Predicates/§Class expressions shows the form — but no released text
+    alternative of the version class expression, while master03
+    §Predicates/§Class expressions grounds only the standard-predicate FORM
+    and the general class-expression shape — no released text
     says whether such a predicate selects from ALL versions of the
     container or filters only the LATEST: `[commit_audit/change_type/
     defining_code/code_string='249']` over a created-then-amended object
     answers 1 under the former reading and 0 under the latter. (#970)
   source: >-
-    QUERY docs/AQL/master07-grammar.adoc §grammar (versionPredicate,
-    quoted from the released AqlParser.g4); QUERY
+    QUERY docs/AQL/grammar/AqlParser.g4 versionPredicate (included by
+    master07-grammar.adoc — the grammar is the only released statement of
+    the form); QUERY
     docs/AQL/master03-syntax.adoc §Predicates/Standard predicate, §Class
-    expressions; RM common master06-change_control_package.adoc
-    §Versioned Object (the version-set model the predicate ranges over).
+    expressions (the FORM only); RM common master06-change_control_package.adoc
+    §Versioned Objects (the version-set model the predicate ranges over).
   handling: >-
     The predicate selects from the container's WHOLE version set. WHY:
     the grammar places the three forms as PEER alternatives of
@@ -7365,14 +7761,17 @@ AMB-176:
     Report-only, no gate. The generated RM types mirror the vendored BMM
     faithfully, so `FEEDER_AUDIT` has no `change_type` member to populate or
     validate, and inventing one would fork the spec model — exactly what the
-    generated layer exists to prevent. The canonical-JSON reader ignores
-    unknown keys by design (an RM-version-skew tolerance), so a client that
-    follows §Structural Correspondence literally and sends
-    `feeder_audit.change_type` has that member silently dropped: it is not
-    refused, but it is not stored or served either, and no released sentence
-    makes either outcome wrong. No case can gate a behaviour with no
-    released model behind it; the feeder-audit round-trip cases therefore
-    exercise only the five modelled FEEDER_AUDIT attributes. Recording the
+    generated layer exists to prevent. The canonical-JSON reader is STRICT
+    (undeclared keys refused — corrected 2026-08-21; the earlier
+    "ignores unknown keys by design" description was false), so a client
+    that follows §Structural Correspondence literally and sends
+    `feeder_audit.change_type` is REFUSED with the unknown-field error
+    naming FEEDER_AUDIT and its legal member set: the released instruction
+    is unfollowable against a reader built strictly from the released
+    model, which states the contradiction more sharply than a silent drop
+    would. The refusal is pinned by its own invalid-twin case (the
+    coverage law's both-twins rule); the feeder-audit round-trip cases
+    exercise the five modelled FEEDER_AUDIT attributes. Recording the
     contradiction upstream is the only sound action — flips to a gating
     expectation only if a future RM release adds the attribute (or reworks
     the sentence onto an existing mechanism).
@@ -7438,76 +7837,33 @@ AMB-177:
     error at the wire — it holds under reading (b) directly and under reading
     (a) via the §Attributes sentence, so it needs no choice between the two.
     The CONVERSE ARM ("an archetype-HRID node must carry
-    `archetype_details`") is NOT enforced: it exists only under reading (b),
-    and reading (a) makes the whole invariant a tautology, so a refusal there
-    would rest on a reading the released text does not pick. Separately and
+    `archetype_details`") is PARTLY ASSIGNED (narrowed 2026-08-21): (i)
+    master03 §The LOCATABLE Class states in the indicative that
+    archetype_details "is non-Void for archetype root points in data", and
+    (ii) FIVE classes declare their own `Is_archetype_root:
+    is_archetype_root` invariant (COMPOSITION, ENTRY, EHR_STATUS,
+    EHR_ACCESS, PARTY) — asserting the function TRUE forces
+    archetype_details /= Void under reading (b) via the xor and under
+    reading (a) directly, so for THOSE five the requirement is released and
+    the roots' presence IS enforced. What stays reading-dependent is the
+    converse arm on LOCATABLE subtypes with no such invariant (SECTION,
+    CLUSTER, ELEMENT, ITEM_TREE, FOLDER, ACTIVITY, …): there a refusal
+    would rest on a reading the released text does not pick, so nested
+    archetype-HRID nodes are NOT refused for omitting archetype_details.
+    Separately and
     independently of this ambiguity, the ROOT-IDENTITY rule IS enforced
     wherever `archetype_details` is actually present — `archetype_node_id`
     must equal the stringified `archetype_details.archetype_id` — because
     that comes from the §Attributes sentence, not from `is_archetype_root`.
-    Corroboration only, never the ground for the above: the CNF valid data
-    sets and the canonical-JSON corpus systematically omit `archetype_details`
-    on nested archetype roots, so reading (b)'s converse arm would reject
-    released reference data. Flips to a gating expectation only if a future
+    Corroboration for the NESTED boundary only, never the ground: the CNF
+    valid data sets omit `archetype_details` on nested archetype roots
+    while the catalogue's own fixtures were normalized to ADD it at
+    top-level ENTRY roots (the Is_archetype_root invariant), so the split
+    above matches the released reference data in both directions. Flips
+    further only if a future
     RM release defines `is_archetype_root ()`.
   disposition: report_only
   upstream_issue: 1614
-AMB-178:
-  ambiguity: >-
-    A RELEASED RM ATTRIBUTE HAS NO SLOT IN THE ITS-XML LINEAGE THE CDR SERVES
-    BY DEFAULT. RM 1.2.0 declares `FEEDER_AUDIT_DETAILS.other_details:
-    ITEM_STRUCTURE` at 0..1 ("Optional attribute to carry any custom
-    meta-data. May be archetyped."). The vendored ITS-XML v1 bundle — tag
-    `Release-1.0.2v2`, target namespace `http://schemas.openehr.org/v1`, the
-    RELEASED-STABLE lineage and the CDR's default served namespace — does NOT
-    declare it: its `FEEDER_AUDIT_DETAILS` complexType is a six-element
-    sequence ending at `version_id`. The v2 bundle (tag `Release-2.0.0v2`) is
-    split by RM release and straddles the addition: its RM `Release-1.0.2`,
-    `Release-1.0.3` and `Release-1.0.4` `Common.xsd` end at `version_id` too,
-    while `Release-1.1.0` and `latest` DO carry
-    `<xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>`
-    as the trailing particle. So the attribute is expressible in canonical XML
-    only under the v2 lineage's newer RM schema sets, and the released RM
-    model has no v1-namespace serialization at all. The RM is silent on which
-    XSD generation a canonical-XML document must satisfy, and no ITS-XML
-    release withdraws the v1 bundle, so there is no released sentence making
-    either the emission or its non-validatability wrong.
-  source: >-
-    RM common docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc
-    §Attributes ("*0..1* | *other_details*: `ITEM_STRUCTURE` | Optional
-    attribute to carry any custom meta-data. May be archetyped.");
-    crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/BaseTypes.xsd
-    `<xs:complexType name="FEEDER_AUDIT_DETAILS">` — sequence `system_id`,
-    `location`, `provider`, `subject`, `time`, `version_id`, then
-    `</xs:sequence>`; the same six-element sequence in
-    its-xml-2.0.0-nsv2/RM/Release-1.0.2/Common.xsd,
-    .../Release-1.0.3/Common.xsd and .../Release-1.0.4/Common.xsd; the
-    seven-element sequence with the trailing
-    `<xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>`
-    in its-xml-2.0.0-nsv2/RM/Release-1.1.0/Common.xsd and
-    its-xml-2.0.0-nsv2/RM/latest/Common.xsd — every complexType read
-    element-by-element, the split across the two lineages CONFIRMED.
-  handling: >-
-    Report-only, no gate. The generated XML codec follows the RM under the
-    completeness rule and emits `other_details` as the trailing element of
-    `FEEDER_AUDIT_DETAILS`, in the same position the v2 `Release-1.1.0`
-    schema puts it, so a document that carries the attribute is byte-identical
-    across the two lineages bar the root namespace and validates against the
-    v2 `Release-1.1.0`/`latest` schema set. Suppressing the element to make
-    the v1 XSD happy would silently drop released RM data on the XML wire —
-    a lossy serialization of a modelled attribute — and is refused. What
-    remains genuinely unassignable is only the v1-namespace validation
-    question, which no released document settles; a client that must
-    schema-validate against the STABLE v1 bundle and also carries
-    `other_details` has no released answer. The XML round-trip gate therefore
-    pins the emission and the parse-back (serialize -> parse -> equal, with
-    the element present in the emitted document); no case asserts v1 XSD
-    validity of such a document. Flips to a gating expectation if a future
-    ITS-XML release either back-ports the element to the v1 bundle or
-    withdraws that lineage.
-  disposition: report_only
-  upstream_issue: 1615
-
 AMB-179:
   ambiguity: >-
     THE RELEASED COMMIT SCHEMA NARROWS THE COMMIT AUDIT TO ONE OF THE TWO RM
@@ -7620,12 +7976,19 @@ AMB-181:
     exact serialisation is not yet defined by openEHR, but dADL might be
     preferred". Two facts compound the gap on the server side. First, "an agreed
     ... format" is agreement between the signing parties, not a wire contract a
-    repository is party to. Second, the inherited `AUDIT_DETAILS` attributes of
-    an attestation are SERVER-MINTED at completion — `system_id`,
-    `time_committed` and the `666|attestation|` `change_type` are the server's,
-    never the client's (ITS-REST overview `Requests_and_responses.md`
-    §"openehr-version and openehr-audit-details": "The `time_committed`
-    attribute is always set by the server") — so the object the server ends up
+    repository is party to. Second, ONE inherited `AUDIT_DETAILS` attribute
+    of an attestation is RELEASED as server-set — `time_committed` ("The
+    `time_committed` attribute is always set by the server",
+    Requests_and_responses.md §"openehr-version and openehr-audit-details";
+    the SAME section's preceding sentence lets clients MAY-supply
+    change_type, description, committer and system_id, and
+    UpdateAttestation.yaml allOf-inherits UpdateAudit, so the earlier
+    claim that system_id and the 666|attestation| change_type are "the
+    server's, never the client's" was over-broad — narrowed 2026-08-21;
+    the 666 minting when the client supplies none is OUR choice). The one
+    released server-set member suffices: it lives inside the signed object
+    and cannot be known to the signer at signing time, so the object the
+    server ends up
     holding is NOT byte-identical to the object the client signed, whatever
     serialisation either used. A stored proof is therefore never
     server-verifiable even in principle.
@@ -7713,8 +8076,11 @@ AMB-183:
     docs/architecture_overview/master11-paths.adoc §Archetype path Predicate
     ll.68, 74 + §Name-based Predicate — read first-hand.
   handling: >-
-    Fixed handling: the path engine implements master11, BASE's formal path
-    grammar chapter, for every path in the system — a bare bracket token binds
+    The path engine implements master11, BASE's formal path
+    grammar chapter (the "Fixed handling:" label struck 2026-08-21 — this
+    entry is report_only, no binding or case encodes it, and the engine's
+    behaviour is the platform's, recorded here for the report), for every
+    path in the system — a bare bracket token binds
     to `archetype_node_id`, and a name is matched only through the explicit
     `name/value` predicate. master05's name-form therefore binds NOTHING: a
     directory path written the master05 way (`/folders[hospital episodes]`)
@@ -7732,44 +8098,6 @@ AMB-183:
     predicate grammar the engine implements.
   disposition: report_only
   upstream_issue: 1650
-
-AMB-184:
-  ambiguity: >-
-    RM NAMES A DEMOGRAPHIC FOLDER THE RELEASED SERVICE SURFACES CANNOT ADDRESS.
-    RM common master05-directory_package.adoc §Overview states that
-    `VERSIONED_FOLDER` "provides a means of versioning `FOLDER` structures over
-    time, which is useful in the EHR, Demographics service or anywhere else
-    where Folders are used". Nothing in the released service or wire
-    specifications realises the Demographics half: SM
-    UML/classes/i_demographic_service.adoc declares exactly four functions —
-    `create_party`, `create_party_relationship`, `i_party`,
-    `i_party_relationship` — none of them folder- or directory-bearing, and
-    there is no `I_DEMOGRAPHIC_DIRECTORY` interface to parallel
-    `I_EHR_DIRECTORY`; the ITS-REST demographic API defines no folder or
-    directory path, every `directory_*` operation being mounted EHR-scoped at
-    `/ehr/{ehr_id}/directory` (specifications/ehr.openapi.yaml). So the RM
-    sentence describes a use the released service model and REST API give no
-    operation for.
-  source: >-
-    RM common master05-directory_package.adoc §Overview (the "EHR, Demographics
-    service or anywhere else" sentence); SM
-    docs/UML/classes/i_demographic_service.adoc §Functions (the complete
-    four-function table); ITS-REST specifications/ehr.openapi.yaml
-    (`/ehr/{ehr_id}/directory`, `/ehr/{ehr_id}/directory/{version_uid}`) +
-    specifications/demographic.openapi.yaml (no folder path) — read first-hand.
-  handling: >-
-    Fixed handling: FOLDER is an EHR-scoped kind, both ways. A demographic
-    CONTRIBUTION carrying a FOLDER version is refused, and an EHR CONTRIBUTION
-    carrying a demographic version is refused (the contribution kind-scope
-    check). The released scoping is the reality to implement: master05's
-    sentence is a statement about where the CLASS is reusable, not a service
-    definition, and no released operation exists to create, address, read or
-    version a demographic folder. Nothing is registered as unassigned here and
-    no upstream report is filed — the specifications are not in conflict, the
-    RM merely describes a possibility its service layer never exposed. This
-    flips only if a released SM interface or ITS-REST path introduces a
-    demographic directory resource.
-  disposition: fixed_handling
 
 AMB-185:
   ambiguity: >-
@@ -7827,7 +8155,9 @@ AMB-185:
     nsv2 `RM/Release-1.0.3`; `FOLDER.details`, `ELEMENT.null_reason`,
     `CODE_PHRASE.preferred_term`, `DV_QUANTITY.units_system` +
     `units_display_name` and `FEEDER_AUDIT_DETAILS.other_details` arrive in
-    nsv2 `RM/Release-1.1.0`; `ENTRY.workflow_id` (inherited by ACTION,
+    nsv2 `RM/Release-1.1.0` (the other_details divergence formerly carried
+    its own entry AMB-178, merged here 2026-08-21 — its standing outbound
+    report is #1615); `ENTRY.workflow_id` (inherited by ACTION,
     ADMIN_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION) is declared by EVERY
     nsv2 RM release folder including `Release-1.0.2` and is absent from the
     nsv1 flat bundle entirely — so nsv1 is not even an RM-1.0.2-complete
@@ -7886,8 +8216,11 @@ AMB-185:
     `its-xml-1.0.2-nsv1/ALL`, `its-xml-1.0.2-nsv1/AOM2`,
     `its-xml-2.0.0-nsv2/AM/Release-1.4` and every BASE release folder). The
     generator reproduces its vendored input verbatim and must, so the
-    misspelling is upstream's to fix; filed as the `upstream-report` issue
-    recorded in `upstream_issue` below.
+    misspelling is upstream's to fix; its standing outbound report is #1849
+    (the machine field below now points at #1663, the uncompilable
+    archetypeNodeId facet — the entry's headline defect; #1664 carries the
+    EHR.tags absence, #1615 the other_details divergence, #1666 the owner's
+    served-default ruling — repointed 2026-08-21).
     Unchanged and still true: these classes are AUTHORED_RESOURCE metadata and
     are not part of any RM document the CDR serves on the ITS-REST wire, so
     neither item touches the served wire this entry governs.
@@ -7943,7 +8276,7 @@ AMB-185:
     consumer. Both stay named here so the sweep's output stays fully accounted
     for rather than filtered out, and neither reaches the served wire.
   disposition: fixed_handling
-  upstream_issue: 1849
+  upstream_issue: 1663
 AMB-186:
   ambiguity: >-
     THE RELEASED COMMIT SCHEMA NARROWS `FOLDER.items` REFERENCE IDS TO TWO OF
@@ -8048,8 +8381,10 @@ AMB-187:
     declares NO `VERSIONED_PARTY_RELATIONSHIP` class beside `VERSIONED_PARTY`
     (grep-verified: the identifier occurs nowhere in the RM). The SM models the
     exact opposite: `I_PARTY_RELATIONSHIP` gives a relationship its OWN
-    independently-addressed version container — every one of its six operations
-    takes `a_versioned_party_rel_id`, `update_party_relationship` "Causes
+    independently-addressed version container — five of its six operations
+    take `a_versioned_party_rel_id` and the sixth
+    (get_party_relationship_at_version) a version id of the same container
+    (count corrected 2026-08-21), `update_party_relationship` "Causes
     server-side creation of a new `ORIGINAL_VERSION` and `CONTRIBUTION`" of its
     own, `delete_party_relationship` deletes that container, and four
     operations declare a `versioned_object_does_not_exist` error, which
@@ -8069,8 +8404,9 @@ AMB-187:
     relationships.is_empty and then relationships.for_all (r | r.source =
     self)`) + the absence of any `VERSIONED_PARTY_RELATIONSHIP` class in the
     package (contrast `versioned_party.adoc`, which exists) CONTRASTED with SM
-    UML/classes/i_party_relationship.adoc (all six operations keyed by
-    `a_versioned_party_rel_id: UUID`; `update_party_relationship` "Causes
+    UML/classes/i_party_relationship.adoc (five operations keyed by
+    `a_versioned_party_rel_id: UUID`, get_party_relationship_at_version by
+    `a_party_rel_version_id: UUID`; `update_party_relationship` "Causes
     server-side creation of a new `ORIGINAL_VERSION` and `CONTRIBUTION`";
     `delete_party_relationship` `Post_relationship_deleted`; the
     `versioned_object_does_not_exist` error on get / get_at_time / update /
@@ -8130,7 +8466,11 @@ AMB-188:
     Determined*: The exact serialisation is not yet defined by openEHR, but
     ODIN might be preferred since it has an unambiguous encoding of object
     structures, whereas different XML libraries can generate different XML from
-    the same objects". `VERSION.canonical_form()` states the same rule
+    the same objects" — a preference the RELEASED components then contradict
+    between themselves: BASE architecture_overview master07-security
+    recommends the signature be over "a canonical representation (such as in
+    schema-based XML)", the very format the RM's tbd disfavours (the
+    opposition recorded 2026-08-21). `VERSION.canonical_form()` states the same rule
     abstractly ("created by serialising all attributes except signature") and
     likewise names no format.
     A SECOND, NARROWER GAP sits inside the first. The section admits two depths
@@ -8242,7 +8582,10 @@ AMB-189:
     predecessor fails, and the register entry exists so a future reader does not
     "fix" the store to satisfy a predicate the spec cannot satisfy either. This
     flips to an enforceable invariant if openEHR restates it over the whole
-    `VERSION_TREE_ID` rather than over `is_first`.
+    `VERSION_TREE_ID` rather than over `is_first`. (The former AMB-197 —
+    the identical invariant pair over the identical master06 L226 example —
+    merged here 2026-08-21; its report #1749 is a duplicate filing of
+    #1677, recorded as superseded on both.)
   disposition: report_only
   upstream_issue: 1677
 
@@ -8301,8 +8644,8 @@ AMB-191:
     SPEC SILENCE on distinguishing at-committal from post-committal
     attestations on the wire. RM common master06 §Digital Signature signs
     "the entire Version object" (only `signature` Void at that point), while
-    §Attestation permits adding attestations "at any point in time after
-    committal" — so attestations arriving later are necessarily OUTSIDE the
+    §Attestation permits adding attestations "at any time after committal of
+    the content being attested" (quote corrected 2026-08-21) — so attestations arriving later are necessarily OUTSIDE the
     signed form. But ORIGINAL_VERSION.attestations is one undistinguished
     list: no released attribute marks which members were present at
     committal, so an external verifier recomputing the canonical form over a
@@ -8311,8 +8654,8 @@ AMB-191:
   source: >-
     RM common master06-change_control_package.adoc §Digital Signature
     ("serialising the entire Version object (note that the signature
-    attribute will be Void at this point)") and §Attestation ("at any point
-    in time after committal") vs org.openehr.rm.common.original_version.adoc
+    attribute will be Void at this point)") and §Attestation ("at any time
+    after committal of the content being attested") vs org.openehr.rm.common.original_version.adoc
     §Attributes (attestations: List<ATTESTATION> 0..1 — no committal-time
     discriminator). Confirmed first-hand.
   handling: >-
@@ -8340,7 +8683,9 @@ AMB-192:
     ITS-REST specifications/operations/ehr_create_with_id.yaml §description
     ("The value of the `ehr_id` unique identifier MUST be valid
     HIER_OBJECT_ID value. It is strongly RECOMMENDED that an UUID always be
-    used for this.") contrasted with
+    used for this.") + the docs-text Glossary_and_conventions.md ehr_id row
+    ("in a form of a HIER_OBJECT_ID, usually an `UUID` or a `GUID`" — the
+    tier-1 wide reading, cited 2026-08-21) contrasted with
     specifications/parameters/path/ehr_id.yaml §schema (`type: string`,
     `format: uuid`) — the same UUID-only shape in the bundled
     ehr-codegen.openapi.yaml §components.parameters.ehr_id and
@@ -8350,12 +8695,16 @@ AMB-192:
     (`hier_object_id = uid_based_id`, `root = uid`,
     `uid = iso_oid | uuid | internet_id`). All read first-hand.
   handling: >-
-    Fixed handling: the PARAMETER SCHEMA reading is implemented — an `ehr_id`
-    is UUID-only. The schema is the computable artifact that binds EVERY
-    ehr_id-carrying operation rather than this one description, and the
-    narrowing is independently grounded on how this CDR mints (uuidv7) and
-    stores (PostgreSQL `uuid` columns) the value; a non-UUID id would enter a
-    store and an AQL surface that cannot represent it. The choice is cited at
+    Fixed handling: a DEPLOYMENT-DECLARED NARROWING, taken AGAINST the
+    tier-1 reading (re-framed 2026-08-21): the docs-text Glossary defines
+    ehr_id as "in a form of a HIER_OBJECT_ID, usually an UUID or a GUID" —
+    "usually", not "always", so the wide reading is the docs text's and
+    wins the oracle order; this CDR nevertheless narrows to UUID-only on
+    the client-supplied path, grounded on how it mints (uuidv7) and
+    stores (PostgreSQL `uuid` columns) the value: a non-UUID id would enter a
+    store and an AQL surface that cannot represent it (OAS `format: uuid`
+    is an annotation, not an assertion, so the parameter schema corroborates
+    but cannot decide). The choice is cited at
     the type that carries it (`app/ferroehr/src/ids.rs`), not left implicit,
     and the contradiction is reported upstream rather than silently resolved.
     Note the narrowing is real only for a CLIENT-supplied id on
@@ -8403,7 +8752,7 @@ AMB-194:
     — but neither the ITS-REST docs text nor the released OAS assigns a status
     to it. The contribution operation's declared error responses
     (400_CONTRIBUTION, 404, 409 — contribution_create.yaml declares no 422
-    branch at all; 422_COMPOSITION.yaml is the released response DEFINITION
+    branch at all; 422.yaml is the released response DEFINITION
     other commit operations reference) never name this trigger, and
     the overview's §HTTP status codes table describes the codes generically
     rather than per-rule. Two conformant implementations may therefore answer
@@ -8414,15 +8763,22 @@ AMB-194:
     contrasted with ITS-REST specifications/docs/overview/
     Requests_and_responses.md §HTTP status codes and
     specifications/operations/contribution_create.yaml §responses +
-    specifications/responses/{400_CONTRIBUTION,422_COMPOSITION}.yaml — none of
-    which names the trigger. All read first-hand.
+    specifications/responses/{400_CONTRIBUTION,422}.yaml — none of
+    which names the incomplete-commit trigger (file corrected 2026-08-21:
+    no 422_COMPOSITION.yaml exists in the release; the real 422.yaml is
+    $ref'd by the twelve composition/party writes and by no contribution
+    operation). All read first-hand.
   handling: >-
     Fixed handling: 422. The overview's own 422 row is written for exactly
     this shape — "The request was well-formed but was unable to be followed due
-    to semantic errors" — and the released 422_COMPOSITION.yaml assigns 422 to
-    committed content the server converts but cannot validate ("information
-    about the errors in the provided COMPOSITION"), which is what a
-    missing-mandatory-data commit is. 400 is reserved on this route for the
+    to semantic errors" — and the released 422.yaml assigns 422 to
+    content that "could be converted to a resource, but there are semantic
+    validation errors" (quote corrected 2026-08-21 — the earlier
+    "information about the errors in the provided COMPOSITION" sentence
+    exists in no released file), which is what a
+    missing-mandatory-data commit is; on THIS route the 422 is an
+    ADDITIONAL status under the table's "Additional status codes MAY be
+    used" clause, since contribution_create declares none. 400 is reserved on this route for the
     SHAPE class the released 400_CONTRIBUTION.yaml enumerates ("could not be
     parsed … syntactically invalid header, parameter or content"), and a
     complete-but-incomplete body parses. The catalogue pins both directions:
@@ -8455,19 +8811,30 @@ AMB-195:
     contribution_create / composition_{create,update,delete} — none of which
     declares a transition-legality branch. All read first-hand.
   handling: >-
-    Fixed handling: the table is ENFORCED and an unlisted transition is 422.
-    Enforcement follows from the state machine being NORMATIVE model content
+    Fixed handling: the DIAGRAM is enforced and an undrawn transition is 422
+    (authority corrected 2026-08-21: master06 designates the diagram as
+    "the formal state machine", and its edge set is a strict SUPERSET of
+    the §Abandoned and Inactive States table — create_draft/create_final,
+    complete, the three update edges, the four delete edges and both
+    revert edges out of DELETED are drawn but untabled — so "the table is
+    enforced" would make the diagram-only edges illegal, contradicting the
+    restore case below). Enforcement follows from the state machine being
+    NORMATIVE model content
     rather than commentary — a server that accepts any code from any state has
     not implemented `ORIGINAL_VERSION.lifecycle_state` as a state machine at
     all, only as a free-text field — and 422 is the overview's own row for a
     well-formed request whose semantics cannot be followed ("The request was
-    well-formed but was unable to be followed due to semantic errors"). The
+    well-formed but was unable to be followed due to semantic errors"),
+    taken on this route as an ADDITIONAL status under the table's MAY
+    (contribution_create declares no 422). The
     catalogue carries one accepting case per named transition
     (-lifecycle_deactivate / -reactivate / -abandon / -retrieve) beside the
     refusal (-lifecycle_illegal_transition), plus -lifecycle_restore_from_deleted,
     which pins the implemented reading of the diagram's `revert` arrow out of
-    `deleted` while that arrow's conflict with the §Logical Deletion prose is
-    carried upstream.
+    `deleted`; the diagram-vs-prose gap (transitions drawn nowhere in
+    prose) is the standing report #1740, and the revert-vs-§Logical-Deletion
+    tension rides it (pointer corrected 2026-08-21 — no separate report
+    exists).
   disposition: fixed_handling
 
 AMB-196:
@@ -8475,7 +8842,10 @@ AMB-196:
     The released COMMIT wire declares NO merge shape, while the RM defines
     merge provenance and the released READ wire serves it. RM common master06
     §Version Merging defines `ORIGINAL_VERSION.other_input_version_uids` with
-    the derived `is_merged` and the `Is_merged_validity` invariant, and
+    the derived `is_merged` and the `Is_merged_validity` invariant — whose
+    released text references `other_input_version_ids` (no `u`), a property
+    the class does not declare, so the invariant as written cannot be
+    evaluated (misspelling recorded 2026-08-21) — and
     ITS-REST `schemas/ehr/OriginalVersion.yaml` declares the property on
     reads — but `schemas/ehr/UpdateVersion.yaml` declares no such property and
     `schemas/ehr/NewContribution.yaml` types `versions` items as
@@ -8506,41 +8876,6 @@ AMB-196:
     (-merge_provenance_member).
   disposition: fixed_handling
 
-AMB-197:
-  ambiguity: >-
-    MODEL CONTRADICTION between the version-identification prose and the two
-    invariants that read the same identifier. BASE `VERSION_TREE_ID` declares
-    `Is_first_validity`: `not is_first xor trunk_version.is_equal("1")` — so
-    `is_first` is TRUE for EVERY version whose trunk part is 1, branch versions
-    included. RM `VERSION` then declares `Preceding_version_uid_validity`:
-    `uid.version_tree_id.is_first xor preceding_version_uid /= Void` — so a
-    version with `is_first` TRUE must have NO preceding version. Together they
-    forbid a `preceding_version_uid` on `1.1.1`, `1.1.2`, `1.2.1` … — every
-    version on every branch off trunk node 1. Yet master06 §Local Versioning
-    presents exactly `1.1.1` as a normal identifier ("first version of first
-    branch from trunk node 1"), and a branch version by definition succeeds the
-    trunk node it branches from. The model as written makes the whole
-    first-trunk-node branch family unrepresentable.
-  source: >-
-    BASE UML/classes/org.openehr.base.base_types.version_tree_id.adoc
-    §Invariants (Is_first_validity) + RM UML/classes/
-    org.openehr.rm.common.version.adoc §Invariants
-    (Preceding_version_uid_validity) contrasted with RM common
-    master06-change_control_package.adoc §Local Versioning ("version numbers
-    like '1.1.1' (first version of first branch from trunk node 1) … are
-    possible"). All read first-hand.
-  handling: >-
-    Report only — the PROSE governs and the implementation follows it: a branch
-    version off trunk node 1 is minted with its true `preceding_version_uid`,
-    which is what makes the version tree navigable at all and what §Local
-    Versioning's own example requires. `is_first` is implemented as the BASE
-    accessor the class table defines (`trunk_version = "1"`), so no local
-    rewriting of either invariant hides the contradiction; the conflict is
-    reported upstream rather than silently resolved, and no catalogue case
-    gates on the invariant pair.
-  disposition: report_only
-  upstream_issue: 1749
-
 AMB-198:
   ambiguity: >-
     CROSS-COMPONENT CONFLICT on the served shape of an IMPORTED_VERSION: the
@@ -8549,7 +8884,13 @@ AMB-198:
     `IMPORTED_VERSION` declares exactly one own attribute, `item:
     ORIGINAL_VERSION 1..1`, and lists `uid`, `preceding_version_uid`,
     `lifecycle_state` and `data` under §Functions as `(effected)` computations
-    — `data` "derived as item.data" — so none of the four is a serialized
+    — uid and preceding_version_uid with formal Post clauses,
+    lifecycle_state as prose ("derived as _item.lifecycle_state_"), while
+    `data`'s row states NO derivation at all (its meaning cell is only
+    "Original content of this Version." — an effected function with no
+    defined effect, a further released defect; the earlier quoted
+    "derived as item.data" exists in no released file — corrected
+    2026-08-21) — so none of the four is a serialized
     attribute. ITS-XML agrees structurally: its abstract `VERSION` carries only
     `contribution`, `commit_audit` and an optional `signature`, `data` is
     declared on `ORIGINAL_VERSION`, and `IMPORTED_VERSION` extends `VERSION`
@@ -8594,10 +8935,22 @@ AMB-198:
 
 AMB-199:
   ambiguity: >-
-    GENUINE MODEL CONTRADICTION inside master06 §Semantics in Distributed
-    Systems: two rules fire on the identical observable state and impose
-    opposite obligations, with no marker, procedure or suspension clause
-    distinguishing them. §Copying §Subsequent Local Modifications requires a
+    GENUINE MODEL GAP inside master06 §Semantics in Distributed
+    Systems, NARROWED 2026-08-21: in the canonical cases the version's TYPE
+    distinguishes the two rules (a copied tip arrives WRAPPED — §Copying
+    creates an IMPORTED_VERSION whose item is the received
+    ORIGINAL_VERSION — while a moved container's tip stays a foreign-system
+    ORIGINAL_VERSION), so "two rules fire on the identical observable
+    state" holds only where a MOVED container's tip is itself an
+    IMPORTED_VERSION (B imports from A, then B's container moves to C):
+    there the trigger the entry states (uid.creating_system_id foreign,
+    since IMPORTED_VERSION.uid is effected = item.uid) is identical under
+    both rules, which impose opposite obligations with no marker,
+    procedure or suspension clause
+    distinguishing them — and §Moving Version Containers defines NO
+    procedure at all against §Disjoint Merging's explicit one, which is
+    the first-hand-verifiable core defect. §Copying §Subsequent Local
+    Modifications requires a
     system committing new content onto a version copied from elsewhere to
     BRANCH — "When new versions are added locally to a copied object, the local
     system id is recorded in the uid.creating_system_id() attribute, while
@@ -8681,23 +9034,35 @@ AMB-200:
 AMB-201:
   ambiguity: >-
     Whether a served ITEM_TAG may carry `_type` is decided by the released OAS
-    against itself. `schemas/common/ItemTag.yaml` is `additionalProperties:
-    false` and its `properties` block enumerates key/value/target_path/target/
-    owner_id — no `_type`. The same released group nevertheless declares
-    `discriminator.propertyName: _type` for the ITEM_TAG family, and a
+    against itself — VARIANT-DEPENDENTLY (re-grounded 2026-08-21).
+    `schemas/common/ItemTag.yaml` is `additionalProperties:
+    false` with properties key/value/target_path/target/owner_id — no
+    `_type` and NO discriminator. The self-contradiction lives in the two
+    released CODEGEN bundles ({ehr,demographic}-codegen.openapi.yaml), whose
+    ItemTag carries BOTH `additionalProperties: false` AND
+    `discriminator.propertyName: _type` — a
     discriminator's whole function is to be READ off the instance
-    (OpenAPI 3.0 §Discriminator Object). So the schema forbids the exact member
-    it simultaneously nominates as the type discriminator: a schema-valid
-    instance cannot carry the discriminator the schema declares, and an
-    instance that carries it is schema-invalid. The ITS-REST docs text is
-    silent — `Resources.md` §JSON Format neither requires nor forbids `_type`
-    on a concrete standalone type — so nothing above the OAS breaks the tie,
-    and the OAS is self-contradictory rather than merely silent.
+    (OpenAPI 3.0 §Discriminator Object), so a schema-valid
+    instance cannot carry the discriminator the schema declares. The
+    -validation bundles' ItemTagOf* are flattened OPEN (no
+    additionalProperties at all, no discriminator) — so the very variant
+    authored for validation ACCEPTS `_type` — and the -html bundles are
+    closed-without-discriminator: three released shapes for one schema.
+    The ITS-REST docs text leans AGAINST emitting: `Resources.md` §JSON
+    Format scopes `_type` to "whenever polymorphism is involved, or when
+    the underlying definition in RM type is abstract", and ITEM_TAG is
+    concrete in a monomorphic position — the sentence's scope does not
+    reach the case, so it neither requires nor forbids, but it gives no
+    reason to emit.
   source: >-
     ITS-REST specifications/schemas/common/ItemTag.yaml (properties +
-    additionalProperties: false) contrasted with the ITEM_TAG group's
-    discriminator.propertyName: _type, and with
-    specifications/docs/overview/Resources.md §JSON Format; RM common
+    additionalProperties: false; no discriminator) contrasted with the
+    released computable/OAS/{ehr,demographic}-codegen.openapi.yaml ItemTag
+    (closed + discriminator.propertyName: _type — the self-contradiction),
+    the -validation bundles' open flattened ItemTagOf* and the -html
+    bundles' closed shape (cited AS the OAS), and with
+    specifications/docs/overview/Resources.md §JSON Format (the `_type`
+    polymorphism scoping); RM common
     UML/classes/org.openehr.rm.common.item_tag.adoc (the class the payload
     realizes). All read first-hand.
   handling: >-
@@ -8711,11 +9076,15 @@ AMB-201:
     discriminator, which no client can then use for anything. The asymmetry
     matters for a payload that has no other type marker: an ITEM_TAG carries no
     `uid` and no archetype id, so `_type` is its only self-description.
-    ACCEPTED CONSEQUENCE, stated rather than hidden: a strict validator run
-    against the released ItemTag schema will reject our served tags on the
-    `additionalProperties` clause. That is a property of the contradiction, not
-    of the choice — the other branch fails the discriminator clause of the same
-    document. Reported upstream (#1799 item 5): remove
+    ACCEPTED CONSEQUENCE, stated rather than hidden AND variant-scoped
+    (corrected 2026-08-21): a strict validator run against the DECOMPOSED
+    ItemTag schema or the -html/-codegen bundles rejects our served tags on
+    the `additionalProperties` clause, while the same validator run against
+    the -validation bundles — the variant the release authors FOR
+    validation — ACCEPTS them (their ItemTagOf* are open). That split is a
+    property of the contradiction, not
+    of the choice — the closed branch fails the codegen bundles' own
+    discriminator clause. Reported upstream (#1799 item 5): remove
     `additionalProperties: false`, or declare `_type`, or drop the
     discriminator.
   disposition: fixed_handling
@@ -8785,11 +9154,20 @@ AMB-203:
     whose predicates may carry `;` inside quoted strings; and (b) what a server
     does with a syntactically parseable entry that carries no `key`.
   source: >-
-    ITS-REST specifications/docs/overview/Requests_and_responses.md §openehr-
-    item-tag and openehr-version-item-tag (the whole section — the example is
-    the only grammar given); ITS-REST specifications/headers/openehr-item-tag.yaml
-    and openehr-version-item-tag.yaml (a `schema: type: string` with the same
-    example, no `pattern`); ITS-REST specifications/schemas/common/UpdateItemTag.yaml
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §openehr-item-tag and openehr-version-item-tag (the whole section — the
+    example is the only grammar given, and its entry separator is the
+    SEMICOLON while OAS `style: simple` arrays serialize comma-separated — a
+    released serialization contradiction recorded 2026-08-21); the two
+    RELEASED FILES per header split by direction (conflation corrected
+    2026-08-21): the REQUEST parameter
+    specifications/parameters/header/openehr-item-tag.yaml declares
+    `style: simple, explode: true` over `type: array` of UpdateItemTag —
+    array-of-OBJECT under simple style, a shape OAS 3.0's style table does
+    not define — and carries the example, while the RESPONSE header
+    specifications/headers/openehr-item-tag.yaml is a bare
+    `schema: type: string` with NO example and no `pattern`; ITS-REST
+    specifications/schemas/common/UpdateItemTag.yaml
     (`required: [key]`); RM common UML/classes/org.openehr.rm.common.item_tag.adoc
     (target_path: "archetype (i.e. AQL) or RM path"). All read first-hand.
   handling: >-
@@ -8799,12 +9177,16 @@ AMB-203:
     This is the only reading under which the section's own `target_path`
     example generalizes to the paths the RM says may appear there; the
     alternative shatters such an entry into fragments that then parse as
-    garbage, silently. (b) A NON-BLANK ENTRY WITH NO `key` IS REFUSED 400. The
-    header is declared "a convenient wrapper around the dedicated ITEM_TAG
-    operations", and `key` is the one REQUIRED member of the operation's own
-    UPDATE_ITEM_TAG schema — a wrapper cannot admit what the operation it wraps
+    garbage, silently. (b) A NON-BLANK ENTRY WITH NO `key` IS REFUSED 400 —
+    OAS-ASSIGNED, not analogical (re-grounded 2026-08-21): the request
+    parameter's own schema types the header value as UpdateItemTag items
+    whose `required: [key]` makes a key-less entry an invalid header value,
+    and responses/400.yaml names "syntactically invalid header" verbatim.
+    (The docs text also calls the headers "convenient wrappers around the
+    dedicated ITEM_TAG operations" — plural, quote corrected 2026-08-21 —
+    which corroborates: a wrapper cannot admit what the operation it wraps
     refuses, and skipping the entry would silently drop a tag the client
-    believes it set (the never-lax rule). A BLANK segment — a trailing `;`, or
+    believes it set, the never-lax rule.) A BLANK segment — a trailing `;`, or
     an empty repeat of the header — carries no entry at all and is NOT an
     error, because the release gives an empty header value its own meaning
     ("Providing an empty value for this header will effectively remove all
@@ -8830,11 +9212,15 @@ AMB-204:
     invariants (a key with surrounding whitespace, a set-but-empty value) that
     the content passes.
   source: >-
-    ITS-REST specifications/docs/overview/Requests_and_responses.md §openehr-
-    item-tag and openehr-version-item-tag (both usage sub-sections, read in
-    full); the operation files that carry the request headers
-    (composition_create/composition_update/ehr_status_update/directory_create/
-    directory_update and the five demographic create/update ops — none declares
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §openehr-item-tag and openehr-version-item-tag (both usage sub-sections,
+    read in full — the docs text names FOLDER among the wrapper-header
+    targets while NO directory operation declares the parameter, the
+    directory cases' actual ground); the THIRTEEN operation files that carry
+    the request headers (composition_create/composition_update/
+    ehr_status_update and the five demographic create/update pairs — the
+    directory ops dropped from this list 2026-08-21, they declare no
+    item-tag parameter; none of the thirteen declares
     a tag-failure branch); RM ehr master04-ehr_package.adoc §Tags ("they do not
     cause re-versioning of the content"); RM common
     UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants. All read
@@ -8863,16 +9249,21 @@ AMB-205:
     The released UpdateItemTag schema is strict — `additionalProperties: false`
     over exactly key/value/target_path, with `key` required — but NOTHING
     released says what a server does when a body violates that strictness. The
-    ITS-REST docs text never discusses the tag write body's member set at all,
-    so the schema itself is the only source (which the oracle order accepts for
-    a docs-text-silent behaviour); but the schema is a shape, not a wire
-    outcome, and the seven tag PUTs' response sets declare only 200/204/400/404
+    ITS-REST docs text DOES name the member set (corrected 2026-08-21:
+    "They both support the same syntax and schema, having the following
+    attributes: `key`, `value` and `target_path`" — the docs text and the
+    schema agree on the three members); what it withholds is only the wire
+    OUTCOME for a violation, and the seven tag PUTs' response sets declare
+    only 200/204/400/404
     with the 400 described as "the request could not be parsed or is invalid".
     Two shapes fall in the gap: a member the schema does not declare (`target`,
     `owner_id`, `_type`, anything), and a declared member of the wrong JSON
-    type (`"value": 42`). Neither is malformed JSON, so neither is obviously
-    the declared 400; and neither is an RM-invariant failure, so AMB-93's 422
-    branch does not reach them either.
+    type (`"value": 42`). AMB-93 already fixes the SYNTACTIC class at 400
+    (non-array body, non-string key); this entry EXTENDS the same line to
+    the undeclared-member shape and to non-string value/target_path
+    (overlap stated 2026-08-21) — neither is an RM-invariant failure, so
+    AMB-93's 422
+    branch does not reach them.
   source: >-
     ITS-REST specifications/schemas/common/UpdateItemTag.yaml (required: [key];
     properties key/value/target_path; additionalProperties: false);
@@ -8915,11 +9306,16 @@ AMB-206:
     sentence says WHICH head is latest when a trunk head (`::2`) and a branch
     head (`::1.1.1`) are both current — and RM common master06 §Semantics in
     Distributed Systems makes coexisting lineages a normal state, not an
-    error. The RM itself names the two readings without choosing between them
-    for an Extract: VERSIONED_OBJECT declares BOTH `latest_version()` and
-    `latest_trunk_version()` as distinct functions (RM common
-    UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions), so a
-    conformant implementation could defensibly export either head, or both.
+    error. The RM defines the UNQUALIFIED name (gloss cited 2026-08-21):
+    VERSIONED_OBJECT.latest_version() is "the most recently added version
+    (i.e. on trunk or any branch)", with latest_trunk_version() the
+    trunk-only sibling (RM common
+    UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions) —
+    so the RM's own gloss leans most-recently-added, while the extract
+    chapter never says WHICH function "latest available version" means (its
+    §Description even says "By default, only latest versionS are included",
+    plural), leaving a conformant implementation able to defensibly export
+    either head, or both.
   source: >-
     RM ehr_extract master04-common_package.adoc §Version Specification (read
     first-hand): "An Extract request in its simplest form has no version
@@ -8937,10 +9333,11 @@ AMB-206:
     all (register AMB-34), so no wire source narrows it either.
   handling: >-
     Fixed handling: the default (non-`include_all_versions`) Extract includes
-    the TRUNK head of each matched container and no branch head. The reason is
-    the RM's own trunk-first reading of "latest": master06 §The 'Virtual
+    the TRUNK head of each matched container and no branch head — a
+    DELIBERATE DEPARTURE from the latest_version() gloss ("most recently
+    added … on trunk or any branch"), argued rather than silent (re-framed
+    2026-08-21): master06 §The 'Virtual
     Version Tree' makes the trunk the lineage every branch descends from,
-    `VERSIONED_OBJECT.latest_trunk_version()` names it without qualification,
     and a branch is by construction a local divergence that may never have
     been propagated — the same asymmetry master04 already relies on when it
     warns that an Extract returns "all available versions from the repository
@@ -8991,48 +9388,8 @@ AMB-207:
     reaches the stage `responses/422.yaml` describes — the body cannot be
     "converted to a resource" in the first place, which is exactly the
     unconvertible half `responses/400.yaml` owns as "syntactically invalid
-    ... content". The complementary template-MEDIATED half is AMB-208's 422.
+    ... content". The complementary template-MEDIATED half is released-assigned: responses/422.yaml names the template-validation trigger verbatim and is declared on the composition writes (AMB-208 removed 2026-08-21 as a false silence).
     Pinned by `SF-FLAT-reject_other_with_code`.
-  disposition: fixed_handling
-
-AMB-208:
-  ambiguity: >-
-    The status of a template-MEDIATED Simplified-Format validation failure is
-    likewise unassigned. ITS-REST
-    docs/simplified_formats/master04-basic_concepts.adoc §Validation
-    enumerates the checks — "Mandatory context fields (language, territory)
-    are present", "Data types match expected types from the Operational
-    Template", "Terminology bindings are valid" — without a status code, and
-    the overview's §Simplified Formats assigns only 415 and 406. The two
-    refusal rows the composition write operations declare therefore both
-    remain candidates for this class.
-  source: >-
-    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §Validation
-    (the enumerated checks, no status); ITS-REST
-    specifications/docs/overview/Resources.md §Simplified Formats (415 and 406
-    only); ITS-REST specifications/responses/422.yaml ("returned when the
-    content type and syntax is correct, could be converted to a resource, but
-    there are semantic validation errors, such as the underlying template is
-    not known or is not validating the supplied resource");
-    specifications/responses/400.yaml (the unconvertible half). All read
-    first-hand.
-  handling: >-
-    Fixed handling: a template-MEDIATED Simplified-Format validation failure
-    is refused 422. Every check master04 §Validation lists is stated as a
-    comparison against the Operational Template, so the failure IS the
-    released 422 trigger in its own words — the template "is not validating
-    the supplied resource". The NOTED ALTERNATIVE, recorded because it is a
-    defensible reading of the same file: `responses/422.yaml` opens with
-    "could be converted to a resource", and a Simplified-Format body that
-    fails one of these checks may never yield a COMPOSITION at all, which
-    would put every FLAT conversion failure on the 400 row and leave the 422
-    branch for simplified formats populated only by "the underlying template
-    is not known". That reading is not taken, because it makes the 422
-    clause's own second half ("or is not validating the supplied resource")
-    unreachable for the one format whose validation the release describes at
-    length. The complementary template-INDEPENDENT half is AMB-207's 400.
-    Pinned by `SF-FLAT-reject_datatype_mismatch`, `SF-CTX-missing_mandatory`
-    and `SF-FLAT-reject_terminology_binding`.
   disposition: fixed_handling
 
 AMB-209:
@@ -9190,8 +9547,8 @@ AMB-211:
     reference at its tree path. References in foreign namespaces and
     "unknown" are accepted verbatim, ids standing free — the BASE
     distributed-referencing ground — so the accepting corpus twins reference
-    foreign systems, and the refusal twin (cnf.directory.invalid.local_
-    dangling_item) pins the boundary from the other side. The reference's
+    foreign systems, and the refusal twin (cnf.directory.invalid.local_dangling_item)
+    pins the boundary from the other side. The reference's
     type facet is deliberately not judged (BASE admits any ancestor name and
     ANY). The 553|incomplete| relaxation never reaches the check: a dangling
     this-system claim is wrong data, not missing data (RM common master06
@@ -9210,9 +9567,15 @@ AMB-212:
     successor. The RM ch.8 shape's only machine-readable carrier is the
     ITS-XML v1 bundle (Resource.xsd + Template.xsd: original_author /
     lifecycle_state / details / parent_resource, no title/licence), i.e.
-    the OPT 1.4 wire. No released text says which model form governs a 1.4
-    artefact's meta-data VALIDATION, and none assigns the RM ch.8 class
-    invariants an enforcement seam.
+    the OPT 1.4 wire. This is a released CROSS-COMPONENT CONTRADICTION, not
+    a bare silence (re-framed 2026-08-21): AM 1.4's own class table binds
+    the model — aom14.archetype.adoc declares ARCHETYPE's Inherit as BASE
+    resource.html AUTHORED_RESOURCE, with AOM1.4 master03's prose ("An
+    archetype is modelled as a particular kind of AUTHORED_RESOURCE") and
+    the AM BMM's includes as echoes — against RM master08's NOTE that its
+    OWN retained package is "used only in ADL 1.4 archetypes". The genuine
+    residue: the RM-ch.8-shaped OPT 1.4 XML wire has no assigned
+    enforcement seam for the ch.8 invariants.
   source: >-
     RM common master08-resource_package.adoc (front-matter NOTE) + RM
     UML/classes/org.openehr.rm.common.{authored_resource,
@@ -9324,3 +9687,42 @@ AMB-215:
     (issue #2482). The example defect is reported upstream.
   disposition: fixed_handling
   upstream_issue: 2483
+AMB-216:
+  ambiguity: >-
+    The demographic CONTRIBUTION read cannot legally be asked for what its own
+    success response promises. The operation pins the `Accept_canonical`
+    parameter (enum: `application/json` | `application/xml` only) while
+    `$ref`-ing the shared `200_CONTRIBUTION.yaml`, whose description promises
+    Simplified serialization ("When the request `Accept` header selects a
+    Simplified Formats MIME type ... only each `versions[i].data` payload is
+    serialized in the requested FLAT or STRUCTURED form") and whose
+    Content-Type header is `ContentType_LOCATABLE` (all four values). The EHR
+    sibling read declares `Accept_LOCATABLE` and spells the Simplified MAY out
+    in its own description, so the contradiction is local to the demographic
+    route's parameter list. The docs text says nothing about this route's
+    negotiation, so both sides of the contradiction are the released OAS
+    against itself.
+  source: >-
+    ITS-REST specifications/operations/demographic_contribution_get.yaml
+    (parameter `$ref` ../parameters/header/Accept_canonical.yaml — enum json |
+    xml; cited as the OAS, docs text silent); ITS-REST
+    specifications/responses/200_CONTRIBUTION.yaml (the Simplified-Formats
+    serialization paragraph + the ContentType_LOCATABLE header — the shared
+    200 both contribution reads `$ref`); ITS-REST
+    specifications/operations/contribution_get.yaml (Accept_LOCATABLE + the
+    explicit Simplified MAY — the sibling proving the divergence is
+    route-local).
+  handling: >-
+    Fixed handling: the operation's own parameter declaration wins as the
+    narrower released statement — a schema-driven client cannot legally send
+    an Accept the enum forbids, so refusing it can never surprise one. The
+    demographic CONTRIBUTION read serves canonical JSON/XML only and a
+    Simplified-Formats `Accept` on this route is refused 406 (overview
+    Requests_and_responses §HTTP status codes); the shared 200 file's
+    Simplified paragraph is read as scoped to the routes whose Accept admits
+    those types. The contradiction is reported upstream. (The 200 file's
+    deeper defect — `versions[i].data` does not exist in the declared
+    CONTRIBUTION schema — is the standing report on AMB-56's family, issue
+    #1530; this entry is only the negotiation contradiction.)
+  disposition: fixed_handling
+  upstream_issue: 2539

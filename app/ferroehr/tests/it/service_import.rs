@@ -1339,3 +1339,69 @@ async fn import_accepts_a_branch_version_whose_closure_is_already_stored() {
         .expect("the imported branch version reads back");
     assert_eq!(served["_type"], json!("IMPORTED_VERSION"));
 }
+
+/// A later receipt may also ADVANCE an already-held branch lineage: with
+/// `2.1.1` stored and open, importing `2.1.2` closes the stored tip and lands
+/// as the lineage's one open row (RM common master06 §Copying, Case-3 append;
+/// §Semantics in Distributed Systems keeps lineages coexisting). A stale
+/// re-receipt of `2.1.1` is then a conflict, mirroring the trunk
+/// strictly-newer rule. Regression: the branch append never closed the open
+/// stored tip, so the insert died on the one-open-row-per-lineage index and
+/// surfaced as a bare storage conflict.
+#[tokio::test]
+async fn import_advances_an_open_branch_lineage_and_rejects_a_stale_branch_version() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let status_uid = find_by_xtype(&exported[0], "X_VERSIONED_EHR_STATUS")
+        .expect("exported EHR_STATUS")["item"]["versions"][0]["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .to_owned();
+    let vo_id = ferroehr::ids::VoId(
+        status_uid
+            .split("::")
+            .next()
+            .expect("object_id")
+            .parse()
+            .expect("vo uuid"),
+    );
+    let ehr_id = target
+        .import_ehr(
+            None,
+            openehr_its::json::from_canonical_value(&exported[0]).expect("EXTRACT decodes"),
+        )
+        .await
+        .expect("first receipt lands the trunk");
+    target
+        .import_ehr_extract(ehr_id, retree_status_version(&exported[0], "2", "2.1.1"))
+        .await
+        .expect("the branch opens");
+
+    // The branch advance: `2.1.2` supersedes the open stored `2.1.1`.
+    target
+        .import_ehr_extract(ehr_id, retree_status_version(&exported[0], "2", "2.1.2"))
+        .await
+        .expect("a branch advance over an open stored tip lands");
+    let served = target
+        .ehr_status_version_envelope(ehr_id, vo_id, "2.1.2")
+        .await
+        .expect("the advanced branch version reads back");
+    assert_eq!(served["_type"], json!("IMPORTED_VERSION"));
+
+    // The stale tip is refused by name, exactly like a stale trunk re-import.
+    let err = target
+        .import_ehr_extract(ehr_id, retree_status_version(&exported[0], "2", "2.1.1"))
+        .await
+        .expect_err("a stale branch version must be refused");
+    assert_eq!(err.status, CallStatusType::Conflict);
+    assert!(
+        err.message.contains("already has branch version"),
+        "the refusal names the stored tip, got: {}",
+        err.message
+    );
+}

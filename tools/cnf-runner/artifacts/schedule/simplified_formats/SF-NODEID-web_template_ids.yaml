@@ -14,6 +14,7 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_DEFINITION_ADL14.get_opt
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-156]
 test_purpose: >-
   Retrieving a provisioned OPT as a Web Template JSON document returns a tree
   whose nodes carry generated node ids (the master04 node-id algorithm output),

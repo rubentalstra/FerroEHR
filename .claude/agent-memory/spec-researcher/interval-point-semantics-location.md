@@ -53,3 +53,23 @@ Load-bearing facts / defects confirmed in released text:
   ODIN can only produce a bounds-equal interval for `|5..5|`.
 - `Interval.has` Post uses `v` while the parameter is named `e`; `strictly_comparable_to`
   (Limits_comparable) is defined nowhere (see [[base-time-ordering-location]]).
+
+RM side — the class that actually governs a committed interval:
+- `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_interval.adoc`
+  — `DV_INTERVAL<T>` inherits `DATA_VALUE` **+ BASE `Interval` directly** (never
+  Point_/Proper_interval) and declares its OWN invariant
+  `Limits_consistent: (not upper_unbounded and not lower_unbounded) implies
+  (lower.is_strictly_comparable_to(upper) and lower <= upper)` — stronger than
+  BASE's same-named one and spelled `is_strictly_comparable_to` (BASE spells it
+  `strictly_comparable_to`). So the invariant set governing a wire DV_INTERVAL is
+  BASE's four PLUS this one: any answer about "which invariant bites on an absent
+  limit" must read this file, not only BASE `interval.adoc`.
+- Consequence to remember: for `{lower_unbounded:false, upper_unbounded:false}` with
+  absent limits, BOTH `Limits_consistent` forms fire their antecedent and then call
+  a feature on a Void limit; no released text states Void-evaluation semantics (the
+  RM guards such calls elsewhere, e.g. `history.adoc` `Events_valid` uses
+  `/= Void and then`). The CNF schedule's own cells call it an opinion
+  ("IMO should fail", forum `is-dv-interval-missing-invariants/2210`).
+- `RM/docs/data_types/master00-amendment_record.adoc` L396 ("`DV_INTERVAL` now
+  inherits from `INTERVAL`") + L503 (lower_unbounded/upper_unbounded were once
+  FUNCTIONS) = the lineage; no revision ever added a bound-presence invariant.

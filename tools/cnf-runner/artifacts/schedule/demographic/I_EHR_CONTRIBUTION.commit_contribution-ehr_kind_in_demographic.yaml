@@ -1,0 +1,37 @@
+# The demographic CONTRIBUTION's kind scope, refusal half one: the released
+# request schema admits ONLY the five party types —
+# schemas/demographic/UVersionable.yaml is a oneOf + discriminator over
+# AGENT/GROUP/ORGANISATION/PERSON/ROLE with its own "use only demographic
+# types" comment, and SM uv_party.adoc types demographic version content
+# "specific to PARTY" — so a member whose data is a FOLDER asserts a kind
+# the route cannot mean. The refusal is released-assigned; the STATUS rides
+# AMB-131's fixed handling (422: the body parses, the semantic contradiction
+# between route family and declared class is the 422 row).
+id: I_EHR_CONTRIBUTION.commit_contribution-ehr_kind_in_demographic
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [PartyOperations]
+exercises: [ChangeSets]
+profiles: [OPTIONS]
+ambiguities: [AMB-131]
+test_purpose: >-
+  A demographic CONTRIBUTION whose member data is a FOLDER — an EHR-family
+  kind the demographic UVersionable schema does not admit — is refused, and
+  nothing is committed.
+description: "Commit demographic CONTRIBUTION carrying an EHR-family FOLDER member"
+spec_refs:
+  - "ITS-REST OAS schemas/demographic/UVersionable.yaml (the five-type discriminator — cited as the OAS; docs text silent)"
+  - "SM openehr_platform §UV_PARTY (demographic version content specific to PARTY)"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes (the 422 row)"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+data_sets: [cnf.directory.root_only]
+flow:
+  - step: 1
+    call: commit_contribution
+    variant: demographic
+    with:
+      versions:
+        - { data: "${ds:cnf.directory.root_only}", change_type: creation }
+    expect: validation_failed              # AMB-131 (a): a body the route cannot mean

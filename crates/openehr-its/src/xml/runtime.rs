@@ -35,8 +35,10 @@ pub const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Namespace {
     /// `http://schemas.openehr.org/v1` — the `Release-1.0.2v2` bundle, the
-    /// RELEASED-STABLE lineage upstream directs stable consumers to, and this
-    /// crate's serialization default.
+    /// RELEASED-STABLE lineage upstream directs stable consumers to. Every
+    /// caller selects a namespace explicitly (no `Default` exists); the
+    /// template/archetype codecs pin V1, while the served RM wire defaults
+    /// to V2 (owner ruling 2026-08-03, issue #1666 — register AMB-185).
     V1,
     /// `http://schemas.openehr.org/v2` — the `Release-2.0.0v2` bundle, TRIAL
     /// upstream ("These schemas are in *TRIAL* state and subject to change").

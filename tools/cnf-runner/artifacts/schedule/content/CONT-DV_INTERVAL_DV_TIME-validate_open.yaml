@@ -1,10 +1,11 @@
-# Re-adjudicated 2026-07-22 (issue #228): the previously-rejected rows rested on
-# invariants the openEHR RM does NOT define. BASE foundation_types §Interval
-# defines only Lower_included_valid / Upper_included_valid / Limits_consistent /
-# Limits_comparable — there is no bound-value-required-when-not-unbounded
-# invariant, and partial-precision comparability is an acknowledged open
-# discussion (the table's own violates text flagged it). A conformant server
-# therefore accepts all of these; expectations corrected rejected -> accepted.
+# Re-adjudicated 2026-07-22 (issue #228), re-grounded 2026-08-21 (AMB-43): the
+# previously-rejected rows are underivable. BASE Interval AND RM DV_INTERVAL
+# each carry a Limits_consistent guarded by "(not upper_unbounded and not
+# lower_unbounded) implies" with UNGUARDED feature calls on both limits, and
+# the released text nowhere states how such a call evaluates on a Void limit
+# (RM data_types §DV_INTERVAL; the register entry carries the adjudication) —
+# refusing on an underivable violation would invent a prohibition, so a
+# conformant server accepts these; expectations corrected rejected -> accepted.
 id: CONT-DV_INTERVAL_DV_TIME-validate_open
 kind: content
 component: CONTENT

@@ -21,6 +21,15 @@ request:
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
 outcomes:
-  ok: { status: 200, headers: { Content-Type: negotiated } }  # 200_Template_adl1_4_retrieved.yaml
+  ok:
+    status: 200                                      # 200_Template_adl1_4_retrieved.yaml
+    headers:
+      Content-Type: negotiated
+      # OAS-declared on this response (headers/ETag_Template_adl1_4.yaml),
+      # weak-prefixed per the overview §Deprecated headers MUST; the value is
+      # the ADDRESSED template id — `<template_id>` resolves from the step's
+      # own `with:` argument (a free string, never the ADL2 HRID grammar);
+      # register AMB-112.
+      ETag: { match: 'pattern:W/"<template_id>"', applies: { its_rest: ">=1.1.0" } }
   not_found: { status: 404 }                         # 404_unknown_template_id.yaml
   not_acceptable: { status: 406 }                    # 406.yaml

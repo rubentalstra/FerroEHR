@@ -334,6 +334,38 @@ pub async fn close_lineage_at(
     Ok(())
 }
 
+/// The stored state of one BRANCH lineage of a container — the highest
+/// `branch_version` held on `(creating_system_id, trunk_version,
+/// branch_number)` and whether that lineage's tip row is still open.
+///
+/// `(0, false)` when the store holds no version of the lineage.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn branch_lineage_state(
+    tx: &mut PgConnection,
+    vo_id: VoId,
+    lineage: &(String, i32, i32),
+) -> Result<(i32, bool), StorageError> {
+    let (csid, trunk, branch) = lineage;
+    let row = sqlx::query(
+        "SELECT max(branch_version) AS max_branch, \
+                bool_or(upper_inf(sys_period)) AS open \
+         FROM vo_version WHERE vo_id = $1 AND creating_system_id = $2 \
+         AND trunk_version = $3 AND branch_number = $4",
+    )
+    .bind(vo_id)
+    .bind(csid)
+    .bind(trunk)
+    .bind(branch)
+    .fetch_one(&mut *tx)
+    .await?;
+    Ok((
+        row.try_get::<Option<i32>, _>("max_branch")?.unwrap_or(0),
+        row.try_get::<Option<bool>, _>("open")?.unwrap_or(false),
+    ))
+}
+
 /// The current state of a to-be-imported container in the target store —
 /// `kind: None` when the container is not present (first receipt — master06
 /// §Copying Case 2).

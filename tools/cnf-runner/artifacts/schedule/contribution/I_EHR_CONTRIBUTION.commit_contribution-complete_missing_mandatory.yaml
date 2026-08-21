@@ -11,7 +11,7 @@
 # SPEC SILENCE on the code, registered as AMB-194: no released sentence assigns
 # a status to this rejection. The register's fixed handling is 422 — the
 # overview's own row for a well-formed request whose semantics cannot be
-# followed, and the code the released `422_COMPOSITION.yaml` assigns to invalid
+# followed, and the code the released `422.yaml` assigns to invalid
 # committed content.
 #
 # The ONLY difference from the accepting sibling is the lifecycle code, so a red

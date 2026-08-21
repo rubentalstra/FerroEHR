@@ -88,12 +88,11 @@ impl FerroEhrService {
         self.ensure_content_writable(ehr_id).await?;
         // `POST /directory` manages the single directory slot = EHR.directory
         // (= folders[1], RM ehr §EHR Class Directory_in_folders); it conflicts
-        // only when a LIVE hierarchy occupies that slot. After a logical
-        // delete the container remains (RM common master06 §Logical Deletion)
-        // but the slot is vacant, so create opens a NEW hierarchy (RM ehr
-        // master04 §Folders); the exact conflict status is spec-silent — 409
-        // is our choice (CNF master09 E.2 requires an error for a live
-        // directory only).
+        // only when a LIVE hierarchy occupies that slot. NOTE: no released
+        // sentence states whether a logically DELETED directory still occupies
+        // the slot — register AMB-79 records both leans; our choice is that a
+        // deleted directory does not block a re-create, and the conflict
+        // status 409 is likewise our choice on the unbound status-table row.
         if crate::storage::ehr_repo::live_directory_exists(&self.pool, ehr_id).await? {
             return Err(ServiceError::conflict(format!(
                 "EHR {ehr_id} already has a directory"

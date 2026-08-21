@@ -50,7 +50,7 @@ requires:
   import:
     extract: cnf.messaging.ehr_extract.branch_lineage_v1
     container: X_VERSIONED_COMPOSITION
-data_sets: [cnf.messaging.ehr_extract.branch_lineage_v2]
+data_sets: [cnf.messaging.ehr_extract.branch_lineage_v2, cnf.messaging.ehr_extract.branch_lineage_v3]
 flow:
   - step: 1                              # append trunk ::2, leaving ::1.1.1 open
     call: import_ehr_extract
@@ -58,7 +58,13 @@ flow:
       an_ehr_id: "${ehr_id}"
       an_extract: "${ds:cnf.messaging.ehr_extract.branch_lineage_v2}"
     expect: updated
-  - step: 2                              # the default, latest-only export
+  - step: 2                              # advance the BRANCH to ::1.1.2 LAST, so the
+    call: import_ehr_extract             # most-recently-added version is a branch head
+    with:                                # and the trunk-vs-most-recent readings separate
+      an_ehr_id: "${ehr_id}"             # (register AMB-206)
+      an_extract: "${ds:cnf.messaging.ehr_extract.branch_lineage_v3}"
+    expect: updated
+  - step: 3                              # the default, latest-only export
     call: export_ehr_extracts
     with:
       extract_spec:
@@ -99,3 +105,7 @@ flow:
       # `::1` is NOT asserted absent: the exported head names it as its
       # `preceding_version_uid`, so its uid is legitimately in the body.)
       - { assert: returns, omits: "8b52e0c9-6d31-4f74-a09e-2c47b1d5836f::cnf\\.branchsys\\.openehr\\.org::1\\.1\\.1" }
+      # The DISCRIMINATOR: the branch head ::1.1.2 is the most-recently-added
+      # version at export time, so its absence pins the trunk-preference
+      # departure AMB-206 argues (a latest_version() reading would serve it).
+      - { assert: returns, omits: "8b52e0c9-6d31-4f74-a09e-2c47b1d5836f::cnf\\.branchsys\\.openehr\\.org::1\\.1\\.2" }
