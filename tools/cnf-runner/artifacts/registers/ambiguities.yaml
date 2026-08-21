@@ -2907,7 +2907,10 @@ AMB-94:
     and repeat the same sentence verbatim. The description says "filtered
     by the given one or more `tag_key`, `tag_value`, `tag_target_path`"
     while all three params are scalar strings
-    (explode:true on a non-array schema is meaningless); how repeats of
+    (explode:true on a non-array schema is meaningless — the same
+    explode-on-scalar shape recurs on parameters/query/ehr_id_Admin.yaml,
+    where the `multiple` example is an ARRAY its own scalar schema forbids,
+    and on ehr_id_Query.yaml; scope extended 2026-08-21); how repeats of
     one param combine and how different params combine is unsaid; the
     match mode (exact/prefix/substring, case sensitivity) is unsaid; and
     matching tag_target_path against a tag with no target_path is unsaid.
@@ -4255,8 +4258,14 @@ AMB-122:
     SEMVER style (i.e. `major.minor.patch`)") +
     specifications/parameters/path/version.yaml (the quoted description,
     shared by definition_query_version_store.yaml,
-    definition_query_version_get.yaml and the query-execution routes) +
-    operations/definition_query_version_store.yaml (responses 200/400/409) +
+    definition_query_version_get.yaml, the query-execution routes AND
+    definition_template_adl2_version_get.yaml — the fifth consumer, added
+    2026-08-21, so the prefix-resolution rule spans the ADL2 template
+    surface too) +
+    operations/definition_query_version_store.yaml (responses 200/400/409;
+    NOTE it omits the ContentType_text parameter its unversioned sibling
+    definition_query_store.yaml declares over the same text/plain body — a
+    released parameter-list asymmetry) +
     responses/409_StoredQuery_version.yaml (the duplicate-pair trigger) +
     responses/400.yaml ("the request could not be parsed or is invalid (e.g.
     malformed request URL syntax, missing required header or parameter, or
@@ -4312,9 +4321,11 @@ AMB-123:
     three released sources that never meet. SM makes it a precondition:
     `store_query` carries `Pre_valid_query: is_valid_query(a_query_text)`,
     and `valid_query` "Return True if the provided query text is a valid
-    instance of the formalism" — the precondition names a function
-    `is_valid_query` the interface does not declare (the declared operation
-    is `valid_query`), an editorial defect that leaves the precondition
+    instance of the formalism" — the precondition is wrong in name AND
+    ARITY (widened 2026-08-21): it names `is_valid_query(a_query_text)`
+    while the declared operation is `valid_query(a_query_text, a_type)`
+    with a MANDATORY second argument, so renaming alone would leave it
+    still malformed — an editorial defect that leaves the precondition
     formally dangling. ITS-REST declares only the general syntactic 400 on
     both stores and never mentions validity. QUERY 1.1.0 is silent on stored
     queries entirely — the component specifies AQL, not a query registry — so
@@ -4501,7 +4512,8 @@ AMB-126:
 AMB-127:
   ambiguity: >-
     The stored-query sub-surface has realization gaps in BOTH directions.
-    SM→ITS: of the nine `I_DEFINITION_QUERY` operations the released wire
+    SM→ITS: of the EIGHT `I_DEFINITION_QUERY` operations (count corrected
+    2026-08-21) the released wire
     realizes two — `store_query` (in its version-less and versioned forms)
     and `list_queries` (the prefix list). Four have no endpoint at all:
     `delete_query` (with `Pre_has_query`: `has_query(a_query_name)` and
@@ -4516,7 +4528,7 @@ AMB-127:
     operation, because the interface declares no get-a-query function at all;
     a released wire behaviour with no service-model anchor to name it by.
   source: >-
-    SM UML/classes/i_definition_query.adoc (all nine operations, incl.
+    SM UML/classes/i_definition_query.adoc (all eight operations, incl.
     §delete_query's pre/postconditions and §store_query_set's "TODO:
     determine details.") vs the released ITS-REST 1.1.0 definition API —
     specifications/definition.openapi.yaml (only
@@ -4565,9 +4577,14 @@ AMB-128:
     committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified
     Format which does not support TEMPLATE_ID value under an equivalent
     `LOCATABLE.archetype_details.template_id` attribute of contained data."
-    None of the ten party create/update operations declares an
-    `openehr-template-id` parameter, so a FLAT party commit has no channel for
-    the template its field identifiers would have to be generated from. What a
+    That MUST is SCOPED to committing COMPOSITION, and no released PARTY
+    shape exists in the format at all — the decisive ground, re-stated
+    2026-08-21: NO operation anywhere declares an openehr-template-id
+    parameter (the header lives only in the docs text), so its absence from
+    the party routes distinguishes nothing; what does is the scope of the
+    MUST plus the mapping chapter. A FLAT party commit therefore has no
+    channel for the template its field identifiers would have to be
+    generated from, and what a
     service does with the two MIME types it is nevertheless offered on those
     routes is stated nowhere.
   source: >-
@@ -4584,8 +4601,11 @@ AMB-128:
     characteristic) and §"Relationship to Other Specifications" ("__Operational
     Templates (OPT)__: field identifiers are generated from OPT definitions";
     "serialized instances represent valid RM structures (e.g. COMPOSITION)") +
-    master05-rm_mapping.adoc (the chapter's top-level mapping is `== COMPOSITION`;
-    no demographic PARTY root mapping exists) + docs/overview/Resources.md
+    master05-rm_mapping.adoc (43 class sections with exactly ONE
+    versioned-object root among them, `== COMPOSITION` — enumeration
+    corrected 2026-08-21; no demographic PARTY root mapping exists, and no
+    PERSON/ORGANISATION/ROLE/AGENT/GROUP/PARTY section exists anywhere in
+    the simplified_formats chapters) + docs/overview/Resources.md
     §Simplified Formats (the negotiation rules and their 415/406 MUSTs) and
     §"Data representation" ("Services MUST support at least one of the openEHR
     **XML** or **JSON** canonical formats for resource representation.
@@ -4611,7 +4631,9 @@ AMB-128:
     forbids. Nothing is silently narrowed — the refusal is a declared,
     exercised branch. Gated by
     I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type (415) and
-    I_PARTY.get_party-simplified_accept (406). Reported upstream (#1574):
+    SF-SCOPE-demographic_no_simplified (406 — the gate name corrected
+    2026-08-21; no I_PARTY.get_party-simplified_accept case exists).
+    Reported upstream (#1574):
     either give the Simplified Formats a demographic shape and the party
     commits a template-naming channel, or drop the two Simplified MIME types
     from the party routes' negotiation enums.
@@ -4740,8 +4762,13 @@ AMB-131:
     class, and neither of the two ways a request can name the wrong one has an
     assigned branch. (a) A body whose `_type` is a DIFFERENT concrete PARTY
     subtype than the route's — a `ROLE` posted to `/demographic/person` — is
-    well-formed JSON and a well-formed RM object; the create declares
-    400/404/422 and no sentence says which of them covers it. (b) A
+    well-formed JSON and a well-formed RM object, but NOT schema-clean
+    against the operation's own declared request schema (Person.yaml pins
+    `_type` to `enum: [PERSON]` with x-discriminator-value — the released
+    element added 2026-08-21, which the 400 row's "syntactically invalid
+    content" could be read to cover); the create declares
+    400/404/422 and no sentence says which of them covers it, so BOTH 400
+    and 422 have a defensible released reading. (b) A
     `uid_based_id` naming a version container that EXISTS but holds another
     kind — a PERSON's `versioned_object_uid` addressed through
     `/demographic/organisation/{uid_based_id}` — is a well-formed identifier
@@ -4764,11 +4791,14 @@ AMB-131:
     silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, one position per branch, each landing on a row the status
-    table already describes. (a) WRONG SUBTYPE IN THE BODY is 422: the request
-    parses and carries a valid RM object, so the 400 row — malformed syntax,
-    syntactically invalid content — does not describe it; what cannot be
-    followed is the SEMANTIC contradiction between the resource the route
-    creates and the class the body declares, which is the 422 row verbatim.
+    table already describes. (a) WRONG SUBTYPE IN THE BODY is 422, chosen
+    over the schema-grounded 400 reading (re-argued 2026-08-21): the
+    Person.yaml `_type` enum makes a 400 defensible, but the defect is not
+    the BYTES — the identical body is perfectly valid one route over — it
+    is the SEMANTIC contradiction between the resource the route
+    creates and the class the body declares, which is the 422 row verbatim;
+    the status stays OUR pick on an unassigned branch, with both readings
+    recorded.
     (b) WRONG KIND BEHIND THE UID is 404: §Typing makes a version container
     single-typed, so an ORGANISATION container with that uid does not exist and
     the request addresses no target resource — the 404 row verbatim. Neither is
@@ -4948,13 +4978,20 @@ AMB-135:
     interface. (2) `I_PARTY.get_party_at_version` carries
     `Pre_has_party_version: has_party_version (a_party_version_id)`, naming a
     function the interface does not declare; the declared probe is
-    `has_party_version_id`. (3) The `I_PARTY_RELATIONSHIP` twin of that
-    operation, `get_party_relationship_at_version`, declares NO precondition at
-    all, although `has_party_relationship` exists and every other read on the
-    interface is guarded. (4) The create/update preconditions call
+    `has_party_version_id`. (3) NONE of `I_PARTY_RELATIONSHIP`'s three reads
+    (get_party_relationship / _at_time / _at_version) is guarded — its only
+    preconditions sit on update and delete — and the cross-interface
+    asymmetry is that `I_PARTY` guards get_party and get_party_at_version
+    while leaving get_party_at_time unguarded (corrected 2026-08-21: the
+    earlier "every other read on the interface is guarded" was false). (4)
+    The CREATE preconditions (create_party, create_party_relationship —
+    the two `valid_content` sites in the chapter; scope corrected
+    2026-08-21) call
     `valid_content (a_version)` while `I_VALIDITY_CHECKER` declares
     `content_valid` — the same naming defect AMB-77 records on
-    `I_EHR_COMPOSITION`. (5) `I_DEMOGRAPHIC_SERVICE.create_party_relationship`
+    `I_EHR_COMPOSITION`; the two UPDATES declare the error `content_invalid`
+    with NO content-validity precondition at all — the defect-(5) shape,
+    unguarded rather than misnamed. (5) `I_DEMOGRAPHIC_SERVICE.create_party_relationship`
     lists the error `definition_unknown` but carries only `Pre_content_valid` —
     no `definitions_valid` precondition to raise it, where its `create_party`
     sibling carries both. (6) Every identifier on both interfaces is typed bare
@@ -4964,7 +5001,8 @@ AMB-135:
     (RM common master06 §Version Identification) and whose wire form is exactly
     that. (7) `I_PARTY.delete_party` postulates `Post_party_deleted: not
     has_party (a_versioned_party_id)` — a PHYSICAL delete — which the RM
-    forbids for a versioned repository.
+    forbids for a versioned repository; `delete_party_relationship` carries
+    the identical postcondition shape (twin added 2026-08-21).
   source: >-
     SM UML/classes/i_demographic_service.adoc (§i_party / §i_party_relationship
     — the untyped parameters; §create_party's `Pre_party_definitions_valid` +
@@ -5235,9 +5273,12 @@ AMB-139:
     bodyless success — but which also means a case expecting `ok_empty` passes
     on either code and no case can require or distinguish the asynchronous
     branch. That is a deliberate, recorded limit of the instrument, not
-    coverage. The vocabulary obstacle behind it is GONE: the 2026-07-28
-    schedule release added the `accepted` kind, so the branch is now nameable
-    and the absorption is a pending migration rather than a hard boundary (the
+    coverage. The vocabulary obstacle behind it is GONE and the MIGRATION
+    LANDED (status corrected 2026-08-21): outcomes.yaml defines the
+    `accepted` kind and both admin bindings declare it beside the 204 —
+    what remains, permanently, is that the release gives the asynchronous
+    arm no client-selectable TRIGGER, so the branch is declared and
+    nameable but unreachable by construction (the
     `admin-delete-async-acceptance-branch` wire-surface element carries it).
     This SUT is synchronous and always answers `204`.
     Reported upstream (#1585).
@@ -5280,7 +5321,10 @@ AMB-140:
     appropriate") — the silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, three positions, each landing on released ground and none
-    inventing a status the operation does not declare. (a) A SUBSET LIST IS
+    CONFLICTING with a predefined code (corrected 2026-08-21: position (c)'s
+    400 is NOT among the operation's declared 202/204/404/405 — it is an
+    ADDITIONAL status under the table's "Additional status codes MAY be
+    used" clause, the same device AMB-139 relies on). (a) A SUBSET LIST IS
     DELETE-WHAT-EXISTS → `204`. Every id the caller named that resolves to an
     EHR is deleted; an id that resolves to nothing contributes nothing and does
     not fail the call. Grounds: the operation's only stated purpose is to delete
@@ -5453,9 +5497,12 @@ AMB-143:
     operations describe the deletion and stop: no sentence states that a
     subsequent read of the deleted `ehr_id` is a 404 rather than, say, a 410 or
     a tombstone; none states whether the same `ehr_id` may be created again
-    (`ehr_create_with_id` declares its 409 for "a conflict with an already
-    existing EHR with the same subject id, namespace pair", which says nothing
-    about an id that used to exist); and none states whether a deleted EHR's
+    (`ehr_create_with_id` declares 409_EHR_with_id.yaml — "the supplied
+    `ehr_id` is already used by an EXISTING EHR"; the subject-pair wording
+    belongs to the id-less create's 409_EHR.yaml — file corrected
+    2026-08-21, and the correction STRENGTHENS re-creation: the only
+    conflict trigger is conditioned on an existing EHR, which a physically
+    deleted one is not); and none states whether a deleted EHR's
     ids may be reused by the server. The cascade itself is given by EXAMPLE, not
     by extension: "All resources associated with or owned by the specified EHR
     (**such as** COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their
@@ -5470,8 +5517,8 @@ AMB-143:
     post-delete or re-creation statement in either) +
     specifications/responses/204_deleted_hard.yaml (the hard-delete sentence,
     which describes the response and not the subsequent state) +
-    operations/ehr_create_with_id.yaml + responses/409_EHR.yaml (the quoted
-    subject-conflict wording — the only 409 the create declares) +
+    operations/ehr_create_with_id.yaml + responses/409_EHR_with_id.yaml (the
+    already-used-ehr_id wording — the only 409 the with-id create declares) +
     responses/404_unknown_ehr_id.yaml ("`404 Not Found` is returned when an EHR
     with `ehr_id` does not exist") + SM UML/classes/i_admin_service.adoc
     §physical_ehr_delete (`Pre_has_ehr` and the error `ehr_id_does_not_exist` —
@@ -5479,7 +5526,8 @@ AMB-143:
     SM i_definition_query.adoc §delete_query, which does state
     `Post_query_deleted`) + RM UML/classes/org.openehr.rm.ehr.ehr.adoc
     §Attributes (the aggregate the delete destroys: `compositions`,
-    `ehr_status`, `directory`, `contributions`, `tags`, `ehr_access`) — the
+    `ehr_status`, `directory`, `folders`, `contributions`, `tags`,
+    `ehr_access` — `folders` added 2026-08-21) — the
     silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, derived from what the delete IS rather than from a missing
@@ -5651,10 +5699,12 @@ AMB-146:
     its own attribute list. The sentence reads "The following attributes in the
     `.well-known/openid-configuration` must match those defined in the OAuth
     2.0 + OpenID Connect Discovery specification as well as the FHIR SMART
-    metadata specification", and the list it introduces ends with
-    `capabilities` — which is not an OpenID Provider Metadata member at all but
+    metadata specification", and the 14-item list it introduces includes
+    `capabilities` (item 13; the last is code_challenge_methods_supported —
+    positions corrected 2026-08-21) — which is not an OpenID Provider
+    Metadata member at all but
     a SMART-configuration member, defined by master04's OWN §Capabilities
-    section three sections later ("The `capabilities` section advertises
+    section two sections later ("The `capabilities` section advertises
     supported SMART features as an array value"). Everything around the
     sentence is about the other document: the chapter opens by extending "the
     FHIR `.well-known/smart-configuration` endpoint definition", the example
@@ -5665,8 +5715,8 @@ AMB-146:
     a different document than the one the whole chapter defines.
   source: >-
     ITS-REST docs/smart_app_launch/master04-service_discovery.adoc
-    §Authentication Endpoints (the quoted sentence and its 14-item list, whose
-    last item is `capabilities`) vs the same file's §Service Discovery ("The
+    §Authentication Endpoints (the quoted sentence and its 14-item list,
+    carrying `capabilities` as item 13) vs the same file's §Service Discovery ("The
     *SMART Service Discovery* mechanism extends the FHIR
     `.well-known/smart-configuration` endpoint definition"; "Responses to
     `/.well-known/smart-configuration` endpoint must be served with the
@@ -5861,10 +5911,15 @@ AMB-150:
     ("the following openEHR-specific parameters may be included in the token
     response"), so a token can hold `patient/composition-*.r` and carry no
     resolvable EHR at all, and nothing says what the Platform then does.
-    (6) MULTI-SCOPE COMPOSITION AND COMPARTMENT MATCHING. Nothing says how
-    several granted scopes combine when more than one could permit a request,
-    and nothing says by what value the `patient` compartment is matched to a
-    request's EHR.
+    (6) MULTI-SCOPE COMPOSITION. Nothing says how
+    several granted scopes combine when more than one could permit a
+    request. The compartment-MATCHING half of the old (6) is RELEASED after
+    all (narrowed 2026-08-21): master04 §Capabilities binds the EHR-level
+    launch context to the `ehrId` token claim ("context-openehr-ehr: …
+    requested via launch/patient scope and conveyed via the ehrId token
+    claim"), which with master08's "restricted to data within that
+    patient's EHR" fixes the match value — only the FHIR-`patient`-claim
+    FALLBACK and the composition rule stay ours.
   source: >-
     ITS-REST docs/smart_app_launch/master08-scopes.adoc §Scopes (second
     paragraph: "The _Platform_ must validate requested scopes against …") +
@@ -5874,7 +5929,10 @@ AMB-150:
     operation) + master07-authorization.adoc §Context Selection (the token
     response table and its introducing sentence "the following openEHR-specific
     parameters may be included in the token response") + the whole
-    smart_app_launch tree, grep-verified to contain no HTTP method, no openEHR
+    smart_app_launch tree, grep-verified to contain no HTTP method AGAINST AN
+    OPENEHR ROUTE (the single method mention is master07's "POSTing to the …
+    token_endpoint" — the OAuth endpoint; claim narrowed 2026-08-21), no
+    openEHR
     route path, no status code, and no operation identifier + ITS-REST
     docs/overview/Requests_and_responses.md §"Authentication and authorization"
     ("If authentication and authorization are required, services MUST properly
@@ -5922,10 +5980,15 @@ AMB-150:
     broadest permitting compartment decides (System over User over Patient), so
     a `system/` grant is not narrowed by the coincidental presence of a
     `patient/` one (`broaden` in `enforce.rs`); and when the patient
-    compartment does decide, the token's claim is compared to the target EHR's
+    compartment does decide, the RELEASED half is honoured first — the
+    `ehrId` token claim master04 §Capabilities binds the launch context to
+    (`launch_context_ehr_id` in `enforce.rs` prefers `ehrId`; ownership
+    split recorded 2026-08-21) — and only past it does the comparison fall
+    back to the FHIR `patient` claim and the target EHR's
     `EHR_STATUS.subject.external_ref` (`subject_gate` in
     `app/ferroehr-rest/src/extensions/access/pep.rs`), the only value the RM
-    gives an EHR that identifies its patient. Both are our own design where the
+    gives an EHR that identifies its patient. The fallback and the
+    composition rule are our own design where the
     spec is silent. Reported upstream (#1596).
   disposition: fixed_handling
   upstream_issue: 1596
