@@ -125,37 +125,45 @@ pub(crate) fn reject_deleted_with_data(lifecycle: &str) -> Result<(), ServiceErr
 /// Whether a `version_lifecycle_state` transition `from -> to` is sanctioned by
 /// the master06 §Version Lifecycle state machine.
 ///
-/// `from = None` is a **first** version (no preceding state): only the two
-/// commit-time states `complete`/`incomplete` are reachable
-/// (master06 §Incomplete Content: "content will be committed in the `complete`
-/// state … it may be committed as `incomplete`"). A subsequent transition is
-/// checked against the state table (master06 §Abandoned and Inactive States):
+/// The authority is the FORMAL machine the section designates — "The following
+/// diagram shows the formal state machine of the
+/// `ORIGINAL_VERSION._lifecycle_state_` attribute"
+/// (`RM/docs/UML/diagrams/RM-version_lifecycle.svg`); the §Abandoned and
+/// Inactive States prose table covers only that pair's transitions. The
+/// diagram's exact edge set:
 ///
-/// | from | allowed to |
+/// | from | allowed to (edge) |
 /// |---|---|
-/// | `complete`   | `complete` (edit), `inactive` (deactivate), `deleted` (delete) |
-/// | `incomplete` | `incomplete` (edit), `complete` (complete), `abandoned` (abandon), `deleted` (delete) |
-/// | `inactive`   | `inactive`, `complete` (reactivate), `incomplete` (retrieve), `deleted` (delete) |
-/// | `abandoned`  | `abandoned`, `incomplete` (retrieve), `deleted` (delete) |
-/// | `deleted`    | `complete`/`incomplete` (restoration, `816`) |
+/// | (new)        | `incomplete` (`create_draft`), `complete` (`create_final`) |
+/// | `complete`   | `complete` (update), `incomplete` (update), `inactive` (deactivate), `deleted` (delete) |
+/// | `incomplete` | `incomplete` (update), `complete` (complete), `abandoned` (abandon), `deleted` (delete) |
+/// | `inactive`   | `complete` (reactivate), `incomplete` (retrieve), `deleted` (delete) |
+/// | `abandoned`  | `incomplete` (retrieve), `deleted` (delete) |
+/// | `deleted`    | `complete`/`incomplete` (revert) |
+///
+/// The machine draws self-`update` loops ONLY on `complete` and `incomplete`:
+/// a same-state re-commit of `inactive`/`abandoned`/`deleted` content is not a
+/// drawn transition (edit resumes via `reactivate`/`retrieve`/`revert` first).
 ///
 /// A transition outside this table is a `422` naming the state machine — e.g.
 /// `complete -> abandoned` (must pass through `incomplete`), `abandoned ->
 /// complete` (must `retrieve` to `incomplete` first). The import replay does
 /// **not** call this (it preserves source history verbatim — master06
 /// §Copying), and the logical-delete path targets `deleted` from any live state
-/// (master06 §Logical Deletion).
+/// (master06 §Logical Deletion, matching the diagram's four `delete` edges).
 pub(crate) fn validate_transition(from: Option<&str>, to: &str) -> Result<(), ServiceError> {
     use state::{ABANDONED, COMPLETE, DELETED, INACTIVE, INCOMPLETE};
 
     let allowed = match from {
-        // A first version can only be authored `complete` or `incomplete`.
+        // A first version can only be authored `complete` or `incomplete`
+        // (create_final / create_draft).
         None => matches!(to, COMPLETE | INCOMPLETE),
-        Some(COMPLETE) => matches!(to, COMPLETE | INACTIVE | DELETED),
+        Some(COMPLETE) => matches!(to, COMPLETE | INCOMPLETE | INACTIVE | DELETED),
         Some(INCOMPLETE) => matches!(to, INCOMPLETE | COMPLETE | ABANDONED | DELETED),
-        Some(INACTIVE) => matches!(to, INACTIVE | COMPLETE | INCOMPLETE | DELETED),
-        Some(ABANDONED) => matches!(to, ABANDONED | INCOMPLETE | DELETED),
-        // Restoration of a logically-deleted version (change type `816`).
+        Some(INACTIVE) => matches!(to, COMPLETE | INCOMPLETE | DELETED),
+        Some(ABANDONED) => matches!(to, INCOMPLETE | DELETED),
+        // The two `revert` edges out of `deleted` (restoration, change
+        // type `816`).
         Some(DELETED) => matches!(to, COMPLETE | INCOMPLETE),
         // An unknown stored state (should be impossible past the CHECK) is
         // treated permissively — the terminology guard is the real gate.
@@ -294,7 +302,8 @@ mod tests {
         assert!(validate_transition(None, ABANDONED).is_err());
         assert!(validate_transition(None, DELETED).is_err());
 
-        // The named transitions of the spec table.
+        // The drawn transitions of the formal machine
+        // (RM-version_lifecycle.svg, designated by §Version Lifecycle).
         assert!(validate_transition(Some(COMPLETE), INACTIVE).is_ok()); // deactivate
         assert!(validate_transition(Some(INACTIVE), COMPLETE).is_ok()); // reactivate
         assert!(validate_transition(Some(INACTIVE), INCOMPLETE).is_ok()); // retrieve
@@ -302,10 +311,14 @@ mod tests {
         assert!(validate_transition(Some(INCOMPLETE), ABANDONED).is_ok()); // abandon
         assert!(validate_transition(Some(ABANDONED), INCOMPLETE).is_ok()); // retrieve
         assert!(validate_transition(Some(ABANDONED), DELETED).is_ok()); // delete
-        assert!(validate_transition(Some(DELETED), COMPLETE).is_ok()); // restoration
+        assert!(validate_transition(Some(DELETED), COMPLETE).is_ok()); // revert
+        assert!(validate_transition(Some(COMPLETE), INCOMPLETE).is_ok()); // update (drawn complete -> incomplete)
 
-        // Ordinary same-state re-commit (a new version, unchanged state).
+        // Self-`update` loops are drawn ONLY on complete and incomplete.
         assert!(validate_transition(Some(COMPLETE), COMPLETE).is_ok());
+        assert!(validate_transition(Some(INCOMPLETE), INCOMPLETE).is_ok());
+        assert!(validate_transition(Some(INACTIVE), INACTIVE).is_err());
+        assert!(validate_transition(Some(ABANDONED), ABANDONED).is_err());
 
         // Illegal transitions. The first is asserted as DATA — the refusal
         // names the state machine it enforces, readable off the value.
@@ -317,7 +330,6 @@ mod tests {
             other => panic!("complete -> abandoned must be refused, got {other:?}"),
         }
         assert!(validate_transition(Some(COMPLETE), ABANDONED).is_err());
-        assert!(validate_transition(Some(COMPLETE), INCOMPLETE).is_err());
         assert!(validate_transition(Some(ABANDONED), COMPLETE).is_err());
         assert!(validate_transition(Some(ABANDONED), INACTIVE).is_err());
         assert!(validate_transition(Some(INACTIVE), ABANDONED).is_err());
