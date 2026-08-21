@@ -54,3 +54,35 @@ Prose on owner_id: `RM/docs/common/master06-change_control_package.adoc` L27/L35
 
 Related: [[version-lifecycle-and-identification-location]],
 [[versioned-object-read-ops-location]], [[its-rest-wire-contract-location]].
+
+## Closure proofs re-derived 2026-08-21 (use these, don't re-grep blind)
+- **The five uid NOTEs are COMPLETE for the RM's top-level types.** The RM's
+  versioned-container set is exactly six class files
+  (`RM/docs/UML/classes/org.openehr.rm.{common.versioned_folder,
+  common.versioned_object,demographic.versioned_party,ehr.versioned_composition,
+  ehr.versioned_ehr_access,ehr.versioned_ehr_status}.adoc`; the six
+  `ehr_extract.x_versioned_*` are Extract mirrors), so the versioned CONTENT
+  types are FOLDER/PARTY/COMPOSITION/EHR_ACCESS/EHR_STATUS — the same five that
+  carry the NOTE. `PARTY_RELATIONSHIP` has NO versioned container class in RM
+  and no uid NOTE. Corroborating prose: `BASE/docs/architecture_overview/
+  master09-identification.adoc` §Levels of Identification L57 ("content
+  structures such as `COMPOSITION`, `EHR_STATUS`, `EHR_ACCESS`, `PARTY` etc.")
+  — that section states NO population rule and no normative keyword.
+- **The whole RM UML class set contains only THREE uid-bearing invariants**
+  (`grep "uid" RM/docs/UML/classes/*.adoc | grep "/= Void"`):
+  `original_version.adoc` Other_input_version_uids_valid,
+  `version.adoc` Preceding_version_uid_validity, and
+  `demographic.party.adoc` L70 `Uid_mandatory: uid /= Void`. So "only PARTY's
+  uid is invariant-backed" is provable, not merely unfound. FOLDER's class
+  table has NO Invariants section at all.
+- **`SYSTEM` is not a class in ANY vendored BMM** — checked all 18 files under
+  `tools/openehr-codegen/vendor/bmm/` (RM 1.0.2/1.0.3/1.0.4/1.1.0/1.2.0, BASE
+  1.0.4-1.3.0, AM, LANG, TERM): zero class names containing "SYSTEM", and no
+  `=== SYSTEM` heading in RM/BASE/SM docs. `OBJECT_REF.type`'s only escape
+  hatch is the literal `ANY` ("can be used to indicate that any type is
+  accepted"), which does not cover `SYSTEM`. Upstream-report #2524.
+- The uid-population rule is recommendation-strength EVERYWHERE it appears:
+  five RM NOTEs ("It is strongly recommended") + `ITS-REST/specifications/
+  docs/overview/Resources.md` L42-43 ("strongly recommended" + lowercase
+  "should be copied"), while that same file uses uppercase MUST/SHOULD for real
+  requirements (L172/L174) — upstream-report #2523.

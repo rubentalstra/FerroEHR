@@ -96,3 +96,31 @@ when-expected → SHOULD 400 (overview §If-Match). If-Match `required:true` in
 `Requests_and_responses.md` §openehr-item-tag). RM grounding =
 `RM/docs/common/master07-tags.adoc` (Tags Package, ITEM_TAG class). Demographic
 tags exist too but Demographic API is DEVELOPMENT-status.
+
+## Artifact provenance + released-text defects in the OAS files (verified 2026-08-21)
+- **Licence stanza:** every bundle carries `info.license` at **L11-13** =
+  `name: Creative Commons Attribution-NoDerivs 3.0 Unported` /
+  `url: https://creativecommons.org/licenses/by-nd/3.0/` (name and URL AGREE).
+  Present in ALL 21 `computable/OAS/*.openapi.yaml` (7 groups x
+  codegen/html/validation, mirrored at `crates/openehr-its/vendor/rest-oas/`)
+  AND in all 7 source `specifications/*.openapi.yaml`. The repository grant is
+  different: `docs/specs/openehr/ITS-REST/LICENSE` is the unmodified
+  **Apache-2.0** boilerplate (201 lines, verbatim @ 24058992d). The spec's own
+  licence table — `specifications/docs/overview/Description.md` L18-20 (also
+  embedded in the overview bundles' `description`) — declares the same
+  CC-BY-ND-3.0, so the ND claim is deliberate document practice, not a stray
+  copy. Upstream-report #2527; sibling family (TERM AGPL XSD / CNF scripts
+  whose by-sa NAME links a by-nd URL) = #2291.
+- **`operations/definition_template_adl1.4_example_get.yaml`**: the
+  `description` value ends `"…for supported formats.tags:\n"` — a stray
+  `tags:` token concatenated into the string (the real `tags: [ADL1.4]` key is
+  two lines later, L23). Propagated verbatim into all three published
+  `definition-{codegen,html,validation}.openapi.yaml` bundles (L247).
+  Upstream-report #2525. Lesson: parse the YAML (`yaml.safe_load`) before
+  trusting a description quote — the defect is invisible when reading the file
+  as prose.
+- **`schemas/base_types/ObjectRef.yaml`** types `type` as a bare `string`
+  (no enum) and is preceded by a 4-line upstream `# Note:`/`# TODO:` comment
+  about the `_type`-vs-`type` codegen collision — so the OAS never constrains
+  `OBJECT_REF.type`; the constraint lives only in BASE (see
+  [[locatable-uid-and-owner-id-landmarks]]).

@@ -13,15 +13,30 @@ CNF Platform Conformance Test Schedule = `docs/specs/openehr/CNF/docs/platform_t
 - **Content (Data Validation) decision-tables**: master15 (composition), master16 (entry), master17.1–17.7 (data types). master17.3 (quantity) = DV_ORDINAL/DV_SCALE/DV_COUNT/DV_QUANTITY/DV_PROPORTION/DV_INTERVAL<>. Columns = input attrs (magnitude/units/symbol/value…) + constraint columns (C_DV_QUANTITY.list, C_INTEGER.range/list…) + `expected` (accepted/rejected) + `constraints violated`. Each ROW is a data set; case × row = one test.
 - **Robot fixtures**: `docs/specs/openehr/CNF/tests/platform/robot/` — suites under `<INTERFACE>/<operation>/*.robot`; fixtures under `_resources/test_data_sets/` (ehr/{valid,invalid}, compositions/{CANONICAL_JSON,CANONICAL_XML,FLAT,STRUCTURED,TDD}, valid_templates/*, invalid_templates/{empty_file,removed_mandatory_elements,multiple_elements,...}, contributions, query). Fixture naming carries the verdict: `__full.json` = valid, `__invalid_wrong_structure.json` / `__invalid_opt_doesnt_exist.json` = invalid; invalid EHR_STATUS files named by defect (007_ehr_status_is_modifiable_missing.json). Subject id placeholder `__AUTO-GENRATED-BY-TEST__` randomized per run.
 - **The PROFILES book (a SEPARATE CNF document, not the schedule)**:
-  `CNF/docs/profiles/master03-profiles.adoc` §Functional — one capability matrix
-  with CORE / STANDARD / OPTIONS columns; L10 is the binding sentence: "In order
-  to obtain `CORE` or `STANDARD` conformance, **all mentioned capabilities must be
-  met in testing**". L18: **"ADL 1.4 Archetype provisioning" is ticked CORE +
-  STANDARD** (as is ADL 1.4 OPT provisioning) while ADL 2 archetype/OPT
-  provisioning are OPTIONS-only — i.e. the books require a capability ITS-REST
-  publishes no endpoint for. L53-58 = the six Admin capabilities, OPTIONS only;
-  L61-68 = the REST API rows (DEFINITION/EHR CORE; QUERY STANDARD;
-  DEMOGRAPHIC/ADMIN/MESSAGE OPTIONS).
+  `CNF/docs/profiles/master03-profiles.adoc` — **THREE tables, not one**
+  (re-counted 2026-08-21): `== Functional` L14-70, `== Non-Functional` L75-83
+  (Security & Privacy: Signing / Anonymous EHRs), `== Other Non-Functional`
+  L88-93 (External Data Format = XML, JSON). L9 is the binding sentence: "In
+  order to obtain `CORE` or `STANDARD` conformance, all mentioned capabilities
+  must be met in testing". Functional row groups + declared rowspans:
+  `.5+` Definitions L18, `.7+` EHR Persistence L29, `.3+` Demographic
+  Persistence L41, `.3+` Querying L49, `.6+` Admin L53, `.2+` Messaging L60,
+  `.7+` REST APIs L63. L18 ticks **ADL 1.4 Archetype provisioning CORE +
+  STANDARD** (as is ADL 1.4 OPT) while ADL 2 is OPTIONS-only — the books
+  require a capability ITS-REST publishes no endpoint for. L63-68 = the REST
+  API rows (DEFINITION/EHR CORE; QUERY STANDARD; DEMOGRAPHIC/ADMIN/MESSAGE
+  OPTIONS).
+- **TWO malformed rowspans in that file, in DIFFERENT tables** (upstream-report
+  #2526; arithmetic: cells+span-slots must be a multiple of the 5 columns):
+  Functional `.7+|*REST APIs*` L63 declares 7 and supplies **6** rows
+  (24 content cells + 7 = 31, not ÷5; `.6+` would give exactly 30), and
+  Non-Functional `.3+|*Security & +\n Privacy*` L79 declares 3 and supplies
+  **2** (8 + 3 = 11, not ÷5; `.2+` gives 10). Every other Functional group's
+  span matches its row count exactly (5/7/3/3/6/2). Do NOT describe the
+  Security & Privacy defect as being in "the same table" as REST APIs.
+- **`SMART` appears NOWHERE in the whole `CNF/docs/` tree** (`grep -rni smart`
+  = zero hits) — the profiles book never gained a SMART row despite the
+  ITS-REST SMART sub-spec existing.
 - **CNF cites SM operation names that do not exist**: `master13-func_tc_messaging.adoc`
   L51/L64/L77 name `I_EHR_EXTRACT.export_ehr()` / `export_ehr_extract()` —
   the SM declares `export_ehrs` / `export_ehr_extracts` on
