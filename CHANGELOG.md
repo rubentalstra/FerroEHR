@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Importing an EHR Extract that advances an already-held BRANCH lineage (a
+  later branch version arriving while the stored branch head is still open)
+  now lands as an append: the stored tip is superseded and the new version
+  becomes the lineage's head, mirroring the trunk behaviour — RM common
+  master06 §Copying / §Semantics in Distributed Systems. Previously the
+  import was refused with a bare `409 Conflict`. A stale receipt (a branch
+  version at or below the stored tip) is now refused with a message naming
+  the stored tip, exactly like a stale trunk re-import.
+
 ## [3.20.0] - 2026-08-21
 
 ### Fixed
