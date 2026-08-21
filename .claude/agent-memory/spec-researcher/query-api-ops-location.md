@@ -8,7 +8,9 @@ metadata:
 # Query API (6 execution ops) — location map
 
 Complements [[aql-result-set-equivalence-location]] (AQL semantics + RESULT_SET
-shape) and [[its-rest-wire-contract-location]] (cross-cutting wire rules).
+shape), [[its-rest-wire-contract-location]] (cross-cutting wire rules) and
+[[sm-query-service-chapter8-location]] (the SM ch.8 side: class map, diagram-only
+multiplicities, the 5 rival name grammars, the unfinished SPECPR-292 rename).
 
 **The Query API is one of the few API groups with DEDICATED released prose** —
 unlike the EHR API whose docs dir is an overview-only stub (see
@@ -92,5 +94,8 @@ annotated result sets delegated to SM/REST).
   prefix; SM `query_parameters: Hash<String,String>` vs REST typed JSON values;
   SM `ehr_ids: List<UUID>` vs REST single `ehr_id`; SM
   `rows_to_fetch` "zero or negative means all" / `row_offset` "zero or negative
-  means offset of zero" — no REST equivalent; SM error `ehr_id_does_not_exist`
-  has NO REST 404 on the ad-hoc ops.
+  means offset of zero" — no REST equivalent, and the SM's own amendment record
+  (0.9.5/SPECPR-292, 28 Feb 2019) says those two names were renamed to
+  `item_offset`/`items_to_fetch`, which master02+master08 use but the class
+  file never adopted; SM error `ehr_id_does_not_exist` has NO REST 404 on the
+  ad-hoc ops.
