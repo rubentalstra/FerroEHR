@@ -36,6 +36,17 @@ fields in the UML class tables (OPT 1.4 carries the object model):
   `BASE/docs/UML/classes/org.openehr.base.base_types.validity_kind.adoc`.
 - AOM/OPT-1.4 XSD is NOT vendored in docs/specs (only RM ITS-XML + terminology
   XSDs exist); the object-model field list = the AOM1.4 UML class tables.
+- The OPT-1.4 XSD *is* vendored under `crates/openehr-its/schemas/xml/`:
+  `its-xml-1.0.2-nsv1/ALL/Archetype.xsd` (C_DATE L275, C_DATE_TIME L293,
+  C_TIME L314, C_DURATION L332) and `its-xml-2.0.0-nsv2/AM/Release-1.4/
+  Archetype.xsd` (C_TIME L316, C_DURATION L333). In BOTH lineages C_TIME and
+  C_DATE_TIME carry only `pattern | timezone_validity | range | assumed_value`
+  and C_DURATION only `pattern | range | assumed_value`; grep for
+  `millisecond|seconds_allowed|fractional_seconds` across either whole bundle
+  returns ZERO. So `millisecond_validity` / `seconds_allowed` /
+  `fractional_seconds_allowed` are modelled in AOM 1.4 (c_time L27,
+  c_date_time L39, c_duration L50/L54) and unserializable in every published
+  ITS-XML bundle; `timezone_validity` IS serializable.
 
 ## C_ORDINAL / DV_SCALE (Q7 pattern)
 `...aom14.c_ordinal.adoc` (=`C_DV_ORDINAL` in ADL2 naming) has only
@@ -63,6 +74,16 @@ both bounded), Limits_comparable (strictly_comparable_to — DEFINED NOWHERE,
 defect). `proper_interval.adoc` adds Inv_not_point: lower/=upper. SILENCE:
 NO invariant requires a bound value present when *_unbounded=false (lower/upper
 are 0..1, no coupling invariant) — spec gap in BASE 1.3.0.
+**The gap was NEVER filled in any generation**: the same 4-invariant set is
+byte-identical in BASE BMM 1.0.4 / 1.1.0 / 1.2.0 / 1.3.0, and RM `DV_INTERVAL`
+carries only `Limits_consistent` in RM 1.0.2→1.2.0 (checked in
+`tools/openehr-codegen/vendor/bmm/components/{BASE,RM}/json/`). So "an earlier
+revision carried a bound-required invariant" is FALSE — never claim it.
+The CNF side says so itself: `master17.3` rows for
+`{NULL,NULL,false,false,true,true}` (L480 / L651 / L728 / L783 / L915 / L957)
+verdict `rejected` with the comment "IMO should fail, see
+…/is-dv-interval-missing-invariants/2210" or "RM/Schema: value is mandatory for
+lower and upper" — an opinion/schema appeal, never an invariant citation.
 
 ## ISO8601 time exclusions
 `BASE/docs/foundation_types/master06-time_types.adoc` L21-35 — L25: fractional
@@ -86,3 +107,29 @@ RFC3986" — STRICTER than the RM invariant AND than RFC3986, which permits bare
 relative refs). Composition/entry validation: master15/master16.
 LOAD-BEARING TENSION: CNF 17.7 rejects bare relative URIs though RM only
 enforces not-empty and RFC3986 allows relative references.
+More confirmed schedule defects, with line anchors:
+- 17.4 L147 NOTE "our test data sets all include the `T` time marker" + every
+  DV_TIME literal (L189-280) and the 17.3 interval-of-time tables (L743-765)
+  print `T10:30:47`-style values; BASE `iso8601_time.adoc` §Description and
+  `time_definitions.adoc` `valid_iso8601_time` (L157-163) admit NO leading `T`
+  in either the extended or the compact form.
+- 17.4 `CONT-DV_DATE_TIME-validate_range` T-precision block (L975-1000) compares
+  values anchored `2021-10-24T…` against ranges anchored `1900-03-13T…`: the 4
+  bounded rows expect `accepted` (impossible under `Interval.has`) and the 4
+  `>=1900-03-13T11` rows expect `rejected` (also impossible — the value IS >=).
+  The other 12 rows in the block ARE derivable; re-anchoring the values to
+  1900-03-13 makes all 24 derivable.
+- `master16-content_tc_entry.adoc` HISTORY tables: exactly TWO rows verdict
+  "no events | absent | accepted" (L127 in `CONT-HIST-events_card_any-summary_ex_opt`,
+  L175 in `CONT-HIST-events_card_opt-summary_ex_opt`) against RM
+  `…data_structures.history.adoc` L49 `Events_valid`; all other such rows reject.
+- 17.2 L103 `CONT-DV_CODED_TEXT-validate_ext_term` row
+  `ABC|local|ac0001|[SNOMED_CT]` verdicts `rejected` "constraint_binding:
+  terminology_id not found" — no AOM 1.4 ground exists for that rejection
+  (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` L83/L85 puts the
+  constraint definition outside the archetype; ADL1.4 `master08-adl.adoc` L416,
+  `master05-cadl.adoc` §Placeholder Constraints L603).
+- DV_CODED_TEXT `value == rubric` is PROSE ONLY: `…dv_coded_text.adoc` L9 +
+  L24, `…dv_text.adoc` L28, plus `RM/docs/data_types/master05-text_package.adoc`
+  L52 + L110; the sole invariant on value is `dv_text.adoc` `Valid_value:
+  not value.is_empty`, and DV_CODED_TEXT's class table has NO Invariants row.

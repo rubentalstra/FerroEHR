@@ -32,8 +32,12 @@ metadata:
   §Embedded iFrame Launch (`launch` scope).
 - **`master08-scopes`** — THE grammar: `<compartment>/<resource>.<permission>`,
   3 compartments, exactly 3 resource nouns (`template-`/`composition-`/`aql-`),
-  the 5-row pattern table (`*` / `**` / `ns::*` / `*::name` / exact), 5 permission
-  letters c/r/u/d/s, the 8-row maximal scope table.
+  the 5-row pattern table (L42-46: exact-template / exact-query / `*::Template.v0` /
+  `MyHospital::*` / bare `*`) — **NO `**` ROW EXISTS** (corrected 2026-08-21: an
+  earlier version of this memory wrongly listed `**` as a row; the token appears
+  only in the L37 prose and the L59 NOTE) —, 5 permission letters c/r/u/d/s
+  (L51-55, `s` = "Search or execute (e.g., for AQL queries)"), the 8-row maximal
+  scope table (L67-74).
 - `master09-experimental_features` — `launch-base64-json`, Episode context
   (`launch/episode`, `episodeId`, `context-openehr-episode`).
 
@@ -82,3 +86,34 @@ metadata:
    media type (`master04` L28). Pre-auth availability is INFERRED from
    `master07` L80 (app fetches the doc using `iss` before the OAuth flow), never
    stated.
+
+## Re-verification pass 2026-08-21 (issues #1591-#1597) — exact line anchors
+
+All five defects above re-confirmed first-hand against the current pin. Extra
+anchors + two anti-drift corrections worth keeping:
+
+- `master04` §Authentication Endpoints list is L93-106 = **14 items, ending with
+  `code_challenge_methods_supported`**; `capabilities` is the 13th (penultimate).
+  §Capabilities is **two** sections later (§Services L108, §Capabilities L149),
+  not three. Any report that says "the list ends with `capabilities` … three
+  sections later" is off by one on both counts.
+- `master08` **L55 DOES assign the letter**: "`s` - Search or execute (e.g., for
+  AQL queries)", and L72 glosses `patient/aql-<queryName>.rs` as "Execute and
+  read". So "the spec never says executing a query is `s`" is refutable; what is
+  genuinely absent is any scope→REST-route/method/operation mapping (grep: ZERO
+  `GET|POST|PUT|DELETE|PATCH|HEAD` and zero openEHR route/operationId in all
+  9 chapters).
+- Exhaustive greps over `*.adoc` only (the `diagrams/*.svg` pollute a tree-wide
+  grep with coordinate digits): **zero** status codes, zero
+  `cache|max-age|etag|freshness`, zero `error`, exactly ONE uppercase RFC2119
+  keyword (`master06:38` MUST NOT). SVG label text extracted too — also clean.
+- `master07` L61 NOTE scope: "standard SMART **launch** scopes and context
+  attributes … their use is not normative" — it does NOT rescue the master04
+  example's `patient/*.rs` / `user/*.rs` resource scopes.
+- Conformance anchors: ITS-REST `specifications/docs/overview/Preface.md`
+  §Conformance = "tbd." (L35-37); the 7 OAS groups are
+  `specifications/{admin,definition,demographic,ehr,overview,query,system}.openapi.yaml`
+  (+ `computable/OAS/<g>-{codegen,html,validation}.openapi.yaml`) — no SMART;
+  CNF `docs/profiles/master03-profiles.adoc` §Functional (L11-71) REST-APIs block
+  has 6 rows (DEFINITION/EHR/DEMOGRAPHIC/QUERY/ADMIN/MESSAGE), no SMART row.
+

@@ -53,16 +53,38 @@ that file, not this one. 10 operations across `I_ADMIN_SERVICE` (6),
 `I_ADMIN_DUMP_LOAD.export_fail_list : DUMP_LOAD_FAIL_REPORT [*] {readOnly}` that
 the class table omits; `EXPORT_SPEC` is the one genuinely referenced by nothing.
 **`I_EHR_SERVICE` declares NO delete at all** — `physical_ehr_delete` is the SM's
-only EHR deletion (grep-verified over every `delete*` in the SM class set).
+only EHR deletion (grep-verified over every `delete*` in the SM class set), and it
+takes `an_ehr_id: UUID [1]` — ONE mandatory id, no list form, no all-EHRs form —
+so the released `admin_ehr_delete_all` route realizes NO SM operation.
+**Do NOT write "nothing else in the SM is set-scoped"**: `i_query_service.adoc`
+L20 + L43 (`execute_stored_query`, `execute_ad_hoc_query`) both take
+`ehr_ids: List<UUID>[0..1]` and their `.Parameters` blocks spell out the
+optional-means-all rule explicitly ("If none supplied, a full population query
+will be performed on all EHRs whose status has the `is_queryable` flag set"),
+which is a STRONGER statement of that shape than `I_ADMIN_ARCHIVE` gives.
+The archive pair (`i_admin_archive.adoc`) is the only set-scoped *write*.
 
 ## RM tension (the load-bearing one)
-`RM/docs/common/master06-change_control_package.adoc` §Logical Deletion:
-"information can only ever be logically deleted"; §Contributions: "a versioned
-repository … is by definition indelible". `RM/docs/ehr/master04-ehr_package.adoc`
-lists _indelibility_ as a COMPOSITION requirement. **GDPR / "data protection" /
-erasure appear NOWHERE in RM/BASE/SM/CNF/TERM/QUERY** — the only two hits in the
-whole vendored tree are the two admin operation descriptions. Registered as
-AMB-10 (physical VERSIONED_OBJECT deletion undefined) — extend, don't duplicate.
+`RM/docs/common/master06-change_control_package.adoc` §Logical Deletion (L192):
+"information can only ever be logically deleted"; §Contributions (L58): "a
+versioned repository … is by definition indelible".
+**Indelibility is asserted in SIX places, not two** — also master06 L5
+(properties list), `RM/docs/ehr/master04-ehr_package.adoc` L56 (a COMPOSITION
+requirement bullet), and BOTH
+`BASE/docs/architecture_overview/master07-security.adoc` L138 ("health record
+information cannot be deleted") + L187, and
+`BASE/docs/architecture_overview/master08-versioning.adoc` L16. So BASE
+RE-STATES the principle and reconciles nothing.
+**GDPR grep, corrected 2026-08-21 — SIX files, not two**: the two admin
+operation descriptions (`ITS-REST/specifications/operations/admin_ehr_delete{,_all}.yaml`)
++ the three assembled `ITS-REST/computable/OAS/admin-{codegen,html,validation}.openapi.yaml`
+bundles that repeat them verbatim + **one non-sentence hit previously missed**:
+a `Consent (GDPR)` box label inside
+`BASE/docs/architecture_overview/diagrams/shared_ehr.svg` (foreignObject text,
+about consent, NOT about deletion). "Data protection" as a JUSTIFICATION for
+erasure still appears in exactly two sentences — the two admin op descriptions.
+Registered as AMB-10 (physical VERSIONED_OBJECT deletion undefined) — extend,
+don't duplicate.
 
 ## CNF
 - Schedule chapter = `CNF/docs/platform_test_schedule/master12-func_tc_admin.adoc`
