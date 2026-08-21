@@ -4776,7 +4776,9 @@ AMB-131:
     says whether that is a miss or something else.
   source: >-
     ITS-REST specifications/operations/person_create.yaml (responses
-    201/400/422/404) and organisation_get.yaml (responses 200/204/404), with
+    201/400/422/404 — the 404 UNTRIGGERABLE on a create with no path
+    parameter at all, a released declaration defect noted 2026-08-21) and
+    organisation_get.yaml (responses 200/204/404), with
     their four siblings each declaring the identical sets +
     docs/overview/Requests_and_responses.md §HTTP status codes (row 422 "The
     request was well-formed but was unable to be followed due to semantic
