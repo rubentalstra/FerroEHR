@@ -62,3 +62,14 @@ issues under the cadence above, zero-drift pipeline at program close. Which
 component programs are open vs released is read from the milestones
 (`gh api … /milestones`), never copied forward. Milestone routing for a fix
 whose program has closed: [[component-fixes-ride-current-patch]].
+
+**SM-program refinements (v3.19.0, 2026-08-21):** DEVELOPMENT-state model
+documents (SDF, Simplified IM-B) get adjudication-verification chapters —
+the audit question is "does the never-implement adjudication hold and is it
+flagged", walkable in-session with no researcher fan-out. Upstream defects
+consolidate into per-defect-class reports (14 for the whole SM), never
+per-cell issues. SM UML diagrams are text-free path art carrying normative
+structure absent from the class tables (inheritance, generic bindings,
+multiplicities) — researchers must rasterize them (`rsvg-convert`), and the
+spec-tree README now records this. Extraction researchers run max 2 ahead of
+the in-session walk; the walk + records + closes stay with the orchestrator.
