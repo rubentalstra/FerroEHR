@@ -4,8 +4,8 @@
 # GET /ehr/{ehr_id}/directory with the optional `version_at_time` query
 # parameter. The `a_time` flow argument maps to `version_at_time`
 # (parameters/query/version_at_time.yaml); omitted -> latest.
-# Empty-vs-error at an empty EHR / before the first version resolves to the 404
-# error branch on ITS-REST (AMB-8).
+# An empty EHR / before the first version is the OAS-defined 404 (no
+# empty-structure representation exists in the release).
 # Sources: specifications/operations/directory_get_at_time.yaml (200/204/404),
 # parameters/query/version_at_time.yaml, responses/200_FOLDER_retrieved.yaml,
 # 204_deleted_at_time.yaml,
