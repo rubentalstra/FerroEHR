@@ -39,7 +39,7 @@ Capabilities claimed:
 - AuthenticatedAccess
 - AuthorizationSeparation
 
-Options declared: contribution-xml-unsupported, directory-empty-error, directory-xml-supported, ehr-status-xml-supported, ehr-xml-supported, adl14-partial-id-exact, xml-namespace-fixed
+Options declared: contribution-xml-unsupported, directory-xml-supported, ehr-status-xml-supported, ehr-xml-supported, adl14-partial-id-exact, xml-namespace-fixed
 
 ## Additional non-openEHR surface
 

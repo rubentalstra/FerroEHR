@@ -83,7 +83,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | EhrStatus | FAIL | 14 | 26 | 3 | 5 |
 | CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 2 |
 | DirectoryOps | FAIL | 61 | 13 | 1 | 10 |
-| ChangeSets | FAIL | 7 | 12 | 58 | 23 |
+| ChangeSets | FAIL | 7 | 13 | 58 | 23 |
 | Versioning | FAIL | 8 | 3 | 50 | 6 |
 | ArchetypeValidation | FAIL | 0 | 67 | 54 | 4 |
 | AqlBasic | FAIL | 5 | 3 | 26 | 0 |
