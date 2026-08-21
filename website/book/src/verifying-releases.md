@@ -18,7 +18,7 @@ workflow.
 ## What a release publishes
 
 Substitute the release tag you downloaded for `<tag>` (for example
-`v3.18.0`) and the architecture for `<arch>` (`x86_64` or `aarch64`) throughout
+`v3.19.0`) and the architecture for `<arch>` (`x86_64` or `aarch64`) throughout
 this page. Linux is the only published target.
 
 | Asset | What it is |
@@ -145,14 +145,14 @@ carry a Sigstore-signed SLSA provenance attestation, plus the SPDX SBOM and
 provenance the builder writes onto the image index itself.
 
 ```bash
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.18.0 \
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.19.0 \
   -R rubentalstra/FerroEHR
 ```
 
 > [!IMPORTANT]
-> **Image tags carry no `v` prefix.** A release publishes `3.18.0`, `3.18` and
+> **Image tags carry no `v` prefix.** A release publishes `3.19.0`, `3.19` and
 > `latest` (plus a `sha-…` tag per commit), while the release *assets* are named
-> after the `v3.18.0` git tag. Using `v3.18.0` as an image reference will simply
+> after the `v3.19.0` git tag. Using `v3.19.0` as an image reference will simply
 > not resolve.
 
 The development tags (`ghcr.io/rubentalstra/ferroehr:develop` and its two
