@@ -25,6 +25,12 @@ workflow refuses a tag that has no matching section here.
   EHR_STATUS. The direct EHR_STATUS update route likewise honours an
   incomplete lifecycle it previously ignored. Previously such commits were
   refused with a 422.
+- The version lifecycle transition table now follows the formal state
+  machine the RM designates (the `RM-version_lifecycle` diagram), in both
+  directions: `complete → incomplete` (the drawn `update` edge) is
+  accepted, while same-state re-commits of `inactive` or `abandoned`
+  content — permissions the machine does not draw — are now refused with
+  a 422 (resume editing via `reactivate`/`retrieve` first).
 
 ### Changed
 
