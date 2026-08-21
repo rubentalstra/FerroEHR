@@ -609,7 +609,7 @@ impl From<ServiceError> for SmError {
     /// the ITS-REST docs text assigns the 422 row a meaning only ("The request
     /// was well-formed but was unable to be followed due to semantic errors",
     /// overview `Requests_and_responses.md` §HTTP status codes) and no body
-    /// shape, and the released OAS `responses/422_COMPOSITION.yaml` declares no
+    /// shape, and the released OAS `responses/422.yaml` declares no
     /// `content`/`schema` at all (the `Error` object is formally bound to
     /// `400`). Both renderings therefore satisfy the release; the status code —
     /// the part the spec DOES assign — is identical on both routes, which is
@@ -788,7 +788,7 @@ mod tests {
     /// followed due to semantic errors", ITS-REST overview
     /// `Requests_and_responses.md` §HTTP status codes) — is the same on both,
     /// and neither body shape is contradicted by the release (the OAS
-    /// `responses/422_COMPOSITION.yaml` declares no schema). This test pins that
+    /// `responses/422.yaml` declares no schema). This test pins that
     /// divergence so it can only change deliberately.
     #[test]
     fn validation_failed_renders_two_bodies_but_one_status() {

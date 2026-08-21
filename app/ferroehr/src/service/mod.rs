@@ -402,7 +402,7 @@ impl FerroEhrService {
     ///
     /// `content_invalid` when no OPT with `template_id` is stored ("operational
     /// template not known" — the commit-path `422`,
-    /// `422_COMPOSITION.yaml`: "the underlying template is not known") or when
+    /// `422.yaml`: "the underlying template is not known") or when
     /// the stored OPT fails to parse/build into a `WebTemplate`; a
     /// storage-classified status (`exception`, `conflict`, or
     /// `service_overloaded`) on a database failure while loading it.

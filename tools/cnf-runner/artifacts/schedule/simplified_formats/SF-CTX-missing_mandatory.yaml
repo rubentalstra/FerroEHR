@@ -4,18 +4,17 @@
 # cannot populate the mandatory COMPOSITION.territory and is rejected. Simplified
 # Formats is an OPTIONS capability, so this reject never gates CORE/STANDARD.
 #
-# WHICH BRANCH: no released text assigns the reject a status — register
-# AMB-208 adjudicates 422 for the template-MEDIATED half, since master04
-# §Validation states the check against the Operational Template and
-# `responses/422.yaml` names exactly that trigger ("the underlying template
-# … is not validating the supplied resource").
+# WHICH BRANCH: the released OAS assigns it — responses/422.yaml names this
+# very trigger ("the underlying template … is not validating the supplied
+# resource"), declared on the composition create/update the case drives, and
+# master04 §Validation states every listed check against the Operational
+# Template (docs text silent on the status, so the OAS grounds it).
 id: SF-CTX-missing_mandatory
 kind: functional
 component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
-ambiguities: [AMB-208]
 test_purpose: >-
   A FLAT commit omitting the mandatory ctx/territory context field is refused
   as a semantic error (the 422 class): the document is well-formed FLAT, and

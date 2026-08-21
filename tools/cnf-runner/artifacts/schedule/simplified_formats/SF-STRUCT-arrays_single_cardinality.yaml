@@ -15,6 +15,7 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-153]
 test_purpose: >-
   A STRUCTURED commit whose single-cardinality leaf is an array round-trips to
   canonical JSON (a COMPOSITION) and back to STRUCTURED with the value equal.

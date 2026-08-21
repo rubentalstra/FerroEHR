@@ -55,7 +55,7 @@ pub enum ApiError {
     Unprocessable(String),
     /// A well-formed payload that failed semantic (template/RM/terminology)
     /// validation: an ITS-REST `422 Unprocessable Entity` with a structured
-    /// list of per-path violations (ITS-REST `422_COMPOSITION.yaml`).
+    /// list of per-path violations (ITS-REST `422.yaml`).
     #[error("{} validation error(s)", .0.len())]
     ValidationFailed(Vec<ValidationError>),
     /// `415 Unsupported Media Type` — the request `Content-Type` is not served.

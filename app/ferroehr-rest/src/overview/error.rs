@@ -17,7 +17,7 @@
 //!   `{ "message", "validationErrors": ["<path>: <message>", …] }` — via the
 //!   generated [`openehr_its::rest::generated::common::Error`] DTO.
 //!
-//!   NOTE: `422_COMPOSITION.yaml` declares no `content`/`schema` (the 422
+//!   NOTE: `422.yaml` declares no `content`/`schema` (the 422
 //!   body is spec-silent); the `Error` object is formally bound only to the
 //!   `400` response. Reusing that `{ message, validationErrors[] }` shape for
 //!   the `422` validation case is a deliberate, documented choice.

@@ -6,7 +6,7 @@
 //! assembled router over a **real** `FerroEhrService` on a real `PostgreSQL`.
 //!
 //! Wire oracle: ITS-REST 1.1.0
-//! `specifications/responses/422_COMPOSITION.yaml` ("content could be
+//! `specifications/responses/422.yaml` ("content could be
 //! converted to a COMPOSITION, but there are semantic validation errors") and
 //! `schemas/others/Error.yaml` (the `Error` object's `validationErrors`
 //! list). The RM rule under test is `data_structures` §ELEMENT
@@ -128,7 +128,7 @@ fn strip_first_element_value(v: &mut Value) -> bool {
 /// > `Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`
 /// > (`RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
 ///
-/// The commit is a `422` (ITS-REST `responses/422_COMPOSITION.yaml`: converts,
+/// The commit is a `422` (ITS-REST `responses/422.yaml`: converts,
 /// but does not validate) whose `Error` body carries the violation in
 /// `validationErrors`, keyed by the offending RM path and naming the
 /// invariant — so the client learns which node is wrong and why, instead of

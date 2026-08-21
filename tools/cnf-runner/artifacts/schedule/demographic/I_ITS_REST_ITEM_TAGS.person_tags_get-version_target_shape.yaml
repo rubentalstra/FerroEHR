@@ -31,6 +31,7 @@ sm_operation: I_ITS_REST_ITEM_TAGS.person_tags_get
 capabilities: [ItemTags]
 exercises: [DemographicApi, PartyOperations]
 profiles: [OPTIONS]
+ambiguities: [AMB-202]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
   - "authored from the released ITEM_TAG operation files + RM common master07-tags.adoc; CNF master10 (DEMOGRAPHIC) is a stalled schedule stub — a coverage guide only, not the authority"

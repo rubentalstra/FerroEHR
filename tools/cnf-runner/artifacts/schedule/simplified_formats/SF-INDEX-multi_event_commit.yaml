@@ -14,6 +14,7 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-156]
 test_purpose: >-
   A FLAT commit with any_event:0 and any_event:1 under one observation
   round-trips to canonical JSON with two events present under the history.
