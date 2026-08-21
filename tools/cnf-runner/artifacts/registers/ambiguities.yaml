@@ -7261,16 +7261,26 @@ AMB-167:
     keep their codec-derived fixtures for exactly that reason: choosing
     the generic `items`+`xsi:type` spelling instead would be the
     catalogue endorsing a wire form for these resources, which is the
-    invention this entry forbids. Affected rows, all now
-    `<family>-xml-unsupported` + `unsupported_media`:
+    invention this entry forbids. Affected rows, all now on their OWN
+    per-direction pair `<family>-xml-write-refused` (+ `unsupported_media`)
+    — SPLIT from the read pair 2026-08-21, because a single per-family arm
+    made the read-offered/write-refused posture (which this entry itself
+    calls conformant) UNREPRESENTABLE: a party declaring `-supported` for
+    its XML reads silently deselected every write-refusal row. The
+    `-write-accepted` sibling is DECLARATION-ONLY by construction (the
+    AMB-61 tag-without-a-case pattern): no accepting write case can exist,
+    since the only document a case could send is one no published XSD
+    admits, and a conformant XSD-validating server MUST refuse it — an
+    accepting party declares the tag so the refusal rows deselect honestly
+    rather than failing it. The rows:
     I_EHR_SERVICE.create_ehr-xml (whose payload is an EHR_STATUS, so it is
     the EHR_STATUS document question wearing the EHR family's tag),
     I_EHR_DIRECTORY.{create,update}_directory-xml,
     I_EHR_STATUS.{set,clear}_ehr_{queryable,modifiable}-xml_body,
     I_DEMOGRAPHIC_SERVICE.create_party-xml and
     I_DEMOGRAPHIC_SERVICE.update_party-xml (SM `I_PARTY.update_party`).
-    The `-supported` tags are unaffected as ICS declarations: every one of
-    them still gates READ rows, which is all this entry ever grounded.
+    The READ `-supported`/`-unsupported` pair is unaffected: it gates the
+    read rows, which is all it ever grounded.
     DOCUMENTED families are untouched — COMPOSITION writes keep their
     `<composition>` payload because Composition.xsd declares that global
     element in BOTH bundles, so the request payload conforms as the MUST
@@ -7290,7 +7300,7 @@ AMB-167:
     AMB-165 report_only and unexercised (its shape, not merely its root
     name, is withheld). ICS-COMPLETENESS CAVEAT: the verdict pipeline's
     option_select review is satisfied by ANY one declared option of an
-    entry, so this entry's twelve tags are checked as a set, not per family; a
+    entry, so this entry's twenty tags are checked as a set, not per family; a
     statement that declares no arm for a family silently deselects both of
     its rows rather than being flagged. Reported upstream (#1607):
     reconcile the XSD document-element inventory with the REST resource
@@ -7312,6 +7322,14 @@ AMB-167:
     - versioned-party-xml-unsupported
     - contribution-xml-supported
     - contribution-xml-unsupported
+    - ehr-xml-write-accepted
+    - ehr-xml-write-refused
+    - ehr-status-xml-write-accepted
+    - ehr-status-xml-write-refused
+    - directory-xml-write-accepted
+    - directory-xml-write-refused
+    - party-xml-write-accepted
+    - party-xml-write-refused
   upstream_issue: 1607
 AMB-169:
   ambiguity: >-
