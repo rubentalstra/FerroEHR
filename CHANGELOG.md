@@ -15,6 +15,49 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Committing a CONTRIBUTION whose EHR_STATUS member carries
+  `lifecycle_state = incomplete` is now accepted, with the incomplete
+  relaxation (existence and cardinality lower bounds lifted) applied to the
+  status body exactly as for every other content type — RM common master06
+  defines the incomplete state generically and no released text excludes
+  EHR_STATUS. The direct EHR_STATUS update route likewise honours an
+  incomplete lifecycle it previously ignored. Previously such commits were
+  refused with a 422.
+- The version lifecycle transition table now follows the formal state
+  machine the RM designates (the `RM-version_lifecycle` diagram), in both
+  directions: `complete → incomplete` (the drawn `update` edge) is
+  accepted, while same-state re-commits of `inactive` or `abandoned`
+  content — permissions the machine does not draw — are now refused with
+  a 422 (resume editing via `reactivate`/`retrieve` first).
+
+### Changed
+
+- The from-source server image build (`docker compose --build`, the
+  conformance stack, the repo-dev posture) now keeps the whole cargo target
+  directory in a persistent BuildKit cache mount — the official Docker Rust
+  pattern — instead of the cargo-chef dependency layer. Cargo's own
+  freshness now decides what recompiles, so an app-only edit no longer
+  recompiles the eight generated `openehr-*` spec crates (previously every
+  edit paid the full 20+ minute workspace compile; cargo-chef documents that
+  local workspace crates cannot ride its layer). The first build on a
+  machine seeds the cache; every later build compiles only what changed.
+- The entire outbound upstream-report corpus — all 215 reports of defects,
+  contradictions, and silences in the released openEHR specifications — was
+  re-verified first-hand against the vendored spec text in one adversarial
+  pass. Three reports were refuted and withdrawn, one rewritten to its
+  provable narrow claim, and every correction the pass surfaced travels on
+  the closed reports for the future submission to openEHR. Verification is
+  now terminal: a verified report closes as the standing record, so the open
+  tracker stays near zero by design.
+- The conformance catalogue follows the pass's refutations: committing a
+  CONTRIBUTION whose EHR_STATUS member carries `lifecycle_state = incomplete`
+  is now a gating acceptance case (RM common master06 defines the incomplete
+  state generically; the reject lean existed only in the stalled CNF guide),
+  and the empty-directory 404 cases gate unconditionally (the released OAS
+  defines the branch — the former empty-vs-error option selection is gone).
+
 ## [3.19.0] - 2026-08-21
 
 ### Fixed

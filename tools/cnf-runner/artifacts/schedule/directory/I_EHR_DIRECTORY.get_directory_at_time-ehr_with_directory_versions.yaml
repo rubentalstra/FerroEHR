@@ -43,7 +43,7 @@ flow:
   - step: 3
     call: get_directory_at_time
     with: { ehr_id: "${ehr_id}", a_time: "${time:before(t0)}" }
-    expect: not_found                     # before(t0) stands in for G.5's "before EHR.time_created" (no version extant either way); OAS 404: no directory at version_at_time (AMB-8 error branch on REST)
+    expect: not_found                     # before(t0) stands in for G.5's "before EHR.time_created" (no version extant either way); the OAS-defined 404: no directory at version_at_time
   - step: 4
     call: get_directory_at_time
     with: { ehr_id: "${ehr_id}", a_time: "${time:between(t0,t1)}" }
@@ -56,4 +56,3 @@ flow:
     expect: ok                            # current time -> the second version
     assert:
       - { assert: equivalent, to: "${ds:cnf.directory.v2}", ignoring: server_assigned }
-ambiguities: [AMB-8]

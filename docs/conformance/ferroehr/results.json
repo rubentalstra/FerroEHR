@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.17.8"
+    "version": "3.19.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.8",
+    "version": "3.19.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",

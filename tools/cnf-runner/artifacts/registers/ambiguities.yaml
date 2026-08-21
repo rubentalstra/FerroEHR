@@ -130,36 +130,6 @@ AMB-5:
     from profile computation until resolved.
   disposition: report_only
   upstream_issue: 1484
-AMB-8:
-  ambiguity: >-
-    Empty-directory retrieval is empty-vs-error ambiguous: get_directory on
-    an EHR without one "should return an empty structure ... could be an
-    error status instead".
-  source: >-
-    RM ehr EHR class §directory (0..1 — a directory is optional) + released
-    ITS-REST 1.1.0 directory retrieval docs (silent on the representation of an
-    empty/never-created directory)
-  handling: >-
-    Sibling cases with option tags; the ICS declares the behaviour.
-    On ITS-REST 1.1.0 only the ERROR option is realizable: released ITS-REST
-    directory retrieval returns not-found for a directory that does not exist
-    (overview Requests_and_responses.md §status codes) and defines no
-    empty-structure representation for a never-created directory — so the
-    its-rest binding fixes the error branch and no directory-empty-structure
-    sibling exists for this ITS (the option pair stands for future ITS
-    bindings). Upstream clarification candidate.
-  disposition: option_select
-  upstream_issue: 1485
-  options: [directory-empty-structure, directory-empty-error]
-AMB-9:
-  ambiguity: "EHR_STATUS `incomplete` lifecycle_state references SPECPR-368 (open upstream problem report)."
-  source: >-
-    RM common master06-change_control_package.adoc §Version Lifecycle
-    (lifecycle_state coded from the 'version lifecycle state' group, including
-    553|incomplete|) + upstream SPECPR-368
-  handling: "Affected cases report but do not gate until SPECPR-368 resolves."
-  disposition: report_only
-  upstream_issue: 1486
 AMB-10:
   ambiguity: >-
     Physical deletion is DEFINED by two released components and FORBIDDEN by a
@@ -394,14 +364,20 @@ AMB-29:
     times) — the date/time constraint tables mix precisions whose ordering the
     RM leaves open.
   source: >-
-    RM data_types DV_ORDERED class §less_than ("<") + §is_strictly_comparable_to
-    (redefined in descendants) + RM data_types master07-date_time_package.adoc
-    §Partial Date/Times (reduced-accuracy partials per ISO 8601; no
-    mixed-precision ordering semantics defined) — silence CONFIRMED first-hand
+    RM data_types date_time classes (DV_DATE_TIME/DV_DATE/DV_TIME each Effect
+    is_strictly_comparable_to = "True, for any two Date/times" and each
+    REDEFINES less_than over magnitude()) + RM data_types
+    master07-date_time_package.adoc §Partial Date/Times (Value_valid admits
+    reduced-accuracy partials per ISO 8601, while magnitude() defines no value
+    for a partial) — the order EXISTS by the Effects; what the released text
+    leaves open is magnitude()'s value for reduced-precision values, so the
+    defined order is incomputable for partials. Re-grounded first-hand
+    2026-08-21 (the earlier "no mixed-precision ordering semantics defined"
+    framing understated what the Effects define).
   handling: >-
     Affected rows carry guards quoting the chapter NOTEs; verdicts on
     mixed-precision comparisons are reported but excluded from profile
-    computation until the SEC resolves the comparability question.
+    computation until the SEC resolves the magnitude-for-partials question.
   disposition: report_only
   upstream_issue: 1493
 AMB-30:
@@ -1790,9 +1766,10 @@ AMB-67:
     records the outcome without gating any tier — presence is a
     recommendation this server ADOPTS (commit-time stamping, #439) but no
     conformant server can be failed for omitting. The FORM when present
-    stays the gating AMB-65 fixed handling. Reported upstream (#1511): the
-    recommendation's scope and strength deserve an explicit wire-level
-    statement for the non-COMPOSITION top-level types.
+    stays the gating AMB-65 fixed handling. Reported upstream (#2523): the
+    served-uid population rule for top-level types is recommendation-strength
+    only — no normative keyword anywhere — and deserves an explicit
+    wire-level statement.
     SCOPE EXCLUSION (2026-07-27, group-12 audit): this entry does NOT reach
     PARTY. The recommendation-strength reading holds only where every released
     sentence about the contained uid is a recommendation, and RM demographic
@@ -1802,7 +1779,7 @@ AMB-67:
     cases therefore ASSERT the uid rather than merely recording it, and the
     invariant-vs-NOTE tension that creates is AMB-129.
   disposition: report_only
-  upstream_issue: 1511
+  upstream_issue: 2523
 AMB-68:
   ambiguity: >-
     The released RM contradicts itself on REVISION_HISTORY item ordering
@@ -2475,8 +2452,11 @@ AMB-86:
   source: >-
     ITS-REST specifications/docs/overview/Requests_and_responses.md
     §openehr-version and openehr-audit-details L74-94 (the scoping
-    context) vs operations/contribution_create.yaml (no header
-    parameters) — confirmed first-hand.
+    context) vs operations/contribution_create.yaml (declares no
+    COMMITTAL header parameters — no operation anywhere does: the
+    released parameters/header/ set holds no openehr-version or
+    openehr-audit-details file, the headers are prose-only everywhere)
+    — confirmed first-hand.
   handling: >-
     Fixed handling: on the native route the BODY is authoritative — the
     committal headers are not merged (they exist to give the convenience

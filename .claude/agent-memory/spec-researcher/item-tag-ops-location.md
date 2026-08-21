@@ -131,3 +131,84 @@ metadata:
 Related: [[its-rest-wire-contract-location]],
 [[composition-crud-ops-location]], [[ehr-status-ops-location]],
 [[directory-api-location]].
+
+## Wire-branch census (re-verified first-hand 2026-08-21)
+- **7 TYPED tag families** (composition, ehr_status + the 5 party subtypes) x
+  {GET, PUT, DELETE} + the 2 space-wide GETs (`ehr_tags_get`,
+  `demographic_tags_get`) = 23 tag ops. The typed families are byte-identical
+  modulo the type name (sed-normalized diffs clean).
+- **All 7 tag PUTs declare exactly `200`/`204`/`400`/`404` — no `422`**, while
+  the 5 sibling PARTY updates (`person_update.yaml` etc.) on the same resources
+  DO declare `422`. The overview's 422 row is
+  `docs/overview/Requests_and_responses.md` **L233** ("The request was
+  well-formed but was unable to be followed due to semantic errors"); the 422
+  body text is `responses/422.yaml`; `responses/400.yaml` covers only
+  parse/syntax failure.
+- 404 text is the ONLY not-found trigger and says nothing about resource KIND:
+  `404_unknown_ehr_id_or_uid_based_id{,_or_key}.yaml` (EHR side) /
+  `404_unknown_uid_based_id{,_or_key}.yaml` (demographic side) = "when the
+  `uid_based_id` does not exist". `parameters/path/uid_based_id.yaml` describes
+  only the two FORMS (OBJECT_VERSION_ID / HIER_OBJECT_ID), never the kind.
+  Grep for wrong-type/mismatch wording across `ITS-REST/specifications/` = zero.
+- The `Prefer` identifier contract lives at
+  `docs/overview/Requests_and_responses.md` **L299-311** (§Prefer only
+  identifier): "the status will be `201 Created` or `200 OK`, never `204 No
+  Content`" + "the response body will be a single JSON object with a single
+  `uid` attribute". `parameters/header/Prefer.yaml` (enum representation/
+  minimal/identifier, default minimal) IS declared on every tag PUT — and
+  ITEM_TAG has no `uid` attribute, so the branch is unsatisfiable.
+- The `(key, target_path)` identity sentence is
+  `Requests_and_responses.md` **L114** (§openehr-item-tag…), repeated in 10 op
+  descriptions. **No `uniqueItems`** anywhere on the tag surface (grep of the
+  tag ops + `ItemTag.yaml` + `UpdateItemTag.yaml` = zero), and no merge rule.
+- Filter grammar: both space-wide GETs `$ref` the SAME three
+  `parameters/query/tag_{key,value,target_path}.yaml` — each is a bare
+  `type: string` with an `example` and **no `description`** — and both repeat
+  verbatim "This list can be filtered by the given one or more `tag_key`,
+  `tag_value`, `tag_target_path` query parameters." (`explode: true`,
+  `style: form`). No combination/match-mode/absent-path rule.
+- `target_path` example census: **6 of 7** `ItemTagOf<T>` schemas carry
+  `target_path: ""` (EHR_STATUS + Person/Agent/Group/Organisation/Role); only
+  `ItemTagOfComposition.yaml` uses a real path
+  (`/context/start_time/value`); NONE omits the attribute. All 7 targets are
+  `_type: HIER_OBJECT_ID` — there is **no VERSION-targeted example** — and the
+  COMPOSITION one sets `type: COMPOSITION` on a HIER_OBJECT_ID (should be the
+  VERSIONED_COMPOSITION container).
+- Editorial residue confirmed: `responses/204_deleted.yaml` says "(logically)
+  deleted" (the only "logically" in ITS-REST); all 7
+  `200_<T>_ItemTagList_updated.yaml` are BYTE-IDENTICAL to their `_retrieved`
+  siblings and say "successfully retrieved" on a PUT; the DELETE descriptions
+  say "identified by `tag_key`" while the parameter file is
+  `parameters/path/key.yaml` (name `key`); party `_tags_get`/`_tags_delete` say
+  "VERSIONED_PARTY.uid.value" while `_tags_update` says
+  "VERSIONED_OBJECT.uid.value" for the resource its own next line calls "the
+  target VERSIONED_PARTY container"; `person_create.yaml` declares BOTH
+  item-tag header params while `person_update.yaml` declares only
+  `openehr-version-item-tag` though its prose (L12) names both;
+  `ehr.openapi.yaml` L150 links ITEM_TAG to RM **/development/**.
+- No paging/ordering parameter on ANY of the 9 tag GETs (only ehr_id/
+  uid_based_id/tag_* filters + `Accept_canonical`); `Accept_canonical.yaml`
+  offers `application/xml` while **zero of the 157 vendored XSDs mention
+  ITEM_TAG**; `Requests_and_responses.md` L116 ("If the server does not support
+  ITEM_TAGs, these headers will also be unsupported") assigns no status; RM
+  `master07-tags.adoc` is 19 lines with no lifecycle rule and
+  `operations/composition_delete.yaml` never mentions tags.
+
+## The `-codegen` OAS bundle carries defects the decomposed tree does NOT (2026-08-21)
+- `docs/specs/openehr/ITS-REST/specifications/schemas/common/ItemTag.yaml` is
+  `additionalProperties: false` with NO `_type` property **and NO discriminator**
+  (the only 17 discriminator-bearing schemas in the decomposed tree are the `U*`
+  union wrappers). The `discriminator: propertyName: _type / mapping: ITEM_TAG`
+  that contradicts `additionalProperties: false` lives in the published BUNDLES:
+  `crates/openehr-its/vendor/rest-oas/ehr-codegen.openapi.yaml` L3188-3191 and
+  `demographic-codegen.openapi.yaml` (~L3155). The `-html` variant has neither;
+  the `-validation` variant has no `ItemTag` schema at all. **Always name the
+  bundle, not the decomposed file, when reporting a discriminator defect.**
+- Header declaration split: `headers/openehr-item-tag.yaml` (RESPONSE) = bare
+  `schema: type: string`, no example, no pattern; `parameters/header/openehr-item-tag.yaml`
+  (REQUEST) = `type: array` of `UpdateItemTag` with `style: simple, explode: true`
+  and the `key="…",value="…"; …` example. Neither carries a `pattern`.
+- **The 13 ops carrying the request header** are composition_create/update,
+  ehr_status_update and {person,agent,group,organisation,role}_{create,update}.
+  `directory_create`/`directory_update` do NOT (zero tag mention), despite
+  `Requests_and_responses.md` L100 naming FOLDER as a taggable resource.

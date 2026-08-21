@@ -1674,7 +1674,7 @@ catalogue, **capability matrix**):
    **2b — option deselection**: a case carrying an `option:` tag is selected
    only when the ICS `options` declaration matches it; the sibling
    realizing the undeclared behaviour is recorded `not-applicable` with the
-   ICS declaration as citation (AMB-4, AMB-8).
+   ICS declaration as citation (AMB-167).
    **2c — performance selection**: the claimed class per environment selects
    that class's performance cases; unclaimed classes are not run (a product
    claims S, it is measured for S — running R unasked is a runner choice,
@@ -1699,7 +1699,7 @@ catalogue, **capability matrix**):
    evidence: `Passed` (≥1 case ran, none failed) / `Failed` /
    `NotEvidenced` / `NoCases` (a printed coverage bound). Profile verdicts
    per the capability matrix: CORE/STANDARD = all required capabilities
-   `Passed`; OPTIONS = any. `report_only`-disposition cases (AMB-5, AMB-9)
+   `Passed`; OPTIONS = any. `report_only`-disposition cases (AMB-5, AMB-29)
    report but never gate.
 5. **Measured verdicts** (the second machinery): per claimed class, every
    §8.14 threshold holds in one measured run ⇒ class `earned`, else

@@ -1,9 +1,11 @@
-# get_versioned_directory on an EHR without a versioned directory. The schedule
-# expects an error, "NOTE: depending on the implementation, a valid result could
-# also be returning an empty result instead of an error" (AMB-8). ITS-REST 1.1.0
-# surfaces no versioned_directory endpoint, so the its-rest binding declares the
-# operation unrealized and this case verdicts not-applicable-with-citation on
-# this ITS (AMB-24).
+# get_versioned_directory on an EHR whose VERSIONED_FOLDER was never created:
+# RM ehr EHR class declares directory 0..1, so the container does not exist and
+# retrieval is the not-found branch — the release defines no empty-structure
+# representation anywhere (the realized directory reads' OAS 404s are the
+# wire-level twin of this ground). ITS-REST 1.1.0 surfaces no
+# versioned_directory endpoint, so the its-rest binding declares the operation
+# unrealized and this case verdicts not-applicable-with-citation on this ITS
+# (AMB-24).
 id: I_EHR_DIRECTORY.get_versioned_directory-empty_ehr
 kind: functional
 component: EHR_DIRECTORY
@@ -11,13 +13,13 @@ sm_operation: I_EHR_DIRECTORY.get_versioned_directory
 capabilities: [DirectoryOps]
 exercises: [Versioning]
 profiles: [STANDARD]
-option: directory-empty-error
 test_purpose: >-
-  get_versioned_directory on an EHR without a directory yields the
-  empty-directory outcome (error branch).
+  get_versioned_directory on an EHR without a directory is not-found — the
+  VERSIONED_FOLDER (EHR.directory, 0..1) was never created.
 description: "Test get_versioned_directory on non-existent EHR"
 spec_refs:
   - "SM openehr_platform §I_EHR_DIRECTORY.get_versioned_directory"
+  - "RM ehr §EHR (directory: VERSIONED_FOLDER, 0..1)"
   - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.get_versioned_directory-empty_ehr"
 applies: { rm: ">=1.0.2" }
 requires:
@@ -27,5 +29,4 @@ flow:
   - step: 1
     call: get_versioned_directory
     with: { ehr_id: "${ehr_id}" }
-    expect: not_found                     # AMB-8 error branch: no versioned directory
-ambiguities: [AMB-8]
+    expect: not_found                     # the VERSIONED_FOLDER was never created (EHR.directory 0..1)

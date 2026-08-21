@@ -39,9 +39,12 @@ several rules exist.
   `409` (generic duplicate).
 
 ## Load-bearing released-text facts
-- **AMB-57 IS STALE**: SPECITS-84 (Amendment_record.md, 27 Apr 2026) LANDED —
-  both contribution ops accept/return the wt MIME types; envelope stays
-  canonical, only `versions[i].data` is FLAT/STRUCTURED. Re-verify before use.
+- **SPECITS-84 landing did not settle AMB-57 — it CREATED the #1530
+  contradiction**: the Amendment_record.md (27 Apr 2026) puts the wt MIME
+  promise on both contribution ops, but the ops' read side carries no `data`
+  member for a simplified body to live in, so the promise sits on operations
+  whose response schema cannot express it. Never cite the landing as a
+  dismissal of the ambiguity; the standing record is #1530.
 - **AMB-54 is partially assigned after all**: `responses/400_CONTRIBUTION.yaml`
   says 400 covers "the modification type does not match the operation - i.e.
   first version of a MODIFICATION". The mirror case (creation WITH a

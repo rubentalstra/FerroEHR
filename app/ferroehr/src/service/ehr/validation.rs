@@ -244,10 +244,7 @@ impl FerroEhrService {
     ) -> Result<(), ServiceError> {
         match kind {
             Kind::Composition => self.validate_composition_for_commit(data, incomplete).await,
-            // NOTE: EHR_STATUS is the ONE committable kind the relaxation does
-            // not reach — the CNF schedule's EHR_STATUS reject case 2 says the
-            // incomplete state "doesn't apply to EHR_STATUS" (open: SPECPR-368).
-            Kind::EhrStatus => validate_ehr_status(data),
+            Kind::EhrStatus => validate_ehr_status(data, incomplete),
             Kind::EhrAccess => validate_ehr_access(data, incomplete),
             Kind::Folder => validate_folder(data, incomplete),
             // The demographic kinds arrive here from the raw-body
@@ -486,11 +483,22 @@ pub(in crate::service) fn validate_root_locatable(
 /// `subject.external_ref`, `Archetype_node_id_valid`, `Links_valid`, and every
 /// invariant below the root.
 ///
+/// `incomplete` (a `553|incomplete|` commit) relaxes the whole-instance
+/// pass's existence and cardinality lower bounds, exactly as for every other
+/// committable kind — RM common master06 §Incomplete Content defines the
+/// relaxation generically, with no content-type exclusion in any released
+/// text. The two slot rules stay unconditional: the incomplete state lifts
+/// lower bounds, never typing ("All other validity requirements must be
+/// satisfied").
+///
 /// # Errors
 /// [`ServiceError::Unprocessable`] for the two slot rules above, or
 /// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
 /// (both → 422).
-pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
+pub(in crate::service) fn validate_ehr_status(
+    status: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::content_invalid(Violation::new(m));
     let obj = status
         .as_object()
@@ -511,7 +519,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
     }
 
     validate_root_locatable(obj, "EHR_STATUS")?;
-    validate_rm_invariants_for_commit(status, "EHR_STATUS", false)
+    validate_rm_invariants_for_commit(status, "EHR_STATUS", incomplete)
 }
 
 /// Validate a client-supplied `EHR_ACCESS` before it is committed (via a
@@ -762,14 +770,14 @@ mod tests {
                     "archetype_node_id": "at0001" }),
         ] {
             let ty = other["_type"].as_str().unwrap().to_owned();
-            validate_ehr_status(&with_other(other))
+            validate_ehr_status(&with_other(other), false)
                 .unwrap_or_else(|e| panic!("{ty} other_details must be accepted: {e:?}"));
         }
         for bad in [
             json!({ "_type": "DV_TEXT", "value": "x" }),
             json!({ "value": "x" }),
         ] {
-            let err = validate_ehr_status(&with_other(bad))
+            let err = validate_ehr_status(&with_other(bad), false)
                 .expect_err("non-ITEM_STRUCTURE other_details must be rejected");
             assert!(format!("{err:?}").contains("ITEM_STRUCTURE"), "got {err:?}");
         }
@@ -777,7 +785,7 @@ mod tests {
 
     #[test]
     fn default_and_typical_ehr_status_are_accepted() {
-        validate_ehr_status(&initial_ehr_status()).expect("default EHR_STATUS");
+        validate_ehr_status(&initial_ehr_status(), false).expect("default EHR_STATUS");
         // A subject identified via external_ref is still a PARTY_SELF (RM ehr
         // master04 §EHR Status).
         let identified = json!({
@@ -802,7 +810,26 @@ mod tests {
             "is_queryable": true,
             "is_modifiable": false
         });
-        validate_ehr_status(&identified).expect("identified PARTY_SELF EHR_STATUS");
+        validate_ehr_status(&identified, false).expect("identified PARTY_SELF EHR_STATUS");
+    }
+
+    /// The `553|incomplete|` relaxation reaches `EHR_STATUS` like every other
+    /// committable kind: RM common master06 §Incomplete Content lifts the
+    /// existence lower bounds ("mandatory attributes may be absent") with no
+    /// content-type exclusion in any released text, so a status missing its
+    /// mandatory `subject` (1..1) is refused complete and accepted incomplete.
+    #[test]
+    fn ehr_status_incomplete_lifts_mandatory_presence() {
+        let mut status = initial_ehr_status();
+        status.as_object_mut().unwrap().remove("subject");
+        let err = validate_ehr_status(&status, false)
+            .expect_err("a complete EHR_STATUS without its mandatory subject is refused");
+        assert!(
+            format!("{err:?}").contains("subject"),
+            "the refusal names the absent mandatory attribute, got {err:?}"
+        );
+        validate_ehr_status(&status, true)
+            .expect("an incomplete EHR_STATUS may omit mandatory attributes");
     }
 
     /// A subject typed with a foreign concrete `PARTY_PROXY` subtype
@@ -832,7 +859,8 @@ mod tests {
             "is_queryable": true,
             "is_modifiable": true
         });
-        let err = validate_ehr_status(&bad).expect_err("PARTY_IDENTIFIED subject must be rejected");
+        let err = validate_ehr_status(&bad, false)
+            .expect_err("PARTY_IDENTIFIED subject must be rejected");
         let msg = format!("{err:?}");
         assert!(
             msg.contains("PARTY_SELF") && msg.contains("PARTY_IDENTIFIED"),
@@ -860,7 +888,7 @@ mod tests {
                 "is_queryable": true,
                 "is_modifiable": true
             });
-            validate_ehr_status(&status).expect("anonymous PARTY_SELF EHR_STATUS");
+            validate_ehr_status(&status, false).expect("anonymous PARTY_SELF EHR_STATUS");
         }
     }
 
@@ -892,7 +920,7 @@ mod tests {
             let text = std::fs::read_to_string(&path).expect("read fixture");
             let status: Value = serde_json::from_str(&text).expect("parse fixture");
             assert!(
-                validate_ehr_status(&status).is_err(),
+                validate_ehr_status(&status, false).is_err(),
                 "invalid EHR_STATUS fixture was accepted: {}",
                 path.display()
             );
@@ -1092,12 +1120,14 @@ mod tests {
     fn ehr_status_empty_rm_version_is_refused() {
         let mut bad = initial_ehr_status();
         bad["archetype_details"]["rm_version"] = json!("");
-        let err = validate_ehr_status(&bad).expect_err("an empty rm_version must be refused");
+        let err =
+            validate_ehr_status(&bad, false).expect_err("an empty rm_version must be refused");
         assert!(
             format!("{err:?}").contains("Rm_version_valid"),
             "the refusal should name the invariant, got {err:?}"
         );
-        validate_ehr_status(&initial_ehr_status()).expect("a populated rm_version is accepted");
+        validate_ehr_status(&initial_ehr_status(), false)
+            .expect("a populated rm_version is accepted");
     }
 
     /// `LINK.meaning` is 1..1 (RM common `org.openehr.rm.common.link.adoc`
@@ -1169,7 +1199,7 @@ mod tests {
             o
         };
 
-        let err = validate_ehr_status(&with_other(item_single(None)))
+        let err = validate_ehr_status(&with_other(item_single(None)), false)
             .expect_err("an ITEM_SINGLE without its mandatory item must be refused");
         assert!(
             matches!(err, ServiceError::ValidationFailed(_)),
@@ -1182,12 +1212,15 @@ mod tests {
 
         // The valid twin, so the refusal is proven specific to the missing
         // mandatory attribute rather than to ITEM_SINGLE as a shape.
-        validate_ehr_status(&with_other(item_single(Some(json!({
-            "_type": "ELEMENT",
-            "name": { "_type": "DV_TEXT", "value": "e" },
-            "archetype_node_id": "at0002",
-            "value": { "_type": "DV_TEXT", "value": "v" }
-        })))))
+        validate_ehr_status(
+            &with_other(item_single(Some(json!({
+                "_type": "ELEMENT",
+                "name": { "_type": "DV_TEXT", "value": "e" },
+                "archetype_node_id": "at0002",
+                "value": { "_type": "DV_TEXT", "value": "v" }
+            })))),
+            false,
+        )
         .expect("an ITEM_SINGLE carrying its mandatory item is accepted");
     }
 
@@ -1223,7 +1256,7 @@ mod tests {
                 .insert("other_details".into(), other);
             status
         };
-        let err = validate_ehr_status(&with_other(other_details(json!([]))))
+        let err = validate_ehr_status(&with_other(other_details(json!([]))), false)
             .expect_err("a nested present-but-empty links list must be refused");
         assert!(
             format!("{err:?}").contains("links")
@@ -1231,12 +1264,15 @@ mod tests {
             "the refusal names the empty container (#1730 parse class), got {err:?}"
         );
 
-        validate_ehr_status(&with_other(other_details(json!([{
-            "_type": "LINK",
-            "meaning": { "_type": "DV_TEXT", "value": "follow up" },
-            "type": { "_type": "DV_TEXT", "value": "issue" },
-            "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
-        }]))))
+        validate_ehr_status(
+            &with_other(other_details(json!([{
+                "_type": "LINK",
+                "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+                "type": { "_type": "DV_TEXT", "value": "issue" },
+                "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+            }]))),
+            false,
+        )
         .expect("a nested non-empty links list is accepted");
     }
 

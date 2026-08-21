@@ -98,6 +98,21 @@ CNF (stalled guide): `CNF/docs/platform_test_schedule/master09-func_tc_ehr_direc
 concrete status codes; L730 literally says the 409-already-exists case "is not (yet) in the
 SPEC"). Fixtures: `_resources/test_data_sets/directory/*.json`.
 
+## "EHR has NO directory" on RETRIEVAL is *not* spec-silent (settled 2026-08-21)
+Before registering an empty-vs-error ambiguity for directory GET, read the two
+404 response FILES — their own sentences ground the outcome:
+`ITS-REST/specifications/responses/404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml`
+= "`404 Not Found` is returned when an EHR with `ehr_id` does not exist, **or when
+a directory does not exist** at the specified `version_at_time`, or when `path`
+does not exist within the directory" (sibling `…_no_version_uid_…` says the same
+for `version_uid`). `directory_get_at_time.yaml` declares ONLY 200/204/404 and
+`200_FOLDER_retrieved.yaml` carries a `schemas/ehr/Folder.yaml` body — there is
+**no empty-structure branch anywhere**, so the "empty structure" option has zero
+released ground. The EHR-API docs text (`specifications/docs/ehr/Description.md`)
+is a stub and `overview/Requests_and_responses.md` never mentions `directory`
+(grep-verified), so the OAS legitimately fills that docs-text silence.
+Residual gaps are only the WRITE paths (see the gap list below).
+
 RELEASED-TEXT GAPS for directory (all confirmed first-hand):
 create-on-existing-directory status; update/delete when EHR has no directory;
 `path` leading-slash + root-name-included + escaping + items-addressable; the
