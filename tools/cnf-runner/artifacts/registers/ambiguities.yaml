@@ -1731,6 +1731,7 @@ AMB-63:
     states the comparison discipline, carries the refusal to the with-id path,
     or admits several EHRs per subject.
   disposition: fixed_handling
+  upstream_issue: 2544
 AMB-64:
   ambiguity: >-
     Whether the `Last-Modified` SHOULD reaches the EHR resource is left open by
@@ -9686,3 +9687,42 @@ AMB-215:
     (issue #2482). The example defect is reported upstream.
   disposition: fixed_handling
   upstream_issue: 2483
+AMB-216:
+  ambiguity: >-
+    The demographic CONTRIBUTION read cannot legally be asked for what its own
+    success response promises. The operation pins the `Accept_canonical`
+    parameter (enum: `application/json` | `application/xml` only) while
+    `$ref`-ing the shared `200_CONTRIBUTION.yaml`, whose description promises
+    Simplified serialization ("When the request `Accept` header selects a
+    Simplified Formats MIME type ... only each `versions[i].data` payload is
+    serialized in the requested FLAT or STRUCTURED form") and whose
+    Content-Type header is `ContentType_LOCATABLE` (all four values). The EHR
+    sibling read declares `Accept_LOCATABLE` and spells the Simplified MAY out
+    in its own description, so the contradiction is local to the demographic
+    route's parameter list. The docs text says nothing about this route's
+    negotiation, so both sides of the contradiction are the released OAS
+    against itself.
+  source: >-
+    ITS-REST specifications/operations/demographic_contribution_get.yaml
+    (parameter `$ref` ../parameters/header/Accept_canonical.yaml — enum json |
+    xml; cited as the OAS, docs text silent); ITS-REST
+    specifications/responses/200_CONTRIBUTION.yaml (the Simplified-Formats
+    serialization paragraph + the ContentType_LOCATABLE header — the shared
+    200 both contribution reads `$ref`); ITS-REST
+    specifications/operations/contribution_get.yaml (Accept_LOCATABLE + the
+    explicit Simplified MAY — the sibling proving the divergence is
+    route-local).
+  handling: >-
+    Fixed handling: the operation's own parameter declaration wins as the
+    narrower released statement — a schema-driven client cannot legally send
+    an Accept the enum forbids, so refusing it can never surprise one. The
+    demographic CONTRIBUTION read serves canonical JSON/XML only and a
+    Simplified-Formats `Accept` on this route is refused 406 (overview
+    Requests_and_responses §HTTP status codes); the shared 200 file's
+    Simplified paragraph is read as scoped to the routes whose Accept admits
+    those types. The contradiction is reported upstream. (The 200 file's
+    deeper defect — `versions[i].data` does not exist in the declared
+    CONTRIBUTION schema — is the standing report on AMB-56's family, issue
+    #1530; this entry is only the negotiation contradiction.)
+  disposition: fixed_handling
+  upstream_issue: 2539
