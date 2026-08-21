@@ -129,7 +129,7 @@
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -143,7 +143,7 @@
     "case": "I_DEMOGRAPHIC_SERVICE.update_party-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -157,7 +157,7 @@
     "case": "I_EHR_DIRECTORY.create_directory-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -192,14 +192,14 @@
     "case": "I_EHR_DIRECTORY.update_directory-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_SERVICE.create_ehr-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -213,14 +213,14 @@
     "case": "I_EHR_STATUS.clear_ehr_modifiable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.clear_ehr_queryable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -234,14 +234,14 @@
     "case": "I_EHR_STATUS.set_ehr_modifiable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.set_ehr_queryable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {

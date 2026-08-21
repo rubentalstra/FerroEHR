@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.19.0"
+    "version": "3.20.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.19.0",
+    "version": "3.20.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -470,6 +470,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-event_bad_opt",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-feeder_audit_change_type",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2155,6 +2161,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_kind_in_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-deprecated_text_forms",
       "status": "passed",
       "rows_driven": 1,
@@ -3505,7 +3517,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
@@ -3889,7 +3901,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
@@ -3962,6 +3974,12 @@
       "status": "passed",
       "rows_driven": 4,
       "rows_total": 4
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_kind_in_demographic",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_CONTRIBUTION.get_contribution-demographic_unknown",
@@ -4235,6 +4253,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-after_delete",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-bad_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -4356,7 +4380,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.delete_directory-bad_ehr",
@@ -4758,7 +4782,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-bulk_load_depth",
@@ -4851,7 +4875,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
@@ -4977,7 +5001,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
@@ -5014,7 +5038,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status-at_time_before_first_version",
@@ -5174,7 +5198,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-audit_change_type",
@@ -5248,7 +5272,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.update_other_details-round_trip",
