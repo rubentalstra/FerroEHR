@@ -2,10 +2,9 @@
 # The SM get_directory(ehr_id) returns the current EHR.directory FOLDER, or Void;
 # realized as GET /ehr/{ehr_id}/directory with version_at_time OMITTED (the
 # `latest` case of directory_get_at_time.yaml).
-# Empty-directory retrieval: a never-existed directory is a 404, and a logically
-# deleted one is a 204 — the empty-vs-error question of AMB-8 resolves to the
-# error branch on ITS-REST (no 200 empty-structure body exists for a missing
-# directory).
+# Empty-directory retrieval: a never-existed directory is the OAS-defined 404,
+# a logically deleted one is a 204 — no 200 empty-structure body exists for a
+# missing directory anywhere in the release.
 # Sources: specifications/operations/directory_get_at_time.yaml (200/204/404),
 # responses/200_FOLDER_retrieved.yaml, 204_deleted_at_time.yaml,
 # 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml.

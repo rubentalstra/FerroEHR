@@ -1,7 +1,7 @@
 # Conformance Report
 
-SUT: ferroehr 3.17.8 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.17.8 · verification pack: passed
+SUT: ferroehr 3.19.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.19.0 · verification pack: passed
 
 ## Summary
 
@@ -86,7 +86,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | EhrStatus | pass | 44 | 0 | 0 | 5 |
 | CompositionOps | pass | 59 | 0 | 0 | 0 |
 | DirectoryOps | pass | 77 | 0 | 0 | 8 |
-| ChangeSets | pass | 100 | 0 | 0 | 5 |
+| ChangeSets | pass | 101 | 0 | 0 | 5 |
 | Versioning | pass | 73 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
 | PartyOperations | pass | 87 | 0 | 0 | 4 |

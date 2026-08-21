@@ -1,6 +1,9 @@
 # get_directory_at_time with empty (omitted) time on an EHR with no directory.
-# Empty time -> latest; on an EHR with no directory this is the AMB-8
-# empty-vs-error case, realized as the error branch (404) on ITS-REST.
+# Empty time -> latest; the docs text is silent on the never-created-directory
+# representation and the released OAS assigns the branch:
+# directory_get_at_time.yaml cites
+# 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml — no
+# empty-structure 200 body exists anywhere in the release.
 id: I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time
 kind: functional
 component: EHR_DIRECTORY
@@ -8,13 +11,14 @@ sm_operation: I_EHR_DIRECTORY.get_directory_at_time
 capabilities: [DirectoryOps]
 exercises: [Versioning]
 profiles: [STANDARD]
-option: directory-empty-error
 test_purpose: >-
-  get_directory_at_time with empty time on an EHR without a directory yields the
-  empty-directory outcome; on ITS-REST that is the error branch.
+  get_directory_at_time with empty time on an EHR without a directory is the
+  error branch — the released OAS defines the 404 and no empty-structure
+  representation exists.
 description: "Test get_directory_at_time on empty EHR with empty time"
 spec_refs:
   - "SM openehr_platform §I_EHR_DIRECTORY.get_directory_at_time"
+  - "ITS-REST OAS operations/directory_get_at_time.yaml (404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path — cited as the OAS; docs text silent)"
   - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time"
 applies: { rm: ">=1.0.2" }
 requires:
@@ -24,5 +28,4 @@ flow:
   - step: 1
     call: get_directory_at_time
     with: { ehr_id: "${ehr_id}" }         # empty time -> version_at_time omitted
-    expect: not_found                     # AMB-8 error branch: no directory
-ambiguities: [AMB-8]
+    expect: not_found                     # the OAS-defined 404: no directory at any time

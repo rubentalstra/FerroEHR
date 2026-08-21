@@ -29,6 +29,26 @@ diagram additionally carries `create_draft`, `create_final`, `complete`,
 DELETED→INCOMPLETE / DELETED→COMPLETE**, which the prose never mentions and
 which ITS-REST has no operation for (`400_already_deleted`).
 
+## `incomplete` is NOT an under-specified state (settled 2026-08-21)
+Do not report "commit/retrieval behaviour in `incomplete` is unspecified" —
+**§Incomplete Content (L141-153) specifies it in detail**: L147 NOTE = "a limited
+form of invalidity is allowed: mandatory attributes may be absent … single-valued
+attributes may have null values and container attributes may be empty … All other
+validity requirements must be satisfied … data may be missing, but it may not be
+wrong"; L149 = same template/archetype "with all existence and cardinality lower
+limits set to zero"; L151 = incomplete→complete requires missing fields populated
+and generates a new VERSION regardless; L139 = every transition needs a new commit.
+`RM/docs/ehr/master05-composition_package.adoc` §Composition Content L90 names
+`VERSION._lifecycle_state_ = 'incomplete'` as the 'draft' empty-COMPOSITION case.
+**The genuine gap is the EHR_STATUS axis, and it lives in CNF, not RM**:
+`CNF/docs/platform_test_schedule/master08-func_tc_ehr_contribution.adoc` L203 —
+"`CONTRIBUTIONs` with `VERSION`, where `VERSION.lifecycle_state` = `incomplete`
+should be rejected, because the `incomplete` state doesn't apply to `EHR_STATUS`.
+Though there is an open issue related to this: SPECPR-368". The RM carries NO
+EHR_STATUS carve-out (`org.openehr.rm.ehr.{ehr_status,versioned_ehr_status}.adoc`
+contain the string `lifecycle` ZERO times — grep-verified), and SPECPR-368 appears
+in the whole vendored tree ONLY at that one CNF line.
+
 ## Class-table anchors §6.3 relies on
 `RM/docs/UML/classes/org.openehr.rm.common.{version,original_version,imported_version,versioned_object}.adoc`;
 `BASE/docs/UML/classes/org.openehr.base.base_types.{object_version_id,version_tree_id,uid_based_id,hier_object_id}.adoc`.

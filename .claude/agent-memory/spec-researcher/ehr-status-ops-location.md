@@ -49,8 +49,18 @@ only — no prose).
   `has_ehr_status_version (an_ehr_id, a_version_uid)` — `a_version_uid` undeclared.
 - DEFECT: version uids typed `UUID`, but a `version_uid` is an
   OBJECT_VERSION_ID (`object_id::creating_system_id::version_tree_id`).
-- DEFECT: `clear_ehr_modifiable` meaning reads "ensures it is treated as active"
-  (should be inactive).
+- DEFECT: `clear_ehr_modifiable` (L104-110) meaning reads "ensures it is treated
+  as active" (should be inactive) while its own post is
+  `not …is_modifiable` — but its spelling of `_is_modifiable_` is CORRECT.
+  The `_is_modifable_` misspelling is in **`set_ehr_modifiable` (L80)**, a
+  different operation — do not attribute the typo to `clear_ehr_modifiable`.
+  Line map: L49 missing `an_ehr_id`, L80 typo, L110 contradiction, L154
+  undeclared `a_version_uid`.
+- SM has NO `revision_history` operation anywhere (grep `revision_history`
+  under `SM/docs/` = zero hits), while ITS-REST declares
+  `operations/versioned_ehr_status_revision_history.yaml`; the at-time/at-version
+  SM ops return `EHR_STATUS` while the REST routes serve the VERSION envelope
+  (`responses/200_VERSION_of_EHR_STATUS_{at_time,by_id}.yaml`).
 - Only declared error across all ops: `ehr_id_does_not_exist`.
 
 ## CNF coverage (stalled guide, not authority)

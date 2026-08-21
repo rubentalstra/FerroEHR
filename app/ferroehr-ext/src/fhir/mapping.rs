@@ -176,10 +176,11 @@ pub struct CodeTranslate {
     pub concept_map: Option<String>,
 }
 
-/// One code the orchestrator must translate before [`build_flat`] can apply a
-/// `translate`-declaring entry: the source coding, the target system, and the
-/// openEHR terminology token the entry's `code_map` binds the target to (the
-/// routing key for the terminology seam).
+/// One code the orchestrator must translate before [`build_flat`] applies.
+///
+/// Carries the source coding, the target system, and the openEHR terminology
+/// token the entry's `code_map` binds the target to (the routing key for the
+/// terminology seam), for one `translate`-declaring entry.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TranslationRequest {
     /// The source code's system URL (from the entry's `system_path`).
@@ -405,10 +406,12 @@ pub fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
     }
 }
 
-/// Build the FLAT map for a resource under a mapping definition: the seed
-/// `context` keys, then each entry's produced leaf(s). `translations` carries
-/// the orchestrator's resolved [`TranslationRequest`] answers (empty when no
-/// entry declares `translate`).
+/// Builds the FLAT map for a resource under a mapping definition.
+///
+/// Seeds the `context` keys, then each entry's produced leaf(s).
+/// `translations` carries the orchestrator's resolved [`TranslationRequest`]
+/// answers (empty when no entry declares `translate`).
+///
 /// # Errors
 /// Returns [`FhirMapError`] when a mapping entry cannot be applied to the
 /// resource (missing/mistyped member, unresolvable path, an untranslatable
@@ -428,10 +431,12 @@ pub fn build_flat(
     Ok(flat)
 }
 
-/// Enumerate the translations `def` needs for `resource`: one request per
-/// `translate`-declaring coded entry whose source code + system resolve.
-/// Deduplicated and ordered; the orchestrator resolves each through the
-/// terminology seam and hands the answers to [`build_flat`].
+/// Enumerates the translations `def` needs for `resource`.
+///
+/// One request per `translate`-declaring coded entry whose source code +
+/// system resolve, deduplicated and ordered; the orchestrator resolves each
+/// through the terminology seam and hands the answers to [`build_flat`].
+///
 /// # Errors
 /// Returns [`FhirMapError::TranslateWithoutSystem`] when a `translate` entry
 /// resolves a code but no source system, and

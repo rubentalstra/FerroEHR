@@ -1,21 +1,23 @@
-# get_directory on an EHR with no directory. The schedule expects an empty
-# structure, "NOTE: in a REST API implementation, the result could be an error
-# status instead" (AMB-8). ITS-REST 1.1.0 has no 200 empty-structure body for a
-# missing directory, so the realized branch is the error one
-# (option: directory-empty-error -> 404).
+# get_directory on an EHR with no directory. The docs text is silent on the
+# never-created-directory representation, and the released OAS assigns the
+# branch: directory_get_at_time.yaml cites
+# 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml ("a
+# directory does not exist at the specified version_at_time"); no
+# empty-structure 200 body exists anywhere in the release. The schedule's
+# empty-structure lean is guide text and loses to the released component.
 id: I_EHR_DIRECTORY.get_directory-empty_ehr
 kind: functional
 component: EHR_DIRECTORY
 sm_operation: I_EHR_DIRECTORY.get_directory
 capabilities: [DirectoryOps]
 profiles: [STANDARD]
-option: directory-empty-error
 test_purpose: >-
-  get_directory on an EHR without a directory yields the empty-directory
-  outcome; on ITS-REST that is the error branch (no directory to return).
+  get_directory on an EHR without a directory is the error branch — the
+  released OAS defines the 404 and no empty-structure representation exists.
 description: "Test get_directory on empty EHR"
 spec_refs:
   - "SM openehr_platform §I_EHR_DIRECTORY.get_directory"
+  - "ITS-REST OAS operations/directory_get_at_time.yaml (404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path — cited as the OAS; docs text silent)"
   - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.get_directory-empty_ehr"
 applies: { rm: ">=1.0.2" }
 requires:
@@ -25,5 +27,4 @@ flow:
   - step: 1
     call: get_directory
     with: { ehr_id: "${ehr_id}" }
-    expect: not_found                     # AMB-8 error branch: no directory (empty-structure branch is unrealized on ITS-REST 1.1.0)
-ambiguities: [AMB-8]
+    expect: not_found                     # the OAS-defined 404: no directory (no empty-structure representation exists in the release)

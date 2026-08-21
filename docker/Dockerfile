@@ -4,72 +4,54 @@
 # ONE runtime stage feeds TWO final targets so a compose-built image and a
 # CI-published image can never drift (docs.docker.com/build/building/multi-stage):
 #
-#   runtime-from-source  the LOCAL/compose path — cargo-chef + cache mounts
-#                         compile the binary in-image.
+#   runtime-from-source  the LOCAL/compose path — a persistent BuildKit target
+#                         cache compiles the binary in-image.
 #   runtime-prebuilt     the CI path — COPY-only packaging of a context-provided
 #                         native binary (bin/${TARGETARCH}/ferroehr); no RUN, so a
 #                         multi-arch buildx needs no QEMU and finishes in seconds.
 #
-# Caching (D1, the F2/F3 fix): cargo-chef splits the dependency compile into its
-# own layer keyed ONLY on the lockfile/recipe, so an app-only edit never
-# recompiles dependencies, and — unlike a bare `--mount=type=cache` — that layer
-# is a real image layer CI can export/import via the GHA backend
-# (docs.docker.com/build/cache/optimize; docs.docker.com/guides/rust).
+# Caching (D1; re-grounded 2026-08-21, issue #2530): the whole cargo target
+# directory lives in a `--mount=type=cache` that persists across builds on the
+# builder host — the official Docker Rust pattern (docs.docker.com/guides/rust).
+# Cargo's own freshness logic then decides what recompiles: an app-only edit
+# rebuilds only the app crates, a `crates/` regeneration rebuilds the spec
+# crates, and dependencies rebuild only on a lockfile change. The previous
+# cargo-chef layering is GONE on the tool's own documented ground: chef caches
+# EXTERNAL dependencies only, and its README states that local workspace
+# crates "may rebuild from scratch due to [cargo's] timestamp-based
+# fingerprinting logic, even if they are unchanged" — which made every edit
+# recompile the eight generated openehr-* crates, the largest units in the
+# tree. The exportable-image-layer rationale chef carried had no consumer:
+# the only CI lane building this target (`server-image-from-source`) is a
+# deliberate no-cache cold-compile proof.
 #
 # The RUST_VERSION toolchain is single-sourced from rust-toolchain.toml; CI
 # cross-checks the ARG against its `channel` so they never drift.
 
 ARG RUST_VERSION=1.97.1
-ARG CARGO_CHEF_VERSION=0.1.77
 
-# ── chef: the builder toolchain + cargo-chef, a cached base for planner/builder ─
+# ── builder: compile in-image against the persistent target cache ──────────────
 # Digest-pinned rust:1.97.1-slim-trixie (Debian 13, glibc 2.41), resolved
 # 2026-07-24. The builder and the cc-debian13 runtime below share the Debian 13
 # generation so the binary links the exact glibc it runs against. Pinning by
 # digest (not the mutable tag) guarantees a reproducible base
 # (docs.docker.com/build/building/best-practices — "pinning to a digest
 # guarantees the same image version").
-FROM rust:${RUST_VERSION}-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS chef
-ARG CARGO_CHEF_VERSION
-# cargo-chef pinned by version, installed behind a cargo-registry cache mount so
-# the download is not repeated on rebuilds (docs.docker.com/build/cache/optimize
-# — RUN --mount=type=cache). This layer rebuilds only when RUST_VERSION or
-# CARGO_CHEF_VERSION changes.
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo install cargo-chef --version ${CARGO_CHEF_VERSION} --locked
+FROM rust:${RUST_VERSION}-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS builder
 WORKDIR /app
-
-# ── planner: distil the dependency recipe from the workspace manifests ─────────
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# ── builder: cook dependencies (cached layer), then build the app ──────────────
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-# Cook ONLY the dependency graph of the server binary. This writes the compiled
-# dependencies into the image layer (NOT a target cache mount — a mount would
-# not export via the GHA backend and would shadow the cooked target on the next
-# stage), so the layer is cache-hit until Cargo.lock/recipe.json changes and CI
-# can reuse it cold (docs.docker.com/guides/rust; docs.docker.com/build/cache/backends).
-# The registry cache mount is safe: it holds downloaded crate sources, never
-# shadows /app/target, and only speeds a cache-missed cook.
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo chef cook --release --locked -p ferroehr-server --recipe-path recipe.json
 COPY . .
 # Build provenance: the OCI-standard REVISION build-arg (the git SHA CI's
 # metadata-action already sets for org.opencontainers.image.revision) is the
 # ONLY provenance input — no bespoke arg. Exposed as an ENV so build.rs reads it
 # and stamps /management/info with the same SHA the image LABEL carries. Absent,
 # build.rs degrades to a version-only identity with SHA=unknown BY DESIGN (never
-# a broken build; .git is not in the context). Declaring it here (after
-# `chef cook`) keeps the cooked dependency layer above untouched by an SHA change
+# a broken build; .git is not in the context). An SHA change re-runs only the
+# build RUN, whose compile state persists in the target cache mount anyway
 # (docs.docker.com/reference/dockerfile — ARG/ENV scoping).
 ARG REVISION=""
 ENV REVISION=${REVISION}
 # The binary is pure-Rust (rustls, no OpenSSL); the slim base needs no extra
-# system libraries. Deps are already compiled by `chef cook`, so this step only
-# builds the workspace's own crates.
+# system libraries.
 # Build parallelism is capped, and tunable. The generated spec crates carry
 # every emitted generation (#1936/#1942), so a single rustc invocation on one of
 # them at opt-level 3 holds gigabytes; running several alongside the app crates
@@ -77,13 +59,23 @@ ENV REVISION=${REVISION}
 # been observed twice at two different caps — SIGKILL on openehr-its at the
 # default parallelism (7.7 GB VM, 2026-08-05), and again at `--jobs 2` once the
 # spec-function work landed — so the number is a property of the machine, not a
-# constant to keep re-tuning in this file.
+# constant to keep re-tuning in this file. With the persistent target cache the
+# cap bites only on cold or spec-crate-invalidating builds; warm rebuilds
+# compile the app crates alone.
 #
 # `--build-arg CARGO_BUILD_JOBS=1` builds on a memory-constrained host. It costs
 # wall-clock and changes no shipped byte: parallelism only decides how many
 # translation units compile at once.
 ARG CARGO_BUILD_JOBS=2
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+# Both caches are mounts, per the official pattern (docs.docker.com/guides/rust):
+# /app/target holds the compile state (fingerprints included, so cargo's
+# freshness survives across builds — the thing an image layer can never give
+# workspace crates), the registry mount holds downloaded crate sources.
+# `sharing=locked` serializes concurrent image builds on the one cache. The
+# binary is copied OUT of the mount in the same RUN — mounts are not part of
+# the image, so nothing under /app/target survives past this step.
+RUN --mount=type=cache,target=/app/target,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     cargo build --release --locked --jobs "${CARGO_BUILD_JOBS}" -p ferroehr-server \
     && cp target/release/ferroehr /usr/local/bin/ferroehr \
     && strip /usr/local/bin/ferroehr
