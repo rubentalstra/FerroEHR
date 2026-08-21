@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.19.0] - 2026-08-21
+
 ### Fixed
 
 - **Error responses name the SM call status the service model actually
@@ -6873,7 +6875,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.18.0...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.19.0...HEAD
+[3.19.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.18.0...v3.19.0
 [3.18.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.8...v3.18.0
 [3.17.8]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.7...v3.17.8
 [3.17.7]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.6...v3.17.7
