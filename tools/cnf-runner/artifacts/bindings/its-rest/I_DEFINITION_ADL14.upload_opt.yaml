@@ -22,7 +22,14 @@ request:
     # declares an `application/json` content entry (schema TemplateIdentifier).
     Accept: application/json
 outcomes:
-  created: { status: 201 }                # 201_Template_adl1_4_upload.yaml
+  created:
+    status: 201                           # 201_Template_adl1_4_upload.yaml
+    headers:
+      # OAS-declared on this response (headers/ETag_Template_adl1_4.yaml —
+      # "identifier of Template"), weak-prefixed per the overview
+      # §Deprecated headers MUST; register AMB-112.
+      ETag: { match: 'pattern:W/"<template_id>"', applies: { its_rest: ">=1.1.0" } }
+      Location: present                   # Location_Template_adl1_4 on the same response
   # The refusal branch is MAPPED so a server that will not serve the Accept
   # this binding declares is JUDGED rather than swallowed as an unmapped
   # status (issue #629). Ground: docs/overview/Requests_and_responses.md

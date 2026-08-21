@@ -2957,9 +2957,12 @@ AMB-96:
     spelling is the released MAJORITY, not an outlier: the EHR_STATUS
     example and ALL FIVE demographic examples (Person, Agent, Group,
     Organisation, Role) carry it; only the COMPOSITION example uses a real
-    path, and no released example anywhere omits the attribute — so a
-    client reading the examples would emit "" for an unpathed tag as a
-    matter of course.
+    path, and no released JSON-SCHEMA example omits the attribute (scope
+    corrected 2026-08-21: the WRAPPER-HEADER examples at
+    Requests_and_responses.md §openehr-item-tag DO omit it for unpathed
+    tags — which corroborates the ""-means-absent normalization below) —
+    so a client reading the schema examples would emit "" for an unpathed
+    tag as a matter of course.
   source: >-
     RM UML/classes/org.openehr.rm.common.item_tag.adoc (target_path 0..1;
     invariants cover key and value only) vs ITS-REST
@@ -2995,7 +2998,8 @@ AMB-97:
     200_PERSON_ItemTagList_retrieved for a response spanning all five party
     kinds (no 200_DEMOGRAPHIC_ItemTagList file exists either), so a
     conformant ROLE tag in that list contradicts the declared schema;
-    the demographic space-wide list's own description ends "...associated
+    the demographic space-wide list's own description carries, as its
+    third paragraph, "...associated
     with any target within given EHR" — a copy-paste from ehr_tags_get
     onto the one tag route that has no EHR at all, and the only sentence
     in the whole demographic tag surface naming a resource the route
@@ -3025,9 +3029,12 @@ AMB-97:
     ITEM_TAGs...") scopes only the headers and no
     tag route declares a refusal branch; nothing states tag persistence
     across new target versions, container-tag reach, or cascade on target
-    deletion; and the whole class is development-RM-only (SPECRM-87) —
-    the one surface in the released ITS-REST whose class link points at
-    RM/development.
+    deletion; and the whole class is development-RM-only (SPECRM-87, dated above the
+    RM Release 1.1.0 separator in the amendment record) — the only ITS-REST
+    class link whose TARGET CLASS post-dates the released RM (scope
+    corrected 2026-08-21: RM/development links number three, but
+    Requests_and_responses.md L152's DV_EHR_URI points at a released
+    class).
   source: >-
     RM UML/classes/org.openehr.rm.common.item_tag.adoc + BASE
     foundation_types string.adoc; ITS-REST specifications/
@@ -3137,7 +3144,10 @@ AMB-101:
     assigned outcome — an SM-to-ITS realization gap. (What the scope DOES
     is NOT part of this entry: SM defines `_ehr_ids_` as "Specific set of
     EHRs on which to execute the query. If none supplied, a full
-    population query will be performed", and the ITS-REST query chapter
+    population query will be performed on all EHRs whose status has the
+    `_is_queryable_` flag set to `True`" (quote completed 2026-08-21 —
+    the dropped clause is a released population-scope constraint), and
+    the ITS-REST query chapter
     states the same effect from the other side, calling population
     queries the ones "not referring or using any `ehr_id` parameter to
     constrain the scope on a specific EHR".)
@@ -3171,14 +3181,23 @@ AMB-102:
     org.openehr::aql form.
   source: >-
     ITS-REST specifications/parameters/path/version.yaml (the two legal
-    forms) + responses/404_Query_version.yaml (the trigger);
+    forms) + responses/404_Query_version.yaml (the trigger) +
+    responses/400_Query.yaml (the COMPETING released candidate on the same
+    operations — "at least one of the parameters has an invalid syntax";
+    cited 2026-08-21) + Requests_and_responses.md §HTTP status codes (the
+    tie-breaker: 400 is "used when no other 4xx error code is
+    appropriate");
     docs/query/Qualified_query_name.md (the class + the reserved-name
     NOTE) — confirmed first-hand.
   handling: >-
     Fixed handling: an unmatchable selector IS "a version that does not
     exist" — 404 under the released trigger's own wording (a selector
     matching nothing), covering malformed versions, out-of-class names,
-    and the reserved name alike. This entry is the READ side only; the
+    and the reserved name alike. 404 wins over the operation's declared
+    400 because the docs text makes 400 the residual code ("when no other
+    4xx error code is appropriate") and a more specific released trigger
+    exists — the same derivation AMB-122 applies on the write side, where
+    no addressable resource exists and 400 therefore stands. This entry is the READ side only; the
     corresponding WRITE-side branches are AMB-122 (a version segment the
     versioned store cannot write) and AMB-123 (a store under the reserved
     name), both 400 rather than 404, because a write cannot address a
@@ -3204,15 +3223,24 @@ AMB-103:
     wrapped object ({values: [...]}) vs the released bare array; the
     flattened wire descriptor loses version/formalism/registration_time —
     the EXECUTED STORED VERSION IS UNOBSERVABLE on the wire, weakening the
-    prefix-matching contract; result_set.adoc carries "Rox data.", an
-    empty Meaning cell, and a left-in authoring TODO. Released doc
+    prefix-matching contract; result_set.adoc carries "Rox data." and an
+    empty Meaning cell (the authoring TODO is i_definition_query.adoc L56
+    — attribution corrected 2026-08-21). Released doc
     defects: Request.md's headline example uses the non-existent FETCH
-    keyword and a malformed at-code node predicate; the vendored AQL
-    grammar files (AqlParser/AqlLexer.g4) are MISSING from the QUERY
-    component; the adjacent definition store operationIds carry a literal
-    .yaml suffix; 400_Query declares no error body; the OAS is JSON-only
-    against the canonical-format MUST while the ITS-XML RESULT_SET is a
-    6-line draft stub; the glossary defines no query term; the CNF
+    keyword (confirmed against the vendored grammar —
+    QUERY/docs/AQL/grammar/AqlParser.g4+AqlLexer.g4, include::'d by
+    master07; the earlier "grammar files MISSING" claim was false) and a
+    malformed at-code node predicate (AqlLexer.g4 CODE_STR refuses at0.63;
+    the quoting rule the Hash<String,String> typing breaks is
+    master03-syntax.adoc §Where L113); the adjacent definition store
+    operationIds carry a literal
+    .yaml suffix; 400_Query declares no error body; the query surface is
+    JSON-only — spec-LEGAL under Resources.md §Data representation ("at
+    least one of the openEHR XML or JSON canonical formats"), the honest
+    defect being the missing XML OPTION on a resource for which ITS-XML
+    ships NO schema at all (the QUERY component holds only a 6-line draft
+    README, no .xsd; framing corrected 2026-08-21); the glossary defines
+    no query term; the CNF
     querying schedule links the demographic service model and is
     otherwise TBD/xx throughout.
   source: >-
@@ -3264,7 +3292,7 @@ AMB-66:
     have anything to read, and the only one reachable over the released wire.
     Every subject-keyed case in the catalogue supplies its subject exactly that
     way (I_EHR_SERVICE.create_ehr-two_ehrs_same_patient,
-    -existing_ehr_by_subject_id, -with_ehr_id_subject_taken), so the deviation
+    get_ehr-existing_ehr_by_subject_id, create_ehr-with_ehr_id_subject_taken), so the deviation
     is exercised rather than merely declared. No case asserts the
     precondition's rejection branch — a conformant server refusing a
     subject-bearing create would satisfy the SM sentence while failing the RM
@@ -3298,9 +3326,13 @@ AMB-104:
     route that consumes it) CONTRASTED with
     parameters/path/template_id_adl2.yaml (HRID examples only) and
     parameters/path/version.yaml (the SEMVER prefix rule, which exists only for
-    ADL2) + AM ADL 1.4 master02-overview.adoc §Templates (templates "do not
-    introduce any new semantics to archetypes"; no template identification or
-    versioning defined) — the absence of a legacy template_id grammar CONFIRMED
+    ADL2) + AM ADL 1.4 master02-overview.adoc §Computational Context
+    (templates "do not
+    introduce any new semantics to archetypes"; the file has no §Templates —
+    re-cited 2026-08-21; AM/docs carries ZERO template_id occurrences, and
+    Identification master02-overview.adoc explicitly scopes its HRID scheme
+    away from non-ADL2 templates) — the absence of a legacy template_id
+    grammar CONFIRMED
     first-hand.
   handling: >-
     Sibling cases carry option tags; the ICS options declaration selects.
@@ -3358,7 +3390,8 @@ AMB-105:
 AMB-106:
   ambiguity: >-
     The SM keys ADL 1.4 OPTs by a UUID the released wire never carries.
-    `has_opt`, `get_opt` and `delete_opt` all take `an_opt_id: UUID`, and
+    `has_opt` and `get_opt` take `an_opt_id: UUID` and `delete_opt` takes
+    `an_id: UUID` (spelling per the released file, corrected 2026-08-21), and
     `list_opts` returns `List<UUID>`; the odd sibling `list_matching_opts`
     returns `List<ARCHETYPE_ID>` instead, so the interface disagrees with
     itself about what an OPT is even called. The ITS-REST surface knows neither
@@ -3369,7 +3402,8 @@ AMB-106:
     element inside the canonical XML the GET serves, but no released sentence
     connects it to the SM key or makes it addressable.)
   source: >-
-    SM i_definition_adl14.adoc §has_opt / §get_opt / §delete_opt (`an_opt_id:
+    SM i_definition_adl14.adoc §has_opt / §get_opt (`an_opt_id: UUID [1]`) /
+    §delete_opt (`an_id:
     UUID [1]`), §list_opts (`List<UUID>`), §list_matching_opts
     (`List<ARCHETYPE_ID>`) vs ITS-REST
     specifications/parameters/path/template_id.yaml (the only ADL 1.4 key),
@@ -3473,7 +3507,11 @@ AMB-108:
 AMB-109:
   ambiguity: >-
     The TEMPLATE surface carries an editorial defect bundle. (1) The released
-    ADL2 upload's request example is not a legal OPT: its second clause is a
+    ADL2 upload's request example — AND the retrieval's 200 example, which
+    carries the identical body (scope widened 2026-08-21:
+    responses/200_Template_adl2_retrieved.yaml, so the defect also lands on
+    the retrieval contract AMB-111 declares verbatim) — is not a legal OPT:
+    its second clause is a
     `specialize` statement (`specialize openEHR-EHR-COMPOSITION.discharge.v1`)
     in a body the operation types as an `OperationalTemplateV2`, while AM says
     an OPT has "no specialisation statement - an OPT is considered a
@@ -3482,11 +3520,12 @@ AMB-109:
     production at all — so the example cannot parse against the grammar it
     illustrates. (2) The Web Template metadata example in the Simplified
     Formats chapter carries a `semVer` member the released `WebTemplate` schema
-    does not declare — the schema requires templateId / version /
-    defaultLanguage / languages / tree and lists no `semVer` property — so the
-    one worked example of the format shows a member no schema admits, and
-    nothing says whether `semVer` and `version` are two spellings of one fact
-    or two different facts.
+    does not DECLARE — the schema requires templateId / version /
+    defaultLanguage / languages / tree and lists no `semVer` property, though
+    it also sets no additionalProperties: false, so under OAS 3.0 defaults
+    the member is undeclared-but-admitted (over-claim corrected 2026-08-21) —
+    and nothing says whether `semVer` and `version` are two spellings of one
+    fact or two different facts.
   source: >-
     ITS-REST specifications/operations/definition_template_adl2_upload.yaml
     (the requestBody example, second clause `specialize`) vs AM
@@ -3494,7 +3533,9 @@ AMB-109:
     statement - an OPT is considered a 'top-level' standalone artefact") and
     docs/OPT2/master03-opt_raw.adoc §Artefact Structure (the
     `adl_operational_template` Antlr4 rule: `'operational_template' '('
-    qualifiers? ')' ARCHETYPE_HRID 'language' … — no specialize production) +
+    qualifiers? ')' ARCHETYPE_HRID 'language' … — no specialize production;
+    its own prose is decisive too: "Since an OPT is considered a 'top-level'
+    standalone artefact, there is no specialisation statement") +
     ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §Web Template
     Metadata (the example's `"semVer": "0.2.0"` beside `"version": "2.3"`) vs
     specifications/schemas/web_template/WebTemplate.yaml (required
@@ -3526,10 +3567,14 @@ AMB-110:
     `valid_artefact(an_arch)`, errors `invalid_template` / `invalid artefact`)
     but assigns no code, being transport-neutral. (b) The `Prefer:
     return=minimal` branch — also the assumed default when no Prefer is sent —
-    IS assigned by the operations' own 201 text ("If the `Prefer` header is
-    missing or set to `return=minimal`, the body is empty"), while the overview
-    says the opposite for the same exchange ("If no response body is returned,
-    the service SHOULD use `204 No Content`").
+    is an INTRA-docs-text contradiction (re-framed 2026-08-21): the overview's
+    own single bullet reads "The response SHOULD include a Location header
+    pointing to the newly created or updated resource. The HTTP status is
+    typically 201 Created. If no response body is returned, the service
+    SHOULD use 204 No Content" — naming 201 and SHOULD-204 for the same
+    no-body exchange in adjacent sentences — and the operations' own 201
+    text ("If the `Prefer` header is missing or set to `return=minimal`,
+    the body is empty") corroborates the bullet's primary sentence.
   source: >-
     ITS-REST specifications/operations/definition_template_adl1.4_upload.yaml
     and definition_template_adl2_upload.yaml (responses 201/400/409 only) +
@@ -3572,10 +3617,12 @@ AMB-110:
     -invalid_artefacts fixture sweeps. Defects the two AM catalogues BOTH claim
     — a missing mandatory SECTION is a missing grammar production and a named
     validation check at once — are AMB-116 and are pinned by no case.
-    (b) The minimal branch is **201 with an empty body**: the operation-level
-    201 text is specific to these two operations and states the outcome
-    directly, while the SHOULD-204 sentence is a general default in the
-    overview and a SHOULD in any case; the specific released statement governs.
+    (b) The minimal branch is **201 with an empty body**: the overview
+    bullet's own primary sentence names 201 for the created resource, its
+    trailing SHOULD-204 contradicts it within the same bullet, and the
+    docs text resolves on its own primary statement — with the
+    operation-level 201 files as corroboration, never as the deciding
+    source (the oracle order stays docs-text-first; re-derived 2026-08-21).
     SCOPE ADJUDICATED 2026-07-28 (#543): the specific-over-general reading is
     NOT Definition-scoped — the same shape holds wherever an operation family's
     own released response text assigns the minimal outcome, which the AMB-62
@@ -3635,41 +3682,49 @@ AMB-111:
 
 AMB-112:
   ambiguity: >-
-    Whether the conditional-request headers apply to a TEMPLATE resource is
-    left open. The overview scopes them by resource kind — "Both `ETag` and
-    `Last-Modified` SHOULD be included in responses for VERSION,
-    VERSIONED_OBJECT, or other resources that have versioning or unique state
-    identifiers" — and a template is neither of the two named kinds, so the
-    question turns entirely on the undefined trailing clause. A template does
-    have a unique IDENTITY (its template_id, or the ARCHETYPE_HRID for ADL2)
-    but no state that changes: the released uploads mint templates and neither
-    route offers an update, so nothing a `Last-Modified` would track ever
-    moves. No released sentence resolves either half, and no template operation
-    declares a `Last-Modified` header or an `If-Match` / `If-None-Match`
-    parameter.
+    RE-GROUNDED 2026-08-21: ETag on templates is NOT open — the released OAS
+    assigns it (dedicated components headers/ETag_Template_adl1_4.yaml and
+    ETag_Template_adl2.yaml, DECLARED on 201_Template_adl1_4_upload,
+    201_Template_adl2_upload and 200_Template_adl1_4_retrieved; the docs
+    text is silent on templates, so the OAS grounds the presence). What
+    stays open: (i) `Last-Modified` — no headers/Last-Modified* component
+    exists anywhere in the OAS tree and no response declares it, so it is
+    both-tier silent; (ii) the OAS's own ASYMMETRY —
+    200_Template_adl2_retrieved, both 200_TemplateList_* and
+    200_Template_example_retrieved declare Content-Type only, so serving
+    ETag there is OUR extension of the release's declared pattern; (iii) no
+    template operation declares an If-Match / If-None-Match parameter, so
+    no conditional precondition exists on these routes. A template has a
+    unique IDENTITY (template_id / ARCHETYPE_HRID) but no state that
+    changes after creation.
   source: >-
-    ITS-REST docs/overview/Requests_and_responses.md §"ETag and Last-Modified"
-    (the SHOULD sentence; "The `ETag` value is usually taken from e.g.
-    VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc. It
-    changes as soon as the resource changes"; "Servers MAY add additional
-    `ETag` response headers"; the weak-`W/` MUST) +
-    specifications/responses/201_Template_adl1_4_upload.yaml and
-    201_Template_adl2_upload.yaml (Location + ETag + Content-Type; no
-    Last-Modified) + 200_Template_adl1_4_retrieved.yaml and
-    200_Template_adl2_retrieved.yaml + the template operations' parameter lists
-    (no conditional-request headers) — CONFIRMED first-hand.
+    ITS-REST specifications/headers/ETag_Template_adl1_4.yaml +
+    ETag_Template_adl2.yaml ("identifier of Template"), declared on
+    responses/201_Template_adl1_4_upload.yaml, 201_Template_adl2_upload.yaml
+    and 200_Template_adl1_4_retrieved.yaml (cited AS the OAS; the docs-text
+    §"ETag and Last-Modified" SHOULD names only VERSION/VERSIONED_OBJECT
+    "or other resources that have versioning or unique state identifiers")
+    + 200_Template_adl2_retrieved.yaml / 200_TemplateList_*.yaml /
+    200_Template_example_retrieved.yaml (Content-Type only — the asymmetry)
+    + the template operations' parameter lists (no conditional-request
+    headers) + Requests_and_responses.md §Deprecated headers (the
+    weak-`W/` MUST: "all ETag headers that hold a resource identifier MUST
+    include a weakness indicator W/" — §attribution corrected 2026-08-21;
+    §ETag and Last-Modified's own sentence is a lowercase "should") —
+    CONFIRMED first-hand.
   handling: >-
-    Fixed handling, both halves. A template DOES carry a unique state
-    identifier for the purposes of the trailing clause — its resolved identity,
-    `template_id` for ADL 1.4 and the resolved ARCHETYPE_HRID for ADL2 — so an
-    `ETag` is served on the template responses, weak-prefixed per the
-    §Deprecated-headers MUST and naming the RESOLVED identity rather than the
-    (possibly partial) addressed one. `Last-Modified` is NOT served: it reports
-    when a resource last changed, and a released template resource never
-    changes after creation, so any value would be an invention. No
+    Fixed handling. ETag is served on ALL template responses — OAS-assigned
+    where declared, our extension of that declared pattern on the responses
+    the OAS leaves Content-Type-only — weak-prefixed per the
+    §Deprecated-headers MUST and naming the RESOLVED identity rather than
+    the (possibly partial) addressed one. `Last-Modified` is NOT served: it
+    reports when a resource last changed, and a released template resource
+    never changes after creation, so any value would be an invention. No
     conditional-request precondition is honoured on the template routes,
-    because none is declared there. The ETag declarations execute on the upload
-    and retrieval bindings; nothing asserts the ABSENCE of Last-Modified, which
+    because none is declared there. The ETag expectations execute on the
+    ADL2 bindings and (since 2026-08-21) the ADL 1.4 upload/get bindings —
+    the release declares the header on exactly those ADL 1.4 responses;
+    nothing asserts the ABSENCE of Last-Modified, which
     stays a documented boundary rather than a claim. Reported upstream
     (#1558): say whether templates fall under the conditional-header SHOULD,
     and if so what `Last-Modified` means for an immutable resource.
@@ -3806,8 +3861,12 @@ AMB-115:
     and the released text names 400 as the code for that branch. An out-of-enum
     value is 400 under the released 400 trigger directly (a syntactically
     invalid parameter), independently of the either/or, so
-    I_DEFINITION_ADL14.get_opt-example_invalid_detail_level gates for every
-    server: a value outside the enum has no "closest supported level" to fall
+    I_DEFINITION_ADL14.get_opt-example_invalid_detail_level gates that 400 —
+    within the OPTIONS-tier TemplateExamples capability it rides, i.e. for
+    every server CLAIMING example generation, exactly like its
+    example-branch siblings (the earlier "gates for every server"
+    contradicted the #545 paragraph below; corrected 2026-08-21): a value
+    outside the enum has no "closest supported level" to fall
     back to, which makes the fall-back branch unreachable there.
     RESIDUAL RESOLVED (#545, 2026-07-28): example generation is its own
     OPTIONS-tier capability (TemplateExamples — the CNF profiles book has no
@@ -3835,8 +3894,16 @@ AMB-116:
     phase; but the AOM2 validation catalogue's very first list also owns the
     same defect — "any missing mandatory parts, e.g. `terminology` section
     (STCNT)" appears under Phase 1 Basic checks, alongside genuinely semantic
-    checks like VARDT — which puts it in the VALIDATION phase. AM never says
-    which phase reports it, and the two phases carry different wire statuses
+    checks like VARDT — which puts it in the VALIDATION phase. For the
+    terminology section AM in fact says BOTH (re-grounded 2026-08-21): the
+    ADL2 syntax-code catalogue itself owns STCNT — master04.6 §Syntax
+    Validity Rules, `["STCNT"] = <"Syntax error: terminology not
+    specified">`, beside SALAN (no language section) and SAON — so the two
+    released AM catalogues CONTRADICT each other about the same code rather
+    than staying silent; for a missing description or definition section the
+    syntax catalogue offers only in-section codes (SADS/SADF) and no absence
+    code, so those remain genuinely unassigned. The two phases carry
+    different wire statuses
     (AMB-110: syntax → the released 400 branch, semantics → the adjudicated
     422). The same question covers the ADL 1.4 side for any defect an XML
     parser could reject as schema-invalid but an OPT validator could equally
@@ -3850,8 +3917,13 @@ AMB-116:
     productions, not optional decorations) vs AM
     docs/AOM2/master08-validation.adoc §Phase 1 - Basic Integrity §Basic checks
     ("any missing mandatory parts, e.g. `terminology` section (STCNT)"),
-    listed among the validation checks; neither says which phase reports a
-    missing section, and AM defines no phase-assignment rule — CONFIRMED
+    listed among the validation checks, AGAINST AM
+    docs/ADL2/master04.6-cadl_validity_rules.adoc §Syntax Validity Rules
+    (the syntax_errors catalogue owning the same STCNT code as "Syntax
+    error: terminology not specified") — a released-vs-released
+    contradiction for terminology, a genuine silence for
+    description/definition (no absence code exists), and AM defines no
+    phase-assignment rule — CONFIRMED
     first-hand.
   handling: >-
     Fixed handling: the wire status follows the phase in which the artefact
@@ -3869,7 +3941,7 @@ AMB-116:
     cnf.adl2.opt.invalid.missing_definition) stay in the corpus, referenced by
     no case, precisely because pinning them would author a status the released
     text does not settle. Reported upstream (#1562): say which phase owns a
-    missing mandatory section, or make the two catalogues disjoint.
+    missing mandatory section — the master04.6 syntax catalogue and the master08 Phase-1 list both own STCNT — or make the two catalogues disjoint.
   disposition: fixed_handling
   upstream_issue: 1562
 

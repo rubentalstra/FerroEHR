@@ -48,8 +48,9 @@ sm_operations:
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
     note: *adl14_archetype_extension_note
   - operation: I_DEFINITION_ADL14.valid_opt
-    reason: off_wire
-    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
+    reason: variant_of
+    source: "SM i_definition_adl14.adoc + register AMB-108 — valid_opt realizes via upload_opt (commit-time validation), the same shape as the ADL2 twin below"
+    note: "realized via I_DEFINITION_ADL14.upload_opt (I_DEFINITION_ADL14.validate_opt-valid_opt drives it)"
   - operation: I_DEFINITION_ADL2.valid_artefact
     reason: variant_of
     source: "SM i_definition_adl2.adoc + register AMB-37 — valid_artefact realizes via upload_artefact (commit-time validation), no separate validate wire"
