@@ -87,9 +87,10 @@ AMB-4:
     (responses 201/400/409; parameters Prefer + Accept_Template +
     Content-Type — no version parameter) + responses/409_template_already_exists.yaml
     ("`409 Conflict` is returned when a template with same `template_id`
-    already exists") + AM ADL 1.4 master02-overview.adoc §Templates (templates
-    are defined at a local level in the dADL formalism and "do not introduce
-    any new semantics to archetypes"; no template versioning) + ITS-REST
+    already exists") + AM ADL 1.4 master02-overview.adoc §Computational
+    Context (templates "do not introduce any new semantics to archetypes";
+    the file has no §Templates — re-cited 2026-08-21) and §What is ADL? ("The
+    formalism of templates is dADL"; no template versioning) + ITS-REST
     docs/overview/Amendment_record.md SPECITS-87 ("Deprecate ADL2 'Get
     template at version' and the version query parameter from upload
     template") — all CONFIRMED first-hand.
@@ -118,13 +119,25 @@ AMB-4:
   disposition: fixed_handling
   upstream_issue: 1483
 AMB-5:
-  ambiguity: "Persistent-COMPOSITION uniqueness per EHR is under SEC debate."
+  ambiguity: >-
+    Whether a SECOND persistent COMPOSITION under the SAME template/OPT is
+    permitted in one EHR is unassigned by the released text (re-grounded
+    2026-08-21: the RM affirmatively admits multiple persistent COMPOSITIONs
+    per EHR in general — "even with the possibility of more than one
+    instance of some, e.g. multiple condition-specific problem lists" — so
+    only the same-template case is open; the "under SEC debate" provenance
+    is the stalled CNF guide's own note, not released text).
   source: >-
     RM ehr COMPOSITION class §Invariants (Category_validity / Territory_valid /
     Language_valid / Content_valid / Is_archetype_root — no invariant requires a
     persistent COMPOSITION to be unique per EHR) + RM ehr
-    master05-composition_package.adoc §Persistent Compositions (silent on
-    uniqueness) — silence CONFIRMED first-hand
+    master04-ehr_package.adoc §Persistent Compositions (admits multiple
+    instances of some; silent on the same-template case) + CNF
+    master07-func_tc_ehr_composition.adoc (the GUIDE's own criterion and its
+    "This is under debate in the openEHR SEC … due to the lack of
+    information in the openEHR specifications" note — cited as the stalled
+    guide, never authority) — silence on the same-template case CONFIRMED
+    first-hand
   handling: >-
     Affected cases carry the flag; verdicts on them are reported but excluded
     from profile computation until resolved.
@@ -152,12 +165,15 @@ AMB-10:
     EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also
     be **permanently** and physically deleted, in compliance with applicable
     data protection regulations (e.g., the GDPR in the European Union)". That
-    justification is the ONLY invocation of a data-protection regulation
-    anywhere in the vendored spec tree — grep-verified: exactly two sentences,
-    in `operations/admin_ehr_delete.yaml` and `operations/admin_ehr_delete_all.yaml`
+    justification is the ONLY PROSE invocation of a data-protection
+    regulation in the vendored spec tree, and the only one that justifies an
+    operation — grep-verified (re-run 2026-08-21): exactly two sentences, in
+    `operations/admin_ehr_delete.yaml` and `operations/admin_ehr_delete_all.yaml`
     (plus the three assembled `computable/OAS/admin-*.openapi.yaml` bundles,
-    which carry those same two sentences verbatim), and nowhere else in RM,
-    BASE, AM, QUERY, TERM, SM, CNF or the rest of ITS-REST. So the RM's
+    which carry those same two sentences verbatim); the sole other mention is
+    a "Consent (GDPR)" LABEL in the BASE architecture-overview figure
+    `diagrams/shared_ehr.svg` (included by master03-aims.adoc §Deployment
+    Environments), which assigns no deletion behaviour. So the RM's
     indelibility principle — stated as a medicolegal requirement — is overridden
     by an aside in an ITS operation description, and no released text reconciles
     the two. RE-ADJUDICATED 2026-07-27 (group-14 audit): the earlier framing,
@@ -307,21 +323,28 @@ AMB-24:
 AMB-27:
   ambiguity: >-
     BASE-grounded correction: the master17.3 DV_INTERVAL<DV_TIME> range table
-    verdicts a domain-constraint rejection (C_TIME.range on lower) for a row
-    whose lower bound is absent with lower_unbounded=true — underivable, since
-    BASE Interval carries no invariant making a bound-value constraint bite on
-    an absent optional limit (the four-invariant set does not require a bound
-    value when *_unbounded is false). Guide-quality CNF-internal table typos
-    recorded WITHOUT an upstream report: the accepted/[] contradiction near the
-    proportion tables; the millisecond-validity column omission; the "different
-    limit types" unitary wording on a type=0 (ratio) row; the integer_fraction
-    prose type [3] vs data column [4]; the forum-style "IMO should fail" notes.
+    (L768) verdicts a domain-constraint rejection (C_TIME.range on lower) for
+    a row whose lower bound is absent with lower_unbounded=true —
+    underivable, since the only interval invariants that reference a bound
+    value are GUARDED by "(not upper_unbounded and not lower_unbounded)
+    implies …", so no invariant can bite while a *_unbounded flag is TRUE
+    (polarity corrected 2026-08-21; the mirror row L769 verdicts `accepted`
+    while still naming C_TIME.range (upper) as a violation). Guide-quality
+    CNF-internal table typos recorded WITHOUT an upstream report: the
+    `reejcted` misspellings (L278/293/323/338); the headerless
+    validate_fraction table (its header row sits above `[options="header"]`,
+    L304-306); the "different limit types" unitary wording on a type=0
+    (ratio) row (L1017-1025); the integer_fraction prose type [3] vs data
+    column [4] (L1290); the forum-style "IMO should fail" notes (L783-785).
   source: >-
     BASE foundation_types interval.adoc §Invariants (the four-invariant set —
     Lower_included_valid / Upper_included_valid / Limits_consistent /
-    Limits_comparable — none requires a bound value on an absent
-    unbounded-flagged limit); the master17.3 quantity decision tables are the
-    stalled guide where the defect appears
+    Limits_comparable — the bound-referencing pair is guarded by "(not
+    upper_unbounded and not lower_unbounded) implies", so none bites on an
+    unbounded-flagged limit) + RM data_types dv_interval.adoc §Invariants
+    (DV_INTERVAL's own Limits_consistent, the same guarded shape — added
+    2026-08-21); the master17.3 quantity decision tables are the stalled
+    guide where the defect appears
   handling: >-
     Rows are encoded verbatim where the verdict is unambiguous; the
     contradiction rows follow the data column (verdict cell wins over
@@ -365,19 +388,24 @@ AMB-29:
     RM leaves open.
   source: >-
     RM data_types date_time classes (DV_DATE_TIME/DV_DATE/DV_TIME each Effect
-    is_strictly_comparable_to = "True, for any two Date/times" and each
-    REDEFINES less_than over magnitude()) + RM data_types
-    master07-date_time_package.adoc §Partial Date/Times (Value_valid admits
-    reduced-accuracy partials per ISO 8601, while magnitude() defines no value
-    for a partial) — the order EXISTS by the Effects; what the released text
-    leaves open is magnitude()'s value for reduced-precision values, so the
-    defined order is incomputable for partials. Re-grounded first-hand
-    2026-08-21 (the earlier "no mixed-precision ordering semantics defined"
-    framing understated what the Effects define).
+    is_strictly_comparable_to = "True, for any two Date/times" / "… Dates" /
+    "… Times" respectively, and each REDEFINES less_than over magnitude())
+    + each class table's own Value_valid invariant (valid_iso8601_* over the
+    value) with RM data_types master07-date_time_package.adoc §Partial
+    Date/Times (the DESIGN section: partials satisfied "by the semantics of
+    ISO 8601:2004 for 'reduced accuracy' date/times"), while magnitude()
+    defines no value for a partial — the order EXISTS by the Effects; what
+    the released text leaves open is magnitude()'s value for
+    reduced-precision values, so the defined order is incomputable for
+    partials. Re-grounded first-hand 2026-08-21 (the earlier "no
+    mixed-precision ordering semantics defined" framing understated what the
+    Effects define).
   handling: >-
-    Affected rows carry guards quoting the chapter NOTEs; verdicts on
-    mixed-precision comparisons are reported but excluded from profile
-    computation until the SEC resolves the magnitude-for-partials question.
+    Affected rows carry guards quoting the stalled guide's own
+    mixed-precision comment cells (CNF master17.3 — the RM chapter's only
+    NOTE is about extended-vs-basic syntax); verdicts on mixed-precision
+    comparisons are reported but excluded from profile computation until the
+    SEC resolves the magnitude-for-partials question.
   disposition: report_only
   upstream_issue: 1493
 AMB-30:
@@ -390,8 +418,12 @@ AMB-30:
     not mandate it.
   source: >-
     QUERY AQL (grammar; §TERMINOLOGY; Amendment Record SPECQUERY-20 — no clause
-    mandates rejecting a dialect superset) + released ITS-REST query Response.md
-    (400 defined only for invalid AQL, not for a dialect superset)
+    mandates rejecting a dialect superset) + the released OAS
+    responses/400_Query.yaml, cited AS the OAS ("returned when the server was
+    unable to execute the query due to invalid input" — a trigger conditioned
+    on the server being UNABLE to execute, which a server executing a
+    superset never reaches; the docs-text query/Response.md carries no status
+    code at all — re-cited 2026-08-21)
   handling: >-
     Dialect-extension rejection cases carry this entry and are report_only:
     verdicts are reported per SUT but never gate profile computation, until
@@ -565,7 +597,7 @@ AMB-33:
     realized in FULL and the `-compression_7z` case drives the member. The
     EXPORT_FORMAT member `openehr_canonical_xml` stays unrealized and answers
     `501 Not Implemented` (RFC 9110 §15.6.2 — "the server does not support
-    the functionality required to fulfil the request"), never `400`: a valid
+    the functionality required to fulfill the request"), never `400`: a valid
     SM enumeration member is not a malformed request. Its boundary is now
     DESIGN-shaped rather than dependency-shaped: the archive envelope
     (manifest/segments/records) is this product's own design with no XML
@@ -624,11 +656,15 @@ AMB-33:
     the top-level `xs:element` declarations across BOTH vendored ITS-XML
     lineages (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1` @ tag
     Release-1.0.2v2 `f7a93777` and `its-xml-2.0.0-nsv2` @ `de8b37ba`, which is
-    upstream HEAD) finds document roots ONLY for `composition`, `extract`,
+    upstream HEAD) finds document roots for `composition`, `extract`,
     `extract_request`, `versioned_object` (the Extract-flavoured
-    X_VERSIONED_OBJECT), `items` and `version` — there is no global element for
-    `EHR`, for `CONTRIBUTION`, or for a standalone `AUDIT_DETAILS` in either
-    lineage. An XML envelope could therefore only be INVENTED, which is worse
+    X_VERSIONED_OBJECT), `items` and `version`, plus `template` and
+    `archetype` in BOTH lineages and additionally `result_set` and
+    `query_request` in the v2 lineage (enumeration corrected 2026-08-21) —
+    but there is no global element for `EHR`, for `CONTRIBUTION`, or for a
+    standalone `AUDIT_DETAILS` in either lineage, i.e. none for the
+    archive's own envelope types. An XML envelope could therefore only be
+    INVENTED, which is worse
     than this entry's standing position that no openEHR spec defines an on-disk
     archive format at all. Our own design/extension, unchanged in both members.
     (b) THE PAYLOADS DO HAVE A PUBLISHED FORM, so they follow the member.
@@ -767,7 +803,11 @@ AMB-37:
     Archetype provisioning, generic listing, delete, and counts are declared
     unrealized on its-rest (cases not-applicable WITH CITATION, activating on a
     later ITS release). valid_artefact realizes via upload_artefact; has_artefact
-    and list_matching_artefacts realize via the ADL2 list (filter); list_templates
+    and list_matching_artefacts realize via the ADL2 list (filter) — a STRICTLY
+    WEAKER realization than the SM operation, which demands a REGEX match
+    ("List all artefacts whose identifiers match a regex pattern", error
+    invalid_id_pattern) while the released filter supports wildcards only
+    (parameters/query/filter_template_id.yaml — recorded 2026-08-21); list_templates
     conflates with list_opts on the one list endpoint; example generation and the
     deprecated version GET anchor to get_artefact (the closest SM op). SM/ITS alignment candidate: add ADL2 archetype provisioning + delete +
     count + generic-list + example-generation operations to the released ITS.
@@ -800,14 +840,21 @@ AMB-37:
   upstream_issue: 1498
 AMB-39:
   ambiguity: >-
-    Support for the deprecated pre-1.1.0 "Simplified Data Template (SDT)"-era
-    simplified-format media types is not mandated: ITS-REST simplified_formats
-    master02 defines only the current application/openehr.wt.flat+json and
-    application/openehr.wt.structured+json MIME types, and the master02 NOTE
-    records that "Simplified Data Template (SDT)" was superseded by "Simplified
-    Formats" at Release 1.1.0. Whether a server still accepts the legacy media
-    types is implementation-defined.
-  source: "ITS-REST simplified_formats master02-overview.adoc §MIME Types + §Overview (SDT rename NOTE)"
+    Support for the deprecated `*.schema+json` simplified-format media types
+    is not mandated: the release's own Alternative-data-formats list
+    deprecates application/openehr.wt.flat.schema+json and
+    …wt.structured.schema+json "in favour of" the current wt.flat/
+    wt.structured types and says such formats "might not be supported once
+    they become obsolete or superseded" — deprecation without a support or
+    refusal mandate (re-grounded 2026-08-21: the earlier "SDT-era"
+    provenance was false — the SDT NOTE renamed the SPECIFICATION, and the
+    retired SDT chapter never mentions .schema+json).
+  source: >-
+    ITS-REST specifications/docs/overview/Resources.md §Alternative data
+    formats (the deprecation list + the optionality sentence) + ITS-REST
+    simplified_formats master02-overview.adoc §MIME Types (only the two
+    current types defined; its Introduction NOTE records the SDT→Simplified
+    Formats specification rename)
   handling: >-
     Sibling cases carry option tags; the ICS options declaration selects which
     applies — the declared behaviour MUST pass, the undeclared sibling is
@@ -818,7 +865,7 @@ AMB-39:
     sf-deprecated-types-unsupported branch also expects not_acceptable (406)
     when a deprecated media type is requested via Accept and the server does
     not support it (ITS-REST overview Resources.md §Simplified Formats — "If
-    the service cannot fulfil this aspect of the request, it MUST respond with
+    the service cannot fulfill this aspect of the request, it MUST respond with
     HTTP status code 406 Not Acceptable").
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
@@ -841,7 +888,8 @@ AMB-41:
     CLAIM RE-DERIVED 2026-07-28 (#623), and the last clause of the original
     handling — "never a CORE failure the ITS cannot avoid" — is WITHDRAWN as
     the wrong remedy. The missing released wire is CONFIRMED unchanged
-    first-hand: specifications/definition.openapi.yaml declares eleven paths,
+    first-hand: specifications/definition.openapi.yaml declares nine path
+    items (thirteen operations — count corrected 2026-08-21),
     all under /definition/template/** or /definition/query/**, and no ITS-REST
     docs chapter names an archetype resource. What was wrong was excusing a
     CLAIMED capability: ISO/IEC 9646 test selection legitimizes "not
@@ -868,9 +916,11 @@ AMB-41:
     and GET/DELETE /definition/archetype/adl1.4/{archetype_id} (the
     `adl14-archetype` served_extensions family). RE-ADJUDICATED 2026-07-29 —
     both former blockers are RESOLVED and the bindings are FLIPPED to
-    extension realizations with an executed six-case battery
-    (upload round-trip / unparseable-source refusal / list / get+delete
-    non-existing / delete round-trip):
+    extension realizations with an executed battery (thirteen cases as of
+    2026-08-21: the original upload round-trip / unparseable-source refusal /
+    list / get+delete non-existing / delete round-trip, plus wrong-media,
+    authz/authn refusals, malformed-id, replaces-existing and
+    translation-restates-original):
     (1) THE OWNER ADJUDICATED `required`. The CNF Profiles book marks the row
     CORE/REQUIRED, but the released ITS-REST gives the capability no wire and
     an extension-realization row may never be `required`
@@ -892,8 +942,10 @@ AMB-42:
   ambiguity: >-
     The AOM 1.4 object model defines millisecond_validity on
     C_TIME/C_DATE_TIME and the separate seconds_allowed /
-    fractional_seconds_allowed booleans on C_DURATION, but the ITS-XML 1.0.2
-    OPT serialization (Archetype.xsd) carries NO millisecond_validity element
+    fractional_seconds_allowed booleans on C_DURATION, but the ITS-XML OPT
+    serialization (Archetype.xsd — IDENTICAL in both published lineages,
+    1.0.2-nsv1 and 2.0.0-nsv2; widened 2026-08-21) carries NO
+    millisecond_validity element
     (C_TIME/C_DATE_TIME sequence is pattern, timezone_validity, range,
     assumed_value) and NO per-field duration booleans (C_DURATION is pattern,
     range, assumed_value), and the ADL 1.4 pattern grammar ends at the seconds
@@ -902,8 +954,8 @@ AMB-42:
     AM aom14 c_time.adoc + c_date_time.adoc (millisecond_validity) +
     c_duration.adoc (seconds_allowed / fractional_seconds_allowed) + AM ADL1.4
     master05-cadl.adoc §Patterns (V_ISO8601_TIME_CONSTRAINT_PATTERN ends at
-    seconds) vs ITS-XML 1.0.2 Archetype.xsd (C_TIME/C_DATE_TIME/C_DURATION
-    sequences — no such elements)
+    seconds) vs ITS-XML Archetype.xsd in BOTH published lineages
+    (C_TIME/C_DATE_TIME/C_DURATION sequences — no such elements)
   handling: >-
     Content rows whose expected rejection rests SOLELY on these
     unserializable axes (millisecond_validity, or a seconds_allowed /
@@ -917,25 +969,41 @@ AMB-42:
   upstream_issue: 1501
 AMB-43:
   ambiguity: >-
-    BASE 1.3.0 Interval<T> declares lower/upper as optional (0..1) and
-    carries exactly four invariants (Lower_included_valid,
-    Upper_included_valid, Limits_consistent, Limits_comparable) — none of
-    which requires a bound VALUE to be present when the corresponding
-    *_unbounded flag is false. An instance {lower_unbounded: false, no
-    lower; upper_unbounded: false, no upper} therefore violates no RM
-    invariant, while the CNF content lineage expects such an interval to be
-    rejected as malformed. (Older openEHR revisions carried such an
-    invariant; the vendored 1.3.0 does not.)
+    What an interval invariant MEANS on absent limits is unassigned
+    (re-grounded 2026-08-21): BASE Interval<T> declares lower/upper 0..1,
+    and BOTH the BASE Limits_consistent and RM DV_INTERVAL's own
+    Limits_consistent fire exactly when both *_unbounded flags are false —
+    "(not upper_unbounded and not lower_unbounded) implies
+    (lower.is_strictly_comparable_to(upper) and lower <= upper)" — with
+    UNGUARDED feature calls on both limits. On an instance {both flags
+    false, both limits absent} the consequent calls features on Void, and
+    the released text nowhere states how such an expression evaluates: the
+    RM guards Void-calls explicitly where it means partiality (e.g.
+    HISTORY's "events /= Void and then …"), but an unguarded call could
+    equally presuppose presence. So the CNF content lineage's rejected
+    verdict and an acceptance are BOTH derivable, on rival readings the
+    released text never arbitrates. (The earlier framing — "no invariant
+    requires a bound value when *_unbounded is false", with a parenthetical
+    that older revisions carried such an invariant — was doubly wrong: the
+    RM invariant's antecedent is exactly that configuration, and no BASE or
+    RM generation ever carried a bound-presence invariant.)
   source: >-
     BASE foundation_types interval.adoc §Attributes (lower/upper 0..1) +
-    §Invariants (the four-invariant set — none requires a bound value when
-    *_unbounded is false)
+    §Invariants (Limits_consistent, guarded by "(not upper_unbounded and
+    not lower_unbounded) implies") + RM data_types dv_interval.adoc
+    §Invariants (its own Limits_consistent, the same shape, calling
+    lower.is_strictly_comparable_to(upper) unguarded) + RM common
+    history.adoc Events_valid ("events /= Void and then …" — the explicit
+    Void-guard idiom the interval invariants do NOT use) — the
+    Void-evaluation silence CONFIRMED first-hand
   handling: >-
-    The framework adopts the RM-invariant reading: a bounded-flag interval
-    with absent limits is ACCEPTED (no invariant violated; the flags are
-    then vacuous). The affected content rows expect accepted with this
-    citation. The rows flip to rejected if a future BASE release restores
-    the bound-required invariant.
+    The framework adopts ACCEPTANCE as the fixed handling: an invariant
+    whose consequent cannot be evaluated (a feature call on a Void limit)
+    has no released evaluation rule, and refusing on an underivable
+    violation would invent a prohibition. The affected content rows expect
+    accepted with this citation. The rows flip to rejected if a future
+    release either states Void-call semantics that fail the invariant or
+    adds a bound-presence invariant.
   disposition: fixed_handling
   upstream_issue: 1502
 AMB-44:
@@ -961,15 +1029,18 @@ AMB-44:
   upstream_issue: 1503
 AMB-45:
   ambiguity: >-
-    The master17.4 DV_DATE_TIME range table's T-precision block tests values
-    anchored at 2021-10-24 (e.g. 2021-10-24T10) against ranges anchored at
-    1900-03-13 yet expects accepted — arithmetically impossible under BASE
-    Interval total-order containment.
+    The master17.4 DV_DATE_TIME range table's T-precision block (L975-1000)
+    tests values anchored at 2021-10-24 (e.g. 2021-10-24T10) against ranges
+    anchored at 1900-03-13, making EIGHT of its 24 rows arithmetically
+    underivable under BASE Interval total-order containment (widened
+    2026-08-21): the four bounded 1900-anchored rows expecting `accepted`
+    AND the four ">=1900-03-13T11…" rows expecting `rejected`, where
+    2021-10-24T10 >= 1900-03-13T11 plainly holds.
   source: >-
-    BASE foundation_types interval.adoc §has() (total-order containment — the
-    master17.4 DV_DATE_TIME T-precision block is arithmetically underivable);
-    the master17.4 temporal range table is the stalled guide where the defect
-    appears
+    BASE foundation_types interval.adoc §Functions `has` (total-order
+    containment via its Post_result ordering expression — a Functions-table
+    row, not a heading); the master17.4 temporal range table is the stalled
+    guide where the defect appears
   handling: >-
     The catalogue re-anchors the block's values to the ranges' 1900-03-13
     date (preserving each row's precision axis and verdict), making every
@@ -990,14 +1061,23 @@ AMB-46:
     AM AOM1.4 master04-constraint_model_package.adoc §Reference Objects
     (C_REFERENCE_OBJECT / CONSTRAINT_REF — the constraint definition is external
     to the archetype; no commit-time terminology-binding enforcement defined)
+    + BASE architecture_overview master12-terminology.adoc §Binding
+    Terminology Value-sets to Archetypes ("bound to queries to one or more
+    external terminologies, whose result would be a (possibly structured)
+    value set" — it defines what a binding MEANS, still without assigning a
+    commit-time outcome for an instance no binding covers; cited 2026-08-21)
   handling: >-
     The unmatched-terminology row asserts acceptance with the AOM citation
-    (rejection is not derivable). Instrument note: the declared
-    constraint_bindings axis is not yet realized by the OPT synthesizer
-    (no binding is emitted into the synthesized template) — the axis is
-    declarative until the terminology-binding synthesis lands; the rm_schema
-    rows are unaffected. Flips to rejected only if a future AM release defines
-    commit-time binding enforcement.
+    (rejection is not derivable) — scoped to the UNBOUND template
+    (cnf.tpl.dv_coded_text_constraint_ref, the unbound twin): where a
+    binding RESOLVES and answers "not a member", AMB-172 adjudicates the
+    OPPOSITE direction and gates rejection, because the bound query's
+    result IS the permitted value set. The binding-carrying twins
+    (dt_coded_text_binding_{sct,tsdown,undefined_ac}.opt) exist in the
+    corpus since 2026-07-29, so this entry's acceptance and AMB-172's
+    rejection are complementary halves of one adjudication, not a
+    contradiction. Flips to rejected only if a future AM release defines
+    commit-time enforcement for the UNBOUND case.
   disposition: fixed_handling
   upstream_issue: 1505
 AMB-51:
@@ -1047,7 +1127,15 @@ AMB-54:
     Fixed handling: (a) creation-with-preceding and (c) out-of-group tokens
     are 422 (well-formed envelopes whose change-control semantics cannot be
     followed — the general 422 row); (b) a stale/unknown
-    preceding_version_uid is 412; the response beyond the status is
+    preceding_version_uid is 412, chosen over the two rival released rows
+    (derivation recorded 2026-08-21): the docs-text 412 row scopes itself to
+    "conditions given in the request HEADER FIELDS" while this precondition
+    is body-borne — but the CONDITION is the same optimistic-concurrency
+    test the header carries elsewhere, whereas the operation's declared 409
+    is defined for "a resource with same identifier(s) already exists" /
+    duplicate-or-conflict generation, which a stale pointer is not — 409
+    stays reserved for the duplicate-uid and is_modifiable conflicts
+    (AMB-82). The response beyond the status is
     UNCONSTRAINED on this branch — the §If-Match ETag SHOULD is conditioned
     on the service RECEIVING If-Match ("If a service receives this header
     …"), which this operation has no parameter for, and CONTRIBUTION.versions
@@ -1097,23 +1185,29 @@ AMB-56:
   ambiguity: >-
     Accept quality-factor (q-value) negotiation strictness is not spec-defined.
     ITS-REST content negotiation states only that a client SHOULD use Accept to
-    specify the expected representation and that a service that cannot fulfil it
+    specify the expected representation and that a service that cannot fulfill it
     MUST respond 406 Not Acceptable; nothing in the ITS-REST corpus defines
     q-value weighting, preference ordering across multiple acceptable types, or
-    */* wildcard resolution (grep: no "q=", "quality", or "weight"). RFC 7231
+    */* wildcard resolution (grep: no "q=", "quality", or "weight"). RFC 9110 —
+    the HTTP authority the release itself names in Requests_and_responses.md —
     defines q-values generically, but ITS-REST assigns them no
-    conformance-visible behaviour.
+    conformance-visible behaviour (RFC citation aligned 2026-08-21).
   source: >-
     ITS-REST overview Resources.md §Data representation ("The client SHOULD use
     the Accept ... request header to specify the expected ... response format.
-    If the service cannot fulfil this aspect of the request, it MUST respond
+    If the service cannot fulfill this aspect of the request, it MUST respond
     with HTTP status code 406 Not Acceptable") + Requests_and_responses.md
     §Representation details negotiation (Prefer verbosity only; no q-value text)
     — silence across the ITS-REST corpus CONFIRMED first-hand
   handling: >-
     No normative cases: a server's handling of a weighted or multi-type Accept
     (q-value ordering, wildcard resolution) is statement-declared, not gated.
-    The one documented rule — an Accept the service cannot fulfil yields 406 —
+    HONESTY NOTE (2026-08-21): no statement or ixit field CARRIES such a
+    declaration today — no options pair, capability, or ixit key expresses an
+    Accept-negotiation posture — so in practice this entry records the
+    behaviour as unassessed; the disposition names the mechanism a future
+    declaration field would use, not one that exists.
+    The one documented rule — an Accept the service cannot fulfill yields 406 —
     is already exercised by the unsupported-Accept case
     (SF-EXAMPLE-unsupported_accept). Activates as gating cases only if a future
     ITS-REST release defines q-value semantics.
@@ -1123,13 +1217,16 @@ AMB-57:
   ambiguity: >-
     CORRECTED 2026-07-27 (the prior text claimed no simplified-format wire
     exists for commit_contribution — STALE: SPECITS-84, Release-1.1.0,
-    defines it in four places). The RESIDUAL conflict is read-side:
-    contribution_get's §Simplified Formats paragraph and the released
-    200_CONTRIBUTION response text both promise that "each versions[i].data
-    payload is serialized in the requested FLAT or STRUCTURED form", but the
-    declared 200 body (the CONTRIBUTION schema) carries versions as
-    OBJECT_REFs — there is NO versions[i].data in the read shape at all —
-    and the operation declares no Prefer parameter, leaving the generic
+    defines it in four places), WIDENED 2026-08-21: the conflict covers
+    EVERY RESPONSE body, not the read only. contribution_get's §Simplified
+    Formats paragraph and the released 200_CONTRIBUTION response text
+    promise that "each versions[i].data payload is serialized in the
+    requested FLAT or STRUCTURED form" — and 201_CONTRIBUTION carries the
+    IDENTICAL promise for the create's return=representation body — while
+    the declared body in BOTH is the CONTRIBUTION schema, whose versions are
+    OBJECT_REFs with NO versions[i].data member at all (the only place
+    versions[i].data exists is the REQUEST's NewContribution/UpdateVersion).
+    The get declares no Prefer parameter, leaving the generic
     "Prefer: return=representation, resolve_refs" mechanism unbound.
   source: >-
     ITS-REST specifications/operations/contribution_{create,get}.yaml
@@ -1140,10 +1237,11 @@ AMB-57:
     ObjectRefOfObjectVersionId, no data); Requests_and_responses.md §Prefer
     resolving Object references — confirmed first-hand.
   handling: >-
-    Fixed handling: the create side is implemented exactly as released
+    Fixed handling: the create REQUEST is implemented exactly as released
     (envelope canonical, each versions[i].data in the negotiated
-    FLAT/STRUCTURED form, both request and Prefer-representation response).
-    On the GET, inner serialization binds to "Prefer:
+    FLAT/STRUCTURED form); the create's return=representation RESPONSE and
+    the GET response face the same schema hole, and both resolve the same
+    way. On the GET, inner serialization binds to "Prefer:
     return=representation, resolve_refs": with it, versions inline as full
     ORIGINAL_VERSIONs and COMPOSITION data serializes in the requested wt
     form (non-COMPOSITION inner payloads 406); without it, the OBJECT_REF
@@ -1177,12 +1275,12 @@ AMB-58:
     for `application/xml` and `application/openehr.wt+json` ONLY — there is no
     application/json response body anywhere in the operation — while the same
     operation declares a `'406'` response. So tier 2 offers the request and
-    defines neither a body for it nor an obligation to fulfil it, leaving both
+    defines neither a body for it nor an obligation to fulfill it, leaving both
     answers exactly as conformant as before.
   source: >-
     ITS-REST overview Resources.md §JSON Format ("The client SHOULD use the
     Accept: application/json request header to specify the expected JSON
-    response format. If the service cannot fulfil this aspect of the request,
+    response format. If the service cannot fulfill this aspect of the request,
     it MUST respond with HTTP status code 406 Not Acceptable"; "Proper header
     Content-Type: application/json MUST be present in the response of the
     service unless the response has no content body") + §Simplified Formats
@@ -1272,7 +1370,9 @@ AMB-60:
     following subset is used in this specification", followed by the two
     quoted SHOULD sentences, with no precedence, no unknown-path rule, and no
     MUST on either branch) + §HTTP status codes (rows 404 "The origin service
-    did not find the target resource", 405 "The method received in the
+    did not find the target resource or is not willing to disclose that one
+    exists" — the disclosure clause restored 2026-08-21, since it bears on
+    the 404-vs-405/501 choice —, 405 "The method received in the
     request-line is known by the origin service but not supported by the target
     resource", 501 "The service does not support the functionality required to
     fulfill the request", and "Additional status codes MAY be used as long as
@@ -1317,7 +1417,7 @@ AMB-60:
     request the service cannot recognize cannot be authored — and is carried
     as the cited vocab/wire_surface.yaml element
     method-501-unrecognized-method-deviation, whose server behaviour is
-    HTTP-tested (app/ferroehr-rest/tests/http.rs
+    HTTP-tested (app/ferroehr-rest/tests/it/http.rs
     `unrecognized_method_is_405_with_allow`).
     Revisits if a future ITS-REST release raises either sentence to a MUST or
     states a precedence.
@@ -1345,27 +1445,32 @@ AMB-61:
     well") + §Simplified Formats ("If the service cannot process the request
     payload as the simplified format is not supported, it MUST respond with
     HTTP status code 415 Unsupported Media Type"; "If the service cannot
-    fulfil this aspect of the request, it MUST respond with HTTP status code
+    fulfill this aspect of the request, it MUST respond with HTTP status code
     406 Not Acceptable") + §XML Format / §JSON Format (the same 415/406 MUSTs
     for the canonical types) — MAY-level support and MUST-level refusal shape
     CONFIRMED first-hand.
   handling: >-
     Sibling cases carry option tags; the ICS options declaration selects which
     applies — the declared behaviour MUST pass, the undeclared sibling is
-    not-applicable. The legacy-alt-formats-unsupported branch is executable
-    today: SF-LEGACY-nc_flat_media_unsupported expects unsupported_media (415)
-    for a commit declaring application/openehr.nc.flat+json, and
-    SF-LEGACY-tds2_accept_unsupported expects not_acceptable (406) for an
-    Accept of application/openehr.tds2+xml. The legacy-alt-formats-supported
-    branch has no case: the released text defines neither a canonical mapping
-    nor a schema for either legacy representation ("based on the ECISFLAT
+    not-applicable. The legacy-alt-formats-unsupported branch carries FOUR
+    cases (census corrected 2026-08-21):
+    SF-LEGACY-{nc_flat_media,tds2_media}_unsupported expect
+    unsupported_media (415) on the request side and
+    SF-LEGACY-{nc_flat_accept,tds2_accept}_unsupported expect
+    not_acceptable (406) on the Accept side. The
+    legacy-alt-formats-supported branch HAS its accepting twin —
+    SF-LEGACY-nc_flat_media_supported (OPTIONS-tier), required so a server
+    answering 415 to everything cannot pass the unsupported battery
+    vacuously — which asserts a successful exchange for a media type whose
+    mapping/schema the released text does not define ("based on the ECISFLAT
     format" / "see this wiki page" are the only pointers, both outside the
-    specification), so there is nothing spec-grounded to assert about a
-    successful exchange — the tag exists so a supporting SUT declares itself
-    out of the unsupported branch rather than failing it. Distinct from AMB-39,
-    which governs the DEPRECATED pre-1.1.0 SDT-era .schema+json types
+    specification): the assertion is therefore exchange-level only (the
+    commit succeeds), never a wire-shape check, and that tension is
+    recorded here on purpose. Distinct from AMB-39,
+    which governs the DEPRECATED .schema+json types
     (superseded equivalents of a CURRENT format, not legacy formats of their
-    own).
+    own) — both entries draw on the same Resources.md §Alternative data
+    formats list.
   disposition: option_select
   options: [legacy-alt-formats-supported, legacy-alt-formats-unsupported]
 AMB-62:
@@ -5581,7 +5686,7 @@ AMB-149:
     absolute-URL requirement itself is NOT part of this silence — it is stated,
     and this server satisfies it from the operator-supplied external origin
     (`smart.public_base_url`, boot-required when SMART is enabled), wire-tested
-    in `app/ferroehr-rest/tests/smart_http.rs`. Reported upstream (#1595).
+    in `app/ferroehr-rest/tests/it/smart_http.rs`. Reported upstream (#1595).
   disposition: fixed_handling
   upstream_issue: 1595
 
@@ -5791,7 +5896,7 @@ AMB-151:
     and its launch-context binding, the `composition-`/`aql-` nouns, the four
     non-`*` pattern rows, the inert demotion), a coverage gap that now shrinks
     case by case because the machinery exists. Both stay proven meanwhile by
-    the server's own tests — `app/ferroehr-rest/tests/smart_http.rs` and the
+    the server's own tests — `app/ferroehr-rest/tests/it/smart_http.rs` and the
     grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs` —
     which is evidence about the server and the parser, never about the wire.
     THE POSTURE IS THE BASELINE (re-adjudicated for PR #611; the earlier
@@ -6847,7 +6952,7 @@ AMB-167:
     negotiated `Content-Type` and an XML document entity — never a root
     name), `<family>-xml-unsupported` gates the mirror
     `-xml_not_acceptable` row (the §XML Format 406 MUST, the release's own
-    designated answer for an Accept it cannot fulfil). The undeclared
+    designated answer for an Accept it cannot fulfill). The undeclared
     sibling is not-applicable, never a failure. Families: `ehr`,
     `ehr-status`, `directory`, `party` (one seam for all five PARTY types —
     the demographic routes share one binding family and one document

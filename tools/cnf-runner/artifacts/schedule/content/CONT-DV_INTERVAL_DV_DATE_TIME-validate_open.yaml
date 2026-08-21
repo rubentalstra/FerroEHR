@@ -1,7 +1,8 @@
 # Re-adjudicated 2026-07-22 (issue #228, mirroring the DV_DATE-open exemplar):
-# null-bound rows rested on a value-mandatory-when-not-unbounded invariant the
-# openEHR RM does NOT define (BASE foundation_types §Interval defines only
-# Lower/Upper_included_valid, Limits_consistent, Limits_comparable) — corrected
+# null-bound rows are underivable: the BASE and RM interval Limits_consistent
+# invariants are guarded by "(not upper_unbounded and not lower_unbounded)
+# implies" with unguarded calls on the limits, and no released text states
+# Void-call semantics (AMB-43, re-grounded 2026-08-21) — corrected
 # rejected -> accepted. Empty-string bounds stay rejected: "" is not a
 # well-formed ISO 8601 date-time (BASE foundation_types §Iso8601_date_time
 # formation), a DATA_VALUE formation defect independent of interval invariants.
