@@ -3,8 +3,8 @@
 # "IMO should fail" cell) is genuinely undecidable under the vendored specs —
 # RM dv_date.adoc answers comparability (is_strictly_comparable_to: "True,
 # for any two Dates"), but Limits_consistent then orders by magnitude(),
-# whose value for a partial date the RM leaves open (upstream SPECPR-380,
-# register AMB-29): a floor-extension reading orders 2021 <= 2021-10 while a
+# whose value for a partial date the RM leaves open (register AMB-29): a
+# floor-extension reading orders 2021 <= 2021-10 while a
 # ceiling-extension reading does not. Neither accepted nor rejected is
 # derivable, so the row rides AMB-29's report_only disposition in its own
 # case, keeping the parent's derivable rows gating.
@@ -17,7 +17,7 @@ profiles: [CORE]
 test_purpose: >-
   A committed DV_INTERVAL<DV_DATE> whose bounds carry different precisions
   ("2021" .. "2021-10") — ordering under Limits_consistent is open upstream
-  (SPECPR-380); the verdict is reported per SUT and never gates (AMB-29).
+  (register AMB-29, upstream #1493); the verdict is reported per SUT and never gates.
 description: "DV_INTERVAL<DV_DATE> open ({*}): mixed-precision bounds (report_only)"
 spec_refs:
   - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_DATE-validate_open"

@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ferroehr 3.19.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.19.0 · verification pack: passed
+SUT: ferroehr 3.20.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.20.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 1047 |
+| passed | 1051 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 38 |
-| total | 1085 |
+| total | 1089 |
 
 ## By chapter
 
@@ -20,12 +20,12 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 464 | 0 | 0 | 18 |
+| **EHR** | 468 | 0 | 0 | 18 |
 | — EHR resource | 25 | 0 | 0 | 2 |
 | — EHR_STATUS | 46 | 0 | 0 | 5 |
-| — COMPOSITION | 138 | 0 | 0 | 0 |
-| — DIRECTORY | 79 | 0 | 0 | 6 |
-| — CONTRIBUTION | 108 | 0 | 0 | 5 |
+| — COMPOSITION | 139 | 0 | 0 | 0 |
+| — DIRECTORY | 80 | 0 | 0 | 6 |
+| — CONTRIBUTION | 110 | 0 | 0 | 5 |
 | — Item tags | 62 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 97 | 0 | 0 | 10 |
@@ -85,11 +85,11 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | EhrOperations | pass | 22 | 0 | 0 | 2 |
 | EhrStatus | pass | 44 | 0 | 0 | 5 |
 | CompositionOps | pass | 59 | 0 | 0 | 0 |
-| DirectoryOps | pass | 77 | 0 | 0 | 8 |
-| ChangeSets | pass | 101 | 0 | 0 | 5 |
+| DirectoryOps | pass | 78 | 0 | 0 | 8 |
+| ChangeSets | pass | 102 | 0 | 0 | 5 |
 | Versioning | pass | 73 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
-| PartyOperations | pass | 87 | 0 | 0 | 4 |
+| PartyOperations | pass | 88 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 19 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 11 | 0 | 0 | 0 |
 | AqlBasic | pass | 35 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1047 of 1085 selected cases driven.
+Coverage: 1051 of 1089 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -193,27 +193,27 @@ Not-executed verdicts (each cited):
 | I_DEFINITION_QUERY.delete_query-delete_existing | I_DEFINITION_QUERY.delete_query: AMB-127 |
 | I_DEFINITION_QUERY.list_matching_queries-id_pattern | I_DEFINITION_QUERY.list_matching_queries: AMB-121 |
 | I_DEFINITION_QUERY.queries_count-count | I_DEFINITION_QUERY.queries_count: AMB-127 |
-| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-empty | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-post_commit | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
-| I_EHR_DIRECTORY.create_directory-xml | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.create_directory-xml | option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_directory-xml_not_acceptable | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_versioned_directory-bad_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-empty_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
-| I_EHR_DIRECTORY.update_directory-xml | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_SERVICE.create_ehr-xml | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.update_directory-xml | option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_SERVICE.create_ehr-xml | option ehr-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.clear_ehr_modifiable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.clear_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_modifiable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_queryable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.set_ehr_modifiable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_modifiable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-LEGACY-nc_flat_media_supported | option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |

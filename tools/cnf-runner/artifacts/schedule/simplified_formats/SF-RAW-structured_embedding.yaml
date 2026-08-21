@@ -15,13 +15,12 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
-# master04 §Raw canonical JSON gives the |raw bypass a FLAT example only and
-# never says whether it exists in STRUCTURED; register AMB-155 is this case's
-# ground (master04 §Field Identifiers lists |raw as component 6 of what "The
-# Simplified Formats use" — the identifier syntax as a whole, not one variant —
-# and §Structured format rule 3 already makes an attribute suffix a
-# pipe-prefixed property, so the bypass is a "|raw" property of the leaf's
-# array element).
+# master04 §Raw canonical JSON assigns the bypass to "flat or structured
+# format inputs" — its EXISTENCE in STRUCTURED is released text — while the
+# section's one example is FLAT, so only the PLACEMENT is open; register
+# AMB-155 carries it (§Structured format rule 3 already makes an attribute
+# suffix a pipe-prefixed property, so the bypass is a "|raw" property of the
+# leaf's array element).
 ambiguities: [AMB-155]
 test_purpose: >-
   A STRUCTURED commit embedding a canonical DV_QUANTITY via |raw round-trips to

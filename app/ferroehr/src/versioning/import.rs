@@ -39,6 +39,8 @@
               verification"
 )]
 
+use std::collections::BTreeMap;
+
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -411,6 +413,50 @@ async fn commit_import_scoped(
                     base,
                 )
                 .await?;
+            }
+            // The BRANCH mirror of the trunk checks above: a later receipt may
+            // also advance an already-held branch lineage (master06 §Copying —
+            // "previous copies have been made for the item"; §Semantics in
+            // Distributed Systems keeps lineages coexisting). Each incoming
+            // branch lineage must be strictly newer than the stored tip, and a
+            // still-open stored tip closes at the import base so the successor
+            // becomes the lineage's one open row.
+            let mut incoming_branch_lineages: BTreeMap<(String, i32, i32), i32> = BTreeMap::new();
+            for version in container.versions.iter().filter(|v| !v.tree.is_trunk()) {
+                let (trunk_version, branch_number, branch_version) = version.tree.columns();
+                let first = incoming_branch_lineages
+                    .entry((
+                        version.creating_system_id.clone(),
+                        trunk_version,
+                        branch_number,
+                    ))
+                    .or_insert(branch_version);
+                *first = (*first).min(branch_version);
+            }
+            for (lineage, first_incoming) in &incoming_branch_lineages {
+                let (max_stored, open) =
+                    crate::storage::version_repo::import::branch_lineage_state(
+                        tx,
+                        container.vo_id,
+                        lineage,
+                    )
+                    .await?;
+                if max_stored > 0 && *first_incoming <= max_stored {
+                    return Err(ServiceError::conflict(format!(
+                        "versioned object {} already has branch version {}.{}.{max_stored} — \
+                         cannot re-import branch version {}.{}.{first_incoming}",
+                        container.vo_id, lineage.1, lineage.2, lineage.1, lineage.2
+                    )));
+                }
+                if open {
+                    crate::storage::version_repo::import::close_lineage_at(
+                        tx,
+                        container.vo_id,
+                        lineage,
+                        base,
+                    )
+                    .await?;
+                }
             }
         } else if container.kind == Kind::Folder
             && let Some(ehr_id) = ehr_id

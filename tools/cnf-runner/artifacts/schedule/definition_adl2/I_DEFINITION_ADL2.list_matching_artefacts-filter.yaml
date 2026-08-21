@@ -27,4 +27,4 @@ postconditions:
   - assert: state
     text: "The filtered list contains the loaded OPT whose id matches the pattern"
     verified_by: I_DEFINITION_ADL2.get_artefact-retrieve
-ambiguities: [AMB-37]
+ambiguities: [AMB-37, AMB-107]

@@ -44,7 +44,7 @@ component: EHR
 sm_operation: I_EHR_STATUS.set_ehr_modifiable
 capabilities: [EhrStatus]
 profiles: [CORE]
-option: ehr-status-xml-unsupported     # AMB-167 option_select branch (the refusal arm)
+option: ehr-status-xml-write-refused     # AMB-167 option_select branch (the refusal arm)
 ambiguities: [AMB-167]
 test_purpose: >-
   On a service that declares it cannot process canonical-XML request payloads

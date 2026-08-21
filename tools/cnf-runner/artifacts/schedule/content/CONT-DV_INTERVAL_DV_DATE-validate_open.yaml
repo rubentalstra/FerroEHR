@@ -2,11 +2,11 @@
 # invariants the openEHR RM does NOT define. BASE foundation_types §Interval
 # defines exactly Lower_included_valid, Upper_included_valid, Limits_consistent
 # ((not upper_unbounded and not lower_unbounded) implies lower <= upper) and
-# Limits_comparable ((not upper_unbounded and not lower_unbounded) implies
-# lower.strictly_comparable_to(upper)) — there is NO invariant requiring a bound
-# VALUE when the corresponding *_unbounded flag is false, and strictly_comparable
-# for partial dates of differing precision is an acknowledged open discussion
-# (the schedule's own DV_INTERVAL missing-invariants note). A conformant SUT
+# Limits_comparable — and RM DV_INTERVAL carries its own guarded
+# Limits_consistent (re-grounded 2026-08-21, AMB-43): the invariants are
+# UNDERIVABLE on Void limits (the released text states no Void-call
+# semantics), and strictly_comparable for partial dates of differing
+# precision is an acknowledged open discussion. A conformant SUT
 # therefore accepts all of these; expectations corrected rejected -> accepted.
 id: CONT-DV_INTERVAL_DV_DATE-validate_open
 kind: content

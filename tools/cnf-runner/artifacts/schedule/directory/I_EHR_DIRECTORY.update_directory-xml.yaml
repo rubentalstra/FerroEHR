@@ -44,7 +44,7 @@ sm_operation: I_EHR_DIRECTORY.update_directory
 capabilities: [DirectoryOps]
 exercises: [Versioning]
 profiles: [STANDARD]
-option: directory-xml-unsupported     # AMB-167 option_select branch (the refusal arm)
+option: directory-xml-write-refused     # AMB-167 option_select branch (the refusal arm)
 ambiguities: [AMB-167]
 test_purpose: >-
   On a service that declares it cannot process canonical-XML request payloads

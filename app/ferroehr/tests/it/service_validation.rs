@@ -14,7 +14,7 @@
 //! validator's own corpus tests use (`openehr-its/tests/validation.rs`).
 //!
 //! Spec: openEHR ITS-REST 1.1.0 —
-//! `docs/specs/openehr/ITS-REST/specifications/responses/422_COMPOSITION.yaml`
+//! `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`
 //! ("content could be converted to a COMPOSITION, but there are semantic
 //! validation errors, such as the underlying template is not known or is not
 //! validating the supplied COMPOSITION" → `422`). CNF cross-check:

@@ -53,7 +53,7 @@ sm_operation: I_EHR_SERVICE.create_ehr
 capabilities: [EhrOperations]
 exercises: [EhrApi]
 profiles: [CORE]
-option: ehr-xml-unsupported       # AMB-167 option_select branch (the refusal arm)
+option: ehr-xml-write-refused       # AMB-167 option_select branch (the refusal arm)
 ambiguities: [AMB-167]
 test_purpose: >-
   On a service that declares it cannot process canonical-XML request payloads

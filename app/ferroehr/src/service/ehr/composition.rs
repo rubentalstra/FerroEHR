@@ -8,7 +8,7 @@
 //!
 //! Spec: RM ehr `versioned_composition.adoc`, RM composition
 //! (`COMPOSITION.category` / `is_persistent`), ITS-REST
-//! `responses/422_COMPOSITION.yaml` (a well-formed body that fails template/RM
+//! `responses/422.yaml` (a well-formed body that fails template/RM
 //! validation is 422, not 400). Versioned-object mechanics are RM common
 //! master06, delegated to [`crate::versioning`].
 

@@ -259,7 +259,7 @@
     [
       "DirectoryOps",
       {
-        "passed": 77,
+        "passed": 78,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 8
@@ -268,7 +268,7 @@
     [
       "ChangeSets",
       {
-        "passed": 101,
+        "passed": 102,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -295,7 +295,7 @@
     [
       "PartyOperations",
       {
-        "passed": 87,
+        "passed": 88,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 4
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1085,
-    "driven": 1047,
-    "passed": 1047,
+    "selected": 1089,
+    "driven": 1051,
+    "passed": 1051,
     "failed": 0,
     "inconclusive": 0
   }

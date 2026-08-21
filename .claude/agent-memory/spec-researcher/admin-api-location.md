@@ -111,10 +111,18 @@ don't duplicate.
 (DELETE /admin/ehr/{ehr_id}; ok_empty=204 alt 202; not_found=404). The other 7
 carry `unrealized:` bindings citing AMB-33. `load_ehrs` has no case at all —
 it lives in `vocab/wire_surface.yaml` `sm_operations` as `off_wire`.
-**Gap: `admin_ehr_delete_all` has NO case, NO binding, NO wire_surface entry**
-(the surface gate is SM-operation-keyed and there is no SM op for bulk delete).
-`vocab/outcomes.yaml` has no `accepted` (202) and no `method_not_allowed` (405)
-kind — both admin-only branches are unauthorable until the taxonomy extends.
+**BOTH gaps recorded here are CLOSED — re-verified 2026-08-21, do not re-cite
+them:** `admin_ehr_delete_all` now has its own binding
+(`bindings/its-rest/I_ADMIN_SERVICE.physical_ehr_delete-delete_all.yaml`, path
+`/admin/ehr/all`) plus delete_all cases (subset / unfiltered / subset_repeated /
+malformed_id / cascade); and `vocab/outcomes.yaml` DOES define `accepted`
+(L70, class success) and `method_not_allowed` — added by the 2026-07-28 schedule
+release (#544). Both admin bindings now declare `accepted: status: 202` AND keep
+`ok_empty.alt_status: [202]` (a deletion-happened case must not refute an async
+server). The residue is permanent, not pending: the released asynchrony is a
+service-side MAY with **no client-selectable trigger**, so no case can drive the
+202 arm (`vocab/wire_surface.yaml` element
+`admin-delete-async-acceptance-branch` states it).
 
 ## Our server
 Admin surface is `{base_path}/admin/**` = `/ferroehr/rest/openehr/v1/admin/**`

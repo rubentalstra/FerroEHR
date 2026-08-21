@@ -267,6 +267,16 @@ cnf.composition.minimal_event.feeder_audit.v1:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by attaching FEEDER_AUDIT at the COMPOSITION root and a second one on the interior ELEMENT — the granularity RM common master03-archetyped_package.adoc §Structural Correspondence describes (\"separate FEEDER_AUDIT objects may need to be generated for parts of a Composition\"). The root instance populates every modelled FEEDER_AUDIT attribute: originating_system_item_ids, an inline original_content DV_PARSABLE (§Original Content: \"allows the original content item itself to be either included inline or pointed to\"), originating_system_audit and feeder_system_audit, the former carrying FEEDER_AUDIT_DETAILS.other_details as a small ITEM_TREE (\"Optional attribute to carry any custom meta-data\", feeder_audit_details.adoc §Attributes)"
+cnf.composition.minimal_event.feeder_audit.change_type:
+  source: fixtures/composition/minimal_event.feeder_audit.change_type.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a FEEDER_AUDIT carrying a change_type member — the attribute RM common master03 §Structural Correspondence instructs a converter to set, which the FEEDER_AUDIT class model does not define (its five attributes carry no change_type)"
+    spec_ref: "RM UML/classes/org.openehr.rm.common.feeder_audit.adoc §Attributes; RM common master03-archetyped_package.adoc §Structural Correspondence"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-21 (the #2531 register re-adjudication) from cnf.composition.minimal_event.feeder_audit.v1 with exactly one addition: feeder_audit.change_type = 252|synthesis| as DV_CODED_TEXT — the shape a client following the released instruction literally would send"
 cnf.composition.minimal_event.feeder_empty_system_id:
   source: fixtures/composition/minimal_event.feeder_empty_system_id.json
   format: canonical-json
@@ -2115,6 +2125,12 @@ cnf.messaging.ehr_extract.branch_lineage_v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-03 as the SECOND half of the branch-lineage pair: the SAME version-container uid at trunk version 2, naming trunk 1 as its preceding_version_uid. It lands into a container whose lineage set already carries a branch — master06 §Copying's third receiving situation ('previous copies have been made for the item in question') over a branched tree, where §Distributed Versioning has the trunk and each branch as coexisting lineages"
+cnf.messaging.ehr_extract.branch_lineage_v3:
+  source: fixtures/messaging/ehr_extract.branch_lineage_v3.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-08-21 (the #2531 register re-adjudication) from branch_lineage_v2: the SAME container's BRANCH (creating system cnf.branchsys.openehr.org) advanced to 1.1.2, naming 1.1.1 as its preceding_version_uid — appended AFTER the trunk head so the latest-across-lineages case discriminates the two 'latest' readings (the branch head is the most-recently-added version while the trunk head stays ::2; register AMB-206)"
 cnf.messaging.ehr_extract.branch_lineage_v1b:
   source: fixtures/messaging/ehr_extract.branch_lineage_v1b.json
   format: canonical-json

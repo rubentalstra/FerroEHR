@@ -16,7 +16,7 @@ profiles: [STANDARD]
 test_purpose: >-
   get_versioned_directory on an EHR without a directory is not-found — the
   VERSIONED_FOLDER (EHR.directory, 0..1) was never created.
-description: "Test get_versioned_directory on non-existent EHR"
+description: "Test get_versioned_directory on an EHR without a directory"
 spec_refs:
   - "SM openehr_platform §I_EHR_DIRECTORY.get_versioned_directory"
   - "RM ehr §EHR (directory: VERSIONED_FOLDER, 0..1)"

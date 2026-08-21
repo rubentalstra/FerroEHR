@@ -55,7 +55,7 @@ use openehr_base::validate::{InvariantViolation, Validate};
 /// mechanics — our own storage design) and the ITS-JSON schema is not enforced
 /// at commit, so a missing mandatory attribute (e.g. `COMPOSITION.composer [1]`)
 /// or a wrong nested type (e.g. an `EHR_STATUS.subject` that is not `PARTY_SELF`)
-/// reaches here and nowhere else. Per ITS-REST `422_COMPOSITION.yaml` ("converts,
+/// reaches here and nowhere else. Per ITS-REST `422.yaml` ("converts,
 /// but does not validate") this is a validation failure — surface it. (The valid
 /// corpus deserializes cleanly at every node, so this never rejects a valid
 /// input; if it ever did, that would expose a codegen field-optionality bug to
