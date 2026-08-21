@@ -15,6 +15,23 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The entire outbound upstream-report corpus — all 215 reports of defects,
+  contradictions, and silences in the released openEHR specifications — was
+  re-verified first-hand against the vendored spec text in one adversarial
+  pass. Three reports were refuted and withdrawn, one rewritten to its
+  provable narrow claim, and every correction the pass surfaced travels on
+  the closed reports for the future submission to openEHR. Verification is
+  now terminal: a verified report closes as the standing record, so the open
+  tracker stays near zero by design.
+- The conformance catalogue follows the pass's refutations: committing a
+  CONTRIBUTION whose EHR_STATUS member carries `lifecycle_state = incomplete`
+  is now a gating acceptance case (RM common master06 defines the incomplete
+  state generically; the reject lean existed only in the stalled CNF guide),
+  and the empty-directory 404 cases gate unconditionally (the released OAS
+  defines the branch — the former empty-vs-error option selection is gone).
+
 ## [3.19.0] - 2026-08-21
 
 ### Fixed
