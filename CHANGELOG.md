@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Committing a CONTRIBUTION whose EHR_STATUS member carries
+  `lifecycle_state = incomplete` is now accepted, with the incomplete
+  relaxation (existence and cardinality lower bounds lifted) applied to the
+  status body exactly as for every other content type — RM common master06
+  defines the incomplete state generically and no released text excludes
+  EHR_STATUS. The direct EHR_STATUS update route likewise honours an
+  incomplete lifecycle it previously ignored. Previously such commits were
+  refused with a 422.
+
 ### Changed
 
 - The entire outbound upstream-report corpus — all 215 reports of defects,
