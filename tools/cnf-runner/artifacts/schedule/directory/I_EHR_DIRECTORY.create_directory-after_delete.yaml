@@ -1,0 +1,50 @@
+# The DELETED-then-recreate accepting twin of -ehr_with_directory: whether a
+# logically deleted directory still occupies the EHR.directory slot is a
+# recorded silence (AMB-79 — the released texts lean both ways: indelibility
+# plus Directory_in_folders read as still-occupied, the deleted head's own
+# 204 read as gone). The register's fixed handling is that a deleted
+# directory does NOT block a re-create, so this case pins the accepting
+# branch; without it, the live-conflict case alone would let a server that
+# answers 409 to every re-create pass vacuously.
+id: I_EHR_DIRECTORY.create_directory-after_delete
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.create_directory
+capabilities: [DirectoryOps]
+exercises: [Versioning]
+profiles: [STANDARD]
+test_purpose: >-
+  create_directory after the EHR's directory was logically deleted is
+  accepted — the deleted hierarchy does not occupy the slot (AMB-79 fixed
+  handling) — and the new directory serves.
+description: "Test create_directory after logical directory deletion"
+ambiguities: [AMB-79]
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.create_directory (Pre_no_directory)"
+  - "RM ehr §EHR (directory 0..1; Directory_in_folders)"
+  - "RM common §change_control (master06 §Logical Deletion — the delete procedure)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.directory.root_only]
+flow:
+  - step: 1
+    call: create_directory               # precondition: the EHR gains a directory
+    with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only}" }
+    expect: created
+    capture: { preceding_version_uid: created.version_uid }
+  - step: 2
+    call: delete_directory
+    with: { ehr_id: "${ehr_id}", preceding_version_uid: "${preceding_version_uid}" }   # ITS-REST: If-Match (ITS-REST overview §If-Match)
+    expect: deleted
+  - step: 3
+    call: create_directory               # the recreate under adjudication
+    with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only}" }
+    expect: created
+  - step: 4
+    call: get_directory
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok                            # the new hierarchy serves
+    assert:
+      - { assert: equivalent, to: "${ds:cnf.directory.root_only}", ignoring: server_assigned }

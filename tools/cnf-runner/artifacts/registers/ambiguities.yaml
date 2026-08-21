@@ -1641,10 +1641,14 @@ AMB-63:
     `'409'`). That settles the two halves the entry used to call open — the
     key IS the (id, namespace) pair, and `PARTY_REF.type` is NOT part of it —
     and it also states the precondition under which the refusal bites (an
-    EHR_STATUS was supplied). What NO source states is HOW the pair is
-    compared: byte-for-byte or folded. BASE gives a case rule for composite
-    IDENTIFIERS, not for a demographic id borne inside a PARTY_SELF, so the
-    comparison discipline remains ours. (b) THE SCOPE: SM i_ehr_service.adoc
+    EHR_STATUS was supplied). On HOW the pair is compared, a released rule
+    EXISTS at SHOULD strength and points the other way (re-grounded
+    2026-08-21): BASE base_types master05 §Composite Identifiers and Case
+    binds case-insensitivity to "all composite identifiers" over the whole
+    OBJECT_ID hierarchy — whose first sentence covers every identifier type
+    used within openEHR systems, PARTY_REF.id included. The byte-exact key
+    below is therefore a DELIBERATE DEVIATION from that SHOULD, not a
+    spec-silent choice. (b) THE SCOPE: SM i_ehr_service.adoc
     declares the error
     `ehr_for_subject_already_exists` on `create_ehr_for_subject` but NOT on
     `create_ehr_for_subject_with_id`, whose error list carries only
@@ -1688,16 +1692,21 @@ AMB-63:
     part of it — and that much is now RELEASED-GROUNDED rather than ours, on
     the OAS `409_EHR.yaml` sentence above ("the same subject id, namespace
     pair"), as is the "whenever EHR_STATUS is supplied" precondition the
-    catalogue's cases already satisfy. What stays OURS is only the COMPARISON
+    catalogue's cases already satisfy. What stays OURS is the COMPARISON
     DISCIPLINE: the pair is matched EXACTLY, byte-for-byte, with no case
-    folding and no normalization. No openEHR spec governs that — our own
-    design/extension: a demographic identifier is opaque to the CDR, so two
+    folding and no normalization — a DELIBERATE DEVIATION from the BASE
+    SHOULD (base_types master05 §Composite Identifiers and Case:
+    case-insensitivity for "all composite identifiers", a rule whose §opening
+    sentence spans the whole OBJECT_ID hierarchy, PARTY_REF.id included;
+    scope corrected 2026-08-21 — the earlier claim that the rule governs only
+    OBJECT_VERSION_ID-shaped ids was false). The safety rationale: a
+    demographic identifier is opaque to the CDR, so two
     spellings a demographic service might reconcile are two different subjects
     here, and folding them would silently merge two patients' records, the
-    wrong-clinical-answer failure mode. Explicitly NOT the BASE
-    composite-identifier case rule (base_types master05 §Composite Identifiers
-    and Case), which governs OBJECT_VERSION_ID-shaped ids, not a demographic
-    id. The type EXCLUSION is now CASED, not merely recorded:
+    wrong-clinical-answer failure mode — a SHOULD admits a reasoned
+    departure, and this one is recorded here and reported upstream as a
+    candidate (blanket case-insensitivity vs demographic-id folding safety).
+    The type EXCLUSION is now CASED, not merely recorded:
     I_EHR_SERVICE.create_ehr-subject_key_ignores_type commits two EHRs whose
     subject external_ref differs ONLY in `type` (same id cnf-subject-11, same
     namespace cnf; both values legal under BASE `PARTY_REF.Type_validity`) and
@@ -1729,7 +1738,7 @@ AMB-64:
     VERSIONED_OBJECT, or other resources that have versioning or unique state
     identifiers" — and an EHR is neither a VERSION nor a VERSIONED_OBJECT: it
     is a root object that is not versioned at all (RM ehr EHR class carries no
-    uid/version attributes, only `ehr_id` and `time_created`). Whether it
+    uid/version attributes — no uid, no version identity, not change-controlled). Whether it
     qualifies under the open-ended third limb turns on reading "unique state
     identifiers", which the document never defines. The companion sentence
     compounds it: the value "should be derived from
@@ -1947,7 +1956,9 @@ AMB-69:
     type: SYSTEM}` (ITS-REST
     specifications/schemas/demographic/VersionedParty.yaml `example`, vendored
     at crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml
-    `components.schemas.VersionedParty.example`) — the "other relevant owning
+    `components.schemas.VersionedParty.example`; note the example's own
+    `type: SYSTEM` violates OBJECT_REF's attribute definition — no RM class
+    is named SYSTEM — the standing report is #2524) — the "other relevant owning
     entity" limb read as the serving system, with the same BASE namespace token
     the EHR side uses. WHAT THAT EXAMPLE IS WORTH, under the oracle order: the
     same as AMB-137's five `ItemTagOf<T>` examples — nothing as an assignment.
@@ -1986,22 +1997,31 @@ AMB-69:
 
 AMB-70:
   ambiguity: >-
-    "The version extant at time T" has no released algorithm. RM gives only
-    the signature `version_at_time (a_time): VERSION` with
-    `Pre: has_version_at_time (a_time)`; nothing released states (a) which
-    instant anchors a version's extancy interval (commit_audit.time_committed
-    is cited only as the Last-Modified source), (b) whether the interval is
-    closed or open at the commit instant, (c) how branch versions
-    participate, (d) what a future-dated T returns, or (e) which function
-    "latest" means for the no-parameter read — `latest_version()` ("most
-    recently added … on trunk or any branch") vs `latest_trunk_version()`
-    are both defined and neither ITS-REST nor SM picks one.
+    "The version extant at time T" has only a PARTIAL released algorithm
+    (re-grounded 2026-08-21). The ANCHOR is released: RM common master06
+    §Committal and Audits binds time_committed to "the time of committal to
+    an EHR server, i.e. the time of availability to other users in the same
+    system", and §Subsequent Local Modifications states that a query "at
+    earlier commit times correctly returns what information existed at that
+    time in that container" — so (a) is answered (the local commit instant),
+    and its availability framing supports the inclusive-at-commit reading of
+    (b). What remains unassigned: (b) interval closedness as a FORMAL rule,
+    (c) how branch versions participate, (d) what a future-dated T returns,
+    and (e) which function "latest" means for the no-parameter read —
+    `latest_version()` ("most recently added … on trunk or any branch") vs
+    `latest_trunk_version()` are both defined and neither ITS-REST nor SM
+    picks one.
   source: >-
-    RM common UML/classes/org.openehr.rm.common.versioned_object.adoc
+    RM common master06-change_control_package.adoc §Committal and Audits
+    (the time_committed anchor) + §Subsequent Local Modifications (the
+    earlier-commit-times query sentence) + RM common
+    UML/classes/org.openehr.rm.common.versioned_object.adoc
     §Functions (version_at_time, latest_version, latest_trunk_version); SM
     UML/classes/i_ehr_status.adoc get_ehr_status_at_time ("If no time
     supplied, get the latest."); ITS-REST overview Resources.md §Datetime
-    format (offset-less values resolve in the local timezone) — confirmed
+    format (offset-less values resolve in the local timezone); the
+    no-version-at-time 404 is OAS-grounded
+    (responses/404_unknown_ehr_id_or_no_version_at_time.yaml) — confirmed
     first-hand.
   handling: >-
     Fixed handling: extancy anchors on the version's commit instant,
@@ -2050,9 +2070,11 @@ AMB-72:
     OBJECT_VERSION_ID (three-part); (4) get_ehr_status_at_time /
     get_ehr_status_at_version return EHR_STATUS while the ITS-REST
     versioned_ehr_status/version routes serve the VERSION envelope, so the
-    mappings are approximate; (5) clear_ehr_modifiable's meaning reads
+    mappings are approximate; (5a) clear_ehr_modifiable's meaning reads
     "this ensures it is treated as active", contradicting its own
-    postcondition `not …is_modifiable` (and misspells `_is_modifable_`).
+    postcondition `not …is_modifiable`; (5b) it is SET_ehr_modifiable (L80)
+    that misspells the attribute as `_is_modifable_` — the SM's only such
+    site (attribution corrected 2026-08-21).
     None of these change conformant wire behaviour; they distort the
     SM-operation vocabulary the case cores speak.
   source: >-
@@ -2360,10 +2382,20 @@ AMB-79:
   handling: >-
     Fixed handling: this server answers 409 Conflict (the row's own text —
     "the request could not be processed because it might generate a
-    duplicate or a conflict") when a LIVE directory occupies the slot; a
-    logically deleted directory vacates it (the container survives, RM
-    master06 §Logical Deletion) so a re-create opens a new hierarchy. The
-    create-conflict case gates on 409. Reported upstream (#1523): bind
+    duplicate or a conflict") when a LIVE directory occupies the slot. The
+    DELETED-then-recreate branch is its own recorded silence (re-grounded
+    2026-08-21 — the earlier citation of RM master06 §Logical Deletion for
+    "vacates the slot" was wrong: that section is only the four-step delete
+    procedure and says nothing about EHR.directory occupancy): the released
+    texts lean BOTH ways — indelibility (master06 §Contributions) plus RM
+    ehr.adoc's `directory` = "a reference to the first member of folders"
+    (Directory_in_folders) can be read as the deleted container still
+    occupying the slot, while the delete's own wire (the directory read
+    serving 204 for a deleted head) reads as the directory being gone. No
+    released sentence arbitrates, so the choice is OURS: a logically
+    deleted directory does not block a re-create — create opens a new
+    hierarchy — pinned by the create-after-delete accepting twin beside the
+    live-conflict case. Reported upstream (#1523): bind
     the branch.
   disposition: fixed_handling
   upstream_issue: 1523
@@ -2372,22 +2404,35 @@ AMB-80:
   ambiguity: >-
     Updating or deleting the directory of an EHR that has NONE has no
     assigned wire outcome: both operations' only 404 file is scoped "when
-    an EHR with ehr_id does not exist"; 412 is scoped to an If-Match
-    mismatch against the latest version — and there is no latest version.
-    SM has Pre_has_directory on both with no error code
+    an EHR with ehr_id does not exist". The 412 question is SHARPER than an
+    OAS scope note (re-grounded 2026-08-21): the docs text MUSTs 412 on a
+    false If-Match ("it MUST NOT perform the requested method. Instead, it
+    MUST respond with … 412", §If-Match and accidental overwrites) and the
+    If-Match parameter is required: true, so a conformant client ALWAYS
+    sends one here — with no latest version, the condition cannot evaluate
+    true. SM has Pre_has_directory on both with no error code
     (delete_directory's only error is ehr_id_does_not_exist).
   source: >-
     ITS-REST specifications/operations/directory_{update,delete}.yaml +
     responses/404_unknown_ehr_id.yaml (the scoping) +
-    responses/412_directory.yaml; SM UML/classes/i_ehr_directory.adoc
+    responses/412_directory.yaml + Requests_and_responses.md §If-Match and
+    accidental overwrites (the MUST) + parameters/header/If-Match.yaml
+    (required: true); SM UML/classes/i_ehr_directory.adoc
     (Pre_has_directory without an error code) — confirmed first-hand.
   handling: >-
     Fixed handling: this server answers 404 Not Found — the directory
     resource the request addresses does not exist, the closest released
-    semantics (the 404 row: "the resource … does not exist"). The
-    no-directory update/delete cases gate on 404. Reported upstream
-    (#1524): scope the 404 files to cover the missing-directory case or
-    bind another branch.
+    semantics (the 404 row: "the resource … does not exist"). What KEEPS
+    404 legal against the §If-Match MUST is the HTTP authority the same
+    section designates: RFC 9110 §13.2.1 — "A server MUST ignore all
+    received preconditions if its response to the same request without
+    those conditions … would have been a status code other than a 2xx
+    (Successful) or 412 (Precondition Failed)" — and without the
+    precondition this request is a 404, so the precondition is ignored by
+    HTTP's own rule (derivation lifted from the case files into the
+    register, 2026-08-21). The no-directory update/delete cases gate on
+    404. Reported upstream (#1524): scope the 404 files to cover the
+    missing-directory case or bind another branch.
   disposition: fixed_handling
   upstream_issue: 1524
 
@@ -2431,8 +2476,12 @@ AMB-82:
     text never mentions is_modifiable outside the EHR-creation defaults,
     and no composition/directory operation declares a branch for it.
   source: >-
-    RM ehr master04-ehr_package.adoc §EHR Active Status (the refusal rule,
-    naming Compositions and Folders); ITS-REST specifications/ (grep:
+    RM UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Attributes ("True if
+    the EHR, other than the EHR_STATUS object, is allowed to be written to.
+    The EHR_STATUS object itself can always be written to." — the
+    PERMISSION rule; citation added 2026-08-21) + RM ehr
+    master04-ehr_package.adoc §EHR Active Status (the scope, naming
+    Compositions and Folders); ITS-REST specifications/ (grep:
     is_modifiable appears only in ehr_create*.yaml defaults and the
     EhrStatus schema) — confirmed first-hand.
   handling: >-
@@ -2441,7 +2490,14 @@ AMB-82:
     CONTRIBUTION commit — the primary write route; scope extended
     2026-07-27) into an EHR with
     is_modifiable = false — the request conflicts with the resource's
-    current state; EHR_STATUS itself stays always-writable (RM: "The
+    current state. The 409 is an ADDITIONAL status on these operations
+    (none declares it; composition_create declares 422, responses/409.yaml
+    is identifier-scoped), taken under the status table's own permission —
+    "Additional status codes MAY be used as long as they do not conflict
+    with the predefined codes" — and preferred over the declared 422
+    because the body is semantically VALID content refused for the
+    resource's STATE, not for its semantics (recorded 2026-08-21).
+    EHR_STATUS itself stays always-writable (RM: "The
     EHR_STATUS object itself can always be written to"), which is how a
     deactivated EHR is reactivated. Cases exercising the deactivated-EHR
     refusal gate on 409. Reported upstream (#1526): assign the branch.
@@ -2451,7 +2507,9 @@ AMB-82:
 AMB-83:
   ambiguity: >-
     The SM I_EHR_DIRECTORY interface carries editorial defects in the
-    AMB-72/77 pattern: five operations declare their parameter as `ehr_id`
+    AMB-72/77 pattern: SIX operations declare their parameter as `ehr_id`
+    (has_directory, has_path, create_directory, get_directory,
+    update_directory, delete_directory — count corrected 2026-08-21)
     while their preconditions read `an_ehr_id` (the interface mixes both
     spellings); version identifiers and ehr ids are typed UUID where the
     wire values are OBJECT_VERSION_ID/HIER_OBJECT_ID; the preconditions
@@ -2468,12 +2526,17 @@ AMB-83:
     no return type; no SM error corresponds to the wire 412; and the three
     boolean probes (has_directory, has_path, has_directory_version) have
     no ITS-REST route (inferable only from GET status codes — AMB-24
-    covers only get_versioned_directory). Two released ITS-REST
+    covers only get_versioned_directory). THREE released ITS-REST
     response-file contract defects travel with the same report: the
     update's 200 and 204 branches select DIFFERENT Location/ETag header
     contracts (Location_directory+ETag_FOLDER vs
-    Location_version+generic ETag) for one operation's success, and
-    412_directory declares a Location header solely to deprecate it.
+    Location_version+generic ETag) for one operation's success;
+    412_directory declares a Location header solely to deprecate it; and
+    the update's 204 (the shared 204_version_updated.yaml) advertises the
+    openehr-item-tag/openehr-version-item-tag response headers while
+    directory_update declares NO item-tag request parameter (only
+    composition_update does) and its own 200 omits them (added
+    2026-08-21).
   source: >-
     SM UML/classes/i_ehr_directory.adoc (all interface defects) +
     i_validity_checker.adoc; ITS-REST
@@ -2506,7 +2569,11 @@ AMB-84:
     Fixed handling: this server rejects an empty (or missing) versions
     list 422 — a well-formed envelope that commits nothing cannot be
     followed as a change set (a CONTRIBUTION exists to list "the affected
-    VERSION objects", master06 §Contributions). Reported upstream
+    VERSION objects", master06 §Contributions). The 422 is an ADDITIONAL
+    status on this route (contribution_create declares 201/400/404/409
+    only), taken under the status table's "Additional status codes MAY be
+    used as long as they do not conflict with the predefined codes"
+    (permission recorded 2026-08-21). Reported upstream
     (#1528): add the minItems to the commit schema or an invariant to the
     RM class.
     SCOPE 2026-07-27 (group-12 audit): the entry is CONTRIBUTION-scoped, not
@@ -2535,7 +2602,11 @@ AMB-85:
   handling: >-
     Fixed handling: this server follows the RM — a 523|deleted| member
     MUST omit data (or carry JSON null, treated as absent) and a
-    523|deleted| member CARRYING data is rejected 422; the stalled
+    523|deleted| member CARRYING data is rejected 422 — an ADDITIONAL
+    status on this route (contribution_create declares 201/400/404/409
+    only), taken under the status table's "Additional status codes MAY be
+    used as long as they do not conflict with the predefined codes"
+    (permission recorded 2026-08-21); the stalled
     schema's required-data is not enforced for deletion members. Reported
     upstream (#1531): give the commit schema a deletion shape.
     SCOPE 2026-07-27 (group-12 audit): the same handling reaches the
@@ -2664,10 +2735,13 @@ AMB-89:
     `uid` (a locally committed version's identifier is allocated by this
     repository), and a `_type` naming any class other than
     UPDATE_VERSION / ORIGINAL_VERSION. A `_type` of one of those two IS
-    accepted: the overview docs text makes `_type` a general metadata
-    attribute whose value "MUST be the uppercase class name from the RM
-    specification" (specifications/docs/overview/Resources.md §Resource
-    representation), and the docs text outranks the OAS. Both names denote
+    accepted: the overview docs text says `_type` "should be used to
+    specify the RM type whenever polymorphism is involved" — the licensing
+    sentence — with its VALUE form pinned by "MUST be the uppercase class
+    name from the RM specification"
+    (specifications/docs/overview/Resources.md §JSON Format — the section
+    corrected 2026-08-21; the file has no §Resource representation), and
+    the docs text outranks the OAS. Both names denote
     the SAME wire shape — the six-property commit-wire PARTIAL
     UpdateVersion.yaml declares — so admitting ORIGINAL_VERSION names the
     class the member BECOMES, never a licence to post a complete RM
