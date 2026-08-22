@@ -47,6 +47,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The COMPOSITION and EHR_STATUS resource reads now refuse a `uid_based_id`
+  of another RM kind with `404`, as the REST specification requires — an
+  EHR_STATUS id addressed on the composition route (or vice versa) previously
+  answered `200` with the other kind's body. Every kind-scoped read
+  (latest, at-version, at-time, revision history, and the directory family)
+  now discriminates the stored kind beside the owning EHR.
 - Importing an EHR Extract that advances an already-held BRANCH lineage (a
   later branch version arriving while the stored branch head is still open)
   now lands as an append: the stored tip is superseded and the new version

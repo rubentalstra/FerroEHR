@@ -852,6 +852,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-status_uid_kind_mismatch",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_composition_at_version-xml",
       "format": "canonical-xml",
       "status": "passed",
@@ -5092,6 +5098,12 @@
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status_at_version-addressed_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_ehr_status_at_version-composition_uid_kind_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

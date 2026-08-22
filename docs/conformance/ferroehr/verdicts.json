@@ -241,7 +241,7 @@
     [
       "EhrStatus",
       {
-        "passed": 44,
+        "passed": 45,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 59,
+        "passed": 60,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1089,
-    "driven": 1051,
-    "passed": 1051,
+    "selected": 1091,
+    "driven": 1053,
+    "passed": 1053,
     "failed": 0,
     "inconclusive": 0
   }

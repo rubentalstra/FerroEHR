@@ -140,7 +140,7 @@ impl FerroEhrService {
             Some(v) => read_version(&self.pool, self.spec_profile, vo_id, v).await?,
             None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == Some(ehr_id))
+        .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Composition)
         .ok_or_else(|| {
             ServiceError::sm(
                 CallStatusType::CompositionDoesNotExist,
@@ -169,7 +169,7 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = version_at(&self.pool, self.spec_profile, vo_id, at)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Composition)
             .ok_or_else(|| {
                 ServiceError::sm(
                     CallStatusType::CompositionDoesNotExist,
@@ -245,7 +245,7 @@ impl FerroEhrService {
     ) -> Result<Value, ServiceError> {
         let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Composition)
             .ok_or_else(|| {
                 ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,
@@ -273,7 +273,7 @@ impl FerroEhrService {
             Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
             None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == Some(ehr_id))
+        .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Composition)
         .ok_or_else(|| {
             ServiceError::sm(
                 CallStatusType::ObjectVersionDoesNotExist,
