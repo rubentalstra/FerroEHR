@@ -7,9 +7,21 @@
 #
 # Same two-target shape as docker/Dockerfile (docs.docker.com/build/building/multi-stage):
 #
-#   runtime-from-source  compose/local — cargo-chef cooks the workspace deps,
-#                         then `cargo leptos build --release` reuses the compiled
-#                         target and adds only the console's own crates + WASM.
+#   runtime-from-source  compose/local — one builder RUN under a persistent
+#                         BuildKit cache mount on /app/target (the official
+#                         Rust caching pattern, docs.docker.com/guides/rust/
+#                         develop — cache mounts for target + registry), so a
+#                         rebuild recompiles only what changed. cargo-chef was
+#                         removed here for the same reason docker/Dockerfile
+#                         dropped it (#2530): its own README documents that
+#                         WORKSPACE member crates cannot survive the COPY
+#                         boundary (timestamp fingerprinting), so every source
+#                         change recompiled the whole dependency graph anyway.
+#                         The mount path is the SAME as the server image's, so
+#                         the one workspace's artifacts are shared across both
+#                         image builds and `sharing=locked` serializes their
+#                         cargo phases — bounding peak memory when compose
+#                         builds both images at once.
 #   runtime-prebuilt     CI — COPY-only packaging of a context-provided native
 #                         binary (bin/${TARGETARCH}/ferroehr-admin-ui) + the
 #                         arch-independent site bundle (site/); no RUN, no QEMU.
@@ -24,28 +36,16 @@
 # prebuilt path the CI workflows use.
 
 ARG RUST_VERSION=1.97.1
-ARG CARGO_CHEF_VERSION=0.1.77
 ARG CARGO_LEPTOS_VERSION=0.3.7
 ARG WASM_BINDGEN_VERSION=0.2.126
 ARG TAILWIND_VERSION=v4.3.3
 
-# ── chef: builder toolchain + cargo-chef (cached base for planner/builder) ─────
+# ── builder: toolchain + prebuilt tools, then cargo-leptos under the cache ─────
 # Digest-pinned rust:1.97.1-slim-trixie (Debian 13, glibc 2.41), resolved
 # 2026-07-24 — same base + rationale as docker/Dockerfile
 # (docs.docker.com/build/building/best-practices — pin by digest).
-FROM rust:${RUST_VERSION}-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS chef
-ARG CARGO_CHEF_VERSION
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo install cargo-chef --version ${CARGO_CHEF_VERSION} --locked
+FROM rust:${RUST_VERSION}-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS builder
 WORKDIR /app
-
-# ── planner: distil the dependency recipe from the workspace manifests ─────────
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# ── builder: tools + cooked deps (cached), then cargo-leptos build ─────────────
-FROM chef AS builder
 ARG CARGO_LEPTOS_VERSION
 ARG WASM_BINDGEN_VERSION
 ARG TAILWIND_VERSION
@@ -89,24 +89,28 @@ RUN --mount=type=cache,target=/opt/tool-cache,sharing=locked \
     install -m0755 "$cache/cargo-leptos-${CARGO_LEPTOS_VERSION}" /usr/local/bin/cargo-leptos; \
     install -m0755 "$cache/wasm-bindgen-${WASM_BINDGEN_VERSION}" /usr/local/bin/wasm-bindgen; \
     install -m0755 "$cache/tailwindcss-${TAILWIND_VERSION}" /usr/local/bin/tailwindcss
-COPY --from=planner /app/recipe.json recipe.json
-# Cook the console's server-side (ssr) dependency graph into a cache-hittable
-# image layer (same rationale as docker/Dockerfile: no target cache mount so the
-# cooked deps materialise in the layer and export via the GHA backend). The
-# WASM/hydrate deps are the smaller share and compile in the leptos build below.
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo chef cook --release --locked --no-default-features --features ssr \
-      -p ferroehr-admin-ui --recipe-path recipe.json
 COPY . .
 # The console has no provenance build.rs, so it carries no compile-time SHA env;
 # its image provenance is the OCI-standard REVISION LABEL on the shared runtime
 # stage below (docs.docker.com/build/building/best-practices).
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
+# Serial-compile escape hatch for memory-constrained hosts, same knob as
+# docker/Dockerfile (cargo reads CARGO_BUILD_JOBS from the environment —
+# doc.rust-lang.org/cargo/reference/environment-variables.html).
+ARG CARGO_BUILD_JOBS=2
+ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
 # `cargo leptos` reads its configuration from the console crate's own manifest
 # directory, so the build runs from there — as a WORKDIR rather than a `cd`
 # inside RUN, which would silently not apply to any later instruction.
 WORKDIR /app/app/ferroehr-admin-ui
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+# The build and the copy-out share ONE RUN because /app/target is a MOUNT: it
+# exists only while a RUN that declares it executes, so artifacts must be
+# copied into the image filesystem before the instruction ends
+# (docs.docker.com/guides/rust/develop — the same shape as docker/Dockerfile).
+# `sharing=locked` serializes every cargo build over the one workspace cache —
+# including the server image's, when compose builds both images at once.
+RUN --mount=type=cache,target=/app/target,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     cargo leptos build --release \
     && mkdir -p /out \
     && cp /app/target/release/ferroehr-admin-ui /out/ \

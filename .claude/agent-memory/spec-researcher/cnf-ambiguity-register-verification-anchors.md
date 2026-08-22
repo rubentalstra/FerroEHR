@@ -377,3 +377,41 @@ always re-read the cited file rather than trusting the entry.
   same `report_only`, same handling. Upstream **#1677 and #1749 are duplicate reports
   of one defect**. AMB-189 is the richer survivor (it alone cites §Distributed
   Versioning L240 — the spec MANDATING the shape its own invariant forbids).
+
+## Two traps that manufacture FALSE outbound reports (verified 2026-08-22)
+- **RFC 2119 is declared in EXACTLY ONE vendored component.**
+  `ITS-REST/specifications/docs/overview/Preface.md` **L41-43** binds the keyword
+  set "when, and only when, they appear in all capitals". Case-insensitive grep
+  for `rfc 2119|rfc2119` over the whole vendored tree hits ONLY that file + the
+  3 `computable/OAS/overview-*.openapi.yaml` copies. **BASE / RM / AM / QUERY /
+  SM / CNF declare no conformance vocabulary at all** — so a lowercase "should"
+  in BASE or RM is NOT an RFC-2119 SHOULD, and writing it as "SHOULD" in an
+  outbound report imports normative force the released text never claims (an easy
+  upstream deflection). Quote the sentence with its own casing.
+- **A `<<_anchor,...>>` xref may resolve OUTSIDE the chapter, into an
+  `include::`d external artifact.** Before calling a cited rule/name "dangling",
+  locate the anchor's OWNING section (`grep -n "^=\+ " <chapter>` + grep the
+  whole component for the anchor id) and check whether that section is an
+  include of an unvendored file — the vendored docs tree can be silent while the
+  published document resolves fine. Worked example (and the exact false report it
+  produced): [[adl2-cadl-primitive-types-location]] §NOT a dangling reference.
+
+## ITS-REST response-file census anchors (verified 2026-08-22)
+Use these instead of re-listing: **12** `responses/201_*.yaml` — `201_EHR.yaml` is
+the ONLY one omitting the `Prefer`-minimal empty-body sentence (the other **11**
+carry it verbatim) and also the only 201 with NO `Content-Type` header. **15**
+`responses/200_*updated*.yaml` = 7 `*_ItemTagList_updated` (each BYTE-IDENTICAL to
+its `_retrieved` sibling, so it says "successfully retrieved" on a PUT and never
+mentions `Prefer`, though all 7 tag PUT ops DO declare the `Prefer` parameter) +
+8 real update responses (all 8 carry the `Prefer` sentence). `responses/404.yaml`
+keys 404 on "the request parameters", and the 5 party-create paths
+(`/demographic/{person,agent,group,organisation,role}`) declare NO path parameter
+while their ops declare `'404': ../responses/404.yaml` (L32-33 of each). Only
+TWO operationIds in the release end `.yaml` (`definition_query_{,version_}store`,
+propagated into the 3 `definition-*.openapi.yaml` bundles) out of 95 distinct
+operationIds across 97 operation files. FOUR untyped `type: array`/`items: {type:
+object}` placeholders exist, not one: `schemas/demographic/See{Capability,Contact,
+PartyIdentity,PartyRelationship}.yaml` — declared as components in BOTH
+`demographic.openapi.yaml` (L217-224) and `definition.openapi.yaml` (L115-122),
+`$ref`d by no operation or schema, and shadowed by a properly typed
+`schemas/demographic/PartyRelationship.yaml`.

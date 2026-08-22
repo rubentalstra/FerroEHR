@@ -14,9 +14,21 @@ metadata:
   timezone table L898-906; L854 "no way to state that timezone information be
   _prohibited_"; L910 absence=optional.
 - §"Duration Constraints" → "Patterns" L934-953.
-- Base Lexer rules L1415-1424: `V_ISO8601_{DATE,TIME,DATE_TIME,DURATION}_CONSTRAINT_PATTERN`.
-  Duration pattern letters = `P[yY]?[mM]?[wW]?[dD]?T[hH]?[mM]?[sS]?` | `P[yY]?[mM]?[wW]?[dD]?`
-  (NO fractional-second slot; TIME pattern ends at `[sS?X][sS?X]`, NO ms slot).
+- **CORRECTED 2026-08-22 — L1415-1424 is NOT the "Base Lexer"**: those
+  `V_ISO8601_{DATE,TIME,DATE_TIME,DURATION}_CONSTRAINT_PATTERN` entries live in
+  master05-cadl.adoc's OWN `== Syntax Specification` (L1024) -> `=== Grammar`
+  (L1028) / `=== Symbols` (L1283), which L1026 states is the **legacy lex/yacc
+  (Eiffel ADL Workbench) specification**, a different formalism. The chapter has
+  NO section titled "Base Lexer" and no `[[_base_lexer]]` anchor (grep = 0).
+  The `<<_base_lexer,...>>` xrefs at L856/L938 resolve to
+  `ADL1.4/masterAppC-syntax_spec.adoc` **L60 `== Base Lexer`** ->
+  `include::{grammar_dir}/adl/base_lexer.g4[]` (L66). That grammar DEFINES the
+  unprefixed `DATE_/TIME_/DATE_TIME_CONSTRAINT_PATTERN` (base_lexer.g4 L35-37)
+  and `DURATION_CONSTRAINT_PATTERN` (L47) — so the prose citations are NOT
+  dangling. See [[adl2-cadl-primitive-types-location]] + [[lexical-layer-per-language-location]].
+  Pattern letters (from the .g4, matching the legacy listing): duration
+  `P[yY]?[mM]?[Ww]?[dD]?('T'[hH]?[mM]?[sS]?)?` (NO fractional-second slot);
+  TIME ends at SECOND_PATTERN + optional TZ_PATTERN, NO ms slot.
 
 ## CRUCIAL syntax-vs-object-model divergence (adjudication point)
 The ADL1.4 *pattern syntax* cannot express milliseconds, timezone-prohibited,

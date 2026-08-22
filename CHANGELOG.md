@@ -17,6 +17,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: a full **Demographics** section — a per-kind party browser
+  and editor for all five party kinds (people, organisations, groups, agents,
+  roles) with create, view, verbatim-merge update and logical delete;
+  versioned-party history with time-travel; a relationships index and detail
+  (both linked ends, edit, history, delete) plus a relationships tab on every
+  party; demographic tag editing per party and a repository-wide tag index;
+  and a demographic contribution viewer. The openEHR demographic API is
+  published in the development state within the implemented REST release, and
+  the section's book page says so.
+
 - FHIR mapping dry run: `POST /fhir/r4/{resource_type}/$validate` (the HL7
   FHIR R4 validation-operation convention) runs the whole ingest pipeline —
   mapping resolution, the FLAT build, the provenance stamp, and the same

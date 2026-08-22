@@ -8,6 +8,7 @@
 pub mod audit;
 pub mod composition;
 pub mod dashboard;
+pub mod demographics;
 pub mod ehr_detail;
 pub mod ehrs;
 pub mod login;

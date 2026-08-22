@@ -12,6 +12,7 @@ mod e2e_audit;
 mod e2e_browse;
 mod e2e_chart;
 mod e2e_composition;
+mod e2e_demographics;
 mod e2e_directory;
 mod e2e_docs_shots;
 mod e2e_ehr_ops;
