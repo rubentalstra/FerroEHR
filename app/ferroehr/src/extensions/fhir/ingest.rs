@@ -266,6 +266,14 @@ impl FerroEhrService {
     ) -> Result<Value, SmError> {
         let scope = self.resolve_patient_scope(patient).await?;
         let mut entries: Vec<Value> = Vec::new();
+        // One entry per COMPOSITION, never per mapping: two enabled mappings
+        // sharing a template would otherwise serve the same versioned object
+        // twice under one fullUrl, which HL7 FHIR R4 bundle.html `bdl-7`
+        // forbids ("FullUrl must be unique in a bundle"). Definitions iterate
+        // in the ingest disposition's own precedence (profiled first, then
+        // id — `enabled_definitions_for_type`), so the mapping that wins a
+        // composition is the one ingest would have picked.
+        let mut seen: std::collections::HashSet<VoId> = std::collections::HashSet::new();
         for raw in self.enabled_definitions_for_type(resource_type).await? {
             let def: FhirMappingDefinition = serde_json::from_value(raw)
                 .map_err(|e| internal_fault("read a stored FHIR mapping definition", &e))?;
@@ -305,6 +313,9 @@ impl FerroEhrService {
                 ) else {
                     continue;
                 };
+                if seen.contains(&vo_id) {
+                    continue;
+                }
                 let Some(read) = crate::versioning::read::read_version_by_ordinal(
                     &self.pool,
                     self.spec_profile,
@@ -320,6 +331,7 @@ impl FerroEhrService {
                 if read.canonical.is_null() || !read.canonical.is_object() {
                     continue;
                 }
+                seen.insert(vo_id);
                 let mut fhir = ferroehr_ext::fhir::reverse::to_fhir(
                     resource_type,
                     &read.canonical,
