@@ -55,9 +55,8 @@ use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 use crate::pages::demographics::party::fact_row;
-use crate::pages::demographics::{
-    DemographicResource, PartyKind, container_uid_of, party_href, relationship_href,
-};
+use crate::pages::demographics::{DemographicResource, PartyKind, party_href, relationship_href};
+use crate::uid::container_uid_of;
 
 /// The noun phrase every relationship write-failure toast is built around.
 const RELATIONSHIP_OBJECT: &str = "this relationship";

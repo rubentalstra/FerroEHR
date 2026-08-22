@@ -41,7 +41,8 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 use crate::pages::demographics::party::fact_row;
-use crate::pages::demographics::{PartyKind, container_uid_of, party_href, relationship_href};
+use crate::pages::demographics::{PartyKind, party_href, relationship_href};
+use crate::uid::container_uid_of;
 
 /// One version a CONTRIBUTION changed, as its `OBJECT_REF` carries it.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

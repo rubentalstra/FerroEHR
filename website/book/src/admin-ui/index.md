@@ -152,8 +152,8 @@ bearer tokens never reach the browser.
   [Templates & EHR browsing](browsing.md).
 - **Queries** — the point-and-click Query Builder, the raw AQL editor, and
   stored-query management. See [Dashboard & queries](queries.md).
-- **EHRs** — browse EHRs, folders, compositions, and version history. See
-  [Templates & EHR browsing](browsing.md).
+- **EHRs** — browse EHRs, folders, compositions, version history, and the
+  item tags on any of them. See [Templates & EHR browsing](browsing.md).
 - **Audit log** — browse the CDR's ATNA security audit trail (see below).
 - **System** — CDR status, the openEHR **conformance manifest** (what the
   server advertises about itself through the System API: product, vendor,
