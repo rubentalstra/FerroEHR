@@ -709,7 +709,7 @@ pub fn ambiguity_register_schema() -> Value {
             "required": ["ambiguity", "source", "handling", "disposition"],
             "properties": {
                 "ambiguity": { "type": "string", "minLength": 1 },
-                "source": { "type": "string", "minLength": 1 },
+                "source": { "type": "string", "minLength": 1, "description": "Where the silence/divergence was verified. Convention (machine-gated by the validate spec-ref check, issue #2545): the field splits into `;`/` + ` fragments; every fragment opening with a spec component token (RM, BASE, AM, QUERY, TERM, LANG, SM, CNF, ITS-REST, ITS-XML, ITS-JSON) is a citation clause and must machine-resolve against the vendored trees (document + § sections; {a,b} brace shorthands expand and every variant must resolve); any other fragment is adjudication prose and passes. A source with no citation clause at all fails — a silence claim must ground on at least one resolvable citation." },
                 "handling": { "type": "string", "minLength": 1 },
                 "disposition": { "enum": tokens(Disposition::ALL) },
                 "options": { "type": "array", "items": { "type": "string", "pattern": OPTION_TAG_PATTERN } },
