@@ -70,6 +70,17 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   `scopes_supported` as plain chips: that is an advertisement of supported
   strings, not a grant this session holds — if it ever explains them, it uses
   this kit and never a second parser.
+- **Every terminology lookup goes through ONE reader — `crate::terminology`**: the
+  six session-guarded `#[server]` fns over the CDR's terminology surface, plus the
+  pure, unit-tested flatteners their answers pass through (`TermRow::rubric` is the
+  single `code — text` spelling). Both consumers read it — the `/terminology`
+  browser screen and the query builder's coded-criterion picker — so a term looks
+  the same wherever it appears. The surface is CONFIG-GATED on the CDR side
+  (`[terminology] api_enabled`, off by default) and answers `404` as if unmounted,
+  which is the same `404` an unknown terminology/code/value set produces: every
+  read returns `Ok(None)` for it and the screen renders the absence it means
+  (the browser's whole-screen disabled card; a silently optionless datalist in the
+  builder). Never add a second terminology client.
 - **Every events-per-day chart comes from ONE kit — `components::activity_chart`
   over `crate::activity::bucket_by_day`**: the dashboard's commit trend and an
   EHR's contribution timeline are the same chart, the day-bucketing is a pure

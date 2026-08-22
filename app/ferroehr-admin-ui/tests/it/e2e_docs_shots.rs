@@ -253,6 +253,25 @@ async fn capture_documentation_screenshots() {
         Some("#party-lookup"),
     )
     .await;
+    // The terminology browser, with a terminology already selected so the
+    // descriptor card has content. The surface is config-gated on the CDR side
+    // (`[terminology] api_enabled`), and a stack that serves it disabled renders
+    // one empty-state card — which is not what this page documents, so the
+    // capture is skipped with a reason rather than publishing the wrong screen.
+    h.goto("/terminology?terminology=openehr").await;
+    h.wait_css("footer").await;
+    if h.driver
+        .find(By::Css("#terminology-descriptor"))
+        .await
+        .is_ok()
+    {
+        shot_to(&h, &dir, "terminology/terminology").await;
+    } else {
+        println!(
+            "SKIP docs-shots: terminology not captured — the CDR under test serves \
+             [terminology] api_enabled = false"
+        );
+    }
     capture(&h, &dir, "/system", "system/system", None).await;
 
     // The operations panel: the base view (dependency health, build provenance,

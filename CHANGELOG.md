@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: a **Terminology** section — browse the terminologies the CDR
+  serves, define a code, test subsumption, and expand or validate a value
+  set — plus a terminology-aware code picker on the query builder's coded
+  criterion: the terminology field offers the served ids, a code can be
+  looked up (rendered `code — term`) or pulled from a value-set expansion,
+  and free-text entry keeps working for terminologies the server does not
+  host. The read-only terminology extension API is now enabled in the dev
+  compose stack's configuration so these screens work out of the box.
+
 - Admin console: the openEHR **item-tag** surfaces — a tag panel on the
   composition viewer (following the version the viewer shows) and on the EHR
   detail's Status tab (the versioned container, so tags survive new

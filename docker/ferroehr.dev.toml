@@ -74,6 +74,13 @@ allow_insecure_issuer = true
 audiences = ["ferroehr"]
 algorithms = ["RS256"]
 
+# The read-only terminology extension API (six GETs over the in-process
+# openEHR vocabulary bundle) is ON in the dev stack so the admin console's
+# terminology browser and code picker work out of the box. Off by default in
+# a bare deployment; this flag only mounts reads, never a provider.
+[terminology]
+api_enabled = true
+
 # External terminology servers for the `terminology` compose profile —
 # DISABLED here and switched on only by an overlay
 # (docker/sut-terminology.yml), so the plain quickstart is byte-identical to a

@@ -154,6 +154,12 @@ bearer tokens never reach the browser.
   stored-query management. See [Dashboard & queries](queries.md).
 - **EHRs** — browse EHRs, folders, compositions, version history, and the
   item tags on any of them. See [Templates & EHR browsing](browsing.md).
+- **Demographics** — browse and edit the five demographic party kinds, their
+  relationships, version history, and tags. See
+  [Demographics](demographics.md).
+- **Terminology** — browse the terminologies the CDR serves, define a code,
+  expand a value set, and test membership or subsumption. See
+  [Terminology](terminology.md).
 - **Audit log** — browse the CDR's ATNA security audit trail (see below).
 - **System** — CDR status, the openEHR **conformance manifest** (what the
   server advertises about itself through the System API: product, vendor,
