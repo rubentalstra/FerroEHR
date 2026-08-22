@@ -49,6 +49,11 @@ services:
       target: runtime-from-source
       args:
         REVISION: ${REVISION:-}
+        # Serial compile for memory-constrained hosts (the docker/Dockerfile
+        # ARG; docker/sut-ferroehr.yml forwards it the same way). A crate
+        # version bump makes the next build cold for every bumped crate, and
+        # two heavy crate compiles at once can OOM the Docker VM.
+        CARGO_BUILD_JOBS: ${CARGO_BUILD_JOBS:-2}
     environment:
       # The openEHR generation set (development | stable) — a from-source dev
       # knob (the pull-only quickstart carries no such env: its pinned released

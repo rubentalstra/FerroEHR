@@ -406,6 +406,15 @@ jobs:
           shared-key: containers-admin-ui-${{ matrix.platform }}
 
       - name: Build the ssr server binary (release, native)
+        # LEPTOS_OUTPUT_NAME must be in the COMPILER's environment: leptos's
+        # HydrationScripts reads it via option_env! and appends `_bg` to the
+        # wasm file name it renders when absent (leptos-0.8 hydration/mod.rs),
+        # while cargo-leptos names the shipped file `<output>.wasm` — a binary
+        # built without it 404s its own wasm and never hydrates (found live on
+        # the published 3.20.0 image, #2164). cargo-leptos exports it for the
+        # from-source Dockerfile path; this plain cargo build must match.
+        env:
+          LEPTOS_OUTPUT_NAME: ferroehr-admin-ui
         run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-admin-ui
 
       - name: Strip
@@ -465,6 +474,8 @@ jobs:
       id-token: write # Sigstore, for the signed attestations
       attestations: write # store them against this repository
     needs: admin-ui-binary
+    outputs:
+      digest: ${{ steps.build_admin_ui.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -709,6 +720,65 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           trivy-config: trivy.yaml
+
+  # The pushed CONSOLE artifact is assembled from two jobs (the per-arch ssr
+  # binary + the once-built site bundle), so its one novel failure class is
+  # ASSEMBLY: a binary and a site tree that disagree. The from-source e2e
+  # battery (ci.yml) never sees the assembled artifact — which is exactly how
+  # a console whose pages 404 their own wasm published green (issue #2550,
+  # found live on the 3.20.0 image during #2164). This smoke drives the very
+  # image this run pushed: every asset the served page references must exist
+  # in the artifact that serves it.
+  admin-ui-smoke:
+    name: admin-ui asset-chain smoke (amd64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read # pull the image this run just pushed
+    needs: admin-ui-image
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull pushed console image (by digest)
+        env:
+          DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+        run: |
+          docker pull "${ADMIN_UI_IMAGE}@${DIGEST}"
+          docker tag  "${ADMIN_UI_IMAGE}@${DIGEST}" ferroehr-admin-ui:smoke
+
+      - name: Serve and verify the asset chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A dummy CDR base URL: the login page renders without a CDR.
+          docker run -d --rm --name adminui-smoke -p 127.0.0.1:3000:3000 \
+            -e FERROEHR_ADMIN__CDR__BASE_URL=http://127.0.0.1:9 \
+            ferroehr-admin-ui:smoke
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:3000/login && break
+            sleep 1
+            [ "$i" = 30 ] && { echo "console never served /login"; docker logs adminui-smoke; exit 1; }
+          done
+          html=$(curl -sf http://127.0.0.1:3000/login)
+          # Every /pkg/ asset the page references (script srcs, stylesheet and
+          # preload hrefs — the wasm preload among them) must exist in the
+          # artifact serving the page.
+          assets=$(printf '%s' "$html" | grep -oE '(href|src)="/pkg/[^"]+"' | sed -E 's/^(href|src)="//; s/"$//' | sort -u)
+          [ -n "$assets" ] || { echo "the served page references no /pkg/ assets — the shell changed shape; update this smoke"; exit 1; }
+          echo "$assets"
+          fail=0
+          while IFS= read -r a; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000$a")
+            echo "$a -> $code"
+            [ "$code" = "200" ] || fail=1
+          done <<< "$assets"
+          docker stop adminui-smoke >/dev/null
+          [ "$fail" = 0 ] || { echo "the pushed console image references assets it does not ship (#2550)"; exit 1; }
 
   smoke:
     name: compose smoke (amd64)
