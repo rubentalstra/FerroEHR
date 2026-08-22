@@ -2804,6 +2804,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_ADL14.list_opts-version_exact_axis",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.list_opts-version_no_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.list_opts-version_star_all_versions",
       "status": "passed",
       "rows_driven": 1,
@@ -3027,7 +3039,31 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_ADL2.list_opts-absent_version_latest_only",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL2.list_opts-non_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.list_opts-version_exact_axis",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.list_opts-version_prefix_glob",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.list_opts-version_star_all_versions",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

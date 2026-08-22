@@ -1,0 +1,33 @@
+# The explicit-`version` branch with the OAS's own glob shape: `version=1.*`
+# returns every family member whose release_version starts `1.` — "Filter by
+# version (e.g. `1.2.*` …), taken from `template_id`" (the RELEASED OAS
+# grounds docs-text silence, cited AS the OAS:
+# specifications/parameters/query/filter_version.yaml). The pre-#2567
+# implementation could not match this documented example shape at all.
+id: I_DEFINITION_ADL2.list_opts-version_prefix_glob
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.list_opts
+capabilities: [Adl2OptProvisioning]
+profiles: [OPTIONS]
+test_purpose: >-
+  Listing ADL2 OPTs with a version prefix glob returns every member of the
+  matching release line.
+description: "list ADL2 OPTs with `version=1.*` — both 1.x members"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.list_opts"
+  - "ITS-REST OAS parameters/query/filter_version.yaml (docs-text-silent ground): \"e.g. `1.2.*`\""
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.adl2.opt.versioned_v100, cnf.adl2.opt.versioned_v110]
+data_sets: [cnf.adl2.opt.versioned_v100, cnf.adl2.opt.versioned_v110]
+flow:
+  - step: 1
+    call: list_opts
+    variant: filter_version
+    with: { version: "1.*" }
+    expect: ok
+    assert:
+      - { assert: returns, matches: "cnf_adl2_versioned\\.v1\\.0\\.0" }
+      - { assert: returns, matches: "cnf_adl2_versioned\\.v1\\.1\\.0" }
