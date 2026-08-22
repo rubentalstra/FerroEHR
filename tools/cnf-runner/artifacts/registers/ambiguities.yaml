@@ -1031,7 +1031,7 @@ AMB-44:
     designators only). The affected DV_TIME/interval-of-time cases tag
     this entry. Flips back if a future BASE release admits the T-prefixed
     time form.
-  disposition: fixed_handling
+  disposition: editorial
   upstream_issue: 1503
 AMB-45:
   ambiguity: >-
@@ -7986,7 +7986,7 @@ AMB-180:
     containment predicate neither source defines. The refusals that ARE pinned
     (empty list, non-`DV_EHR_URI` member) trace to the invariant and the
     attribute type, not to the disputed sentence.
-  disposition: editorial
+  disposition: fixed_handling
   upstream_issue: 1634
 
 AMB-181:

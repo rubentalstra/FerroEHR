@@ -711,7 +711,7 @@ pub fn ambiguity_register_schema() -> Value {
                 "ambiguity": { "type": "string", "minLength": 1 },
                 "source": { "type": "string", "minLength": 1, "description": "Where the silence/divergence was verified. Convention (machine-gated by the validate spec-ref check, issue #2545): the field splits into `;`/` + ` fragments; every fragment opening with a spec component token (RM, BASE, AM, QUERY, TERM, LANG, SM, CNF, ITS-REST, ITS-XML, ITS-JSON) is a citation clause and must machine-resolve against the vendored trees (document + § sections; {a,b} brace shorthands expand and every variant must resolve); any other fragment is adjudication prose and passes. A source with no citation clause at all fails — a silence claim must ground on at least one resolvable citation." },
                 "handling": { "type": "string", "minLength": 1 },
-                "disposition": { "enum": tokens(Disposition::ALL) },
+                "disposition": { "enum": tokens(Disposition::ALL), "description": "The machine-readable handling class. The fixed_handling/editorial boundary (issue #2546) is one question — did the entry CHOOSE anything? editorial = a wording/typography defect with zero behavioural latitude (the corrected reading is forced by the surrounding released text); fixed_handling = real latitude existed and the entry pins this catalogue's choice. Neither changes gating; report_only and editorial additionally require an upstream_issue." },
                 "options": { "type": "array", "items": { "type": "string", "pattern": OPTION_TAG_PATTERN } },
                 "upstream_issue": { "type": "integer", "minimum": 1 }
             },
