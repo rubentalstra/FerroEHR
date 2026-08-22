@@ -184,10 +184,15 @@ pub fn assemble<S: std::hash::BuildHasher>(
     }
 
     let config = match builder.build() {
-        Ok(built) => match built.try_deserialize::<FerroEhrConfig>() {
+        // `serde_path_to_error` wraps the deserializer so a refusal names the
+        // SECTION PATH ("auth.oidc"), which plain serde errors do not carry —
+        // the ingredient that lets `enrich` attribute the right file line, or
+        // honestly say the key came from the environment (#2572).
+        Ok(built) => match serde_path_to_error::deserialize::<_, FerroEhrConfig>(built) {
             Ok(config) => Some(config),
             Err(e) => {
-                errors.push(enrich(&e.to_string(), file_content.as_deref()));
+                let path = e.path().to_string();
+                errors.push(enrich(&path, &e.to_string(), file_content.as_deref()));
                 None
             }
         },
@@ -224,20 +229,58 @@ fn env_source(map: HashMap<String, String>) -> Environment {
     env
 }
 
-/// Enrich a `config`/serde deserialize error: surface the offending key with a
-/// did-you-mean (from serde's "expected one of" list) and, when the value came
-/// from the file, its line number.
-fn enrich(err: &str, file: Option<&str>) -> ConfigError {
+/// Enrich a `config`/serde deserialize error: surface the offending key under
+/// its full section path with a did-you-mean (from serde's "expected one of"
+/// list), and attribute a file line only when the key is defined under THAT
+/// section — an env-sourced key is named as such instead of pointing the
+/// operator at an unrelated valid line (#2572).
+fn enrich(path: &str, err: &str, file: Option<&str>) -> ConfigError {
     let Some(field) = between(err, "unknown field `", "`") else {
         return ConfigError::new(format!("invalid configuration: {err}"));
+    };
+    let section = section_of(path);
+    let full = if section.is_empty() {
+        field.clone()
+    } else {
+        format!("{section}.{field}")
     };
     let candidates = expected_fields(err);
     let refs: Vec<&str> = candidates.iter().map(String::as_str).collect();
     let suggestion = strict::did_you_mean(&field, &refs);
-    let line = file.and_then(|c| find_key_line(c, &field));
-    let loc = line.map_or_else(String::new, |l| format!(" (line {l})"));
+    let line = file.and_then(|c| find_key_line_in_section(c, &section, &field));
+    let loc = line.map_or_else(
+        || {
+            let env_form = env_form_of(&section, &field);
+            format!(" (not in the configuration file — check the environment: {env_form})")
+        },
+        |l| format!(" (line {l})"),
+    );
     let hint = suggestion.map_or_else(String::new, |s| format!("; did you mean `{s}`?"));
-    ConfigError::new(format!("unknown configuration key `{field}`{loc}{hint}"))
+    ConfigError::new(format!("unknown configuration key `{full}`{loc}{hint}"))
+}
+
+/// The section half of a `serde_path_to_error` path: the path up to the failing
+/// struct, with array indices dropped (`auth.basic.users[0]` → the TOML header
+/// form `auth.basic.users`). `serde_path_to_error` reports the unknown FIELD in
+/// the message, so the path IS the section.
+fn section_of(path: &str) -> String {
+    path.split('.')
+        .map(|seg| seg.split_once('[').map_or(seg, |(name, _)| name))
+        .filter(|seg| !seg.is_empty())
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+/// The `FERROEHR__…` environment spelling of a section + field, so the
+/// not-in-file diagnostic tells the operator exactly which variable to check.
+fn env_form_of(section: &str, field: &str) -> String {
+    let mut parts: Vec<String> = section
+        .split('.')
+        .filter(|s| !s.is_empty())
+        .map(str::to_uppercase)
+        .collect();
+    parts.push(field.to_uppercase());
+    format!("FERROEHR__{}", parts.join("__"))
 }
 
 /// The substring between `start` and the next `end`, if present.
@@ -257,17 +300,36 @@ fn expected_fields(err: &str) -> Vec<String> {
         .collect()
 }
 
-/// The 1-based line in `content` where `key` is defined (a `key =` assignment or
-/// a `[..key..]` header), for `file:line` diagnostics.
-fn find_key_line(content: &str, key: &str) -> Option<usize> {
-    content.lines().enumerate().find_map(|(i, line)| {
+/// The 1-based line where `key` is assigned UNDER `section` (`[section]` or
+/// `[[section]]` headers; the empty section is the top of the file before any
+/// header), for `file:line` diagnostics. A bare name match anywhere else is
+/// exactly the misattribution #2572 fixed.
+fn find_key_line_in_section(content: &str, section: &str, key: &str) -> Option<usize> {
+    let mut current = String::new();
+    for (i, line) in content.lines().enumerate() {
         let trimmed = line.trim_start();
+        if let Some(header) = trimmed
+            .strip_prefix("[[")
+            .and_then(|r| r.split_once("]]"))
+            .map(|(h, _)| h)
+            .or_else(|| {
+                trimmed
+                    .strip_prefix('[')
+                    .and_then(|r| r.split_once(']'))
+                    .map(|(h, _)| h)
+            })
+        {
+            header.trim().clone_into(&mut current);
+            continue;
+        }
         let is_assign = trimmed
             .strip_prefix(key)
             .is_some_and(|r| r.trim_start().starts_with('='));
-        let is_header = trimmed.starts_with('[') && trimmed.contains(key);
-        (is_assign || is_header).then_some(i + 1)
-    })
+        if is_assign && current == section {
+            return Some(i + 1);
+        }
+    }
+    None
 }
 
 /// Resolve every `*_file` sibling into its `Secret`/string field immediately
@@ -425,4 +487,72 @@ fn read_trim(path: &Path) -> Result<String, ConfigError> {
     std::fs::read_to_string(path)
         .map(|s| s.trim_end_matches(['\r', '\n']).to_owned())
         .map_err(|e| ConfigError::new(format!("reading secret file {}: {e}", path.display())))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_env_sourced_unknown_key_names_its_section_and_the_variable() {
+        // #2572 regression: FERROEHR__AUTH__OIDC__ENABLED built a nested
+        // auth.oidc.enabled that OidcConfig rejects — the diagnostic must name
+        // the full path and the environment spelling, never a file line.
+        let env: HashMap<String, String> = [(
+            "FERROEHR__AUTH__OIDC__ENABLED".to_owned(),
+            "false".to_owned(),
+        )]
+        .into();
+        let err = assemble(None, &env, &[]).expect_err("the unknown key is refused");
+        let text = err.to_string();
+        assert!(
+            text.contains("auth.oidc.enabled"),
+            "the full section path is named: {text}"
+        );
+        assert!(
+            text.contains("FERROEHR__AUTH__OIDC__ENABLED"),
+            "the environment spelling is named: {text}"
+        );
+        assert!(!text.contains("(line "), "no file line exists: {text}");
+    }
+
+    #[test]
+    fn a_file_line_is_attributed_only_under_the_owning_section() {
+        // The misattribution twin: a bare `enabled =` exists earlier under
+        // [admin]; the offender lives under [auth.oidc] and must get ITS line.
+        let content =
+            "[admin]\nenabled = true\n\n[auth.oidc]\nissuer = \"https://x\"\nbogus_key = 1\n";
+        assert_eq!(
+            find_key_line_in_section(content, "auth.oidc", "bogus_key"),
+            Some(6)
+        );
+        assert_eq!(
+            find_key_line_in_section(content, "admin", "enabled"),
+            Some(2)
+        );
+        // The pre-fix behaviour: the bare name from the WRONG section.
+        assert_eq!(
+            find_key_line_in_section(content, "auth.oidc", "enabled"),
+            None
+        );
+    }
+
+    #[test]
+    fn sections_normalize_array_indices_and_env_forms_uppercase() {
+        assert_eq!(section_of("auth.basic.users[0]"), "auth.basic.users");
+        assert_eq!(section_of(""), "");
+        assert_eq!(
+            env_form_of("auth.oidc", "enabled"),
+            "FERROEHR__AUTH__OIDC__ENABLED"
+        );
+        assert_eq!(env_form_of("", "bogus"), "FERROEHR__BOGUS");
+    }
+
+    #[test]
+    fn the_did_you_mean_hint_survives_the_path_rewrite() {
+        let err = "unknown field `isser`, expected one of `issuer`, `audience`";
+        let text = enrich("auth.oidc", err, None).to_string();
+        assert!(text.contains("auth.oidc.isser"), "{text}");
+        assert!(text.contains("did you mean `issuer`?"), "{text}");
+    }
 }

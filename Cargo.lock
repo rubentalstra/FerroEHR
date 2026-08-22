@@ -2732,6 +2732,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
+ "serde_path_to_error",
  "sevenz-rust2",
  "sha2 0.11.0",
  "sqlx",
