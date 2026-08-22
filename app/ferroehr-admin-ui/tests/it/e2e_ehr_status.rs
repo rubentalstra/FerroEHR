@@ -133,9 +133,9 @@ async fn put_status(
         .send()
         .await
         .expect("commit an out-of-band EHR_STATUS version");
-    let status = response.status().as_u16();
+    let status = response.status();
     assert!(
-        status == 200 || status == 204,
+        status == http::StatusCode::OK || status == http::StatusCode::NO_CONTENT,
         "the out-of-band EHR_STATUS update must be accepted (got {status})"
     );
 }

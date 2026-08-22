@@ -350,7 +350,7 @@ pub async fn find_ehr_by_subject(
         .cdr
         .get(&session.credential, &url, "application/json")
         .await?;
-    if response.status == 404 {
+    if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(None);
     }
     let response = crate::cdr::CdrClient::expect_success(response)?;

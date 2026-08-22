@@ -290,7 +290,7 @@ pub async fn update_composition(
     // 412 Precondition Failed = a mid-air collision (the latest version moved
     // since this page loaded); give it a friendly prefix, the CDR diagnostic
     // appended verbatim.
-    if response.status == 412 {
+    if response.is(http::StatusCode::PRECONDITION_FAILED) {
         let detail = crate::cdr::CdrClient::expect_success(response)
             .err()
             .map(|e| e.to_string())

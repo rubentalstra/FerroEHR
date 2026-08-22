@@ -109,7 +109,7 @@ impl ManagementAvailability {
 /// gate asks about.
 #[must_use]
 pub fn availability_of_status(status: u16) -> ManagementAvailability {
-    if status == 404 {
+    if status == http::StatusCode::NOT_FOUND.as_u16() {
         ManagementAvailability::Disabled
     } else {
         ManagementAvailability::Available
@@ -245,7 +245,7 @@ pub async fn fetch_readiness() -> Result<ReadinessView, AdminUiError> {
     let state: crate::state::AppState = expect_context();
     let url = state.cdr.origin_url("health/readiness");
     let response = state.cdr.get_public(&url, "application/json").await?;
-    let body = if response.status == 503 {
+    let body = if response.is(http::StatusCode::SERVICE_UNAVAILABLE) {
         response.body
     } else {
         crate::cdr::CdrClient::expect_success(response)?.body
@@ -674,7 +674,7 @@ async fn management_get(path: &str) -> Result<Option<String>, AdminUiError> {
         .cdr
         .get(&session.credential, &url, "application/json")
         .await?;
-    if response.status == 404 {
+    if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(None);
     }
     Ok(Some(crate::cdr::CdrClient::expect_success(response)?.body))

@@ -50,12 +50,12 @@ pub async fn login_basic(
     // probe trivially passes, which is the dev posture.
     let url = state.cdr.rest_v1("definition/template/adl1.4");
     let probe = state.cdr.get(&credential, &url, "application/json").await?;
-    if probe.status == 401 {
+    if probe.is(http::StatusCode::UNAUTHORIZED) {
         return Err(AdminUiError::Invalid(
             "wrong username or password".to_owned(),
         ));
     }
-    if probe.status >= 500 {
+    if probe.status >= http::StatusCode::INTERNAL_SERVER_ERROR.as_u16() {
         return Err(AdminUiError::Cdr {
             status: probe.status,
             message: "CDR error while validating credentials".to_owned(),

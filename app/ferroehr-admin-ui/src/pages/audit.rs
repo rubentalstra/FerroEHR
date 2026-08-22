@@ -135,7 +135,7 @@ pub async fn search_audit(
         .cdr
         .get(&session.credential, &url, "application/fhir+json")
         .await?;
-    if response.status == 404 {
+    if response.is(http::StatusCode::NOT_FOUND) {
         // The local Audit Record Repository is disabled ([audit.store]) —
         // a rendered state, never an error.
         return Ok(AuditPage {
