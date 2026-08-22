@@ -343,11 +343,40 @@ impl CdrClient {
     }
 }
 
-/// Pull the human diagnostic out of an openEHR error body
-/// (`{"error": …, "message": …}` per ITS-REST), falling back to the raw
-/// body or the bare status.
+/// Pull the human diagnostic out of a refused body, whatever its vocabulary:
+/// the openEHR error shape (`{"error": …, "message": …}` per ITS-REST) or a
+/// FHIR `OperationOutcome` (the connector authors its refusals as outcomes —
+/// their `issue[].diagnostics` join into one line), falling back to the raw
+/// body or the bare status. ONE reader for both vocabularies, so no screen
+/// ever hands raw JSON to a toast (#2581).
 fn diagnostic_of(response: &CdrResponse) -> String {
     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&response.body) {
+        if value
+            .get("resourceType")
+            .and_then(serde_json::Value::as_str)
+            == Some("OperationOutcome")
+        {
+            let joined = value
+                .get("issue")
+                .and_then(serde_json::Value::as_array)
+                .map(|issues| {
+                    issues
+                        .iter()
+                        .filter_map(|issue| {
+                            issue
+                                .get("diagnostics")
+                                .or_else(|| issue.get("code"))
+                                .and_then(serde_json::Value::as_str)
+                                .filter(|text| !text.is_empty())
+                        })
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                })
+                .unwrap_or_default();
+            if !joined.is_empty() {
+                return joined;
+            }
+        }
         for key in ["message", "error"] {
             if let Some(text) = value.get(key).and_then(serde_json::Value::as_str) {
                 return text.to_owned();
@@ -374,6 +403,22 @@ mod tests {
             content_type: Some("application/json".to_owned()),
             body: body.to_owned(),
         }
+    }
+
+    #[test]
+    fn an_operation_outcome_refusal_yields_its_diagnostics_never_raw_json() {
+        // #2581: the shared reader speaks the FHIR refusal vocabulary too.
+        let response = CdrResponse {
+            status: 400,
+            content_type: Some("application/fhir+json".to_owned()),
+            body: r#"{"resourceType":"OperationOutcome","issue":[
+                {"severity":"error","code":"invalid","diagnostics":"missing field `template_id`"},
+                {"severity":"error","code":"structure"}]}"#
+                .to_owned(),
+        };
+        let text = diagnostic_of(&response);
+        assert_eq!(text, "missing field `template_id`; structure");
+        assert!(!text.contains("resourceType"), "never raw JSON: {text}");
     }
 
     #[test]
