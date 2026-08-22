@@ -50,10 +50,25 @@ use crate::error::AdminUiError;
 /// value both the toast and the inline bar read.
 type TemplateUploadAction = Action<String, Result<String, AdminUiError>>;
 
-/// The template-delete action: the id it was dispatched with, paired with the
-/// CDR's answer, so both the success and the failure toast can name the exact
-/// template (rules §6 — the action's value IS the mutation report).
-type TemplateDeleteAction = Action<String, (String, Result<(), AdminUiError>)>;
+/// The template-delete action: the target it was dispatched with, paired with
+/// the CDR's answer, so both the success and the failure toast can name the
+/// exact template (rules §6 — the action's value IS the mutation report).
+type TemplateDeleteAction = Action<DeleteTarget, (String, Result<(), AdminUiError>)>;
+
+/// Which template a delete addresses — the id, and the family that decides
+/// WHICH wire route removes it.
+///
+/// The family travels with the id rather than being read off the URL at
+/// confirm time: the row that opened the dialog is the one that knows its own
+/// family, so the confirmation copy and the dispatched route can never
+/// disagree with the row the reader clicked.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeleteTarget {
+    /// The archetype-model family the template belongs to.
+    pub family: TemplateFamily,
+    /// The `template_id` (ADL 1.4) or artefact HRID (ADL2) to remove.
+    pub template_id: String,
+}
 
 /// One row of the template list, distilled from the ITS-REST Definition list
 /// shape (`template_id` / `concept` / `created_timestamp`).
@@ -259,6 +274,43 @@ fn accepted_template_id(body: &str) -> String {
     body.trim().to_owned()
 }
 
+/// Delete one stored ADL2 artefact
+/// (`DELETE definition/artefact/adl2/{artefact_id}`).
+///
+/// The ADL2 store's templates are removed through the ARTEFACT resource, not
+/// through the Admin API's `admin/template/{template_id}` (which addresses the
+/// ADL 1.4 store alone): the route is the CDR's own extension realizing SM
+/// `I_DEFINITION_ADL2.delete_artefact`
+/// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`), whose
+/// `artefact_does_not_exist` error is the `404` — which is also the answer for
+/// a malformed HRID, since the store key is opaque. A template-kind artefact
+/// that committed versions still reference is refused `409` with the
+/// referencing count in the diagnostic, and that text surfaces verbatim
+/// through [`delete_failure_copy`](crate::admin::delete_failure_copy).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] for an empty id;
+/// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::CdrUnreachable`] from the CDR.
+#[server]
+pub async fn delete_adl2_artefact(
+    /// The AOM2 artefact HRID to remove.
+    artefact_id: String,
+) -> Result<(), AdminUiError> {
+    let session = crate::session::require_session().await?;
+    if artefact_id.trim().is_empty() {
+        return Err(AdminUiError::Invalid(
+            "no ADL2 artefact id to delete".to_owned(),
+        ));
+    }
+    let state: crate::state::AppState = expect_context();
+    let url = state.cdr.rest_v1(&crate::adl2::artefact_path(&artefact_id));
+    let response = state.cdr.delete(&session.credential, &url, &[]).await?;
+    crate::cdr::CdrClient::expect_success(response)?;
+    Ok(())
+}
+
 /// The Template Manager screen: the family switch, an upload affordance, a
 /// client-side filter, and the filterable template table.
 ///
@@ -272,13 +324,17 @@ fn accepted_template_id(body: &str) -> String {
 /// action's version, all of which are the list resource's source, refetching
 /// it.
 ///
-/// The per-row delete is admin-gated AND ADL 1.4-only: it renders when the
+/// The per-row delete is admin-gated and serves BOTH families, each over the
+/// route that actually removes its store: the Admin API's
+/// `DELETE admin/template/{template_id}` for ADL 1.4, and the artefact
+/// resource `DELETE definition/artefact/adl2/{artefact_id}` for ADL2
+/// ([`delete_adl2_artefact`]). The buttons render when the
 /// [`admin_gate`](crate::admin::admin_gate) probe finds the CDR advertising its
-/// Admin API (discover-and-hide — no admin group, no buttons), and the Admin
-/// API's `DELETE admin/template/{template_id}` addresses the ADL 1.4 store
-/// alone, so the ADL2 listing offers no delete rather than a button that
-/// always answers `404`. Whether the session may USE it is the CDR's
-/// per-request answer, surfaced as actionable copy on refusal.
+/// Admin API (discover-and-hide — no admin group, no buttons), which is the
+/// right gate for both: the ADL2 route is Admin-classed by the CDR's coarse
+/// RBAC even though it is not mounted under `/admin`. Whether the session may
+/// USE it is the CDR's per-request answer, surfaced as actionable copy on
+/// refusal.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -319,16 +375,21 @@ pub fn TemplatesPage() -> impl IntoView {
     // The admin probe, and the delete action it gates. Both live in setup so
     // the gated view can re-render without re-creating them (rules §4).
     let gate = crate::admin::admin_gate();
-    let delete: TemplateDeleteAction = Action::new(|template_id: &String| {
-        let template_id = template_id.clone();
+    let delete: TemplateDeleteAction = Action::new(|target: &DeleteTarget| {
+        let target = target.clone();
         async move {
-            let outcome = crate::admin::admin_delete_template(template_id.clone()).await;
-            (template_id, outcome)
+            let outcome = match target.family {
+                TemplateFamily::Adl14 => {
+                    crate::admin::admin_delete_template(target.template_id.clone()).await
+                }
+                TemplateFamily::Adl2 => delete_adl2_artefact(target.template_id.clone()).await,
+            };
+            (target.template_id, outcome)
         }
     });
     // The template awaiting confirmation in the modal (`None` = no dialog).
     // ONE dialog serves every row — the signal is both "which row" and "open".
-    let pending_delete = RwSignal::new(Option::<String>::None);
+    let pending_delete = RwSignal::new(Option::<DeleteTarget>::None);
     // The resource carries the family it fetched BESIDE the rows. That is not
     // decoration: reading the family signal inside the table's `Suspend` makes
     // the suspense re-run the instant the URL changes — disposing the mounted
@@ -578,19 +639,13 @@ fn adl2_upload_card(source: RwSignal<String>, upload: TemplateUploadAction) -> A
 /// is pending, which is also why it needs no admin gate of its own — only an
 /// admin-gated trigger can set the signal.
 fn delete_dialog(
-    pending_delete: RwSignal<Option<String>>,
+    pending_delete: RwSignal<Option<DeleteTarget>>,
     delete: TemplateDeleteAction,
 ) -> AnyView {
     let message = Signal::derive(move || {
         pending_delete
             .get()
-            .map_or_else(String::new, |template_id| {
-                format!(
-                    "Permanently delete the operational template “{template_id}” from the CDR? \
-                 This cannot be undone. The CDR refuses the delete while a committed version \
-                 still references the template."
-                )
-            })
+            .map_or_else(String::new, |target| delete_prompt(&target))
     });
     view! {
         <crate::components::confirm_dialog::ConfirmDialog
@@ -601,14 +656,38 @@ fn delete_dialog(
             confirm_id="template-delete-confirm"
             on_cancel=Callback::new(move |()| pending_delete.set(None))
             on_confirm=Callback::new(move |()| {
-                if let Some(template_id) = pending_delete.get_untracked() {
-                    delete.dispatch(template_id);
+                if let Some(target) = pending_delete.get_untracked() {
+                    drop(delete.dispatch(target));
                 }
                 pending_delete.set(None);
             })
         />
     }
     .into_any()
+}
+
+/// The confirmation copy for one delete target: what goes, and the one refusal
+/// the CDR can still answer with.
+///
+/// Each family names the object it actually removes — an ADL 1.4 delete takes
+/// the operational template out of the Admin API's template store, an ADL2
+/// delete takes the whole AOM2 artefact out of the definition store — and both
+/// state the never-orphan guard, which the CDR enforces over committed
+/// versions in either store.
+fn delete_prompt(target: &DeleteTarget) -> String {
+    let id = &target.template_id;
+    match target.family {
+        TemplateFamily::Adl14 => format!(
+            "Permanently delete the operational template “{id}” from the CDR? This cannot be \
+             undone. The CDR refuses the delete while a committed version still references the \
+             template."
+        ),
+        TemplateFamily::Adl2 => format!(
+            "Permanently delete the ADL 2 artefact “{id}” from the CDR's definition store? This \
+             cannot be undone, and the store keeps no version history of it. The CDR refuses the \
+             delete while a committed version still references the template."
+        ),
+    }
 }
 
 /// The upload trigger for the page-header action slot: a [`thaw::Upload`] whose
@@ -689,14 +768,13 @@ fn templates_table(
     list: Resource<(TemplateFamily, Result<Vec<TemplateRow>, AdminUiError>)>,
     gate: Resource<Result<AdminAvailability, AdminUiError>>,
     delete: TemplateDeleteAction,
-    pending_delete: RwSignal<Option<String>>,
+    pending_delete: RwSignal<Option<DeleteTarget>>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
-                let admin_api = crate::admin::renders_admin_ops(&gate.await);
+                let admin = crate::admin::renders_admin_ops(&gate.await);
                 let (family, rows) = list.await;
-                let admin = family == TemplateFamily::Adl14 && admin_api;
                 match rows {
                     Ok(rows) => {
                         rows_view(rows, filter, paging, admin, delete, pending_delete, family)
@@ -722,7 +800,7 @@ fn rows_view(
     paging: TablePaging,
     admin: bool,
     delete: TemplateDeleteAction,
-    pending_delete: RwSignal<Option<String>>,
+    pending_delete: RwSignal<Option<DeleteTarget>>,
     family: TemplateFamily,
 ) -> AnyView {
     if rows.is_empty() {
@@ -849,11 +927,11 @@ fn row_view(
     family: TemplateFamily,
     admin: bool,
     delete: TemplateDeleteAction,
-    pending_delete: RwSignal<Option<String>>,
+    pending_delete: RwSignal<Option<DeleteTarget>>,
 ) -> impl IntoView {
     let href = family_detail_href(family, &row.template_id);
     let action = if admin {
-        delete_cell(&row.template_id, delete, pending_delete)
+        delete_cell(family, &row.template_id, delete, pending_delete)
     } else {
         ().into_any()
     };
@@ -877,12 +955,16 @@ fn row_view(
 /// dialog owns the confirm). `data-template-delete` is the stable hook the E2E
 /// journeys select on.
 fn delete_cell(
+    family: TemplateFamily,
     template_id: &str,
     delete: TemplateDeleteAction,
-    pending_delete: RwSignal<Option<String>>,
+    pending_delete: RwSignal<Option<DeleteTarget>>,
 ) -> AnyView {
-    let id_for_click = template_id.to_owned();
-    let on_click = move |_| pending_delete.set(Some(id_for_click.clone()));
+    let target = DeleteTarget {
+        family,
+        template_id: template_id.to_owned(),
+    };
+    let on_click = move |_| pending_delete.set(Some(target.clone()));
     view! {
         <td class=format!("{CELL} text-right")>
             <button
@@ -917,6 +999,31 @@ mod tests {
             ),
             "/templates/adl2/openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"
         );
+    }
+
+    #[test]
+    fn each_family_confirms_the_delete_in_its_own_words() {
+        let opt = crate::pages::templates::delete_prompt(&crate::pages::templates::DeleteTarget {
+            family: TemplateFamily::Adl14,
+            template_id: "minimal_evaluation.en.v1".to_owned(),
+        });
+        assert!(opt.contains("operational template"), "{opt}");
+        assert!(opt.contains("minimal_evaluation.en.v1"), "{opt}");
+
+        let artefact =
+            crate::pages::templates::delete_prompt(&crate::pages::templates::DeleteTarget {
+                family: TemplateFamily::Adl2,
+                template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0".to_owned(),
+            });
+        assert!(artefact.contains("ADL 2 artefact"), "{artefact}");
+        assert!(
+            artefact.contains("openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"),
+            "{artefact}"
+        );
+        // Both name the never-orphan guard the CDR enforces on either store.
+        for copy in [&opt, &artefact] {
+            assert!(copy.contains("still references the template"), "{copy}");
+        }
     }
 
     #[test]

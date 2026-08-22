@@ -213,6 +213,27 @@ pub fn template_path(template_id: &str, version: Option<&str>) -> String {
     }
 }
 
+/// The ITS-REST path of one stored ADL2 ARTEFACT
+/// (`definition/artefact/adl2/{artefact_id}`).
+///
+/// The artefact resource addresses the whole AOM2 store — archetype, template
+/// or OPT — by the same HRID the template routes use, and it is the only route
+/// that DELETES one. NOTE: the released ITS-REST Definition API declares no
+/// artefact route at all, so this is the CDR's own extension realizing SM
+/// `I_DEFINITION_ADL2.delete_artefact`
+/// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`), whose
+/// `artefact_does_not_exist` error is the `404`.
+///
+/// The id is percent-encoded with the `urlencoding` crate (owner hard rule:
+/// never a hand-rolled codec) — an HRID is CDR-supplied text.
+#[must_use]
+pub fn artefact_path(artefact_id: &str) -> String {
+    format!(
+        "definition/artefact/adl2/{}",
+        urlencoding::encode(artefact_id)
+    )
+}
+
 /// The ITS-REST path of the CDR-generated example composition for one stored
 /// ADL2 template.
 ///
@@ -256,8 +277,8 @@ pub fn view_href(template_id: &str, tab: Adl2Tab, version: Option<&str>) -> Stri
 #[cfg(test)]
 mod tests {
     use crate::adl2::{
-        Adl2Tab, TemplateFamily, detail_href, example_path, family_versions, split_hrid,
-        template_path, view_href,
+        Adl2Tab, TemplateFamily, artefact_path, detail_href, example_path, family_versions,
+        split_hrid, template_path, view_href,
     };
 
     #[test]
@@ -360,6 +381,17 @@ mod tests {
             example_path("a b"),
             "definition/template/adl2/a%20b/example"
         );
+    }
+
+    #[test]
+    fn the_artefact_path_addresses_the_aom2_store_by_hrid() {
+        assert_eq!(
+            artefact_path("openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"),
+            "definition/artefact/adl2/openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"
+        );
+        // A slash would otherwise address a different resource entirely.
+        assert_eq!(artefact_path("a/b"), "definition/artefact/adl2/a%2Fb");
+        assert_eq!(artefact_path("a b#c"), "definition/artefact/adl2/a%20b%23c");
     }
 
     #[test]

@@ -36,9 +36,36 @@ use thirtyfour::prelude::*;
 /// detail screen is captured when the template is present on the stack.
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 
-/// The ADL2 artefact the `e2e_adl2` journeys upload; its detail screen is
-/// captured when the template is present on the stack.
+/// The ADL2 artefact whose detail screen is captured; this pass seeds it
+/// itself over the Definition API rather than relying on a journey's leftovers
+/// (the `e2e_adl2` scenes clean up after themselves).
 const ADL2_TEMPLATE_ID: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0";
+
+/// Store the ADL2 capture fixture, so the ADL2 detail screen has something to
+/// show whether or not the journeys ran before this pass.
+///
+/// The upload is idempotent for a capture pass: `201` created, `409` already
+/// there. Any other answer leaves the artefact absent and the caller falls
+/// back to skipping the shot with a printed reason.
+async fn seed_adl2_fixture(cdr: &str, user: &str, pass: &str) {
+    let source = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/versioned.v1_0_0.adls"
+    ))
+    .expect("the ADL2 corpus fixture exists");
+    let status = reqwest::Client::new()
+        .post(format!(
+            "{cdr}/ferroehr/rest/openehr/v1/definition/template/adl2"
+        ))
+        .basic_auth(user, Some(pass))
+        .header("Content-Type", "text/plain")
+        .body(source)
+        .send()
+        .await
+        .expect("seed the ADL2 capture fixture")
+        .status();
+    println!("adl2 capture fixture seed -> {status}");
+}
 
 /// The website book's screenshot directory (`website/book/src/admin-ui/img`),
 /// resolved from this crate's manifest dir (`app/ferroehr-admin-ui`).
@@ -150,8 +177,14 @@ async fn capture_documentation_screenshots() {
 
     // The ADL2 family of the same screen: the listing with its source-upload
     // card, then the detail's version bar + stored-source pane. Both need the
-    // ADL2 fixture present (`e2e_adl2` uploads it earlier in the same stacked
-    // run).
+    // ADL2 fixture present, which this pass seeds itself.
+    if let (Some(cdr), Some(user), Some(pass)) = (
+        env("UI_E2E_CDR_URL"),
+        env("UI_E2E_BASIC_USER"),
+        env("UI_E2E_BASIC_PASS"),
+    ) {
+        seed_adl2_fixture(&cdr, &user, &pass).await;
+    }
     capture(
         &h,
         &dir,
@@ -178,7 +211,7 @@ async fn capture_documentation_screenshots() {
     } else {
         println!(
             "SKIP docs-shots: template-adl2-detail — `{ADL2_TEMPLATE_ID}` not present on the \
-             stack (run the e2e_adl2 journeys first to seed it)"
+             stack (the seed needs UI_E2E_CDR_URL + UI_E2E_BASIC_*)"
         );
     }
 
@@ -335,6 +368,20 @@ async fn capture_documentation_screenshots() {
         .await
         .expect("scroll to the metric samples");
     shot_to(&h, &dir, "operations/operations-metric").await;
+
+    // The tenant registry: probe-gated on the CDR's tenancy extension, which
+    // the E2E stack enables (docker/admin-ui/e2e-env.yml). Absent, the screen
+    // renders its disabled card, which is not what the book documents.
+    h.goto("/tenants").await;
+    h.wait_css("#tenants-screen").await;
+    if h.driver.find(By::Css("#tenants-disabled")).await.is_ok() {
+        println!(
+            "SKIP docs-shots: tenants not captured — the CDR under test runs with \
+             [tenancy] enabled = false"
+        );
+    } else {
+        shot_to(&h, &dir, "tenants/tenants").await;
+    }
 
     // The ehr-detail and composition-viewer screens render the EHR + the
     // two-version composition scripts/ui-e2e.sh seeds over REST.

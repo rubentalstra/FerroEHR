@@ -70,6 +70,8 @@ fn nav_key(path: &str) -> &'static str {
         "/system"
     } else if path.starts_with("/operations") {
         "/operations"
+    } else if path.starts_with("/tenants") {
+        "/tenants"
     } else {
         "/"
     }
@@ -114,10 +116,11 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 pub fn AppShell() -> impl IntoView {
     let session = Resource::new(|| (), |()| current_session());
     let status = Resource::new(|| (), |()| fetch_status());
-    // The management probe is created HERE, in component setup — never inside a
-    // Suspend closure, which re-runs and would re-create the resource
-    // (rules §4). It gates the operations nav entry.
+    // The two surface probes are created HERE, in component setup — never
+    // inside a Suspend closure, which re-runs and would re-create the resource
+    // (rules §4). They gate the operations and tenants nav entries.
     let management = crate::management::management_gate();
+    let tenants = crate::tenants::tenant_gate();
     let theme = thaw::ConfigInjection::expect_context().theme;
     let is_dark = RwSignal::new(false);
     let nav_open = RwSignal::new(false);
@@ -169,6 +172,7 @@ pub fn AppShell() -> impl IntoView {
                 session
                 status
                 management
+                tenants
                 theme
                 is_dark
                 nav_open
@@ -191,6 +195,8 @@ fn AuthedChrome(
     management: Resource<
         Result<crate::management::ManagementAvailability, crate::error::AdminUiError>,
     >,
+    /// The tenancy-extension probe (gates the tenants nav entry).
+    tenants: Resource<Result<crate::tenants::TenantAvailability, crate::error::AdminUiError>>,
     /// The thaw widget theme signal.
     theme: RwSignal<thaw::Theme>,
     /// Dark-mode state.
@@ -206,6 +212,7 @@ fn AuthedChrome(
         session,
         status,
         management,
+        tenants,
         theme,
         is_dark,
         nav_open,
@@ -218,6 +225,11 @@ fn AuthedChrome(
 /// CDR serves its management surface (see [`crate::management`]).
 const OPERATIONS_ITEM: (&str, &str, &icondata_core::IconData) =
     ("/operations", "Operations", icondata_lu::LuGauge);
+
+/// The second probe-gated sidebar entry: the tenant registry renders only when
+/// the CDR serves its tenancy extension (see [`crate::tenants`]).
+const TENANTS_ITEM: (&str, &str, &icondata_core::IconData) =
+    ("/tenants", "Tenants", icondata_lu::LuBuilding2);
 
 /// The demographics entry's href, which is also its [`nav_key`] value: the
 /// section has no kind-agnostic landing page (every screen in it is per-kind or
@@ -284,6 +296,7 @@ fn authed_shell(
     management: Resource<
         Result<crate::management::ManagementAvailability, crate::error::AdminUiError>,
     >,
+    tenants: Resource<Result<crate::tenants::TenantAvailability, crate::error::AdminUiError>>,
     theme: RwSignal<thaw::Theme>,
     is_dark: RwSignal<bool>,
     nav_open: RwSignal<bool>,
@@ -542,13 +555,19 @@ fn authed_shell(
         )
         .into_any()
     });
+    // The same discover-and-hide gate one surface further: the CDR's tenancy
+    // extension is off by default and answers `404` as if unmounted, so a
+    // single-tenant deployment shows no tenant registry at all.
+    let tenants_link = crate::tenants::when_tenant_registry_usable(tenants, move || {
+        nav_entry(active, TENANTS_ITEM.0, TENANTS_ITEM.1, TENANTS_ITEM.2).into_any()
+    });
     let nav = view! {
         <aside
             class="w-52 shrink-0 border-r border-edge bg-raised md:block"
             class:hidden=move || !nav_open.get()
         >
             <nav aria-label="Main" class="p-3">
-                <ul class="flex flex-col gap-1">{nav_links} {operations_link}</ul>
+                <ul class="flex flex-col gap-1">{nav_links} {operations_link} {tenants_link}</ul>
             </nav>
         </aside>
     }
@@ -641,6 +660,8 @@ mod tests {
             nav_key("/operations?metric=aql_queries_total"),
             "/operations"
         );
+        assert_eq!(nav_key("/tenants"), "/tenants");
+        assert_eq!(nav_key("/tenants?page=1"), "/tenants");
         assert_eq!(nav_key("/unknown"), "/");
     }
 }

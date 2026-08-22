@@ -23,4 +23,5 @@ pub mod system;
 pub mod template_adl2;
 pub mod template_detail;
 pub mod templates;
+pub mod tenants;
 pub mod terminology;

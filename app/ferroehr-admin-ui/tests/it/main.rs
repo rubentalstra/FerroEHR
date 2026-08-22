@@ -25,4 +25,5 @@ mod e2e_scopes;
 mod e2e_stored_query_runner;
 mod e2e_system;
 mod e2e_tags;
+mod e2e_tenants;
 mod e2e_terminology;
