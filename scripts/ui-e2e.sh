@@ -140,7 +140,12 @@ if [ -z "${UI_E2E_NO_COMPOSE:-}" ]; then
   # issuer AND the teardown can see the container.
   BUILD_ARGS=(--build)
   [ -n "${UI_E2E_NO_BUILD:-}" ] && BUILD_ARGS=(--no-build)
-  docker compose up -d "${BUILD_ARGS[@]}" ferroehr-postgres ferroehr keycloak
+  # The e2e overlay rides BOTH lanes: without it here, its `ferroehr:` env
+  # block (tenancy on, terminology on) never reached the host-mode CDR — the
+  # lane CI actually runs.
+  docker compose -f docker-compose.yml -f docker-compose.override.yml \
+    -f docker/admin-ui/e2e-env.yml \
+    up -d "${BUILD_ARGS[@]}" ferroehr-postgres ferroehr keycloak
 fi
 wait_http "$CDR_URL/ferroehr/rest/status" 150
 wait_http "$KEYCLOAK_URL/auth/realms/ferroehr/.well-known/openid-configuration" 90
@@ -240,12 +245,11 @@ if [ -n "${UI_E2E_IMAGE:-}" ]; then
   # (docker/admin-ui/Dockerfile) with the e2e-env override supplying the OIDC
   # test wiring; the issuer (http://keycloak:8081) resolves in-network via
   # docker DNS and in the E2E browser via the harness host-resolver mapping.
-  # docker-compose.override.yml is in the explicit -f chain because every other
-  # call in this lane is a BARE `docker compose` (base + override, so `ferroehr`
-  # runs the dev config the override's `!override` swap selects). Without it
-  # here, this call's model gives `ferroehr` the inline quickstart config
-  # instead, and `up ferroehr-admin-ui` would RECREATE the running server
-  # container against that different config — breaking the lane mid-run.
+  # The explicit -f chain here MATCHES the CDR up in step 1 (base + override +
+  # the e2e overlay): compose recreates any dependency whose model differs, so
+  # if this call's model gave `ferroehr` a different config than the running
+  # container, `up ferroehr-admin-ui` would RECREATE the server mid-run —
+  # breaking the lane. The bare calls (stop/down/logs) recreate nothing.
   if [ -n "${UI_E2E_IMAGE_REF:-}" ]; then
     echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
     FERROEHR_ADMIN_UI_IMAGE="$UI_E2E_IMAGE_REF" \

@@ -45,6 +45,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
     // mixing paths panics at router build with "Overlapping method route").
     OpenApiRouter::new()
         .routes(routes!(tenant_list, tenant_create))
+        .routes(routes!(tenant_current))
         .routes(routes!(tenant_get, tenant_update, tenant_delete))
 }
 
@@ -93,6 +94,34 @@ pub(crate) async fn tenant_create(
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
     guarded_dispatch(state, "tenant_create", parts, dispatch).await
+}
+
+/// The tenant THIS request's credential resolves to (`GET /admin/tenant/current`).
+///
+/// Read-only session context for operators: the tenant-resolution middleware
+/// has already resolved the caller (claim, or the dev header override) by the
+/// time any handler runs, so this answers from that ambient scope — never a
+/// console-side computation, never a selector. An unscoped request reports the
+/// reserved default tenant (`{"default": true, "tenant": null}`); a scoped one
+/// carries its registry record (`{"default": false, "tenant": {…}}`). The
+/// static `current` segment cannot collide with a tenant id — ids are UUIDs.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: multi-tenancy has no SM
+/// or ITS-REST governance at all, so the whole group (paths, payloads, status
+/// codes) is our own design.
+#[utoipa::path(
+    get, path = "/admin/tenant/current", tag = "tenancy",
+    responses(
+        (status = 200, description = "The caller's resolved tenant: `{\"default\": bool, \"tenant\": record|null}` — `default: true` (tenant `null`) when the request runs unscoped on the reserved default tenant.", body = serde_json::Value),
+        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn tenant_current(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "tenant_current", parts, dispatch).await
 }
 
 /// Read one tenant by id (`GET /admin/tenant/{tenant_id}`).
@@ -174,6 +203,17 @@ pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -
     })
 }
 
+/// The `GET /admin/tenant/current` answer: the tenant the caller's credential
+/// resolves to. `default: true` (with `tenant` absent) means the request ran
+/// unscoped on the reserved default tenant.
+#[derive(Debug, serde::Serialize)]
+struct CurrentTenant {
+    /// Whether the request ran unscoped on the reserved default tenant.
+    default: bool,
+    /// The resolved registry record; `None` on the default tenant.
+    tenant: Option<ferroehr::extensions::tenancy::TenantRecord>,
+}
+
 async fn run(
     state: AppState,
     op: &'static str,
@@ -199,6 +239,22 @@ async fn run(
                 negotiate::typed_json(h, &parts.body)?;
             let created = state.backend().tenant_create(body).await?;
             Ok(negotiate::respond(h, StatusCode::CREATED, &created))
+        }
+        "tenant_current" => {
+            // The middleware resolved the caller before any handler ran; the
+            // ambient scope is therefore the answer, re-read from the registry
+            // so the record is current.
+            let answer = match ferroehr::extensions::tenant_context::current() {
+                Some(ctx) => CurrentTenant {
+                    default: false,
+                    tenant: Some(state.backend().tenant_get(ctx.tenant_id).await?),
+                },
+                None => CurrentTenant {
+                    default: true,
+                    tenant: None,
+                },
+            };
+            Ok(negotiate::respond(h, StatusCode::OK, &answer))
         }
         "tenant_get" => {
             let id = tenant_id(&parts)?;

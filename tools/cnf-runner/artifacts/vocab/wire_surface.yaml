@@ -1864,6 +1864,7 @@ served_extensions:
     routes:
       - "GET /ferroehr/rest/openehr/v1/admin/tenant"
       - "POST /ferroehr/rest/openehr/v1/admin/tenant"
+      - "GET /ferroehr/rest/openehr/v1/admin/tenant/current"
       - "GET /ferroehr/rest/openehr/v1/admin/tenant/{tenant_id}"
       - "PUT /ferroehr/rest/openehr/v1/admin/tenant/{tenant_id}"
       - "DELETE /ferroehr/rest/openehr/v1/admin/tenant/{tenant_id}"

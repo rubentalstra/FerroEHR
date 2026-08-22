@@ -48,6 +48,7 @@
   - [Demographics](admin-ui/demographics.md)
   - [Terminology](admin-ui/terminology.md)
   - [Operations panel](admin-ui/operations.md)
+  - [Tenant registry](admin-ui/tenants.md)
 - [Operations](operations.md)
   - [Admin & messaging APIs](operations-admin-apis.md)
 - [Conformance](conformance.md)

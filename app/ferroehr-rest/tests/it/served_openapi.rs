@@ -1401,7 +1401,8 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         label: "the multi-tenancy extension",
         prefixes: &["/ferroehr/rest/openehr/v1/admin/tenant"],
         flag: "no openehr spec governs this",
-        operations: 5,
+        // CRUD + the caller's resolved-tenant read (#312).
+        operations: 6,
     },
     NonSpecFamily {
         label: "the FHIR R4B connector + read facade",

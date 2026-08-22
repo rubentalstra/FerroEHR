@@ -99,6 +99,65 @@ async fn disabled_group_is_404() {
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
+/// The shared config with the dev-only header override armed, so a test can
+/// scope a request to a tenant without a JWT (`TenancyConfig::header` — the
+/// header wins over the claim by design).
+fn config_with_header(enabled: bool) -> AppConfig {
+    let mut c = config(enabled);
+    c.tenancy.header = Some("X-Tenant".to_owned());
+    c
+}
+
+#[tokio::test]
+async fn current_reports_the_default_when_unscoped() {
+    // GET /admin/tenant/current with no tenant key: the request runs unscoped
+    // on the reserved default tenant, and the read says so rather than
+    // fabricating a record.
+    let (_pg, app) = app(true).await;
+    let (status, body) = send(app, req("GET", &format!("{GROUP}/current"), None)).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["default"], json!(true));
+    assert!(
+        body["tenant"].is_null(),
+        "unscoped carries no record: {body}"
+    );
+}
+
+#[tokio::test]
+async fn current_reports_the_resolved_tenant_when_scoped() {
+    let (_pg, service) = common::test_service().await;
+    let app = ferroehr_rest::build_with(config_with_header(true), service).expect("router builds");
+
+    let create_body = json!({ "name": "acme-current", "system_id": "acme.example.org" });
+    let (status, created) = send(app.clone(), req("POST", GROUP, Some(create_body))).await;
+    assert_eq!(status, StatusCode::CREATED, "create: {created}");
+
+    // Scoped by the dev header: the read reports the resolved registry record.
+    let scoped = Request::builder()
+        .method("GET")
+        .uri(format!("{GROUP}/current"))
+        .header("X-Tenant", "acme-current")
+        .body(Body::empty())
+        .unwrap();
+    let (status, body) = send(app.clone(), scoped).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["default"], json!(false));
+    assert_eq!(body["tenant"]["name"], "acme-current");
+    assert_eq!(body["tenant"]["id"], created["id"]);
+
+    // An UNKNOWN key runs unscoped -> the default answer (the documented
+    // unknown-key policy: engine-level default scope, never a 403).
+    let unknown = Request::builder()
+        .method("GET")
+        .uri(format!("{GROUP}/current"))
+        .header("X-Tenant", "no-such-tenant")
+        .body(Body::empty())
+        .unwrap();
+    let (status, body) = send(app, unknown).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["default"], json!(true));
+}
+
 #[tokio::test]
 async fn crud_round_trip() {
     let (_pg, app) = app(true).await;
