@@ -65,6 +65,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The template lists' `version` query filter now matches the template id's
+  version axis, as the API documents ("taken from `template_id`") — an exact
+  version or a prefix pattern like `1.2.*` previously matched nothing on
+  either the ADL 1.4 or the ADL2 list, leaving `*` as the only working
+  filter.
+
 - Admin console: the EHR_STATUS editor and the demographics party editor are
   now inert (fields and save disabled) until the served document has seeded
   the form, so a keystroke can no longer race the seed, be silently

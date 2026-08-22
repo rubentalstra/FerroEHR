@@ -1,0 +1,33 @@
+# The explicit-`version` branch with an EXACT axis: `version=1` returns only
+# the family member whose template_id carries the `.v1` axis — the filter's
+# subject is the id's VERSION AXIS, "taken from `template_id`" (the RELEASED
+# OAS grounds docs-text silence, cited AS the OAS:
+# specifications/parameters/query/filter_version.yaml). Found shipped
+# matching the WHOLE id — every non-`*` filter answered empty (#2567); this
+# case pins the exact-axis branch.
+id: I_DEFINITION_ADL14.list_opts-version_exact_axis
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.list_opts
+capabilities: [Adl14OptProvisioning]
+profiles: [CORE]
+test_purpose: >-
+  Listing templates with an exact `version` returns only the family member
+  carrying that version axis.
+description: "list templates with `version=1` — the `.v1` member alone"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.list_opts"
+  - "ITS-REST OAS parameters/query/filter_version.yaml (docs-text-silent ground): \"Filter by version …, taken from `template_id`\""
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]   # two versions of the one family — provisioned, 409-tolerant on a shared world
+data_sets: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]
+flow:
+  - step: 1
+    call: list_opts
+    variant: filter_version
+    with: { version: "1" }
+    expect: ok
+    assert:
+      - { assert: returns, matches: "test_versioned\\.en\\.v1\\b", omits: "test_versioned\\.en\\.v2" }

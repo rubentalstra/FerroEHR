@@ -307,15 +307,17 @@ impl FerroEhrService {
 
 /// Filter + paginate a list of template descriptors per the wire query params.
 ///
-/// `template_id`/`version` glob-match the `template_id` field, `concept`
-/// glob-matches the `concept` field (a record lacking a filtered field does not
-/// match); with `version` ABSENT the survivors collapse to the latest version
-/// of each template ("if missing, then only the latest version will be
-/// returned" — the released OAS
-/// `parameters/query/filter_version.yaml`, grounding docs-text silence);
-/// `page` then applies `offset`/`fetch`
-/// (`parameters/query/filter_template_id.yaml` — "supports wildcards `*`";
-/// `master02-overview.adoc` §List Handling).
+/// `template_id` glob-matches the `template_id` field, `concept` glob-matches
+/// the `concept` field (a record lacking a filtered field does not match), and
+/// `version` glob-matches the id's VERSION AXIS — "Filter by version (e.g.
+/// `1.2.*` or use `*` for all versions), taken from `template_id`" (the
+/// released OAS `parameters/query/filter_version.yaml`, grounding docs-text
+/// silence) — so an id without a version axis survives only a glob admitting
+/// the empty axis (a bare `*`). With `version` ABSENT the survivors collapse
+/// to the latest version of each template ("if missing, then only the latest
+/// version will be returned" — the same source); `page` then applies
+/// `offset`/`fetch` (`parameters/query/filter_template_id.yaml` — "supports
+/// wildcards `*`"; `master02-overview.adoc` §List Handling).
 fn filter_templates(list: Vec<Value>, filter: &TemplateListFilter, page: Page) -> Vec<Value> {
     let tid = filter.template_id.as_deref().map(glob_to_regex);
     let concept = filter.concept.as_deref().map(glob_to_regex);
@@ -329,9 +331,13 @@ fn filter_templates(list: Vec<Value>, filter: &TemplateListFilter, page: Page) -
         .filter(|row| {
             let template_id = row.get("template_id").and_then(Value::as_str);
             let concept_field = row.get("concept").and_then(Value::as_str);
+            let version_axis = template_id
+                .and_then(split_version_axis)
+                .map(|(_, axis)| axis)
+                .unwrap_or_default();
             matches(&tid, template_id)
                 && matches(&concept, concept_field)
-                && matches(&version, template_id)
+                && matches(&version, Some(&version_axis))
         })
         .collect();
     let effective = if version.is_none() {
@@ -535,16 +541,74 @@ mod tests {
 
     #[test]
     fn concrete_version_glob_filters_without_collapsing() {
-        // A partial glob (`1.*`) behaves as today: every matching version.
+        // The OAS's own shape (`1.*`, filter_version.yaml) against the ids'
+        // version AXES: every matching version, no collapse. The pre-fix
+        // whole-id workaround glob (`*v1.*`) belongs to the defect #2567
+        // fixed and must no longer be needed.
         let out = filter_templates(
             rows(&["T.v1.0", "T.v1.5", "T.v2.0"]),
             &TemplateListFilter {
-                version: Some("*v1.*".into()),
+                version: Some("1.*".into()),
                 ..TemplateListFilter::default()
             },
             Page::all(),
         );
         assert_eq!(ids(&out), vec!["T.v1.0", "T.v1.5"]);
+    }
+
+    #[test]
+    fn exact_version_glob_matches_the_axis_alone() {
+        // #2567 regression: `?version=1.0` matched NOTHING while T.v1.0 was
+        // stored, because the glob was compiled anchored and evaluated
+        // against the whole template_id. The subject is the version axis
+        // ("taken from template_id" — filter_version.yaml).
+        let out = filter_templates(
+            rows(&["T.v1.0", "T.v1.5"]),
+            &TemplateListFilter {
+                version: Some("1.0".into()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        );
+        assert_eq!(ids(&out), vec!["T.v1.0"]);
+    }
+
+    #[test]
+    fn unmatched_version_glob_yields_an_empty_list() {
+        let out = filter_templates(
+            rows(&["T.v1.0"]),
+            &TemplateListFilter {
+                version: Some("9.9.9".into()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        );
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn an_unversioned_id_survives_only_a_glob_admitting_the_empty_axis() {
+        // A bare `*` means "all versions" (filter_version.yaml) and keeps
+        // axis-less ids listed; any concrete glob has no axis to match.
+        let all = rows(&["Plain", "T.v1.0"]);
+        let star = filter_templates(
+            all.clone(),
+            &TemplateListFilter {
+                version: Some("*".into()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        );
+        assert_eq!(ids(&star), vec!["Plain", "T.v1.0"]);
+        let concrete = filter_templates(
+            all,
+            &TemplateListFilter {
+                version: Some("1.*".into()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        );
+        assert_eq!(ids(&concrete), vec!["T.v1.0"]);
     }
 
     #[test]

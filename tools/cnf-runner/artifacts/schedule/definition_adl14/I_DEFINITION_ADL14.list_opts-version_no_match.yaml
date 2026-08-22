@@ -1,0 +1,32 @@
+# The explicit-`version` branch with an axis no stored template carries:
+# still `200` with an empty listing — a filter that matches nothing is not
+# an error (the RELEASED OAS grounds docs-text silence, cited AS the OAS:
+# specifications/parameters/query/filter_version.yaml; the operation declares
+# only the 200 listing response,
+# specifications/operations/definition_template_adl1.4_list.yaml).
+id: I_DEFINITION_ADL14.list_opts-version_no_match
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.list_opts
+capabilities: [Adl14OptProvisioning]
+profiles: [CORE]
+test_purpose: >-
+  A `version` filter matching no stored template answers the empty listing,
+  never an error.
+description: "list templates with `version=9.9.9` — empty listing, 200"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.list_opts"
+  - "ITS-REST OAS parameters/query/filter_version.yaml (docs-text-silent ground); operations/definition_template_adl1.4_list.yaml §responses ('200')"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.versioned.v1]
+data_sets: [cnf.opt.versioned.v1]
+flow:
+  - step: 1
+    call: list_opts
+    variant: filter_version
+    with: { version: "9.9.9" }
+    expect: ok
+    assert:
+      - { assert: returns, omits: "test_versioned" }
