@@ -97,7 +97,10 @@ openidconnect = { workspace = true, optional = true }
 # filter-preserving pagination hrefs on every target (ssr, hydrate, and
 # plain featureless test builds); the crate is tiny and wasm-clean.
 urlencoding = { workspace = true }
-http = { workspace = true, optional = true }
+# Typed status comparisons on every target (owner directive 2026-08-06,
+# issue #2055): `http::StatusCode` names the codes the pages branch on, and
+# the crate is tiny and wasm-clean — so it is non-optional, like urlencoding.
+http = { workspace = true }
 
 # browser-only (behind `hydrate`)
 wasm-bindgen = { workspace = true, optional = true }
@@ -143,7 +146,6 @@ ssr = [
     "dep:tower-sessions",
     "dep:csv",
     "dep:openidconnect",
-    "dep:http",
     # The full ITS surface BFF-side (OPT parsing + WebTemplate building); the
     # scope grammar itself is unconditional (see the dependency comment above).
     "openehr-its/full",

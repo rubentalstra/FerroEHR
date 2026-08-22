@@ -28,6 +28,19 @@ pub struct CdrResponse {
     pub body: String,
 }
 
+impl CdrResponse {
+    /// Whether the response carries exactly this status.
+    ///
+    /// The one comparison seam (owner directive 2026-08-06): callers name an
+    /// [`http::StatusCode`] constant, so a transposed code is a compile
+    /// error, never a silent wrong branch; the numeric field itself stays
+    /// `u16` because it is deserialized from and rendered into wire JSON.
+    #[must_use]
+    pub fn is(&self, code: http::StatusCode) -> bool {
+        self.status == code.as_u16()
+    }
+}
+
 /// The one outbound HTTP client to the CDR.
 #[derive(Debug, Clone)]
 pub struct CdrClient {

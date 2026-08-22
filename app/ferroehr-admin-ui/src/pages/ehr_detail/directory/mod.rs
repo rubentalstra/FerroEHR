@@ -184,7 +184,7 @@ pub async fn fetch_directory(
     // Both are the first-class "no live directory" state: the create flow
     // renders, and creating opens a NEW hierarchy (the deleted one's history
     // stays readable by version_uid).
-    if response.status == 404 || response.status == 204 {
+    if response.is(http::StatusCode::NOT_FOUND) || response.is(http::StatusCode::NO_CONTENT) {
         return Ok(None);
     }
     let body = crate::cdr::CdrClient::expect_success(response)?.body;
@@ -360,7 +360,7 @@ pub async fn list_directory_versions(
         .cdr
         .get(&session.credential, &base, "application/json")
         .await?;
-    if current.status == 404 {
+    if current.is(http::StatusCode::NOT_FOUND) {
         return Ok(Vec::new());
     }
     let current_body = crate::cdr::CdrClient::expect_success(current)?.body;
@@ -381,7 +381,7 @@ pub async fn list_directory_versions(
             .cdr
             .get(&session.credential, &url, "application/json")
             .await?;
-        if response.status == 404 {
+        if response.is(http::StatusCode::NOT_FOUND) {
             break;
         }
         let body = crate::cdr::CdrClient::expect_success(response)?.body;
@@ -475,7 +475,7 @@ pub async fn fetch_directory_subtree(
         .cdr
         .get(&session.credential, &url, "application/json")
         .await?;
-    if response.status == 404 {
+    if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(DirectorySubtree::Missing);
     }
     let body = crate::cdr::CdrClient::expect_success(response)?.body;

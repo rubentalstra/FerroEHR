@@ -122,7 +122,7 @@ pub async fn list_stored_queries() -> Result<Vec<StoredQueryRow>, AdminUiError> 
         .cdr
         .get(&session.credential, &url, "application/json")
         .await?;
-    if response.status == 404 {
+    if response.is(http::StatusCode::NOT_FOUND) {
         // A CDR with no stored queries may 404 the listing; treat as empty.
         return Ok(Vec::new());
     }
