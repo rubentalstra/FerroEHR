@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: a **FHIR** screen (shown only when the CDR's FHIR API is
+  enabled) — the mapping-store editor (list, create, edit, and two-step
+  delete of the connector's mapping definitions, edited as JSON documents
+  with the CDR's validation diagnostics verbatim), a read-path viewer
+  showing what a mapping produces on `GET /fhir/r4/{type}`, and a
+  validate-only dry-run panel over `$validate` that commits nothing. The
+  console deliberately has no path to the committing FHIR ingest door.
+
 - The tenancy extension gains `GET /admin/tenant/current` — the tenant the
   calling credential resolves to (`{"default": bool, "tenant": record|null}`;
   the reserved default tenant when the request runs unscoped). Multi-tenancy
@@ -79,6 +87,11 @@ workflow refuses a tag that has no matching section here.
   chapter.
 
 ### Fixed
+
+- Admin console: the query-results chart draws with linear interpolation —
+  the smoothing default emitted invalid SVG (a `NaN` control point) whenever
+  two result rows shared a timestamp on a time axis, and it drew smoothed
+  values between samples that were never measured.
 
 - The unknown-configuration-key diagnostic now names the key's full section
   path (`auth.oidc.enabled`) and attributes a file line only when the key is
