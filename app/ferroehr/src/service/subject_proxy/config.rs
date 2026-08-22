@@ -53,9 +53,13 @@ pub struct SubjectProxyConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SpFhirSystem {
-    /// FHIR R4B base URL, e.g. `https://fhir.example.org/r4` — the frame's
-    /// `query_text` is resolved relative to this after `$subject_id`
-    /// substitution. Empty is a boot error ([`SubjectProxyConfig::build`]).
+    /// The remote FHIR server's base URL, e.g. `https://fhir.example.org/r4`
+    /// — the frame's `query_text` is resolved relative to this after
+    /// `$subject_id` substitution; empty is a boot error
+    /// ([`SubjectProxyConfig::build`]). The FHIR release is the REMOTE's
+    /// property: the proxy relays `application/fhir+json` bodies untyped and
+    /// decodes nothing release-specific, so no release is claimed here (the
+    /// terminology integration's posture).
     pub base_url: String,
     /// TCP connect timeout (ms).
     pub connect_timeout_ms: u64,

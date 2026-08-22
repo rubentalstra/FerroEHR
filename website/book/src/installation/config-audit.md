@@ -92,22 +92,5 @@ The named FHIR systems a subject-proxy `API_CALL`/`fhir_get` data frame may
 retrieve from. **Empty by default and fail-closed**: no external FHIR system is
 reachable until one is named here, and a frame whose `system_id` matches no
 configured system is a typed rejection rather than an arbitrary outbound
-request. See [Subject Proxy](../beyond-core/subject-proxy.md).
-
-Systems are keyed by the name subject-proxy frames use as their `system_id`.
-
-`[subject_proxy.systems.<name>]`:
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `base_url` | string | required per system | FHIR R4B base URL. The frame's query text is resolved relative to this. Blank or absent is a boot error naming the system. |
-| `connect_timeout_ms` | int | `2000` | TCP connect timeout. |
-| `request_timeout_ms` | int | `10000` | Overall request timeout. |
-
-```toml
-[subject_proxy.systems.pas]
-base_url = "https://pas.example.com/fhir"
-```
-
-The environment form for a named system spells the map key as just another
-segment: `FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`.
+request. The per-system key table and examples live on
+[Subject Proxy — Connecting FHIR systems](../beyond-core/subject-proxy.md#connecting-fhir-systems).

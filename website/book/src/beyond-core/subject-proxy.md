@@ -101,17 +101,27 @@ stricter value — registration can only make data fresher, never staler.
 
 ## Connecting FHIR systems
 
-Frames of kind `API_CALL` / `fhir_get` read from remote FHIR R4B servers. Which
+Frames of kind `API_CALL` / `fhir_get` read from remote FHIR servers (the
+FHIR release is the remote's property — the proxy relays `fhir+json` bodies
+and decodes nothing release-specific). Which
 servers are reachable is **opt-in and fail-closed**: only systems named in
 configuration can ever be called, and a frame naming an unconfigured `system_id`
 is a typed rejection, never an arbitrary outbound request. By default no system
 is configured and every FHIR frame is rejected.
 
 Systems are a map keyed by the name frames use as their `system_id`, under
-`[subject_proxy]` — the key table is on
-[Audit & subject proxy](../installation/config-audit.md#subject_proxy). Each
-system needs a `base_url` and may override the connect and request timeouts. A
-blank or missing `base_url` is a boot error that names the offending system.
+`[subject_proxy.systems.<name>]`:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `base_url` | string | required per system | The remote FHIR server's base URL. The frame's query text is resolved relative to this. Blank or absent is a boot error naming the system. |
+| `connect_timeout_ms` | int | `2000` | TCP connect timeout. |
+| `request_timeout_ms` | int | `10000` | Overall request timeout. |
+
+```toml
+[subject_proxy.systems.pas]
+base_url = "https://pas.example.com/fhir"
+```
 
 To let the `fhir::demographics` frame above reach a patient administration
 system:
@@ -150,7 +160,7 @@ config:
         request_timeout_ms: 10000
 ```
 
-**Before you enable it:** a reachable FHIR R4B server per system, and — if the
+**Before you enable it:** a reachable FHIR server per system, and — if the
 chart's default-deny egress policy is on — an egress rule that admits it, or the
 calls fail as timeouts. **To turn it off**, remove the systems: with none
 configured every FHIR frame is rejected, which is the fail-closed default.
