@@ -34,6 +34,7 @@
 compile_error!("features \"hydrate\" and \"ssr\" cannot be enabled at the same time");
 
 pub mod activity;
+pub mod adl2;
 pub mod admin;
 pub mod app;
 pub mod aql_text;

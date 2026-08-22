@@ -20,6 +20,7 @@ pub mod query_builder;
 pub mod query_stored;
 pub mod shell;
 pub mod system;
+pub mod template_adl2;
 pub mod template_detail;
 pub mod templates;
 pub mod terminology;

@@ -10,8 +10,12 @@ client sees.
 
 ## Template Manager
 
-Upload ADL 1.4 operational templates (the CDR's validation diagnostics
-surface verbatim on rejection) and browse what is installed.
+Upload operational templates (the CDR's validation diagnostics surface
+verbatim on rejection) and browse what is installed. The screen serves both
+archetype-model families, switched by the **ADL 1.4** / **ADL 2** pills under
+the title. The choice is in the URL — `/templates` is the ADL 1.4 listing and
+`/templates?family=adl2` the ADL 2 one — so either is a shareable link, and
+the filter and the paging footer work the same in both.
 
 ![Templates](img/templates/templates.png)
 
@@ -52,6 +56,54 @@ any of them.
 > one. The server-side switch is `admin.enabled`
 > (`FERROEHR__ADMIN__ENABLED`), off by default — see
 > [`[admin]`](../installation/config-auth.md#admin).
+
+### ADL 2 templates
+
+The **ADL 2** family lists the operational templates the CDR compiled from
+ADL 2 sources. An ADL 2 artefact is identified by its archetype HRID —
+`openEHR-EHR-COMPOSITION.vitals.v1.0.0` — whose trailing `.v1.0.0` is the
+artefact's own release version, so several versions of one template appear as
+separate rows and the list shows all of them, not just the newest.
+
+![ADL 2 templates](img/templates/templates-adl2.png)
+
+Uploading is different from ADL 1.4 in one way: the CDR ingests the ADL 2
+artefact **source** as plain text rather than an XML document. The upload card
+therefore offers both a file picker and a paste area, feeding the same editor —
+choose a `.adls` file to load it in, or paste a source directly, then read it
+over before sending it. **Upload template** stays disabled until there is
+something to send. If the openEHR-ADL engine refuses the source, its
+diagnostics — the AOM 2 rule codes with their line and column — are shown in
+full above the editor as well as in the failure notification, so the source can
+be corrected in place and re-sent.
+
+Opening a row shows the artefact's three server-side representations:
+
+- **Source** — the stored ADL 2 text, exactly as the CDR holds it.
+- **AOM2 JSON** — the same operational template as canonical JSON
+  (`OPERATIONAL_TEMPLATE`), which is where the constraint structure, node ids
+  and occurrences are readable.
+- **Example** — a composition the CDR generates from the template, in
+  canonical JSON, canonical XML, FLAT or STRUCTURED.
+
+![ADL 2 template detail](img/templates/template-adl2-detail.png)
+
+The **Version** bar above the panes pins the Source and AOM2 JSON reads to a
+particular release version. The chips are the versions the CDR actually holds
+for that HRID family, and *As stored* returns to the artefact the link named.
+The box beside them also accepts a prefix — `1` or `1.0` — which the CDR
+resolves to the highest matching version, so `1` on a family holding 1.0.0 and
+1.1.0 shows 1.1.0. Whichever you pick lands in the URL as `?version=`, so a
+pinned view is shareable. The example is generated from the artefact the link
+named and does not follow the version bar: the CDR publishes no versioned
+example resource.
+
+> [!NOTE]
+> ADL 2 templates have no path catalog. The catalog on the ADL 1.4 detail
+> screen is built from an OPT 1.4 Web Template, and the CDR serves no Web
+> Template representation of an ADL 2 artefact — so the screen says so instead
+> of showing an invented tree. Read the AOM2 JSON pane for the structure. The
+> admin delete is likewise ADL 1.4 only.
 
 ## EHR browser
 
