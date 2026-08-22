@@ -471,7 +471,7 @@ pub async fn resolve_demographic_version_at_time(
         .get(&session.credential, &url, "application/json")
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(uid_value_of(&response.body))
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 /// Read one version of a demographic resource as its own document, pretty-
@@ -592,10 +592,10 @@ fn parse_versioned_object(
     let version: Value = serde_json::from_str(version_body)
         .map_err(|e| AdminUiError::Internal(format!("demographic version JSON: {e}")))?;
     Ok(VersionedObjectFacts {
-        object_uid: json_str(&object, &["uid", "value"]),
+        object_uid: crate::uid::uid_value_of_document(&object),
         owner_id: json_str(&object, &["owner_id", "id", "value"]),
         time_created: json_str(&object, &["time_created", "value"]),
-        version_id: json_str(&version, &["uid", "value"]),
+        version_id: crate::uid::uid_value_of_document(&version),
         lifecycle_state: json_str(&version, &["lifecycle_state", "value"]),
         preceding_version_uid: json_str(&version, &["preceding_version_uid", "value"]),
         contribution_uid: json_str(&version, &["contribution", "id", "value"]),
@@ -604,17 +604,6 @@ fn parse_versioned_object(
             .and_then(Value::as_str)
             .is_some_and(|signature| !signature.is_empty()),
     })
-}
-
-#[cfg(feature = "ssr")]
-/// The `uid.value` of a served body (a committed version's
-/// `OBJECT_VERSION_ID`), or an empty string when the body carries none — a
-/// `Prefer: return=minimal` write answers with no representation at all.
-pub(crate) fn uid_value_of(body: &str) -> String {
-    serde_json::from_str::<Value>(body)
-        .ok()
-        .map(|doc| json_str(&doc, &["uid", "value"]))
-        .unwrap_or_default()
 }
 
 #[cfg(feature = "ssr")]
@@ -752,7 +741,7 @@ mod tests {
 
 #[cfg(all(test, feature = "ssr"))]
 mod parse_tests {
-    use super::{parse_versioned_object, uid_value_of};
+    use super::parse_versioned_object;
 
     #[test]
     fn parses_a_demographic_container_and_its_version_envelope() {
@@ -796,15 +785,5 @@ mod parse_tests {
         assert_eq!(facts.object_uid, "");
         assert!(parse_versioned_object("not json", "{}").is_err());
         assert!(parse_versioned_object("{}", "not json").is_err());
-    }
-
-    #[test]
-    fn uid_value_reads_the_committed_version_or_empty() {
-        let body =
-            r#"{"_type":"PERSON","uid":{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::1"}}"#;
-        assert_eq!(uid_value_of(body), "7d44::sys::1");
-        // A `Prefer: return=minimal` write answers with no representation.
-        assert_eq!(uid_value_of(""), "");
-        assert_eq!(uid_value_of("{}"), "");
     }
 }

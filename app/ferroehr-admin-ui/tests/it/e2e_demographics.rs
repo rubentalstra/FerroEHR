@@ -45,7 +45,9 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, login_basic};
+use common::{
+    Harness, click_until_css, login_basic, retype, wait_enabled, wait_text, wait_text_suffix,
+};
 use thirtyfour::prelude::*;
 
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
@@ -230,71 +232,6 @@ async fn add_inline_relationship(
     );
 }
 
-/// Type `text` into the field at `css`, clearing whatever is there first.
-///
-/// # Panics
-/// On any interaction failure.
-async fn retype(h: &Harness, css: &str, text: &str) {
-    let field = h.wait_css(css).await;
-    field.clear().await.expect("clear the field");
-    field.send_keys(text).await.expect("type into the field");
-}
-
-/// Wait until the element at `css` has a non-empty `value` property — the proof
-/// that a CONTROLLED textarea has been seeded from the CDR's answer.
-///
-/// Typing before that would be overwritten by the seed, and the save would then
-/// commit the pre-seed content.
-///
-/// # Panics
-/// When it never fills within 15 s.
-async fn wait_value_present(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await {
-            let value = element
-                .prop("value")
-                .await
-                .ok()
-                .flatten()
-                .unwrap_or_default();
-            if !value.trim().is_empty() {
-                return;
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never received its seeded value");
-}
-
-/// Wait until some element's text contains `needle` (a toast title, a status
-/// line), returning whether it appeared.
-async fn wait_text(h: &Harness, needle: &str) -> bool {
-    let xpath = format!("//*[contains(normalize-space(.), '{needle}')]");
-    for _ in 0..75 {
-        if h.driver.find(By::XPath(&xpath)).await.is_ok() {
-            return true;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    false
-}
-
-/// Click `css` until `target_css` shows up, returning whether it did (the
-/// pre-hydration-click precedent; re-clicking an "open this version" button is
-/// idempotent).
-async fn click_until_css(h: &Harness, css: &str, target_css: &str) -> bool {
-    for _ in 0..5 {
-        h.wait_css(css).await.click().await.expect("click");
-        for _ in 0..25 {
-            if h.driver.find(By::Css(target_css)).await.is_ok() {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        }
-    }
-    false
-}
-
 /// Wait until the browser screen has re-rendered for `plural` (its page
 /// heading) AND its create card seeds that kind's document, returning whether
 /// both landed.
@@ -322,24 +259,6 @@ async fn wait_kind_screen(h: &Harness, plural: &str, rm_type: &str) -> bool {
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
     false
-}
-
-/// Wait until the element at `css` has text ending in `suffix`.
-///
-/// # Panics
-/// When it never does within 15 s.
-async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
-    let mut last = String::new();
-    for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await {
-            last = element.text().await.unwrap_or_default();
-            if last.trim_end().ends_with(suffix) {
-                return;
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never ended in `{suffix}` (last text: `{last}`)");
 }
 
 /// The party lifecycle through the console alone: create a PERSON from the
@@ -416,9 +335,10 @@ async fn party_create_read_update_and_history() {
     // Commit a second version through the edit form: `details` is the party's
     // optional ITEM_STRUCTURE, and the form re-sends everything else verbatim.
     h.wait_toasts_cleared().await;
-    // The identities textarea filling is the proof the form was seeded; typing
-    // before that would be overwritten by the seed.
-    wait_value_present(&h, "#party-identities").await;
+    // The form stays disabled until it is seeded; typing before that would be
+    // overwritten by the seed.
+    wait_enabled(&h, "#party-identities").await;
+    wait_enabled(&h, "#party-details").await;
     retype(
         &h,
         "#party-details",

@@ -184,9 +184,8 @@ pub async fn fetch_version_at_time(
         .get(&session.credential, &url, "application/json")
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    // The VERSION envelope's `uid.value` is the `OBJECT_VERSION_ID`; the update
-    // response reader follows the identical path, so reuse it.
-    Ok(new_version_uid(&response.body))
+    // The VERSION envelope's `uid.value` is the `OBJECT_VERSION_ID`.
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 #[cfg(feature = "ssr")]
@@ -213,22 +212,6 @@ pub(crate) fn datetime_local_to_rfc3339(local: &str) -> String {
         trimmed.to_owned()
     };
     format!("{with_seconds}Z")
-}
-
-#[cfg(feature = "ssr")]
-/// The new version uid of a just-updated COMPOSITION: `uid.value` from the
-/// `Prefer: return=representation` body (the new `OBJECT_VERSION_ID`). Empty
-/// when the CDR returned no representation body.
-pub(crate) fn new_version_uid(body: &str) -> String {
-    serde_json::from_str::<Value>(body)
-        .ok()
-        .and_then(|doc| {
-            doc.get("uid")
-                .and_then(|u| u.get("value"))
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .unwrap_or_default()
 }
 
 /// Commit a new version of a COMPOSITION
@@ -300,7 +283,7 @@ pub async fn update_composition(
         )));
     }
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(new_version_uid(&response.body))
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 /// Logically delete a COMPOSITION
@@ -482,10 +465,10 @@ fn parse_versioned_details(
     let version: Value = serde_json::from_str(version_body)
         .map_err(|e| AdminUiError::Internal(format!("version JSON: {e}")))?;
     Ok(VersionedCompositionDetails {
-        object_uid: json_str(&object, &["uid", "value"]),
+        object_uid: crate::uid::uid_value_of_document(&object),
         owner_id: json_str(&object, &["owner_id", "id", "value"]),
         time_created: json_str(&object, &["time_created", "value"]),
-        version_id: json_str(&version, &["uid", "value"]),
+        version_id: crate::uid::uid_value_of_document(&version),
         lifecycle_state: json_str(&version, &["lifecycle_state", "value"]),
         preceding_version_uid: json_str(&version, &["preceding_version_uid", "value"]),
         contribution_uid: json_str(&version, &["contribution", "id", "value"]),
@@ -581,11 +564,19 @@ pub fn CompositionPage() -> impl IntoView {
     // view — rules §4), never an error bar.
     let at_time_input = RwSignal::new(String::new());
     let version_at_time = Action::new(
-        |(ehr_id, versioned_object_uid, at_time): &(String, String, String)| {
+        move |(ehr_id, versioned_object_uid, at_time): &(String, String, String)| {
             let ehr_id = ehr_id.clone();
             let versioned_object_uid = versioned_object_uid.clone();
             let at_time = at_time.clone();
-            async move { fetch_version_at_time(ehr_id, versioned_object_uid, at_time).await }
+            async move {
+                let resolved = fetch_version_at_time(ehr_id, versioned_object_uid, at_time).await;
+                // NOTE: the write rides the dispatched event's own continuation, so
+                // it is an event write rather than an Effect write (rules §2).
+                if let Ok(version) = &resolved {
+                    selected_version.set(version.clone());
+                }
+                resolved
+            }
         },
     );
 
@@ -707,19 +698,6 @@ pub fn CompositionPage() -> impl IntoView {
             &crate::feedback::logical_delete_failure_copy("this composition", &error),
         ),
         None => {}
-    });
-
-    // Sync a successful at-time resolution into the shared selection. This is
-    // the async-load-into-local-state case (rules §2 — the one-directional
-    // pattern the AQL editor uses to seed from a loaded query): the Effect
-    // reads only the action value and writes only `selected_version`, so there
-    // is no reactive loop, and Effects never run on the server (no hydration
-    // divergence). A failure leaves the selection untouched (the toolbar note
-    // renders it).
-    Effect::new(move |_| {
-        if let Some(Ok(resolved)) = version_at_time.value().get() {
-            selected_version.set(resolved);
-        }
     });
 
     let toolbar = toolbar_section(
@@ -1401,8 +1379,7 @@ fn short_version(version_id: &str) -> String {
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{
-        datetime_local_to_rfc3339, new_version_uid, parse_versioned_details, parse_versions,
-        short_version,
+        datetime_local_to_rfc3339, parse_versioned_details, parse_versions, short_version,
     };
 
     /// A `VERSIONED_COMPOSITION` container body, as the wire carries it.
@@ -1524,15 +1501,5 @@ mod tests {
     fn short_version_takes_the_trailing_segment() {
         assert_eq!(short_version("7d44::example.org::3"), "v3");
         assert_eq!(short_version("no-version"), "no-version");
-    }
-
-    #[test]
-    fn new_version_uid_reads_uid_value_or_empty() {
-        let body =
-            r#"{"_type":"COMPOSITION","uid":{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::2"}}"#;
-        assert_eq!(new_version_uid(body), "7d44::sys::2");
-        // A return=minimal (empty) or non-JSON body yields no uid.
-        assert_eq!(new_version_uid(""), "");
-        assert_eq!(new_version_uid("{}"), "");
     }
 }

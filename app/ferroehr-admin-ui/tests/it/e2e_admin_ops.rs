@@ -46,7 +46,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as};
+use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as, wait_css_absent};
 use thirtyfour::prelude::*;
 
 /// A fixture OPT no other journey touches, and its template id — deleted from
@@ -149,26 +149,6 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     panic!(
         "`{template_id}` never appeared after uploading `{fixture}` (uploads exhausted; {evidence})"
     );
-}
-
-/// Poll until no element matches `css` (the assert-gone half of every journey).
-///
-/// # Panics
-/// When the element is still present after 15 s.
-async fn wait_css_absent(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if h.driver
-            .find_all(By::Css(css))
-            .await
-            .unwrap_or_default()
-            .is_empty()
-        {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    let url = h.driver.current_url().await.expect("current url");
-    panic!("`{css}` was still present after the delete (at {url})");
 }
 
 /// Template delete from the list row: upload a fixture OPT, delete it through

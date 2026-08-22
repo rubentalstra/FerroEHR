@@ -137,7 +137,7 @@ fn parse_contribution(body: &str) -> Result<ContributionState, AdminUiError> {
             body,
             crate::format::ReprFormat::CanonicalJson,
         ),
-        uid: super::json_str(&doc, &["uid", "value"]),
+        uid: crate::uid::uid_value_of_document(&doc),
         committer: super::json_str(&doc, &["audit", "committer", "name"]),
         time_committed: super::json_str(&doc, &["audit", "time_committed", "value"]),
         change_type: super::json_str(&doc, &["audit", "change_type", "value"]),

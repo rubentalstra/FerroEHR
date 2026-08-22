@@ -26,30 +26,7 @@
 
 use crate::common;
 
-use std::time::Duration;
-
-use common::{Harness, login_basic};
-use thirtyfour::prelude::*;
-
-/// Poll until `css`'s text contains `fragment`.
-///
-/// # Panics
-/// When it never does within 15 s, reporting what it said instead.
-async fn wait_text_contains(h: &Harness, css: &str, fragment: &str) {
-    let mut last = String::new();
-    for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await
-            && let Ok(text) = element.text().await
-        {
-            if text.contains(fragment) {
-                return;
-            }
-            last = text;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never contained `{fragment}` (last text: {last})");
-}
+use common::{Harness, login_basic, wait_text_contains};
 
 /// The conformance-manifest card renders what the CDR advertises about itself
 /// through `OPTIONS {base_path}`: its product identity, its claimed conformance

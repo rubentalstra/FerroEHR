@@ -41,7 +41,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic};
+use common::{Harness, confirm_in_dialog, env, login_basic, retype, wait_css_absent};
 use thirtyfour::prelude::*;
 
 /// The template `scripts/ui-e2e.sh` seeds; its CDR-generated example
@@ -74,17 +74,6 @@ fn generated_uuid() -> String {
     let mid = u16::try_from((nanos >> 32) & 0xffff).unwrap_or(1);
     let node = u64::try_from((nanos >> 16) & 0xffff_ffff_ffff).unwrap_or(1);
     format!("{low:08x}-{mid:04x}-4000-8000-{node:012x}")
-}
-
-/// Type `value` into `css`, clearing first (`send_keys` appends, so a retry
-/// would otherwise double the field's content).
-///
-/// # Panics
-/// On any interaction failure.
-async fn retype(h: &Harness, css: &str, value: &str) {
-    let field = h.wait_css(css).await;
-    field.clear().await.expect("clear the field");
-    field.send_keys(value).await.expect("type the value");
 }
 
 /// Click the EHR-create button until the console leaves for the new EHR's
@@ -137,25 +126,6 @@ async fn click_until_xpath(h: &Harness, css: &str, xpath: &str) -> bool {
         }
     }
     false
-}
-
-/// Poll until no element matches `css`.
-///
-/// # Panics
-/// When the element is still present after 15 s.
-async fn wait_css_absent(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if h.driver
-            .find_all(By::Css(css))
-            .await
-            .unwrap_or_default()
-            .is_empty()
-        {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never disappeared");
 }
 
 /// A client-supplied EHR id creates exactly that EHR (`PUT /ehr/{ehr_id}`), the

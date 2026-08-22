@@ -183,7 +183,7 @@ pub async fn create_party(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    let uid = super::uid_value_of(&response.body);
+    let uid = crate::uid::uid_value_of(&response.body);
     if uid.is_empty() {
         return Err(AdminUiError::Internal(
             "the CDR created the party but returned no uid to open it by".to_owned(),
@@ -263,7 +263,7 @@ pub async fn update_party(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(super::uid_value_of(&response.body))
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 /// Logically delete a party (`DELETE /demographic/{kind}/{uid_based_id}`).
@@ -357,7 +357,7 @@ fn checked_party_body(body: &str, kind: PartyKind) -> Result<String, AdminUiErro
 fn parse_party_state(body: &str) -> Result<PartyState, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("party JSON: {e}")))?;
-    let version_uid = super::json_str(&doc, &["uid", "value"]);
+    let version_uid = crate::uid::uid_value_of_document(&doc);
     let identities = doc.get("identities").filter(|value| !value.is_null());
     Ok(PartyState {
         body: body.to_owned(),
@@ -928,6 +928,10 @@ fn document_section(resource: PartyResource) -> AnyView {
 /// Always mounted with a constant structure, so the server HTML and the client
 /// view match (rules §8); every value comes from the long-lived [`PartyForm`],
 /// so the card survives the facts section's Suspend re-runs (rules §4).
+///
+/// Both drafts and the save are DISABLED until [`seed`] has loaded a document
+/// into the form: the card is mounted before the read resolves, and an edit
+/// typed into it then would be silently replaced by the seed.
 #[expect(
     clippy::too_many_lines,
     reason = "one erased section: the edit card's two drafts + validation + action wiring (rules §1)"
@@ -937,6 +941,7 @@ fn edit_form(
     form: PartyForm,
     save: Action<PartyEdit, Result<String, AdminUiError>>,
 ) -> AnyView {
+    let unseeded = Signal::derive(move || form.seeded_uid.with(Option::is_none));
     let on_save = move |_| {
         let identities = form.identities.get();
         let details = form.details.get();
@@ -1005,6 +1010,8 @@ fn edit_form(
                     <textarea
                         id="party-identities"
                         class=format!("{TEXTAREA} min-h-[10rem]")
+                        disabled=true
+                        prop:disabled=move || unseeded.get()
                         prop:value=move || form.identities.get()
                         on:input:target=move |ev| form.identities.set(ev.target().value())
                     >
@@ -1019,6 +1026,8 @@ fn edit_form(
                         id="party-details"
                         class=format!("{TEXTAREA} min-h-[8rem]")
                         placeholder="{ \"_type\": \"ITEM_TREE\", \"archetype_node_id\": \"at0001\", … }"
+                        disabled=true
+                        prop:disabled=move || unseeded.get()
                         prop:value=move || form.details.get()
                         on:input:target=move |ev| form.details.set(ev.target().value())
                     >
@@ -1030,7 +1039,8 @@ fn edit_form(
                         id="party-save"
                         type="button"
                         class=BTN_PRIMARY
-                        disabled=Signal::derive(move || save.pending().get())
+                        disabled=true
+                        prop:disabled=move || unseeded.get() || save.pending().get()
                         on:click=on_save
                     >
                         <leptos_icons::Icon icon=icondata_lu::LuSave width="14" height="14" />

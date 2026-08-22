@@ -19,9 +19,9 @@
 //!
 //! This module owns the [`EhrDetailPage`] shell, the EHR summary header (the
 //! one read of the EHR resource itself — `GET /ehr/{ehr_id}`, so an unknown id
-//! fails once at the top of the screen instead of once per tab), the shared
-//! `tab_bar` strip, and the `commit_version_uid` helper shared by the
-//! directory and composition commit paths.
+//! fails once at the top of the screen instead of once per tab), and the shared
+//! `tab_bar` strip. A commit's new version uid is read by the console's ONE
+//! reader, [`uid_value_of`](crate::uid::uid_value_of).
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound (ITS-REST EHR + Query APIs). User input
@@ -62,23 +62,6 @@ use crate::pages::ehr_detail::contributions::contributions_section;
 use crate::pages::ehr_detail::directory::directory_section;
 use crate::pages::ehr_detail::status::history::status_history_section;
 use crate::pages::ehr_detail::status::status_section;
-
-#[cfg(feature = "ssr")]
-/// The new version uid of a just-committed versioned object: `uid.value` from
-/// the `Prefer: return=representation` body (an `OBJECT_VERSION_ID`). Empty when
-/// the CDR returned no representation body — the UI then shows a generic
-/// success message rather than a uid.
-fn commit_version_uid(body: &str) -> String {
-    serde_json::from_str::<Value>(body)
-        .ok()
-        .and_then(|doc| {
-            doc.get("uid")
-                .and_then(|u| u.get("value"))
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .unwrap_or_default()
-}
 
 /// The EHR resource's own summary facts, flattened for the detail header.
 ///
@@ -442,7 +425,7 @@ fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{commit_version_uid, parse_ehr_summary};
+    use super::parse_ehr_summary;
 
     #[test]
     fn parses_the_ehr_resources_summary_attributes() {
@@ -476,15 +459,5 @@ mod tests {
         assert_eq!(summary.system_id, "");
         assert_eq!(summary.ehr_status_uid, "");
         assert!(parse_ehr_summary("not json").is_err());
-    }
-
-    #[test]
-    fn commit_version_uid_reads_uid_value_or_empty() {
-        let body =
-            r#"{"_type":"COMPOSITION","uid":{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::1"}}"#;
-        assert_eq!(commit_version_uid(body), "7d44::sys::1");
-        // A return=minimal (empty) or non-JSON body yields no uid.
-        assert_eq!(commit_version_uid(""), "");
-        assert_eq!(commit_version_uid("{}"), "");
     }
 }

@@ -228,11 +228,20 @@ pub(super) fn apply_status_edits(
 /// [`status_section`](super::status_section) — the inline pane keeps the
 /// diagnostic beside the input that caused it (the console's feedback rule,
 /// crate `CLAUDE.md`).
+///
+/// Every control is DISABLED until [`seed`] has loaded a document into the
+/// form: the card is mounted before the read resolves, and an edit made in it
+/// then would be silently replaced by the seed.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one erased section: the edit card's two toggles + draft + validation + action wiring (rules §1)"
+)]
 pub(super) fn edit_form(
     ehr_id: Signal<String>,
     form: StatusForm,
     save: Action<StatusEdit, Result<String, AdminUiError>>,
 ) -> AnyView {
+    let unseeded = Signal::derive(move || form.seeded_uid.with(Option::is_none));
     let on_save = move |_| {
         let draft = form.other_details.get();
         // Client-side validation first: a malformed draft is refused inline,
@@ -300,12 +309,14 @@ pub(super) fn edit_form(
                     "is_queryable",
                     "Include this EHR in population queries (AQL).",
                     form.queryable,
+                    unseeded,
                 )}
                 {toggle_row(
                     "status-modifiable",
                     "is_modifiable",
                     "Allow new content to be committed to this EHR.",
                     form.modifiable,
+                    unseeded,
                 )} <div class="flex flex-col gap-1">
                     <label class=LABEL r#for="status-other-details">
                         "other_details (canonical JSON ITEM_STRUCTURE — leave blank to remove)"
@@ -314,6 +325,8 @@ pub(super) fn edit_form(
                         id="status-other-details"
                         class=format!("{TEXTAREA} min-h-[10rem]")
                         placeholder="{ \"_type\": \"ITEM_TREE\", \"archetype_node_id\": \"at0001\", … }"
+                        disabled=true
+                        prop:disabled=move || unseeded.get()
                         prop:value=move || form.other_details.get()
                         on:input:target=move |ev| form.other_details.set(ev.target().value())
                     >
@@ -324,7 +337,8 @@ pub(super) fn edit_form(
                         id="status-save"
                         type="button"
                         class=BTN_PRIMARY
-                        disabled=Signal::derive(move || save.pending().get())
+                        disabled=true
+                        prop:disabled=move || unseeded.get() || save.pending().get()
                         on:click=on_save
                     >
                         <leptos_icons::Icon icon=icondata_lu::LuSave width="14" height="14" />
@@ -344,12 +358,17 @@ pub(super) fn edit_form(
 ///
 /// `prop:checked` + an `on:change` listener (rules §5 — the `checked` attribute
 /// would only set the initial state, and an `onchange="…"` JS attribute is
-/// forbidden outright).
+/// forbidden outright). Inert-until-seeded is the same split: a STATIC
+/// `disabled` attribute for the server HTML (inert from first paint) and
+/// `prop:disabled` for the live state — the seed can land during hydration
+/// replay, before this binding exists, so only a property applied at
+/// hydration enables reliably (rules §2).
 fn toggle_row(
     id: &'static str,
     label: &'static str,
     hint: &'static str,
     value: RwSignal<bool>,
+    disabled: Signal<bool>,
 ) -> AnyView {
     view! {
         <div class="flex flex-col gap-0.5">
@@ -357,7 +376,9 @@ fn toggle_row(
                 <input
                     id=id
                     type="checkbox"
-                    class="accent-accent"
+                    class="accent-accent disabled:opacity-50"
+                    disabled=true
+                    prop:disabled=move || disabled.get()
                     prop:checked=move || value.get()
                     on:change=move |ev| value.set(event_target_checked(&ev))
                 />
