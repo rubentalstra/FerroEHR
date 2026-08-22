@@ -76,3 +76,17 @@ Every "shown below in the Base Lexer syntax section" reference
 unresolved `include::{openehr_adl_antlr_include}/adl/*.g4[]` directives — the
 `.g4` files are NOT vendored. The only grammar text physically present for
 primitives is the one-line `duration_constraint` production at master04.5 L507.
+
+**NOT a dangling reference (verified first-hand 2026-08-22 — do not report it as
+one).** The 4 sentences citing `DATE_/TIME_/DATE_TIME_/DURATION_CONSTRAINT_PATTERN`
+(ADL2 master04.5 **L374 + L456**, ADL1.4 master05-cadl **L856 + L938** — same
+wording, 4 sites in 2 chapters) name the rules EXACTLY as the included
+`base_lexer.g4` defines them: `crates/openehr-adl/vendor/grammar/v2_4/base_lexer.g4`
+**L35-37 + L47** (unprefixed), and ADL1.4's own
+`v1_4/cadl14_primitives.g4` **L74-77** too (provenance: openEHR/adl-antlr @
+`8db091ec`). The `V_ISO8601_*`-prefixed names appear ONLY in the chapters' own
+legacy lex/yacc listings (master05-cadl §Syntax Specification L1024-1450) and in
+ZERO vendored `.g4` (grep = 0). Base-Lexer section anchors:
+`ADL2/masterAppB-syntax_spec.adoc` L51, `ADL1.4/masterAppC-syntax_spec.adoc` L60.
+Trap: reading the chapter-local legacy listing as "the Base Lexer section"
+manufactures a false dangling-reference defect.
