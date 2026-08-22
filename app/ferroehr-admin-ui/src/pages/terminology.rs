@@ -87,7 +87,7 @@ pub fn TerminologyPage() -> impl IntoView {
     let body = browser_section(terminologies, descriptor, selected);
 
     view! {
-        <Title text="Terminology · ferroehr-admin" />
+        <Title text="Terminology" />
         <div id="terminology-screen" class="p-6">
             <PageHeader
                 title="Terminology"

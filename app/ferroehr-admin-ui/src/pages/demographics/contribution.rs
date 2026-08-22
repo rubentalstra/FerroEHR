@@ -191,7 +191,7 @@ pub fn DemographicContributionPage() -> impl IntoView {
     .into_any();
 
     view! {
-        <Title text="Contribution · ferroehr-admin" />
+        <Title text="Contribution" />
         <div class="p-6">
             <PageHeader
                 title=heading

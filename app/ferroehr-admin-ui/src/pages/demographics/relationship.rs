@@ -682,7 +682,7 @@ pub fn RelationshipsPage() -> impl IntoView {
         .to_owned();
     if !find.is_empty() {
         return view! {
-            <Title text="Relationship · ferroehr-admin" />
+            <Title text="Relationship" />
             <Redirect path=relationship_href(&find) />
         }
         .into_any();
@@ -697,7 +697,7 @@ pub fn RelationshipsPage() -> impl IntoView {
     let lookup = lookup_card();
     let create = create_card(&source_uid, &source_kind);
     view! {
-        <Title text="Relationships · ferroehr-admin" />
+        <Title text="Relationships" />
         <div class="p-6">
             <PageHeader
                 title="Party relationships"
@@ -1060,7 +1060,7 @@ pub fn RelationshipDetailPage() -> impl IntoView {
     });
 
     view! {
-        <Title text="Relationship · ferroehr-admin" />
+        <Title text="Relationship" />
         <div class="p-6">
             <PageHeader
                 title=heading

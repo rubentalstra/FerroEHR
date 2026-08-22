@@ -25,7 +25,7 @@
 //! envelope facts (lifecycle state, preceding version, contribution, signature)
 //! ← the direct VERSION read.
 //!
-//! Every resource is created ONCE in [`history_section`] — never inside a
+//! Every resource is created ONCE in `history_section` — never inside a
 //! `Suspend` (rules §4) — and gated on the tab being active, so an unopened tab
 //! fetches nothing (rules §6).
 

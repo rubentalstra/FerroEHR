@@ -102,7 +102,7 @@ pub fn QueriesPage() -> impl IntoView {
     let namespaces = namespaces_panel(stored);
 
     view! {
-        <Title text="Stored queries · ferroehr-admin" />
+        <Title text="Stored queries" />
         <div class="p-6">
             <PageHeader
                 title="Queries"

@@ -32,7 +32,7 @@
 //!    `OBJECT_VERSION_ID` … representing the `preceding_version_uid` to be
 //!    deleted", `operations/person_delete.yaml`), and a read takes either. The
 //!    console routes on the container uid
-//!    ([`container_uid_of`](crate::uid::container_uid_of)) and takes the
+//!    ([`container_uid_of`]) and takes the
 //!    served document's own `uid.value` for `If-Match` and for the delete path.
 //! 3. **`PARTY_RELATIONSHIP` has no released wire.** The vendored Demographic
 //!    API defines no `party_relationship` path at all; those routes are the
@@ -384,10 +384,8 @@ pub async fn fetch_versioned_object(
 /// `operations/versioned_party_revision_history.yaml`).
 ///
 /// The rows are the shared [`VersionEntry`] the composition viewer's history
-/// uses, parsed by the same
-/// [`parse_versions`](crate::pages::composition::parse_versions) — a
-/// `REVISION_HISTORY` is a `REVISION_HISTORY` whichever versioned object it
-/// belongs to.
+/// uses, parsed by the same `parse_versions` — a `REVISION_HISTORY` is a
+/// `REVISION_HISTORY` whichever versioned object it belongs to.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport

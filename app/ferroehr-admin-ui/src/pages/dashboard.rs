@@ -259,7 +259,7 @@ pub fn DashboardPage() -> impl IntoView {
     let trend = trend_section();
 
     view! {
-        <Title text="Dashboard · ferroehr-admin" />
+        <Title text="Dashboard" />
         <div class="p-6">
             <PageHeader
                 title="Dashboard"

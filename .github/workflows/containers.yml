@@ -297,7 +297,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
           labels: |
-            org.opencontainers.image.title=ferroehr
+            org.opencontainers.image.title=FerroEHR
             org.opencontainers.image.description=Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)
             org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
             org.opencontainers.image.url=https://ferroehr.eu/
@@ -518,7 +518,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
           labels: |
-            org.opencontainers.image.title=ferroehr-admin-ui
+            org.opencontainers.image.title=FerroEHR admin console
             org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
             org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
             org.opencontainers.image.url=https://ferroehr.eu/
@@ -603,7 +603,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
           labels: |
-            org.opencontainers.image.title=ferroehr-postgres
+            org.opencontainers.image.title=FerroEHR PostgreSQL
             org.opencontainers.image.description=PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr
             org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
             org.opencontainers.image.url=https://ferroehr.eu/

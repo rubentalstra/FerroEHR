@@ -15,7 +15,7 @@
 //! (`GET /demographic/tags`) — it spans every kind, because an `ITEM_TAG`
 //! reports its target as a bare `UID_BASED_ID` with no kind attached, which is
 //! why opening a row asks
-//! [`resolve_party_kind`](super::resolve_party_kind) where that id lives.
+//! [`resolve_party_kind`] where that id lives.
 //!
 //! Every filter, page and window lives in the URL (rules §9), and the lookup
 //! form is a plain `<form method="GET">` so finding a party works before the
@@ -62,7 +62,7 @@ use crate::uid::container_uid_of;
 #[component]
 pub fn DemographicsPage() -> impl IntoView {
     view! {
-        <Title text="Demographics · ferroehr-admin" />
+        <Title text="Demographics" />
         <Redirect path=browse_href(PartyKind::Person) />
     }
 }
@@ -89,7 +89,7 @@ pub fn unknown_kind_view(segment: &str) -> AnyView {
         })
         .collect::<Vec<_>>();
     view! {
-        <Title text="Not found · ferroehr-admin" />
+        <Title text="Not found" />
         <div class="p-6">
             <PageHeader title="Unknown party kind" />
             <section class=CARD_PAD id="demographics-unknown-kind">
@@ -148,7 +148,7 @@ pub fn PartyBrowserPage() -> impl IntoView {
         let target = kind.get_untracked().map(|kind| party_href(kind, &find));
         return match target {
             Some(path) => view! {
-                <Title text="Demographics · ferroehr-admin" />
+                <Title text="Demographics" />
                 <Redirect path=path />
             }
             .into_any(),
@@ -201,7 +201,7 @@ fn browser_screen(kind: PartyKind) -> AnyView {
     );
 
     view! {
-        <Title text="Demographics · ferroehr-admin" />
+        <Title text="Demographics" />
         <div class="p-6">
             <PageHeader title=kind.plural().to_owned() subtitle=subtitle />
             {switcher}

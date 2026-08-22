@@ -1,6 +1,6 @@
 # Conformance Report
 
-SUT: ehrbase 2.34.0 · schedule cnf-2.0-w2 · ITS its-rest
+SUT: EHRbase 2.34.0 (sut `ehrbase`) · schedule cnf-2.0-w2 · ITS its-rest
 Runner: cnf-runner 3.17.5 · verification pack: passed
 
 ## Summary
@@ -77,13 +77,13 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
 | Adl14ArchetypeProvisioning | FAIL | 4 | 1 | 6 | 2 |
-| Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 6 |
+| Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 8 |
 | QueryProvisioning | FAIL | 15 | 10 | 1 | 0 |
 | EhrOperations | FAIL | 18 | 2 | 0 | 3 |
-| EhrStatus | FAIL | 14 | 26 | 3 | 5 |
-| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 2 |
-| DirectoryOps | FAIL | 61 | 13 | 1 | 10 |
-| ChangeSets | FAIL | 7 | 13 | 58 | 23 |
+| EhrStatus | FAIL | 14 | 26 | 3 | 6 |
+| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 3 |
+| DirectoryOps | FAIL | 61 | 13 | 1 | 11 |
+| ChangeSets | FAIL | 7 | 13 | 58 | 24 |
 | Versioning | FAIL | 8 | 3 | 50 | 6 |
 | ArchetypeValidation | FAIL | 0 | 67 | 54 | 4 |
 | AqlBasic | FAIL | 5 | 3 | 26 | 0 |
@@ -137,7 +137,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 571 of 638 selected cases driven.
+Coverage: 571 of 645 selected cases driven.
 
 Not-executed verdicts (each cited):
 

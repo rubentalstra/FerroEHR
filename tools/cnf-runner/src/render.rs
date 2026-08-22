@@ -48,14 +48,18 @@ use crate::vocab::{Family, FormatName, Tier};
 pub fn render_report(
     results: &Results,
     verdicts: &VerdictReport,
+    statement: &Statement,
 ) -> Result<String, crate::conf_assets::TaxonomyError> {
     let mut out = String::new();
     let _ = writeln!(out, "# Conformance Report\n");
+    // The party's declared product DISPLAY name leads; the machine `sut` key
+    // (which names the artifact directories) stays visible beside it.
     let _ = writeln!(
         out,
-        "SUT: {} {} · schedule {} · ITS {}",
-        results.sut.name,
+        "SUT: {} {} (sut `{}`) · schedule {} · ITS {}",
+        statement.product.name,
         results.sut.version,
+        results.sut.name,
         results.schedule_release,
         its_token(results),
     );
@@ -870,8 +874,8 @@ mod tests {
     #[test]
     fn report_is_deterministic_and_lists_citations() {
         let v = verdicts();
-        let a = render_report(&results(), &v).unwrap();
-        let b = render_report(&results(), &v).unwrap();
+        let a = render_report(&results(), &v, &statement()).unwrap();
+        let b = render_report(&results(), &v, &statement()).unwrap();
         assert_eq!(a, b);
         assert!(a.ends_with('\n'));
         assert!(a.contains("Coverage: 1 of 1"));
