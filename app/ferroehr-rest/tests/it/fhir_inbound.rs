@@ -643,3 +643,58 @@ async fn validate_operation_level_statuses_mirror_ingest() {
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND, "the config gate answers 404");
 }
+
+/// Two enabled mappings over ONE template serve one committed composition as
+/// ONE Bundle entry — never one per mapping. HL7 FHIR R4 `bdl-7` ("`FullUrl`
+/// must be unique in a bundle"); the #2579 regression, measured live as
+/// `total: 2` with two identical `fullUrl`s for one stored composition.
+#[tokio::test]
+async fn two_mappings_over_one_template_serve_one_entry_per_composition() {
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
+
+    for (name, profile) in [("bp", PROFILE_OK), ("bp-alt", "http://example.org/alt")] {
+        let (status, _, body) = send(
+            &router,
+            req("POST", MAPPINGS, Some(mapping_body(name, profile, "US"))),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CREATED, "mapping {name}: {body}");
+    }
+
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation"),
+            Some(bp_observation(PROFILE_OK)),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "ingest committed: {oo}");
+
+    let (status, _, bundle) = send(
+        &router,
+        req(
+            "GET",
+            &format!("{BASE}/fhir/r4/Observation?patient=p-42&_count=10"),
+            None,
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "façade query: {bundle}");
+    assert_eq!(
+        bundle["total"], 1,
+        "one composition is one entry, regardless of how many mappings are enabled: {bundle}"
+    );
+    let entries = bundle["entry"].as_array().expect("entry array");
+    assert_eq!(entries.len(), 1, "{bundle}");
+    let full_urls: Vec<&str> = entries
+        .iter()
+        .filter_map(|e| e["fullUrl"].as_str())
+        .collect();
+    let mut deduped = full_urls.clone();
+    deduped.sort_unstable();
+    deduped.dedup();
+    assert_eq!(full_urls.len(), deduped.len(), "unique fullUrls: {bundle}");
+}
