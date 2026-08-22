@@ -27,6 +27,16 @@ pub struct AmbiguityEntry {
     /// The divergence/silence, with its source citation.
     pub ambiguity: String,
     /// Where it was verified (spec file/section).
+    ///
+    /// Field-format convention (issue #2545, machine-gated by the validate
+    /// `spec-ref` check): the field splits into `;`/` + ` fragments; every
+    /// fragment opening with a spec component token (`RM`, `BASE`, `AM`,
+    /// `QUERY`, `TERM`, `LANG`, `SM`, `CNF`, `ITS-REST`, `ITS-XML`,
+    /// `ITS-JSON`) is a citation clause and must machine-resolve (document +
+    /// `§` sections; `{a,b}` brace shorthands expand, every variant must
+    /// resolve); any other fragment is adjudication prose and passes. A
+    /// source with no citation clause at all fails — a silence claim must
+    /// ground on at least one resolvable citation.
     pub source: String,
     /// The normative handling a runner must apply.
     pub handling: String,

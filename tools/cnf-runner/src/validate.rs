@@ -270,6 +270,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     check_corpus_integrity(ctx.set, &mut findings);
     if let Some(spec) = spec.as_ref() {
         check_corpus_spec_refs(ctx.set, spec, &mut findings);
+        check_register_sources(ctx.set, spec, &mut findings);
     }
     check_vocab_drift(ctx.set, &mut findings);
     check_journey_envelope(ctx.set, &mut findings);
@@ -1758,20 +1759,25 @@ struct SpecIndex<'a> {
     /// The ITS-XML component's SECOND root: the released XSD bundles.
     /// See [`SpecIndex::component_roots`].
     xml_schemas: Option<PathBuf>,
+    /// The ITS-JSON component's SECOND root: the vendored ITS-JSON schema.
+    json_schemas: Option<PathBuf>,
+    /// The ITS-REST component's SECOND root: the vendored released OAS
+    /// bundle artifacts (`*-codegen/html/validation.openapi.yaml`).
+    rest_oas: Option<PathBuf>,
 }
 
-/// The vendored ITS-XML schema bundle, located from the vendored spec root.
+/// One vendored machine-readable bundle, located from the vendored spec root.
 ///
 /// Both are repo-relative and both are vendored by committed scripts, so the
 /// spec root's grandparent IS the workspace root (`docs/specs/openehr` →
 /// `docs/specs` → `docs` → the workspace). The same derivation already
 /// locates `docs/conformance/` for the coverage report. `None` when the
 /// bundle is not there (a spec tree used outside the workspace, e.g. a test
-/// fixture): ITS-XML citations then resolve against the docs tree alone,
-/// exactly as before issue #1833.
-fn xml_schema_root(spec_root: &Path) -> Option<PathBuf> {
+/// fixture): the component's citations then resolve against the docs tree
+/// alone, exactly as before issue #1833.
+fn bundle_root(spec_root: &Path, relative: &str) -> Option<PathBuf> {
     let workspace = spec_root.parent()?.parent()?.parent()?;
-    let bundle = workspace.join("crates/openehr-its/schemas/xml");
+    let bundle = workspace.join(relative);
     bundle.is_dir().then_some(bundle)
 }
 
@@ -1796,7 +1802,9 @@ impl<'a> SpecIndex<'a> {
             sections: RefCell::new(BTreeMap::new()),
             attributes: RefCell::new(BTreeMap::new()),
             interfaces: RefCell::new(BTreeMap::new()),
-            xml_schemas: xml_schema_root(root),
+            xml_schemas: bundle_root(root, "crates/openehr-its/schemas/xml"),
+            json_schemas: bundle_root(root, "crates/openehr-its/schemas/json"),
+            rest_oas: bundle_root(root, "crates/openehr-its/vendor/rest-oas"),
         }
     }
 
@@ -1804,15 +1812,22 @@ impl<'a> SpecIndex<'a> {
     /// authoritative first.
     ///
     /// Every component has exactly one — its vendored docs directory —
-    /// except **ITS-XML**, which has two. `scripts/vendor/spec-docs.sh`
-    /// vendors PROSE, so the docs tree's `ITS-XML/components/**` holds only
-    /// the upstream `README.adoc` stubs; the released XSD bundles themselves
-    /// are vendored ONCE, at `crates/openehr-its/schemas/xml/`, as the
-    /// canonical-XML codec's input. An XSD-element citation therefore resolved
-    /// nowhere. Adjudication (issue #1833): the gate learns the bundle as a
-    /// SECOND ROOT — one vendored copy, two readers — rather than the
-    /// bundle being copied into the docs tree, which would fork the
-    /// schemas the codec and the citations speak about.
+    /// except the three whose machine-readable artifacts are vendored
+    /// OUTSIDE the docs tree. `scripts/vendor/spec-docs.sh` vendors PROSE,
+    /// so the docs tree's `ITS-XML/components/**` holds only the upstream
+    /// `README.adoc` stubs while the released XSD bundles live at
+    /// `crates/openehr-its/schemas/xml/` as the canonical-XML codec's input —
+    /// an XSD-element citation therefore resolved nowhere. Adjudication
+    /// (issue #1833): the gate learns the bundle as a SECOND ROOT — one
+    /// vendored copy, two readers — rather than the bundle being copied into
+    /// the docs tree, which would fork the schemas the codec and the
+    /// citations speak about. The same law (issue #2545) covers **ITS-JSON**
+    /// (the validation-oracle schema at `crates/openehr-its/schemas/json/`)
+    /// and **ITS-REST**'s released OAS BUNDLE artifacts
+    /// (`crates/openehr-its/vendor/rest-oas/` — the assembled
+    /// codegen/html/validation variants exist only there, and a
+    /// bundle-variant divergence can only be cited against the bundle; the
+    /// `specifications/**` source files stay first, in the docs tree).
     ///
     /// A root that does not exist is dropped, so an empty result is the
     /// "component dir missing" finding.
@@ -1822,10 +1837,14 @@ impl<'a> SpecIndex<'a> {
         if docs.is_dir() {
             roots.push(docs);
         }
-        if component == "ITS-XML"
-            && let Some(schemas) = &self.xml_schemas
-        {
-            roots.push(schemas.clone());
+        let second = match component {
+            "ITS-XML" => &self.xml_schemas,
+            "ITS-JSON" => &self.json_schemas,
+            "ITS-REST" => &self.rest_oas,
+            _ => &None,
+        };
+        if let Some(bundle) = second {
+            roots.push(bundle.clone());
         }
         roots
     }
@@ -2380,6 +2399,56 @@ fn citation_clauses(citation: &str) -> Vec<CitationClause<'_>> {
     clauses
 }
 
+/// Expand one `{a,b}` brace group in a path-hint token into its concrete
+/// alternatives, recursing for a second group in the produced tail. A token
+/// with no well-formed group passes through literally (a spaced group has
+/// already been broken by the whitespace splitter, and the literal's no-match
+/// finding is the honest failure).
+fn expand_one_token(token: &str) -> Vec<String> {
+    let Some(open) = token.find('{') else {
+        return vec![token.to_owned()];
+    };
+    let Some(close) = token.get(open..).and_then(|rest| rest.find('}')) else {
+        return vec![token.to_owned()];
+    };
+    let (Some(head), Some(body), Some(tail)) = (
+        token.get(..open),
+        token.get(open + 1..open + close),
+        token.get(open + close + 1..),
+    ) else {
+        return vec![token.to_owned()];
+    };
+    body.split(',')
+        .flat_map(|alternative| expand_one_token(&format!("{head}{alternative}{tail}")))
+        .collect()
+}
+
+/// Expand `{a,b}` brace groups across a clause's path-hint tokens into the
+/// concrete token-list variants — the authored shorthand for one clause citing
+/// several sibling documents (`operations/directory_{update,delete}.yaml`).
+/// Every variant must resolve on its own, so a half-phantom shorthand still
+/// fails. Bounded at 32 variants: past that the literal tokens come back
+/// unexpanded and fail loudly rather than exploding.
+fn expand_braces(tokens: &[&str]) -> Vec<Vec<String>> {
+    let mut variants: Vec<Vec<String>> = vec![Vec::new()];
+    for token in tokens {
+        let expansions = expand_one_token(token);
+        let mut next = Vec::with_capacity(variants.len() * expansions.len());
+        for variant in &variants {
+            for expansion in &expansions {
+                let mut grown = variant.clone();
+                grown.push(expansion.clone());
+                next.push(grown);
+            }
+        }
+        if next.len() > 32 {
+            return vec![tokens.iter().map(|t| (*t).to_owned()).collect()];
+        }
+        variants = next;
+    }
+    variants
+}
+
 /// The vendored documents one path hint names, or `None` when it names none.
 ///
 /// Every token must appear in the file's component-relative path, and the LAST
@@ -2446,7 +2515,7 @@ fn section_candidates(section: &str) -> BTreeSet<String> {
     let mut add = |text: &str| {
         let text = text
             .trim()
-            .trim_end_matches([',', ';', '.', '/', '-', ':'])
+            .trim_end_matches([',', ';', '.', '/', '-', ':', ')'])
             .trim();
         if !text.is_empty() {
             out.insert(text.to_owned());
@@ -2521,24 +2590,33 @@ fn check_citations(
             }
             // Each root is resolved independently and the hits pooled: an
             // ITS-XML citation may name a docs-tree chapter OR an XSD of the
-            // vendored schema bundle (issue #1833).
+            // vendored schema bundle (issue #1833). Brace shorthands expand
+            // first, and EVERY variant must resolve (issue #2545) — a
+            // half-phantom `{a,b}` still fails, naming the missing variant.
             let mut documents: Vec<(&PathBuf, PathBuf)> = Vec::new();
-            for root in &roots {
-                documents.extend(
-                    resolve_documents(spec, root, &clause.tokens)
-                        .into_iter()
-                        .map(|document| (root, document)),
-                );
+            let mut unmatched: Option<String> = None;
+            for variant in expand_braces(&clause.tokens) {
+                let tokens: Vec<&str> = variant.iter().map(String::as_str).collect();
+                let mut hits: Vec<(&PathBuf, PathBuf)> = Vec::new();
+                for root in &roots {
+                    hits.extend(
+                        resolve_documents(spec, root, &tokens)
+                            .into_iter()
+                            .map(|document| (root, document)),
+                    );
+                }
+                if hits.is_empty() {
+                    unmatched = Some(variant.join(" "));
+                    break;
+                }
+                documents.extend(hits);
             }
-            if documents.is_empty() {
+            if let Some(missing) = unmatched {
                 push(
                     findings,
                     CheckId::SpecRef,
                     who,
-                    format!(
-                        "{citation:?}: no vendored document under {dir} matches {:?}",
-                        clause.tokens.join(" ")
-                    ),
+                    format!("{citation:?}: no vendored document under {dir} matches {missing:?}"),
                 );
                 continue;
             }
@@ -2668,6 +2746,38 @@ fn check_binding_sources(
         check_citations(
             &[source],
             &format!("{who} [{field}.source]"),
+            spec,
+            findings,
+        );
+    }
+}
+
+/// The ambiguity register's own `source` citations resolve (issue #2545).
+///
+/// A register entry is a claim that the released text is silent, and its
+/// `source` field is where that claim grounds — so a phantom file, a moved
+/// chapter or a misattributed section there is exactly the drift class this
+/// gate exists to catch, yet the register went unchecked while every OTHER
+/// artifact's citations resolved. The field-format convention (recorded on
+/// the register schema): `source` splits into `;`/` + ` fragments; every
+/// fragment opening with a spec component token is a CITATION CLAUSE and
+/// resolves like a case `spec_ref` (document + `§` sections, the shared
+/// [`check_citations`] machinery, both ITS-XML roots); any other fragment is
+/// adjudication prose and passes — the register deliberately narrates its
+/// verification (grep footprints, oracle-tier notes), unlike a binding
+/// derivation, so the binding gate's every-clause-accounted-for rule does not
+/// apply here. A source with NO citation clause at all is accused through
+/// the unknown-component fallback: a silence claim must ground on at least
+/// one resolvable citation.
+fn check_register_sources(set: &ArtifactSet, spec: &SpecIndex<'_>, findings: &mut Vec<Finding>) {
+    let Some((path, register)) = &set.register else {
+        return;
+    };
+    let who = path.display().to_string();
+    for (id, entry) in register.entries() {
+        check_citations(
+            &[entry.source.as_str()],
+            &format!("{who} [{id}] source"),
             spec,
             findings,
         );
@@ -4853,9 +4963,77 @@ h|*1..1*\n\
         findings
     }
 
+    /// The register-source convention (#2545): prose fragments pass, citation
+    /// clauses resolve, and a register-shaped mix of both is clean when its
+    /// citations are real.
+    #[test]
+    fn register_source_prose_passes_and_citations_resolve() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        assert!(
+            citation_findings(
+                "silence CONFIRMED first-hand (grep of the chapter: zero hits); \
+                 RM ehr_extract master04-common_package §Version Specification; \
+                 the stalled guide is never authority",
+                &spec
+            )
+            .is_empty()
+        );
+    }
+
+    /// A register source with NO citation clause at all is accused through
+    /// the unknown-component fallback — a silence claim must ground on at
+    /// least one resolvable citation (#2545).
+    #[test]
+    fn register_source_without_any_citation_clause_is_accused() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        let out = citation_findings("ALL SOURCES READ FIRST-HAND, nothing cited", &spec);
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert!(out[0].message.contains("unknown component"), "{out:?}");
+    }
+
+    /// Seeded defects a register source must fail on: a phantom document and
+    /// a phantom section in a real document (#2545).
+    #[test]
+    fn register_source_phantom_document_and_section_fail() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        let phantom_doc = citation_findings("RM ehr_extract master99-nonexistent §Anything", &spec);
+        assert_eq!(phantom_doc.len(), 1, "{phantom_doc:?}");
+        let phantom_section = citation_findings(
+            "RM ehr_extract master04-common_package §No Such Heading Anywhere",
+            &spec,
+        );
+        assert_eq!(phantom_section.len(), 1, "{phantom_section:?}");
+    }
+
+    /// `{a,b}` brace shorthands expand — every variant must resolve, so a
+    /// half-phantom shorthand still fails, naming the missing variant (#2545).
+    #[test]
+    fn brace_shorthand_expands_and_a_half_phantom_variant_fails() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        assert!(
+            citation_findings(
+                "RM ehr_extract UML/classes/org.openehr.rm.ehr_extract.{extract_manifest}.adoc \
+                 §Attributes",
+                &spec
+            )
+            .is_empty()
+        );
+        let out = citation_findings(
+            "RM ehr_extract \
+             UML/classes/org.openehr.rm.ehr_extract.{extract_manifest,nonexistent}.adoc",
+            &spec,
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert!(out[0].message.contains("nonexistent"), "{out:?}");
+    }
+
     /// A workspace-shaped fixture: `docs/specs/openehr` beside the vendored
     /// XSD bundle at `crates/openehr-its/schemas/xml`, mirroring the real
-    /// layout [`xml_schema_root`] derives.
+    /// layout [`bundle_root`] derives.
     fn workspace_fixture() -> assert_fs::TempDir {
         let dir = assert_fs::TempDir::new().unwrap();
         let docs = dir
