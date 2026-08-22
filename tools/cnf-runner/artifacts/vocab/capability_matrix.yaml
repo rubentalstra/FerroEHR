@@ -15,8 +15,8 @@ Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cas
 TemplateExamples: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml NOTE + register AMB-115 (no CNF profiles row exists for example generation)" }
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }
 EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
-EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 49, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
-CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
+EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 50, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
+CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 60, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 86, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
 ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 107, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 73, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }

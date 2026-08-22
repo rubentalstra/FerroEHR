@@ -82,6 +82,11 @@ impl WrappedOriginal {
 pub(crate) struct VersionRead {
     pub(crate) vo_id: VoId,
     pub(crate) ehr_id: Option<EhrId>,
+    /// The stored RM kind of the versioned object this version belongs to —
+    /// the discriminator a kind-scoped resource read refuses a wrong-kind
+    /// `uid_based_id` with (ITS-REST `404_unknown_ehr_id_or_uid_based_id`:
+    /// the id is not a representation of THAT resource).
+    pub(crate) kind: Kind,
     pub(crate) tree: TreeId,
     pub(crate) preceding_version_uid: Option<String>,
     pub(crate) other_input_version_uids: Vec<String>,
@@ -214,6 +219,7 @@ fn version_read(
     Ok(VersionRead {
         vo_id: stored.vo_id,
         ehr_id: stored.ehr_id,
+        kind,
         tree,
         preceding_version_uid: stored.preceding_version_uid,
         other_input_version_uids: stored.other_input_version_uids,

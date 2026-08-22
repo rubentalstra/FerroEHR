@@ -87,7 +87,7 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::EhrStatus)
             .ok_or_else(|| {
                 ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,
@@ -303,7 +303,7 @@ impl FerroEhrService {
     ) -> Result<Value, ServiceError> {
         let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::EhrStatus)
             .ok_or_else(|| {
                 ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,

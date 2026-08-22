@@ -2720,3 +2720,69 @@ async fn the_bootstrap_ehr_status_version_has_no_preceding_version_uid() {
         .expect("second ORIGINAL_VERSION");
     assert_eq!(original_v2["preceding_version_uid"]["value"], ovid_v1);
 }
+
+/// A kind-scoped resource read refuses a wrong-kind `uid_based_id` with the
+/// not-found class (ITS-REST `404_unknown_ehr_id_or_uid_based_id` — an id of
+/// another kind is not a representation of THAT resource). Regression for
+/// #2559, found live: both reads answered `200` with the OTHER kind's body,
+/// filtering only on the owning EHR.
+#[tokio::test]
+async fn wrong_kind_uid_on_a_resource_read_is_not_found() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
+
+    // The EHR's own EHR_STATUS container id, and one committed COMPOSITION.
+    let status_v1 = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status get");
+    let status_version_id = uid(&status_v1).to_owned();
+    let status_container: ferroehr::ids::VoId = status_version_id
+        .split("::")
+        .next()
+        .unwrap()
+        .parse()
+        .expect("status vo uuid");
+    let comp_ovid = svc
+        .create_composition(ehr_uuid, uv(&composition("KindProbe"), "249", None))
+        .await
+        .expect("composition_create")
+        .version_uid();
+    let comp_vo: ferroehr::ids::VoId = comp_ovid
+        .split("::")
+        .next()
+        .unwrap()
+        .parse()
+        .expect("comp vo uuid");
+
+    // COMPOSITION read addressed with the EHR_STATUS container: not found.
+    let cross = svc.get_composition_latest(ehr_uuid, status_container).await;
+    assert!(
+        matches!(
+            &cross,
+            Err(SmError {
+                status: CallStatusType::CompositionDoesNotExist,
+                ..
+            })
+        ),
+        "an EHR_STATUS uid is not a COMPOSITION representation: {cross:?}"
+    );
+
+    // EHR_STATUS version read addressed with the COMPOSITION's version: not found.
+    let cross = svc
+        .ehr_status_at_version_response(ehr_uuid, comp_vo, "1")
+        .await;
+    assert!(
+        cross.is_err(),
+        "a COMPOSITION uid is not an EHR_STATUS representation: {cross:?}"
+    );
+
+    // The right-kind reads still serve (the filter narrows, never breaks).
+    svc.get_composition_latest(ehr_uuid, comp_vo)
+        .await
+        .expect("the composition still reads by its own id");
+    svc.ehr_status_at_version_response(ehr_uuid, status_container, "1")
+        .await
+        .expect("the status still reads by its own id");
+}
