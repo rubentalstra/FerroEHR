@@ -1,0 +1,39 @@
+# A wrong-KIND version uid on the EHR_STATUS resource read: a committed
+# COMPOSITION's version uid is real, current, and owned by the addressed EHR —
+# but it is not a representation of the EHR_STATUS resource, so the read is
+# the released 404, never a 200 serving the other kind's body. The
+# kind-confusion twin on the COMPOSITION route is
+# I_EHR_COMPOSITION.get_composition_at_version-status_uid_kind_mismatch;
+# found live (#2559) as a 200 carrying `"_type":"COMPOSITION"` from the
+# EHR_STATUS route.
+id: I_EHR_STATUS.get_ehr_status_at_version-composition_uid_kind_mismatch
+kind: functional
+component: EHR
+sm_operation: I_EHR_STATUS.get_ehr_status_at_version
+capabilities: [EhrStatus]
+profiles: [CORE]
+test_purpose: >-
+  A syntactically valid version uid of ANOTHER RM kind (a committed
+  COMPOSITION) addressed on the EHR_STATUS resource is refused not-found,
+  never served as the other kind's body.
+description: "Get EHR_STATUS addressed with a COMPOSITION version uid"
+spec_refs:
+  - "ITS-REST specifications/responses/404_unknown_ehr_id_or_version_uid.yaml (the EHR_STATUS route's 404 family — cited as the OAS; docs text silent)"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes (the 404 row: 'did not find the target resource')"
+  - "SM openehr_platform §I_EHR_STATUS.get_ehr_status_at_version"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1                              # the OTHER kind's real, current version uid
+    call: I_EHR_COMPOSITION.create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+    capture: { composition_version_uid: created.version_uid }
+  - step: 2
+    call: get_ehr_status_at_version
+    with: { ehr_id: "${ehr_id}", version_uid: "${composition_version_uid}" }
+    expect: not_found                    # a real uid of the wrong kind is not this resource

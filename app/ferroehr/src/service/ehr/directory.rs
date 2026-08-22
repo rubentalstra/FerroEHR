@@ -140,7 +140,7 @@ impl FerroEhrService {
             Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
             None => read_current(&self.pool, self.spec_profile, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == Some(ehr_id))
+        .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Folder)
         .ok_or_else(|| {
             ServiceError::sm(
                 CallStatusType::VersionedObjectDoesNotExist,
@@ -190,7 +190,7 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = read_version(&self.pool, self.spec_profile, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Folder)
             .ok_or_else(|| {
                 ServiceError::sm(
                     CallStatusType::VersionDoesNotExist,
