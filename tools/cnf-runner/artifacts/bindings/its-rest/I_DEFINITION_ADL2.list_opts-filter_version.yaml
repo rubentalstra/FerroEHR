@@ -1,0 +1,24 @@
+# Wire realization of I_DEFINITION_ADL2.list_opts, variant `filter_version`:
+# the listing with an explicit `version` filter. The ITS-REST docs text is
+# silent on template-list version filtering, so the RELEASED OAS grounds the
+# parameter (oracle order 2026-07-28 — the OAS fills docs-text silence, cited
+# AS the OAS): specifications/parameters/query/filter_version.yaml — "Filter
+# by version (e.g. `1.2.*` or use `*` for all versions), taken from
+# `template_id`; if missing, then only the latest version will be returned."
+# The variant-less binding carries no query parameters and therefore drives
+# the ABSENT-version (latest-only) branch; this variant drives the
+# explicit-filter branch.
+# Sources: specifications/operations/definition_template_adl2_list.yaml
+# (200); parameters/query/filter_version.yaml.
+sm_operation: I_DEFINITION_ADL2.list_opts
+its: its-rest
+variant: filter_version
+request:
+  method: GET
+  path: /definition/template/adl2
+  query:
+    version: "${version}"
+  headers:
+    Accept: application/json
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }

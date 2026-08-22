@@ -9,9 +9,9 @@
 #                      measured hospital simulation does not exercise.
 # Derivation narratives live in the ambiguity register and on the tracker.
 Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 13, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
-Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 26, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
+Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 28, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
 Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
-Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 30, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
+Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 34, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
 TemplateExamples: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml NOTE + register AMB-115 (no CNF profiles row exists for example generation)" }
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }
 EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
