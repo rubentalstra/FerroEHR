@@ -173,6 +173,14 @@ pub fn QueryBuilderPage() -> impl IntoView {
         None => {}
     });
 
+    // The live AQL / validation, recomputed from the whole state on any change.
+    let preview = Memo::new(move |_| ctx.query.with(to_aql));
+
+    let load_notice = if has_load {
+        load_notice_section(load_resource, lift_refusal)
+    } else {
+        ().into_any()
+    };
     // A lifted query arrives with its criteria already built, so their catalog
     // metadata (labels, coded/ordinal option lists, unit lists) has to come from
     // the template's catalog rather than from the click that would normally have
@@ -182,14 +190,6 @@ pub fn QueryBuilderPage() -> impl IntoView {
         seed_leaf_meta_from_catalog(catalog, ctx);
     }
 
-    // The live AQL / validation, recomputed from the whole state on any change.
-    let preview = Memo::new(move |_| ctx.query.with(to_aql));
-
-    let load_notice = if has_load {
-        load_notice_section(load_resource, lift_refusal)
-    } else {
-        ().into_any()
-    };
     let template_step = template_step_section(ctx, ran, templates);
     let picker = picker_section(ctx, catalog);
     let criteria = criteria_section(ctx);
@@ -246,11 +246,21 @@ pub(crate) fn load_href(name: &str, version: &str) -> String {
 /// Lift a loaded stored query into the builder state, exactly once and
 /// client-side.
 ///
-/// Effects never run on the server, so this cannot diverge at hydration; the
-/// one-shot `StoredValue` guard keeps it from re-firing. The save fields are
-/// seeded the way the raw editor seeds them — the qualified name split back into
-/// namespace + bare name, and the NEXT version proposed, because the loaded
-/// `(name, version)` pair is immutable.
+/// This is the ONE seed on the screen that stays an `Effect` instead of moving
+/// into a `Suspend` the way the console seeds every other form (rules §2, and
+/// the sibling [`seed_leaf_meta`]): what it writes — `ctx.query.template_id` —
+/// is the SOURCE of the `catalog` resource that the always-mounted picker
+/// `<Transition>` renders. Seeding from inside a `Suspend` would therefore have
+/// one suspended view mutate another's resource source mid-render, so the
+/// server pass could resolve and serialize that resource twice while the client
+/// hydrates against whichever pass reached the buffer — the divergence class
+/// rules §4 exists to prevent. An `Effect` never runs on the server, which
+/// keeps the server pass deterministic: the lift is a client-only state
+/// transition, and the one-shot `StoredValue` guard keeps it from re-firing.
+///
+/// The save fields are seeded the way the raw editor seeds them — the qualified
+/// name split back into namespace + bare name, and the NEXT version proposed,
+/// because the loaded `(name, version)` pair is immutable.
 ///
 /// A query the builder cannot represent is NOT partially loaded: the refusal is
 /// recorded for the notice and the builder stays empty, so nothing on screen
@@ -290,9 +300,14 @@ fn seed_builder_from_stored_query(
 /// metadata, once, so a LIFTED criterion shows its real label and its
 /// constrained code/ordinal/unit options instead of a bare path segment.
 ///
-/// One-shot and client-side for the same reasons as
-/// [`seed_builder_from_stored_query`]; existing entries win, so a node the user
-/// added by hand is never overwritten.
+/// A resource-reading `Effect`, kept deliberately (the written-justification
+/// case rules §2 admits): it writes `ctx.leaf_meta` and bumps the criteria
+/// version that the ALWAYS-MOUNTED criteria section renders from, outside the
+/// picker's `<Transition>` — a seed inside that `Suspend` would write them
+/// during the server pass and again during hydration replay, the mid-walk
+/// divergence reproduced live on `/queries/aql?load=…` as tachys'
+/// unrecoverable-hydration panic. One-shot; existing entries win, so a node
+/// the user added by hand is never overwritten.
 fn seed_leaf_meta_from_catalog(
     catalog: Resource<Result<Option<CatalogNode>, AdminUiError>>,
     ctx: BuilderCtx,

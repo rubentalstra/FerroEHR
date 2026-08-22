@@ -54,6 +54,14 @@ still checkable first-hand.
    and the enumeration memberships (CALL_STATUS_TYPE 10 / EHR_CALL_STATUS_TYPE 6 /
    DEFINITION_CALL_STATUS_TYPE 7).
 
+3. **outlined paths (ALL AM UML diagrams too)** — same 0-text shape; `rsvg-convert -z 2
+   <svg> -o out.png` renders them fully legibly at ~2000px. **They are not decoration: the
+   AM primitive-package diagrams carry attributes the CLASS TABLES omit** — e.g.
+   `AM-aom14.archetype.constraint_model.primitive.svg` shows `C_DATE.timezone_validity`,
+   which `org.openehr.am.aom14.c_date.adoc` and the AOM1.4 BMM both lack (and which the
+   ITS-XML `AM/Release-1.4/Archetype.xsd` L283 also declares). Rasterize before concluding
+   "the model does not declare X". See [[temporal-constraint-timezone-anchors]].
+
 ## SM orphan-class census (reproducible one-liner)
 `for f in docs/UML/classes/*.adoc; do grep -rqF "classes/$(basename $f)" docs/*/*.adoc || echo $f; done`
 run from `docs/specs/openehr/SM` → exactly **11** files included by none of the three books

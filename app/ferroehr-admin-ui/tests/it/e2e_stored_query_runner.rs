@@ -37,7 +37,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic_as};
+use common::{Harness, confirm_in_dialog, env, login_basic_as, wait_css_absent};
 use thirtyfour::prelude::*;
 
 /// The namespace half of every stored-query name these journeys save.
@@ -83,26 +83,6 @@ fn admin_credentials() -> (String, String) {
         env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ferroehr-admin".to_owned()),
         env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ferroehr".to_owned()),
     )
-}
-
-/// Poll until no element matches `css` (the assert-gone half of a cleanup).
-///
-/// # Panics
-/// When the element is still present after 15 s.
-async fn wait_css_absent(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if h.driver
-            .find_all(By::Css(css))
-            .await
-            .unwrap_or_default()
-            .is_empty()
-        {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    let url = h.driver.current_url().await.expect("current url");
-    panic!("`{css}` never disappeared (at {url})");
 }
 
 /// Store `aql` at version 1.0.0 under `bare_name` through the real raw-editor

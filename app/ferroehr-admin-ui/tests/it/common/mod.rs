@@ -5,6 +5,13 @@
 //! when the stack isn't up), step screenshots, explicit waits, and the
 //! standing browser-console gate — every journey fails on any console
 //! error (the cheapest hydration-bug detector).
+//!
+//! Two lanes drive this harness, and they are not equals. The IMAGE lane is
+//! the authoritative one: it runs the shipped OCI artifact, whose WASM is the
+//! release build. The HOST lane serves a debug-profile WASM bundle an order of
+//! magnitude larger, trading hydration latency for compile speed so a change
+//! can be driven in seconds — which is why [`Harness::wait_hydrated`] carries
+//! its own, far longer budget than the element waits around it.
 
 #![allow(
     clippy::panic,
@@ -24,6 +31,15 @@
 use std::time::Duration;
 
 use thirtyfour::prelude::*;
+
+/// The budget every ordinary element wait allows.
+const WAIT: Duration = Duration::from_secs(15);
+
+/// The budget [`Harness::wait_hydrated`] allows, four times [`WAIT`]: the host
+/// lane's debug WASM is ~91 MB and the browser has to fetch, compile and run it
+/// before the marker appears, which is comfortably slower than any wait that
+/// only observes a rendered page (module docs).
+const HYDRATION_WAIT: Duration = Duration::from_mins(1);
 
 /// Everything a journey needs.
 pub(crate) struct Harness {
@@ -135,15 +151,24 @@ impl Harness {
         }
     }
 
-    /// Explicit wait: the first element matching `css`, within 15 s.
+    /// Explicit wait: the first element matching `css`, within [`WAIT`].
     ///
     /// # Panics
     /// When the element never appears — with the selector in the message.
     pub(crate) async fn wait_css(&self, css: &str) -> WebElement {
+        self.wait_css_for(css, WAIT).await
+    }
+
+    /// [`Self::wait_css`] with an explicit budget, so the hydration wait can be
+    /// long without lengthening every other wait.
+    ///
+    /// # Panics
+    /// When the element never appears — with the selector in the message.
+    async fn wait_css_for(&self, css: &str, budget: Duration) -> WebElement {
         match self
             .driver
             .query(By::Css(css))
-            .wait(Duration::from_secs(15), Duration::from_millis(200))
+            .wait(budget, Duration::from_millis(200))
             .first()
             .await
         {
@@ -232,7 +257,7 @@ impl Harness {
         match self
             .driver
             .query(By::XPath(xpath))
-            .wait(Duration::from_secs(15), Duration::from_millis(200))
+            .wait(WAIT, Duration::from_millis(200))
             .first()
             .await
         {
@@ -268,7 +293,7 @@ impl Harness {
             .driver
             .query(By::XPath(xpath))
             .and_clickable()
-            .wait(Duration::from_secs(15), Duration::from_millis(200))
+            .wait(WAIT, Duration::from_millis(200))
             .first()
             .await
         {
@@ -329,8 +354,14 @@ impl Harness {
     /// Required before driving any control whose handler exists only
     /// hydrated — a click or file selection landing earlier is silently
     /// lost, and a same-value re-send fires no later event (#2285).
+    ///
+    /// This one wait gets [`HYDRATION_WAIT`] rather than [`WAIT`]: it is the
+    /// only condition whose latency is dominated by the WASM bundle's size,
+    /// which differs by an order of magnitude between the two lanes (module
+    /// docs).
     pub(crate) async fn wait_hydrated(&self) {
-        self.wait_css("body[data-hydrated]").await;
+        self.wait_css_for("body[data-hydrated]", HYDRATION_WAIT)
+            .await;
     }
 
     /// Failure evidence at a journey-defined point, for a panic that would
@@ -425,6 +456,127 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
         Ok(element) => element.is_displayed().await.unwrap_or(false),
         Err(_) => false,
     }
+}
+
+/// Poll until the control at `css` is present and ENABLED.
+///
+/// The console keeps an edit form inert until the document it edits has been
+/// seeded into it, so this is the condition that makes typing (or saving) safe:
+/// input accepted earlier would be replaced by the seed and the save would then
+/// commit the pre-seed draft.
+///
+/// # Panics
+/// When it never becomes enabled within 15 s.
+pub(crate) async fn wait_enabled(h: &Harness, css: &str) {
+    for _ in 0..75 {
+        if let Ok(element) = h.driver.find(By::Css(css)).await
+            && element.is_enabled().await.unwrap_or(false)
+        {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    panic!("`{css}` never became enabled — its form was never seeded");
+}
+
+/// Poll until no element matches `css` — the assert-gone half of a delete.
+///
+/// # Panics
+/// When something still matches after [`WAIT`], with the page it was on.
+pub(crate) async fn wait_css_absent(h: &Harness, css: &str) {
+    for _ in 0..75 {
+        if h.driver
+            .find_all(By::Css(css))
+            .await
+            .unwrap_or_default()
+            .is_empty()
+        {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let url = h.driver.current_url().await.expect("current url");
+    panic!("`{css}` never disappeared (at {url})");
+}
+
+/// Wait until some element's text contains `needle` (a toast title, a status
+/// line), returning whether it appeared.
+pub(crate) async fn wait_text(h: &Harness, needle: &str) -> bool {
+    let xpath = format!("//*[contains(normalize-space(.), '{needle}')]");
+    for _ in 0..75 {
+        if h.driver.find(By::XPath(&xpath)).await.is_ok() {
+            return true;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    false
+}
+
+/// Poll until the text of the element at `css` contains `fragment` — the "the
+/// CDR actually applied it" assertion, an explicit condition rather than a
+/// sleep.
+///
+/// # Panics
+/// When it never does within [`WAIT`], reporting what it said instead.
+pub(crate) async fn wait_text_contains(h: &Harness, css: &str, fragment: &str) {
+    let mut last = String::new();
+    for _ in 0..75 {
+        if let Ok(element) = h.driver.find(By::Css(css)).await
+            && let Ok(text) = element.text().await
+        {
+            if text.contains(fragment) {
+                return;
+            }
+            last = text;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    panic!("`{css}` never contained `{fragment}` (last text: {last})");
+}
+
+/// Wait until the element at `css` has text ending in `suffix` (a version
+/// number the screen must have caught up to).
+///
+/// # Panics
+/// When it never does within [`WAIT`], reporting the last text seen.
+pub(crate) async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
+    let mut last = String::new();
+    for _ in 0..75 {
+        if let Ok(element) = h.driver.find(By::Css(css)).await {
+            last = element.text().await.unwrap_or_default();
+            if last.trim_end().ends_with(suffix) {
+                return;
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    panic!("`{css}` never ended in `{suffix}` (last text: `{last}`)");
+}
+
+/// Type `text` into the field at `css`, clearing whatever is there first.
+///
+/// # Panics
+/// On any interaction failure.
+pub(crate) async fn retype(h: &Harness, css: &str, text: &str) {
+    let field = h.wait_css(css).await;
+    field.clear().await.expect("clear the field");
+    field.send_keys(text).await.expect("type into the field");
+}
+
+/// Click `css` until `target_css` shows up, returning whether it did (the
+/// pre-hydration-click precedent; re-clicking an "open this version" button is
+/// idempotent).
+pub(crate) async fn click_until_css(h: &Harness, css: &str, target_css: &str) -> bool {
+    for _ in 0..5 {
+        h.wait_css(css).await.click().await.expect("click");
+        for _ in 0..25 {
+            if h.driver.find(By::Css(target_css)).await.is_ok() {
+                return true;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+    false
 }
 
 /// Poll until `css` is no longer visible.

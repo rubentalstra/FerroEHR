@@ -75,11 +75,23 @@ pub(super) fn history_section(
 
     // The at-time lookup is an Action, not a resource: it is a one-shot the
     // operator triggers, and its answer (an OBJECT_VERSION_ID) feeds the shared
-    // selection rather than being rendered on its own.
+    // selection rather than being rendered on its own. A failure leaves the
+    // selection untouched — the lookup's own note renders it.
     let at_time: Action<(String, String), Result<String, AdminUiError>> =
         Action::new(move |(uid, at): &(String, String)| {
             let (uid, at) = (uid.clone(), at.clone());
-            async move { resolve_demographic_version_at_time(family.to_owned(), uid, at).await }
+            async move {
+                let resolved =
+                    resolve_demographic_version_at_time(family.to_owned(), uid, at).await;
+                // NOTE: the write rides the dispatched event's own continuation,
+                // so it is an event write rather than an Effect write (rules §2).
+                if let Ok(version) = &resolved
+                    && !version.is_empty()
+                {
+                    pinned.set(version.clone());
+                }
+                resolved
+            }
         });
 
     let history: HistoryResource = Resource::new(
@@ -117,22 +129,6 @@ pub(super) fn history_section(
             }
         },
     );
-
-    // Sync a resolved at-time lookup into the shared selection — a
-    // signal-reading, signal-writing Effect, which rules §2 admits only with a
-    // written justification: `pinned` has TWO writers (a history row's click
-    // and this async answer), so no single derived value replaces it. The
-    // Effect reads only the action's value and writes only `pinned`, so there
-    // is no loop, and Effects never run on the server, so hydration cannot
-    // diverge. A failure leaves the selection untouched and the lookup's own
-    // note renders it. Same shape as `ehr_detail/status/history.rs`.
-    Effect::new(move |_| {
-        if let Some(Ok(resolved)) = at_time.value().get()
-            && !resolved.is_empty()
-        {
-            pinned.set(resolved);
-        }
-    });
 
     let card = versioned_section(versioned);
     let table = history_table_section(history, pinned);

@@ -342,14 +342,6 @@ pub(crate) fn object_ref(namespace: &str, ref_type: &str, id_type: &str, id_valu
     })
 }
 
-/// The versioned-object id of an `OBJECT_VERSION_ID` value (everything before
-/// the first `::`), used as the `HIER_OBJECT_ID` value when referencing a
-/// composition by its versioned object rather than a specific version.
-#[must_use]
-pub(crate) fn versioned_object_id(uid: &str) -> &str {
-    uid.split_once("::").map_or(uid, |(head, _)| head)
-}
-
 /// The total descendant folder count (excluding the root) and total item
 /// count across the whole tree, for the version-history summary.
 #[must_use]
@@ -409,7 +401,6 @@ mod tests {
         add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_item_index,
         find_path_by_key, item_count, item_node_keys, item_summary, node_key_at, node_name,
         normalize_datetime, object_ref, remove_item, rename_folder, stamp_keys, strip_keys,
-        versioned_object_id,
     };
     use crate::pages::ehr_detail::directory::{DIRECTORY_ARCHETYPE, folder_json};
 
@@ -659,12 +650,6 @@ mod tests {
         assert_eq!(r["type"], "COMPOSITION");
         assert_eq!(r["id"]["_type"], "HIER_OBJECT_ID");
         assert_eq!(r["id"]["value"], "abc::sys::1");
-    }
-
-    #[test]
-    fn versioned_object_id_strips_the_version() {
-        assert_eq!(versioned_object_id("abc::sys::1"), "abc");
-        assert_eq!(versioned_object_id("abc"), "abc");
     }
 
     #[test]

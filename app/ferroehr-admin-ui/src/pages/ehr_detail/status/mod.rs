@@ -283,7 +283,7 @@ pub async fn update_ehr_status(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(crate::pages::ehr_detail::commit_version_uid(&response.body))
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 /// The `VERSIONED_EHR_STATUS`'s revision history, newest-first
@@ -424,7 +424,7 @@ pub async fn fetch_status_version_at_time(
         .get(&session.credential, &url, "application/json")
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(crate::pages::ehr_detail::commit_version_uid(&response.body))
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 #[cfg(feature = "ssr")]
@@ -444,7 +444,7 @@ fn parse_status_state(body: &str) -> Result<EhrStatusState, AdminUiError> {
         .unwrap_or_default();
     Ok(EhrStatusState {
         body: body.to_owned(),
-        version_uid: json_str(&doc, &["uid", "value"]),
+        version_uid: crate::uid::uid_value_of_document(&doc),
         is_queryable: doc
             .get("is_queryable")
             .and_then(Value::as_bool)
@@ -474,10 +474,10 @@ fn parse_versioned_status(
     let version: Value = serde_json::from_str(version_body)
         .map_err(|e| AdminUiError::Internal(format!("version JSON: {e}")))?;
     Ok(VersionedStatusDetails {
-        object_uid: json_str(&object, &["uid", "value"]),
+        object_uid: crate::uid::uid_value_of_document(&object),
         owner_id: json_str(&object, &["owner_id", "id", "value"]),
         time_created: json_str(&object, &["time_created", "value"]),
-        version_id: json_str(&version, &["uid", "value"]),
+        version_id: crate::uid::uid_value_of_document(&version),
         lifecycle_state: json_str(&version, &["lifecycle_state", "value"]),
         preceding_version_uid: json_str(&version, &["preceding_version_uid", "value"]),
         contribution_uid: json_str(&version, &["contribution", "id", "value"]),

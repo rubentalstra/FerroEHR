@@ -41,10 +41,11 @@ use crate::format::ReprFormat;
 use crate::pages::ehr_detail::directory::edit::{
     add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_item_index,
     find_path_by_key, item_count, item_node_keys, item_summary, node_key_at, node_name, object_ref,
-    remove_item, rename_folder, stamp_keys, strip_keys, versioned_object_id,
+    remove_item, rename_folder, stamp_keys, strip_keys,
 };
 use crate::pages::ehr_detail::directory::{DirectoryState, PickerResource};
 use crate::pages::ehrs::cell_text;
+use crate::uid::container_uid_of;
 
 /// A small square icon button (node actions).
 const ICON_BTN: &str = "inline-flex items-center justify-center rounded-control p-1 text-ink-muted hover:bg-sunken hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent";
@@ -926,7 +927,7 @@ fn composition_choices(ed: TreeEditor, rows: &[Vec<Value>]) -> AnyView {
 fn composition_choice(ed: TreeEditor, row: &[Value]) -> AnyView {
     let uid = row.first().map(cell_text).unwrap_or_default();
     let name = row.get(1).map(cell_text).unwrap_or_default();
-    let object_id = versioned_object_id(&uid).to_owned();
+    let object_id = container_uid_of(&uid);
     let uid_display = uid.clone();
     let on_add = move |_| {
         if let Some(key) = ed.picker_target.get() {

@@ -314,13 +314,16 @@ async fn capture_documentation_screenshots() {
     //    running it). ─────────────────────────────────────────────────────
     if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
         // EHR detail: the status tab (URL-driven tab state) — the current
-        // document plus the edit form.
+        // document plus the edit form. The marker is the ENABLED save: the
+        // edit card is mounted before its document loads and stays disabled
+        // until seeded, so waiting on the card alone would publish a dimmed,
+        // half-loaded form.
         capture(
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}?tab=status"),
             "ehrs/status/status",
-            Some("#status-edit"),
+            Some("#status-save:not([disabled])"),
         )
         .await;
         // EHR detail: the VERSIONED_EHR_STATUS history tab — the revision

@@ -15,8 +15,10 @@ pub const INPUT: &str = "rounded-control border border-edge-strong bg-raised px-
 /// A `<select>` control.
 pub const SELECT: &str = "rounded-control border border-edge-strong bg-raised px-2 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent";
 
-/// A multi-line `<textarea>` (AQL editor, parameter bindings).
-pub const TEXTAREA: &str = "w-full rounded-control border border-edge-strong bg-raised px-3 py-2 font-mono text-xs text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent";
+/// A multi-line `<textarea>` (AQL editor, parameter bindings). A disabled one
+/// dims exactly like the disabled buttons below — an edit form is inert until
+/// the document it edits has been loaded into it.
+pub const TEXTAREA: &str = "w-full rounded-control border border-edge-strong bg-raised px-3 py-2 font-mono text-xs text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent disabled:opacity-50 disabled:pointer-events-none";
 
 /// A form label.
 pub const LABEL: &str = "text-sm font-medium text-ink";

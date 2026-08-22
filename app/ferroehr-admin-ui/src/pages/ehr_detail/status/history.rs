@@ -65,10 +65,21 @@ pub(in crate::pages::ehr_detail) fn status_history_section(
 
     // The at-time lookup is an Action, not a resource: it is a one-shot the
     // operator triggers, and its answer (an OBJECT_VERSION_ID) feeds the shared
-    // selection rather than being rendered on its own.
-    let at_time = Action::new(|(ehr_id, at_time): &(String, String)| {
+    // selection rather than being rendered on its own. A failure leaves the
+    // selection untouched — the lookup's own note renders it.
+    let at_time = Action::new(move |(ehr_id, at_time): &(String, String)| {
         let (ehr_id, at_time) = (ehr_id.clone(), at_time.clone());
-        async move { fetch_status_version_at_time(ehr_id, at_time).await }
+        async move {
+            let resolved = fetch_status_version_at_time(ehr_id, at_time).await;
+            // NOTE: the write rides the dispatched event's own continuation, so
+            // it is an event write rather than an Effect write (rules §2).
+            if let Ok(version) = &resolved
+                && !version.is_empty()
+            {
+                pinned.set(version.clone());
+            }
+            resolved
+        }
     });
 
     let history: HistoryResource = Resource::new(
@@ -101,20 +112,6 @@ pub(in crate::pages::ehr_detail) fn status_history_section(
             }
         },
     );
-
-    // Sync a resolved at-time lookup into the shared selection. This is the
-    // async-load-into-local-state case (the composition viewer's precedent): the
-    // Effect reads ONLY the action's value and writes ONLY `pinned`, so there is
-    // no reactive loop, and Effects never run on the server (no hydration
-    // divergence). A failure leaves the selection untouched — the lookup's own
-    // note renders it.
-    Effect::new(move |_| {
-        if let Some(Ok(resolved)) = at_time.value().get()
-            && !resolved.is_empty()
-        {
-            pinned.set(resolved);
-        }
-    });
 
     let card = versioned_section(versioned);
     let table = history_section(history, pinned);

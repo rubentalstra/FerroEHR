@@ -34,7 +34,7 @@
 #
 # Usage: scripts/checks/default-style.sh [--all | <file>...]
 #   no args  → the files changed against origin/develop
-#   --all    → every tracked .rs file
+#   --all    → every .rs file, tracked or untracked (unignored)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -45,7 +45,9 @@ STD_PATHS='Option::default|Vec::default|String::default|bool::default'
 
 collect() {
   if [ "${1:-}" = "--all" ]; then
-    git ls-files '*.rs'
+    # -co --exclude-standard: tracked AND untracked (unignored) files — a new
+    # file is checkable before it is ever staged.
+    git ls-files -co --exclude-standard '*.rs'
   elif [ "$#" -gt 0 ]; then
     printf '%s\n' "$@"
   else
@@ -96,28 +98,33 @@ done
 # there, while a `pub`/`pub(crate)` one is counted tree-wide. Counting every
 # name tree-wide would conflate same-named constants in different modules
 # (`events::config::DEFAULT_URL` and `db::DEFAULT_URL` are unrelated).
-if [ "${1:-}" = "--all" ]; then
-  while IFS= read -r decl; do
-    file=${decl%%:*}
-    rest=${decl#*:}
-    line=${rest%%:*}
+#
+# Declarations come from the SAME collected file set as rules 1-2 (a plain grep
+# over each file), so explicit-path invocations — the per-edit hook's shape —
+# and untracked files are both inspected; tree-wide reader counts carry
+# `--untracked` for the same reason (`git grep` alone sees only tracked
+# content).
+for f in $files; do
+  [ -f "$f" ] || continue
+  while IFS=: read -r line decl; do
+    [ -n "${line:-}" ] || continue
     name=$(printf '%s' "$decl" | sed -nE 's/.*const[[:space:]]+(DEFAULT_[A-Z0-9_]+).*/\1/p')
     [ -n "$name" ] || continue
     if printf '%s' "$decl" | grep -q 'pub[[:space:]]\|pub(' ; then
       # Visible beyond the file: count tree-wide, discounting every declaration.
-      hits=$(git grep -how "$name" -- '*.rs' | wc -l | tr -d ' ')
-      decls=$(git grep -hcE "const[[:space:]]+$name\b" -- '*.rs' | paste -sd+ - | bc 2>/dev/null || echo 1)
+      hits=$(git grep --untracked -how "$name" -- '*.rs' | wc -l | tr -d ' ')
+      decls=$(git grep --untracked -hcE "const[[:space:]]+$name\b" -- '*.rs' | paste -sd+ - | bc 2>/dev/null || echo 1)
       readers=$((hits - decls))
     else
-      readers=$(($(grep -cow "$name" "$file" | tr -d ' ') - 1))
+      readers=$(($(grep -cow "$name" "$f" | tr -d ' ') - 1))
     fi
     if [ "$readers" -le 1 ]; then
-      report "$file:$line: \`const $name\` has $readers reader(s) — a constant \
+      report "$f:$line: \`const $name\` has $readers reader(s) — a constant \
 earns its name by being shared; inline the value in the \`impl Default\` that \
 reads it (scripts/checks/default-style.sh)"
     fi
-  done < <(git grep -nE 'const[[:space:]]+DEFAULT_[A-Z0-9_]+' -- '*.rs' || true)
-fi
+  done < <(grep -nE 'const[[:space:]]+DEFAULT_[A-Z0-9_]+' "$f" || true)
+done
 
 if [ "$failures" -gt 0 ]; then
   echo "default-style: $failures violation(s) — see above." >&2
