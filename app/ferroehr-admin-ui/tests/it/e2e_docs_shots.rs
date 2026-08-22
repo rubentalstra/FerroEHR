@@ -15,6 +15,11 @@
     dead_code,
     reason = "the shared `common` harness is compiled into every journey binary; each one drives a different subset of it"
 )]
+#![expect(
+    clippy::disallowed_types,
+    reason = "test fixtures posted through a REST seam are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction)"
+)]
 // A capture pass, not an assertive journey: it drives the console and writes
 // the canonical per-screen screenshots the website book embeds. Gated behind
 // UI_E2E_DOCS_SHOTS so the normal E2E run (and plain `cargo nextest`) skips it.
@@ -65,6 +70,50 @@ async fn seed_adl2_fixture(cdr: &str, user: &str, pass: &str) {
         .expect("seed the ADL2 capture fixture")
         .status();
     println!("adl2 capture fixture seed -> {status}");
+}
+
+/// Store one FHIR mapping so the connector capture shows a populated mapping
+/// store instead of its empty state.
+///
+/// Idempotent for a capture pass: `201` created, `409` already there. Any other
+/// answer leaves the store empty and the capture simply shows that; the shot is
+/// never skipped for it. It binds the same template
+/// `scripts/ui-e2e.sh` seeds while bringing the stack up.
+async fn seed_fhir_mapping(cdr: &str, user: &str, pass: &str) {
+    let status = reqwest::Client::new()
+        .post(format!("{cdr}/ferroehr/rest/openehr/v1/admin/fhir_mapping"))
+        .basic_auth(user, Some(pass))
+        .json(&serde_json::json!({
+            "name": "observation-weight",
+            "enabled": true,
+            "definition": {
+                "resource_type": "Observation",
+                "profile_url": "http://hl7.org/fhir/StructureDefinition/vitalsigns",
+                "template_id": TEMPLATE_ID,
+                "subject": {
+                    "reference_path": "subject.reference",
+                    "namespace": "fhir",
+                    "strip_prefix": "Patient/"
+                },
+                "context": {
+                    "ctx/language": "en",
+                    "ctx/territory": "US",
+                    "ctx/composer_name": "fhir-connector"
+                },
+                "entries": [
+                    {
+                        "openehr_path": "minimal/minimal:0/quantity",
+                        "fhir_path": "valueQuantity.value",
+                        "transform": { "kind": "quantity", "unit_path": "valueQuantity.unit" }
+                    }
+                ]
+            }
+        }))
+        .send()
+        .await
+        .expect("seed the FHIR capture fixture")
+        .status();
+    println!("fhir capture fixture seed -> {status}");
 }
 
 /// The website book's screenshot directory (`website/book/src/admin-ui/img`),
@@ -343,8 +392,6 @@ async fn capture_documentation_screenshots() {
              [terminology] api_enabled = false"
         );
     }
-    capture(&h, &dir, "/system", "system/system", None).await;
-
     // The operations panel: the base view (dependency health, build provenance,
     // the metric tiles, log control), then the metric browser showing one
     // metric's samples. Probe-gated on the CDR's management surface, which the
@@ -368,20 +415,6 @@ async fn capture_documentation_screenshots() {
         .await
         .expect("scroll to the metric samples");
     shot_to(&h, &dir, "operations/operations-metric").await;
-
-    // The tenant registry: probe-gated on the CDR's tenancy extension, which
-    // the E2E stack enables (docker/admin-ui/e2e-env.yml). Absent, the screen
-    // renders its disabled card, which is not what the book documents.
-    h.goto("/tenants").await;
-    h.wait_css("#tenants-screen").await;
-    if h.driver.find(By::Css("#tenants-disabled")).await.is_ok() {
-        println!(
-            "SKIP docs-shots: tenants not captured — the CDR under test runs with \
-             [tenancy] enabled = false"
-        );
-    } else {
-        shot_to(&h, &dir, "tenants/tenants").await;
-    }
 
     // The ehr-detail and composition-viewer screens render the EHR + the
     // two-version composition scripts/ui-e2e.sh seeds over REST.
@@ -633,19 +666,42 @@ async fn capture_documentation_screenshots() {
 
     h.finish().await;
 
-    // The audit-log screen is admin-only (the ATNA trail is an operator
-    // surface), so its captures run in a fresh session as the quickstart
-    // admin user: first the POPULATED table (the stack's own audited
-    // activity — every journey request lands in the trail), then the
-    // first-class EMPTY state via a filter that cannot match, so the book
-    // shows both faces of the screen.
-    let Some(h) = Harness::start("docs-shots-audit").await else {
+    capture_admin_screens(&dir).await;
+}
+
+/// Capture every screen whose data the CDR classes as ADMIN work, in one
+/// session signed in as the admin dev user.
+///
+/// **Every admin-gated capture belongs here, and nowhere else.** The main pass
+/// signs in as the ORDINARY dev user, and a screen reading an `/admin` route
+/// answers that session `403` — so a capture taken there publishes the console's
+/// refusal card instead of the screen the book documents. That is not
+/// hypothetical: the committed `/tenants` shot was exactly that (issue #2578),
+/// and `/system`'s runtime-configuration card and the whole `/fhir` screen have
+/// the same shape. One session, one place to add the next one.
+///
+/// A fresh [`Harness`] rather than a re-login: a new browser session starts with
+/// no console cookie, so the admin sign-in cannot land on top of the ordinary
+/// one. The main pass has already finished by the time this runs, so nothing
+/// later depends on the ordinary session.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear capture script over the admin-gated views — sectioning it would obscure the walkthrough order"
+)]
+async fn capture_admin_screens(dir: &Path) {
+    let Some(h) = Harness::start("docs-shots-admin").await else {
         return;
     };
     let admin_user = env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ferroehr-admin".to_owned());
     let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ferroehr".to_owned());
     login_basic_as(&h, &admin_user, &admin_pass).await;
-    capture(&h, &dir, "/audit", "audit/audit", Some("table tbody tr")).await;
+
+    // The audit-log screen is admin-only (the ATNA trail is an operator
+    // surface): first the POPULATED table (the stack's own audited activity —
+    // every journey request lands in the trail), then the first-class EMPTY
+    // state via a filter that cannot match, so the book shows both faces of the
+    // screen.
+    capture(&h, dir, "/audit", "audit/audit", Some("table tbody tr")).await;
 
     // The raw-record view: open the first row's disclosure and capture the
     // full stored FHIR AuditEvent as the reader will see it.
@@ -655,20 +711,65 @@ async fn capture_documentation_screenshots() {
         .await
         .expect("open the raw record");
     h.wait_css("tbody tr details pre").await;
-    shot_to(&h, &dir, "audit/audit-record").await;
+    shot_to(&h, dir, "audit/audit-record").await;
 
     h.goto("/audit?patient=docs-shots-no-such-patient").await;
     h.wait_css("footer").await;
     h.wait_xpath("//*[contains(text(), 'No audit records match')]")
         .await;
-    shot_to(&h, &dir, "audit/audit-empty").await;
+    shot_to(&h, dir, "audit/audit-empty").await;
+
+    // The System screen: its runtime-configuration card reads `GET
+    // /admin/config`, so the ordinary session gets a refusal there — below the
+    // capture fold today, which is exactly how it stayed unnoticed.
+    capture(&h, dir, "/system", "system/system", None).await;
+
+    // The tenant registry: probe-gated on the CDR's tenancy extension, which
+    // the E2E stack enables (docker/admin-ui/e2e-env.yml). Absent, the screen
+    // renders its disabled card, which is not what the book documents.
+    h.goto("/tenants").await;
+    h.wait_css("#tenants-screen").await;
+    if h.driver.find(By::Css("#tenants-disabled")).await.is_ok() {
+        println!(
+            "SKIP docs-shots: tenants not captured — the CDR under test runs with \
+             [tenancy] enabled = false"
+        );
+    } else {
+        shot_to(&h, dir, "tenants/tenants").await;
+    }
+
+    // The FHIR connector: probe-gated on `[fhir] api_enabled`, which the E2E
+    // stack enables (docker/admin-ui/e2e-env.yml). The capture seeds one
+    // mapping first, so the book shows a populated store rather than the empty
+    // state the journeys leave behind.
+    if let Some(cdr) = env("UI_E2E_CDR_URL") {
+        seed_fhir_mapping(&cdr, &admin_user, &admin_pass).await;
+    }
+    h.goto("/fhir").await;
+    h.wait_css("#fhir-screen").await;
+    if h.driver.find(By::Css("#fhir-disabled")).await.is_ok() {
+        println!(
+            "SKIP docs-shots: fhir not captured — the CDR under test runs with \
+             [fhir] api_enabled = false"
+        );
+    } else {
+        let dry_run = h.wait_css("#fhir-dry-run").await;
+        shot_to(&h, dir, "fhir/fhir").await;
+        // The two verification panels sit below the fold on the capture window,
+        // and a screenshot is the VIEWPORT: scroll them into view for their own
+        // shot, or the book documents them with a picture of the store.
+        dry_run
+            .scroll_into_view()
+            .await
+            .expect("scroll to the verification panels");
+        shot_to(&h, dir, "fhir/fhir-verify").await;
+    }
 
     // ── The ADMIN destructive operations. They are probe-gated on the CDR's
-    //    admin API, so they render only for this ADMIN session — never in the
-    //    plain-user pass above, which is exactly why they are captured here.
+    //    admin API, so they render only for an ADMIN session.
     capture(
         &h,
-        &dir,
+        dir,
         "/templates",
         "templates/templates-admin-delete",
         Some("[data-template-delete]"),
@@ -679,7 +780,7 @@ async fn capture_documentation_screenshots() {
     h.goto("/queries").await;
     h.wait_css("footer").await;
     if h.driver.find(By::Css("[data-query-delete]")).await.is_ok() {
-        shot_to(&h, &dir, "queries/queries-admin-delete").await;
+        shot_to(&h, dir, "queries/queries-admin-delete").await;
     } else {
         println!("SKIP docs-shots: no stored query on the stack to show the CDR delete on");
     }
@@ -703,7 +804,7 @@ async fn capture_documentation_screenshots() {
             }
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         }
-        shot_to(&h, &dir, "ehrs/ehr-admin-delete").await;
+        shot_to(&h, dir, "ehrs/ehr-admin-delete").await;
     } else {
         println!("SKIP docs-shots: the EHR delete needs UI_E2E_SEEDED_EHR_ID");
     }
@@ -743,7 +844,7 @@ async fn capture_documentation_screenshots() {
         }
     }
     if opened {
-        shot_to(&h, &dir, "operations/operations-log-filter").await;
+        shot_to(&h, dir, "operations/operations-log-filter").await;
     } else {
         println!(
             "TODO docs-shots: operations/operations-log-filter not captured — the confirmation \
