@@ -88,6 +88,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Admin console: a FHIR-shaped refusal (an `OperationOutcome`) now renders
+  its human diagnostics wherever an error surfaces — the shared diagnostic
+  reader speaks both error vocabularies, so no screen can hand raw JSON to
+  a toast.
+
 - The FHIR read facade serves one Bundle entry per stored composition —
   with several enabled mappings over one template it previously served the
   same composition once per mapping, duplicating `fullUrl`s within a Bundle

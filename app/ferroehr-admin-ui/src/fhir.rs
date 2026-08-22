@@ -27,14 +27,15 @@
 //! group (`401`/`403`) still counts as present, and the refusal surfaces as
 //! copy on the screen that asked.
 //!
-//! **Two error vocabularies meet on this surface, and the split is load
-//! bearing.** Every refusal the connector itself authors is a FHIR
+//! **Two error vocabularies meet on this surface, and ONE reader speaks
+//! both (#2581).** Every refusal the connector itself authors is a FHIR
 //! `OperationOutcome` (`{resourceType, issue: [{severity, code,
-//! diagnostics}]}`), which the shared openEHR diagnostic reader
-//! ([`crate::cdr`]) cannot see into — so this module extracts the diagnostics
-//! itself ([`outcome_summary`]). Authentication and authorization refusals come
-//! from the layer ABOVE the handler and keep the openEHR `{error, message}`
-//! body, so they travel the shared path unchanged.
+//! diagnostics}]}`); authentication and authorization refusals come from the
+//! layer ABOVE the handler and carry the openEHR `{error, message}` body.
+//! The shared reader ([`crate::cdr`]'s `expect_success`) extracts the human
+//! diagnostic from either shape, so this module keeps no refusal shim;
+//! [`outcome_summary`] remains for the VERDICT panel, which classifies
+//! outcomes rather than reading refusals.
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is a
@@ -460,7 +461,7 @@ pub async fn list_fhir_mappings() -> Result<Option<Vec<FhirMappingRow>>, AdminUi
     if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(None);
     }
-    let body = expect_fhir_success(response)?.body;
+    let body = crate::cdr::CdrClient::expect_success(response)?.body;
     let value = serde_json::from_str::<serde_json::Value>(&body)
         .map_err(|e| AdminUiError::Internal(format!("FHIR mapping list JSON: {e}")))?;
     let rows = value
@@ -507,7 +508,7 @@ pub async fn create_fhir_mapping(
             mapping_body(Some(name.trim()), &definition, enabled)?,
         )
         .await?;
-    stored_record(&expect_fhir_success(response)?.body)
+    stored_record(&crate::cdr::CdrClient::expect_success(response)?.body)
 }
 
 /// Replace a stored mapping's definition and enabled flag
@@ -552,7 +553,7 @@ pub async fn update_fhir_mapping(
             mapping_body(None, &definition, enabled)?,
         )
         .await?;
-    stored_record(&expect_fhir_success(response)?.body)
+    stored_record(&crate::cdr::CdrClient::expect_success(response)?.body)
 }
 
 /// Delete one stored mapping (`DELETE admin/fhir_mapping/{mapping_id}`).
@@ -577,7 +578,7 @@ pub async fn delete_fhir_mapping(
         urlencoding::encode(&mapping_id)
     ));
     let response = state.cdr.delete(&session.credential, &url, &[]).await?;
-    expect_fhir_success(response)?;
+    crate::cdr::CdrClient::expect_success(response)?;
     Ok(())
 }
 
@@ -682,7 +683,14 @@ pub async fn dry_run_fhir_resource(
 #[cfg(feature = "ssr")]
 fn fhir_answer(response: &crate::cdr::CdrResponse) -> Result<FhirAnswer, AdminUiError> {
     if response.is(http::StatusCode::UNAUTHORIZED) || response.is(http::StatusCode::FORBIDDEN) {
-        return Err(refusal(response));
+        // NOTE: the shared reader speaks both refusal vocabularies (#2581),
+        // so the auth layer's openEHR body needs no FHIR-side shim.
+        return Err(
+            match crate::cdr::CdrClient::expect_success(response.clone()) {
+                Err(e) => e,
+                Ok(_) => AdminUiError::Forbidden(String::new()),
+            },
+        );
     }
     let parsed = serde_json::from_str::<serde_json::Value>(&response.body).ok();
     let issues = parsed.as_ref().map(outcome_issues).unwrap_or_default();
@@ -695,47 +703,6 @@ fn fhir_answer(response: &crate::cdr::CdrResponse) -> Result<FhirAnswer, AdminUi
         body,
         issues,
     })
-}
-
-/// The mapping-store equivalent of
-/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success), reading
-/// the FHIR error vocabulary.
-///
-/// The store answers every refusal it authors as an `OperationOutcome`, whose
-/// diagnostics the shared openEHR reader cannot see — it would hand the raw
-/// JSON to a toast. Authentication and authorization refusals keep the openEHR
-/// body, and both vocabularies are covered by [`refusal`].
-#[cfg(feature = "ssr")]
-fn expect_fhir_success(
-    response: crate::cdr::CdrResponse,
-) -> Result<crate::cdr::CdrResponse, AdminUiError> {
-    if (200..300).contains(&response.status) {
-        return Ok(response);
-    }
-    Err(refusal(&response))
-}
-
-/// Normalize one refused response: the FHIR outcome's diagnostics when it is an
-/// outcome, the shared openEHR reader's diagnostic otherwise.
-#[cfg(feature = "ssr")]
-fn refusal(response: &crate::cdr::CdrResponse) -> AdminUiError {
-    let message = outcome_summary(&response.body).unwrap_or_else(|| {
-        // The openEHR-shaped bodies (401/403 from the layer above the handler)
-        // and any non-JSON body go through the shared reader, which is the one
-        // place that knows the `{error, message}` shape.
-        match crate::cdr::CdrClient::expect_success(response.clone()) {
-            Err(AdminUiError::Forbidden(message) | AdminUiError::Cdr { message, .. }) => message,
-            _ => response.body.clone(),
-        }
-    });
-    if response.is(http::StatusCode::UNAUTHORIZED) || response.is(http::StatusCode::FORBIDDEN) {
-        AdminUiError::Forbidden(message)
-    } else {
-        AdminUiError::Cdr {
-            status: response.status,
-            message,
-        }
-    }
 }
 
 /// The `{name?, definition, enabled}` request body a create or update sends.
@@ -1122,27 +1089,28 @@ mod tests {
     #[cfg(feature = "ssr")]
     #[test]
     fn a_refusal_reads_the_fhir_vocabulary_and_falls_back_to_the_openehr_one() {
+        // #2581: ONE reader for both vocabularies — the store's own
+        // OperationOutcome refusals and the auth layer's openEHR bodies both
+        // go through the shared `expect_success`.
         let outcome = crate::cdr::CdrResponse {
             status: 409,
             content_type: Some("application/fhir+json".to_owned()),
             body: r#"{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"conflict","diagnostics":"a FHIR mapping with that name exists"}]}"#.to_owned(),
         };
         assert_eq!(
-            super::refusal(&outcome),
+            crate::cdr::CdrClient::expect_success(outcome).unwrap_err(),
             AdminUiError::Cdr {
                 status: 409,
                 message: "a FHIR mapping with that name exists".to_owned(),
             }
         );
-        // The auth layer sits ABOVE the handler and answers the openEHR body,
-        // which the shared reader is the one place that understands.
         let refused = crate::cdr::CdrResponse {
             status: 403,
             content_type: Some("application/json".to_owned()),
             body: r#"{"error":"Forbidden","message":"forbidden: operation requires the 'ADMIN' role"}"#.to_owned(),
         };
         assert_eq!(
-            super::refusal(&refused),
+            crate::cdr::CdrClient::expect_success(refused).unwrap_err(),
             AdminUiError::Forbidden("forbidden: operation requires the 'ADMIN' role".to_owned())
         );
     }
