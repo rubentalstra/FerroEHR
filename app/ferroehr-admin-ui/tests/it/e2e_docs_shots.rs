@@ -243,6 +243,16 @@ async fn capture_documentation_screenshots() {
     )
     .await;
     capture(&h, &dir, "/ehrs", "ehrs/ehrs", Some("#ehr-lookup")).await;
+    // The demographics party browser — the kind switcher plus the create card
+    // render on an empty stack, which is what the book's walkthrough opens on.
+    capture(
+        &h,
+        &dir,
+        "/demographics/person",
+        "demographics/demographics",
+        Some("#party-lookup"),
+    )
+    .await;
     capture(&h, &dir, "/system", "system/system", None).await;
 
     // The operations panel: the base view (dependency health, build provenance,

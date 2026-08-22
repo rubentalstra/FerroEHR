@@ -45,6 +45,7 @@
 - [Admin console](admin-ui/index.md)
   - [Dashboard & queries](admin-ui/queries.md)
   - [Templates & EHR browsing](admin-ui/browsing.md)
+  - [Demographics](admin-ui/demographics.md)
   - [Operations panel](admin-ui/operations.md)
 - [Operations](operations.md)
   - [Admin & messaging APIs](operations-admin-apis.md)

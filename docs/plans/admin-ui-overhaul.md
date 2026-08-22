@@ -109,7 +109,7 @@ Do not re-plan these — the audit confirmed each in code:
 
 ### T14–T18 design polish
 
-- [ ] **T14** `scope="col"` on the shared table_shell `<th>`
+- [x] **T14** `scope="col"` on the shared table_shell `<th>` (already implemented — src/components/data_table.rs; ticked 2026-08-22 when the #308 build found the stale box)
   (`components/data_table.rs:30`) — one edit fixes every table.
 - [ ] **T15** `aria-label` on the four icon-only remove buttons
   (`query_builder.rs:503/616/1254/1323`).

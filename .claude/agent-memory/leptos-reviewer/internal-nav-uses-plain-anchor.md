@@ -1,22 +1,29 @@
 ---
 name: internal-nav-uses-plain-anchor
-description: W2 admin-ui navigates internal routes with plain <a href> (and thaw NavItem href), not leptos_router <A> — full-page reloads, §9
+description: CORRECTED — plain <a href> IS intercepted by leptos_router's window-level click handler, so internal anchors are client-side navigations, not full-page reloads
 metadata:
   type: project
 ---
 
-The W2 shell/app never import or use `leptos_router::components::A`. Internal
-links use plain `<a href="/">` (e.g. `app.rs` NotFound) and the nav drawer
-uses `thaw::NavItem href=…`, both of which do full-page navigations instead
-of client-side routing.
+The console navigates internal routes with plain `<a href>` and thaw `NavItem
+href=…` rather than `leptos_router::components::A`.
 
-**Rule:** `.claude/rules/leptos-ui.md` §9 — "Navigation uses `<A>`/router
-APIs, never window.location."
+**The earlier claim in this memory — that those do FULL-PAGE reloads — was
+WRONG.** Verified first-hand against the locked leptos_router 0.8.15 source:
 
-**How to apply:** hand-written internal links should be `<A href=…>`
-(should-fix). The `thaw::NavDrawer`/`NavItem` full-page nav is a thaw
-constraint (it renders raw `<a href>`, not integrated with leptos_router) —
-the `selected`-nav-seeded-from-URL comment in shell.rs acknowledges it; treat
-as a recorded deviation, not a fresh finding, unless a client-side-routing
-NavItem wrapper is introduced. Plain `<a>` to a BFF axum route (OIDC login) is
-correct and must stay a plain anchor.
+- `src/location/history.rs:161` — `BrowserUrl::init` installs
+  `window_event_listener(ev::click, …)` unconditionally.
+- `src/location/mod.rs:298` `handle_anchor_click` walks `ev.composed_path()`
+  for ANY `HtmlAnchorElement` and calls `ev.prevent_default()` + a History-API
+  navigation. It bails out only for: a modified click (button != 0, meta/alt/
+  ctrl/shift), a non-empty `target`, `download`, `rel="external"`, a
+  cross-origin href, or a path outside the router base.
+
+So a plain `<a href="/x">` is a client-side navigation exactly like `<A>`; the
+only thing `<A>` adds is `aria-current`/active-class handling. Do NOT flag
+plain internal anchors as full-page reloads, and DO treat every internal
+anchor as a client-side nav when reasoning about remount semantics —
+see [[router-same-route-param-nav]], which is what makes that load-bearing.
+
+`rel="external"` on an anchor to a BFF axum route (the OIDC login link) is
+still required and correct (leptos-ui.md §4).
