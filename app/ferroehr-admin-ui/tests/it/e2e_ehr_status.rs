@@ -44,7 +44,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, env, login_basic};
+use common::{Harness, click_until_css, env, login_basic, wait_enabled, wait_text_suffix};
 use thirtyfour::prelude::*;
 
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
@@ -232,40 +232,6 @@ async fn save_queryable(h: &Harness, desired: bool) -> bool {
     false
 }
 
-/// Click `css` until `target_css` shows up, returning whether it did (the
-/// pre-hydration-click precedent; re-clicking an "open this version" button is
-/// idempotent).
-async fn click_until_css(h: &Harness, css: &str, target_css: &str) -> bool {
-    for _ in 0..5 {
-        h.wait_css(css).await.click().await.expect("click");
-        for _ in 0..25 {
-            if h.driver.find(By::Css(target_css)).await.is_ok() {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        }
-    }
-    false
-}
-
-/// Wait until the element at `css` has text ending in `suffix`.
-///
-/// # Panics
-/// When it never does within 15 s.
-async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
-    let mut last = String::new();
-    for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await {
-            last = element.text().await.unwrap_or_default();
-            if last.trim_end().ends_with(suffix) {
-                return;
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never ended in `{suffix}` (last text: `{last}`)");
-}
-
 /// The `EHR_STATUS` edit round trip: unticking `is_queryable` commits a new
 /// version, the badge flips, and the Status-history tab lists version 2 and
 /// opens its document by `OBJECT_VERSION_ID`.
@@ -289,6 +255,11 @@ async fn ehr_status_edit_commits_a_version_and_flips_the_badge() {
     h.wait_css("[data-status-flag='queryable'][data-status-value='true']")
         .await;
     h.wait_css("#status-edit").await;
+    // Every control stays disabled until the loaded document has been seeded
+    // into the form, so nothing entered here can be lost to the seed.
+    wait_enabled(&h, "#status-queryable").await;
+    wait_enabled(&h, "#status-other-details").await;
+    wait_enabled(&h, "#status-save").await;
     // The form is live once the checkbox reports the SERVED value (see
     // `wait_checkbox`) — only then does clicking it change what the save sends.
     assert!(
@@ -353,6 +324,8 @@ async fn a_stale_if_match_is_refused_and_the_old_version_still_reads() {
     h.goto(&format!("/ehrs/{ehr_id}?tab=status")).await;
     h.wait_css("[data-status-flag='queryable'][data-status-value='true']")
         .await;
+    // The whole card is disabled until the loaded document is seeded into it.
+    wait_enabled(&h, "#status-queryable").await;
     assert!(
         wait_checkbox(&h, "#status-queryable", true).await,
         "the edit form never hydrated with the loaded is_queryable"

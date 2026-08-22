@@ -41,7 +41,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 #[cfg(feature = "ssr")]
-use crate::pages::ehr_detail::commit_version_uid;
+use crate::uid::uid_value_of;
 
 use crate::components::data_table::table_skeleton;
 use crate::error::AdminUiError;
@@ -188,7 +188,7 @@ pub async fn fetch_directory(
         return Ok(None);
     }
     let body = crate::cdr::CdrClient::expect_success(response)?.body;
-    let version_uid = commit_version_uid(&body);
+    let version_uid = uid_value_of(&body);
     Ok(Some(DirectoryState { body, version_uid }))
 }
 
@@ -234,7 +234,7 @@ pub async fn create_directory(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(commit_version_uid(&response.body))
+    Ok(uid_value_of(&response.body))
 }
 
 /// Update the EHR's directory (`PUT /ehr/{ehr_id}/directory`) with a new
@@ -291,7 +291,7 @@ pub async fn update_directory(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(commit_version_uid(&response.body))
+    Ok(uid_value_of(&response.body))
 }
 
 /// Delete the EHR's directory (`DELETE /ehr/{ehr_id}/directory`). The current
@@ -364,7 +364,7 @@ pub async fn list_directory_versions(
         return Ok(Vec::new());
     }
     let current_body = crate::cdr::CdrClient::expect_success(current)?.body;
-    let latest_uid = commit_version_uid(&current_body);
+    let latest_uid = uid_value_of(&current_body);
     let Some((prefix, latest_n)) = split_version_uid(&latest_uid) else {
         // A non-integer version tree id (a branch) — surface just the latest.
         return Ok(vec![summarize_directory_version(&current_body, 1, true)]);
@@ -434,7 +434,7 @@ pub async fn fetch_directory_at_time(
         404 => Ok(DirectoryAtTime::NoneAtTime),
         _ => {
             let body = crate::cdr::CdrClient::expect_success(response)?.body;
-            let version_uid = commit_version_uid(&body);
+            let version_uid = uid_value_of(&body);
             Ok(DirectoryAtTime::Present(DirectoryState {
                 body,
                 version_uid,
@@ -499,7 +499,7 @@ fn split_version_uid(uid: &str) -> Option<(String, i32)> {
 #[cfg(feature = "ssr")]
 fn summarize_directory_version(body: &str, number: i32, is_latest: bool) -> DirectoryVersion {
     let doc: Value = serde_json::from_str(body).unwrap_or(Value::Null);
-    let version_uid = commit_version_uid(body);
+    let version_uid = uid_value_of(body);
     let root_name = doc
         .get("name")
         .and_then(|n| n.get("value"))

@@ -236,7 +236,7 @@ pub async fn create_relationship(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    let uid = super::uid_value_of(&response.body);
+    let uid = crate::uid::uid_value_of(&response.body);
     if uid.is_empty() {
         return Err(AdminUiError::Internal(
             "the CDR created the relationship but returned no uid to open it by".to_owned(),
@@ -305,7 +305,7 @@ pub async fn update_relationship(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(super::uid_value_of(&response.body))
+    Ok(crate::uid::uid_value_of(&response.body))
 }
 
 /// Logically delete a relationship
@@ -529,7 +529,7 @@ fn apply_relationship_edits(base: &str, name: &str, details: &str) -> Result<Str
 fn parse_relationship_state(body: &str) -> Result<RelationshipState, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("PARTY_RELATIONSHIP JSON: {e}")))?;
-    let version_uid = super::json_str(&doc, &["uid", "value"]);
+    let version_uid = crate::uid::uid_value_of_document(&doc);
     Ok(RelationshipState {
         body: body.to_owned(),
         versioned_object_uid: container_uid_of(&version_uid),
@@ -577,7 +577,7 @@ pub(super) fn inline_relationships_of(doc: &Value) -> Vec<InlineRelationship> {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_owned(),
-            uid: super::json_str(item, &["uid", "value"]),
+            uid: crate::uid::uid_value_of_document(item),
             source: party_ref_view(item.get("source")),
             target: party_ref_view(item.get("target")),
         })

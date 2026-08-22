@@ -37,10 +37,7 @@
 
 use crate::common;
 
-use std::time::Duration;
-
-use common::{Harness, login_basic};
-use thirtyfour::prelude::*;
+use common::{Harness, login_basic, retype, wait_css_absent, wait_text};
 
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
 /// with a reason.
@@ -140,48 +137,6 @@ async fn create_composition(http: &reqwest::Client, v1: &str, ehr_id: &str) -> S
         .next()
         .unwrap_or_default()
         .to_owned()
-}
-
-/// Type `text` into the field at `css`, clearing whatever is there first.
-///
-/// # Panics
-/// On any interaction failure.
-async fn retype(h: &Harness, css: &str, text: &str) {
-    let field = h.wait_css(css).await;
-    field.clear().await.expect("clear the field");
-    field.send_keys(text).await.expect("type into the field");
-}
-
-/// Wait until some element's text contains `needle` (a toast title, a status
-/// line), returning whether it appeared.
-async fn wait_text(h: &Harness, needle: &str) -> bool {
-    let xpath = format!("//*[contains(normalize-space(.), '{needle}')]");
-    for _ in 0..75 {
-        if h.driver.find(By::XPath(&xpath)).await.is_ok() {
-            return true;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    false
-}
-
-/// Wait until `css` matches nothing.
-///
-/// # Panics
-/// When it is still present after 15 s.
-async fn wait_css_absent(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if h.driver
-            .find_all(By::Css(css))
-            .await
-            .unwrap_or_default()
-            .is_empty()
-        {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never disappeared");
 }
 
 /// Set one tag through whichever tag panel is on screen.

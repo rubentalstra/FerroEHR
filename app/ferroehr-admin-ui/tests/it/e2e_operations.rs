@@ -38,7 +38,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as};
+use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as, wait_text_contains};
 use thirtyfour::prelude::*;
 
 /// The log filter the journey applies — deliberately narrow (one crate at
@@ -60,27 +60,6 @@ fn admin_credentials() -> (String, String) {
 /// When the element never appears or its text cannot be read.
 async fn text_of(h: &Harness, css: &str) -> String {
     h.wait_css(css).await.text().await.expect("element text")
-}
-
-/// Poll until `css`'s text contains `fragment` — the "the CDR actually applied
-/// it" assertion, an explicit condition rather than a sleep.
-///
-/// # Panics
-/// When the text never matches within 15 s (reporting what it said instead).
-async fn wait_text_contains(h: &Harness, css: &str, fragment: &str) {
-    let mut last = String::new();
-    for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await
-            && let Ok(text) = element.text().await
-        {
-            if text.contains(fragment) {
-                return;
-            }
-            last = text;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never contained `{fragment}` (last text: {last})");
 }
 
 /// The panel renders: the probe-gated nav entry exists, the readiness card lists

@@ -47,6 +47,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Admin console: the EHR_STATUS editor and the demographics party editor are
+  now inert (fields and save disabled) until the served document has seeded
+  the form, so a keystroke can no longer race the seed, be silently
+  overwritten, and then be committed as the overwritten text.
+
+- Admin console: the composition links on the EHR detail's Compositions tab
+  now percent-encode the EHR id and the versioned-object id, like every
+  other link the console builds.
+
 - The COMPOSITION and EHR_STATUS resource reads now refuse a `uid_based_id`
   of another RM kind with `404`, as the REST specification requires — an
   EHR_STATUS id addressed on the composition route (or vice versa) previously

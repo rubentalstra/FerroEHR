@@ -16,7 +16,7 @@ use leptos_router::components::A;
 use serde_json::Value;
 
 #[cfg(feature = "ssr")]
-use crate::pages::ehr_detail::commit_version_uid;
+use crate::uid::uid_value_of;
 
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
@@ -135,7 +135,7 @@ pub async fn commit_composition(
         )
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(commit_version_uid(&response.body))
+    Ok(uid_value_of(&response.body))
 }
 
 /// Compositions tab: `list_compositions` (AQL) → a paged table whose uid
@@ -373,16 +373,21 @@ fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
 
 /// One composition row: the uid cell links to the viewer at the
 /// versioned-object id; the full uid stays visible.
+///
+/// Both segments are percent-encoded (owner rule: all percent-coding goes
+/// through `urlencoding`) — an id carrying `/`, `#`, `?` or `%` would otherwise
+/// address a different route.
 fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
     let uid = row.first().map(cell_text).unwrap_or_default();
-    let vo_id = versioned_object_id(&uid).to_owned();
+    let vo_id = urlencoding::encode(&crate::uid::container_uid_of(&uid)).into_owned();
+    let ehr = urlencoding::encode(ehr_id);
     let cells = row
         .iter()
         .enumerate()
         .map(|(i, value)| {
             let text = cell_text(value);
             if i == 0 {
-                let href = format!("/ehrs/{ehr_id}/compositions/{vo_id}");
+                let href = format!("/ehrs/{ehr}/compositions/{vo_id}");
                 view! {
                     <td class=CELL_MONO>
                         <A href=href attr:class="text-accent hover:underline">
@@ -399,32 +404,15 @@ fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
     view! { <tr class=ROW>{cells}</tr> }.into_any()
 }
 
-/// The versioned-object id from an `OBJECT_VERSION_ID` value: everything
-/// before the first `::` (`uuid::system::version` → `uuid`), which is what
-/// the composition route keys on.
-fn versioned_object_id(uid: &str) -> &str {
-    uid.split_once("::").map_or(uid, |(head, _)| head)
-}
-
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{LIST_COMPOSITIONS_AQL, format_from_value, format_value, versioned_object_id};
+    use super::{LIST_COMPOSITIONS_AQL, format_from_value, format_value};
     use crate::format::ReprFormat;
 
     #[test]
     fn fixed_aql_parses() {
         openehr_query::parser::parse_str(LIST_COMPOSITIONS_AQL)
             .expect("the compositions AQL const must parse");
-    }
-
-    #[test]
-    fn versioned_object_id_strips_the_version_suffix() {
-        assert_eq!(
-            versioned_object_id("7d44aa01::example.ferroehr.eu::2"),
-            "7d44aa01"
-        );
-        // A bare versioned-object id (no suffix) is returned unchanged.
-        assert_eq!(versioned_object_id("7d44aa01"), "7d44aa01");
     }
 
     #[test]

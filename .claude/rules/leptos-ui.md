@@ -80,6 +80,24 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   ONLY to sync with the non-reactive outside world (DOM APIs, logging,
   storage); most "I need an effect" cases are really event listeners or a
   `leptos-use` primitive — check there first.
+- The two sanctioned async-answer-into-signal shapes (adjudicated 2026-08-22,
+  the #2555 program): an **Action dispatch's answer** is written in the
+  action's own async continuation — the dispatch is the user event, no
+  Effect needed. A **Resource seeding editable local state** stays a one-shot
+  resource-reading `Effect` WITH a written justification whenever any seed
+  target renders outside the resource's own `Suspend`: seeding inside the
+  `Suspend` writes those signals during the server pass and again during
+  hydration replay, and the mid-walk divergence is a tachys
+  unrecoverable-hydration panic (reproduced live on `/queries/aql?load=…`).
+  Seed inside the `Suspend` only when every target renders inside it.
+- Corollary for **seed-gated `disabled`** (inert-until-seeded forms): the live
+  state goes on `prop:disabled`, with a STATIC `disabled` attribute beside it
+  for the server HTML (inert from first paint). An attribute BINDING is not
+  enough: the seed can flip the signal during hydration replay, before the
+  binding exists, and hydration trusts the serialized attribute — the control
+  then stays disabled until a change that never comes. Same doctrine as
+  `prop:value`/`prop:checked` (leptos COMMON_BUGS: attributes set initial
+  state; properties carry live state).
 - Effects don't run on the server (that's a feature — see §7);
   `Effect::new_isomorphic` only with a written justification.
   `Effect::watch` for explicit-dependency cases.

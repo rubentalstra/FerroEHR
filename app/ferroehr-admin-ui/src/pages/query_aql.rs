@@ -171,8 +171,6 @@ pub fn QueryAqlPage() -> impl IntoView {
     }
 }
 
-/// The `?load=` hand-off status: a house-pattern `<Transition>` reporting the
-/// loaded query (or the CDR error inline). The editor itself is seeded by the
 /// The `?load=name@version` fetch: the stored query the hand-off from
 /// `/queries` names, or `None` when the parameter is absent or malformed.
 ///
@@ -200,16 +198,22 @@ pub(crate) fn loaded_query_resource(
 /// Seed the editor and the save fields from a loaded stored query, exactly once
 /// and client-side.
 ///
-/// Effects never run on the server, so this cannot diverge at hydration; the
-/// one-shot `StoredValue` guard keeps it from re-firing, and the editor is only
-/// filled while it is still untouched so back-navigation never clobbers edits
-/// (the async-load-into-editable-local-state case, rules §2).
+/// A resource-reading `Effect`, kept deliberately (the written-justification
+/// case rules §2 admits): the targets — the editor `aql` and the save fields —
+/// render in ALWAYS-MOUNTED sections outside the load `<Transition>`, so a
+/// seed inside that `Suspend` writes them during the server pass and again
+/// during hydration replay, changing already-serialized reactive text mid-walk
+/// — reproduced live as tachys' unrecoverable-hydration panic on
+/// `/queries/aql?load=…`. An `Effect` runs only after hydration completes, so
+/// the seed can never diverge the two passes. The one-shot `StoredValue` guard
+/// keeps it from re-firing, and the editor is only filled while still
+/// untouched, so back-navigation never clobbers edits in progress.
 ///
 /// The qualified name is SPLIT back into namespace + bare name (which is what
 /// pre-fills the namespace field), and the version field is seeded with the
-/// NEXT version rather than the loaded one: an explicit `(name, version)` pair
-/// is immutable, so re-saving at the loaded version is a `409` by design
-/// (ITS-REST `operations/definition_query_version_store.yaml`). A loaded
+/// NEXT patch after the loaded version — the loaded `(name, version)` pair is
+/// immutable on the CDR, so re-storing the same triple can only 409; proposing
+/// the successor makes the common "load, tweak, save" loop one keystroke. A
 /// version that is not a bumpable triple leaves the field empty — the
 /// server-assigned store is then the honest default, and the field's own note
 /// says so.
@@ -236,6 +240,8 @@ fn seed_editor_from_loaded_query(
     });
 }
 
+/// The `?load=` hand-off status: a house-pattern `<Transition>` reporting the
+/// loaded query (or the CDR error inline). The editor itself is seeded by the
 /// one-shot effect in the page component; this only surfaces load progress.
 fn load_status_section(
     load_resource: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
