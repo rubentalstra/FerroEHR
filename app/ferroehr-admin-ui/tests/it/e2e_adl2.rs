@@ -25,18 +25,28 @@
 //! versioned get — both an exact release version and the wire's
 //! `{major}` prefix resolution, driven through the screen's own version bar.
 //!
+//! …and, since #2568, the per-row DELETE the ADL2 rows now carry over the
+//! artefact resource.
+//!
 //! Fixtures are the repository's own authored ADL2 corpus
 //! (`tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt`), read repo-relative
-//! so the `WebDriver` file-upload `send_keys` receives a real host path. The
-//! ADL2 store has NO delete on any API surface, so every scene is
-//! upload-if-absent rather than seed-and-clean: a shared stack that a sibling
-//! scene already filled is never re-POSTed into a `409`.
+//! so the `WebDriver` file-upload `send_keys` receives a real host path. Every
+//! scene is SEED-AND-CLEAN: it uploads what it needs (upload-if-absent, so a
+//! stack a sibling scene already filled is never re-POSTed into a `409`) and
+//! removes exactly those artefacts at scene end over
+//! `DELETE definition/artefact/adl2/{artefact_id}`, so a shared stack is left
+//! as it was found. The cleanup runs as the ADMIN dev user: that route is
+//! Admin-classed by the CDR's coarse RBAC.
 
 use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, retype, wait_enabled, wait_text, wait_text_contains};
+use common::{
+    Harness, confirm_in_dialog, env, login_basic_as, retype, wait_css_absent, wait_enabled,
+    wait_text, wait_text_contains,
+};
+use reqwest::StatusCode;
 use thirtyfour::prelude::*;
 
 /// The versioned fixture pair: one HRID family, two release versions, so the
@@ -46,8 +56,54 @@ const VERSIONED_V100: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"
 /// The higher member of that pair.
 const VERSIONED_V110: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.1.0";
 
+/// The artefact the delete scene owns — its own fixture, so removing it can
+/// never race a sibling scene's reads.
+const DELETABLE: &str = "openEHR-EHR-COMPOSITION.cnf_minimal_h.v1.0.0";
+
 /// The ADL2 listing, as URL state.
 const LIST_URL: &str = "/templates?family=adl2";
+
+/// The admin dev user (quickstart `docker/ferroehr.dev.toml`): the artefact
+/// delete is Admin-classed, so both the delete scene and every scene-end
+/// cleanup run as this session.
+fn admin_credentials() -> (String, String) {
+    (
+        env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ferroehr-admin".to_owned()),
+        env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ferroehr".to_owned()),
+    )
+}
+
+/// Remove the artefacts a scene seeded, over the same route the console's
+/// delete affordance drives (`204` deleted, `404` already gone).
+///
+/// Without `UI_E2E_CDR_URL` the scene has no way to reach the CDR directly and
+/// says so rather than failing: the assertions above it have already run.
+///
+/// # Panics
+/// On any answer other than `204`/`404`.
+async fn remove_adl2_artefacts(hrids: &[&str]) {
+    let Some(cdr) = env("UI_E2E_CDR_URL") else {
+        println!("NOTE adl2 cleanup skipped: UI_E2E_CDR_URL unset");
+        return;
+    };
+    let http = reqwest::Client::new();
+    let (user, pass) = admin_credentials();
+    for hrid in hrids {
+        let status = http
+            .delete(format!(
+                "{cdr}/ferroehr/rest/openehr/v1/definition/artefact/adl2/{hrid}"
+            ))
+            .basic_auth(&user, Some(&pass))
+            .send()
+            .await
+            .expect("delete an ADL2 fixture artefact")
+            .status();
+        assert!(
+            status == StatusCode::NO_CONTENT || status == StatusCode::NOT_FOUND,
+            "ADL2 artefact cleanup -> {status}"
+        );
+    }
+}
 
 /// The absolute, canonicalized path of one fixture under the repository's
 /// authored ADL2 corpus.
@@ -182,6 +238,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     h.shot(4, "adl2-json-pane").await;
 
     h.assert_console_clean(&["Failed to load resource"]).await;
+    remove_adl2_artefacts(&[VERSIONED_V100]).await;
     h.finish().await;
 }
 
@@ -250,6 +307,7 @@ async fn adl2_versioned_get_reaches_both_stored_versions() {
     h.shot(3, "adl2-version-prefix").await;
 
     h.assert_console_clean(&["Failed to load resource"]).await;
+    remove_adl2_artefacts(&[VERSIONED_V100, VERSIONED_V110]).await;
     h.finish().await;
 }
 
@@ -282,6 +340,7 @@ async fn adl2_example_composition_renders() {
     h.shot(2, "adl2-example-xml").await;
 
     h.assert_console_clean(&["Failed to load resource"]).await;
+    remove_adl2_artefacts(&[VERSIONED_V100]).await;
     h.finish().await;
 }
 
@@ -331,5 +390,40 @@ async fn an_unparseable_adl2_source_surfaces_the_engine_diagnostic() {
     // The 400 the CDR answered the server fn with is the point of this journey.
     h.assert_console_clean(&["400", "Failed to load resource"])
         .await;
+    h.finish().await;
+}
+
+/// The ADL2 rows carry the same two-step delete the ADL 1.4 rows do, over the
+/// artefact resource: seed an artefact, remove it through the confirmation
+/// dialog, and its row is gone from the listing.
+#[tokio::test]
+async fn an_adl2_artefact_is_deleted_from_the_listing() {
+    let Some(h) = Harness::start("adl2-delete").await else {
+        return;
+    };
+    // The artefact delete is Admin-classed by the CDR's coarse RBAC, so this
+    // scene drives it as the admin dev user — the delete BUTTON renders for any
+    // session while the admin group is mounted (capability is not
+    // authorization), but only this one may use it.
+    let (user, pass) = admin_credentials();
+    login_basic_as(&h, &user, &pass).await;
+    ensure_adl2_template_present(&h, "minimal_h.adls", DELETABLE).await;
+    h.shot(1, "adl2-delete-listed").await;
+
+    let trigger = format!("[data-template-delete=\"{DELETABLE}\"]");
+    confirm_in_dialog(&h, &trigger, "template-delete-confirm").await;
+
+    // Gone from the listing, both as a row and as its delete trigger — the
+    // list refetches on the action's version, so this is the CDR's own answer.
+    wait_css_absent(&h, &trigger).await;
+    wait_css_absent(&h, &row_link(DELETABLE)).await;
+    assert!(
+        wait_text(&h, "Template deleted").await,
+        "a successful delete must toast"
+    );
+    h.shot(2, "adl2-delete-gone").await;
+
+    h.assert_console_clean(&["Failed to load resource"]).await;
+    remove_adl2_artefacts(&[DELETABLE]).await;
     h.finish().await;
 }

@@ -102,8 +102,24 @@ example resource.
 > ADL 2 templates have no path catalog. The catalog on the ADL 1.4 detail
 > screen is built from an OPT 1.4 Web Template, and the CDR serves no Web
 > Template representation of an ADL 2 artefact — so the screen says so instead
-> of showing an invented tree. Read the AOM2 JSON pane for the structure. The
-> admin delete is likewise ADL 1.4 only.
+> of showing an invented tree. Read the AOM2 JSON pane for the structure.
+
+#### Deleting an ADL 2 template
+
+ADL 2 rows carry the same **Delete** affordance the ADL 1.4 rows do, and it
+behaves the same way: a confirmation dialog naming the artefact, nothing sent
+until you confirm, the refusal shown with its referencing count when a
+committed composition still uses the template, and no button at all when the
+CDR's admin API is off.
+
+What differs is the resource underneath. An ADL 1.4 delete removes the
+template registration from the Admin API's template store; an ADL 2 delete
+removes the whole **artefact** — archetype, template or OPT — from the
+definition store, which keeps no version history of it, so the deleted release
+version is simply gone. Other versions of the same HRID family are untouched:
+each is its own artefact, deleted from its own row. The route is admin-gated
+like the rest, so a session without the ADMIN role is refused with a message
+naming what is missing.
 
 ## EHR browser
 

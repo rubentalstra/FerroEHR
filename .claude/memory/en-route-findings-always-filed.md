@@ -35,6 +35,16 @@ upstream answer, a separate exclusive run) stays open past the branch,
 with the blocker stated on the issue. "It needs its own adjudication" is
 NOT a blocker — adjudicate it now.
 
+**Verify NEGATIVE premises before filing (self-correction, 2026-08-22, the
+#2568 lesson):** a worker's "no API offers X" claim is an existence claim
+about the whole surface, and the worker only probed the routes IT knew.
+Before filing an issue on a negative premise, grep the route
+tables/wire_surface first-hand — #2568 was filed on "an ADL2 template can
+never be removed through any API" while `DELETE
+/definition/artefact/adl2/{artefact_id}` existed, Admin-classed and fully
+CNF-cased, and a duplicate route got half-built before the check that
+should have preceded the filing.
+
 **Sharpened again (owner, 2026-08-20, the #2441–#2454 correction):**
 within an audit/QA program, the fix-first cadence covers SELF-FILED
 issues too — verification-pass findings, guard gaps, en-route defects I

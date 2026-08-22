@@ -331,6 +331,7 @@ const ADMIN_READ: &[(&str, &str)] = &[
     ("GET", "/admin/report/composition_version/count"),
     ("GET", "/admin/report/versioned_composition/count"),
     ("GET", "/admin/tenant"),
+    ("GET", "/admin/tenant/current"),
     ("GET", "/admin/tenant/{tenant_id}"),
     ("GET", "/admin/event_subscription"),
     ("GET", "/admin/event_subscription/{subscription_id}"),

@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The tenancy extension gains `GET /admin/tenant/current` — the tenant the
+  calling credential resolves to (`{"default": bool, "tenant": record|null}`;
+  the reserved default tenant when the request runs unscoped). Multi-tenancy
+  stays credential-derived: the read reports the middleware's own
+  resolution, and nothing selects a tenant.
+
+- Admin console: a **Tenants** screen (shown only when the CDR serves the
+  tenancy extension) — the tenant registry with create, edit, and two-step
+  delete, plus a read-only card naming the tenant this session's credential
+  resolves to. There is deliberately no tenant switcher.
+
+- Admin console: the ADL2 template rows gain the same two-step delete the
+  ADL 1.4 rows have, driving the CDR's existing ADL2 artefact delete (with
+  its never-orphan refusal surfaced verbatim).
+
 - Admin console: the **ADL2 template family** — the Templates screen gains a
   family switch (ADL 1.4 | ADL 2, kept in the URL): list and upload ADL2
   operational-template sources (validation diagnostics surface verbatim,
