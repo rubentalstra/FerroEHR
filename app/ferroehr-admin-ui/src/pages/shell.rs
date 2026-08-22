@@ -72,6 +72,8 @@ fn nav_key(path: &str) -> &'static str {
         "/operations"
     } else if path.starts_with("/tenants") {
         "/tenants"
+    } else if path.starts_with("/fhir") {
+        "/fhir"
     } else {
         "/"
     }
@@ -121,6 +123,7 @@ pub fn AppShell() -> impl IntoView {
     // (rules §4). They gate the operations and tenants nav entries.
     let management = crate::management::management_gate();
     let tenants = crate::tenants::tenant_gate();
+    let fhir = crate::fhir::fhir_gate();
     let theme = thaw::ConfigInjection::expect_context().theme;
     let is_dark = RwSignal::new(false);
     let nav_open = RwSignal::new(false);
@@ -173,6 +176,7 @@ pub fn AppShell() -> impl IntoView {
                 status
                 management
                 tenants
+                fhir
                 theme
                 is_dark
                 nav_open
@@ -197,6 +201,8 @@ fn AuthedChrome(
     >,
     /// The tenancy-extension probe (gates the tenants nav entry).
     tenants: Resource<Result<crate::tenants::TenantAvailability, crate::error::AdminUiError>>,
+    /// The FHIR-connector probe (gates the FHIR nav entry).
+    fhir: Resource<Result<crate::fhir::FhirAvailability, crate::error::AdminUiError>>,
     /// The thaw widget theme signal.
     theme: RwSignal<thaw::Theme>,
     /// Dark-mode state.
@@ -213,6 +219,7 @@ fn AuthedChrome(
         status,
         management,
         tenants,
+        fhir,
         theme,
         is_dark,
         nav_open,
@@ -230,6 +237,10 @@ const OPERATIONS_ITEM: (&str, &str, &icondata_core::IconData) =
 /// the CDR serves its tenancy extension (see [`crate::tenants`]).
 const TENANTS_ITEM: (&str, &str, &icondata_core::IconData) =
     ("/tenants", "Tenants", icondata_lu::LuBuilding2);
+
+/// The third probe-gated sidebar entry: the FHIR connector renders only when
+/// the CDR serves it (see [`crate::fhir`]).
+const FHIR_ITEM: (&str, &str, &icondata_core::IconData) = ("/fhir", "FHIR", icondata_lu::LuPlug);
 
 /// The demographics entry's href, which is also its [`nav_key`] value: the
 /// section has no kind-agnostic landing page (every screen in it is per-kind or
@@ -297,6 +308,7 @@ fn authed_shell(
         Result<crate::management::ManagementAvailability, crate::error::AdminUiError>,
     >,
     tenants: Resource<Result<crate::tenants::TenantAvailability, crate::error::AdminUiError>>,
+    fhir: Resource<Result<crate::fhir::FhirAvailability, crate::error::AdminUiError>>,
     theme: RwSignal<thaw::Theme>,
     is_dark: RwSignal<bool>,
     nav_open: RwSignal<bool>,
@@ -561,13 +573,21 @@ fn authed_shell(
     let tenants_link = crate::tenants::when_tenant_registry_usable(tenants, move || {
         nav_entry(active, TENANTS_ITEM.0, TENANTS_ITEM.1, TENANTS_ITEM.2).into_any()
     });
+    // The same discover-and-hide gate once more: the CDR's FHIR connector is
+    // off by default and answers `404` as if unmounted, so a deployment without
+    // it shows no mapping store, no read facade and no dry run at all.
+    let fhir_link = crate::fhir::when_fhir_connector_usable(fhir, move || {
+        nav_entry(active, FHIR_ITEM.0, FHIR_ITEM.1, FHIR_ITEM.2).into_any()
+    });
     let nav = view! {
         <aside
             class="w-52 shrink-0 border-r border-edge bg-raised md:block"
             class:hidden=move || !nav_open.get()
         >
             <nav aria-label="Main" class="p-3">
-                <ul class="flex flex-col gap-1">{nav_links} {operations_link} {tenants_link}</ul>
+                <ul class="flex flex-col gap-1">
+                    {nav_links} {operations_link} {tenants_link} {fhir_link}
+                </ul>
             </nav>
         </aside>
     }
@@ -662,6 +682,11 @@ mod tests {
         );
         assert_eq!(nav_key("/tenants"), "/tenants");
         assert_eq!(nav_key("/tenants?page=1"), "/tenants");
+        assert_eq!(nav_key("/fhir"), "/fhir");
+        assert_eq!(
+            nav_key("/fhir?resource_type=Observation&patient=p-42"),
+            "/fhir"
+        );
         assert_eq!(nav_key("/unknown"), "/");
     }
 }

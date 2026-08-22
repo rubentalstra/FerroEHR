@@ -27,8 +27,8 @@
 
 use leptos::prelude::*;
 use leptos_chartistry::{
-    AspectRatio, AxisMarker, Chart, Colour, IntoInner, Line, SERIES_COLOUR_SCHEME, Series,
-    TickLabels, YGridLine,
+    AspectRatio, AxisMarker, Chart, Colour, Interpolation, IntoInner, Line, SERIES_COLOUR_SCHEME,
+    Series, TickLabels, YGridLine,
 };
 use serde_json::Value;
 
@@ -206,10 +206,14 @@ fn chart_svg(
     // Annotated: with no lines added yet the Y type would be ambiguous.
     let mut series: Series<ChartRow, f64, f64> = Series::new(|row: &ChartRow| row.x);
     for (index, spec) in specs.iter().enumerate() {
+        // NOTE: explicit Linear (leptos-chartistry 0.2.3 src/series/line/
+        // interpolation.rs — the default Monotone's tangent divides by
+        // `x_next - x`, so duplicate-x rows emit `S x,NaN`, invalid SVG).
         series = series.line(
             Line::new(move |row: &ChartRow| series_y(row, index, visible))
                 .with_name(spec.name.clone())
-                .with_colour(series_colour(index)),
+                .with_colour(series_colour(index))
+                .with_interpolation(Interpolation::Linear),
         );
     }
     view! {

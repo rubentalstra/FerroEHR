@@ -48,6 +48,11 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
 )]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one route tree whose DECLARATION ORDER is load-bearing (leptos_router takes the first \
+              match), so it stays a single readable list"
+)]
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
@@ -158,6 +163,7 @@ pub fn App() -> impl IntoView {
                         <Route path=path!("audit") view=crate::pages::audit::AuditPage />
                         <Route path=path!("system") view=crate::pages::system::SystemPage />
                         <Route path=path!("tenants") view=crate::pages::tenants::TenantsPage />
+                        <Route path=path!("fhir") view=crate::pages::fhir::FhirPage />
                         <Route
                             path=path!("operations")
                             view=crate::pages::operations::OperationsPage

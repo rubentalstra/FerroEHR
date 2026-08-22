@@ -10,19 +10,21 @@
 # `keycloak` to 127.0.0.1). The client secret is the shipped DEV realm's
 # (docker/keycloak/import) — test-only, never a production credential.
 #
-# The CDR block turns two opt-in extensions on for the run, both of which
+# The CDR block turns three opt-in extensions on for the run, all of which
 # answer `404` as if unmounted while they are off — so the console's journeys
 # over them would otherwise have nothing but a disabled empty state to drive:
-# the terminology surface (`[terminology] api_enabled`) and the tenant registry
-# (`[tenancy] enabled`). Enabling tenancy is a POSTURE change, which is why it
-# rides this overlay alone and not the dev quickstart or the CNF stack. The
-# mechanical `__` env mapping addresses the same TOML keys
-# (app/ferroehr/assets/ferroehr.default.toml).
+# the terminology surface (`[terminology] api_enabled`), the tenant registry
+# (`[tenancy] enabled`) and the FHIR connector (`[fhir] api_enabled`, which
+# gates both `/fhir/r4/*` and the `/admin/fhir_mapping` store). Enabling
+# tenancy is a POSTURE change, which is why it rides this overlay alone and not
+# the dev quickstart or the CNF stack. The mechanical `__` env mapping
+# addresses the same TOML keys (app/ferroehr/assets/ferroehr.default.toml).
 services:
   ferroehr:
     environment:
       FERROEHR__TERMINOLOGY__API_ENABLED: "true"
       FERROEHR__TENANCY__ENABLED: "true"
+      FERROEHR__FHIR__API_ENABLED: "true"
 
   ferroehr-admin-ui:
     environment:

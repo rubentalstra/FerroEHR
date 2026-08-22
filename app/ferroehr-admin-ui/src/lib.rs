@@ -45,6 +45,7 @@ pub mod clinical;
 pub mod components;
 pub mod error;
 pub mod feedback;
+pub mod fhir;
 pub mod format;
 pub mod highlight;
 pub mod management;
