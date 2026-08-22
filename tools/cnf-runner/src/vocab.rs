@@ -263,12 +263,24 @@ impl Tier {
 
 /// The machine-readable handling class of an ambiguity-register entry — the
 /// pipeline branches on this (closed enum).
+///
+/// The `FixedHandling`/`Editorial` boundary (issue #2546) is decidable by one
+/// question: **did the entry CHOOSE anything?** `Editorial` records a
+/// wording/typography defect with zero behavioural latitude — the corrected
+/// reading is forced by the surrounding released text, and the catalogue
+/// encodes that one reading. `FixedHandling` records real latitude — several
+/// readings were defensible and the entry pins this catalogue's choice.
+/// Neither changes gating (`verdict.rs` branches identically); the split
+/// exists so a reader knows whether re-adjudication could ever move the
+/// behaviour (`fixed_handling`: yes, on a better ground; `editorial`: only if
+/// the text itself changes).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Disposition {
     /// Assert loosely (e.g. AMB-1: at most a `message` string).
     LooseAssert,
-    /// Handling encoded directly in bindings/cases.
+    /// Real latitude existed; the entry pins this catalogue's choice,
+    /// encoded directly in bindings/cases.
     FixedHandling,
     /// Sibling cases carry `option:` tags; the ICS `options` declaration selects.
     OptionSelect,
@@ -276,7 +288,8 @@ pub enum Disposition {
     ReportOnly,
     /// No normative cases; statement-declared behaviour only.
     StatementDeclared,
-    /// Editorial defect in the schedule text itself.
+    /// A wording/typography defect with zero behavioural latitude: the
+    /// corrected reading is forced, nothing was chosen.
     Editorial,
 }
 
