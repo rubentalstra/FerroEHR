@@ -39,7 +39,8 @@
           "report_only",
           "statement_declared",
           "editorial"
-        ]
+        ],
+        "description": "The machine-readable handling class. The fixed_handling/editorial boundary (issue #2546) is one question — did the entry CHOOSE anything? editorial = a wording/typography defect with zero behavioural latitude (the corrected reading is forced by the surrounding released text); fixed_handling = real latitude existed and the entry pins this catalogue's choice. Neither changes gating; report_only and editorial additionally require an upstream_issue."
       },
       "options": {
         "type": "array",
