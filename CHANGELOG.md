@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: the **ADL2 template family** — the Templates screen gains a
+  family switch (ADL 1.4 | ADL 2, kept in the URL): list and upload ADL2
+  operational-template sources (validation diagnostics surface verbatim,
+  like the OPT upload), and a per-template detail screen serving the stored
+  source, the AOM2 canonical JSON, an example composition (JSON or XML), and
+  version navigation across a template's stored versions. ADL2 templates
+  carry no Web Template, so the detail states that instead of a path
+  catalog.
+
 - Admin console: a **Terminology** section — browse the terminologies the CDR
   serves, define a code, test subsumption, and expand or validate a value
   set — plus a terminology-aware code picker on the query builder's coded

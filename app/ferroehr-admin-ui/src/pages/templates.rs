@@ -1,21 +1,25 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The `/templates` screen — the Template Manager list + OPT upload.
+//! The `/templates` screen — the Template Manager list + template upload.
 //!
-//! A list of the CDR's ADL 1.4 operational templates with a client-side text
-//! filter, plus an OPT/XML upload that surfaces the CDR's validation
-//! diagnostics verbatim. No openEHR spec governs an admin UI — our own design /
-//! product extension; the wire it reads/writes is the ITS-REST Definition API.
+//! One screen, two template FAMILIES, switched by `?family=` (rules §9 — the
+//! switch is deep-linkable URL state, not a private signal): ADL 1.4
+//! operational templates (`definition/template/adl1.4`, OPT/XML upload) and
+//! ADL2 ones (`definition/template/adl2`, `text/plain` ADL2 source upload).
+//! Each family has its own list, its own upload affordance, and its own detail
+//! route; the client-side text filter and the URL page window serve both. No
+//! openEHR spec governs an admin UI — our own design / product extension; the
+//! wire it reads/writes is the ITS-REST Definition API.
 //!
-//! Discipline (rules §0/§1/§6/§8/§9): the two `#[server]` fns guard the session
-//! first (a server fn is a public HTTP endpoint) and never let a CDR credential
-//! reach client-visible state; the view is composed from `.into_any()`-erased
-//! section locals; async is a [`Resource`] read under `<Transition>` and an
-//! [`Action`] for the mutating upload (refetch the list on the action's
-//! version); the table is the shared [`table_shell`], which emits an explicit
-//! `<tbody>` (hydration correctness — rules §8), paged by the shared
-//! [`table_footer`] whose page state lives in the URL.
+//! Discipline (rules §0/§1/§6/§8/§9): every `#[server]` fn guards the session
+//! first (a server fn is a public HTTP endpoint) and never lets a CDR
+//! credential reach client-visible state; the view is composed from
+//! `.into_any()`-erased section locals; async is a [`Resource`] read under
+//! `<Transition>` and an [`Action`] per mutating upload (refetch the list on
+//! the action's version); the table is the shared [`table_shell`], which emits
+//! an explicit `<tbody>` (hydration correctness — rules §8), paged by the
+//! shared [`table_footer`] whose page state lives in the URL.
 
 #![allow(
     clippy::disallowed_types,
@@ -28,16 +32,23 @@ use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
 
+use crate::adl2::TemplateFamily;
 use crate::admin::AdminAvailability;
 use crate::components::data_table::{
     CELL, CELL_MONO, ROW, TablePaging, page_rows, page_window, paging_from_url, row_total,
     table_footer, table_shell, table_skeleton,
 };
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_DANGER, INPUT};
+use crate::components::field::{BTN_DANGER, BTN_PRIMARY, INPUT, TEXTAREA};
 use crate::components::page_header::PageHeader;
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
+
+/// A template-upload action: the source text it was dispatched with is the
+/// input, the CDR's answer (the accepted `template_id`, or the diagnostic) the
+/// value both the toast and the inline bar read.
+type TemplateUploadAction = Action<String, Result<String, AdminUiError>>;
 
 /// The template-delete action: the id it was dispatched with, paired with the
 /// CDR's answer, so both the success and the failure toast can name the exact
@@ -155,21 +166,119 @@ pub async fn upload_template(
     Ok(crate::cdr::CdrClient::expect_success(response)?.body)
 }
 
-/// The Template Manager screen: an upload bar, a client-side filter, and the
-/// filterable template table.
+/// List the CDR's ADL2 operational templates.
 ///
-/// The filter is a private client-side `contains` over already-loaded rows (a
-/// bound signal, per the screen spec — no server round-trip, so URL state
-/// would add nothing here); the PAGE the filtered rows are windowed at does
-/// live in the URL (`?page=`/`?size=`, rules §9), so a reload or a shared link
-/// lands on the same rows. A successful upload or delete bumps its action's
-/// version, both of which are the list resource's source, refetching it.
+/// GET `definition/template/adl2?version=*` with
+/// `Accept: application/json`. The row shape is the same four fields the ADL
+/// 1.4 listing carries (`template_id` / `concept` / `archetype_id` /
+/// `created_timestamp`), so both families share one [`TemplateRow`] and one
+/// parser. `version=*` pins the FULL inventory: without it the CDR collapses
+/// the listing to the latest version of each HRID family (the released OAS
+/// `parameters/query/filter_version.yaml`), which would hide every superseded
+/// ADL2 artefact from a management console.
 ///
-/// The per-row delete is admin-gated: it renders only when the
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
+/// when the CDR body is not valid JSON.
+#[server]
+pub async fn list_adl2_templates() -> Result<Vec<TemplateRow>, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = expect_context();
+    let url = state.cdr.rest_v1("definition/template/adl2?version=*");
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    let body = crate::cdr::CdrClient::expect_success(response)?.body;
+    let value = serde_json::from_str::<serde_json::Value>(&body)
+        .map_err(|e| AdminUiError::Internal(format!("ADL2 template list JSON: {e}")))?;
+    let rows = value
+        .as_array()
+        .map(|items| items.iter().map(template_row).collect())
+        .unwrap_or_default();
+    Ok(rows)
+}
+
+/// Upload an ADL2 operational template (the artefact SOURCE) to the CDR.
+///
+/// POST `definition/template/adl2` with `Content-Type: text/plain` — the
+/// operation's single declared body type — `Accept: application/json` and
+/// `Prefer: return=identifier`, so the `201` echoes
+/// `{"template_id": "<resolved HRID>"}` and the success toast can name the
+/// artefact the CDR actually stored. The `openehr-adl` engine's refusals
+/// (`400` unparseable, `422` AOM2-invalid with the rule codes, `409` duplicate
+/// HRID) surface verbatim through
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] for empty content;
+/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
+#[server]
+pub async fn upload_adl2_template(
+    /// The ADL2 operational-template source, pasted or read from a file.
+    adl2_source: String,
+) -> Result<String, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    if adl2_source.trim().is_empty() {
+        return Err(AdminUiError::Invalid(
+            "there is no ADL2 source to upload".to_owned(),
+        ));
+    }
+    let state: crate::state::AppState = expect_context();
+    let url = state.cdr.rest_v1("definition/template/adl2");
+    let response = state
+        .cdr
+        .post(
+            &session.credential,
+            &url,
+            "text/plain",
+            "application/json",
+            &[("Prefer", "return=identifier")],
+            adl2_source,
+        )
+        .await?;
+    let body = crate::cdr::CdrClient::expect_success(response)?.body;
+    Ok(accepted_template_id(&body))
+}
+
+/// The `template_id` a `Prefer: return=identifier` upload answer echoes
+/// (`{"template_id": …}`), or the trimmed body when the CDR echoed something
+/// else — the upload SUCCEEDED either way, so an unexpected body shape is
+/// reported as-is rather than turned into a failure.
+#[cfg(feature = "ssr")]
+fn accepted_template_id(body: &str) -> String {
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(body)
+        && let Some(id) = value.get("template_id").and_then(serde_json::Value::as_str)
+    {
+        return id.to_owned();
+    }
+    body.trim().to_owned()
+}
+
+/// The Template Manager screen: the family switch, an upload affordance, a
+/// client-side filter, and the filterable template table.
+///
+/// The FAMILY (`?family=`) is URL state, so a link lands on the family it
+/// names and the listing, the upload card and the row links all follow it
+/// (rules §9). The filter is a private client-side `contains` over
+/// already-loaded rows (a bound signal, per the screen spec — no server
+/// round-trip, so URL state would add nothing here); the PAGE the filtered rows
+/// are windowed at does live in the URL (`?page=`/`?size=`), so a reload or a
+/// shared link lands on the same rows. A successful upload or delete bumps its
+/// action's version, all of which are the list resource's source, refetching
+/// it.
+///
+/// The per-row delete is admin-gated AND ADL 1.4-only: it renders when the
 /// [`admin_gate`](crate::admin::admin_gate) probe finds the CDR advertising its
-/// Admin API (discover-and-hide — no admin group, no buttons). Whether the
-/// session may USE it is the CDR's per-request answer, surfaced as actionable
-/// copy on refusal.
+/// Admin API (discover-and-hide — no admin group, no buttons), and the Admin
+/// API's `DELETE admin/template/{template_id}` addresses the ADL 1.4 store
+/// alone, so the ADL2 listing offers no delete rather than a button that
+/// always answers `404`. Whether the session may USE it is the CDR's
+/// per-request answer, surfaced as actionable copy on refusal.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -181,9 +290,31 @@ pub fn TemplatesPage() -> impl IntoView {
     // The table's page window, read from the URL in SETUP (never inside the
     // suspense that fetches the list — rules §4).
     let paging = paging_from_url();
-    let upload = Action::new(|opt_xml: &String| {
+    // The family the screen is showing, derived from the URL in setup — the
+    // same value on the server pass and at hydration (rules §8).
+    let query = leptos_router::hooks::use_query_map();
+    let family = Memo::new(move |_| {
+        TemplateFamily::from_query(&query.with(|q| q.get("family").unwrap_or_default()))
+    });
+    let upload: TemplateUploadAction = Action::new(|opt_xml: &String| {
         let opt_xml = opt_xml.clone();
         async move { upload_template(opt_xml).await }
+    });
+    // The ADL2 source awaiting upload: the file picker fills it, the textarea
+    // edits it, and the upload button dispatches exactly what it holds.
+    let adl2_source = RwSignal::new(String::new());
+    // The accepted source is cleared in the action's OWN async continuation,
+    // never from an Effect reading the action's value: a dispatch is the user
+    // event, so the answer is written where it arrives (rules §2).
+    let adl2_upload: TemplateUploadAction = Action::new(move |source: &String| {
+        let source = source.clone();
+        async move {
+            let outcome = upload_adl2_template(source).await;
+            if outcome.is_ok() {
+                adl2_source.set(String::new());
+            }
+            outcome
+        }
     });
     // The admin probe, and the delete action it gates. Both live in setup so
     // the gated view can re-render without re-creating them (rules §4).
@@ -198,17 +329,91 @@ pub fn TemplatesPage() -> impl IntoView {
     // The template awaiting confirmation in the modal (`None` = no dialog).
     // ONE dialog serves every row — the signal is both "which row" and "open".
     let pending_delete = RwSignal::new(Option::<String>::None);
-    let list: Resource<Result<Vec<TemplateRow>, AdminUiError>> = Resource::new(
-        move || (upload.version().get(), delete.version().get()),
-        |_| async move { list_templates().await },
+    // The resource carries the family it fetched BESIDE the rows. That is not
+    // decoration: reading the family signal inside the table's `Suspend` makes
+    // the suspense re-run the instant the URL changes — disposing the mounted
+    // table's owner while the same URL change is still notifying the footer's
+    // page signals, which then read a disposed value and panic in the browser
+    // (reproduced live on the family switch). Sourcing it and reading it back
+    // off the data keeps the suspense driven by resource arrival alone, and
+    // makes the rows and their family agree by construction.
+    let list: Resource<(TemplateFamily, Result<Vec<TemplateRow>, AdminUiError>)> = Resource::new(
+        move || {
+            (
+                family.get(),
+                upload.version().get(),
+                adl2_upload.version().get(),
+                delete.version().get(),
+            )
+        },
+        |(family, ..)| async move {
+            let rows = match family {
+                TemplateFamily::Adl14 => list_templates().await,
+                TemplateFamily::Adl2 => list_adl2_templates().await,
+            };
+            (family, rows)
+        },
     );
 
-    // Both outcomes toast (the console's mutation-feedback rule — crate
-    // CLAUDE.md); the CDR's validation diagnostic ALSO keeps its inline
-    // MessageBar, because an OPT rejection is a list worth reading line by
-    // line. Dispatching a toast is a side-effect on the outside world (the
-    // thaw toaster), so an Effect is its correct home (rules §2); it never
-    // runs on the server pass.
+    mutation_toasts(toaster, upload, adl2_upload, delete);
+
+    // The two families' upload affordances are genuinely different controls
+    // (an OPT/XML file picker versus a source editor), so the header slot and
+    // the card below it are reactive branches on the URL family rather than
+    // one control with two modes — both branches render identically on the
+    // server pass and at hydration, because the family comes from the URL.
+    let action_slot = move || match family.get() {
+        TemplateFamily::Adl14 => upload_trigger(upload),
+        TemplateFamily::Adl2 => ().into_any(),
+    };
+    let upload_card = move || match family.get() {
+        TemplateFamily::Adl14 => upload_feedback(upload),
+        TemplateFamily::Adl2 => adl2_upload_card(adl2_source, adl2_upload),
+    };
+    let switch = family_switch(family);
+    let table_section = templates_table(filter, paging, list, gate, delete, pending_delete);
+    let confirm = delete_dialog(pending_delete, delete);
+
+    view! {
+        <Title text="Templates" />
+        <div class="p-6">
+            <PageHeader
+                title="Templates"
+                subtitle="Operational templates registered in the CDR, by archetype-model family."
+            >
+                {action_slot}
+            </PageHeader>
+            {switch}
+            <div class="mb-3">
+                <input
+                    type="text"
+                    class=format!("w-full max-w-sm {INPUT}")
+                    placeholder="filter by id or concept…"
+                    prop:value=move || filter.get()
+                    on:input:target=move |ev| filter.set(ev.target().value())
+                />
+            </div>
+            {upload_card}
+            {table_section}
+            {confirm}
+        </div>
+    }
+}
+
+/// Wire the screen's three mutations to their success/failure toasts.
+///
+/// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
+/// rule — crate CLAUDE.md); an upload rejection ALSO keeps its inline
+/// `MessageBar`, because a validation diagnostic is worth reading line by line.
+/// Dispatching a toast is a side-effect on the outside world (the thaw
+/// toaster), so an Effect is its correct home (rules §2) — it never writes a
+/// signal, and it never runs on the server pass.
+fn mutation_toasts(
+    toaster: thaw::ToasterInjection,
+    upload: TemplateUploadAction,
+    adl2_upload: TemplateUploadAction,
+    delete: TemplateDeleteAction,
+) {
     Effect::new(move |_| match upload.value().get() {
         Some(Ok(_)) => toast_success(
             toaster,
@@ -224,9 +429,25 @@ pub fn TemplatesPage() -> impl IntoView {
         None => {}
     });
 
-    // The delete outcome is reported as a toast naming the template: success
-    // plainly, failure with the actionable copy (the CDR's in-use `409`
-    // diagnostic included).
+    // The ADL2 upload names the HRID the CDR resolved the source to (the
+    // `Prefer: return=identifier` echo) so the reader can find the new row.
+    Effect::new(move |_| match adl2_upload.value().get() {
+        Some(Ok(template_id)) => toast_success(
+            toaster,
+            "ADL2 template uploaded",
+            &format!("{template_id} was accepted by the CDR."),
+        ),
+        Some(Err(error)) => crate::feedback::toast_write_failure(
+            toaster,
+            "Upload failed",
+            "the ADL2 operational template",
+            &error,
+        ),
+        None => {}
+    });
+
+    // The delete outcome names the template: success plainly, failure with the
+    // actionable copy (the CDR's in-use `409` diagnostic included).
     Effect::new(move |_| match delete.value().get() {
         Some((template_id, Ok(()))) => toast_success(
             toaster,
@@ -240,35 +461,115 @@ pub fn TemplatesPage() -> impl IntoView {
         ),
         None => {}
     });
+}
 
-    let action_slot = upload_trigger(upload);
+/// The family switch: one URL-driven pill link per template family (rules §9 —
+/// the selected family is a shareable query parameter, not private widget
+/// state). Each href carries the family alone, so switching never inherits the
+/// other listing's page window.
+fn family_switch(family: Memo<TemplateFamily>) -> AnyView {
+    let link = move |target: TemplateFamily| {
+        let class = move || {
+            let base = "rounded-control px-3 py-1.5 text-sm font-medium transition-colors";
+            if family.get() == target {
+                format!("{base} bg-accent-subtle text-accent-ink")
+            } else {
+                format!("{base} text-ink-muted hover:bg-sunken")
+            }
+        };
+        view! {
+            <leptos_router::components::A
+                href=target.href()
+                attr:class=class
+                attr:data-template-family=target.as_query()
+            >
+                {target.label()}
+            </leptos_router::components::A>
+        }
+        .into_any()
+    };
+    view! {
+        <nav aria-label="Template families" class="flex gap-1 mb-3">
+            {link(TemplateFamily::Adl14)}
+            {link(TemplateFamily::Adl2)}
+        </nav>
+    }
+    .into_any()
+}
+
+/// The ADL2 upload card: a file picker and a paste area over ONE source
+/// signal, plus the upload button that dispatches exactly what the area holds
+/// and the inline diagnostic the CDR answered with.
+///
+/// The two inputs feed one signal on purpose — a selected file is loaded into
+/// the editor so it can be read (and corrected) before it is sent, and there is
+/// only one thing the button can dispatch. The button is inert from first paint
+/// (a static `disabled` attribute for the server HTML) with the live state on
+/// `prop:disabled`, per the properties-carry-live-state doctrine (rules §2).
+fn adl2_upload_card(source: RwSignal<String>, upload: TemplateUploadAction) -> AnyView {
+    // `custom_request` runs only in the browser (a file-selection event), so
+    // reading the file with the Web `File`/`Blob` API here is hydration-safe
+    // (rules §8 — browser-only APIs never run on the server pass).
+    let custom_request = move |files: thaw::FileList| {
+        let Some(file) = files.get(0) else {
+            return;
+        };
+        let promise = file.text();
+        leptos::task::spawn_local(async move {
+            if let Ok(value) = wasm_bindgen_futures::JsFuture::from(promise).await
+                && let Some(text) = value.as_string()
+            {
+                source.set(text);
+            }
+        });
+    };
+    let empty = Signal::derive(move || source.read().trim().is_empty());
     let feedback = upload_feedback(upload);
-    let table_section = templates_table(filter, paging, list, gate, delete, pending_delete);
-    let confirm = delete_dialog(pending_delete, delete);
 
     view! {
-        <Title text="Templates" />
-        <div class="p-6">
-            <PageHeader
-                title="Templates"
-                subtitle="Operational templates registered in the CDR (ADL 1.4)."
-            >
-                {action_slot}
-            </PageHeader>
-            <div class="mb-3">
-                <input
-                    type="text"
-                    class=format!("w-full max-w-sm {INPUT}")
-                    placeholder="filter by id or concept…"
-                    prop:value=move || filter.get()
-                    on:input:target=move |ev| filter.set(ev.target().value())
-                />
+        <section class=format!("{CARD_PAD} mb-4")>
+            <h2 class=CARD_TITLE>"Upload an ADL2 operational template"</h2>
+            <p class="mb-3 text-sm text-ink-muted">
+                "The CDR ingests the ADL2 artefact SOURCE as text/plain. Choose a file or paste the
+                 source below; the openEHR-ADL engine's diagnostics are shown verbatim on refusal."
+            </p>
+            <div id="adl2-upload-picker" class="mb-2">
+                <thaw::Upload
+                    accept=Signal::derive(|| ".adls,.adl,.opt2,.txt".to_owned())
+                    custom_request
+                >
+                    <thaw::Button>
+                        <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
+                        " Choose an ADL2 file"
+                    </thaw::Button>
+                </thaw::Upload>
             </div>
-            {feedback}
-            {table_section}
-            {confirm}
-        </div>
+            <textarea
+                id="adl2-source"
+                class=format!("{TEXTAREA} min-h-[10rem]")
+                placeholder="operational_template (adl_version=2.0.6; rm_release=1.0.2; generated) …"
+                prop:value=move || source.get()
+                on:input:target=move |ev| source.set(ev.target().value())
+            ></textarea>
+            <div class="mt-2">
+                <button
+                    id="adl2-upload-submit"
+                    type="button"
+                    class=BTN_PRIMARY
+                    disabled=true
+                    prop:disabled=move || empty.get() || upload.pending().get()
+                    on:click=move |_| {
+                        drop(upload.dispatch(source.get_untracked()));
+                    }
+                >
+                    <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
+                    "Upload template"
+                </button>
+            </div>
+            <div class="mt-2">{feedback}</div>
+        </section>
     }
+    .into_any()
 }
 
 /// The screen's ONE delete-confirmation modal, driven by `pending_delete`
@@ -378,11 +679,14 @@ fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyV
 ///
 /// The admin probe is awaited in the SAME `Suspend` as the list (rules §6 —
 /// several resources awaited in one suspend, no nested `Option` matching), so
-/// the header row and the rows agree on whether the delete column exists.
+/// the header row and the rows agree on whether the delete column exists. The
+/// family comes off the list resource, never from a signal read here: a signal
+/// read inside the suspense re-runs it (and disposes the mounted table) on the
+/// URL change itself, which panics the browser (see `TemplatesPage`).
 fn templates_table(
     filter: RwSignal<String>,
     paging: TablePaging,
-    list: Resource<Result<Vec<TemplateRow>, AdminUiError>>,
+    list: Resource<(TemplateFamily, Result<Vec<TemplateRow>, AdminUiError>)>,
     gate: Resource<Result<AdminAvailability, AdminUiError>>,
     delete: TemplateDeleteAction,
     pending_delete: RwSignal<Option<String>>,
@@ -390,9 +694,13 @@ fn templates_table(
     view! {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
-                let admin = crate::admin::renders_admin_ops(&gate.await);
-                match list.await {
-                    Ok(rows) => rows_view(rows, filter, paging, admin, delete, pending_delete),
+                let admin_api = crate::admin::renders_admin_ops(&gate.await);
+                let (family, rows) = list.await;
+                let admin = family == TemplateFamily::Adl14 && admin_api;
+                match rows {
+                    Ok(rows) => {
+                        rows_view(rows, filter, paging, admin, delete, pending_delete, family)
+                    }
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -415,16 +723,10 @@ fn rows_view(
     admin: bool,
     delete: TemplateDeleteAction,
     pending_delete: RwSignal<Option<String>>,
+    family: TemplateFamily,
 ) -> AnyView {
     if rows.is_empty() {
-        return view! {
-            <EmptyState
-                icon=icondata_lu::LuFileCode2
-                message="No templates yet"
-                hint="Upload your first operational template (OPT/XML) with the Upload OPT button above."
-            />
-        }
-        .into_any();
+        return empty_family_state(family);
     }
 
     let matched = Memo::new(move |_| {
@@ -453,7 +755,7 @@ fn rows_view(
                 matched.with(|rows| page_rows(rows, window))
             }
             key=|row| row.template_id.clone()
-            children=move |row| row_view(row, admin, delete, pending_delete)
+            children=move |row| row_view(row, family, admin, delete, pending_delete)
         />
     }
     .into_any();
@@ -463,7 +765,9 @@ fn rows_view(
     } else {
         &["Template ID", "Concept", "Archetype ID", "Created"]
     };
-    let footer = table_footer("/templates", "templates", paging, total);
+    // `base` stays the screen's own path: the paging href carries every OTHER
+    // query parameter across, `?family=` included.
+    let footer = table_footer("/templates", family_noun(family), paging, total);
 
     view! {
         {table_shell(headers, body)}
@@ -505,16 +809,49 @@ fn detail_href(template_id: &str) -> String {
     format!("/templates/{}", urlencoding::encode(template_id))
 }
 
-/// One table row: the template id links to the detail route; concept and
-/// created are plain cells; the admin delete cell renders only when the probe
-/// said so.
+/// The detail-route link for one row of `family` — the two families have
+/// separate detail screens because they serve different representations.
+fn family_detail_href(family: TemplateFamily, template_id: &str) -> String {
+    match family {
+        TemplateFamily::Adl14 => detail_href(template_id),
+        TemplateFamily::Adl2 => crate::adl2::detail_href(template_id),
+    }
+}
+
+/// How the pagination footer names this family's rows
+/// (`26–50 of 137 ADL 2 templates`).
+fn family_noun(family: TemplateFamily) -> &'static str {
+    match family {
+        TemplateFamily::Adl14 => "ADL 1.4 templates",
+        TemplateFamily::Adl2 => "ADL 2 templates",
+    }
+}
+
+/// The empty-catalogue state for one family, naming the upload that fills it.
+fn empty_family_state(family: TemplateFamily) -> AnyView {
+    let hint = match family {
+        TemplateFamily::Adl14 => {
+            "Upload your first operational template (OPT/XML) with the Upload OPT button above."
+        }
+        TemplateFamily::Adl2 => {
+            "Upload your first ADL2 operational template with the source card above."
+        }
+    };
+    view! { <EmptyState icon=icondata_lu::LuFileCode2 message="No templates yet" hint=hint /> }
+        .into_any()
+}
+
+/// One table row: the template id links to its family's detail route; concept
+/// and created are plain cells; the admin delete cell renders only when the
+/// probe said so.
 fn row_view(
     row: TemplateRow,
+    family: TemplateFamily,
     admin: bool,
     delete: TemplateDeleteAction,
     pending_delete: RwSignal<Option<String>>,
 ) -> impl IntoView {
-    let href = detail_href(&row.template_id);
+    let href = family_detail_href(family, &row.template_id);
     let action = if admin {
         delete_cell(&row.template_id, delete, pending_delete)
     } else {
@@ -564,7 +901,29 @@ fn delete_cell(
 
 #[cfg(test)]
 mod tests {
-    use crate::pages::templates::detail_href;
+    use crate::adl2::TemplateFamily;
+    use crate::pages::templates::{detail_href, family_detail_href, family_noun};
+
+    #[test]
+    fn each_family_links_rows_at_its_own_detail_route() {
+        assert_eq!(
+            family_detail_href(TemplateFamily::Adl14, "minimal_evaluation.en.v1"),
+            "/templates/minimal_evaluation.en.v1"
+        );
+        assert_eq!(
+            family_detail_href(
+                TemplateFamily::Adl2,
+                "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"
+            ),
+            "/templates/adl2/openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"
+        );
+    }
+
+    #[test]
+    fn the_footer_names_the_family_whose_rows_it_pages() {
+        assert_eq!(family_noun(TemplateFamily::Adl14), "ADL 1.4 templates");
+        assert_eq!(family_noun(TemplateFamily::Adl2), "ADL 2 templates");
+    }
 
     #[test]
     fn detail_href_leaves_a_url_safe_template_id_alone() {
@@ -592,5 +951,47 @@ mod tests {
             detail_href("a b/c?d#e%f&g=h+i"),
             "/templates/a%20b%2Fc%3Fd%23e%25f%26g%3Dh%2Bi"
         );
+    }
+
+    /// Both families' listings are read through this one parser, so it is
+    /// pinned against the four fields the Definition API returns.
+    #[cfg(feature = "ssr")]
+    #[test]
+    fn a_list_element_distils_into_a_row_and_missing_fields_stay_empty() {
+        let item = serde_json::json!({
+            "template_id": "openEHR-EHR-COMPOSITION.cnf_vitals.v1.0.0",
+            "concept": "cnf_vitals",
+            "archetype_id": "openEHR-EHR-COMPOSITION.cnf_vitals.v1.0.0",
+            "created_timestamp": "2026-08-22T14:51:32.596215Z",
+        });
+        let row = crate::pages::templates::template_row(&item);
+        assert_eq!(row.template_id, "openEHR-EHR-COMPOSITION.cnf_vitals.v1.0.0");
+        assert_eq!(row.concept, "cnf_vitals");
+        assert_eq!(row.created, "2026-08-22T14:51:32.596215Z");
+        // A renamed or absent field empties that cell rather than dropping the
+        // whole row from the listing.
+        let sparse = serde_json::json!({ "template_id": "only-the-id" });
+        let row = crate::pages::templates::template_row(&sparse);
+        assert_eq!(row.template_id, "only-the-id");
+        assert!(row.concept.is_empty());
+        assert!(row.archetype_id.is_empty());
+        assert!(row.created.is_empty());
+    }
+
+    #[cfg(feature = "ssr")]
+    #[test]
+    fn the_upload_answer_yields_the_echoed_template_id() {
+        let body = r#"{"template_id":"openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0"}"#;
+        assert_eq!(
+            crate::pages::templates::accepted_template_id(body),
+            "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0"
+        );
+        // A body that is not the identifier object is reported as-is: the
+        // upload still succeeded.
+        assert_eq!(
+            crate::pages::templates::accepted_template_id("  not json  "),
+            "not json"
+        );
+        assert_eq!(crate::pages::templates::accepted_template_id("{}"), "{}");
     }
 }
