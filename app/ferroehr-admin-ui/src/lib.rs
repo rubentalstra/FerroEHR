@@ -53,6 +53,7 @@ pub mod query_namespace;
 pub mod scopes;
 pub mod system_api;
 pub mod theme;
+pub mod uid;
 
 #[cfg(feature = "ssr")]
 pub mod cdr;

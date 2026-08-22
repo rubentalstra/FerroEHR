@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-08-21T22:38:53.884Z
+  modified: 2026-08-22T10:26:47.042Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
@@ -19,6 +19,14 @@ Recurring session-workflow traps (all hit 2026-07-13/14):
    cache invalidation, run the pipeline as
    `CARGO_BUILD_JOBS=1 bash scripts/conformance.sh` (docker/sut-ferroehr.yml
    forwards the env var); warm rebuilds are fine at the default 2.
+   ESCALATION (2026-08-22, #309): the console crate's wasm-release pass
+   (`[profile.wasm-release]`: opt-level=z + codegen-units=1) now SIGKILLs in
+   the 8 GB Docker VM even building ALONE at jobs=1 — rustc's own peak on the
+   grown crate exceeds the VM. jobs=1 cannot fix a single-process peak; the
+   fixes are a bigger VM (Docker Desktop → Resources → Memory, 12-16 GB —
+   recommended to the owner) or host-built/prebuilt packaging. Keycloak (1 GB
+   container limit) is always the first OOM-reaper victim mid-run — the
+   monitor tripwire `docker start ferroehr-e2e-keycloak-1` revives it.
 
 1. **Long background Bash tasks get killed (~30 min)** — for multi-hour runs
    (benchmark ladders, seeds), launch detached: `nohup caffeinate -is

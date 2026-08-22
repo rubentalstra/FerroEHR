@@ -746,6 +746,17 @@ pub fn CompositionPage() -> impl IntoView {
     let audit = audit_section(versions, selected_version);
     let versioned_card = versioned_section(versioned);
     let delete_action = delete_section(ehr_id, versions, confirming_delete, delete);
+    // The tag panel edits whichever collection the viewer is showing: the
+    // VERSIONED_COMPOSITION container on "Latest", that one version once it is
+    // pinned. The two are disjoint on the wire, so the addressed id is derived
+    // from the same selection the document pane uses.
+    let tags = crate::pages::ehr_tags::composition_tags_section(
+        ehr_id,
+        Signal::derive(move || {
+            let chosen = selected_version.get();
+            if chosen.is_empty() { uid.get() } else { chosen }
+        }),
+    );
 
     let title = Signal::derive(move || {
         let short: String = uid.get().chars().take(8).collect();
@@ -772,6 +783,7 @@ pub fn CompositionPage() -> impl IntoView {
             {timeline}
             {audit}
             {versioned_card}
+            <div class="mt-4">{tags}</div>
         </div>
     }
 }

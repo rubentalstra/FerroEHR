@@ -39,14 +39,14 @@ use crate::components::data_table::{
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, TEXTAREA};
 use crate::components::format_view::inline_error;
+use crate::components::item_tags::{ItemTagRow, tag_filter_form};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
-use crate::pages::demographics::tags::{ItemTagRow, list_demographic_tags};
-use crate::pages::demographics::{
-    PartyKind, browse_href, container_uid_of, party_href, resolve_party_kind,
-};
+use crate::pages::demographics::tags::list_demographic_tags;
+use crate::pages::demographics::{PartyKind, browse_href, party_href, resolve_party_kind};
+use crate::uid::container_uid_of;
 
 /// `/demographics` — the section's entry point, which opens the default kind's
 /// browser.
@@ -570,47 +570,10 @@ fn tag_index_section(kind: PartyKind) -> AnyView {
             <p class="mb-3 text-xs text-ink-muted">
                 "The demographic tag list spans every party kind, and a tag names its target without naming that target's kind — so opening a row asks the CDR which kind holds it."
             </p>
-            {filter_form(kind, filters)}
+            {tag_filter_form(browse_href(kind), filters, &[])}
             {table}
             {note}
         </section>
-    }
-    .into_any()
-}
-
-/// The tag index's filter form: the three released query parameters, submitted
-/// as a plain GET so the URL carries the filter (rules §9).
-///
-/// Each field's initial value is the filter already in the URL, so a filtered
-/// screen shows what it is filtered by. It is the `value` ATTRIBUTE, not a
-/// controlled input: the value is a URL parameter, deterministic on the server
-/// pass and at hydration alike (rules §8), and an uncontrolled field never
-/// loses what was typed before the WASM loaded (rules §5).
-fn filter_form(kind: PartyKind, filters: Signal<(String, String, String)>) -> AnyView {
-    let field =
-        move |id: &'static str, name: &'static str, label: &'static str, current: String| {
-            view! {
-                <div class="flex flex-col gap-1">
-                    <label class=LABEL r#for=id>
-                        {label}
-                    </label>
-                    <input id=id name=name type="text" class=INPUT value=current />
-                </div>
-            }
-            .into_any()
-        };
-    let (key, value, target_path) = filters.get_untracked();
-    view! {
-        <form method="GET" action=browse_href(kind) class="mb-3">
-            <div class="flex flex-wrap items-end gap-3">
-                {field("tag-filter-key", "tag_key", "Key", key)}
-                {field("tag-filter-value", "tag_value", "Value", value)}
-                {field("tag-filter-path", "tag_target_path", "Target path", target_path)}
-                <button id="tag-filter-apply" type="submit" class=BTN_SECONDARY>
-                    "Filter"
-                </button>
-            </div>
-        </form>
     }
     .into_any()
 }
@@ -636,7 +599,7 @@ fn tag_index_table(
                 let window = page_window(total, paging.page.get(), paging.size.get());
                 page_rows(&tags, window)
             }
-            key=|tag| format!("{}\u{1f}{}", tag.target, tag.identity())
+            key=ItemTagRow::global_identity
             let:tag
         >
             {tag_index_row(&tag, open)}

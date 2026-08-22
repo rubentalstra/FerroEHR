@@ -592,7 +592,13 @@ pub(super) fn status_section(ehr_id: Signal<String>, selected: Memo<String>) -> 
     let facts = facts_section(resource, form);
     let editor = edit_form(ehr_id, form, save);
     let document = document_section(resource);
-    view! { <div class="flex flex-col gap-4">{facts} {editor} {document}</div> }.into_any()
+    // The status's own ITEM_TAG collection — the VERSIONED_EHR_STATUS
+    // container's, so a tag survives the edit above.
+    let tags = crate::pages::ehr_tags::status_tags_section(
+        ehr_id,
+        Signal::derive(move || selected.get() == "status"),
+    );
+    view! { <div class="flex flex-col gap-4">{facts} {editor} {document} {tags}</div> }.into_any()
 }
 
 /// The current status's facts — the two capability badges, the subject, the

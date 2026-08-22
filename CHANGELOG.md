@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: the openEHR **item-tag** surfaces — a tag panel on the
+  composition viewer (following the version the viewer shows) and on the EHR
+  detail's Status tab (the versioned container, so tags survive new
+  versions), plus a Tags tab listing every tag in an EHR grouped by the
+  object it sits on, filterable by key, value and target path in the URL.
+  One shared tag kit serves these and the demographic tag editor.
+
 - Admin console: a full **Demographics** section — a per-kind party browser
   and editor for all five party kinds (people, organisations, groups, agents,
   roles) with create, view, verbatim-merge update and logical delete;
