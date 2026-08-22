@@ -93,6 +93,10 @@ pub fn App() -> impl IntoView {
                             view=crate::pages::templates::TemplatesPage
                         />
                         <Route
+                            path=path!("templates/adl2/:template_id")
+                            view=crate::pages::template_adl2::Adl2TemplateDetailPage
+                        />
+                        <Route
                             path=path!("templates/:template_id")
                             view=crate::pages::template_detail::TemplateDetailPage
                         />

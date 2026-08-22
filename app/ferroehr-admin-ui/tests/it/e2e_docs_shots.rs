@@ -36,6 +36,10 @@ use thirtyfour::prelude::*;
 /// detail screen is captured when the template is present on the stack.
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 
+/// The ADL2 artefact the `e2e_adl2` journeys upload; its detail screen is
+/// captured when the template is present on the stack.
+const ADL2_TEMPLATE_ID: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0";
+
 /// The website book's screenshot directory (`website/book/src/admin-ui/img`),
 /// resolved from this crate's manifest dir (`app/ferroehr-admin-ui`).
 fn book_img_dir() -> PathBuf {
@@ -141,6 +145,40 @@ async fn capture_documentation_screenshots() {
         println!(
             "TODO docs-shots: template-detail skipped — `{TEMPLATE_ID}` not present on the stack \
              (run the browse journeys first to seed it)"
+        );
+    }
+
+    // The ADL2 family of the same screen: the listing with its source-upload
+    // card, then the detail's version bar + stored-source pane. Both need the
+    // ADL2 fixture present (`e2e_adl2` uploads it earlier in the same stacked
+    // run).
+    capture(
+        &h,
+        &dir,
+        "/templates?family=adl2",
+        "templates/templates-adl2",
+        Some("#adl2-upload-submit"),
+    )
+    .await;
+    if h.driver
+        .find(By::Css(format!(
+            "a[href='/templates/adl2/{ADL2_TEMPLATE_ID}']"
+        )))
+        .await
+        .is_ok()
+    {
+        capture(
+            &h,
+            &dir,
+            &format!("/templates/adl2/{ADL2_TEMPLATE_ID}"),
+            "templates/template-adl2-detail",
+            Some("#adl2-source-pane pre"),
+        )
+        .await;
+    } else {
+        println!(
+            "SKIP docs-shots: template-adl2-detail — `{ADL2_TEMPLATE_ID}` not present on the \
+             stack (run the e2e_adl2 journeys first to seed it)"
         );
     }
 
