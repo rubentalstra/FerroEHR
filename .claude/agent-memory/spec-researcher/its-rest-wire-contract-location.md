@@ -124,3 +124,22 @@ tags exist too but Demographic API is DEVELOPMENT-status.
   about the `_type`-vs-`type` codegen collision — so the OAS never constrains
   `OBJECT_REF.type`; the constraint lives only in BASE (see
   [[locatable-uid-and-owner-id-landmarks]]).
+- **The two CONTRIBUTION reads split their negotiation contract** (verified
+  2026-08-22): `responses/200_CONTRIBUTION.yaml` is `$ref`d by EXACTLY two ops —
+  `operations/contribution_get.yaml` (EHR side, L16 `Accept_LOCATABLE`) and
+  `operations/demographic_contribution_get.yaml` (L9 `Accept_canonical`, json|xml
+  only) — while that shared 200 promises Simplified serialization of
+  `versions[i].data` (L4) and declares `headers/ContentType_LOCATABLE.yaml`.
+  The demographic CREATE side does NOT share: it has its own
+  `responses/201_demographic_CONTRIBUTION.yaml` (no Simplified paragraph,
+  `ContentType_canonical`) + `404_demographic_CONTRIBUTION.yaml`, so the 200 is
+  the one un-forked file. Amendment-record row for the Simplified addition:
+  `docs/overview/Amendment_record.md` **L46** (SPECITS-84) — it says "CONTRIBUTION
+  endpoints", unscoped. The ITS-REST **docs text is silent**: `docs/demographic/
+  Description.md` is a 25-line stub with zero contribution/format prose, and
+  `grep -rn subject docs/` = 0 hits, so the demographic contribution contract and
+  the create-EHR subject conflict key (`responses/409_EHR.yaml`: "the same subject
+  id, namespace pair, whenever EHR_STATUS is supplied", `$ref`d only by
+  `ehr_create.yaml`; `409_EHR_with_id.yaml` names only an `ehr_id` clash) exist
+  ONLY in the OAS. Media-type prose lives at `docs/overview/Resources.md`
+  §Simplified Formats **L132-148** (406 on unfulfillable `Accept`).

@@ -1652,12 +1652,15 @@ AMB-63:
     key IS the (id, namespace) pair, and `PARTY_REF.type` is NOT part of it —
     and it also states the precondition under which the refusal bites (an
     EHR_STATUS was supplied). On HOW the pair is compared, a released rule
-    EXISTS at SHOULD strength and points the other way (re-grounded
-    2026-08-21): BASE base_types master05 §Composite Identifiers and Case
+    EXISTS and points the other way (re-grounded 2026-08-21; framing
+    corrected 2026-08-22 — the released word is a lowercase "should" and
+    BASE declares no RFC-2119 vocabulary, so it is strong guidance, not a
+    BCP-14 SHOULD): BASE base_types master05 §Composite Identifiers and Case
     binds case-insensitivity to "all composite identifiers" over the whole
-    OBJECT_ID hierarchy — whose first sentence covers every identifier type
-    used within openEHR systems, PARTY_REF.id included. The byte-exact key
-    below is therefore a DELIBERATE DEVIATION from that SHOULD, not a
+    OBJECT_ID hierarchy — whose owning section covers every identifier type
+    used within openEHR systems and EXPLICITLY tables GENERIC_ID under
+    externally defined identifiers, PARTY_REF.id included. The byte-exact
+    key below is therefore a DELIBERATE DEVIATION from that guidance, not a
     spec-silent choice. (b) THE SCOPE: SM i_ehr_service.adoc
     declares the error
     `ehr_for_subject_already_exists` on `create_ehr_for_subject` but NOT on
@@ -1705,15 +1708,16 @@ AMB-63:
     catalogue's cases already satisfy. What stays OURS is the COMPARISON
     DISCIPLINE: the pair is matched EXACTLY, byte-for-byte, with no case
     folding and no normalization — a DELIBERATE DEVIATION from the BASE
-    SHOULD (base_types master05 §Composite Identifiers and Case:
-    case-insensitivity for "all composite identifiers", a rule whose §opening
-    sentence spans the whole OBJECT_ID hierarchy, PARTY_REF.id included;
+    guidance (base_types master05 §Composite Identifiers and Case: a lowercase
+    "should" — BASE declares no RFC-2119 vocabulary — binding
+    case-insensitivity to "all composite identifiers", whose owning section
+    spans the whole OBJECT_ID hierarchy, PARTY_REF.id included;
     scope corrected 2026-08-21 — the earlier claim that the rule governs only
     OBJECT_VERSION_ID-shaped ids was false). The safety rationale: a
     demographic identifier is opaque to the CDR, so two
     spellings a demographic service might reconcile are two different subjects
     here, and folding them would silently merge two patients' records, the
-    wrong-clinical-answer failure mode — a SHOULD admits a reasoned
+    wrong-clinical-answer failure mode — guidance admits a reasoned
     departure, and this one is recorded here and reported upstream as a
     candidate (blanket case-insensitivity vs demographic-id folding safety).
     The type EXCLUSION is now CASED, not merely recorded:

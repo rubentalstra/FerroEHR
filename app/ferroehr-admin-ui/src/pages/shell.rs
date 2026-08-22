@@ -60,6 +60,8 @@ fn nav_key(path: &str) -> &'static str {
         "/queries"
     } else if path.starts_with("/ehrs") {
         "/ehrs"
+    } else if path.starts_with("/demographics") {
+        NAV_DEMOGRAPHICS
     } else if path.starts_with("/audit") {
         "/audit"
     } else if path.starts_with("/system") {
@@ -215,12 +217,19 @@ fn AuthedChrome(
 const OPERATIONS_ITEM: (&str, &str, &icondata_core::IconData) =
     ("/operations", "Operations", icondata_lu::LuGauge);
 
+/// The demographics entry's href, which is also its [`nav_key`] value: the
+/// section has no kind-agnostic landing page (every screen in it is per-kind or
+/// per-object), so the nav opens the default kind's browser directly and every
+/// `/demographics/…` path highlights this entry.
+const NAV_DEMOGRAPHICS: &str = "/demographics/person";
+
 /// One sidebar entry: route, label, Lucide icon.
-const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 6] = [
+const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 7] = [
     ("/", "Dashboard", icondata_lu::LuLayoutDashboard),
     ("/templates", "Templates", icondata_lu::LuFileCode2),
     ("/queries", "Queries", icondata_lu::LuSearchCode),
     ("/ehrs", "EHRs", icondata_lu::LuDatabase),
+    (NAV_DEMOGRAPHICS, "Demographics", icondata_lu::LuUsers),
     ("/audit", "Audit log", icondata_lu::LuShieldCheck),
     ("/system", "System", icondata_lu::LuServer),
 ];
@@ -608,6 +617,17 @@ mod tests {
         assert_eq!(nav_key("/templates/vitals.v1"), "/templates");
         assert_eq!(nav_key("/queries/builder"), "/queries");
         assert_eq!(nav_key("/ehrs/abc/compositions/xyz"), "/ehrs");
+        // Every demographic screen — per-kind, per-party, per-relationship,
+        // per-contribution — highlights the one nav entry.
+        for path in [
+            "/demographics",
+            "/demographics/person",
+            "/demographics/role/8849182c?tab=history",
+            "/demographics/relationship/7d44aa01",
+            "/demographics/contribution/c9",
+        ] {
+            assert_eq!(nav_key(path), super::NAV_DEMOGRAPHICS, "{path}");
+        }
         assert_eq!(nav_key("/audit"), "/audit");
         assert_eq!(nav_key("/audit?patient=p-1"), "/audit");
         assert_eq!(nav_key("/system"), "/system");

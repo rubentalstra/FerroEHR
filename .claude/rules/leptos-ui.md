@@ -237,7 +237,12 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   `<Form method="GET">` → `use_query_map` → resource source
   (`router/20`, `15_global_state`): shareable, refresh-safe, WASM-optional.
   Table/query-builder pages follow this pattern rather than private signals.
-- Navigation uses `<A>`/router APIs, never `window.location`.
+- Navigation uses `<A>`/router APIs, never `window.location`. A plain
+  same-origin `<a href>` is equally safe — the router's window-level click
+  handler intercepts every same-origin anchor (verified in leptos_router 0.8
+  `location/mod.rs`), so `<A>` differs only in active-class handling; what
+  the rule bans is imperative `window.location` writes. (Anchors to BFF axum
+  routes still need `rel="external"` — §4.)
 
 ## 10. Testing & quality gates
 

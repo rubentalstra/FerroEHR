@@ -118,6 +118,35 @@ pub fn App() -> impl IntoView {
                             path=path!("ehrs/:ehr_id/compositions/:uid")
                             view=crate::pages::composition::CompositionPage
                         />
+                        // The demographic routes are declared BEFORE the
+                        // `:kind` ones on purpose: leptos_router matches a
+                        // route tuple in declaration order and takes the first
+                        // hit, so `relationship`/`contribution` would otherwise
+                        // be read as a party kind.
+                        <Route
+                            path=path!("demographics")
+                            view=crate::pages::demographics::browse::DemographicsPage
+                        />
+                        <Route
+                            path=path!("demographics/relationship")
+                            view=crate::pages::demographics::relationship::RelationshipsPage
+                        />
+                        <Route
+                            path=path!("demographics/relationship/:uid")
+                            view=crate::pages::demographics::relationship::RelationshipDetailPage
+                        />
+                        <Route
+                            path=path!("demographics/contribution/:uid")
+                            view=crate::pages::demographics::contribution::DemographicContributionPage
+                        />
+                        <Route
+                            path=path!("demographics/:kind")
+                            view=crate::pages::demographics::browse::PartyBrowserPage
+                        />
+                        <Route
+                            path=path!("demographics/:kind/:uid")
+                            view=crate::pages::demographics::party::PartyDetailPage
+                        />
                         <Route path=path!("audit") view=crate::pages::audit::AuditPage />
                         <Route path=path!("system") view=crate::pages::system::SystemPage />
                         <Route

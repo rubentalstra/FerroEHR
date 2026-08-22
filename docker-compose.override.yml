@@ -68,6 +68,9 @@ services:
       target: runtime-from-source
       args:
         REVISION: ${REVISION:-}
+        # The same serial-compile knob the server image forwards (the
+        # Dockerfile ARG; cargo reads it from the environment).
+        CARGO_BUILD_JOBS: ${CARGO_BUILD_JOBS:-2}
 
   # Keycloak for OAuth2/OIDC bearer auth (the "ferroehr" realm is imported from
   # docker/keycloak/import), behind the `keycloak` profile. The app defaults to
