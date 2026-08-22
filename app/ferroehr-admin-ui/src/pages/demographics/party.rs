@@ -7,9 +7,9 @@
 //! Four URL-driven tabs (`?tab=`, rules §9) over one versioned object:
 //!
 //! - **Party** (default) — the CURRENT version
-//!   (`GET /demographic/{kind}/{uid_based_id}`): its facts, the [`edit_form`]
+//!   (`GET /demographic/{kind}/{uid_based_id}`): its facts, the `edit_form`
 //!   that commits a new version (`PUT` with `If-Match`), and the whole document
-//!   in a [`DocumentPane`](crate::components::format_view::DocumentPane).
+//!   in a [`DocumentPane`].
 //! - **History** — the `VERSIONED_PARTY` family
 //!   ([`history`](super::history)).
 //! - **Relationships** — the party's own `relationships` list
@@ -205,7 +205,7 @@ pub async fn create_party(
 /// as [`AdminUiError::Cdr`] with that status and gets its own toast.
 ///
 /// The body sent is `base_body` with exactly `identities` and `details`
-/// replaced ([`apply_party_edits`]); everything else travels back verbatim.
+/// replaced (`apply_party_edits`); everything else travels back verbatim.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -555,7 +555,7 @@ fn party_screen(kind: PartyKind, uid: Signal<String>, selected: Memo<String>) ->
     });
 
     view! {
-        <Title text="Party · ferroehr-admin" />
+        <Title text="Party" />
         <div class="p-6">
             <PageHeader
                 title=heading

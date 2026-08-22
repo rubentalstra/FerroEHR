@@ -347,7 +347,7 @@ pub fn FhirPage() -> impl IntoView {
     let confirm = delete_dialog(pending_delete, delete);
 
     view! {
-        <Title text="FHIR · ferroehr-admin" />
+        <Title text="FHIR" />
         <div id="fhir-screen" class="p-6">
             <PageHeader
                 title="FHIR"

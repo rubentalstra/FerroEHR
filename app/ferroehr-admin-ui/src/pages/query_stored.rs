@@ -109,7 +109,7 @@ pub fn QueryStoredPage() -> impl IntoView {
     let results_pane = results_section(results, offset, ran);
 
     view! {
-        <Title text="Run stored query · ferroehr-admin" />
+        <Title text="Run stored query" />
         <div class="p-6 space-y-4">
             <PageHeader
                 title="Run stored query"

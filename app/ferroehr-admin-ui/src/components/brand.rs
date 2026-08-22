@@ -25,7 +25,7 @@ pub fn Wordmark() -> impl IntoView {
                 </g>
             </svg>
             <span class="text-base font-semibold tracking-tight text-ink">
-                "ferroehr" <span class="text-accent">"-admin"</span>
+                "FerroEHR" <span class="text-accent">"-admin"</span>
             </span>
         </span>
     }

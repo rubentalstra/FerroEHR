@@ -132,6 +132,7 @@ cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
 cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 cargo fmt --all
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude ferroehr-admin-ui --all-features --no-deps   # the rustdoc gate (intra-doc links, doc lints)
+RUSTDOCFLAGS="-D warnings" cargo doc -p ferroehr-admin-ui --features ssr --no-deps                      # the console's own rustdoc gate (same CI job, second step)
 cargo deny check   # subsumes cargo-audit: same RustSec DB + yanked/licenses/bans/sources
 # conformance pipeline (the acceptance instrument) — the CNF 2.0 runner:
 bash scripts/conformance.sh   # compose up --build (fresh volumes) → the CNF catalogue → verdicts → docs/conformance/<sut>/ (results + verdicts + report/statement/certificate + badges); baseline numbers live ONLY in the committed artifacts
@@ -197,6 +198,7 @@ Remaining work is tracked exclusively on GitHub Issues.
 
 ## Conventions
 
+- **The product name is spelled `FerroEHR` everywhere a human reads it as a name** (owner directive 2026-08-22, #2575): UI text and titles, headings, display metadata (OCI `image.title`, OpenAPI titles, rendered conformance documents), diagram labels naming the product, and prose. Lowercase `ferroehr` is reserved for technical identifiers — crate/package/binary names, registry refs and image names, URLs and the `ferroehr.eu` domain, the REST base path, the `FERROEHR__` env grammar, `ferroehr.toml`, k8s/compose/Helm resource names, DB schema/GUC names, the AMQP exchange, dev credentials, `urn:` forms, the conformance `sut` key and its artifact directories, and persisted storage keys.
 - Crate boundaries mirror openEHR components. Keep dependencies pointing downward: app (`ferroehr-*`) → spec (`openehr-*`), never the reverse. The `ferroehr-*` crates consume the generated `openehr-*` types directly as their domain model — never re-model the RM or re-serialize.
 - **Two disciplines by layer.** Spec/ITS crates (`openehr-*`) = *generated* from the vendored specs: change the emitter and regenerate, never hand-edit `// @generated`; the bar is wire + semantic + invariant parity. Application crates (`ferroehr-*`) = *modern idiomatic Rust of our own design*: use proper crates (axum, sqlx+sea-query-sqlx, oauth2, utoipa); the openEHR specs are the authority; verify at the REST/AQL surface with the CNF conformance suite + corpus tests. Build compiling, tested increments.
 - Emission choices the generator already makes (do not re-litigate per class): closed openEHR subtype sets → untagged Rust `enum`s; recursion (`FOLDER`, `CLUSTER`, `ITEM_TREE`, `SECTION`, `DV_MULTIMEDIA.thumbnail`, F-bounded ranges) → `Box`; `_type` via emitted manual serde impls (`emit-json` → per-crate `json_serde.rs` — no derives, no serde attributes on spec types); strong types where unambiguous (`uuid::Uuid`, etc.). Behavioural back-references (`PATHABLE.parent()`) in hand-written `*_impl.rs` use `Weak` or an index, never an owning reference.

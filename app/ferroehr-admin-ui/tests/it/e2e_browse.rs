@@ -140,6 +140,14 @@ async fn template_upload_lists_and_inspects_path_catalog() {
     // is absent on a fresh stack, so an empty count is expected).
     h.goto("/templates").await;
     h.wait_css("input[type=file]").await;
+    // The rendered tab title: the ONE browser-level pin of the app shell's
+    // Title formatter (the unit tests pin the pure fn; only WebDriver sees
+    // what the tab actually says).
+    assert_eq!(
+        h.driver.title().await.expect("tab title"),
+        "Templates · FerroEHR-admin",
+        "the shell's Title formatter suffixes every page title"
+    );
     h.wait_css("a[href^='/templates/'], .thaw-message-bar")
         .await;
     let before = h

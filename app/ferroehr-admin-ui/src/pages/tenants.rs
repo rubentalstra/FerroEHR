@@ -193,7 +193,7 @@ pub fn TenantsPage() -> impl IntoView {
     }));
 
     view! {
-        <Title text="Tenants · ferroehr-admin" />
+        <Title text="Tenants" />
         <div id="tenants-screen" class="p-6">
             <PageHeader
                 title="Tenants"

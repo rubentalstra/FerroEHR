@@ -39,7 +39,7 @@ COPY initdb/ /docker-entrypoint-initdb.d/
 # scripts are MIT, and every layer under them is upstream `postgres`, which is
 # PostgreSQL-licensed. Claiming only MIT would understate what the image
 # contains.
-LABEL org.opencontainers.image.title="ferroehr-postgres" \
+LABEL org.opencontainers.image.title="FerroEHR PostgreSQL" \
       org.opencontainers.image.description="PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr" \
       org.opencontainers.image.url="https://ferroehr.eu/" \
       org.opencontainers.image.documentation="https://ferroehr.eu/docs/latest/" \

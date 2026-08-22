@@ -149,7 +149,7 @@ ARG REVISION=""
 # See docker/Dockerfile for the split: build-independent keys here, the four
 # build-dependent ones from the publishing workflow. base.* names this runtime
 # stage's `FROM`, kept in step by scripts/checks/image-labels.sh.
-LABEL org.opencontainers.image.title="ferroehr-admin-ui" \
+LABEL org.opencontainers.image.title="FerroEHR admin console" \
       org.opencontainers.image.description="Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)" \
       org.opencontainers.image.url="https://ferroehr.eu/" \
       org.opencontainers.image.documentation="https://ferroehr.eu/docs/latest/" \

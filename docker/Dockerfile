@@ -121,7 +121,7 @@ ARG REVISION=""
 # base.name/base.digest name the IMMEDIATE parent — the `FROM` of this runtime
 # stage, not an intermediate build stage. They are kept in step with that pin by
 # scripts/checks/image-labels.sh.
-LABEL org.opencontainers.image.title="ferroehr" \
+LABEL org.opencontainers.image.title="FerroEHR" \
       org.opencontainers.image.description="Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)" \
       org.opencontainers.image.url="https://ferroehr.eu/" \
       org.opencontainers.image.documentation="https://ferroehr.eu/docs/latest/" \
