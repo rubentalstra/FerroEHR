@@ -26,14 +26,14 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, login_basic};
+use common::{Harness, login_basic, wait_text_contains};
 use thirtyfour::prelude::*;
 
 /// The operational template uploaded (or reused) by these journeys, and its
 /// detail-route id. The fixture is a small, real SDK OPT (a minimal
 /// EVALUATION with a `DV_QUANTITY` and a `DV_CODED_TEXT` leaf — enough to
 /// exercise the path catalog and the query builder without a large tree).
-const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
+pub(crate) const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 
 /// The detail-route anchor the template list renders for [`TEMPLATE_ID`].
 const TEMPLATE_LINK: &str = "a[href='/templates/minimal_evaluation.en.v1']";
@@ -66,7 +66,7 @@ fn fixture_opt_path() -> String {
 ///
 /// # Panics
 /// On any navigation/interaction failure (journeys are assertive end-to-end).
-async fn ensure_template_present(h: &Harness) -> bool {
+pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
     h.goto("/templates").await;
     // The upload bar's hidden file input is always in the DOM.
     h.wait_css("input[type=file]").await;
@@ -104,14 +104,14 @@ async fn ensure_template_present(h: &Harness) -> bool {
 /// Expand every collapsed disclosure in the visible catalog tree so the deep
 /// `DV_*` leaves (and their "+ condition"/"+ column" affordances) become
 /// interactable — the picker auto-expands only the top two levels, and the
-/// data-value leaves sit deeper. Each pass clicks the currently-displayed
-/// collapsed toggles (`▸`); a toggle just flips a `hidden` class, so elements
-/// never go stale, and newly-revealed toggles are clicked on the next pass.
+/// data-value leaves sit deeper. The toggle is the `aria-expanded` disclosure
+/// button (its chevron is an icon, not text); each pass clicks the collapsed
+/// ones, and newly-revealed toggles are clicked on the next pass.
 async fn expand_catalog_tree(h: &Harness) {
     for _ in 0..15 {
         let collapsed = h
             .driver
-            .find_all(By::XPath("//button[normalize-space(.)='▸']"))
+            .find_all(By::Css("button[aria-expanded='false']"))
             .await
             .unwrap_or_default();
         let mut clicked = false;
@@ -124,25 +124,6 @@ async fn expand_catalog_tree(h: &Harness) {
             break;
         }
     }
-}
-
-/// Poll the AQL-preview `<pre>` until it contains `needle`. The preview is a
-/// synchronous memo over the builder state, but the DOM update after a click is
-/// asynchronous — so this is an explicit condition wait, never a fixed sleep.
-///
-/// # Panics
-/// When the preview never contains `needle` within the budget.
-async fn wait_pre_contains(h: &Harness, needle: &str) {
-    for _ in 0..75 {
-        if let Ok(pre) = h.driver.find(By::Css("pre")).await
-            && let Ok(text) = pre.text().await
-            && text.contains(needle)
-        {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("AQL preview never contained `{needle}`");
 }
 
 /// Uploading an OPT lists it in the template manager, and its detail screen
@@ -260,7 +241,7 @@ async fn query_builder_generates_and_runs_aql() {
         .expect("fill the range's from bound");
 
     // The live preview is a real, runnable AQL over compositions.
-    wait_pre_contains(&h, "CONTAINS COMPOSITION").await;
+    wait_text_contains(&h, "pre", "CONTAINS COMPOSITION").await;
     h.shot(3, "builder-aql-preview").await;
 
     // Run it: the results card resolves to a table or the zero-rows state.

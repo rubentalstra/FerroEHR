@@ -56,6 +56,7 @@ use crate::pages::template_detail::fetch_template_catalog;
 use crate::pages::templates::list_templates;
 use crate::queries_api::{run_aql, store_query};
 use crate::query_namespace::{is_full_semver, next_minor, qualify, split_qualified};
+use crate::terminology::{TermRow, fetch_term, fetch_value_set, list_terminologies};
 
 /// The shared, all-`Copy` signal bundle the builder's recursive views thread
 /// through instead of a long argument list. `struct_ver` is bumped only on
@@ -73,6 +74,12 @@ struct BuilderCtx {
     leaf_meta: RwSignal<HashMap<String, CatalogNode>>,
     /// The group a new criterion is added into (defaults to the root group).
     active_path: RwSignal<Vec<usize>>,
+    /// The terminology ids the CDR serves, backing the coded editor's
+    /// datalist. Created ONCE in page setup rather than per criterion editor:
+    /// the criteria tree re-renders on every structural change (`struct_ver`),
+    /// so a resource created inside it would be re-created — and re-fetched —
+    /// on each one (rules §4).
+    terminologies: Resource<Result<Option<Vec<String>>, AdminUiError>>,
 }
 
 impl BuilderCtx {
@@ -99,6 +106,7 @@ pub fn QueryBuilderPage() -> impl IntoView {
         struct_ver: RwSignal::new(0),
         leaf_meta: RwSignal::new(HashMap::new()),
         active_path: RwSignal::new(Vec::new()),
+        terminologies: Resource::new(|| (), |()| async move { list_terminologies().await }),
     };
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<String>);
@@ -225,8 +233,34 @@ pub fn QueryBuilderPage() -> impl IntoView {
             </div>
             {preview_run}
             {results_pane}
+            {terminology_options(ctx)}
         </div>
     }
+}
+
+/// The terminology ids the CDR serves, as ONE document-level `<datalist>` every
+/// coded criterion editor references by id (`list="qb-terminology-options"`).
+///
+/// One element rather than one per criterion: two `<datalist>`s sharing an id
+/// would be invalid HTML, and hydration walks the DOM (rules §8). A CDR that
+/// does not serve the terminology surface answers `404`, which reads as no
+/// options at all — the field then behaves as the plain text input it has
+/// always been, because an AQL author must be able to name a terminology this
+/// server does not host.
+fn terminology_options(ctx: BuilderCtx) -> AnyView {
+    view! {
+        <Suspense fallback=|| ()>
+            {move || Suspend::new(async move {
+                let ids = ctx.terminologies.await.ok().flatten().unwrap_or_default();
+                let options = ids
+                    .into_iter()
+                    .map(|id| view! { <option value=id></option> })
+                    .collect::<Vec<_>>();
+                view! { <datalist id="qb-terminology-options">{options}</datalist> }.into_any()
+            })}
+        </Suspense>
+    }
+    .into_any()
 }
 
 // ---------------------------------------------------------------------------
@@ -1101,8 +1135,86 @@ fn proportion_editor(
     view! { <div class="flex flex-wrap items-end gap-2">{min_field}{max_field}</div> }.into_any()
 }
 
-/// `DV_CODED_TEXT`: a checkbox multi-pick of the catalog's constrained codes
-/// plus a terminology id (default `local`).
+/// How a hand-entered code on a coded criterion was answered by the CDR's
+/// terminology surface.
+///
+/// Display only: the model's `CriterionKind::CodedIn.codes` stays a plain
+/// `Vec<String>` of bare codes whichever variant a chip carries, so lowering
+/// and lifting never see a rubric.
+#[derive(Clone, PartialEq, Eq)]
+enum CodeChip {
+    /// The CDR defined the code; the string is its `code — text` rubric.
+    Defined(String),
+    /// The CDR answered `404` for it — added anyway, and marked.
+    Unvalidated,
+    /// Added without asking the CDR (the free-text path).
+    Plain,
+}
+
+/// The coded editor's shared, all-`Copy` signal bundle, threaded through its
+/// sub-sections instead of a long argument list.
+#[derive(Clone, Copy)]
+struct CodedCtx {
+    /// The criterion's codes — the model's own list, mirrored for editing.
+    selected: RwSignal<Vec<String>>,
+    /// The terminology id field.
+    terminology: RwSignal<String>,
+    /// Hand-entered codes and how the CDR answered for each; the template's
+    /// own constrained options stay in their checkbox list instead.
+    chips: RwSignal<Vec<(String, CodeChip)>>,
+    /// The member terms of the last expanded value set.
+    members: RwSignal<Vec<TermRow>>,
+}
+
+/// Write the coded criterion's current codes + terminology back into the query.
+fn apply_coded(ctx: BuilderCtx, coded: CodedCtx, path: &[usize]) {
+    let kind = CriterionKind::CodedIn {
+        codes: coded.selected.get_untracked(),
+        terminology: coded.terminology.get_untracked(),
+    };
+    ctx.query.update(|q| set_leaf_kind(q, path, kind));
+}
+
+/// Add `code` to the coded criterion at `path` and record how the CDR answered.
+///
+/// The model receives the bare code and nothing else; `chip` only decides how
+/// the code READS on screen. Re-adding a known code refreshes its chip rather
+/// than duplicating it.
+fn add_coded_code(ctx: BuilderCtx, coded: CodedCtx, path: &[usize], code: &str, chip: CodeChip) {
+    coded.selected.update(|codes| {
+        if !codes.iter().any(|known| known == code) {
+            codes.push(code.to_owned());
+        }
+    });
+    coded.chips.update(
+        |chips| match chips.iter_mut().find(|(known, _)| known == code) {
+            Some(entry) => entry.1 = chip,
+            None => chips.push((code.to_owned(), chip)),
+        },
+    );
+    apply_coded(ctx, coded, path);
+}
+
+/// Drop a hand-entered code from the coded criterion at `path`.
+fn remove_coded_code(ctx: BuilderCtx, coded: CodedCtx, path: &[usize], code: &str) {
+    coded
+        .selected
+        .update(|codes| codes.retain(|known| known != code));
+    coded
+        .chips
+        .update(|chips| chips.retain(|(known, _)| known != code));
+    apply_coded(ctx, coded, path);
+}
+
+/// `DV_CODED_TEXT`: the template's constrained codes as checkboxes, plus a
+/// terminology-backed picker — a datalist over the terminologies the CDR
+/// serves, a code entry that can look its rubric up before adding, and a value
+/// set whose members add with one click each.
+///
+/// Only the EDITOR knows about terminology. A code added through a lookup and
+/// one typed by hand are the same `Vec<String>` entry, so the model, the
+/// lowering and the lifting are untouched and the free-text path keeps working
+/// exactly as before.
 fn coded_editor(
     codes: Vec<String>,
     terminology: String,
@@ -1110,84 +1222,352 @@ fn coded_editor(
     path: Vec<usize>,
     ctx: BuilderCtx,
 ) -> AnyView {
-    let selected = RwSignal::new(codes);
-    let term_s = RwSignal::new(terminology);
-    let apply = move || {
-        let kind = CriterionKind::CodedIn {
-            codes: selected.get_untracked(),
-            terminology: term_s.get_untracked(),
-        };
-        ctx.query.update(|q| set_leaf_kind(q, &path, kind));
-    };
     let options = meta.map(|m| m.code_options).unwrap_or_default();
+    // A code already on the criterion that the template does not offer is a
+    // hand-entered one: it gets a chip so it stays visible and removable (the
+    // `?load=` lift arrives this way), with no claim about the CDR having
+    // defined it.
+    let chips = codes
+        .iter()
+        .filter(|code| !options.iter().any(|opt| &&opt.code == code))
+        .map(|code| (code.clone(), CodeChip::Plain))
+        .collect::<Vec<_>>();
+    let picker = CodedCtx {
+        selected: RwSignal::new(codes),
+        terminology: RwSignal::new(terminology),
+        chips: RwSignal::new(chips),
+        members: RwSignal::new(Vec::new()),
+    };
+    let key = path_key(&path);
+
+    let boxes = coded_option_boxes(options, picker, &path, ctx);
+    let terminology_field = coded_terminology_field(&key, picker, path.clone(), ctx);
+    let entry = coded_code_entry(&key, picker, path.clone(), ctx);
+    let value_set = coded_value_set(&key, picker, path, ctx);
+
+    view! { <div class="space-y-2">{boxes} {terminology_field} {entry} {value_set}</div> }
+        .into_any()
+}
+
+/// The template's constrained codes as a checkbox multi-pick.
+fn coded_option_boxes(
+    options: Vec<crate::builder::catalog::CodeOption>,
+    coded: CodedCtx,
+    path: &[usize],
+    ctx: BuilderCtx,
+) -> AnyView {
     // Deliberately an inline hint, not an EmptyState: this is one field inside a
     // leaf-condition card, and the kit's dashed box is sized for a data region —
-    // here it would dwarf the editor it belongs to. The terminology input below
-    // still gives the reader something to do.
-    let boxes = if options.is_empty() {
-        view! {
+    // here it would dwarf the editor it belongs to. The code entry below still
+    // gives the reader something to do.
+    if options.is_empty() {
+        return view! {
             <p class="text-xs text-ink-muted italic">
                 "No coded options in the template for this node."
             </p>
         }
-        .into_any()
-    } else {
-        let apply = apply.clone();
-        let items = options
-            .into_iter()
-            .map(|opt| {
-                let code = opt.code.clone();
-                let checked_code = opt.code.clone();
-                let toggle_code = opt.code.clone();
-                let apply = apply.clone();
-                let text = if opt.label == opt.code {
-                    opt.code.clone()
-                } else {
-                    format!("{} ({})", opt.label, opt.code)
-                };
-                view! {
-                    <label class="flex items-center gap-1 text-sm">
-                        <input
-                            type="checkbox"
-                            class="accent-accent"
-                            prop:checked=move || selected.with(|s| s.contains(&checked_code))
-                            on:change:target=move |ev| {
-                                let on = ev.target().checked();
-                                selected
-                                    .update(|s| {
-                                        if on {
-                                            if !s.contains(&toggle_code) {
-                                                s.push(toggle_code.clone());
-                                            }
-                                        } else {
-                                            s.retain(|c| c != &toggle_code);
+        .into_any();
+    }
+    let selected = coded.selected;
+    let items = options
+        .into_iter()
+        .map(|opt| {
+            let code = opt.code.clone();
+            let checked_code = opt.code.clone();
+            let toggle_code = opt.code.clone();
+            let path = path.to_vec();
+            let text = if opt.label == opt.code {
+                opt.code.clone()
+            } else {
+                format!("{} ({})", opt.label, opt.code)
+            };
+            view! {
+                <label class="flex items-center gap-1 text-sm">
+                    <input
+                        type="checkbox"
+                        class="accent-accent"
+                        prop:checked=move || selected.with(|s| s.contains(&checked_code))
+                        on:change:target=move |ev| {
+                            let on = ev.target().checked();
+                            selected
+                                .update(|s| {
+                                    if on {
+                                        if !s.contains(&toggle_code) {
+                                            s.push(toggle_code.clone());
                                         }
-                                    });
-                                apply();
-                            }
-                        />
-                        <span>{text}</span>
-                        <span class="font-mono text-xs text-ink-muted">{code}</span>
-                    </label>
+                                    } else {
+                                        s.retain(|c| c != &toggle_code);
+                                    }
+                                });
+                            apply_coded(ctx, coded, &path);
+                        }
+                    />
+                    <span>{text}</span>
+                    <span class="font-mono text-xs text-ink-muted">{code}</span>
+                </label>
+            }
+        })
+        .collect::<Vec<_>>();
+    view! { <div class="flex flex-col gap-1">{items}</div> }.into_any()
+}
+
+/// The terminology field: a datalist-backed text input.
+///
+/// The options come from [`terminology_options`]; the value is free text and is
+/// preserved verbatim, because an AQL author must be able to name a terminology
+/// this server does not host.
+fn coded_terminology_field(
+    key: &str,
+    coded: CodedCtx,
+    path: Vec<usize>,
+    ctx: BuilderCtx,
+) -> AnyView {
+    let id = format!("qb-coded-terminology-{key}");
+    let terminology = coded.terminology;
+    view! {
+        <label class="flex flex-col gap-0.5 text-xs">
+            <span class="text-ink-muted">"terminology"</span>
+            <input
+                id=id
+                type="text"
+                list="qb-terminology-options"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-40"
+                prop:value=move || terminology.get()
+                on:input:target=move |ev| {
+                    terminology.set(ev.target().value());
+                    apply_coded(ctx, coded, &path);
                 }
-            })
-            .collect::<Vec<_>>();
-        view! { <div class="flex flex-col gap-1">{items}</div> }.into_any()
+            />
+        </label>
+    }
+    .into_any()
+}
+
+/// The code entry: type a code, then either look its rubric up in the named
+/// terminology or add it as-is.
+///
+/// The lookup's answer is written in the action's own async continuation
+/// (rules §2) — a `404` still adds the code, marked, because the builder must
+/// never refuse a code the CDR happens not to define.
+fn coded_code_entry(key: &str, coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
+    let code_id = format!("qb-coded-code-{key}");
+    let lookup_id = format!("qb-coded-lookup-{key}");
+    let add_id = format!("qb-coded-add-{key}");
+    let draft = RwSignal::new(String::new());
+    let lookup = {
+        let path = path.clone();
+        Action::new(move |code: &String| {
+            let code = code.clone();
+            let terminology = coded.terminology.get_untracked();
+            let path = path.clone();
+            async move {
+                let found = fetch_term(terminology, code.clone(), String::new()).await?;
+                let chip = found
+                    .as_ref()
+                    .and_then(|extract| extract.terms.iter().find(|term| term.code == code))
+                    .map_or(CodeChip::Unvalidated, |term| {
+                        CodeChip::Defined(term.rubric())
+                    });
+                add_coded_code(ctx, coded, &path, &code, chip);
+                Ok::<(), AdminUiError>(())
+            }
+        })
+    };
+    let add_path = path.clone();
+    let on_add = move |_| {
+        let code = draft.get_untracked().trim().to_owned();
+        if !code.is_empty() {
+            add_coded_code(ctx, coded, &add_path, &code, CodeChip::Plain);
+            draft.set(String::new());
+        }
+    };
+    let on_lookup = move |_| {
+        let code = draft.get_untracked().trim().to_owned();
+        if !code.is_empty() {
+            lookup.dispatch(code);
+            draft.set(String::new());
+        }
+    };
+    let chip_list = coded_chip_list(coded, path, ctx);
+    view! {
+        <div class="space-y-1">
+            <div class="flex flex-wrap items-end gap-2">
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"code"</span>
+                    <input
+                        id=code_id
+                        type="text"
+                        class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-40"
+                        prop:value=move || draft.get()
+                        on:input:target=move |ev| draft.set(ev.target().value())
+                    />
+                </label>
+                <button
+                    id=lookup_id
+                    type="button"
+                    class="text-xs rounded border border-accent text-accent px-1.5 py-1 hover:bg-accent-subtle"
+                    disabled=Signal::derive(move || lookup.pending().get())
+                    on:click=on_lookup
+                >
+                    "look up"
+                </button>
+                <button
+                    id=add_id
+                    type="button"
+                    class="text-xs rounded border border-edge-strong px-1.5 py-1 hover:bg-sunken"
+                    on:click=on_add
+                >
+                    "add"
+                </button>
+            </div>
+            {move || match lookup.value().get() {
+                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Ok(())) | None => ().into_any(),
+            }}
+            {chip_list}
+        </div>
+    }
+    .into_any()
+}
+
+/// The hand-entered codes as removable chips, each reading the way the CDR
+/// answered for it.
+fn coded_chip_list(coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
+    view! {
+        <div class="flex flex-wrap gap-1">
+            <For each=move || coded.chips.get() key=|(code, _)| code.clone() let:entry>
+                {
+                    let (code, chip) = entry;
+                    let remove_code = code.clone();
+                    let hook = code.clone();
+                    let path = path.clone();
+                    let (label, marker) = match chip {
+                        CodeChip::Defined(rubric) => (rubric, ""),
+                        CodeChip::Unvalidated => (code, "unvalidated"),
+                        CodeChip::Plain => (code, ""),
+                    };
+                    view! {
+                        <span
+                            data-coded-chip=hook
+                            class="inline-flex items-center gap-1 rounded-full border border-edge-strong bg-sunken px-2 py-0.5 text-xs text-ink"
+                        >
+                            <span class="font-mono">{label}</span>
+                            <span class="text-ink-faint italic">{marker}</span>
+                            <button
+                                type="button"
+                                class="text-danger"
+                                aria-label=format!("Remove code {remove_code}")
+                                on:click=move |_| remove_coded_code(ctx, coded, &path, &remove_code)
+                            >
+                                <leptos_icons::Icon icon=icondata_lu::LuX width="10" height="10" />
+                            </button>
+                        </span>
+                    }
+                }
+            </For>
+        </div>
+    }
+    .into_any()
+}
+
+/// The value-set picker: expand a value set in the named terminology and add
+/// any of its members with one click.
+fn coded_value_set(key: &str, coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
+    let value_set_id = format!("qb-coded-value-set-{key}");
+    let expand_id = format!("qb-coded-expand-{key}");
+    let draft = RwSignal::new(String::new());
+    let expand = Action::new(move |value_set: &String| {
+        let value_set = value_set.clone();
+        let terminology = coded.terminology.get_untracked();
+        async move {
+            let found = fetch_value_set(terminology, value_set).await?;
+            // Written in the action's own async continuation (rules §2).
+            let known = found.is_some();
+            coded
+                .members
+                .set(found.map(|extract| extract.terms).unwrap_or_default());
+            Ok::<bool, AdminUiError>(known)
+        }
+    });
+    let on_expand = move |_| {
+        let value_set = draft.get_untracked().trim().to_owned();
+        if !value_set.is_empty() {
+            expand.dispatch(value_set);
+        }
+    };
+    let outcome = move || match expand.value().get() {
+        None => ().into_any(),
+        Some(Err(error)) => crate::components::format_view::inline_error(&error),
+        Some(Ok(false)) => {
+            let value_set = expand.input().get().unwrap_or_default();
+            view! {
+                <p class="text-xs text-ink-muted italic">
+                    "No value set " <span class="font-mono">{value_set}</span>
+                    " in this terminology."
+                </p>
+            }
+            .into_any()
+        }
+        Some(Ok(true)) => coded_member_chips(coded, path.clone(), ctx),
     };
     view! {
-        <div class="space-y-2">
-            {boxes} <label class="flex flex-col gap-0.5 text-xs">
-                <span class="text-ink-muted">"terminology"</span>
-                <input
-                    type="text"
-                    class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-40"
-                    prop:value=move || term_s.get()
-                    on:input:target=move |ev| {
-                        term_s.set(ev.target().value());
-                        apply();
+        <div class="space-y-1">
+            <div class="flex flex-wrap items-end gap-2">
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"value set (optional)"</span>
+                    <input
+                        id=value_set_id
+                        type="text"
+                        class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-48"
+                        prop:value=move || draft.get()
+                        on:input:target=move |ev| draft.set(ev.target().value())
+                    />
+                </label>
+                <button
+                    id=expand_id
+                    type="button"
+                    class="text-xs rounded border border-edge-strong px-1.5 py-1 hover:bg-sunken"
+                    disabled=Signal::derive(move || expand.pending().get())
+                    on:click=on_expand
+                >
+                    "expand"
+                </button>
+            </div>
+            {outcome}
+        </div>
+    }
+    .into_any()
+}
+
+/// The expanded value set's members as clickable chips; a click adds that
+/// member to the criterion as a defined code.
+fn coded_member_chips(coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
+    view! {
+        <div class="flex flex-wrap gap-1">
+            <For each=move || coded.members.get() key=|term| term.code.clone() let:term>
+                {
+                    let hook = term.code.clone();
+                    let code = term.code.clone();
+                    let label = term.rubric();
+                    let path = path.clone();
+                    view! {
+                        <button
+                            type="button"
+                            data-value-set-code=hook
+                            class="rounded-full border border-accent px-2 py-0.5 text-xs text-accent hover:bg-accent-subtle"
+                            on:click=move |_| add_coded_code(
+                                ctx,
+                                coded,
+                                &path,
+                                &code,
+                                CodeChip::Defined(label.clone()),
+                            )
+                        >
+                            {term.rubric()}
+                        </button>
                     }
-                />
-            </label>
+                }
+            </For>
         </div>
     }
     .into_any()
