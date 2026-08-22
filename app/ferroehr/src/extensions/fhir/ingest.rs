@@ -718,6 +718,142 @@ impl FerroEhrService {
         Ok(self.committed_response(ehr_id, &committed))
     }
 
+    /// The ingest door's dry twin — FHIR R4 `$validate`: resolve the mapping,
+    /// map to FLAT, build and provenance-stamp the COMPOSITION exactly as
+    /// [`Self::fhir_ingest`] would, run the commit path's own validation, and
+    /// commit NOTHING. Returns the FHIR `OperationOutcome` carrying the
+    /// verdict: the validator's rejections verbatim as `error` issues, or the
+    /// valid verdict plus the EHR disposition (`would commit into …` /
+    /// `would create …` — the target EHR is resolved, never created) as
+    /// `information` issues.
+    ///
+    /// NOTE: no openEHR spec governs FHIR interop — our own extension; the
+    /// wire convention is HL7 FHIR R4 `resource-operation-validate`
+    /// (<https://hl7.org/fhir/R4/resource-operation-validate.html>).
+    ///
+    /// # Errors
+    /// Operation-level failures mirror [`Self::fhir_ingest`]:
+    /// `VersionedObjectDoesNotExist` (404) when no enabled mapping matches;
+    /// `precondition` when the resource lacks the mapped subject or a
+    /// required field; `Exception` on a broken stored definition or
+    /// terminology fault. CONTENT failures are never errors — they are the
+    /// verdict this operation exists to preview.
+    pub async fn fhir_validate(
+        &self,
+        resource_type: String,
+        profile: Option<String>,
+        a_resource: Value,
+    ) -> Result<Value, SmError> {
+        // Steps 1–4 of the ingest path, verbatim: the dry run validates the
+        // exact artifact the real commit would hand the validator.
+        let def_value = self
+            .resolve_mapping(&resource_type, profile.as_deref())
+            .await?
+            .ok_or_else(|| {
+                SmError::new(
+                    CallStatusType::VersionedObjectDoesNotExist,
+                    format!("no enabled FHIR mapping for resource type '{resource_type}'"),
+                )
+            })?;
+        let def: FhirMappingDefinition = serde_json::from_value(def_value)
+            .map_err(|e| internal_fault("read a stored FHIR mapping definition", &e))?;
+        let subject = ferroehr_ext::fhir::mapping::extract_subject(&a_resource, &def)
+            .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
+        // Resolve — never create: the disposition is reported, not enacted.
+        let disposition = match self
+            .get_ehrs_for_subject(SubjectRef::person(
+                subject.id.clone(),
+                subject.namespace.clone(),
+            ))
+            .await?
+            .first()
+        {
+            Some(existing) => format!("would commit into existing EHR {}", existing.ehr_id),
+            None => format!(
+                "would create a new EHR for subject '{}' (namespace '{}')",
+                subject.id, subject.namespace
+            ),
+        };
+        let translations = self.resolve_code_translations(&a_resource, &def).await?;
+        let wt = self.web_template_for(&def.template_id).await?;
+        let flat = ferroehr_ext::fhir::mapping::build_flat(&a_resource, &def, &translations)
+            .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
+        let now = ferroehr_ext::fhir::feeder_audit::now_iso();
+        let template_id = def.template_id.clone();
+
+        // From here every failure is the VERDICT: exactly the refusals the
+        // ingest path classes content-invalid (422), previewed instead of
+        // enacted.
+        let verdict = self
+            .dry_run_verdict(&resource_type, &a_resource, &flat, &wt, &now)
+            .await?;
+        Ok(match verdict {
+            None => serde_json::json!({
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    { "severity": "information", "code": "informational",
+                      "diagnostics": format!(
+                          "valid: the resource maps to a COMPOSITION under template \
+                           '{template_id}' that passes commit validation; nothing was committed"
+                      ) },
+                    { "severity": "information", "code": "informational",
+                      "diagnostics": disposition }
+                ]
+            }),
+            Some(rejection) => serde_json::json!({
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    { "severity": "error", "code": "invalid", "diagnostics": rejection },
+                    { "severity": "information", "code": "informational",
+                      "diagnostics": disposition }
+                ]
+            }),
+        })
+    }
+
+    /// The dry run's content verdict: `None` when the mapped COMPOSITION
+    /// builds, re-types and passes the commit path's own validation (the
+    /// validity-checking seam every commit runs); `Some(rejection)` carrying
+    /// the refusal text verbatim otherwise.
+    ///
+    /// # Errors
+    /// Only non-verdict service failures (template store or database faults)
+    /// propagate; a validation refusal is the RETURN VALUE, never an error.
+    async fn dry_run_verdict(
+        &self,
+        resource_type: &str,
+        a_resource: &Value,
+        flat: &serde_json::Map<String, Value>,
+        wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+        now: &str,
+    ) -> Result<Option<String>, SmError> {
+        let mut composition = match openehr_its::flat::convert::composition_from_flat(flat, wt, now)
+        {
+            Ok(c) => c,
+            Err(e) => {
+                return Ok(Some(format!(
+                    "FHIR resource did not map to a valid COMPOSITION: {e}"
+                )));
+            }
+        };
+        let feeder = ferroehr_ext::fhir::feeder_audit::feeder_audit(
+            resource_type,
+            &ferroehr_ext::fhir::feeder_audit::resource_id(a_resource, resource_type),
+            ferroehr_ext::fhir::feeder_audit::resource_version(a_resource).as_deref(),
+            now,
+        );
+        ferroehr_ext::fhir::feeder_audit::inject_feeder_audit(&mut composition, feeder);
+        if let Err(e) = openehr_its::json::from_canonical_value::<openehr_rm::prelude::Composition>(
+            &composition,
+        ) {
+            return Ok(Some(format!(
+                "FHIR resource did not map to a valid COMPOSITION: {e}"
+            )));
+        }
+        self.commit_rejection(crate::versioning::Kind::Composition, &composition)
+            .await
+    }
+
     /// The read façade: the FHIR `searchset` Bundle for `resource_type` scoped
     /// to `patient` (an EHR uuid or a subject external id), reverse-mapped from
     /// the stored COMPOSITIONs. `count` caps rows per mapping (`_count`).

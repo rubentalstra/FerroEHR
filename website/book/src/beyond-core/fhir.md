@@ -40,6 +40,38 @@ Provenance is not optional: the composition the CDR stores carries a
 `FEEDER_AUDIT` naming the FHIR origin and the source resource's own id, so an
 ingested record is always distinguishable from one authored in openEHR.
 
+## Validating without committing (`$validate`)
+
+`POST /fhir/r4/{resource_type}/$validate` is the ingest door's dry twin,
+following FHIR R4's own
+[validation operation](https://hl7.org/fhir/R4/resource-operation-validate.html)
+convention. It runs the whole ingest pipeline — mapping resolution, the FLAT
+build, the `FEEDER_AUDIT` stamp, and the *same validation the real commit
+runs* — and **commits nothing**: no composition, no version, and no EHR is
+created (the target EHR is resolved and reported, never touched).
+
+The response is a FHIR `OperationOutcome`, and a completed validation is
+`200` whichever way the verdict falls:
+
+- **Valid**: `information` issues — the verdict naming the resolved template,
+  plus the EHR disposition (`would commit into existing EHR <id>`, or
+  `would create a new EHR for subject '<id>'`).
+- **Invalid**: an `error` issue carrying the openEHR validator's rejection
+  **verbatim** — the exact text the real ingest would refuse with as a `422` —
+  plus the same disposition issue.
+
+Operation-level failures mirror the ingest door: no enabled mapping is `404`,
+a type outside the starter set is `501`, a malformed body is `400`, and the
+disabled connector is `404`. This is what makes mapping development safe:
+iterate on a mapping with `$validate` against real sample resources, and only
+switch to the real `POST` once the outcome reads valid.
+
+```bash
+curl -s -X POST "$CDR/fhir/r4/Observation/\$validate" \
+  -H 'Content-Type: application/json' \
+  --data-binary @observation.json | jq '.issue[].diagnostics'
+```
+
 ## Read façade
 
 `GET /fhir/r4/{resource_type}?patient=<subject>` returns openEHR data
@@ -99,7 +131,59 @@ through an admin API (classed under admin authorization):
 A mapping definition binds **one FHIR resource type** (optionally scoped to a
 `meta.profile` URL) to **one openEHR template**, and lists field bindings — each
 mapping an openEHR FLAT path to a FHIR path, or to a constant, shaped by a
-transform:
+transform.
+
+**Resolution is two-step and deterministic.** An incoming resource resolves by
+its type plus the *first* entry of `meta.profile` (only `meta.profile[0]` is
+consulted): an enabled mapping whose `profile_url` **exactly matches** that URL
+wins; otherwise the type's enabled mapping with **no `profile_url`** — the
+type default — applies. A resource declaring no profile matches only the type
+default. When neither exists, the ingest (and `$validate`) answer `404`.
+
+The stored definition is the deployable artifact — the CDR stores it verbatim
+and interprets it at ingest time, so a mapping deploys, updates, and rolls
+back without a server release. Its shape (this is the whole contract — no
+openEHR specification governs FHIR interop; the wire vocabulary follows
+[HL7 FHIR R4](https://hl7.org/fhir/R4/)):
+
+```json
+{
+  "resource_type": "Observation",
+  "profile_url": "http://hl7.org/fhir/StructureDefinition/bp",
+  "template_id": "blood_pressure.en.v1",
+  "subject": {
+    "reference_path": "subject.reference",
+    "namespace": "fhir",
+    "strip_prefix": "Patient/"
+  },
+  "context": {
+    "ctx/language": "en",
+    "ctx/territory": "US",
+    "ctx/composer_name": "fhir-connector"
+  },
+  "entries": [
+    { "openehr_path": "blood_pressure/blood_pressure:0/systolic",
+      "fhir_path": "component.where(code.coding[0].code = '8480-6').valueQuantity.value",
+      "transform": { "kind": "quantity",
+        "unit_path": "component.where(code.coding[0].code = '8480-6').valueQuantity.unit" },
+      "required": true },
+    { "openehr_path": "blood_pressure/blood_pressure:0/diastolic",
+      "fhir_path": "component.where(code.coding[0].code = '8462-4').valueQuantity.value",
+      "transform": { "kind": "quantity",
+        "unit_path": "component.where(code.coding[0].code = '8462-4').valueQuantity.unit" },
+      "required": true }
+  ]
+}
+```
+
+The example binds the HL7 FHIR R4 core
+[blood-pressure profile](https://hl7.org/fhir/R4/bp.html) (systolic LOINC
+`8480-6`, diastolic `8462-4`, each a `component` of one `Observation`) to a
+blood-pressure template's two quantity leaves. `subject` names where the
+patient identity lives in the resource and how it becomes the EHR subject
+(`Patient/p-42` → subject id `p-42` in namespace `fhir`); `context` supplies
+the FLAT `ctx/` defaults every built composition carries (an omitted
+`ctx/time` defaults to the ingestion instant). The transforms:
 
 | Transform | What it writes |
 |---|---|

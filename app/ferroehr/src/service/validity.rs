@@ -78,11 +78,33 @@ impl FerroEhrService {
         let Some(kind) = Kind::from_type(rm_type) else {
             return Ok(false);
         };
-        match self.validate_for_commit(kind, a_content, false).await {
-            Ok(()) => Ok(true),
-            Err(ServiceError::ValidationFailed(_) | ServiceError::Unprocessable { .. }) => {
-                Ok(false)
-            }
+        Ok(self.commit_rejection(kind, a_content).await?.is_none())
+    }
+
+    /// The diagnostics-bearing sibling of [`Self::content_valid`]: the same
+    /// commit-path validation, answering `None` for valid content and
+    /// `Some(rejection)` with the refusal text VERBATIM — the seam a dry-run
+    /// caller (the FHIR `$validate` door) previews the commit's own verdict
+    /// through. Full strictness, exactly like a bare validity check.
+    ///
+    /// # Errors
+    /// A validation verdict is never an error; any other service failure from
+    /// the validation path (e.g. a template-store/database fault) propagates
+    /// as its [`SmError`] mapping.
+    pub(crate) async fn commit_rejection(
+        &self,
+        a_kind: Kind,
+        a_content: &Value,
+    ) -> Result<Option<String>, SmError> {
+        match self.validate_for_commit(a_kind, a_content, false).await {
+            Ok(()) => Ok(None),
+            // Rendered through the SM bridge — where the per-path violation
+            // list joins into one message — so the text matches what the
+            // committing routes serve, verbatim.
+            Err(
+                rejection
+                @ (ServiceError::ValidationFailed(_) | ServiceError::Unprocessable { .. }),
+            ) => Ok(Some(SmError::from(rejection).message)),
             Err(other) => Err(other.into()),
         }
     }

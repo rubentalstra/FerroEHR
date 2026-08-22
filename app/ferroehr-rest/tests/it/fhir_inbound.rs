@@ -453,3 +453,193 @@ async fn mapping_crud_over_http() {
     let (status, _, _) = send(&router, req("GET", &format!("{MAPPINGS}/{id}"), None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
+
+/// The `(vo_version, ehr)` row counts — the dry run's commits-nothing proof.
+async fn commit_counts(pool: &PgPool) -> (i64, i64) {
+    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_version")
+        .fetch_one(pool)
+        .await
+        .expect("count vo_version");
+    let ehrs: i64 = sqlx::query_scalar("SELECT count(*) FROM ehr")
+        .fetch_one(pool)
+        .await
+        .expect("count ehr");
+    (versions, ehrs)
+}
+
+/// `$validate` on a valid resource: `200`, an informational verdict naming the
+/// template, the would-create EHR disposition — and NOTHING committed (no
+/// version row, no EHR row).
+#[tokio::test]
+async fn validate_dry_run_reports_valid_and_commits_nothing() {
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
+    let (status, _, _) = send(
+        &router,
+        req("POST", MAPPINGS, Some(mapping_body("bp", PROFILE_OK, "US"))),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+
+    let before = commit_counts(&db.pool()).await;
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation/$validate"),
+            Some(bp_observation(PROFILE_OK)),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "a completed validation is 200: {oo}"
+    );
+    assert_eq!(oo["resourceType"], "OperationOutcome");
+    assert_eq!(oo["issue"][0]["severity"], "information");
+    let verdict = oo["issue"][0]["diagnostics"].as_str().unwrap();
+    assert!(
+        verdict.contains("valid") && verdict.contains(TEMPLATE_ID),
+        "the verdict names the template: {verdict}"
+    );
+    let disposition = oo["issue"][1]["diagnostics"].as_str().unwrap();
+    assert!(
+        disposition.contains("would create a new EHR"),
+        "the absent EHR is simulated, never created: {disposition}"
+    );
+    assert_eq!(
+        commit_counts(&db.pool()).await,
+        before,
+        "the dry run committed nothing"
+    );
+}
+
+/// `$validate` on a resource whose mapped COMPOSITION the commit path refuses:
+/// still `200` — the verdict rides the `OperationOutcome`, carrying the
+/// openEHR validator's rejection VERBATIM — and nothing is committed.
+#[tokio::test]
+async fn validate_dry_run_carries_the_validator_rejection_verbatim() {
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
+    let (status, _, _) = send(
+        &router,
+        req(
+            "POST",
+            MAPPINGS,
+            Some(mapping_body("bp-bad", PROFILE_BAD, "ZZ")),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+
+    let before = commit_counts(&db.pool()).await;
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation/$validate"),
+            Some(bp_observation(PROFILE_BAD)),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "the verdict is the payload: {oo}");
+    assert_eq!(oo["issue"][0]["severity"], "error");
+    assert_eq!(oo["issue"][0]["code"], "invalid");
+    let diag = oo["issue"][0]["diagnostics"]
+        .as_str()
+        .unwrap()
+        .to_lowercase();
+    assert!(
+        diag.contains("territory") || diag.contains("country") || diag.contains("zz"),
+        "the ingest path's rejection, verbatim: {diag}"
+    );
+    assert_eq!(
+        commit_counts(&db.pool()).await,
+        before,
+        "an invalid dry run committed nothing either"
+    );
+}
+
+/// With the subject's EHR already existing (a prior real ingest), the dry run
+/// reports the would-commit-into disposition — and still commits nothing.
+#[tokio::test]
+async fn validate_dry_run_reports_the_existing_ehr_disposition() {
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
+    let (status, _, _) = send(
+        &router,
+        req("POST", MAPPINGS, Some(mapping_body("bp", PROFILE_OK, "US"))),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let (status, _, _) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation"),
+            Some(bp_observation(PROFILE_OK)),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "the real ingest seeds the EHR");
+
+    let before = commit_counts(&db.pool()).await;
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation/$validate"),
+            Some(bp_observation(PROFILE_OK)),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let disposition = oo["issue"][1]["diagnostics"].as_str().unwrap();
+    assert!(
+        disposition.contains("would commit into existing EHR"),
+        "the resolved EHR is reported, not touched: {disposition}"
+    );
+    assert_eq!(commit_counts(&db.pool()).await, before);
+}
+
+/// Operation-level statuses mirror the ingest door: no mapping → `404`, an
+/// out-of-scope type → `501`, the disabled connector → `404`.
+#[tokio::test]
+async fn validate_operation_level_statuses_mirror_ingest() {
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Patient/$validate"),
+            Some(json!({ "resourceType": "Patient", "id": "p-1" })),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "no mapping → 404: {oo}");
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/MedicationRequest/$validate"),
+            Some(json!({ "resourceType": "MedicationRequest" })),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{oo}");
+
+    let db2 = testkit::db().await.expect("testkit database");
+    let (_svc, off) = app_with_template(db2.pool(), false).await;
+    let (status, _, _) = send(
+        &off,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation/$validate"),
+            Some(bp_observation(PROFILE_OK)),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "the config gate answers 404");
+}
