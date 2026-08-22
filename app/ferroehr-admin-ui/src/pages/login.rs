@@ -166,7 +166,7 @@ pub fn LoginPage() -> impl IntoView {
     .into_any();
 
     view! {
-        <leptos_meta::Title text="Sign in · ferroehr-admin" />
+        <leptos_meta::Title text="Sign in" />
         <main class="min-h-screen bg-surface flex items-center justify-center p-4">
             <div class=format!("w-full max-w-sm {CARD_PAD}")>
                 <div class="flex flex-col gap-4">

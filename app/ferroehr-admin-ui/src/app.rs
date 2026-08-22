@@ -8,7 +8,9 @@
 //! [`crate::pages::shell::AppShell`] layout, which renders the matched child
 //! through its `<Outlet/>`.
 //!
-//! Every routed view sets its own `<Title/>`.
+//! Every routed view sets a `<Title/>` carrying its BARE section name; the
+//! product suffix is appended in exactly one place, `console_title`, through
+//! the root `<Title formatter=…/>`.
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
@@ -37,6 +39,31 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             </body>
         </html>
     }
+}
+
+/// The product name as a human reads it — the console's own display name.
+///
+/// Lowercase `ferroehr-admin` stays reserved for technical identifiers (the
+/// crate, the asset paths, the `thaw` theme id, the `localStorage` theme key).
+const PRODUCT: &str = "FerroEHR-admin";
+
+/// Formats one screen's section name into the document title.
+///
+/// Every routed screen sets a BARE section name (`"Templates"`), and this is
+/// the single place the product name is appended — so a new screen cannot
+/// forget the suffix and no screen can spell it differently. The product name
+/// itself passes through unchanged rather than doubling: it is the root
+/// `<Title/>`'s own text, shown until a screen pushes its section.
+///
+/// The owned `String` argument is `leptos_meta::Formatter`'s own signature
+/// (`Fn(String) -> String`), so the suffix is appended in place.
+fn console_title(mut section: String) -> String {
+    if section.is_empty() || section == PRODUCT {
+        return PRODUCT.to_owned();
+    }
+    section.push_str(" · ");
+    section.push_str(PRODUCT);
+    section
 }
 
 /// The root component: meta context, the `thaw` theme/config provider, and the
@@ -69,7 +96,7 @@ pub fn App() -> impl IntoView {
     });
     view! {
         <Stylesheet id="leptos" href="/pkg/ferroehr-admin-ui.css" />
-        <Title text="ferroehr-admin" />
+        <Title formatter=console_title text=PRODUCT />
         <thaw::ConfigProvider
             theme_id="ferroehr-admin".to_owned()
             theme=RwSignal::new(crate::theme::console_light())
@@ -180,7 +207,7 @@ pub fn App() -> impl IntoView {
 #[component]
 fn NotFound() -> impl IntoView {
     view! {
-        <Title text="Not found · ferroehr-admin" />
+        <Title text="Not found" />
         <div class="p-6">
             <thaw::Card>
                 <thaw::CardHeader>
@@ -194,5 +221,38 @@ fn NotFound() -> impl IntoView {
                 </p>
             </thaw::Card>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PRODUCT, console_title};
+
+    #[test]
+    fn a_section_name_gains_the_product_suffix() {
+        assert_eq!(
+            console_title("Templates".to_owned()),
+            "Templates · FerroEHR-admin"
+        );
+        assert_eq!(
+            console_title("Not found".to_owned()),
+            "Not found · FerroEHR-admin"
+        );
+        // The per-object screens format their own prefix; the suffix still
+        // lands exactly once, at the end.
+        assert_eq!(
+            console_title("Template · vitals.v1".to_owned()),
+            "Template · vitals.v1 · FerroEHR-admin"
+        );
+    }
+
+    /// `leptos_meta` applies the formatter to whatever text is on top of the
+    /// title stack — including the root `<Title/>`'s own product name, which
+    /// is what the console shows before a screen pushes its section. Suffixing
+    /// that would read `FerroEHR-admin · FerroEHR-admin`.
+    #[test]
+    fn the_product_name_is_never_suffixed_with_itself() {
+        assert_eq!(console_title(PRODUCT.to_owned()), PRODUCT);
+        assert_eq!(console_title(String::new()), PRODUCT);
     }
 }

@@ -283,7 +283,7 @@ pub fn EhrDetailPage() -> impl IntoView {
     let delete_action = delete_section(ehr_id);
 
     view! {
-        <Title text="EHR detail · ferroehr-admin" />
+        <Title text="EHR detail" />
         <div class="p-6">
             <PageHeader
                 title=Signal::derive(move || heading.get())

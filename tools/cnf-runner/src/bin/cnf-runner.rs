@@ -585,7 +585,7 @@ fn run_verdicts(
         ),
         (
             "CONFORMANCE_REPORT.md",
-            match render_report(&results, &report) {
+            match render_report(&results, &report, &statement) {
                 Ok(markdown) => markdown,
                 Err(e) => {
                     eprintln!("cannot render the report: {e}");

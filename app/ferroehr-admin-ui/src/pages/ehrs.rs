@@ -412,7 +412,7 @@ pub fn EhrsPage() -> impl IntoView {
     let find = find_from_url();
     if !find.is_empty() {
         return view! {
-            <Title text="EHRs · ferroehr-admin" />
+            <Title text="EHRs" />
             <Redirect path=ehr_detail_href(&find) />
         }
         .into_any();
@@ -425,7 +425,7 @@ pub fn EhrsPage() -> impl IntoView {
     let table = recent_ehrs_section(offset);
 
     view! {
-        <Title text="EHRs · ferroehr-admin" />
+        <Title text="EHRs" />
         <div class="p-6">
             <PageHeader
                 title="EHRs"

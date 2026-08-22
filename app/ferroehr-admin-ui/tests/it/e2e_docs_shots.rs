@@ -275,6 +275,11 @@ async fn capture_documentation_screenshots() {
         env("UI_E2E_BASIC_PASS"),
     ) {
         let http = reqwest::Client::new();
+        // The cleanup below hits the ADMIN extension, which the plain
+        // `UI_E2E_BASIC_*` account has no ADMIN role for — so it carries the
+        // admin credential, read from the environment like every journey.
+        let admin_user = env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ferroehr-admin".to_owned());
+        let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ferroehr".to_owned());
         // Self-cleaning: earlier runs may have seeded these — delete first
         // (the admin extension endpoint; 404 = already absent) so the
         // empty-state capture is honest.
@@ -287,7 +292,7 @@ async fn capture_documentation_screenshots() {
                 .delete(format!(
                     "{cdr}/ferroehr/rest/openehr/v1/admin/query/{name}/1.0.0"
                 ))
-                .basic_auth("ferroehr-admin", Some("ferroehr"))
+                .basic_auth(&admin_user, Some(&admin_pass))
                 .send()
                 .await
                 .expect("clean stored query")

@@ -88,6 +88,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The product is spelled **FerroEHR** everywhere a human reads it as a name:
+  the admin console's sidebar wordmark and every browser-tab title (both
+  previously `ferroehr-admin`), the three published container images'
+  display titles, and the conformance report's opening line (which now
+  leads with the product name and keeps the machine `sut` key beside it).
+  Technical identifiers — package names, URLs, paths, environment
+  variables, registry references — deliberately stay lowercase.
+
+- Admin console: the sidebar is grouped — the domain sections (Dashboard
+  through Terminology, plus FHIR and Tenants when served) sit above a
+  divider, and the platform group (Operations, Audit log, System) sits
+  below it, with System last.
+
 - Admin console: the query-results chart draws with linear interpolation —
   the smoothing default emitted invalid SVG (a `NaN` control point) whenever
   two result rows shared a timestamp on a time axis, and it drew smoothed

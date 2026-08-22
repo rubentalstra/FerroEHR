@@ -118,9 +118,9 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 pub fn AppShell() -> impl IntoView {
     let session = Resource::new(|| (), |()| current_session());
     let status = Resource::new(|| (), |()| fetch_status());
-    // The two surface probes are created HERE, in component setup — never
+    // The three surface probes are created HERE, in component setup — never
     // inside a Suspend closure, which re-runs and would re-create the resource
-    // (rules §4). They gate the operations and tenants nav entries.
+    // (rules §4). They gate the operations, tenants and FHIR nav entries.
     let management = crate::management::management_gate();
     let tenants = crate::tenants::tenant_gate();
     let fhir = crate::fhir::fhir_gate();
@@ -228,41 +228,78 @@ fn AuthedChrome(
     )
 }
 
-/// The probe-gated sidebar entry: the operations panel renders only when the
-/// CDR serves its management surface (see [`crate::management`]).
-const OPERATIONS_ITEM: (&str, &str, &icondata_core::IconData) =
-    ("/operations", "Operations", icondata_lu::LuGauge);
-
-/// The second probe-gated sidebar entry: the tenant registry renders only when
-/// the CDR serves its tenancy extension (see [`crate::tenants`]).
-const TENANTS_ITEM: (&str, &str, &icondata_core::IconData) =
-    ("/tenants", "Tenants", icondata_lu::LuBuilding2);
-
-/// The third probe-gated sidebar entry: the FHIR connector renders only when
-/// the CDR serves it (see [`crate::fhir`]).
-const FHIR_ITEM: (&str, &str, &icondata_core::IconData) = ("/fhir", "FHIR", icondata_lu::LuPlug);
-
 /// The demographics entry's href, which is also its [`nav_key`] value: the
 /// section has no kind-agnostic landing page (every screen in it is per-kind or
 /// per-object), so the nav opens the default kind's browser directly and every
 /// `/demographics/…` path highlights this entry.
 const NAV_DEMOGRAPHICS: &str = "/demographics/person";
 
-/// One sidebar entry: route, label, Lucide icon.
-const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 8] = [
-    ("/", "Dashboard", icondata_lu::LuLayoutDashboard),
-    ("/templates", "Templates", icondata_lu::LuFileCode2),
-    ("/queries", "Queries", icondata_lu::LuSearchCode),
-    ("/ehrs", "EHRs", icondata_lu::LuDatabase),
-    (NAV_DEMOGRAPHICS, "Demographics", icondata_lu::LuUsers),
-    ("/terminology", "Terminology", icondata_lu::LuBookA),
-    ("/audit", "Audit log", icondata_lu::LuShieldCheck),
-    ("/system", "System", icondata_lu::LuServer),
+/// The CDR probe deciding whether a gated sidebar entry renders at all.
+///
+/// Each surface is optional on the CDR side and answers `404` as if unmounted,
+/// so its nav entry follows the crate's discover-and-hide pattern: a deployment
+/// that does not serve the surface shows no link to a screen whose cards would
+/// all read "not available".
+enum NavProbe {
+    /// The FHIR connector (see [`crate::fhir`]).
+    Fhir,
+    /// The tenancy extension (see [`crate::tenants`]).
+    Tenants,
+    /// The management surface, off by default (see [`crate::management`]).
+    Management,
+}
+
+/// One slot of the sidebar, in render order.
+enum NavSlot {
+    /// An always-present entry: route, label, Lucide icon.
+    Item(&'static str, &'static str, &'static icondata_core::IconData),
+    /// A probe-gated entry: the probe deciding it, then route, label, icon.
+    Gated(
+        NavProbe,
+        &'static str,
+        &'static str,
+        &'static icondata_core::IconData,
+    ),
+    /// The hairline between the domain group and the meta group.
+    Divider,
+}
+
+/// The sidebar, in the order it renders: the DOMAIN group (the clinical and
+/// definitional sections a deployment's own data lives in), a divider, then the
+/// META group (the platform-about-itself screens), with `/system` last.
+///
+/// Gated entries sit in their group rather than after the static ones, so a
+/// full-featured deployment reads in the same order as a minimal one. The
+/// divider belongs to the meta group, whose anchors (`Audit log`, `System`) are
+/// unconditional — so no hidden entry can ever strand it or double a gap.
+const NAV_SLOTS: [NavSlot; 12] = [
+    NavSlot::Item("/", "Dashboard", icondata_lu::LuLayoutDashboard),
+    NavSlot::Item("/templates", "Templates", icondata_lu::LuFileCode2),
+    NavSlot::Item("/queries", "Queries", icondata_lu::LuSearchCode),
+    NavSlot::Item("/ehrs", "EHRs", icondata_lu::LuDatabase),
+    NavSlot::Item(NAV_DEMOGRAPHICS, "Demographics", icondata_lu::LuUsers),
+    NavSlot::Item("/terminology", "Terminology", icondata_lu::LuBookA),
+    NavSlot::Gated(NavProbe::Fhir, "/fhir", "FHIR", icondata_lu::LuPlug),
+    NavSlot::Gated(
+        NavProbe::Tenants,
+        "/tenants",
+        "Tenants",
+        icondata_lu::LuBuilding2,
+    ),
+    NavSlot::Divider,
+    NavSlot::Gated(
+        NavProbe::Management,
+        "/operations",
+        "Operations",
+        icondata_lu::LuGauge,
+    ),
+    NavSlot::Item("/audit", "Audit log", icondata_lu::LuShieldCheck),
+    NavSlot::Item("/system", "System", icondata_lu::LuServer),
 ];
 
-/// One sidebar `<li>`: the link, its active styling, and its icon. Shared by the
-/// static [`NAV_ITEMS`] and the probe-gated operations entry so both look
-/// identical and only one place styles a nav link.
+/// One sidebar `<li>`: the link, its active styling, and its icon. Every
+/// [`NAV_SLOTS`] entry draws through it — static and probe-gated alike — so the
+/// two look identical and only one place styles a nav link.
 fn nav_entry(
     active: Memo<String>,
     href: &'static str,
@@ -287,6 +324,14 @@ fn nav_entry(
             </a>
         </li>
     }
+}
+
+/// The hairline `<li>` splitting the sidebar's domain group from its meta
+/// group. Purely decorative — hidden from assistive technology, since the
+/// grouping it draws carries no information the labels do not already give —
+/// and static chrome like the rest of the nav, so it paints before hydration.
+fn nav_divider() -> AnyView {
+    view! { <li aria-hidden="true" class="my-1.5 border-t border-edge"></li> }.into_any()
 }
 
 /// Builds the authenticated chrome (topbar, nav, footer, scopes drawer) around
@@ -549,45 +594,41 @@ fn authed_shell(
     .into_any();
 
     // Static Tailwind nav — never thaw (the chrome must be styled on the
-    // pre-hydration paint; see the module doc).
-    let nav_links = NAV_ITEMS
+    // pre-hydration paint; see the module doc). One pass over `NAV_SLOTS` is
+    // what puts each probe-gated entry in its GROUP instead of after the static
+    // ones: the table is the only place the order is declared, so the rendered
+    // sidebar cannot drift from it. Each gated slot renders its own
+    // discover-and-hide wrapper in place, collapsing to nothing when the CDR
+    // does not serve that surface.
+    let nav_slots = NAV_SLOTS
         .into_iter()
-        .map(|(href, label, icon)| nav_entry(active, href, label, icon))
+        .map(|slot| match slot {
+            NavSlot::Item(href, label, icon) => nav_entry(active, href, label, icon).into_any(),
+            NavSlot::Gated(NavProbe::Fhir, href, label, icon) => {
+                crate::fhir::when_fhir_connector_usable(fhir, move || {
+                    nav_entry(active, href, label, icon).into_any()
+                })
+            }
+            NavSlot::Gated(NavProbe::Tenants, href, label, icon) => {
+                crate::tenants::when_tenant_registry_usable(tenants, move || {
+                    nav_entry(active, href, label, icon).into_any()
+                })
+            }
+            NavSlot::Gated(NavProbe::Management, href, label, icon) => {
+                crate::management::when_management_usable(management, move || {
+                    nav_entry(active, href, label, icon).into_any()
+                })
+            }
+            NavSlot::Divider => nav_divider(),
+        })
         .collect_view();
-    // The operations panel is probe-gated: the CDR's management surface is off
-    // by default, so the entry appears only for a deployment that serves it —
-    // never a nav link to a screen whose cards would all read "not available"
-    // (the `crate::admin` discover-and-hide pattern, one surface further).
-    let operations_link = crate::management::when_management_usable(management, move || {
-        nav_entry(
-            active,
-            OPERATIONS_ITEM.0,
-            OPERATIONS_ITEM.1,
-            OPERATIONS_ITEM.2,
-        )
-        .into_any()
-    });
-    // The same discover-and-hide gate one surface further: the CDR's tenancy
-    // extension is off by default and answers `404` as if unmounted, so a
-    // single-tenant deployment shows no tenant registry at all.
-    let tenants_link = crate::tenants::when_tenant_registry_usable(tenants, move || {
-        nav_entry(active, TENANTS_ITEM.0, TENANTS_ITEM.1, TENANTS_ITEM.2).into_any()
-    });
-    // The same discover-and-hide gate once more: the CDR's FHIR connector is
-    // off by default and answers `404` as if unmounted, so a deployment without
-    // it shows no mapping store, no read facade and no dry run at all.
-    let fhir_link = crate::fhir::when_fhir_connector_usable(fhir, move || {
-        nav_entry(active, FHIR_ITEM.0, FHIR_ITEM.1, FHIR_ITEM.2).into_any()
-    });
     let nav = view! {
         <aside
             class="w-52 shrink-0 border-r border-edge bg-raised md:block"
             class:hidden=move || !nav_open.get()
         >
             <nav aria-label="Main" class="p-3">
-                <ul class="flex flex-col gap-1">
-                    {nav_links} {operations_link} {tenants_link} {fhir_link}
-                </ul>
+                <ul class="flex flex-col gap-1">{nav_slots}</ul>
             </nav>
         </aside>
     }
@@ -650,7 +691,89 @@ fn authed_shell(
 
 #[cfg(test)]
 mod tests {
-    use super::nav_key;
+    use super::{NAV_SLOTS, NavProbe, NavSlot, nav_key};
+
+    /// Renders one slot as the token the order assertions read: a plain label,
+    /// a label carrying the probe that gates it, or the divider's rule.
+    fn slot_token(slot: &NavSlot) -> String {
+        match slot {
+            NavSlot::Item(_, label, _) => (*label).to_owned(),
+            NavSlot::Gated(probe, _, label, _) => {
+                let probe = match probe {
+                    NavProbe::Fhir => "fhir",
+                    NavProbe::Tenants => "tenants",
+                    NavProbe::Management => "management",
+                };
+                format!("{label} (gated: {probe})")
+            }
+            NavSlot::Divider => "──".to_owned(),
+        }
+    }
+
+    /// The decided sidebar order (owner call, issue #2577): the domain group on
+    /// top with its gated entries in place, then the divider, then the meta
+    /// group with `System` last.
+    #[test]
+    fn sidebar_renders_domain_group_then_meta_group_with_system_last() {
+        let order: Vec<String> = NAV_SLOTS.iter().map(slot_token).collect();
+        assert_eq!(
+            order,
+            [
+                "Dashboard",
+                "Templates",
+                "Queries",
+                "EHRs",
+                "Demographics",
+                "Terminology",
+                "FHIR (gated: fhir)",
+                "Tenants (gated: tenants)",
+                "──",
+                "Operations (gated: management)",
+                "Audit log",
+                "System",
+            ]
+        );
+    }
+
+    /// The divider is meta-group chrome, and the meta group's anchors are
+    /// unconditional — so the leanest possible deployment (no FHIR connector,
+    /// no tenancy extension, no management surface) still shows the rule with
+    /// content on both sides: no stray divider, no doubled gap.
+    #[test]
+    fn hiding_every_gated_entry_leaves_the_divider_between_two_groups() {
+        let visible: Vec<String> = NAV_SLOTS
+            .iter()
+            .filter(|slot| !matches!(slot, NavSlot::Gated(..)))
+            .map(slot_token)
+            .collect();
+        assert_eq!(
+            visible,
+            [
+                "Dashboard",
+                "Templates",
+                "Queries",
+                "EHRs",
+                "Demographics",
+                "Terminology",
+                "──",
+                "Audit log",
+                "System",
+            ]
+        );
+    }
+
+    /// Every sidebar entry's href is also its [`nav_key`] value, so the entry
+    /// the user clicked is the entry that highlights.
+    #[test]
+    fn every_sidebar_href_highlights_its_own_entry() {
+        for slot in &NAV_SLOTS {
+            let href = match slot {
+                NavSlot::Item(href, _, _) | NavSlot::Gated(_, href, _, _) => *href,
+                NavSlot::Divider => continue,
+            };
+            assert_eq!(nav_key(href), href, "{href}");
+        }
+    }
 
     #[test]
     fn nav_key_maps_paths_to_top_level_sections() {
