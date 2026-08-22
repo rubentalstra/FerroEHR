@@ -46,6 +46,7 @@
   - [Dashboard & queries](admin-ui/queries.md)
   - [Templates & EHR browsing](admin-ui/browsing.md)
   - [Demographics](admin-ui/demographics.md)
+  - [Terminology](admin-ui/terminology.md)
   - [Operations panel](admin-ui/operations.md)
 - [Operations](operations.md)
   - [Admin & messaging APIs](operations-admin-apis.md)

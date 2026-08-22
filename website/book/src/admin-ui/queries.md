@@ -34,6 +34,18 @@ query text.
 
 ![Query builder](img/queries/query-builder.png)
 
+A **coded condition** can go further than the template's own list. Its
+terminology field is backed by the terminologies the CDR serves, offered as
+suggestions while staying free text — an AQL author must be able to name a
+terminology this server does not host. Beside the code box, **look up** asks the
+CDR what the code means and adds it as `code — text`; a code the terminology
+does not define is still added, marked *unvalidated*, because the builder never
+refuses a code the CDR happens not to know. **Expand** a value set and its
+members become one-click chips. Typing a code and pressing **add** works exactly
+as it always has, and whichever route a code took, the query carries the bare
+code — the rubric is only how it reads on screen. When the CDR does not serve
+its [terminology surface](terminology.md) the field is simply a plain text box.
+
 Choose what comes back: whole compositions, projected data points (with
 column aliases), a bare match count, or the distinct EHR ids matching the
 criteria tree (**EHRs (cohort)**). Run pages through the result set; save the

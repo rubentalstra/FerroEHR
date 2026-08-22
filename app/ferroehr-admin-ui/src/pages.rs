@@ -22,3 +22,4 @@ pub mod shell;
 pub mod system;
 pub mod template_detail;
 pub mod templates;
+pub mod terminology;

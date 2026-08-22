@@ -62,6 +62,8 @@ fn nav_key(path: &str) -> &'static str {
         "/ehrs"
     } else if path.starts_with("/demographics") {
         NAV_DEMOGRAPHICS
+    } else if path.starts_with("/terminology") {
+        "/terminology"
     } else if path.starts_with("/audit") {
         "/audit"
     } else if path.starts_with("/system") {
@@ -224,12 +226,13 @@ const OPERATIONS_ITEM: (&str, &str, &icondata_core::IconData) =
 const NAV_DEMOGRAPHICS: &str = "/demographics/person";
 
 /// One sidebar entry: route, label, Lucide icon.
-const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 7] = [
+const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 8] = [
     ("/", "Dashboard", icondata_lu::LuLayoutDashboard),
     ("/templates", "Templates", icondata_lu::LuFileCode2),
     ("/queries", "Queries", icondata_lu::LuSearchCode),
     ("/ehrs", "EHRs", icondata_lu::LuDatabase),
     (NAV_DEMOGRAPHICS, "Demographics", icondata_lu::LuUsers),
+    ("/terminology", "Terminology", icondata_lu::LuBookA),
     ("/audit", "Audit log", icondata_lu::LuShieldCheck),
     ("/system", "System", icondata_lu::LuServer),
 ];
@@ -628,6 +631,8 @@ mod tests {
         ] {
             assert_eq!(nav_key(path), super::NAV_DEMOGRAPHICS, "{path}");
         }
+        assert_eq!(nav_key("/terminology"), "/terminology");
+        assert_eq!(nav_key("/terminology?terminology=openehr"), "/terminology");
         assert_eq!(nav_key("/audit"), "/audit");
         assert_eq!(nav_key("/audit?patient=p-1"), "/audit");
         assert_eq!(nav_key("/system"), "/system");
