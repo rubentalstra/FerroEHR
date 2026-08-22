@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- FHIR mapping dry run: `POST /fhir/r4/{resource_type}/$validate` (the HL7
+  FHIR R4 validation-operation convention) runs the whole ingest pipeline —
+  mapping resolution, the FLAT build, the provenance stamp, and the same
+  validation the real commit runs — and commits nothing. The
+  `OperationOutcome` carries the verdict: the validator's rejections
+  verbatim, or the valid verdict plus the EHR disposition (the target EHR is
+  resolved and reported, never created). Same starter-set scope, config gate
+  and access class as the ingest door; the mapping-definition contract and a
+  worked blood-pressure example are now documented in the book's FHIR
+  chapter.
+
 ### Fixed
 
 - Importing an EHR Extract that advances an already-held BRANCH lineage (a
