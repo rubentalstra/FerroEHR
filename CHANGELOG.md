@@ -88,6 +88,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The FHIR read facade serves one Bundle entry per stored composition —
+  with several enabled mappings over one template it previously served the
+  same composition once per mapping, duplicating `fullUrl`s within a Bundle
+  (HL7 FHIR R4 `bdl-7`) and over-counting `total`. The mapping that wins a
+  composition follows the same precedence ingest uses.
+
 - The published conformance statement's product version had sat at 3.6.0
   since that release while the record beside it moved on — it now matches
   the workspace version, and the release-cut guard fails whenever the two
