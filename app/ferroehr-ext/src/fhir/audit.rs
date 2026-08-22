@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The FHIR R4B `AuditEvent` renderer of the ATNA audit trail.
+//! The FHIR R4 `AuditEvent` renderer of the ATNA audit trail.
 //!
 //! The platform's system log decides WHAT an audit record says — the IHE
 //! BALP codings, role direction, entities, and profile claims. This module
@@ -10,9 +10,12 @@
 //! [`AuditRecord`] description and serializes it.
 //!
 //! **No openEHR spec governs FHIR resource representation — our own
-//! design/extension.** The resource model is the `fhir-model` crate's R4B
-//! (4.3.0) generation
-//! (<https://docs.rs/fhir-model/0.13.0/fhir_model/r4b/resources/struct.AuditEvent.html>).
+//! design/extension.** The rendered document is R4 (the connector's release —
+//! see [`super`]); `AuditEvent` is unchanged between the releases, so the
+//! crate's `r4b` generation
+//! (<https://docs.rs/fhir-model/0.13.0/fhir_model/r4b/resources/struct.AuditEvent.html>)
+//! builds it faithfully — R4B's own page records "No Changes" for this
+//! resource (<https://hl7.org/fhir/R4B/auditevent.html>).
 
 use fhir_model::r4b::codes::{AuditEventAction, AuditEventAgentNetworkType, AuditEventOutcome};
 use fhir_model::r4b::resources::{
@@ -117,7 +120,7 @@ pub struct AuditEntityRef {
 }
 
 /// A resolved audit record, in the neutral shape [`render`] turns into a FHIR
-/// R4B `AuditEvent`.
+/// R4 `AuditEvent`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditRecord {
     /// The profiles the record claims (`meta.profile`); empty claims none.
@@ -142,7 +145,7 @@ pub struct AuditRecord {
     pub entities: Vec<AuditEntityRef>,
 }
 
-/// Renders a resolved audit record as a FHIR R4B `AuditEvent` JSON document.
+/// Renders a resolved audit record as a FHIR R4 `AuditEvent` JSON document.
 ///
 /// # Errors
 ///

@@ -86,6 +86,15 @@ workflow refuses a tag that has no matching section here.
   worked blood-pressure example are now documented in the book's FHIR
   chapter.
 
+### Changed
+
+- The FHIR connector's release identity is recorded as **FHIR R4**: every
+  resource and element it touches is unchanged in R4B (HL7's own R4B scope
+  statement), so the wire's `/fhir/r4` is truthful and connector-side text
+  and citations now say R4 consistently. The terminology integration keeps
+  its deliberate R4B identity — the two vocabularies are intentionally
+  different, and the documentation says which is which.
+
 ### Fixed
 
 - Admin console: a FHIR-shaped refusal (an `OperationOutcome`) now renders

@@ -105,7 +105,7 @@ impl Default for SyslogConfig {
 }
 
 /// The RESTful-ATNA feed (`[audit.fhir_feed]`): ITI-20 **ATX: FHIR Feed** —
-/// HTTP `POST {url}/AuditEvent` of the FHIR R4B `AuditEvent` (IHE BALP shape)
+/// HTTP `POST {url}/AuditEvent` of the FHIR R4 `AuditEvent` (IHE BALP shape)
 /// to an external Audit Record Repository.
 ///
 /// When the local store is on, the feed drains the store's outbox

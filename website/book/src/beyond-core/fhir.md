@@ -1,7 +1,8 @@
 # FHIR connectors
 
-Many systems around a CDR speak FHIR. FerroEHR ships a set of FHIR R4B
-connectors so it can take FHIR resources in, hand openEHR data back out as FHIR,
+Many systems around a CDR speak FHIR. FerroEHR ships a set of
+[FHIR R4](https://hl7.org/fhir/R4/) connectors so it can take FHIR resources in,
+hand openEHR data back out as FHIR,
 and emit FHIR resources to downstream systems — all driven by mappings you
 control. It is not a full FHIR server; it is a focused, mapping-driven bridge
 between the FHIR and openEHR worlds.
@@ -12,6 +13,19 @@ characteristics. All FHIR routes are relative to the API base path
 (`/ferroehr/rest/openehr/v1`) and speak `application/fhir+json`; every response
 on this surface — success or failure — is a FHIR resource, so an error arrives as
 an `OperationOutcome` rather than the openEHR error body.
+
+> [!NOTE]
+> **R4, and what that means if you run R4B.** The connector's routes are
+> `/fhir/r4/…`, and the resources it exchanges — `Bundle`, `OperationOutcome`,
+> `AuditEvent` — are identical in R4 and R4B, so an R4B client can use this
+> surface unchanged: HL7 states that "implementers that do not use the specific
+> portions where changes have been made can continue to use either R4 or R4B
+> without any functional difference"
+> ([what R4B changed](https://hl7.org/fhir/R4B/r4b-explanation.html)). Which
+> resource types you may actually exchange is set by your mappings, not by the
+> release. One neighbouring subsystem is deliberately different: the
+> [external terminology servers](terminology.md) FerroEHR *calls out to* are
+> R4B, because there the release belongs to the server you point it at.
 
 <!-- toc -->
 

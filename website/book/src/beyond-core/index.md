@@ -87,7 +87,7 @@ for the exact list of settings a slim binary rejects.
 - **[Change events (AMQP)](amqp.md)** — a transactional outbox that publishes a
   PHI-free, at-least-once event for every commit to an AMQP broker, so
   downstream systems can respond to changes instead of polling.
-- **[FHIR connectors](fhir.md)** — mapping-driven ingestion of FHIR R4B
+- **[FHIR connectors](fhir.md)** — mapping-driven ingestion of FHIR R4
   resources, a patient-scoped read façade that returns openEHR data as FHIR, and
   event-driven outbound emission of mapped FHIR resources.
 - **[S3 multimedia](s3-multimedia.md)** — threshold-based, content-addressed

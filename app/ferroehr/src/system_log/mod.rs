@@ -19,7 +19,7 @@
 //! default, served back via the RESTful-ATNA ITI-81 retrieval), the classic
 //! **DICOM Audit Message** feed (DICOM PS3.15 §A.5 XML — *not* openEHR
 //! ITS-XML — over RFC 5424 syslog; RFC 5426 UDP or RFC 5425 TLS; IHE ITI
-//! TF-2 ITI-20), and the **FHIR R4B `AuditEvent`** feed (IHE BALP shape;
+//! TF-2 ITI-20), and the **FHIR R4 `AuditEvent`** feed (IHE BALP shape;
 //! ITI-20 ATX:FHIR Feed). This is authorized defensive security-audit
 //! logging for a healthcare system.
 //!
@@ -46,7 +46,7 @@
 //! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the
 //!   event enums.
 //! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
-//! - `fhir` — the FHIR R4B `AuditEvent` rendering per the IHE BALP content
+//! - `fhir` — the FHIR R4 `AuditEvent` rendering per the IHE BALP content
 //!   profiles (the modern half of the dual format; the `fhir` cargo
 //!   feature, over `ferroehr_ext::fhir::audit`).
 //! - [`syslog`] — RFC 5424 assembly + RFC 5426 UDP / RFC 5425 TLS transports.
@@ -120,7 +120,7 @@ impl From<std::io::Error> for AuditError {
 /// The loud slim-build refusal for the FHIR-rendering audit sinks.
 ///
 /// Both the local Audit Record Repository and the ITI-20 ATX:FHIR Feed carry
-/// a FHIR R4B `AuditEvent` document, which a binary built without the `fhir`
+/// a FHIR R4 `AuditEvent` document, which a binary built without the `fhir`
 /// cargo feature cannot render. A configuration that enables either is a
 /// boot error, never a silently document-less audit trail (the syslog sink
 /// needs no FHIR and stays available).

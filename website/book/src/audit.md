@@ -20,7 +20,7 @@ reads and rejected attempts.
 Every audited operation produces one record, rendered in the two formats the
 IHE standards define:
 
-- **FHIR R4B `AuditEvent`** following the IHE **BALP** (Basic Audit Log
+- **FHIR R4 `AuditEvent`** following the IHE **BALP** (Basic Audit Log
   Patterns) content profiles — the modern RESTful-ATNA form and the canonical
   stored form. Patient-centric operations carry the resolved EHR subject as
   the patient entity (`PatientRead`/`PatientCreate`/… profile claims); query

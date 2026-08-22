@@ -3,7 +3,7 @@
 
 //! End-to-end test of the RESTful-ATNA feed (IHE ITI-20 **ATX: FHIR Feed**):
 //! events emitted through the sender land in the local store, and the outbox
-//! worker POSTs each stored FHIR R4B `AuditEvent` to the ARR
+//! worker POSTs each stored FHIR R4 `AuditEvent` to the ARR
 //! (`{url}/AuditEvent`, `application/fhir+json`) and stamps
 //! `delivered_fhir_feed_at` — a real `PostgreSQL` 18 (shared testkit harness) plus a
 //! `wiremock` ARR.

@@ -302,7 +302,7 @@ contribution and an audit record in the same transaction.
 ### B7 — The audit trail
 
 **Control.** Every access is recorded in both official renderings (DICOM PS3.15
-and FHIR R4B `AuditEvent`/BALP) into a local Audit Record Repository, on by
+and FHIR R4 `AuditEvent`/BALP) into a local Audit Record Repository, on by
 default, with optional syslog and ATX:FHIR-Feed forwarding. Refusals — `401`,
 `403`, and the `400` a malformed credential header earns — are always recorded,
 and an unattributable denial is recorded as unattributed rather than under a

@@ -595,7 +595,7 @@ byte-for-byte as a single-tenant system.
 Separately from openEHR's own provenance, FerroEHR keeps an IHE ATNA
 security audit trail of API access — **on by default**, persisted in the
 local Audit Record Repository (the dedicated `audit` PostgreSQL schema),
-rendered in both official formats (FHIR R4B `AuditEvent` per IHE BALP, and
+rendered in both official formats (FHIR R4 `AuditEvent` per IHE BALP, and
 the DICOM PS3.15 audit message for the classic syslog feed), retrievable via
 the RESTful-ATNA **ITI-81** FHIR search, and optionally forwarded to an
 external ARR over syslog and/or the ITI-20 FHIR feed. Node authentication
