@@ -6,7 +6,7 @@
 //! Browses the CDR's local Audit Record Repository through the RESTful-ATNA
 //! **ITI-81** retrieval (`GET fhir/r4/AuditEvent`): a filter form (event-time
 //! window, patient, principal, outcome, action), a paged table of the stored
-//! FHIR R4B `AuditEvent` documents (IHE BALP shape), and a per-row raw-record
+//! FHIR R4 `AuditEvent` documents (IHE BALP shape), and a per-row raw-record
 //! view. No openEHR spec governs an admin UI — our own design / product
 //! extension; the wire it reads is IHE's (the `RESTful` ATNA supplement's
 //! ITI-81 FHIR search), served by the CDR.

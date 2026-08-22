@@ -13,7 +13,7 @@
 //! lives in [`super::feeder_audit`]. Gate: the connector's inbound routes are
 //! config-gated in `ferroehr-rest`.
 //!
-//! A mapping definition binds one FHIR R4B resource profile to one openEHR
+//! A mapping definition binds one FHIR R4 resource profile to one openEHR
 //! template. Its `entries` each read a value out of the incoming FHIR resource
 //! (a **`FHIRPath`-lite** dot-path — see [`resolve`]) and write it to a
 //! template-relative **openEHR FLAT path** (the `id[:i]/…|suffix` key

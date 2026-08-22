@@ -39,7 +39,7 @@ queue_capacity = 8192
 | `server_host` | string | unset ⇒ the `value_if_missing` fill | This node's advertised network address, reported as the destination `NetworkAccessPointID`. |
 
 > [!NOTE]
-> The local store and the ATX:FHIR Feed both carry a FHIR R4B `AuditEvent`
+> The local store and the ATX:FHIR Feed both carry a FHIR R4 `AuditEvent`
 > document, so both need the `fhir` build feature — on in the published binary
 > and container images. A binary built with `--no-default-features` refuses at
 > startup if `audit.store.enabled` or `audit.fhir_feed.enabled` is set; the

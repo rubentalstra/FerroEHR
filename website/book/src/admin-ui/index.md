@@ -195,7 +195,7 @@ accessed what, with what outcome — through the standard IHE ITI-81
 retrieval (`GET /fhir/r4/AuditEvent`; see the
 [Audit trail chapter](../audit.md)). Filter by event-time window, patient,
 principal, outcome, or action; every filter lives in the URL, so a filtered
-view is shareable and refresh-safe. Each row opens the full stored FHIR R4B
+view is shareable and refresh-safe. Each row opens the full stored FHIR R4
 `AuditEvent` record.
 
 The audit trail is an operator surface: under role-based access control the

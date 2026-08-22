@@ -182,7 +182,7 @@ const SECURITY_SCHEME: &str = "openehr_auth";
         (name = "message", description = "The SM MESSAGE component — I_EHR_EXTRACT_SERVICE (EHR-Extract export/import) and I_TDD_SERVICE (Template Data Document import). OUR OWN EXTENSION: ITS-REST 1.1.0 publishes no message/extract/TDD API at all, so no released operation governs any route here; they carry the ordinary clinical authentication class, not the admin gate."),
         (name = "event-subscription", description = "Event-subscription CRUD extension (config-gated: FERROEHR_REST_EVENT_SUBSCRIPTION__ENABLED)."),
         (name = "tenancy", description = "Multi-tenancy admin extension (config-gated: FERROEHR_REST_TENANCY__ENABLED)."),
-        (name = "fhir", description = "FHIR R4B inbound connector + mapping store (config-gated: FERROEHR_REST_FHIR__ENABLED)."),
+        (name = "fhir", description = "FHIR R4 inbound connector + mapping store (config-gated: FERROEHR_REST_FHIR__ENABLED)."),
     )
 )]
 #[derive(Debug)]
@@ -608,7 +608,7 @@ const FAMILIES: &[(&str, &str, Members)] = &[
     (
         "FerroEHR — FHIR Connector",
         "fhir",
-        // `audit` = the ITI-81 AuditEvent retrieval: a FHIR R4B surface served
+        // `audit` = the ITI-81 AuditEvent retrieval: a FHIR R4 surface served
         // under the same `/fhir/r4` root, gated by the local audit repository
         // rather than by the connector.
         Members::Tags(&["fhir", "audit"]),

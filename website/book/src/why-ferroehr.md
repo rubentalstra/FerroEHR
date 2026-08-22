@@ -39,7 +39,7 @@ and published* rather than asserted in a datasheet.
 
 - **MIT for all of our own code, with no open-core tier.** Multi-tenancy,
   role- and attribute-based access control, IHE ATNA audit, per-version
-  digital signatures, the FHIR R4B connectors, change events, the admin
+  digital signatures, the FHIR R4 connectors, change events, the admin
   console — one repository, one licence. Nothing is held back to be sold back
   to you. (Vendored openEHR material keeps its own upstream terms, and the
   spec crates that embed it say so in their own metadata — see

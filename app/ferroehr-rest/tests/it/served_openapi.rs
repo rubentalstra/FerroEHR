@@ -1405,7 +1405,7 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         operations: 6,
     },
     NonSpecFamily {
-        label: "the FHIR R4B connector + read facade",
+        label: "the FHIR R4 connector + read facade",
         prefixes: &["/ferroehr/rest/openehr/v1/fhir/r4/{resource_type}"],
         flag: "no openehr spec governs this",
         // Ingest, the read facade, and the ingest door's `$validate` dry

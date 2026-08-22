@@ -8,7 +8,7 @@
 //! The request path only [`AuditSender::emit`]s (a `try_send`, never blocking
 //! or awaiting). The drain task optionally enriches the patient subject
 //! (background only — never on the request path), renders the record — the
-//! FHIR R4B `AuditEvent` (IHE BALP, [`super::fhir`]) and/or the DICOM PS3.15
+//! FHIR R4 `AuditEvent` (IHE BALP, [`super::fhir`]) and/or the DICOM PS3.15
 //! §A.5 XML ([`super::message`]) — and delivers it:
 //!
 //! - **store** (`[audit.store]`, the durability anchor): the record is
@@ -616,7 +616,7 @@ async fn drain(
     tracing::debug!("ATNA audit drain: channel closed, task exiting");
 }
 
-/// The FHIR R4B `AuditEvent` document for one resolved record, or `None` when
+/// The FHIR R4 `AuditEvent` document for one resolved record, or `None` when
 /// the rendering failed (metered + logged, never silent).
 #[cfg(feature = "fhir")]
 fn render_audit_event(
