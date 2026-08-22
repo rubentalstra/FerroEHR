@@ -80,6 +80,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The unknown-configuration-key diagnostic now names the key's full section
+  path (`auth.oidc.enabled`) and attributes a file line only when the key is
+  really defined under that section — a key arriving from the environment is
+  named by its `FERROEHR__…` variable instead of pointing at an unrelated,
+  valid line of the configuration file.
+
 - The template lists' `version` query filter now matches the template id's
   version axis, as the API documents ("taken from `template_id`") — an exact
   version or a prefix pattern like `1.2.*` previously matched nothing on
