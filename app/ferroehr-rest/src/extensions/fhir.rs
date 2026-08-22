@@ -86,6 +86,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
     // mixing paths panics at router build with "Overlapping method route").
     OpenApiRouter::new()
         .routes(routes!(fhir_ingest, fhir_search))
+        .routes(routes!(fhir_validate))
         // The static /fhir/r4/AuditEvent route wins over the dynamic
         // /fhir/r4/{resource_type} façade route (axum static-first matching).
         .routes(routes!(audit_event_search))
@@ -126,6 +127,43 @@ pub(crate) async fn fhir_ingest(
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
     guarded_dispatch(state, "fhir_ingest", parts, dispatch).await
+}
+
+/// The ingest door's dry twin: validate a FHIR R4B resource against its
+/// mapping WITHOUT committing (`POST /fhir/r4/{resource_type}/$validate`).
+///
+/// The wire convention is HL7 FHIR R4's own validation operation
+/// (`resource-operation-validate`,
+/// <https://hl7.org/fhir/R4/resource-operation-validate.html>): the sibling
+/// `$validate` path on the ingest door, returning an `OperationOutcome`. A
+/// COMPLETED validation is `200` whichever way the verdict falls — the
+/// verdict rides the issues: the commit path's rejections VERBATIM as
+/// `error` issues, or the valid verdict plus the EHR disposition
+/// (`would commit into …` / `would create …` — resolved, never created) as
+/// `information` issues. Operation-level failures mirror the ingest door's
+/// statuses. Same starter-set scope, same config gate, same access class as
+/// the ingest door (its dry twin exists for mapping development).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector; the operation's wire shape follows
+/// HL7 FHIR R4 (official external documentation).
+#[utoipa::path(
+    post, path = "/fhir/r4/{resource_type}/$validate", tag = "fhir",
+    params(("resource_type" = String, Path, description = "The FHIR R4B resource type (starter set only).")),
+    request_body(content = serde_json::Value, description = "A FHIR R4B resource (JSON)."),
+    responses(
+        (status = 200, description = "Validation completed — the OperationOutcome carries the verdict: `information` issues (valid + the EHR disposition) or `error` issues with the commit path's rejections verbatim. Nothing is committed either way.", content_type = "application/fhir+json"),
+        (status = 400, description = "The request body is not valid JSON, or a mapping precondition failed (OperationOutcome) — the same class the ingest door refuses `400`.", content_type = "application/fhir+json"),
+        (status = 404, description = "No enabled mapping matches the resource type (the ingest door's `404`), or the FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json"),
+        (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
+    )
+)]
+pub(crate) async fn fhir_validate(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_validate", parts, dispatch).await
 }
 
 /// Read façade: a patient-scoped FHIR searchset Bundle of reverse-mapped
@@ -357,6 +395,7 @@ async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response
     let h = &parts.headers;
     match op {
         "fhir_ingest" => ingest(&state, &parts).await,
+        "fhir_validate" => validate(&state, &parts).await,
         "fhir_search" => search(&state, &parts).await,
         "fhir_mapping_list" => match state.backend().fhir_mapping_list().await {
             Ok(items) => negotiate::respond(h, StatusCode::OK, &items),
@@ -454,6 +493,30 @@ async fn ingest(state: &AppState, parts: &RequestParts) -> Response {
         .await
     {
         Ok(resp) => ingest_created(state, &resp),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// `POST /fhir/r4/{resource_type}/$validate` — the ingest door's dry twin.
+async fn validate(state: &AppState, parts: &RequestParts) -> Response {
+    let resource_type = match scoped_resource_type(parts) {
+        Ok(rt) => rt,
+        Err(resp) => return resp,
+    };
+    let body = match negotiate::json_value(&parts.headers, &parts.body) {
+        Ok(b) => b,
+        Err(e) => return api_error_outcome(&e),
+    };
+    let profile = first_profile(&body);
+    match state
+        .backend()
+        .fhir_validate(resource_type, profile, body)
+        .await
+    {
+        // A completed validation is 200 whichever way the verdict fell (the
+        // OperationOutcome carries it); only operation-level failures take
+        // the ingest door's statuses.
+        Ok(outcome) => fhir_json(StatusCode::OK, &outcome),
         Err(e) => sm_error_outcome(e),
     }
 }

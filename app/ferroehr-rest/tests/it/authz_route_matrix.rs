@@ -315,6 +315,11 @@ const CLINICAL_WRITE: &[(&str, &str)] = &[
     ("POST", "/message/tdd/{ehr_id}"),
     ("POST", "/message/tdd/{ehr_id}/batch"),
     ("POST", "/fhir/r4/{resource_type}"),
+    // The ingest door's dry twin (#342): the same class as the door it
+    // previews — it exists for mapping development by callers allowed to
+    // ingest, and although it commits nothing it exercises the same
+    // mapping/template surface.
+    ("POST", "/fhir/r4/{resource_type}/$validate"),
 ];
 
 /// Admin-class reads (base-relative) — every one under the `/admin/` prefix

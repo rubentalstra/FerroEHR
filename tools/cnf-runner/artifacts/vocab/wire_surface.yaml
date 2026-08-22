@@ -1873,6 +1873,7 @@ served_extensions:
   - family: fhir-r4-connector
     routes:
       - "POST /ferroehr/rest/openehr/v1/fhir/r4/{resource_type}"
+      - "POST /ferroehr/rest/openehr/v1/fhir/r4/{resource_type}/$validate"
       - "GET /ferroehr/rest/openehr/v1/fhir/r4/{resource_type}"
     config_gate: "[fhir].api_enabled (default off); the gate sits in-handler behind authentication and refuses with a FHIR OperationOutcome"
     spec_silence: "FHIR interoperability is outside every released openEHR component: ITS-REST defines no FHIR resource, media type or route, and no released clause governs the URI space beyond the resource set. Our own design/extension — the inbound HL7 FHIR R4 façade, whose contract is HL7's, not openEHR's."
