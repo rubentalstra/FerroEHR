@@ -81,19 +81,20 @@ AMB-4:
     SM i_definition_adl14.adoc §upload_opt (`Pre_valid`, error
     `invalid_template` — no duplicate rule) CONTRASTED with the same file's
     §upload_archetype ("If an archetype with the same id already exists,
-    replace it") and SM i_definition_adl2.adoc §upload_artefact ("If an
+    replace it") + SM i_definition_adl2.adoc §upload_artefact ("If an
     artefact with the same physical identifier and namespace exists, replace
     it") + ITS-REST specifications/operations/definition_template_adl1.4_upload.yaml
     (responses 201/400/409; parameters Prefer + Accept_Template +
-    Content-Type — no version parameter) + responses/409_template_already_exists.yaml
+    Content-Type — no version parameter) + ITS-REST
+    specifications/responses/409_template_already_exists.yaml
     ("`409 Conflict` is returned when a template with same `template_id`
     already exists") + AM ADL 1.4 master02-overview.adoc §Computational
     Context (templates "do not introduce any new semantics to archetypes";
     the file has no §Templates — re-cited 2026-08-21) and §What is ADL? ("The
     formalism of templates is dADL"; no template versioning) + ITS-REST
-    docs/overview/Amendment_record.md SPECITS-87 ("Deprecate ADL2 'Get
-    template at version' and the version query parameter from upload
-    template") — all CONFIRMED first-hand.
+    specifications/docs/overview/Amendment_record.md (SPECITS-87: "Deprecate
+    ADL2 'Get template at version' and the version query parameter from
+    upload template") — all CONFIRMED first-hand.
     Docs-text silence re-verified 2026-07-28: a grep of ITS-REST
     specifications/docs/** for "duplicate", "already exists" and
     "template_id" turns up no sentence governing a second upload under an
@@ -128,7 +129,8 @@ AMB-5:
     only the same-template case is open; the "under SEC debate" provenance
     is the stalled CNF guide's own note, not released text).
   source: >-
-    RM ehr COMPOSITION class §Invariants (Category_validity / Territory_valid /
+    RM UML/classes/org.openehr.rm.composition.composition.adoc §Invariants
+    (Category_validity / Territory_valid /
     Language_valid / Content_valid / Is_archetype_root — no invariant requires a
     persistent COMPOSITION to be unique per EHR) + RM ehr
     master04-ehr_package.adoc §Persistent Compositions (admits multiple
@@ -186,14 +188,14 @@ AMB-10:
     indelibility sentence quoted above) and §Logical Deletion (the "cannot be
     literally removed" / "can only ever be logically deleted" sentences and the
     four-step logical-deletion procedure: new Version, delete its `_data_`,
-    `_lifecycle_state_` to `deleted`, commit) CONTRASTED with SM
+    `_lifecycle_state_` to `deleted`, commit) + SM
     UML/classes/i_admin_service.adoc §physical_ehr_delete ("Physical deletion of
     specified EHR."; `an_ehr_id: UUID [1]`; `Pre_has_ehr: has_ehr (an_ehr_id)`;
     error `ehr_id_does_not_exist`) and §physical_party_delete ("Physical delete
     of specified Party, along with related Party relationships.") + ITS-REST
     specifications/responses/204_deleted_hard.yaml (the quoted hard-delete
-    sentence) + specifications/operations/admin_ehr_delete.yaml and
-    admin_ehr_delete_all.yaml (the quoted permanent/physical/GDPR sentence; the
+    sentence) + ITS-REST specifications/operations/admin_ehr_delete.yaml + ITS-REST
+    specifications/operations/admin_ehr_delete_all.yaml (the quoted permanent/physical/GDPR sentence; the
     grep for GDPR and "data protection" over the whole of
     docs/specs/openehr/ hits only those two files and the three assembled OAS
     bundles) — ALL CONFIRMED first-hand.
@@ -510,19 +512,22 @@ AMB-33:
     service-model anchor to name it by.
   source: >-
     SM UML/classes/i_admin_service.adoc (six operations, incl.
-    §physical_ehr_delete's single `an_ehr_id: UUID [1]` parameter),
-    i_admin_dump_load.adoc (export_ehrs, load_ehrs), i_admin_archive.adoc
-    (§archive_ehrs "Move selected EHRs to archival storage", `ehr_ids:
-    List<UUID> [0..1]`; §archive_parties) and
-    docs/openehr_platform/master15-admin_service.adoc (the chapter includes
+    §physical_ehr_delete's single `an_ehr_id: UUID [1]` parameter) +
+    SM UML/classes/i_admin_dump_load.adoc (export_ehrs, load_ehrs) +
+    SM UML/classes/i_admin_archive.adoc §archive_ehrs ("Move selected EHRs
+    to archival storage", `ehr_ids: List<UUID> [0..1]`; also
+    §archive_parties) +
+    SM docs/openehr_platform/master15-admin_service.adoc (the chapter includes
     exactly i_admin_service, i_admin_archive, i_admin_dump_load,
     dump_load_fail_report, export_spec — there is no set-scoped delete
     interface anywhere in SM) vs the released ITS-REST 1.1.0 admin API —
-    specifications/admin.openapi.yaml (exactly two paths:
+    ITS-REST specifications/admin.openapi.yaml (exactly two paths:
     `/admin/ehr/{ehr_id}` and `/admin/ehr/all{?ehr_id*}`) +
-    operations/admin_ehr_delete.yaml + operations/admin_ehr_delete_all.yaml
+    ITS-REST specifications/operations/admin_ehr_delete.yaml +
+    ITS-REST specifications/operations/admin_ehr_delete_all.yaml
     ("Deletes all or multiple EHRs, or a specified subset of EHRs identified
-    using the `ehr_id` query parameter") + parameters/query/ehr_id_Admin.yaml
+    using the `ehr_id` query parameter") +
+    ITS-REST specifications/parameters/query/ehr_id_Admin.yaml
     ("An optional parameter to perform the operation on a subset of EHRs") —
     ALL CONFIRMED first-hand.
   handling: >-
@@ -711,7 +716,8 @@ AMB-34:
     export_ehr_extracts, import_ehr, import_ehr_extract) and I_TDD_SERVICE
     (import_tdd, import_tdds) are entirely unwired.
   source: >-
-    SM i_ehr_extract_service.adoc / i_tdd_service.adoc / i_message_service.adoc
+    SM i_ehr_extract_service.adoc + SM i_tdd_service.adoc + SM
+    i_message_service.adoc
     (export/import_ehr(_extract), import_tdd(s) — define the operations; the
     vendored SM I_EHR_EXTRACT_SERVICE is the resolution oracle for the master13
     naming) vs released ITS-REST 1.1.0 (no MESSAGE / extract / tdd wire)
@@ -992,9 +998,9 @@ AMB-43:
     §Invariants (Limits_consistent, guarded by "(not upper_unbounded and
     not lower_unbounded) implies") + RM data_types dv_interval.adoc
     §Invariants (its own Limits_consistent, the same shape, calling
-    lower.is_strictly_comparable_to(upper) unguarded) + RM common
-    history.adoc Events_valid ("events /= Void and then …" — the explicit
-    Void-guard idiom the interval invariants do NOT use) — the
+    lower.is_strictly_comparable_to(upper) unguarded) + RM
+    data_structures history.adoc §Invariants (Events_valid: "events /= Void and then …" — the
+    explicit Void-guard idiom the interval invariants do NOT use) — the
     Void-evaluation silence CONFIRMED first-hand
   handling: >-
     The framework adopts ACCEPTANCE as the fixed handling: an invariant
@@ -1230,11 +1236,14 @@ AMB-57:
     "Prefer: return=representation, resolve_refs" mechanism unbound.
   source: >-
     ITS-REST specifications/operations/contribution_{create,get}.yaml
-    §Simplified Formats + responses/{201,200}_CONTRIBUTION.yaml (the
+    (their "Simplified Formats" description sections) + ITS-REST
+    specifications/responses/{201,200}_CONTRIBUTION.yaml (the
     envelope-canonical / inner-simplified rule, all four places);
-    docs/overview/Amendment_record.md SPECITS-84 (27 Apr 2026,
-    Release-1.1.0); schemas/common/Contribution.yaml (versions =
-    ObjectRefOfObjectVersionId, no data); Requests_and_responses.md §Prefer
+    ITS-REST specifications/docs/overview/Amendment_record.md (SPECITS-84,
+    27 Apr 2026, Release-1.1.0); ITS-REST
+    specifications/schemas/common/Contribution.yaml (versions =
+    ObjectRefOfObjectVersionId, no data); ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §Prefer
     resolving Object references — confirmed first-hand.
   handling: >-
     Fixed handling: the create REQUEST is implemented exactly as released
@@ -1537,9 +1546,10 @@ AMB-62:
     status is 201-with-an-empty-body on a create and 204 on an update, and
     nothing is left for a runner to guess.
   source: >-
-    TIER 1, DOCS TEXT — ITS-REST
+    ITS-REST
     specifications/docs/overview/Requests_and_responses.md §"Prefer
-    minimal, identifier or full representation response" ("`Prefer:
+    minimal, identifier or full representation response" (TIER 1, the docs
+    text: "`Prefer:
     return=minimal` Indicates the client prefers a minimal response. The
     response SHOULD include a `Location` header pointing to the newly created
     or updated resource. The HTTP status is typically `201 Created`. If no
@@ -1665,7 +1675,7 @@ AMB-63:
     `ehr_for_subject_already_exists`) vs §create_ehr_for_subject_with_id (only
     `ehr_create_fail_duplicate_id`) vs §get_ehrs_for_subject ("Retrieve EHR or
     EHRs …": `List<EHR_SUMMARY>`) and §has_ehr_for_subject ("there are EHR(s)")
-    + RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, "The
+    + RM UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Attributes (`subject`: 1..1 PARTY_SELF, "The
     subject of this EHR. The `_external_ref_` attribute can be used to contain
     a direct reference to the subject in a demographic or identity service" —
     no uniqueness, no comparison rule) + the released ITS-REST DOCS TEXT,
@@ -1750,8 +1760,8 @@ AMB-64:
     Last-Modified" ("Both `ETag` and `Last-Modified` SHOULD be included in
     responses for VERSION, VERSIONED_OBJECT, or other resources that have
     versioning or unique state identifiers"; "For openEHR resources, this value
-    should be derived from VERSION.commit_audit.time_committed.value") + RM ehr
-    EHR class §Attributes (`ehr_id` 1..1 HIER_OBJECT_ID, `time_created` 1..1
+    should be derived from VERSION.commit_audit.time_committed.value") + RM
+    UML/classes/org.openehr.rm.ehr.ehr.adoc §Attributes (`ehr_id` 1..1 HIER_OBJECT_ID, `time_created` 1..1
     DV_DATE_TIME — no uid, no version identity; the EHR is not a
     change-controlled resource) — the undefined third limb and the missing
     derivation source CONFIRMED first-hand.
@@ -2018,7 +2028,7 @@ AMB-70:
     earlier-commit-times query sentence) + RM common
     UML/classes/org.openehr.rm.common.versioned_object.adoc
     §Functions (version_at_time, latest_version, latest_trunk_version); SM
-    UML/classes/i_ehr_status.adoc get_ehr_status_at_time ("If no time
+    UML/classes/i_ehr_status.adoc §get_ehr_status_at_time ("If no time
     supplied, get the latest."); ITS-REST overview Resources.md §Datetime
     format (offset-less values resolve in the local timezone); the
     no-version-at-time 404 is OAS-grounded
@@ -2081,7 +2091,7 @@ AMB-72:
   source: >-
     SM UML/classes/i_ehr_status.adoc (all five, confirmed first-hand);
     BASE UML/classes/org.openehr.base.base_types.object_version_id.adoc
-    (the version-uid form for defect 3); SM has no revision-history
+    (the version-uid form for defect 3); the SM defines no revision-history
     operation at all (grep across SM/docs = zero hits) — the REST
     revision-history route's abstract counterpart is RM
     VERSIONED_OBJECT.revision_history().
@@ -2107,7 +2117,7 @@ AMB-73:
     RM UML/classes/org.openehr.rm.ehr.versioned_composition.adoc
     §Invariants (Archetype_node_id_valid + Persistent_validity only); RM
     common master06-change_control_package.adoc §Contributions (no
-    content-stability rule); SM i_ehr_composition.adoc update_composition
+    content-stability rule); SM i_ehr_composition.adoc §update_composition
     (silent); CNF platform_test_schedule master07
     §update_composition-wrong_template (guide only) — silence confirmed
     first-hand.
@@ -2284,9 +2294,10 @@ AMB-77:
     §Multiple identifiers example writes a single colon before the
     version_tree_id.
   source: >-
-    SM UML/classes/i_ehr_composition.adoc + i_validity_checker.adoc;
-    ITS-REST specifications/headers/ETag_COMPOSITION.yaml,
-    operations/composition_get.yaml, docs/overview/Resources.md §Multiple
+    SM UML/classes/i_ehr_composition.adoc + SM UML/classes/i_validity_checker.adoc;
+    ITS-REST specifications/headers/ETag_COMPOSITION.yaml + ITS-REST
+    specifications/operations/composition_get.yaml + ITS-REST
+    specifications/docs/overview/Resources.md §Multiple
     identifiers — all confirmed first-hand.
   handling: >-
     Editorial: the catalogue keeps the SM operation names and adjudicates
@@ -2375,10 +2386,11 @@ AMB-79:
     @PABLO this is not (yet) in the SPEC".
   source: >-
     ITS-REST specifications/operations/directory_create.yaml (responses
-    201/400/404 only); SM UML/classes/i_ehr_directory.adoc create_directory
-    (Pre_no_directory, errors lack a code for it);
-    Requests_and_responses.md §HTTP status codes (the unbound 409 row); CNF
-    robot directory_keywords.robot L730-737 (the admission) — confirmed
+    201/400/404 only); SM UML/classes/i_ehr_directory.adoc §create_directory
+    (Pre_no_directory, errors lack a code for it); ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §HTTP status codes
+    (the unbound 409 row); CNF
+    robot directory_keywords.robot (L730-737, the admission) — confirmed
     first-hand.
   handling: >-
     Fixed handling: this server answers 409 Conflict (the row's own text —
@@ -2451,7 +2463,7 @@ AMB-81:
     references.
   source: >-
     ITS-REST specifications/parameters/query/path.yaml (the whole released
-    definition); SM UML/classes/i_ehr_directory.adoc has_path (identical
+    definition); SM UML/classes/i_ehr_directory.adoc §has_path (identical
     wording); RM common master05-directory_package.adoc §Paths (the
     distinct RM grammar) — confirmed first-hand.
   handling: >-
@@ -2540,10 +2552,10 @@ AMB-83:
     2026-08-21).
   source: >-
     SM UML/classes/i_ehr_directory.adoc (all interface defects) +
-    i_validity_checker.adoc; ITS-REST
-    specifications/responses/{200_directory_updated,204_version_updated,
-    412_directory}.yaml + headers/{Location_directory,Location_version,
-    Location_deprecated,ETag,ETag_FOLDER}.yaml — confirmed first-hand.
+    SM UML/classes/i_validity_checker.adoc; ITS-REST
+    specifications/responses/{200_directory_updated,204_version_updated,412_directory}.yaml +
+    ITS-REST specifications/headers/{Location_directory,Location_version,Location_deprecated,ETag,ETag_FOLDER}.yaml
+    — confirmed first-hand.
   handling: >-
     Editorial: the catalogue keeps the SM operation names and adjudicates
     wire behaviour from the ITS-REST docs text + RM; the wire serves ONE
@@ -2660,8 +2672,10 @@ AMB-87:
     CONTRIBUTION is immutable with a unique identifier.
   source: >-
     ITS-REST specifications/docs/overview/Requests_and_responses.md
-    §"ETag and Last-Modified" vs Resources.md §Resources (the
-    non-versioned classification) vs responses/{200,201}_CONTRIBUTION.yaml
+    §"ETag and Last-Modified" + ITS-REST
+    specifications/docs/overview/Resources.md (the
+    non-versioned classification) + ITS-REST
+    specifications/responses/{200,201}_CONTRIBUTION.yaml
     — confirmed first-hand.
   handling: >-
     Fixed handling: the GET serves the contribution-uid weak ETag (the
@@ -2797,9 +2811,10 @@ AMB-90:
   source: >-
     SM UML/classes/{i_ehr_contribution,update_version,update_audit}.adoc +
     SM openehr_platform master03-common_package.adoc §Version Update
-    Semantics; ITS-REST specifications/schemas/{ehr/UpdateVersion,
-    common/UpdateAudit}.yaml + docs/overview/Amendment_record.md
-    (SPECITS-95, SPECPR-472) + Glossary_and_conventions.md; RM common
+    Semantics; ITS-REST specifications/schemas/{ehr/UpdateVersion,common/UpdateAudit}.yaml +
+    ITS-REST specifications/docs/overview/Amendment_record.md
+    (SPECITS-95, SPECPR-472) + ITS-REST
+    specifications/docs/overview/Glossary_and_conventions.md; RM common
     master06 §Committal and Audits — confirmed first-hand.
   handling: >-
     Editorial: the catalogue keeps the SM operation names; wire behaviour
@@ -2825,11 +2840,11 @@ AMB-91:
     uid on a composition tag route) — the cross-space direction being one
     the EHR-only reading never had to consider.
   source: >-
-    ITS-REST specifications/responses/404_unknown_ehr_id_or_uid_based_id.yaml
-    and 404_unknown_ehr_id_or_uid_based_id_or_key.yaml (the EHR-side
-    trigger sets) + responses/404_unknown_uid_based_id.yaml ("`404 Not
-    Found` is returned when the `uid_based_id` does not exist") and
-    404_unknown_uid_based_id_or_key.yaml (the demographic-side trigger
+    ITS-REST specifications/responses/404_unknown_ehr_id_or_uid_based_id.yaml +
+    ITS-REST specifications/responses/404_unknown_ehr_id_or_uid_based_id_or_key.yaml (the EHR-side
+    trigger sets) + ITS-REST specifications/responses/404_unknown_uid_based_id.yaml ("`404 Not
+    Found` is returned when the `uid_based_id` does not exist") + ITS-REST
+    specifications/responses/404_unknown_uid_based_id_or_key.yaml (the demographic-side trigger
     sets — the whole 404 vocabulary of the five party tag families); the
     route-typed operation descriptions
     (operations/{composition,ehr_status}_tags_*.yaml and
@@ -2916,11 +2931,11 @@ AMB-94:
     match mode (exact/prefix/substring, case sensitivity) is unsaid; and
     matching tag_target_path against a tag with no target_path is unsaid.
   source: >-
-    ITS-REST operations/ehr_tags_get.yaml and
+    ITS-REST operations/ehr_tags_get.yaml + ITS-REST
     operations/demographic_tags_get.yaml (both descriptions carry the
     identical "one or more" sentence; both reference the same three
-    parameter files) vs
-    parameters/query/tag_{key,value,target_path}.yaml (scalar schemas, no
+    parameter files) + ITS-REST
+    specifications/parameters/query/tag_{key,value,target_path}.yaml (scalar schemas, no
     description fields at all) — confirmed first-hand.
   handling: >-
     Fixed handling: the filters are scalar, AND-combined across
@@ -2940,9 +2955,11 @@ AMB-95:
     released rule: identity is the pair, but the array schema carries no
     uniqueItems and no sentence assigns rejection or a merge order.
   source: >-
-    ITS-REST operations/*_tags_update.yaml requestBody +
-    schemas/common/UpdateItemTag.yaml; Requests_and_responses.md §item-tag
-    headers (the identity sentence) — confirmed first-hand.
+    ITS-REST operations/{composition,ehr_status,person,agent,group,organisation,role}_tags_update.yaml
+    (their requestBody) + ITS-REST
+    specifications/schemas/common/UpdateItemTag.yaml; ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §openehr-item-tag
+    and openehr-version-item-tag (the identity sentence) — confirmed first-hand.
   handling: >-
     Fixed handling: last-wins — the posted set is deduped on the identity
     pair with the final occurrence kept, mirroring a full-replace applied
@@ -3248,9 +3265,7 @@ AMB-103:
     querying schedule links the demographic service model and is
     otherwise TBD/xx throughout.
   source: >-
-    SM UML/classes/{i_query_service,stored_query_execute_spec,
-    adhoc_query_execute_spec,result_set,result_set_column,result_set_row,
-    result_query_descriptor,query_descriptor}.adoc + SM openehr_platform
+    SM UML/classes/{i_query_service,stored_query_execute_spec,adhoc_query_execute_spec,result_set,result_set_column,result_set_row,result_query_descriptor,query_descriptor}.adoc + SM openehr_platform
     master08-query_service.adoc; ITS-REST docs/query/Request.md +
     schemas/query/* + operations/definition_query_*store*.yaml +
     responses/400_Query.yaml; QUERY docs/AQL master07-grammar.adoc (the
@@ -3283,7 +3298,7 @@ AMB-66:
     SM i_ehr_service.adoc §create_ehr and §create_ehr_with_id
     (`Pre_no_subject`: `an_ehr_status.subject = Void`, immediately followed by
     "A default `_subject_` will be generating containing a `PARTY_SELF`
-    object") vs RM ehr EHR_STATUS class §Attributes (`subject`: 1..1
+    object") + RM UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Attributes (`subject`: 1..1
     PARTY_SELF — "The subject of this EHR") vs the released ITS-REST EHR API
     (no for-subject create operation; the optional EHR_STATUS body is the only
     subject-bearing input) — contradiction CONFIRMED first-hand.
@@ -3484,10 +3499,10 @@ AMB-108:
     §list_matching_opts — all defined) vs released ITS-REST 1.1.0 (the
     /definition/template/adl1.4 route set: list / upload / get / example only)
     + ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml
-    and definition_template_adl2_example_get.yaml vs the SM Definition
-    interfaces (i_definition_adl14.adoc, i_definition_adl2.adoc — no
-    example-generation operation) + ITS-REST
-    docs/overview/Amendment_record.md SPECITS-58 ("Add support for /example
+    + ITS-REST specifications/operations/definition_template_adl2_example_get.yaml
+    (vs the SM Definition interfaces — i_definition_adl14.adoc,
+    i_definition_adl2.adoc — no example-generation operation) + ITS-REST
+    specifications/docs/overview/Amendment_record.md (SPECITS-58: "Add support for /example
     sub-resource under template-definition endpoint") — CONFIRMED first-hand.
   handling: >-
     Report only, both directions carried. SM→ITS: `valid_opt` is exercised
@@ -3581,19 +3596,19 @@ AMB-110:
     the body is empty") corroborates the bullet's primary sentence.
   source: >-
     ITS-REST specifications/operations/definition_template_adl1.4_upload.yaml
-    and definition_template_adl2_upload.yaml (responses 201/400/409 only) +
-    responses/400.yaml (the syntactic trigger) +
-    responses/201_Template_adl1_4_upload.yaml and
-    201_Template_adl2_upload.yaml (identical text: representation → the full
+    + ITS-REST specifications/operations/definition_template_adl2_upload.yaml (responses 201/400/409 only) +
+    ITS-REST specifications/responses/400.yaml (the syntactic trigger) +
+    ITS-REST specifications/responses/201_Template_adl1_4_upload.yaml +
+    ITS-REST specifications/responses/201_Template_adl2_upload.yaml (identical text: representation → the full
     resource, identifier → only its unique identifier, "If the `Prefer` header
-    is missing or set to `return=minimal`, the body is empty") +
-    docs/overview/Requests_and_responses.md §HTTP status codes (row 422 "The
+    is missing or set to `return=minimal`, the body is empty") + ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §HTTP status codes (row 422 "The
     request was well-formed but was unable to be followed due to semantic
     errors"; "Additional status codes MAY be used as long as they do not
     conflict with the predefined codes") + §"Prefer minimal, identifier or full
     representation response" (the SHOULD-204 sentence) + SM
-    i_definition_adl14.adoc §upload_opt and i_definition_adl2.adoc
-    §upload_artefact (preconditions + errors, no codes) — CONFIRMED first-hand.
+    i_definition_adl14.adoc §upload_opt + SM i_definition_adl2.adoc
+    §upload_artefact (preconditions and errors, no codes) — CONFIRMED first-hand.
   handling: >-
     Fixed handling, one position per branch. (a) THE SPLIT LAW, identical on
     both upload routes: content that fails its OWN SYNTAX answers the released
@@ -3660,11 +3675,11 @@ AMB-111:
     ITS-REST specifications/operations/definition_template_adl1.4_get.yaml
     ("Note that this can return either the original (canonical) `XML` based OPT
     format (if called with the `Accept: application/xml` request header)…") +
-    definition_template_adl2_get.yaml ("Retrieves the latest version of the
+    ITS-REST specifications/operations/definition_template_adl2_get.yaml ("Retrieves the latest version of the
     ADL2 operational template identified by `template_id` identifier.") +
-    responses/200_Template_adl1_4_retrieved.yaml and
-    200_Template_adl2_retrieved.yaml (representation only; no fidelity rule) +
-    SM i_definition_adl14.adoc §get_opt and i_definition_adl2.adoc
+    ITS-REST specifications/responses/200_Template_adl1_4_retrieved.yaml +
+    ITS-REST specifications/responses/200_Template_adl2_retrieved.yaml (representation only; no fidelity rule) +
+    SM i_definition_adl14.adoc §get_opt + SM i_definition_adl2.adoc
     §get_artefact ("Get the … artefact with id `_an_id_`" — no fidelity rule) —
     silence CONFIRMED first-hand.
   handling: >-
@@ -3797,15 +3812,18 @@ AMB-114:
     response shows a flat list of templates carrying no version field at all
     and the metadata schema marks `version` deprecated.
   source: >-
-    ITS-REST specifications/parameters/query/filter_template_id.yaml,
-    concept.yaml, filter_version.yaml ("Filter by version (e.g. `1.2.*` or use
+    ITS-REST specifications/parameters/query/filter_template_id.yaml +
+    ITS-REST specifications/parameters/query/concept.yaml +
+    ITS-REST specifications/parameters/query/filter_version.yaml ("Filter by version (e.g. `1.2.*` or use
     `*` for all versions), taken from `template_id`; if missing, then only the
-    latest version will be returned"), offset.yaml ("The row number in
-    result-set to start result-set from (`0`-based), default is `0`") and
-    fetch.yaml + operations/definition_template_adl1.4_list.yaml and
-    definition_template_adl2_list.yaml (a single '200' branch) +
-    responses/200_TemplateList_adl1_4.yaml (the example list) +
-    schemas/definition/TemplateMetadata.yaml (`version` present but
+    latest version will be returned") +
+    ITS-REST specifications/parameters/query/offset.yaml ("The row number in
+    result-set to start result-set from (`0`-based), default is `0`") +
+    ITS-REST specifications/parameters/query/fetch.yaml +
+    ITS-REST specifications/operations/definition_template_adl1.4_list.yaml +
+    ITS-REST specifications/operations/definition_template_adl2_list.yaml (a single 200 branch) +
+    ITS-REST specifications/responses/200_TemplateList_adl1_4.yaml (the example list) +
+    ITS-REST specifications/schemas/definition/TemplateMetadata.yaml (`version` present but
     deprecated) — silence CONFIRMED first-hand.
   handling: >-
     Fixed handling. Filters CONJOIN: each supplied filter narrows the result
@@ -3918,10 +3936,10 @@ AMB-116:
     qualifiers? ')' ARCHETYPE_HRID 'language' odin_text 'description'
     odin_text 'definition' cadl_text … 'terminology' odin_text …
     'component_terminologies' odin_text` — the sections are grammar
-    productions, not optional decorations) vs AM
-    docs/AOM2/master08-validation.adoc §Phase 1 - Basic Integrity §Basic checks
+    productions, not optional decorations) + AM
+    docs/AOM2/master08-validation.adoc §"Phase 1 - Basic Integrity" and its §"Basic checks"
     ("any missing mandatory parts, e.g. `terminology` section (STCNT)"),
-    listed among the validation checks, AGAINST AM
+    listed among the validation checks + AM
     docs/ADL2/master04.6-cadl_validity_rules.adoc §Syntax Validity Rules
     (the syntax_errors catalogue owning the same STCNT code as "Syntax
     error: terminology not specified") — a released-vs-released
@@ -4339,15 +4357,16 @@ AMB-123:
   source: >-
     SM UML/classes/i_definition_query.adoc §store_query (`Pre_valid_query`:
     `is_valid_query(a_query_text)`) and §valid_query (the declared operation
-    name and its Meaning) vs ITS-REST
-    specifications/operations/definition_query_store.yaml and
-    definition_query_version_store.yaml (400 the only rejection) +
-    responses/400.yaml (the syntactic trigger) + docs/query/
-    Qualified_query_name.md §NOTE ("The `query-name` value must not be `aql`
-    (case-insensitive), as that is a reserved name") +
+    name and its Meaning) + ITS-REST
+    specifications/operations/definition_query_store.yaml + ITS-REST
+    specifications/operations/definition_query_version_store.yaml (400 the only rejection) +
+    ITS-REST specifications/responses/400.yaml (the syntactic trigger) + ITS-REST
+    specifications/docs/query/Qualified_query_name.md (its NOTE callout: "The
+    `query-name` value must not be `aql` (case-insensitive), as that is a
+    reserved name") +
     parameters/query/query_type.yaml (a free string, `default: "AQL"`) + SM
     UML/classes/query_descriptor.adoc §formalism ("aql"; "any other string
-    value") + QUERY 1.1.0 docs/AQL (no stored-query registration or
+    value") + QUERY docs/AQL (the 1.1.0 release text: no stored-query registration or
     store-time validity text) — CONFIRMED first-hand.
   handling: >-
     Fixed handling for all three branches, all on the released 400. (1)
@@ -4589,24 +4608,24 @@ AMB-128:
     service does with the two MIME types it is nevertheless offered on those
     routes is stated nowhere.
   source: >-
-    ITS-REST specifications/parameters/header/Accept_LOCATABLE.yaml and
-    ContentType_LOCATABLE.yaml (both enums list
+    ITS-REST specifications/parameters/header/Accept_LOCATABLE.yaml +
+    ITS-REST specifications/parameters/header/ContentType_LOCATABLE.yaml (both enums list
     `application/openehr.wt.flat+json` and
     `application/openehr.wt.structured+json`) as referenced by
     operations/{person,agent,group,organisation,role}_{create,update,get}.yaml
     (whose parameter lists carry Prefer / Accept / Content-Type / the item-tag
-    headers and NO openehr-template-id) vs ITS-REST
-    docs/overview/Requests_and_responses.md §openehr-template-id (the quoted
-    MUST, scoped to "committing COMPOSITION") + docs/simplified_formats/
+    headers and NO openehr-template-id) + ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §openehr-template-id (the quoted
+    MUST, scoped to "committing COMPOSITION") + ITS-REST docs/simplified_formats/
     master02-overview.adoc §Introduction (the "Template-specific" key
     characteristic) and §"Relationship to Other Specifications" ("__Operational
     Templates (OPT)__: field identifiers are generated from OPT definitions";
-    "serialized instances represent valid RM structures (e.g. COMPOSITION)") +
-    master05-rm_mapping.adoc (43 class sections with exactly ONE
+    "serialized instances represent valid RM structures (e.g. COMPOSITION)") + ITS-REST
+    docs/simplified_formats/master05-rm_mapping.adoc (43 class sections with exactly ONE
     versioned-object root among them, `== COMPOSITION` — enumeration
     corrected 2026-08-21; no demographic PARTY root mapping exists, and no
     PERSON/ORGANISATION/ROLE/AGENT/GROUP/PARTY section exists anywhere in
-    the simplified_formats chapters) + docs/overview/Resources.md
+    the simplified_formats chapters) + ITS-REST specifications/docs/overview/Resources.md
     §Simplified Formats (the negotiation rules and their 415/406 MUSTs) and
     §"Data representation" ("Services MUST support at least one of the openEHR
     **XML** or **JSON** canonical formats for resource representation.
@@ -4934,17 +4953,18 @@ AMB-134:
     describing what an XML envelope would even be.
   source: >-
     ITS-REST specifications/operations/contribution_create.yaml (the EHR-side
-    commit: the quoted §"Simplified Formats (FLAT / STRUCTURED)" paragraph;
-    parameters Accept_LOCATABLE + ContentType_LOCATABLE) vs
-    operations/demographic_contribution_create.yaml (the same operationId,
-    no Simplified paragraph; parameters Accept_canonical +
-    ContentType_canonical) + parameters/header/{Accept,ContentType}_canonical.yaml
-    (enum: application/json, application/xml) +
-    docs/overview/Amendment_record.md SPECITS-84 ("Add support for FLAT/SDT to
+    commit: the quoted "Simplified Formats (FLAT / STRUCTURED)" description paragraph;
+    parameters Accept_LOCATABLE and ContentType_LOCATABLE) + ITS-REST
+    specifications/operations/demographic_contribution_create.yaml (the same operationId,
+    no Simplified paragraph; parameters Accept_canonical and
+    ContentType_canonical) + ITS-REST
+    specifications/parameters/header/{Accept,ContentType}_canonical.yaml
+    (enum: application/json, application/xml) + ITS-REST
+    specifications/docs/overview/Amendment_record.md (SPECITS-84: "Add support for FLAT/SDT to
     Contribution REST API calls - accept the Simplified Formats MIME types on
     CONTRIBUTION endpoints; the Simplified Formats serialization applies to
-    versions[].data only, the CONTRIBUTION envelope remains canonical") +
-    docs/overview/Resources.md §"Data representation" ("Services MUST support
+    versions[].data only, the CONTRIBUTION envelope remains canonical") + ITS-REST
+    specifications/docs/overview/Resources.md §"Data representation" ("Services MUST support
     at least one of the openEHR **XML** or **JSON** canonical formats") and
     §XML Format / §JSON Format / §Simplified Formats (the 415/406 MUSTs) —
     CONFIRMED first-hand.
@@ -5025,7 +5045,7 @@ AMB-135:
     the UUID typing throughout; §delete_party's `Post_party_deleted`) + SM
     UML/classes/i_party_relationship.adoc (§get_party_relationship_at_version —
     no precondition) + SM UML/classes/i_validity_checker.adoc (the declared
-    `definitions_valid` and `content_valid`) vs RM common
+    `definitions_valid` and `content_valid`) + RM common
     master06-change_control_package.adoc §Contributions ("Since a versioned
     repository (i.e. a collection of `VERSIONED_OBJECTs`) is by definition
     indelible, all logical changes including deletions … are achieved by
@@ -5261,10 +5281,10 @@ AMB-139:
     So the two admin operations are the only released operations whose success
     can be a code the specification's own subset does not contain.
   source: >-
-    ITS-REST specifications/operations/admin_ehr_delete.yaml and
-    admin_ehr_delete_all.yaml (the quoted async/sync paragraph; both enumerate
-    `202`) + specifications/responses/202.yaml (the quoted description) vs
-    docs/overview/Requests_and_responses.md §"HTTP status codes" (the sixteen-row
+    ITS-REST specifications/operations/admin_ehr_delete.yaml + ITS-REST
+    specifications/operations/admin_ehr_delete_all.yaml (the quoted async/sync paragraph; both enumerate
+    `202`) + ITS-REST specifications/responses/202.yaml (the quoted description) + ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §"HTTP status codes" (the sixteen-row
     table and its lead-in "The following subset is used in this specification",
     with no 202 row) and its closing clause "To indicate the status of a request
     or operation, an appropriate HTTP status code MUST be used as described
@@ -5525,14 +5545,15 @@ AMB-143:
     tree, an attestation, an externalized multimedia blob, an audit record)
     survives the delete.
   source: >-
-    ITS-REST specifications/operations/admin_ehr_delete.yaml and
-    admin_ehr_delete_all.yaml (the quoted "such as" cascade sentence; no
-    post-delete or re-creation statement in either) +
+    ITS-REST specifications/operations/admin_ehr_delete.yaml + ITS-REST
+    specifications/operations/admin_ehr_delete_all.yaml (the quoted "such as" cascade sentence; no
+    post-delete or re-creation statement in either) + ITS-REST
     specifications/responses/204_deleted_hard.yaml (the hard-delete sentence,
-    which describes the response and not the subsequent state) +
-    operations/ehr_create_with_id.yaml + responses/409_EHR_with_id.yaml (the
-    already-used-ehr_id wording — the only 409 the with-id create declares) +
-    responses/404_unknown_ehr_id.yaml ("`404 Not Found` is returned when an EHR
+    which describes the response and not the subsequent state) + ITS-REST
+    specifications/operations/ehr_create_with_id.yaml + ITS-REST
+    specifications/responses/409_EHR_with_id.yaml (the
+    already-used-ehr_id wording — the only 409 the with-id create declares) + ITS-REST
+    specifications/responses/404_unknown_ehr_id.yaml ("`404 Not Found` is returned when an EHR
     with `ehr_id` does not exist") + SM UML/classes/i_admin_service.adoc
     §physical_ehr_delete (`Pre_has_ehr` and the error `ehr_id_does_not_exist` —
     a PREcondition, with no stated postcondition; contrast
@@ -5670,11 +5691,11 @@ AMB-145:
     here at all.
   source: >-
     ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Service
-    Discovery (the example JSON block — the quoted `scopes_supported` array)
-    CONTRASTED with master08-scopes.adoc §Resource Scopes (the syntax line
+    Discovery (the example JSON block — the quoted `scopes_supported` array) +
+    ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the syntax line
     `<compartment>/<resource>.<permission>`; the closed three-noun `<resource>`
     list; the `<templateId>`/`<queryName>` pattern table; the maximal scope
-    table) + master07-authorization.adoc §Context Selection NOTE ("standard
+    table) + ITS-REST docs/smart_app_launch/master07-authorization.adoc §Context Selection NOTE ("standard
     SMART launch scopes and context attributes remain compatible and may be
     used in parallel for interoperability purposes … but their use is not
     normative in this specification" — which covers the LAUNCH scopes, not the
@@ -5952,7 +5973,7 @@ AMB-150:
     use the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers,
     returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy Authentication`
     as applicable") and §"HTTP status codes" (403 — "The service understood the
-    request but refuses to authorize it") + RM ehr EHR_STATUS class §Attributes
+    request but refuses to authorize it") + RM UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Attributes
     (`subject`: 1..1 PARTY_SELF, whose `external_ref` is the demographic
     reference) — all silences CONFIRMED first-hand.
   handling: >-
@@ -6169,12 +6190,12 @@ AMB-152:
     routes, and it rests on STRONGER evidence: there the only offer was a
     negotiation enum, here a released prose sentence names the two classes.
   source: >-
-    ITS-REST specifications/operations/contribution_create.yaml §"Simplified
-    Formats (FLAT / STRUCTURED)" (the released description prose, quoted above,
+    ITS-REST specifications/operations/contribution_create.yaml (its "Simplified
+    Formats (FLAT / STRUCTURED)" description prose, quoted above,
     naming `COMPOSITION`, `EHR_STATUS` and `FOLDER`) + ITS-REST
     docs/simplified_formats/master05-rm_mapping.adoc (43 class sections; the only
     versioned-object root mapped is `== COMPOSITION` — no EHR_STATUS section, no
-    FOLDER section) + master02-overview.adoc §Introduction ("__Template-specific__:
+    FOLDER section) + ITS-REST docs/simplified_formats/master02-overview.adoc §Introduction ("__Template-specific__:
     Field identifiers are specific to each operational template") and
     §"Relationship to Other Specifications" ("__Operational Templates (OPT)__:
     field identifiers are generated from OPT definitions"; "serialized instances
@@ -6659,7 +6680,7 @@ AMB-157:
     beside the released groups (the count lives THERE, never here — a prose
     copy rots; corrected 2026-08-21).
   source: >-
-    ITS-REST specifications/docs/overview/Resources.md preamble (the document
+    ITS-REST specifications/docs/overview/Resources.md (its preamble: the document
     opens — before its first heading — with "For the
     openEHR API, a **resource** is an instance object of a specific openEHR
     class (type) that can be identified, addressed, handled or managed by the
@@ -6667,10 +6688,10 @@ AMB-157:
     available types, refer to the class index") — a definition of the openEHR
     resource set, never a constraint on the URI space around it. The
     overview's two "Additional/other … MAY" sentences concern STATUS CODES
-    and DATA FORMATS, not routes
-    (Requests_and_responses.md §HTTP status codes: "Additional status codes MAY
-    be used as long as they do not conflict with the predefined codes";
-    Resources.md §Data representation: "other alternative formats MAY be
+    and DATA FORMATS, not routes;
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §HTTP status codes ("Additional status codes MAY
+    be used as long as they do not conflict with the predefined codes");
+    ITS-REST specifications/docs/overview/Resources.md §"Data representation" ("other alternative formats MAY be
     supported as well" — enumeration corrected 2026-08-21). Silence
     CONFIRMED first-hand: a grep of specifications/docs/** for an
     additional/vendor/proprietary/custom endpoint clause returns ZERO hits, and
@@ -6806,8 +6827,9 @@ AMB-159:
     trigger CONFIRMED first-hand across the entire
     released QUERY chapter: docs/query/Request.md, Response.md, Query_types.md
     and Qualified_query_name.md contain no occurrence of `408`, "timeout" or any
-    execution-time concept (grep-verified), and §"Common Headers and Query
-    Parameters" is the complete client-settable surface quoted above.
+    execution-time concept (grep-verified); ITS-REST docs/query/Request.md
+    §"Common Headers and Query Parameters" (the complete client-settable
+    surface quoted above).
     docs/query/Qualified_query_name.md, which governs the stored route's extra
     addressing, adds only name and version selection — so the stored and ad-hoc
     routes are in exactly the same position.
@@ -6883,14 +6905,15 @@ AMB-161:
     never models is therefore unnameable AND structurally invisible: not merely
     uncovered, but incapable of being reported as uncovered.
   source: >-
-    docs/specs/openehr/SM/docs/UML/classes/ — there is no System interface
+    SM UML/classes (the whole class-export directory) — there is no System interface
     (i_system_log.adoc is the ATNA logging interface, i_status.adoc the
     last-call status probe: last_call_failed / last_call_status), and no class
     export in the directory contains the words "options", "manifest" or
-    "conformance" at all — against ITS-REST
-    specifications/docs/system/Description.md §Status, which puts the System
-    API in the `STABLE` state, and docs/overview/Requests_and_responses.md
-    §HTTP Methods, which tabulates the method it is served with. The same
+    "conformance" at all + ITS-REST
+    specifications/docs/system/Description.md §Status (which puts the System
+    API in the `STABLE` state) + ITS-REST
+    specifications/docs/overview/Requests_and_responses.md
+    §HTTP Methods (which tabulates the method it is served with). The same
     ITS→SM direction AMB-127 records for the stored-query single-definition
     read ("a released wire behaviour with no service-model anchor to name it
     by"), here in its complete form: not one operation missing from an
@@ -6958,9 +6981,9 @@ AMB-165:
     undefinable, and no conformance case can drive it without inventing the
     document.
   source: >-
-    THREE-WAY CHECK, both sources read first-hand. (1) DOCS TEXT — the only
-    sentence governing an XML request payload is ITS-REST
-    docs/overview/Resources.md §"XML Format": "When resources are serialized in
+    ITS-REST specifications/docs/overview/Resources.md §"XML Format" (the
+    three-way check, both sources read first-hand; TIER 1, the only
+    sentence governing an XML request payload): "When resources are serialized in
     **canonical XML** format, both request payloads and responses MUST conform
     to the [published XSDs]". The EHR API chapter adds nothing:
     docs/ehr/Description.md is a 25-line stub (Purpose, Related Documents,
@@ -7130,9 +7153,9 @@ AMB-167:
     XML branch exists on that wire at all; the unconditional 406 cases there
     stand on the media type never being offered, not on a missing document.
   source: >-
-    ALL THREE SOURCES READ FIRST-HAND, in the oracle order.
-    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Resources.md
-    §"Data representation": "Services MUST support at least one of the
+    ITS-REST specifications/docs/overview/Resources.md
+    §"Data representation" (all three sources read first-hand, in the oracle
+    order; TIER 1, the docs text): "Services MUST support at least one of the
     openEHR **XML** or **JSON** canonical formats for resource
     representation" (so offering XML is a SERVICE CHOICE, never an
     obligation), and §"XML Format", whose four sentences govern CONDUCT once
@@ -7616,8 +7639,8 @@ AMB-173:
     Relationships between Archetypes (parent-archetype queries retrieve
     specialisation-child data); AM docs/Identification/master07-referencing.adoc
     §Supporting Archetype-based Querying (the archetype-based matching set —
-    file corrected 2026-08-21: AOM1.4's master07 is the Terminology Package
-    and carries no §Querying).
+    file corrected 2026-08-21: AOM1.4 master07 is the Terminology Package
+    and has no Querying section).
   handling: >-
     The subsumption reading is normative for a full archetype-HRID
     predicate: a predicate naming archetype X matches data whose root
@@ -7693,7 +7716,7 @@ AMB-175:
     defining_code/code_string='249']` over a created-then-amended object
     answers 1 under the former reading and 0 under the latter. (#970)
   source: >-
-    QUERY docs/AQL/grammar/AqlParser.g4 versionPredicate (included by
+    QUERY docs/AQL/grammar/AqlParser.g4 (rule `versionPredicate`, included by
     master07-grammar.adoc — the grammar is the only released statement of
     the form); QUERY
     docs/AQL/master03-syntax.adoc §Predicates/Standard predicate, §Class
@@ -8122,9 +8145,9 @@ AMB-185:
     source (2c)), so for the newer half the obligation currently has no
     machine-checkable referent either.
   source: >-
-    ALL SOURCES READ FIRST-HAND, in the oracle order.
-    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Resources.md §"XML
-    Format", first sentence: "When resources are serialized in **canonical
+    ITS-REST specifications/docs/overview/Resources.md §"XML
+    Format" (all sources read first-hand, in the oracle order; TIER 1, the
+    docs text), first sentence: "When resources are serialized in **canonical
     XML** format, both request payloads and responses MUST conform to the
     [published XSDs]", the bracketed phrase linking to
     `https://specifications.openehr.org/releases/ITS-XML/latest`. §"Data
@@ -8301,9 +8324,9 @@ AMB-186:
     `ObjectRef.yaml` keeps `id` at `UObjectId` while its `example` pins a
     version-addressed COMPOSITION ref.
   source: >-
-    ALL SOURCES READ FIRST-HAND, in the oracle order.
-    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Requests_and_responses.md
-    §"openehr-version and openehr-audit-details" names FOLDER in the sentence
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §"openehr-version and openehr-audit-details" (all sources read
+    first-hand, in the oracle order; TIER 1, the docs text) names FOLDER in the sentence
     that assigns the commit semantics to the RM: "for all change-controlled
     resources (e.g. COMPOSITION, EHR_STATUS, FOLDER, etc.) the services are
     [performing versioning] under the hood. The 'native' way of committing is
@@ -8325,8 +8348,8 @@ AMB-186:
     the six concrete OBJECT_ID subtypes' class tables
     (…base_types.{hier_object_id,object_version_id,archetype_id,template_id,
     terminology_id,generic_id}.adoc §Inherit); ITS-JSON
-    crates/openehr-its/schemas/json/openehr_rm_1.1.0_all.json,
-    `definitions.OBJECT_REF.properties.id` — the same six `_type` values.
+    openehr_rm_1.1.0_all.json (the vendored schema:
+    `definitions.OBJECT_REF.properties.id` — the same six `_type` values).
     (3) THE RELEASED OAS, cited AS THE OAS — ITS-REST
     specifications/schemas/ehr/Folder.yaml (`items.items` `$ref`
     ../base_types/UObjectRefOfUidBasedId.yaml),
@@ -8759,11 +8782,10 @@ AMB-194:
     the same complete-but-incomplete commit 400 or 422.
   source: >-
     RM common master06-change_control_package.adoc §Incomplete Content ("would
-    be treated as invalid by the repository and rejected by the API")
-    contrasted with ITS-REST specifications/docs/overview/
-    Requests_and_responses.md §HTTP status codes and
-    specifications/operations/contribution_create.yaml §responses +
-    specifications/responses/{400_CONTRIBUTION,422}.yaml — none of
+    be treated as invalid by the repository and rejected by the API") +
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §HTTP status codes +
+    ITS-REST specifications/operations/contribution_create.yaml (its `responses` map) +
+    ITS-REST specifications/responses/{400_CONTRIBUTION,422}.yaml — none of
     which names the incomplete-commit trigger (file corrected 2026-08-21:
     no 422_COMPOSITION.yaml exists in the release; the real 422.yaml is
     $ref'd by the twelve composition/party writes and by no contribution
@@ -8855,12 +8877,12 @@ AMB-196:
     IMPORT commit, one property over.
   source: >-
     RM common master06-change_control_package.adoc §Version Merging +
-    UML/classes/org.openehr.rm.common.original_version.adoc §Attributes
-    (other_input_version_uids) / §Invariants (Is_merged_validity) contrasted
-    with ITS-REST specifications/schemas/ehr/{UpdateVersion,NewContribution}.yaml
-    (no merge shape) vs specifications/schemas/ehr/OriginalVersion.yaml (the
+    RM UML/classes/org.openehr.rm.common.original_version.adoc §Attributes
+    (other_input_version_uids) and §Invariants (Is_merged_validity) +
+    ITS-REST specifications/schemas/ehr/{UpdateVersion,NewContribution}.yaml
+    (no merge shape) + ITS-REST specifications/schemas/ehr/OriginalVersion.yaml (the
     property declared on the read side); SM UML/classes/update_version.adoc
-    likewise carries no such attribute. All read first-hand.
+    (likewise carries no such attribute). All read first-hand.
   handling: >-
     Fixed handling, mirroring AMB-89: this server does NOT accept
     `other_input_version_uids` on the commit wire — an undeclared member on a
@@ -8912,9 +8934,9 @@ AMB-198:
     instance is never modified"); ITS-XML
     components/RM/Release-1.1.0/Common.xsd (VERSION: contribution /
     commit_audit / signature only; IMPORTED_VERSION extends it with `item`);
-    ITS-REST OAS ehr-codegen.openapi.yaml schemas Version (required:
-    contribution, commit_audit, data) + ImportedVersion (allOf Version,
-    required: item); ITS-REST specifications/docs/ (no sentence on the
+    ITS-REST OAS ehr-codegen.openapi.yaml (schemas: Version — required
+    contribution, commit_audit, data — and ImportedVersion, allOf Version,
+    required item); ITS-REST specifications/docs/ (no sentence on the
     IMPORTED_VERSION payload). All read first-hand.
   handling: >-
     Fixed handling: the wire follows the MODEL, not the OAS defect. A served
@@ -9578,14 +9600,13 @@ AMB-212:
     enforcement seam for the ch.8 invariants.
   source: >-
     RM common master08-resource_package.adoc (front-matter NOTE) + RM
-    UML/classes/org.openehr.rm.common.{authored_resource,
-    translation_details,resource_description,resource_description_item}.adoc
+    UML/classes/org.openehr.rm.common.{authored_resource,translation_details,resource_description,resource_description_item}.adoc
     §Invariants; the vendored AM 1.4 BMM
     (tools/openehr-codegen/vendor/bmm/components/AM/json/
     openehr_am_1.4.0.bmm.json — includes: openehr_base_1.3.0, no resource
-    classes); ITS-XML v1 AM Release-1.4 Template.xsd (the
-    OPERATIONAL_TEMPLATE annotation: the template "will inherit" from
-    AUTHORED_RESOURCE) + ALL/Resource.xsd.
+    classes); ITS-XML its-xml-1.0.2-nsv1/ALL/Template.xsd (the v1 bundle;
+    the OPERATIONAL_TEMPLATE annotation: the template "will inherit" from
+    AUTHORED_RESOURCE) + ITS-XML its-xml-1.0.2-nsv1/ALL/Resource.xsd.
   handling: >-
     Fixed handling (issues #2446/#2447): the RM ch.8 classes stay
     emitted-complete in openehr-rm (the completeness rule); typed AOM-1.4
