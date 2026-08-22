@@ -44,31 +44,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-# The `--all` scope, and why it is not the whole tree yet.
-#
-# The rule is repo-wide, but two crates carry pre-existing violations of a shape
-# that cannot be fixed as a side effect of adding this guard, so `--all` covers
-# the server and the specification crates — where a mis-compared status IS a wire
-# defect — and the two sweeps are tracked instead of quietly excluded forever:
-#
-#   * `app/ferroehr-admin-ui` — the console's own DTOs, in a crate parked pending
-#     its full pass (#2055).
-#
-# `tools/cnf-runner` was the other one and is now clean (#2054): it holds
-# `StatusCode` in memory and applies `.as_u16()` only where a number is rendered
-# or serialized, with the committed artifacts proven byte-identical.
-#
-# `--all-really` still checks anything, so the #2055 sweep can verify itself
-# as it lands. Explicit paths (the per-edit hook) honour the SAME parked-crate
-# exclusion as `--all` — the hook must never block an edit CI accepts (#2441's
-# QA pass hit exactly that on the console's u16 DTO fields).
+# `--all` covers the WHOLE tree. Both parked sweeps have landed: the runner
+# (#2054) holds `StatusCode` in memory and applies `.as_u16()` only where a
+# number is rendered or serialized, and the console (#2055) compares through
+# `CdrResponse::is(StatusCode)` and named constants, its `status: u16` DTO
+# fields staying numeric because they are deserialized from and rendered into
+# wire JSON. `--all-really` is kept as an alias so callers written against
+# the parked-era flag keep working.
 collect() {
-  if [ "${1:-}" = "--all-really" ]; then
+  if [ "${1:-}" = "--all-really" ] || [ "${1:-}" = "--all" ]; then
     git ls-files '*.rs'
-  elif [ "${1:-}" = "--all" ]; then
-    git ls-files '*.rs' | grep -v '^app/ferroehr-admin-ui/'
   elif [ "$#" -gt 0 ]; then
-    printf '%s\n' "$@" | grep -v 'app/ferroehr-admin-ui/' || true
+    printf '%s\n' "$@"
   else
     git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
   fi

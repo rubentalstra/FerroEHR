@@ -60,7 +60,7 @@ pub async fn fetch_smart_config() -> Result<Option<String>, AdminUiError> {
     // (master04-service_discovery.adoc §"the configuration endpoint").
     let url = state.cdr.origin_url(".well-known/smart-configuration");
     let response = state.cdr.get_public(&url, "application/json").await?;
-    if response.status == 404 {
+    if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(None);
     }
     Ok(Some(crate::cdr::CdrClient::expect_success(response)?.body))
@@ -140,7 +140,7 @@ pub async fn fetch_openapi(
     let response = state.cdr.get_public(&url, "application/json").await?;
     // Public surface; if a deployment happens to gate it, retry with the
     // session credential before giving up.
-    let response = if response.status == 401 {
+    let response = if response.is(http::StatusCode::UNAUTHORIZED) {
         state
             .cdr
             .get(&session.credential, &url, "application/json")
