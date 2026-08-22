@@ -88,6 +88,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The published conformance statement's product version had sat at 3.6.0
+  since that release while the record beside it moved on — it now matches
+  the workspace version, and the release-cut guard fails whenever the two
+  diverge again.
+
 - The product is spelled **FerroEHR** everywhere a human reads it as a name:
   the admin console's sidebar wordmark and every browser-tab title (both
   previously `ferroehr-admin`), the three published container images'

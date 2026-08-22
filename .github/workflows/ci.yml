@@ -1952,6 +1952,14 @@ jobs:
           persist-credentials: false
       - name: Validate CITATION.cff (CFF 1.2.0 schema)
         run: pipx run cffconvert --validate
+      # The ferroehr party statement is the published conformance claim for
+      # THE product this repo ships; its product version sat at 3.6.0 while
+      # the record reached 3.20.0 with nothing failing (#2576). Same
+      # version-agreement family as the CITATION check below; the ehrbase
+      # party statement deliberately stays unchecked (another vendor's
+      # product).
+      - name: The ferroehr party statement's product version matches the workspace
+        run: bash scripts/checks/statement-version.sh
       - name: CITATION.cff version matches the workspace version
         run: |
           set -euo pipefail
