@@ -57,9 +57,9 @@ any of them.
 
 Find an EHR by id (or browse the most recent), then work through its tabs:
 EHR status, the status version history, the folder directory, the composition
-list, and contribution lookup. Find-by-id is a plain form: it works in a
-browser with JavaScript disabled, and `/ehrs?find=<ehr_id>` is a shareable
-shortcut straight to an EHR.
+list, contribution lookup, and the EHR's item tags. Find-by-id is a plain
+form: it works in a browser with JavaScript disabled, and
+`/ehrs?find=<ehr_id>` is a shareable shortcut straight to an EHR.
 
 ![EHRs](img/ehrs/ehrs.png)
 
@@ -184,6 +184,30 @@ selector shows — its lifecycle state, its preceding version, the contribution
 it was committed under, whether it carries a signature, and whether it still
 carries content.
 
+### Tags on a composition
+
+Below the versioned-object card, **Tags** lists the composition's item tags —
+free key/value markers any openEHR client can attach — and sets or deletes
+one. Three things about them are worth knowing before you use them:
+
+- **The panel edits the collection it names.** The line under the heading
+  says which one: with the version selector on *Latest* that is the
+  versioned composition's own collection; pin a version and the panel edits
+  *that version's* tags instead. openEHR keeps the two apart — a tag belongs
+  to exactly one target — so a tag set on the container is not visible on any
+  version, and vice versa.
+- **Saving re-sends the whole collection**, because that is what the openEHR
+  tag update does. The console reads the current tags and merges yours in, so
+  nothing is lost by accident — but the tag operations carry no version check
+  at all, so a tag another client added between your load and your save can
+  be. Reload before editing a busy composition.
+- **A tag is identified by its key and target path together**, so the same key
+  on two different paths is two tags; deleting addresses the key alone and
+  removes both.
+
+A tag write is not a versioned write: it commits no contribution, mints no
+new version, and never appears in the revision history.
+
 ### Deleting a composition
 
 **Delete composition** on the viewer performs the openEHR *logical* delete of
@@ -237,6 +261,15 @@ exactly as the CDR served it, so nothing the form does not show can be lost.
 > reload the tab and reapply your edit. A rejected document keeps the CDR's own
 > diagnostic on screen, beside the form.
 
+### Tags on the EHR status
+
+The Status tab ends with its own **Tags** panel, the same editor as the
+composition one. It always edits the *versioned* EHR status's collection, so a
+tag stays put when you edit the status into a new version — the status tab has
+no version selector, and a tag pinned to a superseded version would quietly
+disappear. Saving re-sends the whole collection and carries no version check,
+exactly as on a composition.
+
 ### EHR status history
 
 The **Status history** tab is the versioned view of the same object: the
@@ -247,3 +280,22 @@ version extant at that instant. Opening any row — or a resolved instant —
 shows that version's `EHR_STATUS` document exactly as it stood at that commit.
 
 ![EHR status history](img/ehrs/status/history.png)
+
+### Tags in this EHR
+
+The EHR detail's **Tags** tab is the whole EHR's tag list in one place: every
+tag on every object under it — compositions, the EHR status, the directory —
+grouped by the object it sits on. Filter by key, value or target path; the
+filter lives in the address bar, so a filtered view is shareable and
+refresh-safe, and the shared footer pages the groups.
+
+A tag names its target by identifier but not by kind, so each group's **Open**
+asks the CDR which object holds that id before going there: a composition
+opens in the viewer, the EHR status and the directory open on their own tabs.
+If nothing in the EHR holds it any more — the object was deleted — the tab
+says so instead of guessing.
+
+The container form and one version of the same object appear as two groups,
+because openEHR stores them as two separate collections.
+
+![EHR tags](img/ehrs/tags/tags.png)

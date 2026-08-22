@@ -31,7 +31,8 @@
 //!    addresses the version to supersede ("MUST be in a form of an
 //!    `OBJECT_VERSION_ID` … representing the `preceding_version_uid` to be
 //!    deleted", `operations/person_delete.yaml`), and a read takes either. The
-//!    console routes on the container uid ([`container_uid_of`]) and takes the
+//!    console routes on the container uid
+//!    ([`container_uid_of`](crate::uid::container_uid_of)) and takes the
 //!    served document's own `uid.value` for `If-Match` and for the delete path.
 //! 3. **`PARTY_RELATIONSHIP` has no released wire.** The vendored Demographic
 //!    API defines no `party_relationship` path at all; those routes are the
@@ -66,6 +67,7 @@ use serde_json::Value;
 
 use crate::error::AdminUiError;
 use crate::pages::composition::VersionEntry;
+use crate::uid::container_uid_of;
 
 /// The five concrete PARTY families the Demographic API routes by.
 ///
@@ -242,21 +244,6 @@ fn unknown_segment(segment: &str, expected: &str) -> AdminUiError {
     AdminUiError::Invalid(format!(
         "{segment:?} is not a {expected} of the demographic API"
     ))
-}
-
-/// The version CONTAINER id inside a `uid_based_id`: an `OBJECT_VERSION_ID`
-/// (`{uuid}::{system}::{tree}`) reduced to its `object_id`, a bare
-/// `HIER_OBJECT_ID` returned unchanged.
-///
-/// The two forms address the same versioned object but not the same routes
-/// (module docs fact 2), so every console route keys on this one, and it is
-/// applied to operator input as well as to a served `uid.value`. Splitting on
-/// `::` is the `OBJECT_VERSION_ID` syntax itself (BASE
-/// `master05-identification_package.adoc` §Syntaxes: `object_version_id =
-/// object_id "::" creating_system_id "::" version_tree_id`).
-#[must_use]
-pub fn container_uid_of(uid: &str) -> String {
-    uid.trim().split("::").next().unwrap_or_default().to_owned()
 }
 
 /// The `/demographics/{kind}` browser href.
@@ -647,8 +634,8 @@ pub(crate) fn json_str(value: &Value, path: &[&str]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        DemographicResource, PartyKind, VersionedFamily, browse_href, container_uid_of,
-        contribution_href, party_href, relationship_href,
+        DemographicResource, PartyKind, VersionedFamily, browse_href, contribution_href,
+        party_href, relationship_href,
     };
 
     #[test]
@@ -684,23 +671,6 @@ mod tests {
         for rm_type in ["PARTY", "ACTOR", "ANY", ""] {
             assert_eq!(PartyKind::from_rm_type(rm_type), None, "{rm_type}");
         }
-    }
-
-    #[test]
-    fn an_object_version_id_reduces_to_its_container() {
-        assert_eq!(
-            container_uid_of("8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"),
-            "8849182c-82ad-4088-a07f-48ead4180515"
-        );
-        // A bare HIER_OBJECT_ID is already the container form.
-        assert_eq!(
-            container_uid_of("8849182c-82ad-4088-a07f-48ead4180515"),
-            "8849182c-82ad-4088-a07f-48ead4180515"
-        );
-        // Surrounding whitespace from a pasted id never reaches a URL.
-        assert_eq!(container_uid_of("  8849182c::sys::1  "), "8849182c");
-        assert_eq!(container_uid_of(""), "");
-        assert_eq!(container_uid_of("   "), "");
     }
 
     #[test]

@@ -52,7 +52,8 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
-use crate::pages::demographics::{PartyKind, browse_href, container_uid_of};
+use crate::pages::demographics::{PartyKind, browse_href};
+use crate::uid::container_uid_of;
 
 /// The noun phrase every party write-failure toast is built around
 /// ([`crate::feedback::write_failure_copy`]).

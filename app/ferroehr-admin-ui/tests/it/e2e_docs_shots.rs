@@ -408,6 +408,34 @@ async fn capture_documentation_screenshots() {
             .await
             .expect("scroll to the editor");
         shot_to(&h, &dir, "ehrs/compositions/editor").await;
+        // EHR detail: the tag browser, with one real tag on it — set through
+        // the composition viewer's own panel, so the published shot shows a
+        // populated group rather than the empty state.
+        h.wait_css("#tag-key")
+            .await
+            .send_keys("reviewed")
+            .await
+            .expect("type the tag key");
+        h.wait_css("#tag-value")
+            .await
+            .send_keys("true")
+            .await
+            .expect("type the tag value");
+        h.wait_css("#tag-save")
+            .await
+            .click()
+            .await
+            .expect("save the tag");
+        h.wait_css("[data-tag-key='reviewed']").await;
+        h.wait_toasts_cleared().await;
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=tags"),
+            "ehrs/tags/tags",
+            Some("[data-tag-key='reviewed']"),
+        )
+        .await;
     } else {
         println!("SKIP docs-shots: feature views need the seeded ids");
     }

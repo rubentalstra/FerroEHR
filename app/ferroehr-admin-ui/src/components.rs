@@ -8,7 +8,8 @@
 //! style every control, `StatCard`/`EmptyState` cover metrics and voids,
 //! `results_chart` draws every AQL result set, `activity_chart` draws every
 //! events-per-day timeline, `scope_grants` renders every SMART scope string,
-//! and `toast` reports every mutation outcome.
+//! `item_tags` renders every `ITEM_TAG` collection, and `toast` reports every
+//! mutation outcome.
 
 pub mod activity_chart;
 pub mod brand;
@@ -17,6 +18,7 @@ pub mod data_table;
 pub mod empty_state;
 pub mod field;
 pub mod format_view;
+pub mod item_tags;
 pub mod page_header;
 pub mod results_chart;
 pub mod scope_grants;

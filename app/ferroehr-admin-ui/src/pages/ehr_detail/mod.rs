@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: MIT
 
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / status history /
-//! directory / compositions / contributions tabs.
+//! directory / compositions / contributions / tags tabs.
 //!
-//! Five URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
+//! Six URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
 //! `#[server]` fn co-located with the tab in its own submodule — [`status`]
 //! (which owns BOTH status tabs: the current document plus its
 //! `VERSIONED_EHR_STATUS` history), [`directory`], [`compositions`],
-//! [`contributions`]. The resources are
+//! [`contributions`], and the EHR-wide tag browser in
+//! [`crate::pages::ehr_tags`] (which also owns the per-target tag panels the
+//! Status tab and the composition viewer mount). The resources are
 //! created once and their sources are gated on the active tab (a `Memo` over
 //! the query map), so only the visible tab fetches (rules §6 — never
 //! fetch-in-effect). The tab bodies are always mounted and toggled with
@@ -107,9 +109,12 @@ pub struct EhrSummary {
 
 /// Read the EHR resource itself (`GET /ehr/{ehr_id}`) for the detail header.
 ///
-/// This is the console's ONE reader of the EHR resource: an unknown or
-/// mistyped id surfaces here, once, at the top of the screen — the tabs read
-/// their own sub-resources.
+/// This is the console's ONE reader of the EHR resource's own FACTS: an
+/// unknown or mistyped id surfaces here, once, at the top of the screen — the
+/// tabs read their own sub-resources. (The status tag panel reads the same
+/// endpoint server-side for the one identifier that addresses the status's tag
+/// collection — a second window of one endpoint, not a second reader of a
+/// claim.)
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -282,6 +287,7 @@ pub fn EhrDetailPage() -> impl IntoView {
     let directory = directory_section(ehr_id, selected);
     let compositions = compositions_section(ehr_id, offset, selected);
     let contributions = contributions_section(ehr_id, selected);
+    let tag_browser = crate::pages::ehr_tags::ehr_tags_section(ehr_id, selected);
 
     let heading = Signal::derive(move || {
         let id = ehr_id.get();
@@ -314,6 +320,7 @@ pub fn EhrDetailPage() -> impl IntoView {
                 <div class:hidden=move || {
                     selected.get() != "contributions"
                 }>{contributions}</div>
+                <div class:hidden=move || selected.get() != "tags">{tag_browser}</div>
             </div>
         </div>
     }
@@ -427,7 +434,7 @@ fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
         <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
             {link("status", "Status")} {link("status-history", "Status history")}
             {link("directory", "Directory")} {link("compositions", "Compositions")}
-            {link("contributions", "Contributions")}
+            {link("contributions", "Contributions")} {link("tags", "Tags")}
         </div>
     }
     .into_any()
