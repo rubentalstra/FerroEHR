@@ -25,7 +25,10 @@ optional:
   `deploy/helm/validate.sh --update`, + `CITATION.cff` `version` and
   `date-released` (the `citation-guard` CI job enforces the version match),
   then re-render `.zenodo.json` (`bash scripts/render/zenodo-json.sh`, checked
-  by the same job) — it is GENERATED, never hand-edited, because Zenodo ignores
+  by the same job), + the ferroehr party statement's product version
+  (`tools/cnf-runner/party/ferroehr/statement.json`, regenerating the derived
+  documents via `bash scripts/render/conformance-docs.sh` — the
+  `statement-version.sh` step of `citation-guard` enforces the match) — it is GENERATED, never hand-edited, because Zenodo ignores
   `CITATION.cff` completely whenever a `.zenodo.json` exists
   (<https://help.zenodo.org/docs/github/describe-software/zenodo-json/>),
   + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
