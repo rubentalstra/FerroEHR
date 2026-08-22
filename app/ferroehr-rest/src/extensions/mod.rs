@@ -27,7 +27,7 @@
 //! - [`terminology`] — the `/terminology` wire: `I_TERMINOLOGY_SERVICE` is SM
 //!   `master12`; the development-edition OAS set defines no terminology API, so
 //!   the operation semantics are cited from SM and the wire shape is our own.
-//! - [`event_subscription`] + [`fhir`] — eventing and the FHIR R4B connector
+//! - [`event_subscription`] + [`fhir`] — eventing and the FHIR R4 connector
 //!   (enterprise features E1/E3); nothing in SM/ITS-REST governs them.
 //! - [`tenant_routes`] — multi-tenancy (enterprise feature E2); zero spec
 //!   mentions.

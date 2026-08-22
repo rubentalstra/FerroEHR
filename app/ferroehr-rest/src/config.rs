@@ -29,7 +29,7 @@ pub struct AppConfig {
     pub tenancy: TenancyConfig,
     /// `[smart]` — SMART App Launch resource-server posture.
     pub smart: SmartConfig,
-    /// `[fhir].api_enabled` — mount the FHIR R4B inbound façade + admin mapping.
+    /// `[fhir].api_enabled` — mount the FHIR R4 inbound façade + admin mapping.
     pub fhir_api_enabled: bool,
     /// `[terminology].api_enabled` — mount the terminology extension API.
     pub terminology_api_enabled: bool,

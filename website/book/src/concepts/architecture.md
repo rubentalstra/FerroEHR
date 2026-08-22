@@ -50,7 +50,7 @@ regeneration, not a rewrite. That layer is also published for reuse, as
 **The application layer is the server** — everything the generated layer does
 not give you: storage, the query execution engine, validation, and security.
 This is where design choices specific to FerroEHR live. The optional
-integrations (FHIR R4B, change events, S3 multimedia) sit beside it in their own
+integrations (FHIR R4, change events, S3 multimedia) sit beside it in their own
 crate behind additive cargo features, so a build without them contains none of
 their code — see [Beyond the core](../beyond-core/index.md).
 

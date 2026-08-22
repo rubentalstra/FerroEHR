@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! FHIR R4B `AuditEvent` rendering of the audit event model, following the
+//! FHIR R4 `AuditEvent` rendering of the audit event model, following the
 //! IHE **BALP** (Basic Audit Log Patterns) content profiles.
 //!
 //! This is the modern half of the dual ATNA rendering (the classic half is
 //! the DICOM PS3.15 §A.5 XML in [`super::message`]): the same resolved
-//! [`super::event::AuditEvent`] renders to one FHIR R4B (4.3.0)
+//! [`super::event::AuditEvent`] renders to one FHIR R4
 //! `AuditEvent` JSON document. This module decides the BALP content; the
 //! resource itself is built and serialized by
-//! [`ferroehr_ext::fhir::audit`], over the typed `fhir-model` R4B model.
+//! [`ferroehr_ext::fhir::audit`], over the typed `fhir-model` model.
 //! The BALP profiles pin the codings this module emits (IHE BALP v1.1.4,
 //! `IHE.BasicAudit.*` StructureDefinitions):
 //!
@@ -44,7 +44,7 @@ use crate::system_log::AuditError;
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass};
 use crate::system_log::message::AuditContext;
 
-// ── Code systems (FHIR R4B / IHE BALP fixed bindings) ─────────────────────────
+// ── Code systems (FHIR R4 / IHE BALP fixed bindings) ──────────────────────────
 
 /// FHIR `audit-event-type` code system (`rest`).
 pub const SYS_AUDIT_EVENT_TYPE: &str = "http://terminology.hl7.org/CodeSystem/audit-event-type";
@@ -81,7 +81,7 @@ fn coding(system: &str, code: &str, display: &str) -> AuditCoding {
     }
 }
 
-/// Renders a resolved [`AuditEvent`] as a FHIR R4B `AuditEvent` document.
+/// Renders a resolved [`AuditEvent`] as a FHIR R4 `AuditEvent` document.
 ///
 /// The content follows the IHE BALP patterns, with the server identity from
 /// the [`AuditContext`] and the optionally-resolved patient subject id.

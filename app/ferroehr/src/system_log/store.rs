@@ -12,7 +12,7 @@
 //! §Access logging), so the store lives in its own `audit` schema, strictly
 //! outside the EHR data (`migrations/audit/0001_baseline.sql`).
 //!
-//! The canonical stored form is the **FHIR R4B `AuditEvent`** (IHE BALP
+//! The canonical stored form is the **FHIR R4 `AuditEvent`** (IHE BALP
 //! shape, rendered by the `fhir` cargo feature) in the `fhir` jsonb column —
 //! the exact document
 //! the RESTful-ATNA ITI-81 search serves; the promoted columns are derived

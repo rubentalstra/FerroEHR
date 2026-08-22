@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! End-to-end HTTP tests for the FHIR R4B connector API group (our own extension
+//! End-to-end HTTP tests for the FHIR R4 connector API group (our own extension
 //! — no openEHR spec governs this; E3): the config gate
 //! (`AppConfig::fhir_api_enabled`), the starter-scope `501`, the inbound
 //! `POST /fhir/r4/{resourceType}` outcomes, the `/admin/fhir_mapping` CRUD, and

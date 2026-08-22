@@ -5,7 +5,7 @@
 //! (`ferroehr::system_log::store`) against a real `PostgreSQL` 18
 //! (shared testkit harness): the `audit` schema migrates cleanly alongside
 //! `ext`/`ehr`, inserted records land with the promoted search columns and
-//! the FHIR R4B `AuditEvent` payload (IHE BALP shape), and the retention
+//! the FHIR R4 `AuditEvent` payload (IHE BALP shape), and the retention
 //! reaper deletes only rows older than the horizon (0 = keep forever).
 //! No openEHR spec governs audit storage — our own design/extension (the
 //! schema-separation rationale is BASE
