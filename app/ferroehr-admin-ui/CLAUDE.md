@@ -81,6 +81,13 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   read returns `Ok(None)` for it and the screen renders the absence it means
   (the browser's whole-screen disabled card; a silently optionless datalist in the
   builder). Never add a second terminology client.
+- **Every BFF fan-out is bounded by ONE constant — `cdr::FANOUT_CONCURRENCY`**:
+  a `#[server]` fn that issues N CDR requests for one screen runs them
+  `futures::stream::iter(…).buffered(FANOUT_CONCURRENCY)`, never a serial await
+  chain and never an unbounded burst (the dashboard namespace tiles, `/system`'s
+  repository-usage counts, the directory history window). `try_collect` keeps a
+  serial loop's short circuit where the caller had one. Never write a second
+  concurrency literal.
 - **Every events-per-day chart comes from ONE kit — `components::activity_chart`
   over `crate::activity::bucket_by_day`**: the dashboard's commit trend and an
   EHR's contribution timeline are the same chart, the day-bucketing is a pure
@@ -145,6 +152,18 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   format-negotiating one), commit history ← the revision history, the VERSION's
   envelope facts (lifecycle state, preceding version, contribution, signature)
   ← the direct VERSIONED_COMPOSITION version read.
+- **The operational template is read ONCE per template-detail render**:
+  `pages::template_detail::fetch_template_detail` fetches the OPT and distils
+  all three panes from that one document (source, identity card, WT path
+  catalog) through the pure `template_detail_from_opt`; every pane takes the
+  same handle. The Query Builder's `fetch_template_catalog` rides the same
+  pipeline and returns the catalog alone, so its wire payload stays the tree.
+  Never add a second GET of `definition/template/adl1.4/{id}`.
+- **Directory history is a WINDOW, never a walk**: ITS-REST exposes no
+  VERSIONED_FOLDER revision history (register AMB-24, upstream report #1490),
+  so `list_directory_versions` synthesizes the uid list and reads the newest
+  `PAGE_SIZE` of it concurrently; the rest is reached by the panel's explicit
+  "load older", one page per click. There is deliberately no "load all".
 - **EHR_STATUS split**: the *current* status document is read ONCE per
   EHR-detail screen — `pages::ehr_detail::status::status_feed`, created in the
   page's setup and shared by its two consumers: the header's identity strip

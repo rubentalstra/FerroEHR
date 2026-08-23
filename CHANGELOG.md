@@ -116,6 +116,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Admin console: the directory history panel loads a bounded window of the
+  newest versions (with a "Load older versions" affordance) instead of one
+  request per version back to v1, and opening the history of a logically
+  deleted directory shows the empty state instead of a bogus row; the
+  template detail screen fetches and parses its OPT once instead of three
+  times; the `/system` repository-usage card runs its per-template counts
+  concurrently and says when it is showing a truncated list.
+
 - Admin console: a CDR-refused session (`401`) and a wrong-role refusal
   (`403`) now read as two different situations with two different next
   actions — previously both collapsed into the same "forbidden" copy. The

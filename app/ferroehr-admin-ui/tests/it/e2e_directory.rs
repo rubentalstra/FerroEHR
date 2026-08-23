@@ -425,6 +425,150 @@ async fn directory_history_and_restore_journey() {
     h.finish().await;
 }
 
+/// Commit one version of the EHR's directory over ITS-REST and return the new
+/// `OBJECT_VERSION_ID`. `previous` is the `If-Match` precondition — `None`
+/// creates the directory (v1), `Some(uid)` supersedes that version.
+///
+/// Seeding a deep history through the tree editor would be dozens of hydrated
+/// click/save cycles; what this journey is about is the READ side of that
+/// history, so the versions arrive at the wire.
+///
+/// # Panics
+/// When the CDR refuses the write or answers without a `uid.value`.
+async fn commit_directory_version(
+    cdr: &str,
+    user: &str,
+    pass: &str,
+    ehr_id: &str,
+    name: &str,
+    previous: Option<&str>,
+) -> String {
+    let client = reqwest::Client::new();
+    let url = format!("{cdr}/ferroehr/rest/openehr/v1/ehr/{ehr_id}/directory");
+    let request = match previous {
+        None => client.post(&url),
+        Some(uid) => client.put(&url).header("If-Match", format!("\"{uid}\"")),
+    };
+    let body: serde_json::Value = request
+        .basic_auth(user, Some(pass))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("Prefer", "return=representation")
+        .json(&serde_json::json!({
+            "_type": "FOLDER",
+            "archetype_node_id": "openEHR-EHR-FOLDER.directory.v1",
+            "name": { "_type": "DV_TEXT", "value": name },
+            "folders": [],
+            "items": [],
+        }))
+        .send()
+        .await
+        .expect("commit a directory version")
+        .error_for_status()
+        .expect("the CDR accepted the directory version")
+        .json()
+        .await
+        .expect("the committed directory");
+    body.pointer("/uid/value")
+        .and_then(serde_json::Value::as_str)
+        .expect("the committed directory's uid")
+        .to_owned()
+}
+
+/// The exact-match `XPath` for one history row's button — `v1` must never
+/// match `v10`, which is precisely what a deep history puts on screen.
+fn history_row_xpath(number: u32) -> String {
+    format!("//button[.//span[normalize-space(text())='v{number}']]")
+}
+
+/// Journey: a history deeper than one window — the panel loads only the newest
+/// page, "load older" reaches the versions below it, and a version reached
+/// that way still restores.
+///
+/// The console cannot ask the CDR for a FOLDER revision history (ITS-REST
+/// 1.1.0 exposes none — register AMB-24, upstream report #1490), so it
+/// synthesizes the uid list and reads it in windows; this journey is the proof
+/// that the window is real and that the rest stays reachable.
+#[tokio::test]
+async fn directory_history_load_older_journey() {
+    let Some(h) = Harness::start("directory-history-older").await else {
+        return;
+    };
+    let (Some(cdr), Some(user), Some(pass)) = (
+        env("UI_E2E_CDR_URL"),
+        env("UI_E2E_BASIC_USER"),
+        env("UI_E2E_BASIC_PASS"),
+    ) else {
+        println!("SKIP directory-history-older: seeding needs UI_E2E_CDR_URL/UI_E2E_BASIC_*");
+        h.finish().await;
+        return;
+    };
+    login_basic(&h).await;
+    let ehr_id = create_ehr(&h).await;
+
+    // Two versions past one window, so the first page stops at v3 and the
+    // oldest two are only reachable through "load older".
+    let deepest = ferroehr_admin_ui::components::data_table::PAGE_SIZE + 2;
+    let mut previous: Option<String> = None;
+    for number in 1..=deepest {
+        let uid = commit_directory_version(
+            &cdr,
+            &user,
+            &pass,
+            &ehr_id,
+            &format!("revision {number}"),
+            previous.as_deref(),
+        )
+        .await;
+        previous = Some(uid);
+    }
+
+    h.goto(&format!("/ehrs/{ehr_id}?tab=directory")).await;
+    h.wait_hydrated().await;
+    h.wait_toasts_cleared().await;
+    h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
+        .await
+        .click()
+        .await
+        .expect("open version history");
+
+    // The newest version heads the list; the whole first window renders from
+    // one resolution, so v1's absence beside it is a settled fact, not a race.
+    h.wait_xpath(&history_row_xpath(deepest)).await;
+    let oldest_rows = h
+        .driver
+        .find_all(By::XPath(history_row_xpath(1)))
+        .await
+        .expect("query the oldest history row");
+    assert!(
+        oldest_rows.is_empty(),
+        "the initial history load must stop at the newest window, but v1 of {deepest} was listed"
+    );
+    h.shot(1, "history-first-window").await;
+
+    // "Load older" widens the window by another page and reaches v1.
+    h.wait_css("#directory-history-older")
+        .await
+        .click()
+        .await
+        .expect("load older versions");
+    let oldest = h.wait_xpath(&history_row_xpath(1)).await;
+    oldest.click().await.expect("select v1");
+    h.shot(2, "history-older-loaded").await;
+
+    // …and restoring it still commits, which is the half a listing test cannot
+    // prove: the restore PUTs v1's tree against the current latest If-Match.
+    h.wait_toasts_cleared().await;
+    h.wait_xpath("//button[contains(normalize-space(.), 'Restore this version')]")
+        .await
+        .click()
+        .await
+        .expect("restore v1 from the widened window");
+    h.wait_xpath(&history_row_xpath(deepest + 1)).await;
+    h.assert_console_clean(&[]).await;
+    h.finish().await;
+}
+
 /// Journey: the two-step delete — confirm, the deleted/empty state renders
 /// the create flow again, and (per RM master06 §Logical Deletion + our
 /// live-slot rule) creating a NEW directory afterwards succeeds.

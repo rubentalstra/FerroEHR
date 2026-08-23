@@ -208,49 +208,83 @@ fn template_usage_body(template_id: &str) -> String {
     )
 }
 
-/// Per-template composition counts ("repo usage"; measured ~0.3 s per
-/// count AQL — plain AQL suffices, no CDR stats endpoint). Bounded to the
-/// first 25 templates, sorted by count descending.
+/// How many templates the repository-usage card counts.
+#[cfg(feature = "ssr")]
+const USAGE_TEMPLATES: usize = 25;
+
+/// Count the compositions committed under one template, via `POST query/aql`.
+#[cfg(feature = "ssr")]
+async fn template_count(
+    state: &crate::state::AppState,
+    session: &crate::session::AdminSession,
+    template_id: String,
+) -> Result<(String, i64), AdminUiError> {
+    let url = state.cdr.rest_v1("query/aql");
+    let response = state
+        .cdr
+        .post(
+            &session.credential,
+            &url,
+            "application/json",
+            "application/json",
+            &[],
+            template_usage_body(&template_id),
+        )
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    let count = serde_json::from_str::<serde_json::Value>(&response.body)
+        .ok()
+        .and_then(|v| {
+            v.get("rows")?
+                .as_array()?
+                .first()?
+                .as_array()?
+                .first()?
+                .as_i64()
+        })
+        .unwrap_or(0);
+    Ok((template_id, count))
+}
+
+/// Per-template composition counts ("repo usage") — one count AQL per
+/// template, plain AQL (no CDR stats endpoint exists). Bounded to the first
+/// `USAGE_TEMPLATES` templates, sorted by count descending; the second
+/// member is the repository's total template count, so the card can say
+/// when it is showing a truncated list.
+///
+/// The counts fan out with the shared bounded concurrency
+/// ([`FANOUT_CONCURRENCY`](crate::cdr::FANOUT_CONCURRENCY)) rather than a
+/// serial await chain, so the card's latency is the slowest batch instead of
+/// the sum of every count. `buffered` yields in input order, so the sort below
+/// still breaks ties by the template listing's order, and `try_collect` keeps
+/// the serial loop's short circuit: a refused count abandons the rest.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR errors
 /// normalized by the underlying calls.
 #[server]
-pub async fn template_usage() -> Result<Vec<(String, i64)>, AdminUiError> {
+pub async fn template_usage() -> Result<(Vec<(String, i64)>, u32), AdminUiError> {
+    use futures::stream::{StreamExt, TryStreamExt};
+
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
     let templates = crate::pages::templates::list_templates().await?;
-    let mut usage = Vec::new();
-    for row in templates.into_iter().take(25) {
-        let body = template_usage_body(&row.template_id);
-        let url = state.cdr.rest_v1("query/aql");
-        let response = state
-            .cdr
-            .post(
-                &session.credential,
-                &url,
-                "application/json",
-                "application/json",
-                &[],
-                body,
-            )
-            .await?;
-        let response = crate::cdr::CdrClient::expect_success(response)?;
-        let count = serde_json::from_str::<serde_json::Value>(&response.body)
-            .ok()
-            .and_then(|v| {
-                v.get("rows")?
-                    .as_array()?
-                    .first()?
-                    .as_array()?
-                    .first()?
-                    .as_i64()
-            })
-            .unwrap_or(0);
-        usage.push((row.template_id, count));
-    }
+    let total = u32::try_from(templates.len()).unwrap_or(u32::MAX);
+    // Borrowed once outside the stream: each fan-out future captures the two
+    // references by copy, which keeps the `#[server]` boundary's future sized.
+    let state = &state;
+    let session = &session;
+    let mut usage: Vec<(String, i64)> = futures::stream::iter(
+        templates
+            .into_iter()
+            .take(USAGE_TEMPLATES)
+            .map(|row| template_count(state, session, row.template_id)),
+    )
+    .buffered(crate::cdr::FANOUT_CONCURRENCY)
+    .try_collect()
+    .await?;
     usage.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
-    Ok(usage)
+    Ok((usage, total))
 }
 
 /// The `/system` screen: the CDR's status document, the conformance-manifest
@@ -397,7 +431,7 @@ fn usage_card() -> AnyView {
             {move || {
                 Suspend::new(async move {
                     match resource.await {
-                        Ok(rows) if rows.is_empty() => {
+                        Ok((rows, _)) if rows.is_empty() => {
                             view! {
                                 <EmptyState
                                     icon=icondata_lu::LuFileCode2
@@ -407,7 +441,9 @@ fn usage_card() -> AnyView {
                             }
                                 .into_any()
                         }
-                        Ok(rows) => {
+                        Ok((rows, total)) => {
+                            let shown = rows.len();
+                            let truncated = usize::try_from(total).is_ok_and(|t| t > shown);
                             let body = rows
                                 .into_iter()
                                 .map(|(template_id, count)| {
@@ -423,10 +459,25 @@ fn usage_card() -> AnyView {
                                 })
                                 .collect_view()
                                 .into_any();
-                            crate::components::data_table::table_shell(
+                            let table = crate::components::data_table::table_shell(
                                 &["Template", "Compositions"],
                                 body,
-                            )
+                            );
+                            if truncated {
+                                view! {
+                                    <div>
+                                        {table}
+                                        <p class="mt-2 text-xs text-ink-muted">
+                                            {format!(
+                                                "Showing the {shown} busiest of {total} templates.",
+                                            )}
+                                        </p>
+                                    </div>
+                                }
+                                    .into_any()
+                            } else {
+                                table
+                            }
                         }
                         Err(e) => crate::components::format_view::inline_error(&e),
                     }

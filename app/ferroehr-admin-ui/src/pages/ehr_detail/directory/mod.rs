@@ -90,6 +90,20 @@ pub struct DirectoryVersion {
     pub is_latest: bool,
 }
 
+/// One window of the directory's version history: the rows the panel shows
+/// plus whether older versions remain beyond them.
+///
+/// The default is the empty history (no rows, nothing older), which is what an
+/// unopened panel and an EHR without a directory both read as.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DirectoryHistory {
+    /// The fetched versions, newest first.
+    pub versions: Vec<DirectoryVersion>,
+    /// Whether versions older than the last row exist — what the panel's
+    /// "load older" affordance is gated on.
+    pub has_older: bool,
+}
+
 /// The outcome of a `version_at_time` directory read: present, deleted at that
 /// time (`204`), or no directory at that time (`404`) — the three distinct
 /// states the time-travel panel renders.
@@ -357,12 +371,22 @@ pub async fn delete_directory(
     Ok(())
 }
 
-/// Enumerate the EHR's directory version history newest-first. The current
-/// FOLDER is read to obtain the latest `version_uid`
-/// (`object_id::system::N`); versions `N` down to `1` are then read by
+/// Read the newest `window` versions of the EHR's directory, newest first.
+///
+/// The current FOLDER is read to obtain the latest `version_uid`
+/// (`object_id::system::N`); the window's version numbers are then read by
 /// constructed `version_uid` (`GET /ehr/{ehr_id}/directory/{version_uid}`,
 /// ITS-REST `specifications/operations/directory_get_by_version_id.yaml`),
-/// stopping at the first `404`. An empty list means the EHR has no directory.
+/// concurrently with the shared bound
+/// ([`FANOUT_CONCURRENCY`](crate::cdr::FANOUT_CONCURRENCY)) and truncated at
+/// the first `404`. An empty list means the EHR has no directory.
+///
+/// The request count is therefore `1 + min(window, N)` regardless of how deep
+/// the history runs; the rest is reached by asking for a wider window.
+///
+/// NOTE: ITS-REST 1.1.0 exposes no VERSIONED_FOLDER revision history (register
+/// AMB-24, upstream report #1490), so the uid list is synthesized from the
+/// latest version number rather than read from the CDR.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -372,7 +396,11 @@ pub async fn delete_directory(
 pub async fn list_directory_versions(
     /// The EHR whose directory version list to read.
     ehr_id: String,
-) -> Result<Vec<DirectoryVersion>, AdminUiError> {
+    /// How many of the newest versions to read.
+    window: u32,
+) -> Result<DirectoryHistory, AdminUiError> {
+    use futures::stream::{StreamExt, TryStreamExt};
+
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
     let base = state
@@ -382,38 +410,72 @@ pub async fn list_directory_versions(
         .cdr
         .get(&session.credential, &base, "application/json")
         .await?;
-    if current.is(http::StatusCode::NOT_FOUND) {
-        return Ok(Vec::new());
+    // 204 = a logically deleted directory (the same split `fetch_directory`
+    // makes): there is no live version to anchor the walk, so the panel
+    // renders the empty state instead of a bogus row built from the empty
+    // body.
+    if current.is(http::StatusCode::NOT_FOUND) || current.is(http::StatusCode::NO_CONTENT) {
+        return Ok(DirectoryHistory::default());
     }
     let current_body = crate::cdr::CdrClient::expect_success(current)?.body;
     let latest_uid = uid_value_of(&current_body);
     let Some((prefix, latest_n)) = split_version_uid(&latest_uid) else {
         // A non-integer version tree id (a branch) — surface just the latest.
-        return Ok(vec![summarize_directory_version(&current_body, 1, true)]);
+        return Ok(DirectoryHistory {
+            versions: vec![summarize_directory_version(&current_body, 1, true)],
+            has_older: false,
+        });
     };
-    let mut out = Vec::new();
-    for number in (1..=latest_n).rev() {
-        let uid = format!("{prefix}::{number}");
-        let url = state.cdr.rest_v1(&format!(
-            "ehr/{}/directory/{}",
-            urlencoding::encode(&ehr_id),
-            urlencoding::encode(&uid)
-        ));
-        let response = state
-            .cdr
-            .get(&session.credential, &url, "application/json")
-            .await?;
-        if response.is(http::StatusCode::NOT_FOUND) {
-            break;
-        }
-        let body = crate::cdr::CdrClient::expect_success(response)?.body;
-        out.push(summarize_directory_version(
-            &body,
-            number,
-            number == latest_n,
-        ));
-    }
-    Ok(out)
+    let numbers = version_window(latest_n, window);
+    let requested = numbers.len();
+    let oldest_requested = numbers.last().copied().unwrap_or(latest_n);
+    let (state, session, ehr_id, prefix) = (&state, &session, &ehr_id, &prefix);
+    let fetched: Vec<Option<DirectoryVersion>> =
+        futures::stream::iter(numbers.into_iter().map(|number| async move {
+            let uid = format!("{prefix}::{number}");
+            let url = state.cdr.rest_v1(&format!(
+                "ehr/{}/directory/{}",
+                urlencoding::encode(ehr_id),
+                urlencoding::encode(&uid)
+            ));
+            let response = state
+                .cdr
+                .get(&session.credential, &url, "application/json")
+                .await?;
+            if response.is(http::StatusCode::NOT_FOUND) {
+                return Ok(None);
+            }
+            let body = crate::cdr::CdrClient::expect_success(response)?.body;
+            Ok::<_, AdminUiError>(Some(summarize_directory_version(
+                &body,
+                number,
+                number == latest_n,
+            )))
+        }))
+        .buffered(crate::cdr::FANOUT_CONCURRENCY)
+        .try_collect()
+        .await?;
+    // A `404` inside the window ends the history the same way the serial walk
+    // did: nothing below a missing synthesized uid was ever committed.
+    let versions: Vec<DirectoryVersion> = fetched
+        .into_iter()
+        .take_while(Option::is_some)
+        .flatten()
+        .collect();
+    let truncated = versions.len() < requested;
+    Ok(DirectoryHistory {
+        has_older: !truncated && oldest_requested > 1,
+        versions,
+    })
+}
+
+/// The version numbers one history window covers, newest first: at most
+/// `window` numbers ending at `latest_n`, never below `1`.
+#[cfg(feature = "ssr")]
+fn version_window(latest_n: i32, window: u32) -> Vec<i32> {
+    let window = i32::try_from(window).unwrap_or(i32::MAX).max(1);
+    let oldest = latest_n.saturating_sub(window).saturating_add(1).max(1);
+    (oldest..=latest_n).rev().collect()
 }
 
 /// Read the directory FOLDER as it stood at `version_at_time`
@@ -742,15 +804,22 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     let time_input = RwSignal::new(String::new());
     let path_input = RwSignal::new(String::new());
 
+    // How much of the history the panel currently holds. It starts at one
+    // console page and grows by another page per "load older" click, so the
+    // initial load is bounded no matter how deep the version tree runs
+    // (the read side of AMB-24 / #1490 — see `list_directory_versions`).
+    let history_window = RwSignal::new(crate::components::data_table::PAGE_SIZE);
     let versions = Resource::new(
         move || {
             let refresh = write_version.get();
-            (selected.get() == "directory" && history_open.get()).then(|| (ehr_id.get(), refresh))
+            let window = history_window.get();
+            (selected.get() == "directory" && history_open.get())
+                .then(|| (ehr_id.get(), refresh, window))
         },
         |active| async move {
             match active {
-                Some((id, _)) => list_directory_versions(id).await,
-                None => Ok(Vec::new()),
+                Some((id, _, window)) => list_directory_versions(id, window).await,
+                None => Ok(DirectoryHistory::default()),
             }
         },
     );
@@ -787,7 +856,14 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         time_open,
         path_open,
     );
-    let history = panels::history_panel(ehr_id, directory, versions, restore, history_open);
+    let history = panels::history_panel(
+        ehr_id,
+        directory,
+        versions,
+        restore,
+        history_open,
+        history_window,
+    );
     let time = panels::time_travel_panel(at_time, time_input, time_open);
     let path = panels::path_panel(at_path, path_input, path_open);
 
@@ -869,7 +945,7 @@ mod tests {
     use super::{
         DIRECTORY_ARCHETYPE, FOLDER_NODE_ID, directory_state, directory_toast_detail,
         empty_root_folder, folder_json, is_conflict, split_version_uid,
-        summarize_directory_version,
+        summarize_directory_version, version_window,
     };
     use crate::error::AdminUiError;
 
@@ -960,6 +1036,28 @@ mod tests {
         assert_eq!(v.folder_count, 1);
         assert_eq!(v.item_count, 0);
         assert!(v.is_latest);
+    }
+
+    #[test]
+    fn a_history_window_covers_the_newest_versions_only() {
+        // The panel's first page over a deep history: 25 numbers, newest first,
+        // and the walk never reaches v1 — which is the whole point (#2606).
+        let window = version_window(400, 25);
+        assert_eq!(window.len(), 25);
+        assert_eq!(window.first(), Some(&400));
+        assert_eq!(window.last(), Some(&376));
+    }
+
+    #[test]
+    fn a_history_window_stops_at_the_first_version() {
+        // A window wider than the history yields the whole history once, never
+        // a synthesized `::0` uid.
+        assert_eq!(version_window(3, 25), vec![3, 2, 1]);
+        assert_eq!(version_window(1, 25), vec![1]);
+        // A zero window would fetch nothing and hide the history entirely.
+        assert_eq!(version_window(4, 0), vec![4]);
+        // A window past i32 clamps instead of overflowing the version numbers.
+        assert_eq!(version_window(2, u32::MAX), vec![2, 1]);
     }
 
     #[test]
