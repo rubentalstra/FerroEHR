@@ -41,14 +41,6 @@ CREATE TABLE event_subscription (
     -- template_id: the OPT template a COMPOSITION was committed against (NULL for
     -- EHR_STATUS/FOLDER/deletes). A predicate NULL = any template.
     template_id  text,
-    -- archetype: the root archetype/concept id. NULL = any archetype. NOTE
-    --: the topic routing key is the fixed three-field
-    -- <kind>.<change_type>.<template_id|-> — it carries NO archetype segment, so
-    -- this predicate is persisted as part of the full subscription model but is
-    -- NOT expressible in a topic binding key today (broker-side archetype
-    -- filtering would need a header exchange or a consumer-side filter — deferred
-    -- with the AQL-shaped condition language).
-    archetype    text,
     -- Whether the subscription is active: the publisher declares/binds a queue
     -- only for enabled subscriptions. Disabled = retained but not bound.
     enabled      boolean NOT NULL DEFAULT true,
@@ -68,7 +60,6 @@ COMMENT ON COLUMN event_subscription.name IS 'Subscription name; also the suffix
 COMMENT ON COLUMN event_subscription.kind IS 'Predicate: versioned-object RM type (COMPOSITION/EHR_STATUS/FOLDER/EHR_ACCESS). NULL = wildcard (any kind).';
 COMMENT ON COLUMN event_subscription.change_type IS 'Predicate: audit change-type group code (249/251/523/666/…). NULL = wildcard (any change type).';
 COMMENT ON COLUMN event_subscription.template_id IS 'Predicate: OPT template id a COMPOSITION was committed against. NULL = wildcard (any template).';
-COMMENT ON COLUMN event_subscription.archetype IS 'Predicate: root archetype/concept id. NULL = wildcard. NOTE: not expressible in the three-field topic routing key — persisted but not broker-routable today.';
 COMMENT ON COLUMN event_subscription.enabled IS 'Whether the subscription is active (its queue is declared/bound). Disabled rows are retained but unbound.';
 
 -- ── Grants ──────────────────────────────────────────────────────

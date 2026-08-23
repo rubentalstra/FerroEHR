@@ -280,7 +280,6 @@ async fn create_and_assert_row(h: &Harness) {
     )
     .await;
     // A predicate never set reads as the wildcard, not as an empty cell.
-    wait_text_contains(h, &row_cell(ROUND_TRIP_SUBSCRIPTION, "archetype"), "any").await;
     // …and the plain-words summary says what the row selects.
     wait_text_contains(
         h,

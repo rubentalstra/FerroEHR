@@ -196,3 +196,82 @@ async fn enabled_group_lists_real_store() {
     assert_eq!(status, StatusCode::OK);
     assert!(body.is_array());
 }
+
+/// The update is a full replace whose intent must be complete (#2598): a PUT
+/// omitting `enabled` is refused — measured pre-fix, it silently re-enabled a
+/// deliberately disabled subscription — and the disabled state survives.
+#[tokio::test]
+async fn a_put_omitting_enabled_is_refused_and_cannot_reenable() {
+    let (_pg, a) = app(true).await;
+    let (status, created) = send(
+        a.clone(),
+        req(
+            "POST",
+            GROUP,
+            Some(json!({ "name": "replace-honesty", "enabled": true })),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "{created}");
+    let id = created["id"].as_str().expect("id").to_owned();
+
+    // Disable explicitly.
+    let (status, disabled) = send(
+        a.clone(),
+        req(
+            "PUT",
+            &format!("{GROUP}/{id}"),
+            Some(json!({ "enabled": false })),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{disabled}");
+    assert_eq!(disabled["enabled"], false);
+
+    // A partial replace omitting `enabled` is the caller's incomplete intent.
+    let (status, refused) = send(
+        a.clone(),
+        req(
+            "PUT",
+            &format!("{GROUP}/{id}"),
+            Some(json!({ "kind": "COMPOSITION" })),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{refused}");
+    assert!(
+        refused["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("enabled")),
+        "the refusal names the field: {refused}"
+    );
+
+    // The deliberate disable survived the refused replace.
+    let (_s, read) = send(a, req("GET", &format!("{GROUP}/{id}"), None)).await;
+    assert_eq!(read["enabled"], false, "{read}");
+}
+
+/// An unknown body key is refused loudly (#2599's removal follow-through): a
+/// client still sending the removed `archetype` predicate gets a 400, never a
+/// silent drop — while echoed read-only members from a prior GET stay
+/// tolerated (the crud round trip pins that).
+#[tokio::test]
+async fn an_unknown_predicate_key_is_refused_never_dropped() {
+    let (_pg, a) = app(true).await;
+    let (status, body) = send(
+        a,
+        req(
+            "POST",
+            GROUP,
+            Some(json!({ "name": "stale-client", "archetype": "openEHR-EHR-COMPOSITION.x.v1" })),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert!(
+        body["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("archetype")),
+        "the refusal names the unknown key: {body}"
+    );
+}
