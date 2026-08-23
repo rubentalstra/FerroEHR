@@ -736,6 +736,10 @@ fn folder_actions(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
 /// identity (rules §4). Both live positions are re-derived per use: the folder
 /// path from `parent_key` ([`find_path_by_key`]), the item index from
 /// `item_key` ([`find_item_index`]).
+///
+/// The row carries its referenced id as `data-item-id`, so a reader (and the
+/// sibling-delete browser journey) can name WHICH reference a row is rather
+/// than counting rows.
 fn render_item(ed: TreeEditor, parent_key: String, item_key: String) -> AnyView {
     let summary_folder = parent_key.clone();
     let summary_item = item_key.clone();
@@ -753,8 +757,9 @@ fn render_item(ed: TreeEditor, parent_key: String, item_key: String) -> AnyView 
             }
         });
     };
+    let hook = id.clone();
     view! {
-        <li class="flex items-center gap-1 py-0.5 text-ink-muted">
+        <li class="flex items-center gap-1 py-0.5 text-ink-muted" data-item-id=hook>
             <leptos_icons::Icon icon=icondata_lu::LuFileText width="14" height="14" />
             <span class="mr-1 text-xs uppercase">{ref_type}</span>
             <span class="break-all font-mono text-xs">{id}</span>

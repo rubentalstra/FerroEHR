@@ -44,8 +44,8 @@ use crate::common;
 use reqwest::StatusCode;
 
 use common::{
-    Harness, confirm_in_dialog, env, login_basic_as, retype, wait_css_absent, wait_enabled,
-    wait_text, wait_text_contains,
+    Harness, clear_field, confirm_in_dialog, env, login_basic_as, retype, wait_css_absent,
+    wait_enabled, wait_text, wait_text_contains,
 };
 use thirtyfour::prelude::*;
 
@@ -177,43 +177,6 @@ async fn open_subscriptions(h: &Harness) {
             .is_err(),
         "the CDR under test runs with the event-subscription admin API disabled — set \
          FERROEHR__EVENTS__ADMIN_API=true on the composed `ferroehr` service"
-    );
-}
-
-/// Empty the field at `css` BY TYPING (an edit that CLEARS a predicate is the
-/// case that proves a blank field becomes the CDR's wildcard).
-///
-/// Deliberately not `WebDriver`'s element-clear command: measured on this
-/// journey, clearing that way empties the DOM value without the console's
-/// `on:input` listener ever running, so the form's state keeps the old value
-/// and the save sends it back — a green screen and a wrong wire. Backspacing
-/// is what a person does, and it fires the events the binding listens for.
-/// (`common::retype` is unaffected: the keystrokes it sends after clearing
-/// re-deliver the whole value.)
-///
-/// # Panics
-/// On any interaction failure, or when the field is not empty afterwards.
-async fn clear_field(h: &Harness, css: &str) {
-    let field = h.wait_css(css).await;
-    let held = field
-        .prop("value")
-        .await
-        .expect("read the field's value")
-        .unwrap_or_default();
-    let mut keys = String::from(Key::End.value());
-    keys.extend(std::iter::repeat_n(
-        Key::Backspace.value(),
-        held.chars().count(),
-    ));
-    field.send_keys(keys).await.expect("erase the field");
-    let left = field
-        .prop("value")
-        .await
-        .expect("read the field's value")
-        .unwrap_or_default();
-    assert!(
-        left.is_empty(),
-        "`{css}` still reads `{left}` after erasing"
     );
 }
 

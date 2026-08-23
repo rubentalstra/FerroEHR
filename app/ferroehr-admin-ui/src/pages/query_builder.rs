@@ -2391,11 +2391,12 @@ fn results_section(
     .into_any()
 }
 
-/// Result-export forms: two plain form-POSTs to the BFF `/export/aql` route so
-/// the download runs without WASM (progressive enhancement — the router does
-/// not intercept native forms). The hidden inputs track the screen's current
-/// query/parameters signals via `prop:value`; the route exports the query's own
-/// `LIMIT` window, or the CDR's default fetch limit. Shared with the raw editor.
+/// Result-export forms: two plain form-POSTs to the BFF `/export/aql` route —
+/// native submissions the client router does not intercept. Not a no-JS path:
+/// the pane hosting them renders only after a hydrated Run click, and the
+/// hidden inputs track the screen's query/parameters signals via `prop:value`
+/// (nothing lands in SSR markup). The route exports the query's own `LIMIT`
+/// window, or the CDR's default fetch limit. Shared with the raw editor.
 pub(crate) fn export_forms(current_aql: Signal<String>, params: Signal<String>) -> AnyView {
     view! {
         <div class="flex flex-wrap items-center gap-2">

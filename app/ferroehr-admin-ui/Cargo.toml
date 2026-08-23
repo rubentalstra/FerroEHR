@@ -161,8 +161,10 @@ tower.workspace = true
 thirtyfour.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 # The docs-shots journey seeds stored queries over the Definition API
-# directly (bypassing the UI) — a plain HTTP client for test setup.
-reqwest = { workspace = true }
+# directly (bypassing the UI) — a plain HTTP client for test setup. `form`
+# (test-only): the export journey re-posts the console's own
+# `<form method="post">` to /export/aql, which is url-encoded by definition.
+reqwest = { workspace = true, features = ["form"] }
 
 [lints]
 workspace = true

@@ -34,7 +34,7 @@ use reqwest::StatusCode;
 
 use std::path::{Path, PathBuf};
 
-use common::{Harness, env, login_basic, login_basic_as, wait_enabled};
+use common::{Harness, env, login_basic, login_basic_as, wait_enabled, wait_visible};
 use thirtyfour::prelude::*;
 
 /// The detail-route id of the fixture template the browse journeys upload; its
@@ -45,6 +45,36 @@ const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 /// itself over the Definition API rather than relying on a journey's leftovers
 /// (the `e2e_adl2` scenes clean up after themselves).
 const ADL2_TEMPLATE_ID: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0";
+
+/// Store the OPT capture fixture, so the template-detail screen has something
+/// to show whether or not another journey uploaded it first.
+///
+/// The upload is idempotent for a capture pass: `201` created, `409` already
+/// there. The fixture is the same operational template `scripts/ui-e2e.sh`
+/// seeds while bringing the stack up; seeding it here as well is what makes the
+/// detail capture unconditional.
+async fn seed_opt_fixture(cdr: &str, user: &str, pass: &str) {
+    let source = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
+    ))
+    .expect("the OPT fixture exists");
+    let status = reqwest::Client::new()
+        .post(format!(
+            "{cdr}/ferroehr/rest/openehr/v1/definition/template/adl1.4"
+        ))
+        .basic_auth(user, Some(pass))
+        .header("Content-Type", "application/xml")
+        .body(source)
+        .send()
+        .await
+        .expect("seed the OPT capture fixture")
+        .status();
+    assert!(
+        status == StatusCode::CREATED || status == StatusCode::CONFLICT,
+        "OPT capture fixture seed -> {status}"
+    );
+}
 
 /// Store the ADL2 capture fixture, so the ADL2 detail screen has something to
 /// show whether or not the journeys ran before this pass.
@@ -205,6 +235,62 @@ async fn pick_composition(h: &Harness) {
         .expect("pick the seeded composition");
 }
 
+/// The settle a themed capture needs: the console's surfaces animate
+/// `transition-colors`, and a screenshot racing the token switch freezes a
+/// half-themed frame. An animation wait, not a condition wait.
+const THEME_SETTLE: std::time::Duration = std::time::Duration::from_millis(700);
+
+/// Turn dark mode ON for this browser session and wait until it is applied.
+///
+/// The preference persists to `localStorage`, so one flip covers every screen
+/// the session visits afterwards.
+async fn enable_dark_mode(h: &Harness) {
+    h.wait_css("button[aria-label='Toggle dark mode']")
+        .await
+        .click()
+        .await
+        .expect("turn dark mode on");
+    h.wait_css("html.dark").await;
+    tokio::time::sleep(THEME_SETTLE).await;
+}
+
+/// Navigate to `path` and write its DARK variant.
+///
+/// Every navigation waits for `html.dark` again: the class is applied from a
+/// browser-only effect that re-reads the stored preference after hydration, so
+/// the server pass never carries it (rules §8).
+async fn capture_dark(h: &Harness, dir: &Path, path: &str, slug: &str, content: Option<&str>) {
+    h.goto(path).await;
+    h.wait_css("footer").await;
+    h.wait_css("html.dark").await;
+    if let Some(selector) = content {
+        h.wait_css(selector).await;
+    }
+    tokio::time::sleep(THEME_SETTLE).await;
+    shot_to(h, dir, slug).await;
+}
+
+/// [`capture_dark`] for a PROBE-GATED screen: skip with a printed reason when
+/// the screen renders its own disabled card, exactly as the light capture does.
+async fn capture_dark_gated(
+    h: &Harness,
+    dir: &Path,
+    path: &str,
+    slug: &str,
+    screen_css: &str,
+    disabled_css: &str,
+) {
+    h.goto(path).await;
+    h.wait_css(screen_css).await;
+    h.wait_css("html.dark").await;
+    if h.driver.find(By::Css(disabled_css)).await.is_ok() {
+        println!("SKIP docs-shots: {slug} not captured — the CDR under test does not serve it");
+        return;
+    }
+    tokio::time::sleep(THEME_SETTLE).await;
+    shot_to(h, dir, slug).await;
+}
+
 /// Write a full-window PNG for an already-prepared page state.
 async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
     let out = dir.join(format!("{slug}.png"));
@@ -246,6 +332,18 @@ async fn capture_documentation_screenshots() {
 
     login_basic(&h).await;
 
+    // Both template families' capture fixtures, seeded by this pass itself so
+    // every template screen is captured unconditionally rather than depending
+    // on what an earlier journey happened to leave behind.
+    if let (Some(cdr), Some(user), Some(pass)) = (
+        env("UI_E2E_CDR_URL"),
+        env("UI_E2E_BASIC_USER"),
+        env("UI_E2E_BASIC_PASS"),
+    ) {
+        seed_opt_fixture(&cdr, &user, &pass).await;
+        seed_adl2_fixture(&cdr, &user, &pass).await;
+    }
+
     // The authenticated screens, each with a stable content marker so the shot
     // is taken after the screen's primary content has rendered.
     capture(&h, &dir, "/", "dashboard/dashboard", None).await;
@@ -257,39 +355,17 @@ async fn capture_documentation_screenshots() {
         Some("input[type=file]"),
     )
     .await;
-
-    // The template-detail shot needs the fixture template present (the browse
-    // journeys upload it earlier in the same stacked run).
-    if h.driver
-        .find(By::Css("a[href='/templates/minimal_evaluation.en.v1']"))
-        .await
-        .is_ok()
-    {
-        capture(
-            &h,
-            &dir,
-            &format!("/templates/{TEMPLATE_ID}"),
-            "templates/template-detail",
-            Some("ul.text-sm li"),
-        )
-        .await;
-    } else {
-        println!(
-            "TODO docs-shots: template-detail skipped — `{TEMPLATE_ID}` not present on the stack \
-             (run the browse journeys first to seed it)"
-        );
-    }
+    capture(
+        &h,
+        &dir,
+        &format!("/templates/{TEMPLATE_ID}"),
+        "templates/template-detail",
+        Some("ul.text-sm li"),
+    )
+    .await;
 
     // The ADL2 family of the same screen: the listing with its source-upload
-    // card, then the detail's version bar + stored-source pane. Both need the
-    // ADL2 fixture present, which this pass seeds itself.
-    if let (Some(cdr), Some(user), Some(pass)) = (
-        env("UI_E2E_CDR_URL"),
-        env("UI_E2E_BASIC_USER"),
-        env("UI_E2E_BASIC_PASS"),
-    ) {
-        seed_adl2_fixture(&cdr, &user, &pass).await;
-    }
+    // card, then the detail's version bar + stored-source pane.
     capture(
         &h,
         &dir,
@@ -742,29 +818,128 @@ async fn capture_documentation_screenshots() {
         .await;
     shot_to(&h, &dir, "dashboard/scopes-drawer").await;
 
-    // Dark mode (one representative capture; the toggle persists, so flip
-    // back afterwards to leave the session light for any later steps).
+    // Dark mode: flipped ONCE (the preference persists for the rest of this
+    // session) and then swept over the same screens, so the book documents the
+    // whole console in both themes rather than one representative shot. The
+    // sweep is this session's last act, so the theme is never flipped back.
     h.goto("/").await;
-    h.wait_css("button[aria-label='Toggle dark mode']")
-        .await
-        .click()
-        .await
-        .expect("dark on");
-    h.wait_css("html.dark").await;
-    // The tiles animate `transition-colors`; a capture racing the token
-    // switch freezes a half-themed frame. Fixed settle for the CSS
-    // transition duration — an animation wait, not a condition wait.
-    tokio::time::sleep(std::time::Duration::from_millis(700)).await;
+    enable_dark_mode(&h).await;
     shot_to(&h, &dir, "dashboard/dashboard-dark").await;
-    h.wait_css("button[aria-label='Toggle dark mode']")
-        .await
-        .click()
-        .await
-        .expect("dark off");
+    dark_ordinary_screens(&h, &dir).await;
 
     h.finish().await;
 
     capture_admin_screens(&dir).await;
+}
+
+/// The DARK sweep over the screens the ORDINARY session can read.
+///
+/// Its admin-gated other half is [`dark_admin_screens`] — the same split the
+/// light captures make, and for the same reason: a screen reading an `/admin`
+/// route answers this session `403`, so a capture taken here would publish the
+/// console's refusal card.
+async fn dark_ordinary_screens(h: &Harness, dir: &Path) {
+    capture_dark(
+        h,
+        dir,
+        "/templates",
+        "templates/templates-dark",
+        Some("input[type=file]"),
+    )
+    .await;
+    capture_dark(
+        h,
+        dir,
+        "/queries/builder",
+        "queries/query-builder-dark",
+        Some("#qb-template"),
+    )
+    .await;
+    capture_dark(h, dir, "/ehrs", "ehrs/ehrs-dark", Some("#ehr-lookup")).await;
+    capture_dark(
+        h,
+        dir,
+        "/demographics/person",
+        "demographics/demographics-dark",
+        Some("#party-lookup"),
+    )
+    .await;
+    capture_dark(
+        h,
+        dir,
+        "/operations",
+        "operations/operations-dark",
+        Some("#ops-build-info"),
+    )
+    .await;
+    // The terminology surface is config-gated on the CDR side and answers as
+    // if unmounted when off; its READY marker is the descriptor card, so the
+    // gate here is presence rather than a disabled card.
+    h.goto("/terminology?terminology=openehr").await;
+    h.wait_css("footer").await;
+    h.wait_css("html.dark").await;
+    if h.driver
+        .find(By::Css("#terminology-descriptor"))
+        .await
+        .is_ok()
+    {
+        tokio::time::sleep(THEME_SETTLE).await;
+        shot_to(h, dir, "terminology/terminology-dark").await;
+    } else {
+        println!(
+            "SKIP docs-shots: terminology-dark not captured — the CDR under test serves \
+             [terminology] api_enabled = false"
+        );
+    }
+    // One EHR-detail tab, so the master-detail chrome is documented dark too.
+    if let Some(ehr_id) = env("UI_E2E_SEEDED_EHR_ID") {
+        capture_dark(
+            h,
+            dir,
+            &format!("/ehrs/{ehr_id}?tab=compositions"),
+            "ehrs/compositions/list-dark",
+            Some("#compositions-filter"),
+        )
+        .await;
+    } else {
+        println!("SKIP docs-shots: the dark EHR-detail capture needs UI_E2E_SEEDED_EHR_ID");
+    }
+}
+
+/// The DARK sweep over the ADMIN-gated screens, run inside the admin session
+/// that captured their light variants.
+async fn dark_admin_screens(h: &Harness, dir: &Path) {
+    h.goto("/").await;
+    enable_dark_mode(h).await;
+    capture_dark(h, dir, "/system", "system/system-dark", None).await;
+    capture_dark(h, dir, "/audit", "audit/audit-dark", Some("table tbody tr")).await;
+    capture_dark_gated(
+        h,
+        dir,
+        "/tenants",
+        "tenants/tenants-dark",
+        "#tenants-screen",
+        "#tenants-disabled",
+    )
+    .await;
+    capture_dark_gated(
+        h,
+        dir,
+        "/subscriptions",
+        "subscriptions/subscriptions-dark",
+        "#subscriptions-screen",
+        "#subscriptions-disabled",
+    )
+    .await;
+    capture_dark_gated(
+        h,
+        dir,
+        "/fhir",
+        "fhir/fhir-dark",
+        "#fhir-screen",
+        "#fhir-disabled",
+    )
+    .await;
 }
 
 /// Capture every screen whose data the CDR classes as ADMIN work, in one
@@ -917,13 +1092,7 @@ async fn capture_admin_screens(dir: &Path) {
         // thaw's dialog is never removed from the DOM (CSSTransition hides it
         // with `display: none`), so wait for VISIBILITY — presence would let the
         // capture race the open.
-        let confirm = h.wait_css("#ehr-delete-confirm").await;
-        for _ in 0..75 {
-            if confirm.is_displayed().await.unwrap_or(false) {
-                break;
-            }
-            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-        }
+        wait_visible(&h, "#ehr-delete-confirm").await;
         shot_to(&h, dir, "ehrs/ehr-admin-delete").await;
     } else {
         println!("SKIP docs-shots: the EHR delete needs UI_E2E_SEEDED_EHR_ID");
@@ -939,38 +1108,18 @@ async fn capture_admin_screens(dir: &Path) {
         .send_keys("ferroehr=debug,sqlx=warn")
         .await
         .expect("type the filter directives");
-    // The dialog surface is absent from the DOM until it opens, so the confirm
-    // button is looked up AFTER each click — and the click is retried, because
-    // one landing before hydration attaches the listener is simply lost and
-    // would otherwise publish a screenshot of the closed screen.
-    let mut opened = false;
-    for _ in 0..10 {
-        h.wait_css("#ops-log-apply")
-            .await
-            .click()
-            .await
-            .expect("open the log-filter dialog");
-        for _ in 0..10 {
-            if let Ok(confirm) = h.driver.find(By::Css("#ops-log-apply-confirm")).await
-                && confirm.is_displayed().await.unwrap_or(false)
-            {
-                opened = true;
-                break;
-            }
-            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-        }
-        if opened {
-            break;
-        }
-    }
-    if opened {
-        shot_to(&h, dir, "operations/operations-log-filter").await;
-    } else {
-        println!(
-            "TODO docs-shots: operations/operations-log-filter not captured — the confirmation \
-             dialog never opened (pre-hydration clicks exhausted)"
-        );
-    }
+    // One click, no retry: `Harness::goto` waits for the shell's hydration
+    // marker, so the listener is attached before anything here runs — a dialog
+    // that does not open is a defect to fail on, never a shot to skip.
+    h.wait_css("#ops-log-apply")
+        .await
+        .click()
+        .await
+        .expect("open the log-filter dialog");
+    wait_visible(&h, "#ops-log-apply-confirm").await;
+    shot_to(&h, dir, "operations/operations-log-filter").await;
+
+    dark_admin_screens(&h, dir).await;
 
     h.finish().await;
 }
