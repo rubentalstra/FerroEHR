@@ -116,6 +116,33 @@ async fn seed_fhir_mapping(cdr: &str, user: &str, pass: &str) {
     println!("fhir capture fixture seed -> {status}");
 }
 
+/// Store one event subscription so the subscriptions capture shows a populated
+/// table instead of its empty state.
+///
+/// Idempotent for a capture pass: `201` created, `409` already there. Any other
+/// answer leaves the table empty and the capture simply shows that; the shot is
+/// never skipped for it. It binds the same template
+/// `scripts/ui-e2e.sh` seeds while bringing the stack up.
+async fn seed_event_subscription(cdr: &str, user: &str, pass: &str) {
+    let status = reqwest::Client::new()
+        .post(format!(
+            "{cdr}/ferroehr/rest/openehr/v1/admin/event_subscription"
+        ))
+        .basic_auth(user, Some(pass))
+        .json(&serde_json::json!({
+            "name": "vitals-feed",
+            "kind": "COMPOSITION",
+            "change_type": "249",
+            "template_id": TEMPLATE_ID,
+            "enabled": true
+        }))
+        .send()
+        .await
+        .expect("seed the subscription capture fixture")
+        .status();
+    println!("event subscription capture fixture seed -> {status}");
+}
+
 /// The website book's screenshot directory (`website/book/src/admin-ui/img`),
 /// resolved from this crate's manifest dir (`app/ferroehr-admin-ui`).
 fn book_img_dir() -> PathBuf {
@@ -807,6 +834,28 @@ async fn capture_admin_screens(dir: &Path) {
         );
     } else {
         shot_to(&h, dir, "tenants/tenants").await;
+    }
+
+    // The event subscriptions: probe-gated on `[events] admin_api`, which the
+    // E2E stack enables (docker/admin-ui/e2e-env.yml). The capture seeds one
+    // subscription first, so the book shows a populated table rather than the
+    // empty state the journeys leave behind.
+    if let Some(cdr) = env("UI_E2E_CDR_URL") {
+        seed_event_subscription(&cdr, &admin_user, &admin_pass).await;
+    }
+    h.goto("/subscriptions").await;
+    h.wait_css("#subscriptions-screen").await;
+    if h.driver
+        .find(By::Css("#subscriptions-disabled"))
+        .await
+        .is_ok()
+    {
+        println!(
+            "SKIP docs-shots: subscriptions not captured — the CDR under test runs with \
+             [events] admin_api = false"
+        );
+    } else {
+        shot_to(&h, dir, "subscriptions/subscriptions").await;
     }
 
     // The FHIR connector: probe-gated on `[fhir] api_enabled`, which the E2E

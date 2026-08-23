@@ -700,7 +700,9 @@ fn facts_card(state: &EhrStatusState) -> AnyView {
             </div>
             <div class="text-sm">
                 <span class="font-medium text-ink-muted">"subject: "</span>
-                <span class="font-mono break-all text-ink">{subject}</span>
+                <span class="font-mono break-all text-ink" data-status-fact="subject">
+                    {subject}
+                </span>
             </div>
             <div class="text-sm">
                 <span class="font-medium text-ink-muted">"version: "</span>

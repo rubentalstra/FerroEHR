@@ -898,6 +898,12 @@ fn ehrs_row(row: &[Value]) -> AnyView {
 /// `Suspend`, which already re-runs on every query change (the list resource's
 /// source reads the same parameters), so tracking here would only add a
 /// dependency the closure already has.
+///
+/// Each step carries the same `data-page` hook the shared table footer's steps
+/// use (`prev`/`next`), so a journey addresses an offset control exactly as it
+/// addresses a footer one. The two never appear on the same screen: a table is
+/// either server-windowed (this control) or paged from rows in hand (the
+/// footer).
 pub(crate) fn paging_controls(
     offset: u32,
     row_count: usize,
@@ -917,7 +923,7 @@ pub(crate) fn paging_controls(
     let prev = (offset > 0).then(|| {
         let href = href_for(offset.saturating_sub(PAGE_SIZE));
         view! {
-            <A href=href attr:class=BTN_SECONDARY>
+            <A href=href attr:class=BTN_SECONDARY attr:data-page="prev">
                 "← Previous"
             </A>
         }
@@ -926,7 +932,7 @@ pub(crate) fn paging_controls(
     let next = full.then(|| {
         let href = href_for(offset.saturating_add(PAGE_SIZE));
         view! {
-            <A href=href attr:class=BTN_SECONDARY>
+            <A href=href attr:class=BTN_SECONDARY attr:data-page="next">
                 "Next →"
             </A>
         }
