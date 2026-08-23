@@ -710,7 +710,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         move || picker_target.with(Option::is_some).then(|| ehr_id.get()),
         |active| async move {
             match active {
-                Some(id) => crate::pages::ehr_detail::compositions::list_compositions(id, 0)
+                Some(id) => crate::pages::ehr_detail::compositions::all_compositions(id, 0)
                     .await
                     .map(Some),
                 None => Ok(None),

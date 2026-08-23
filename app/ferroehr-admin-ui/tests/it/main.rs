@@ -13,6 +13,7 @@ mod e2e_audit;
 mod e2e_browse;
 mod e2e_chart;
 mod e2e_composition;
+mod e2e_compositions_filters;
 mod e2e_contribution_authoring;
 mod e2e_demographics;
 mod e2e_directory;

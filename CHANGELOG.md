@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: the EHR detail's Compositions tab gains **filters** —
+  template, date range, and composer, all AQL-backed and kept in the URL so
+  a filtered view can be shared — and its rows open the composition's
+  rendered clinical view directly. The EHR header now shows the subject's
+  identity and the queryable/modifiable badges.
+
 - Admin console: a **Commit** tab on the EHR detail — stage several changes
   (create a composition, amend one, modify the EHR status), set the
   contribution's audit, and commit them as ONE contribution, all-or-nothing:

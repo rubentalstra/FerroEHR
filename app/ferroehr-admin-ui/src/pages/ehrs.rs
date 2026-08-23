@@ -159,10 +159,26 @@ pub async fn list_ehrs(
 /// §EHR Status — `subject` is a `PARTY_SELF`, the subject is identified via
 /// its `external_ref`, never a `PARTY_IDENTIFIED`). `is_queryable` /
 /// `is_modifiable` default true.
+///
+/// `archetype_details` is not decoration: `EHR_STATUS` carries the invariant
+/// `Is_archetype_root`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc`),
+/// and `LOCATABLE`'s `Archetyped_valid` is
+/// `is_archetype_root xor archetype_details = Void`
+/// (`.../org.openehr.rm.common.locatable.adoc`) — so an `EHR_STATUS` without an
+/// `ARCHETYPED` is invalid and the CDR refuses it `422`.
 pub(crate) fn subject_ehr_status(subject_id: &str, subject_namespace: &str) -> Value {
     serde_json::json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+            },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": {
             "_type": "PARTY_SELF",
@@ -421,8 +437,9 @@ pub fn EhrsPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     let create = create_ehr_section(toaster);
     let finder = finder_section();
+    let query = leptos_router::hooks::use_query_map();
     let offset = offset_from_url();
-    let table = recent_ehrs_section(offset);
+    let table = recent_ehrs_section(offset, query);
 
     view! {
         <Title text="EHRs" />
@@ -787,7 +804,10 @@ fn finder_section() -> AnyView {
 /// `<Transition>` (old rows stay visible across paging — rules §6) that
 /// resolves its `Result` inside the transition (an SSR'd `ErrorBoundary`
 /// fallback mismatches at hydration in leptos 0.8), and prev/next links.
-fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
+fn recent_ehrs_section(
+    offset: Signal<u32>,
+    query: Memo<leptos_router::params::ParamsMap>,
+) -> AnyView {
     let resource = Resource::new(
         move || offset.get(),
         |offset| async move { list_ehrs(offset).await },
@@ -796,7 +816,7 @@ fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
                 match resource.await {
-                    Ok(page) => ehrs_table(&page),
+                    Ok(page) => ehrs_table(&page, query),
                     Err(e) => inline_error(&e),
                 }
             })}
@@ -807,7 +827,7 @@ fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
 
 /// Render one page of EHRs: a table whose id cells link to the detail route,
 /// plus prev/next paging links. The empty page is a first-class state.
-fn ehrs_table(page: &ResultPage) -> AnyView {
+fn ehrs_table(page: &ResultPage, query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
     if page.rows.is_empty() {
         return view! {
             <EmptyState
@@ -829,7 +849,7 @@ fn ehrs_table(page: &ResultPage) -> AnyView {
         </For>
     }
     .into_any();
-    let paging = paging_controls(page.offset, page.rows.len(), "/ehrs");
+    let paging = paging_controls(page.offset, page.rows.len(), "/ehrs", query);
     view! {
         {table_shell(&["EHR ID", "Created"], body)}
         {paging}
@@ -867,10 +887,35 @@ fn ehrs_row(row: &[Value]) -> AnyView {
 /// Prev/next paging links for an AQL-paged table at `base` (e.g. `/ehrs`).
 /// Prev appears when `offset > 0`; next appears when the page is full (there
 /// may be more). Offsets use saturating arithmetic (reliability rule).
-pub(crate) fn paging_controls(offset: u32, row_count: usize, base: &str) -> AnyView {
+///
+/// `query` is the screen's whole query map, so a page link carries every OTHER
+/// parameter across — the tab a table sits on, the filters that produced it —
+/// instead of navigating back to a bare path. Encoding is the router's own
+/// [`ParamsMap::to_query_string`], never a hand-rolled codec, and the default
+/// offset is written as its ABSENCE so the first page's URL stays clean.
+///
+/// The map is read UNTRACKED: this control renders inside the table's
+/// `Suspend`, which already re-runs on every query change (the list resource's
+/// source reads the same parameters), so tracking here would only add a
+/// dependency the closure already has.
+pub(crate) fn paging_controls(
+    offset: u32,
+    row_count: usize,
+    base: &str,
+    query: Memo<leptos_router::params::ParamsMap>,
+) -> AnyView {
+    let href_for = |next: u32| {
+        let mut map = query.get_untracked();
+        if next == 0 {
+            drop(map.remove("offset"));
+        } else {
+            map.replace("offset", next.to_string());
+        }
+        format!("{base}{}", map.to_query_string())
+    };
     let full = u32::try_from(row_count).unwrap_or(u32::MAX) >= PAGE_SIZE;
     let prev = (offset > 0).then(|| {
-        let href = format!("{base}?offset={}", offset.saturating_sub(PAGE_SIZE));
+        let href = href_for(offset.saturating_sub(PAGE_SIZE));
         view! {
             <A href=href attr:class=BTN_SECONDARY>
                 "← Previous"
@@ -879,7 +924,7 @@ pub(crate) fn paging_controls(offset: u32, row_count: usize, base: &str) -> AnyV
         .into_any()
     });
     let next = full.then(|| {
-        let href = format!("{base}?offset={}", offset.saturating_add(PAGE_SIZE));
+        let href = href_for(offset.saturating_add(PAGE_SIZE));
         view! {
             <A href=href attr:class=BTN_SECONDARY>
                 "Next →"
@@ -979,6 +1024,14 @@ mod tests {
         assert_eq!(status["subject"]["external_ref"]["type"], "PERSON");
         assert_eq!(status["is_queryable"].as_bool(), Some(true));
         assert_eq!(status["is_modifiable"].as_bool(), Some(true));
+        // EHR_STATUS is an archetype root (RM ehr_status `Is_archetype_root`),
+        // and LOCATABLE's `Archetyped_valid` then makes ARCHETYPED mandatory —
+        // a body without it is refused `422`.
+        assert_eq!(status["archetype_details"]["_type"], "ARCHETYPED");
+        assert_eq!(
+            status["archetype_details"]["archetype_id"]["value"],
+            "openEHR-EHR-EHR_STATUS.generic.v1"
+        );
     }
 
     #[test]

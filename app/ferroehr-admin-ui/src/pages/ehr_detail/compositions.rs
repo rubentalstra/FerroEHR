@@ -1,8 +1,18 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The EHR-detail Compositions tab: the AQL-driven composition list plus the
-//! "Commit composition" form.
+//! The EHR-detail Compositions tab: the AQL-driven composition list, its
+//! URL-borne row filters, and the "Commit composition" form.
+//!
+//! The filters (template, a context-start-time window, composer) live in the
+//! query string — `?template=`/`?from=`/`?to=`/`?composer=`, submitted by a GET
+//! `<Form>` (rules §9) — so a filtered view is shareable, refresh-safe and
+//! reproducible before the WASM bundle loads. They are read in SETUP and feed
+//! the list resource's source, so a filter change refetches exactly once and a
+//! submission drops `?offset=`, putting the reader on the first page of the new
+//! result set. The statement they produce is assembled by the pure,
+//! component-free [`composition_filter`](super::composition_filter): operator
+//! input is bound as AQL `query_parameters`, never concatenated into the query.
 
 #![expect(
     clippy::disallowed_types,
@@ -13,6 +23,7 @@
 use leptos::prelude::*;
 use leptos::server;
 use leptos_router::components::A;
+use leptos_router::params::ParamsMap;
 use serde_json::Value;
 
 #[cfg(feature = "ssr")]
@@ -20,48 +31,55 @@ use crate::uid::uid_value_of;
 
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_PRIMARY, INPUT, LABEL, SELECT, TEXTAREA};
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA};
+use crate::components::format_view::PaneView;
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
-use crate::pages::ehrs::{ResultPage, cell_text, paging_controls};
+use crate::pages::ehr_detail::composition_filter::CompositionFilter;
+use crate::pages::ehrs::{ResultPage, cell_text, ehr_detail_href, paging_controls};
 // Server-side helpers, compiled only where the #[server] bodies exist.
+#[cfg(feature = "ssr")]
+use crate::pages::ehr_detail::composition_filter::composition_query;
 #[cfg(feature = "ssr")]
 use crate::pages::ehrs::{aql_request_body, parse_result_set};
 
-#[cfg(feature = "ssr")]
-/// The fixed AQL that lists an EHR's compositions newest-first. The `ehr_id`
-/// is bound as an AQL parameter (`$ehr_id`), never string-interpolated.
-/// Validated by [`tests::fixed_aql_parses`].
-const LIST_COMPOSITIONS_AQL: &str = "SELECT c/uid/value, c/name/value, \
-c/archetype_details/template_id/value, c/context/start_time/value \
-FROM EHR e CONTAINS COMPOSITION c WHERE e/ehr_id/value = $ehr_id \
-ORDER BY c/context/start_time/value DESC";
-
-/// List an EHR's compositions via `LIST_COMPOSITIONS_AQL`, one page at
-/// `offset`.
+/// List an EHR's compositions newest-first, one page at `offset`, narrowed by
+/// whichever filters are filled.
+///
+/// Every argument is operator input and every one of them travels as an AQL
+/// `query_parameters` binding — see
+/// [`composition_query`](super::composition_filter::composition_query), which
+/// builds the statement and the bindings together.
 ///
 /// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
-/// errors pass through; a non-2xx CDR answer normalizes via
-/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] when a date bound is neither a date nor an
+/// instant; CDR transport errors pass through; a non-2xx CDR answer normalizes
+/// via [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`AdminUiError::Internal`] when the result set is not valid JSON.
 #[server]
 pub async fn list_compositions(
     /// The EHR whose compositions to list.
     ehr_id: String,
+    /// Substring of the template id to keep; empty means every template.
+    template: String,
+    /// Inclusive lower bound on the context start time; empty means unbounded.
+    from: String,
+    /// Inclusive upper bound on the context start time; empty means unbounded.
+    to: String,
+    /// Substring of the composer's name to keep; empty means every composer.
+    composer: String,
     /// First row of the page to return.
     offset: u32,
 ) -> Result<ResultPage, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
+    let filter = CompositionFilter::new(&template, &from, &to, &composer);
+    let query = composition_query(&ehr_id, &filter)?;
     let url = state.cdr.rest_v1("query/aql");
-    let body = aql_request_body(
-        LIST_COMPOSITIONS_AQL,
-        &serde_json::json!({ "ehr_id": ehr_id }),
-        offset,
-    );
+    let body = aql_request_body(&query.aql, &query.parameters, offset);
     let response = state
         .cdr
         .post(
@@ -75,6 +93,29 @@ pub async fn list_compositions(
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
     parse_result_set(&response.body, offset)
+}
+
+/// The EHR's compositions with NO filter applied.
+///
+/// The console's composition PICKERS (the Commit tab's amend selector, the
+/// directory editor's item selector) offer every composition in the EHR, not
+/// the view the tab happens to be filtered to — this names that intent at the
+/// call site instead of four empty strings.
+///
+/// `ehr_id` names the EHR and `offset` the page's first row.
+///
+/// # Errors
+/// Whatever [`list_compositions`] returns.
+pub async fn all_compositions(ehr_id: String, offset: u32) -> Result<ResultPage, AdminUiError> {
+    list_compositions(
+        ehr_id,
+        String::new(),
+        String::new(),
+        String::new(),
+        String::new(),
+        offset,
+    )
+    .await
 }
 
 /// Commit a new COMPOSITION to the EHR (`POST /ehr/{ehr_id}/composition`). The
@@ -138,17 +179,31 @@ pub async fn commit_composition(
     Ok(uid_value_of(&response.body))
 }
 
-/// Compositions tab: `list_compositions` (AQL) → a paged table whose uid
-/// cells link to the composition viewer (under `<Transition>` so paging keeps
-/// old rows visible), plus a "Commit composition" form below it. A successful
-/// commit bumps the commit action's version — a source of the list resource —
-/// refetching the table (rules §6 — never fetch-in-effect).
+/// Compositions tab: the filter bar, `list_compositions` (AQL) → a paged table
+/// whose uid cells open the composition viewer's RENDERED clinical reading
+/// (under `<Transition>` so paging keeps old rows visible), plus a "Commit
+/// composition" form below it. A successful commit bumps the commit action's
+/// version — a source of the list resource — refetching the table (rules §6 —
+/// never fetch-in-effect).
 pub(super) fn compositions_section(
     ehr_id: Signal<String>,
     offset: Signal<u32>,
     selected: Memo<String>,
 ) -> AnyView {
     let toaster = thaw::ToasterInjection::expect_context();
+    // URL state read in SETUP (rules §9): the filter values feed the resource
+    // source, and the paging links carry every one of them across.
+    let query = leptos_router::hooks::use_query_map();
+    let filter = Signal::derive(move || {
+        query.with(|q| {
+            CompositionFilter::new(
+                &q.get("template").unwrap_or_default(),
+                &q.get("from").unwrap_or_default(),
+                &q.get("to").unwrap_or_default(),
+                &q.get("composer").unwrap_or_default(),
+            )
+        })
+    });
     let commit = Action::new(
         |(ehr_id, format, template_id, body): &(String, ReprFormat, String, String)| {
             let ehr_id = ehr_id.clone();
@@ -182,11 +237,21 @@ pub(super) fn compositions_section(
     let resource = Resource::new(
         move || {
             let version = commit.version().get();
-            (selected.get() == "compositions").then(|| (ehr_id.get(), offset.get(), version))
+            (selected.get() == "compositions")
+                .then(|| (ehr_id.get(), filter.get(), offset.get(), version))
         },
         |active| async move {
             match active {
-                Some((id, offset, _)) => list_compositions(id, offset).await.map(Some),
+                Some((id, filter, offset, _)) => list_compositions(
+                    id,
+                    filter.template,
+                    filter.from,
+                    filter.to,
+                    filter.composer,
+                    offset,
+                )
+                .await
+                .map(Some),
                 None => Ok(None),
             }
         },
@@ -195,7 +260,14 @@ pub(super) fn compositions_section(
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
                 match resource.await {
-                    Ok(Some(page)) => compositions_table(&page, &ehr_id.get()),
+                    Ok(Some(page)) => {
+                        compositions_table(
+                            &page,
+                            &ehr_id.get(),
+                            filter.with_untracked(CompositionFilter::is_empty),
+                            query,
+                        )
+                    }
                     Ok(None) => ().into_any(),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
@@ -203,8 +275,106 @@ pub(super) fn compositions_section(
         </Transition>
     }
     .into_any();
+    let filters = filter_bar(ehr_id, query);
     let form = commit_form(ehr_id, commit);
-    view! { <div>{table} {form}</div> }.into_any()
+    view! { <div>{filters} {table} {form}</div> }.into_any()
+}
+
+/// The row-filter bar: a GET `<Form>` whose fields ARE the URL state
+/// (rules §9).
+///
+/// Submitting navigates to `/ehrs/{id}?tab=compositions&…`, which drops
+/// `?offset=` — a new filter set starts at its own first page — and keeps
+/// working with no JavaScript at all (pre-hydration the browser submits it
+/// natively; the router takes over once WASM loads).
+///
+/// Each field shows what the URL says, through the attribute/property pair the
+/// console uses wherever server HTML and live state must agree (rules §2): the
+/// static `value` attribute is the server pass, so a shared link arrives with
+/// the boxes already filled; the `prop:value` binding follows the address bar
+/// afterwards, so **Clear** and the browser's back button empty and refill them
+/// instead of leaving stale text under a URL that no longer says it. Typing
+/// changes nothing the binding reads, so a draft survives until the next
+/// navigation — at which point the URL is the truth again.
+fn filter_bar(ehr_id: Signal<String>, query: Memo<ParamsMap>) -> AnyView {
+    let initial = move |key: &str| query.read_untracked().get(key).unwrap_or_default();
+    let current = move |key: &'static str| {
+        Signal::derive(move || query.with(|q| q.get(key).unwrap_or_default()))
+    };
+    let action = move || ehr_detail_href(&ehr_id.get());
+    let clear = move || format!("{}?tab=compositions", ehr_detail_href(&ehr_id.get()));
+    view! {
+        <leptos_router::components::Form
+            method="GET"
+            action=action
+            attr:class="mb-4"
+            attr:id="compositions-filter"
+        >
+            // The tab this form belongs to travels with it: a GET <Form>
+            // submits its own fields as the whole query string, so without
+            // this the filtered result would land back on the Status tab.
+            <input type="hidden" name="tab" value="compositions" />
+            <div class="flex flex-wrap items-end gap-2">
+                <label class="flex flex-col gap-1 text-xs text-ink-muted">
+                    "Template"
+                    <input
+                        id="composition-filter-template"
+                        type="text"
+                        name="template"
+                        class=format!("w-56 {INPUT}")
+                        placeholder="part of the template id"
+                        value=initial("template")
+                        prop:value=current("template")
+                    />
+                </label>
+                <label class="flex flex-col gap-1 text-xs text-ink-muted">
+                    "From (UTC date)"
+                    <input
+                        id="composition-filter-from"
+                        type="date"
+                        name="from"
+                        class=format!("w-44 {INPUT}")
+                        value=initial("from")
+                        prop:value=current("from")
+                    />
+                </label>
+                <label class="flex flex-col gap-1 text-xs text-ink-muted">
+                    "To (UTC date)"
+                    <input
+                        id="composition-filter-to"
+                        type="date"
+                        name="to"
+                        class=format!("w-44 {INPUT}")
+                        value=initial("to")
+                        prop:value=current("to")
+                    />
+                </label>
+                <label class="flex flex-col gap-1 text-xs text-ink-muted">
+                    "Composer"
+                    <input
+                        id="composition-filter-composer"
+                        type="text"
+                        name="composer"
+                        class=format!("w-48 {INPUT}")
+                        placeholder="part of the composer's name"
+                        value=initial("composer")
+                        prop:value=current("composer")
+                    />
+                </label>
+                <button id="composition-filter-apply" type="submit" class=BTN_PRIMARY>
+                    <leptos_icons::Icon icon=icondata_lu::LuFunnel width="14" height="14" />
+                    "Filter"
+                </button>
+                <a id="composition-filter-clear" href=clear class=BTN_SECONDARY>
+                    "Clear"
+                </a>
+            </div>
+            <p class="mt-2 text-xs text-ink-muted">
+                "Template and composer match anywhere in the value; the dates bound the composition's context start time, each covering its whole UTC day."
+            </p>
+        </leptos_router::components::Form>
+    }
+    .into_any()
 }
 
 /// The "Commit composition" form: a format select, a template-id input shown
@@ -337,19 +507,34 @@ fn format_from_value(value: &str) -> ReprFormat {
     }
 }
 
-/// Render one page of compositions: a table whose uid cell links to the
-/// composition viewer (the versioned-object id — any `::system::version`
-/// suffix stripped for the link, the full uid kept visible), plus paging.
-fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
+/// Render one page of compositions: a table whose uid cell opens the
+/// composition viewer's rendered clinical reading (the versioned-object id —
+/// any `::system::version` suffix stripped for the link, the full uid kept
+/// visible), plus paging that preserves the filters.
+///
+/// `unfiltered` picks the empty state's copy: nothing to show is a different
+/// fact from nothing matching the filters, and the reader needs to know which
+/// one they are looking at.
+fn compositions_table(
+    page: &ResultPage,
+    ehr_id: &str,
+    unfiltered: bool,
+    query: Memo<ParamsMap>,
+) -> AnyView {
     if page.rows.is_empty() {
-        return view! {
-            <EmptyState
-                icon=icondata_lu::LuFileText
-                message="No compositions in this EHR"
-                hint="Commit one with the form above, or through the CDR's REST API."
-            />
-        }
-        .into_any();
+        let (message, hint) = if unfiltered {
+            (
+                "No compositions in this EHR",
+                "Commit one with the form above, or through the CDR's REST API.",
+            )
+        } else {
+            (
+                "No compositions match these filters",
+                "Widen the date window, shorten the template or composer text, or clear the filters.",
+            )
+        };
+        return view! { <EmptyState icon=icondata_lu::LuFileText message=message hint=hint /> }
+            .into_any();
     }
     let rows = page.rows.clone();
     let ehr_id_owned = ehr_id.to_owned();
@@ -363,18 +548,24 @@ fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
         </For>
     }
     .into_any();
-    let paging = paging_controls(page.offset, page.rows.len(), &format!("/ehrs/{ehr_id}"));
+    let paging = paging_controls(
+        page.offset,
+        page.rows.len(),
+        &ehr_detail_href(ehr_id),
+        query,
+    );
     view! {
-        {table_shell(&["Composition", "Name", "Template", "Started"], body)}
+        {table_shell(&["Composition", "Name", "Template", "Started", "Composer"], body)}
         {paging}
     }
     .into_any()
 }
 
-/// One composition row: the uid cell links to the viewer at the
-/// versioned-object id; the full uid stays visible.
+/// One composition row: the uid cell opens the viewer at the versioned-object
+/// id, in the RENDERED clinical view (`?view=` — the composition viewer's
+/// deep-linkable pane mode); the full uid stays visible.
 ///
-/// Both segments are percent-encoded (owner rule: all percent-coding goes
+/// Both path segments are percent-encoded (owner rule: all percent-coding goes
 /// through `urlencoding`) — an id carrying `/`, `#`, `?` or `%` would otherwise
 /// address a different route.
 fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
@@ -387,7 +578,10 @@ fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
         .map(|(i, value)| {
             let text = cell_text(value);
             if i == 0 {
-                let href = format!("/ehrs/{ehr}/compositions/{vo_id}");
+                let href = format!(
+                    "/ehrs/{ehr}/compositions/{vo_id}?view={}",
+                    PaneView::Rendered.param()
+                );
                 view! {
                     <td class=CELL_MONO>
                         <A href=href attr:class="text-accent hover:underline">
@@ -404,16 +598,10 @@ fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
     view! { <tr class=ROW>{cells}</tr> }.into_any()
 }
 
-#[cfg(all(test, feature = "ssr"))]
+#[cfg(test)]
 mod tests {
-    use super::{LIST_COMPOSITIONS_AQL, format_from_value, format_value};
+    use super::{format_from_value, format_value};
     use crate::format::ReprFormat;
-
-    #[test]
-    fn fixed_aql_parses() {
-        openehr_query::parser::parse_str(LIST_COMPOSITIONS_AQL)
-            .expect("the compositions AQL const must parse");
-    }
 
     #[test]
     fn format_value_round_trips() {
