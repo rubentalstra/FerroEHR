@@ -288,6 +288,17 @@ else
 fi
 wait_http "$CONSOLE_URL/login"
 
+# Warm the served asset chain once: the first journey after a cold console
+# start otherwise pays the whole debug-build wasm read (measured 100s+ cold)
+# against the harness's hydration budget.
+curl -sf "$CONSOLE_URL/login" \
+  | grep -oE '(href|src)="/pkg/[^"]+"' \
+  | sed -E 's/^(href|src)="//; s/"$//' \
+  | sort -u \
+  | while IFS= read -r asset; do
+      curl -sf -o /dev/null "$CONSOLE_URL$asset" || true
+    done
+
 # ── 4. chromedriver ──────────────────────────────────────────────────────────
 CHROMEDRIVER_BIN="${CHROMEDRIVER:-chromedriver}"
 if ! command -v "$CHROMEDRIVER_BIN" >/dev/null; then
@@ -328,6 +339,8 @@ UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
 UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
 UI_E2E_BASIC_USER="ferroehr" \
 UI_E2E_BASIC_PASS="ferroehr" \
+UI_E2E_ADMIN_USER="ferroehr-admin" \
+UI_E2E_ADMIN_PASS="ferroehr" \
 UI_E2E_CDR_URL="$CDR_URL" \
 UI_E2E_OIDC_USER="ferroehr-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
@@ -347,6 +360,8 @@ if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
   UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
   UI_E2E_BASIC_USER="ferroehr" \
   UI_E2E_BASIC_PASS="ferroehr" \
+  UI_E2E_ADMIN_USER="ferroehr-admin" \
+  UI_E2E_ADMIN_PASS="ferroehr" \
   UI_E2E_CDR_URL="$CDR_URL" \
   UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
   UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \

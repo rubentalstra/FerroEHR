@@ -84,8 +84,9 @@ CDR (Basic) or your identity provider (OIDC), and there are no user, role, or
 password screens to find — those live in the CDR's configuration and in your
 IdP.
 
-The console ships a full dark theme (the toggle persists per browser),
-and the user menu opens the access drawer:
+The console ships a full dark theme (the toggle persists per browser) — every
+screen in this chapter has one, and [Dark mode](dark-mode.md) is the gallery.
+The user menu opens the access drawer:
 
 ![Dark mode](img/dashboard/dashboard-dark.png)
 
@@ -182,6 +183,9 @@ bearer tokens never reach the browser.
   versions the CDR publishes to a message broker. Appears only when the CDR
   serves its subscription API. See
   [Event subscriptions](subscriptions.md).
+
+Every one of them is themed twice; [Dark mode](dark-mode.md) shows the dark
+half of the console screen by screen.
 
 ### Paging
 
