@@ -525,6 +525,48 @@ impl ServiceError {
         }
     }
 
+    /// Attribute a per-member refusal to its CONTRIBUTION version member.
+    ///
+    /// The commit route's whole purpose is a multi-member change set, so a
+    /// member-scoped refusal names `versions[index]` the way the declared-key
+    /// check always has (#2590): SM-status rows prefix the message, violation
+    /// rows prefix the path, validation rows prefix each violation's path.
+    /// Rows that are never member-scoped pass through unchanged.
+    #[must_use]
+    pub(crate) fn for_version_member(self, index: usize) -> Self {
+        let prefix_message = |mut sm: SmError| {
+            sm.message = format!("versions[{index}]: {}", sm.message);
+            sm
+        };
+        match self {
+            ServiceError::NotFound(sm) => ServiceError::NotFound(prefix_message(sm)),
+            ServiceError::BadRequest(sm) => ServiceError::BadRequest(prefix_message(sm)),
+            ServiceError::Conflict(sm) => ServiceError::Conflict(prefix_message(sm)),
+            ServiceError::VersionConflict(sm) => ServiceError::VersionConflict(prefix_message(sm)),
+            ServiceError::Unprocessable {
+                status,
+                mut violation,
+            } => {
+                violation.path = Some(match violation.path.take() {
+                    Some(path) => format!("versions[{index}]/{path}"),
+                    None => format!("versions[{index}]"),
+                });
+                ServiceError::Unprocessable { status, violation }
+            }
+            ServiceError::ValidationFailed(mut violations) => {
+                for violation in &mut violations {
+                    violation.path = if violation.path.is_empty() {
+                        format!("versions[{index}]")
+                    } else {
+                        format!("versions[{index}]/{}", violation.path)
+                    };
+                }
+                ServiceError::ValidationFailed(violations)
+            }
+            other => other,
+        }
+    }
+
     /// A server-side fault (`500`) whose diagnosis is a log detail.
     ///
     /// `detail` diagnoses the fault (a codec error, an unexpected stored shape,

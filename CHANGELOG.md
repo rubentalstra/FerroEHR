@@ -104,6 +104,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Every member-scoped refusal on the contribution commit now names the
+  offending member (`versions[i]`) — the data-parse, template-resolution,
+  change-type and audit refusals previously carried no index, so a client
+  staging several changes could not tell which one was rejected.
+
 - Admin console: a FHIR-shaped refusal (an `OperationOutcome`) now renders
   its human diagnostics wherever an error surfaces — the shared diagnostic
   reader speaks both error vocabularies, so no screen can hand raw JSON to

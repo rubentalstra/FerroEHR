@@ -214,6 +214,9 @@ fn classify(
 /// One parsed `UPDATE_VERSION` of a CONTRIBUTION commit — the single-pass plan
 /// entry (see the parse pass in [`commit_version_set`]).
 struct PlannedVersion {
+    /// The member's position in the submitted `versions` array — every
+    /// member-scoped refusal names it (#2590).
+    index: usize,
     action: Action,
     /// The parsed `preceding_version_uid` target (modify/delete/attest).
     target: Option<(VoId, TreeId)>,
@@ -470,12 +473,13 @@ pub(crate) async fn commit_version_set(
         let has_preceding = version
             .get("preceding_version_uid")
             .is_some_and(|v| !v.is_null());
-        let (action, code) = classify(token.as_deref(), has_preceding, data.is_some())?;
+        let (action, code) = classify(token.as_deref(), has_preceding, data.is_some())
+            .map_err(|e| e.for_version_member(index))?;
 
         let target = if action == Action::Create {
             None
         } else {
-            Some(parse_preceding(version)?)
+            Some(parse_preceding(version).map_err(|e| e.for_version_member(index))?)
         };
         // m4: default committer/system_id from the CONTRIBUTION audit when the
         // version item omits them (a "should be copied", so an explicit
@@ -489,7 +493,8 @@ pub(crate) async fn commit_version_set(
             &contrib_committer,
             &contrib_system_id,
             action != Action::Attest,
-        )?;
+        )
+        .map_err(|e| e.for_version_member(index))?;
         let lifecycle_state = lifecycle_of(version);
         // `UPDATE_VERSION.lifecycle_state` is REQUIRED on this wire (SM
         // `master03-common_package.adoc` §Version Update Semantics: "must be
@@ -503,25 +508,24 @@ pub(crate) async fn commit_version_set(
         // and only it — it commits no new version (master06 §Contributions), so
         // it has no version lifecycle state to supply; the RM governs the gap.
         if version.get("other_input_version_uids").is_some() {
-            return Err(ServiceError::precondition(
-                "other_input_version_uids is not a member of UPDATE_VERSION — the \
-                 released commit wire declares no merge shape (ITS-REST \
-                 UpdateVersion.yaml); merge provenance is served on reads only \
-                 (OriginalVersion.yaml)"
-                    .to_owned(),
-            ));
+            return Err(ServiceError::precondition(format!(
+                "versions[{index}]: other_input_version_uids is not a member of \
+                 UPDATE_VERSION — the released commit wire declares no merge shape \
+                 (ITS-REST UpdateVersion.yaml); merge provenance is served on reads \
+                 only (OriginalVersion.yaml)"
+            )));
         }
         if action != Action::Attest && lifecycle_state.is_none() {
-            return Err(ServiceError::precondition(
-                "lifecycle_state is required on every CONTRIBUTION version \
-                 (SM master03 §Version Update Semantics: \"The lifecycle_state must \
-                 be supplied in all cases\"; ITS-REST UpdateVersion.yaml lists it \
+            return Err(ServiceError::precondition(format!(
+                "versions[{index}]: lifecycle_state is required on every CONTRIBUTION \
+                 version (SM master03 §Version Update Semantics: \"The lifecycle_state \
+                 must be supplied in all cases\"; ITS-REST UpdateVersion.yaml lists it \
                  under required)"
-                    .to_owned(),
-            ));
+            )));
         }
         if action == Action::Delete {
-            reject_contradictory_delete_lifecycle(lifecycle_state.as_deref())?;
+            reject_contradictory_delete_lifecycle(lifecycle_state.as_deref())
+                .map_err(|e| e.for_version_member(index))?;
         }
         // A `553|incomplete|` version gets relaxed content validation
         // (master06 §Incomplete Content).
@@ -530,6 +534,7 @@ pub(crate) async fn commit_version_set(
             .and_then(lifecycle_state_code)
             .is_some_and(|c| c == state::INCOMPLETE);
         plan.push(PlannedVersion {
+            index,
             action,
             target,
             data,
@@ -587,8 +592,8 @@ pub(crate) async fn commit_version_set(
                     "attest plan entry lost its parsed preceding target".to_owned(),
                 ));
             };
-            let kind = require_kind(vo_id)?;
-            check_kind_scope(kind, party_only)?;
+            let kind = require_kind(vo_id).map_err(|e| e.for_version_member(v.index))?;
+            check_kind_scope(kind, party_only).map_err(|e| e.for_version_member(v.index))?;
             let partial = v.commit_audit.ok_or_else(|| {
                 ServiceError::content_invalid(
                     Violation::new(
@@ -607,21 +612,25 @@ pub(crate) async fn commit_version_set(
         }
         // AUDIT_DETAILS.System_id_valid + committer PARTY invariants — a
         // client-supplied version commit_audit must be a valid RM instance.
-        validate_commit_audit(&v.audit)?;
+        validate_commit_audit(&v.audit).map_err(|e| e.for_version_member(v.index))?;
         let change = match v.action {
             Action::Create => {
                 let data = v.data.ok_or_else(|| {
                     ServiceError::content_invalid(
                         Violation::new("is required on a creation version").with_path("data"),
                     )
+                    .for_version_member(v.index)
                 })?;
-                let kind = data_kind(&data)?;
-                check_kind_scope(kind, party_only)?;
-                typed_decode_gate(kind, &data, v.incomplete)?;
+                let kind = data_kind(&data).map_err(|e| e.for_version_member(v.index))?;
+                check_kind_scope(kind, party_only).map_err(|e| e.for_version_member(v.index))?;
+                typed_decode_gate(kind, &data, v.incomplete)
+                    .map_err(|e| e.for_version_member(v.index))?;
                 // A CONTRIBUTION commit is a full commit route: its versions
                 // are validated exactly as a direct create/update, relaxed for
                 // a `553|incomplete|` lifecycle (master06 §Incomplete Content).
-                cx.validate_for_commit(kind, &data, v.incomplete).await?;
+                cx.validate_for_commit(kind, &data, v.incomplete)
+                    .await
+                    .map_err(|e| e.for_version_member(v.index))?;
                 // An EHR holds exactly one EHR_STATUS / EHR_ACCESS (RM ehr,
                 // EHR class); FOLDER hierarchies follow the CNF
                 // master08-func_tc_ehr_contribution E.2 criterion.
@@ -645,7 +654,8 @@ pub(crate) async fn commit_version_set(
                     template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
-                    attestations: accompanying(&v.accompanying)?,
+                    attestations: accompanying(&v.accompanying)
+                        .map_err(|e| e.for_version_member(v.index))?,
                 }
             }
             Action::Modify => {
@@ -653,16 +663,20 @@ pub(crate) async fn commit_version_set(
                     ServiceError::content_invalid(
                         Violation::new("is required on a modification version").with_path("data"),
                     )
+                    .for_version_member(v.index)
                 })?;
                 let Some((vo_id, expected)) = v.target else {
                     return Err(ServiceError::exception(
                         "modify plan entry lost its parsed preceding target".to_owned(),
                     ));
                 };
-                let kind = require_kind(vo_id)?;
-                check_kind_scope(kind, party_only)?;
-                typed_decode_gate(kind, &data, v.incomplete)?;
-                cx.validate_for_commit(kind, &data, v.incomplete).await?;
+                let kind = require_kind(vo_id).map_err(|e| e.for_version_member(v.index))?;
+                check_kind_scope(kind, party_only).map_err(|e| e.for_version_member(v.index))?;
+                typed_decode_gate(kind, &data, v.incomplete)
+                    .map_err(|e| e.for_version_member(v.index))?;
+                cx.validate_for_commit(kind, &data, v.incomplete)
+                    .await
+                    .map_err(|e| e.for_version_member(v.index))?;
                 // Same template stamping as the Create arm (the delete guard
                 // counts every version row, modifications included).
                 let template_id = (kind == Kind::Composition)
@@ -679,7 +693,8 @@ pub(crate) async fn commit_version_set(
                     template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
-                    attestations: accompanying(&v.accompanying)?,
+                    attestations: accompanying(&v.accompanying)
+                        .map_err(|e| e.for_version_member(v.index))?,
                 }
             }
             Action::Delete => {
@@ -688,8 +703,8 @@ pub(crate) async fn commit_version_set(
                         "delete plan entry lost its parsed preceding target".to_owned(),
                     ));
                 };
-                let kind = require_kind(vo_id)?;
-                check_kind_scope(kind, party_only)?;
+                let kind = require_kind(vo_id).map_err(|e| e.for_version_member(v.index))?;
+                check_kind_scope(kind, party_only).map_err(|e| e.for_version_member(v.index))?;
                 // EHR.ehr_status is mandatory (RM ehr, EHR class:
                 // ehr_status 1..1) — deleting the only EHR_STATUS would
                 // leave the EHR violating its own invariant, so a delete
