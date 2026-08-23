@@ -28,6 +28,9 @@
 //!
 //! - **client-supplied EHR id**: creating an EHR at an id the operator chooses
 //!   (`PUT /ehr/{ehr_id}`), and the CDR's refusal when that id is already used;
+//! - **a subject-bound EHR**: creating one through the console's OWN form, and
+//!   the subject identity then rendering on the EHR the console navigated to —
+//!   the whole path is the console's, so nothing here seeds an EHR over REST;
 //! - **composition logical delete**: deleting the latest version of a
 //!   composition from the viewer (`DELETE` with `If-Match`), after which the
 //!   EHR's composition list no longer offers it.
@@ -41,7 +44,9 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic, retype, wait_css_absent};
+use common::{
+    Harness, confirm_in_dialog, env, login_basic, retype, wait_css_absent, wait_text_contains,
+};
 use thirtyfour::prelude::*;
 
 /// The template `scripts/ui-e2e.sh` seeds; its CDR-generated example
@@ -195,6 +200,106 @@ async fn client_supplied_ehr_id_creates_that_ehr_and_then_conflicts() {
         "Failed to load resource",
     ])
     .await;
+    h.finish().await;
+}
+
+/// The namespace the subject-bound create journey issues its subject ids in.
+const SUBJECT_NAMESPACE: &str = "e2e-console-subjects";
+
+/// Click the EHR-create button until the console leaves `/ehrs`, returning
+/// whether it did.
+///
+/// The subject-bound create lets the CDR mint the id, so there is nothing to
+/// watch the URL for except leaving the finder. Same bounded retry as
+/// [`create_ehr_until_navigated`]: a click landing before hydration is lost.
+async fn create_ehr_until_left_finder(h: &Harness) -> bool {
+    for _ in 0..3 {
+        h.wait_css("#ehr-create-submit")
+            .await
+            .click()
+            .await
+            .expect("create the EHR");
+        for _ in 0..50 {
+            if !h
+                .driver
+                .current_url()
+                .await
+                .expect("current url")
+                .as_str()
+                .ends_with("/ehrs")
+            {
+                return true;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+    false
+}
+
+/// The console's OWN **create-EHR-with-subject** path: the form binds the
+/// subject, and the EHR the console lands on carries it — in the detail
+/// header's identity strip and on the Status tab, both from the one
+/// current-`EHR_STATUS` read.
+///
+/// Nothing here is seeded over REST: the point of the journey is that the
+/// console can create a subject-bound EHR through its own form at all. It could
+/// not, once — the `EHR_STATUS` it built carried no `archetype_details`, so the
+/// CDR refused it `422` — and every journey seeding EHRs over REST is why that
+/// shipped unnoticed.
+#[tokio::test]
+async fn a_subject_bound_ehr_created_in_the_console_carries_its_subject() {
+    let Some(h) = Harness::start("ehr-create-with-subject").await else {
+        return;
+    };
+    login_basic(&h).await;
+    // A run-unique subject id, so a shared stack can hold several runs'.
+    let subject_id = format!("patient-{}", generated_uuid());
+
+    h.goto("/ehrs").await;
+    retype(&h, "#ehr-create-subject-id", &subject_id).await;
+    retype(&h, "#ehr-create-subject-namespace", SUBJECT_NAMESPACE).await;
+    assert!(
+        create_ehr_until_left_finder(&h).await,
+        "creating a subject-bound EHR never navigated to its detail route — the console's own \
+         create path is broken (a 422 from the CDR toasts here)"
+    );
+
+    // The header's identity strip names the subject id AND its namespace.
+    let identity = h.wait_css("#ehr-identity").await;
+    let text = identity.text().await.expect("the identity line's text");
+    assert!(
+        text.contains(&subject_id) && text.contains(SUBJECT_NAMESPACE),
+        "the header must name the subject the form bound (got `{text}`)"
+    );
+    h.shot(1, "ehr-created-with-subject").await;
+
+    // The Status tab reads the same current EHR_STATUS and spells the subject
+    // identically — one read, two renderings. It is also the tab the detail
+    // screen opens on, so the assertion below runs on the landing page; opening
+    // it explicitly first puts the tab in the URL.
+    h.wait_css("a[href$='tab=status']")
+        .await
+        .click()
+        .await
+        .expect("open the Status tab");
+    h.wait_url_contains("tab=status").await;
+    wait_text_contains(&h, "[data-status-fact='subject']", &subject_id).await;
+    wait_text_contains(&h, "[data-status-fact='subject']", SUBJECT_NAMESPACE).await;
+    h.shot(2, "ehr-status-carries-the-subject").await;
+
+    // The same subject now resolves through the finder's subject lookup, which
+    // is what binding it was for.
+    h.goto("/ehrs").await;
+    retype(&h, "#ehr-subject-id", &subject_id).await;
+    retype(&h, "#ehr-subject-namespace", SUBJECT_NAMESPACE).await;
+    assert!(
+        click_until_xpath(&h, "#ehr-subject-find", "//*[@id='ehr-identity']").await,
+        "the subject the console bound must be findable by subject id + namespace"
+    );
+    h.shot(3, "ehr-found-by-subject").await;
+
+    h.assert_console_clean(&["401", "Failed to load resource"])
+        .await;
     h.finish().await;
 }
 

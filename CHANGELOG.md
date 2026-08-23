@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: a **Subscriptions** screen (shown only when the CDR's
+  event-subscription admin API is enabled) — list, create, edit, and
+  two-step delete of change-event subscriptions.
+
 - Admin console: the EHR detail's Compositions tab gains **filters** —
   template, date range, and composer, all AQL-backed and kept in the URL so
   a filtered view can be shared — and its rows open the composition's

@@ -49,6 +49,8 @@
   - [Terminology](admin-ui/terminology.md)
   - [Operations panel](admin-ui/operations.md)
   - [Tenant registry](admin-ui/tenants.md)
+  - [FHIR connector admin](admin-ui/fhir.md)
+  - [Event subscriptions](admin-ui/subscriptions.md)
 - [Operations](operations.md)
   - [Admin & messaging APIs](operations-admin-apis.md)
 - [Conformance](conformance.md)
