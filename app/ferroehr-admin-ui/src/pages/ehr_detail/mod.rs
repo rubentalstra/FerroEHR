@@ -199,7 +199,7 @@ fn summary_section(ehr_id: Signal<String>, status: StatusFeed) -> AnyView {
                     {move || Suspend::new(async move {
                         match resource.await {
                             Ok(summary) => summary_facts(&summary),
-                            Err(AdminUiError::Cdr { status: 404, .. }) => {
+                            Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
                                 view! {
                                     <div
                                         role="alert"

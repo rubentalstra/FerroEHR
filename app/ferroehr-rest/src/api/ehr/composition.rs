@@ -345,6 +345,17 @@ pub(super) async fn run(
                     p.uid_based_id
                 ))
             })?;
+            // The operation declares no `If-Match` parameter, but a RECEIVED
+            // one is honoured (overview §"If-Match and accidental
+            // overwrites": condition false → the method MUST NOT be
+            // performed). The service evaluates it AFTER its own 404/400/409
+            // pre-checks, per the RFC 9110 §13.2.1 precedence rule (ignore
+            // preconditions when the unconditioned answer is not 2xx/412);
+            // a malformed value is a 400 like every required-If-Match route.
+            let volunteered_if_match = match h.get("if-match").and_then(|v| v.to_str().ok()) {
+                Some(raw) => Some(require_if_match(raw)?),
+                None => None,
+            };
             // A DELETE commits a `523|deleted|` version, so the committal
             // request headers are accepted and merged here too (overview
             // §"openehr-version and openehr-audit-details": PUT, POST and
@@ -355,7 +366,12 @@ pub(super) async fn run(
             )?;
             match state
                 .backend()
-                .delete_composition(ehr_id, &ovid, update_audit.as_ref())
+                .delete_composition(
+                    ehr_id,
+                    &ovid,
+                    volunteered_if_match.as_ref(),
+                    update_audit.as_ref(),
+                )
                 .await
             {
                 Ok(committed) => {
@@ -372,9 +388,15 @@ pub(super) async fn run(
                         &resp,
                     ))
                 }
-                // 409_COMPOSITION_with_uid_based_id (stale / not-modifiable) →
-                // decorated with the latest version_uid.
-                Err(e @ ferroehr::service::error::ServiceError::Conflict(_)) => {
+                // 409_COMPOSITION_with_uid_based_id (stale / not-modifiable)
+                // and the volunteered-If-Match 412 → both decorated with the
+                // latest version_uid (overview §"If-Match and accidental
+                // overwrites": the 412 "SHOULD return also latest
+                // `version_uid` in the `ETag` response headers").
+                Err(
+                    e @ (ferroehr::service::error::ServiceError::Conflict(_)
+                    | ferroehr::service::error::ServiceError::VersionConflict(_)),
+                ) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, VoId(vo_id))

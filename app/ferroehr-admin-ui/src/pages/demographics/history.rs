@@ -315,7 +315,7 @@ fn lookup_section(
         }
     };
     let note = move || match at_time.value().get() {
-        Some(Err(AdminUiError::Cdr { status: 404, .. })) => {
+        Some(Err(ref e)) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
             view! { <p class="mt-2 text-sm text-ink-muted">"No version existed at that time."</p> }
                 .into_any()
         }

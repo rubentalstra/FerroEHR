@@ -156,20 +156,19 @@ pub fn when_admin_usable(
 #[must_use]
 pub fn delete_failure_copy(object: &str, error: &AdminUiError) -> String {
     match error {
-        AdminUiError::Cdr {
-            status: 409,
-            message,
-        } => format!(
-            "{object} is still referenced by committed data, so the CDR refused the delete \
-             ({message}). Delete the versions that reference it first, then retry."
-        ),
-        AdminUiError::Cdr { status: 404, .. } => format!(
-            "{object} is not in the CDR any more — it was already deleted. Reload this screen."
-        ),
-        AdminUiError::Cdr {
-            status: 400 | 422,
-            message,
-        } => format!("The CDR rejected the delete of {object}: {message}."),
+        AdminUiError::Cdr { message, .. } => match error.status_code() {
+            Some(http::StatusCode::CONFLICT) => format!(
+                "{object} is still referenced by committed data, so the CDR refused the delete \
+                 ({message}). Delete the versions that reference it first, then retry."
+            ),
+            Some(http::StatusCode::NOT_FOUND) => format!(
+                "{object} is not in the CDR any more — it was already deleted. Reload this screen."
+            ),
+            Some(http::StatusCode::BAD_REQUEST | http::StatusCode::UNPROCESSABLE_ENTITY) => {
+                format!("The CDR rejected the delete of {object}: {message}.")
+            }
+            _ => format!("Deleting {object} failed: {error}"),
+        },
         AdminUiError::Forbidden(message) => format!(
             "This session may not delete {object} ({message}). Sign in with an ADMIN-role \
              account and retry."

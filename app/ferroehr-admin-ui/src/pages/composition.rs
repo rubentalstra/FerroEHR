@@ -107,9 +107,18 @@ pub async fn fetch_versions(
     })
 }
 
-/// One representation of a composition version, pretty-printed for display.
-/// `version_uid` may be the bare versioned-object id (the latest version) or a
-/// full `OBJECT_VERSION_ID` (that exact version).
+/// One representation of a composition version, pretty-printed for display, or
+/// `None` when the addressed version is deleted. `version_uid` may be the bare
+/// versioned-object id (the latest version) or a full `OBJECT_VERSION_ID` (that
+/// exact version).
+///
+/// The `204` branch is `composition_get`'s own declared answer — "`204 No
+/// Content` is returned when the resource identified by the request parameters
+/// (at specified `version_at_time`) time has been deleted"
+/// (`docs/specs/openehr/ITS-REST/specifications/responses/204_deleted_at_time.yaml`,
+/// referenced from `operations/composition_get.yaml`) — so it is a rendered
+/// absence, not a failure: the pane says the version is deleted and the history
+/// beside it stays readable.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -125,7 +134,7 @@ pub async fn fetch_composition(
     version_uid: String,
     /// Which representation to negotiate for the document body.
     format: ReprFormat,
-) -> Result<String, AdminUiError> {
+) -> Result<Option<String>, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
@@ -137,8 +146,11 @@ pub async fn fetch_composition(
         .cdr
         .get(&session.credential, &url, format.media_type())
         .await?;
+    if response.is(http::StatusCode::NO_CONTENT) {
+        return Ok(None);
+    }
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    Ok(pretty_body(&response.body, format))
+    Ok(Some(pretty_body(&response.body, format)))
 }
 
 /// Resolve the `OBJECT_VERSION_ID` of the VERSION of a `VERSIONED_COMPOSITION`
@@ -195,8 +207,14 @@ pub async fn fetch_version_at_time(
 /// ISO 8601 format"). A `datetime-local` control emits no seconds and no zone,
 /// so absent seconds default to `:00` and the zone to `Z`; an already-zoned
 /// value is returned unchanged. Empty input yields an empty string (the caller
-/// rejects it). Interpreting the wall-clock value as UTC is a console
-/// convenience — no openEHR spec governs the admin UI.
+/// rejects it).
+///
+/// NOTE: the zone is stamped deliberately — a zone-less parameter means "the
+/// local timezone is assumed"
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §Datetime format), which on the wire is the CDR's local zone, not the
+/// operator's; every picker feeding this function labels its field as UTC, so
+/// the `Z` states the instant the operator actually asked for.
 pub(crate) fn datetime_local_to_rfc3339(local: &str) -> String {
     let trimmed = local.trim();
     if trimmed.is_empty() {
@@ -296,15 +314,13 @@ pub async fn update_composition(
 /// (`docs/specs/openehr/ITS-REST/specifications/operations/composition_delete.yaml`),
 /// so a bare versioned-object id is rejected here rather than sent.
 ///
-/// The same value also travels quoted in `If-Match`. The header is not
-/// *required* on this operation — it is required only "when the
-/// `preceding_version_uid` is not part of the endpoint path segment", and here
-/// it is — but a client "SHOULD" send `If-Match` with a state-changing method,
-/// and a service that evaluates it must then answer `412 Precondition Failed`
-/// rather than delete a version that is no longer the latest
-/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-/// §"If-Match and accidental overwrites"). A `204` is the success answer; a
-/// `409` is "supplied `uid_based_id` doesn't match the latest version".
+/// No `If-Match` is sent: the operation declares none, because the path IS the
+/// precondition (`operations/composition_delete.yaml` lists only the two path
+/// parameters). A header carrying the same uid the path already names can never
+/// evaluate to false, so it would protect nothing; latest-ness is enforced by
+/// the operation's own `409`, "supplied `uid_based_id` doesn't match the latest
+/// version". The success answer is `204`, and an already-deleted version is
+/// `400`.
 ///
 /// This is the openEHR LOGICAL delete: a new deleted-lifecycle version is
 /// committed and the history stays readable — not the admin physical delete.
@@ -312,9 +328,8 @@ pub async fn update_composition(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] when no full `OBJECT_VERSION_ID` is known; CDR
-/// transport errors pass through; a non-2xx CDR answer (the `409`/`412`
-/// concurrency family and the `400` for an already-deleted version included)
-/// normalizes via
+/// transport errors pass through; a non-2xx CDR answer (the `409` stale-uid
+/// branch and the `400` for an already-deleted version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn delete_composition(
@@ -333,21 +348,13 @@ pub async fn delete_composition(
                 .to_owned(),
         ));
     }
-    let if_match = format!("\"{version_uid}\"");
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/composition/{}",
         urlencoding::encode(&ehr_id),
         urlencoding::encode(version_uid)
     ));
-    let response = state
-        .cdr
-        .delete(
-            &session.credential,
-            &url,
-            &[("If-Match", if_match.as_str())],
-        )
-        .await?;
-    crate::cdr::CdrClient::expect_success(response)?;
+    let response = state.cdr.delete(&session.credential, &url, &[]).await?;
+    drop(crate::cdr::CdrClient::expect_success(response)?);
     Ok(())
 }
 
@@ -956,7 +963,7 @@ fn edit_section(
     uid: Signal<String>,
     format: RwSignal<ReprFormat>,
     versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
-    document: Resource<Result<String, AdminUiError>>,
+    document: Resource<Result<Option<String>, AdminUiError>>,
     edit_open: RwSignal<bool>,
     editor_body: RwSignal<String>,
     update: Action<(String, String, String, String), Result<String, AdminUiError>>,
@@ -969,7 +976,7 @@ fn edit_section(
         let opening = !edit_open.get();
         if opening
             && format.get() == ReprFormat::CanonicalJson
-            && let Some(Ok(current)) = document.get()
+            && let Some(Ok(Some(current))) = document.get()
         {
             editor_body.set(current);
         }
@@ -1096,7 +1103,7 @@ fn toolbar_section(
     // by a void, and the kit's dashed box would read as a broken panel wedged
     // into a toolbar row.
     let note = move || match version_at_time.value().get() {
-        Some(Err(AdminUiError::Cdr { status: 404, .. })) => view! {
+        Some(Err(ref e)) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => view! {
             <p class="mt-2 text-sm text-ink-muted">
                 "No version of this composition existed at that time."
             </p>
@@ -1118,7 +1125,7 @@ fn toolbar_section(
                 <div class="flex items-end gap-2">
                     <div class="flex flex-col gap-1">
                         <label class=LABEL r#for="version-at-time">
-                            "Time travel"
+                            "Time travel (interpreted as UTC)"
                         </label>
                         <input
                             id="version-at-time"
@@ -1169,14 +1176,15 @@ fn version_select(entries: Vec<VersionEntry>, selected: RwSignal<String>) -> Any
 
 /// The document pane: the pretty-printed representation for the current
 /// `(version, format)` selection, under a `<Transition>` so switching either
-/// keeps the prior document visible. A `406` (declined representation) or any
-/// other CDR error renders through the boundary.
+/// keeps the prior document visible. A deleted version (`Ok(None)` — the
+/// operation's `204`) is a first-class rendered absence; a `406` (declined
+/// representation) or any other CDR error renders through the boundary.
 ///
 /// `initial_view` is the deep-linked opening mode (`?view=`), read in the
 /// screen's setup — a plain value, so every Suspend re-run mounts the pane the
 /// same way on both sides of hydration.
 fn document_section(
-    document: Resource<Result<String, AdminUiError>>,
+    document: Resource<Result<Option<String>, AdminUiError>>,
     initial_view: PaneView,
 ) -> AnyView {
     view! {
@@ -1189,17 +1197,36 @@ fn document_section(
         }>
             {move || Suspend::new(async move {
                 match document.await {
-                    Ok(body) => {
+                    Ok(Some(body)) => {
                         let body_sig = RwSignal::new(body);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! { <DocumentPane body=body_sig initial_view=initial_view /> }
                             .into_any()
                     }
+                    Ok(None) => deleted_pane(),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
         </Transition>
+    }
+    .into_any()
+}
+
+/// The document pane for a version the CDR reports as deleted (`204`).
+///
+/// A rendered absence, not an error: the logical delete commits a
+/// deleted-lifecycle version, so the pane says so and points at the history
+/// strip, where every earlier version is still readable by its own uid.
+fn deleted_pane() -> AnyView {
+    view! {
+        <div id="composition-version-deleted">
+            <EmptyState
+                icon=icondata_lu::LuTrash
+                message="This version was deleted at the selected instant"
+                hint="The delete committed a deleted-lifecycle version; pick an earlier version above to read it."
+            />
+        </div>
     }
     .into_any()
 }

@@ -275,6 +275,9 @@ async fn set_tag_at(
         value.trim(),
         target_path.trim(),
     );
+    // NOTE: clients are "strongly encouraged to always include the `Prefer`
+    // request header explicitly" — ITS-REST
+    // `specifications/docs/overview/Requests_and_responses.md` §Deprecated headers.
     let response = state
         .cdr
         .put(
@@ -282,7 +285,7 @@ async fn set_tag_at(
             url,
             "application/json",
             "application/json",
-            &[],
+            &[("Prefer", "return=minimal")],
             body,
         )
         .await?;
