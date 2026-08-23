@@ -6116,6 +6116,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-uncoercible_parameter",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope",
       "status": "passed",
       "rows_driven": 1,

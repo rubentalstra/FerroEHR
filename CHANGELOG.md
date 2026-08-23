@@ -110,6 +110,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- An AQL query parameter whose value cannot be coerced to the type its
+  predicate compares against (an invalid date/time or text representation)
+  is now the caller's `400`, naming the defect class — previously the
+  database's coercion failure surfaced as an opaque internal `500`.
+
 - Every member-scoped refusal on the contribution commit now names the
   offending member (`versions[i]`) — the data-parse, template-resolution,
   change-type and audit refusals previously carried no index, so a client
