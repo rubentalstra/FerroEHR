@@ -126,15 +126,6 @@ pub struct NamespaceTile {
     pub members: u32,
 }
 
-/// How many member stored queries a namespace tile runs at once. Bounded so a
-/// large query store cannot open an unbounded burst of CDR requests from one
-/// dashboard load, and small enough to stay polite to a shared CDR — the tiles
-/// are a summary, not a latency-critical path.
-///
-/// NOTE: no openEHR spec governs an admin dashboard — our own design/extension.
-#[cfg(feature = "ssr")]
-const TILE_CONCURRENCY: usize = 8;
-
 /// The dashboard's per-namespace match tiles: the CDR's stored queries grouped
 /// by the namespace of their qualified name
 /// ([`group_by_namespace`](crate::query_namespace::group_by_namespace)), each
@@ -158,8 +149,8 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
     let mut tiles = Vec::new();
     for group in crate::query_namespace::group_by_namespace(&rows) {
         // The grouping is DERIVED — there is no stored member list to narrow
-        // by — so every member runs, fanned out with bounded concurrency
-        // (`TILE_CONCURRENCY`) instead of a serial await chain.
+        // by — so every member runs, fanned out with the shared bounded
+        // concurrency instead of a serial await chain.
         //
         // The identifiers are collected into owned pairs BEFORE the stream: an
         // async block borrowing out of `group` is not general enough over
@@ -175,7 +166,7 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
                 .ok();
             (name, version, counted)
         }))
-        .buffered(TILE_CONCURRENCY)
+        .buffered(crate::cdr::FANOUT_CONCURRENCY)
         .collect::<Vec<_>>()
         .await;
         let mut matches: Option<i64> = Some(0);

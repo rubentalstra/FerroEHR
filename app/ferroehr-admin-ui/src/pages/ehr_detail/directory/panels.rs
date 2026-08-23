@@ -26,7 +26,7 @@ use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::error::AdminUiError;
 use crate::pages::ehr_detail::directory::tree::read_only_tree;
 use crate::pages::ehr_detail::directory::{
-    DirectoryAtTime, DirectoryState, DirectorySubtree, DirectoryVersion,
+    DirectoryAtTime, DirectoryHistory, DirectoryState, DirectorySubtree, DirectoryVersion,
 };
 
 /// A toolbar toggle button, styled active when its panel is open.
@@ -175,15 +175,17 @@ fn toolbar_body(
     .into_any()
 }
 
-/// The version-history panel: newest-first version rows, a selected-version
-/// read-only preview, and a restore action (a `PUT` of the chosen version's
-/// tree against the current latest `If-Match`).
+/// The version-history panel: the newest window of version rows, a
+/// selected-version read-only preview, a restore action (a `PUT` of the chosen
+/// version's tree against the current latest `If-Match`), and — while older
+/// versions remain — a "load older" affordance that widens the window.
 pub(in crate::pages::ehr_detail::directory) fn history_panel(
     ehr_id: Signal<String>,
     directory: Resource<Result<Option<DirectoryState>, AdminUiError>>,
-    versions: Resource<Result<Vec<DirectoryVersion>, AdminUiError>>,
+    versions: Resource<Result<DirectoryHistory, AdminUiError>>,
     restore: Action<(String, String, String), Result<String, AdminUiError>>,
     history_open: RwSignal<bool>,
+    history_window: RwSignal<u32>,
 ) -> AnyView {
     let selected = RwSignal::new(Option::<String>::None);
     view! {
@@ -194,7 +196,7 @@ pub(in crate::pages::ehr_detail::directory) fn history_panel(
             }>
                 {move || Suspend::new(async move {
                     match versions.await {
-                        Ok(list) if list.is_empty() => {
+                        Ok(history) if history.versions.is_empty() => {
                             view! {
                                 <EmptyState
                                     icon=icondata_lu::LuHistory
@@ -204,7 +206,16 @@ pub(in crate::pages::ehr_detail::directory) fn history_panel(
                             }
                                 .into_any()
                         }
-                        Ok(list) => history_content(ehr_id, directory, restore, list, selected),
+                        Ok(history) => {
+                            history_content(
+                                ehr_id,
+                                directory,
+                                restore,
+                                history,
+                                selected,
+                                history_window,
+                            )
+                        }
                         Err(e) => inline_error(&e),
                     }
                 })}
@@ -214,16 +225,19 @@ pub(in crate::pages::ehr_detail::directory) fn history_panel(
     .into_any()
 }
 
-/// The history rows plus the selected-version preview.
+/// The history rows, the "load older" affordance, and the selected-version
+/// preview.
 fn history_content(
     ehr_id: Signal<String>,
     directory: Resource<Result<Option<DirectoryState>, AdminUiError>>,
     restore: Action<(String, String, String), Result<String, AdminUiError>>,
-    list: Vec<DirectoryVersion>,
+    history: DirectoryHistory,
     selected: RwSignal<Option<String>>,
+    history_window: RwSignal<u32>,
 ) -> AnyView {
-    let rows_source = list.clone();
-    let versions = StoredValue::new(list);
+    let rows_source = history.versions.clone();
+    let has_older = history.has_older;
+    let versions = StoredValue::new(history.versions);
     let rows = view! {
         <For each=move || rows_source.clone() key=|v| v.version_uid.clone() let:version>
             {history_row(&version, selected)}
@@ -244,7 +258,29 @@ fn history_content(
     view! {
         <div class="flex flex-col gap-3">
             <ul class="flex flex-col gap-1">{rows}</ul>
+            {load_older(has_older, history_window)}
             <div>{preview}</div>
+        </div>
+    }
+    .into_any()
+}
+
+/// The "load older" affordance: one more page of history per click, rendered
+/// only while the CDR still has versions beyond the loaded window. There is
+/// deliberately no "load all" — an unbounded walk is the defect this replaces.
+fn load_older(has_older: bool, history_window: RwSignal<u32>) -> AnyView {
+    if !has_older {
+        return ().into_any();
+    }
+    let widen = move |_| {
+        history_window.update(|w| *w = w.saturating_add(crate::components::data_table::PAGE_SIZE));
+    };
+    view! {
+        <div>
+            <button id="directory-history-older" type="button" class=BTN_SECONDARY on:click=widen>
+                <leptos_icons::Icon icon=icondata_lu::LuChevronDown width="14" height="14" />
+                "Load older versions"
+            </button>
         </div>
     }
     .into_any()

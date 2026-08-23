@@ -177,6 +177,16 @@ async fn template_upload_lists_and_inspects_path_catalog() {
     h.wait_css("ul.text-sm li button, ul.text-sm li span").await;
     h.shot(3, "template-detail-catalog").await;
 
+    // The OPT tab is fed by the SAME page-level read as the catalog, so the
+    // switch shows the operational template's own source with no second fetch.
+    h.wait_xpath("//nav[@aria-label='Template views']//a[normalize-space(.)='OPT']")
+        .await
+        .click()
+        .await
+        .expect("open the OPT tab");
+    wait_text_contains(&h, "pre", "template_id").await;
+    h.shot(4, "template-detail-opt").await;
+
     h.assert_console_clean(&["401", "Failed to load resource"])
         .await;
     h.finish().await;

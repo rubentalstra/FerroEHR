@@ -12,6 +12,13 @@
 //! is `openehr_its::flat`'s (built from the CDR's OPT), per the ITS-REST
 //! Simplified Formats spec (`master04`).
 //!
+//! The WT catalog, the OPT source pane and the identity card are three views
+//! of ONE document, so the screen reads the operational template exactly once
+//! per render — a single page-level [`Resource`] over
+//! [`fetch_template_detail`], shared by every pane (the one-reader rule, crate
+//! `CLAUDE.md`). The Example tab keeps its own tab-gated resource: it is a
+//! different CDR resource whose fetch runs the CDR's example generator.
+//!
 //! Discipline (rules §0/§1/§6/§8): each `#[server]` fn guards the session
 //! first and keeps CDR credentials server-side; the view is composed from
 //! `.into_any()`-erased sections; the catalog tree is a recursive component
@@ -30,72 +37,6 @@ use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
-
-/// Fetch the raw OPT 1.4 operational template (canonical XML).
-///
-/// GET `definition/template/adl1.4/{template_id}` with
-/// `Accept: application/xml`; the `template_id` path segment is percent-encoded
-/// server-side.
-///
-/// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Cdr`] (e.g. `404` for an unknown template) /
-/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
-/// [`AdminUiError::CdrUnreachable`] from the CDR.
-#[server]
-pub async fn fetch_template_opt(
-    /// The template whose OPT source to read.
-    template_id: String,
-) -> Result<String, AdminUiError> {
-    let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = expect_context();
-    let url = state.cdr.rest_v1(&format!(
-        "definition/template/adl1.4/{}",
-        urlencoding::encode(&template_id)
-    ));
-    let response = state
-        .cdr
-        .get(&session.credential, &url, "application/xml")
-        .await?;
-    Ok(crate::cdr::CdrClient::expect_success(response)?.body)
-}
-
-/// Fetch the OPT, build its Web Template, and distil the browser-side path
-/// catalog (the same [`CatalogNode`] tree the Query Builder navigates).
-///
-/// The OPT XML is parsed with
-/// [`openehr_its::opt14::from_xml`](openehr_its::opt14::from_xml) — the OPT 1.4
-/// canonical-XML parse entry (root `<template>` = `OPERATIONAL_TEMPLATE`) —
-/// then [`openehr_its::flat::webtemplate::builder::build_web_template`] produces the Web
-/// Template, and [`crate::builder::catalog::from_web_template`] the slim
-/// serializable tree.
-///
-/// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors as
-/// above; [`AdminUiError::Internal`] when the OPT fails to parse or the Web
-/// Template fails to build (the diagnostic named, never a panic).
-#[server]
-pub async fn fetch_template_catalog(
-    /// The template to build the path catalog from.
-    template_id: String,
-) -> Result<CatalogNode, AdminUiError> {
-    let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = expect_context();
-    let url = state.cdr.rest_v1(&format!(
-        "definition/template/adl1.4/{}",
-        urlencoding::encode(&template_id)
-    ));
-    let response = state
-        .cdr
-        .get(&session.credential, &url, "application/xml")
-        .await?;
-    let xml = crate::cdr::CdrClient::expect_success(response)?.body;
-    let opt = openehr_its::opt14::from_xml(&xml)
-        .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
-    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
-        .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
-    Ok(crate::builder::catalog::from_web_template(&web_template))
-}
 
 /// Template identity + language metadata for the detail header card,
 /// combined from the typed OPT (uid, concept, original language) and its
@@ -116,18 +57,80 @@ pub struct TemplateMeta {
     pub languages: Vec<String>,
 }
 
-/// Fetch the OPT and distil the identity/metadata card fields (typed parse —
-/// the same `openehr_its::opt14` + WebTemplate pipeline as the catalog).
+/// Everything the template-detail screen shows about one operational template,
+/// distilled from a SINGLE fetch of its OPT source.
+///
+/// The three panes of the screen are three views of the same document — the
+/// raw source, its identity metadata, and its Web Template path catalog — so
+/// they travel together and the screen reads the CDR once (the one-reader rule,
+/// crate `CLAUDE.md`).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TemplateDetail {
+    /// The raw OPT 1.4 canonical XML the CDR served, verbatim.
+    pub source: String,
+    /// The identity/metadata card fields.
+    pub meta: TemplateMeta,
+    /// The Web Template path catalog (the same [`CatalogNode`] tree the Query
+    /// Builder navigates).
+    pub catalog: CatalogNode,
+}
+
+/// Distil the fetched OPT source into the screen's three panes: one parse, one
+/// Web Template build, both views derived from them.
+///
+/// The XML is parsed with [`openehr_its::opt14::from_xml`] — the OPT 1.4
+/// canonical-XML parse entry (root `<template>` = `OPERATIONAL_TEMPLATE`) —
+/// then [`openehr_its::flat::webtemplate::builder::build_web_template`]
+/// produces the Web Template, and
+/// [`crate::builder::catalog::from_web_template`] the slim serializable tree.
 ///
 /// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors as
-/// above; [`AdminUiError::Internal`] when the OPT fails to parse or the Web
-/// Template fails to build.
+/// [`AdminUiError::Internal`] when the OPT fails to parse or the Web Template
+/// fails to build (the diagnostic named, never a panic).
+#[cfg(feature = "ssr")]
+pub fn template_detail_from_opt(source: String) -> Result<TemplateDetail, AdminUiError> {
+    let opt = openehr_its::opt14::from_xml(&source)
+        .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
+    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
+        .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
+    Ok(TemplateDetail {
+        meta: TemplateMeta {
+            template_id: opt.template_id.value.clone(),
+            concept: opt.concept.clone(),
+            uid: opt
+                .uid
+                .as_ref()
+                .map(|u| u.value().to_owned())
+                .unwrap_or_default(),
+            language: opt.language.code_string.clone(),
+            version: web_template.version.clone(),
+            languages: web_template.languages.clone(),
+        },
+        catalog: crate::builder::catalog::from_web_template(&web_template),
+        source,
+    })
+}
+
+/// Fetch the operational template ONCE and distil everything the detail screen
+/// shows from that one document.
+///
+/// GET `definition/template/adl1.4/{template_id}` with
+/// `Accept: application/xml`; the `template_id` path segment is percent-encoded
+/// server-side. The OPT is parsed exactly once, by
+/// [`template_detail_from_opt`].
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Cdr`] (e.g. `404` for an unknown template) /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::CdrUnreachable`] from the CDR;
+/// [`AdminUiError::Internal`] when the OPT fails to parse or the Web Template
+/// fails to build.
 #[server]
-pub async fn fetch_template_meta(
-    /// The template whose metadata to read.
+pub async fn fetch_template_detail(
+    /// The template whose OPT to read.
     template_id: String,
-) -> Result<TemplateMeta, AdminUiError> {
+) -> Result<TemplateDetail, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
@@ -138,23 +141,25 @@ pub async fn fetch_template_meta(
         .cdr
         .get(&session.credential, &url, "application/xml")
         .await?;
-    let xml = crate::cdr::CdrClient::expect_success(response)?.body;
-    let opt = openehr_its::opt14::from_xml(&xml)
-        .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
-    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
-        .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
-    Ok(TemplateMeta {
-        template_id: opt.template_id.value.clone(),
-        concept: opt.concept.clone(),
-        uid: opt
-            .uid
-            .as_ref()
-            .map(|u| u.value().to_owned())
-            .unwrap_or_default(),
-        language: opt.language.code_string.clone(),
-        version: web_template.version.clone(),
-        languages: web_template.languages.clone(),
-    })
+    template_detail_from_opt(crate::cdr::CdrClient::expect_success(response)?.body)
+}
+
+/// Fetch a template's Web Template path catalog alone — the Query Builder's
+/// reader, which navigates paths and has no use for the OPT source or the
+/// identity card.
+///
+/// It rides [`fetch_template_detail`]'s single fetch + parse pipeline and
+/// returns only the catalog, so the builder's wire payload stays the tree
+/// rather than the whole operational template.
+///
+/// # Errors
+/// As [`fetch_template_detail`].
+#[server]
+pub async fn fetch_template_catalog(
+    /// The template to build the path catalog from.
+    template_id: String,
+) -> Result<CatalogNode, AdminUiError> {
+    Ok(fetch_template_detail(template_id).await?.catalog)
 }
 
 /// Fetch the CDR-generated example composition for the template, in `format`.
@@ -231,28 +236,18 @@ pub fn TemplateDetailPage() -> impl IntoView {
     let selected_node = RwSignal::new(None::<CatalogNode>);
     let example_format = RwSignal::new(ReprFormat::CanonicalJson);
 
-    // Each tab's resource is gated on the tab being active so only the
-    // visible pane fetches (the example fetch in particular triggers the
-    // CDR's example GENERATOR — never run it for a tab the user hasn't
-    // opened). The stable source keeps loaded state on re-show.
-    let catalog: Resource<Result<Option<CatalogNode>, AdminUiError>> = Resource::new(
-        move || (selected_tab.get() == "wt").then(|| template_id.get()),
-        |active| async move {
-            match active {
-                Some(id) => fetch_template_catalog(id).await.map(Some),
-                None => Ok(None),
-            }
-        },
+    // ONE page-level read of the operational template, shared by every pane
+    // that describes it — the metadata card (tab-independent by owner
+    // directive 2026-07-18), the WT path catalog, and the OPT source view are
+    // three views of one document, so the screen fetches and parses it once
+    // (the one-reader rule, crate `CLAUDE.md`).
+    let detail = Resource::new(
+        move || template_id.get(),
+        |id| async move { fetch_template_detail(id).await },
     );
-    let opt: Resource<Result<Option<String>, AdminUiError>> = Resource::new(
-        move || (selected_tab.get() == "opt").then(|| template_id.get()),
-        |active| async move {
-            match active {
-                Some(id) => fetch_template_opt(id).await.map(Some),
-                None => Ok(None),
-            }
-        },
-    );
+    // The example stays its own tab-gated resource: it is a DIFFERENT CDR
+    // resource (`…/example`) whose fetch triggers the CDR's example generator,
+    // and its format is a live selection — never run it for an unopened tab.
     let example: Resource<Result<Option<String>, AdminUiError>> = Resource::new(
         move || {
             (selected_tab.get() == "example").then(|| (template_id.get(), example_format.get()))
@@ -265,18 +260,10 @@ pub fn TemplateDetailPage() -> impl IntoView {
         },
     );
 
-    // The identity/metadata card is tab-independent (owner directive
-    // 2026-07-18: template id, concept, version, UID, languages always
-    // visible on the detail screen).
-    let meta = Resource::new(
-        move || template_id.get(),
-        |id| async move { fetch_template_meta(id).await },
-    );
-
-    let wt_pane = wt_tab(catalog, selected_node);
-    let opt_pane = opt_tab(opt);
+    let wt_pane = wt_tab(detail, selected_node);
+    let opt_pane = opt_tab(detail);
     let example_pane = example_tab(example, example_format);
-    let meta_card = meta_section(meta);
+    let meta_card = meta_section(detail);
     let delete_action = delete_section(template_id);
 
     // The tabs are URL-driven pill links (rules §9): a static-Tailwind anchor
@@ -413,8 +400,8 @@ fn delete_section(template_id: Signal<String>) -> AnyView {
 
 /// The identity/metadata card: template id, concept, version, UID, and
 /// languages — always visible above the tabs. Resolved inside `Suspense`
-/// per the house error pattern.
-fn meta_section(meta: Resource<Result<TemplateMeta, AdminUiError>>) -> AnyView {
+/// per the house error pattern, from the shared detail handle.
+fn meta_section(detail: Resource<Result<TemplateDetail, AdminUiError>>) -> AnyView {
     let entry = |label: &'static str, value: String, mono: bool| {
         let value_class = if mono {
             "font-mono text-xs text-ink break-all"
@@ -447,8 +434,9 @@ fn meta_section(meta: Resource<Result<TemplateMeta, AdminUiError>>) -> AnyView {
             }>
                 {move || {
                     Suspend::new(async move {
-                        match meta.await {
-                            Ok(m) => {
+                        match detail.await {
+                            Ok(loaded) => {
+                                let m = loaded.meta;
                                 let language_list = if m.languages.is_empty() {
                                     m.language.clone()
                                 } else {
@@ -477,9 +465,9 @@ fn meta_section(meta: Resource<Result<TemplateMeta, AdminUiError>>) -> AnyView {
 
 /// The WT tab: a two-pane layout — the recursive path-catalog tree (left) and
 /// the node inspector (right), the latter driven by the shared selection
-/// signal.
+/// signal. The tree is the shared detail handle's catalog.
 fn wt_tab(
-    catalog: Resource<Result<Option<CatalogNode>, AdminUiError>>,
+    detail: Resource<Result<TemplateDetail, AdminUiError>>,
     selected: RwSignal<Option<CatalogNode>>,
 ) -> AnyView {
     view! {
@@ -489,14 +477,17 @@ fn wt_tab(
                 <div class="overflow-auto max-h-[70vh]">
                     <Transition fallback=tree_skeleton>
                         {move || Suspend::new(async move {
-                            match catalog.await {
-                                Ok(None) => ().into_any(),
-                                Ok(Some(root)) => {
+                            match detail.await {
+                                Ok(loaded) => {
                                     // Resolve inside the Transition: an SSR'd ErrorBoundary
                                     // fallback mismatches at hydration in leptos 0.8.
                                     view! {
                                         <ul class="text-sm">
-                                            <CatalogTreeNode node=root selected=selected depth=0 />
+                                            <CatalogTreeNode
+                                                node=loaded.catalog
+                                                selected=selected
+                                                depth=0
+                                            />
                                         </ul>
                                     }
                                         .into_any()
@@ -771,18 +762,19 @@ fn code_chip_section(node: &CatalogNode) -> AnyView {
     .into_any()
 }
 
-/// The OPT tab: the raw canonical-XML operational template in the shared
-/// document pane.
-fn opt_tab(opt: Resource<Result<Option<String>, AdminUiError>>) -> AnyView {
+/// The OPT tab: the raw canonical-XML operational template — the shared detail
+/// handle's own source, verbatim — in the shared document pane.
+fn opt_tab(detail: Resource<Result<TemplateDetail, AdminUiError>>) -> AnyView {
     view! {
         <Transition fallback=tree_skeleton>
             {move || Suspend::new(async move {
-                match opt.await {
-                    Ok(None) => ().into_any(),
-                    Ok(Some(xml)) => {
+                match detail.await {
+                    Ok(loaded) => {
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
-                        view! { <crate::components::format_view::DocumentPane body=xml /> }
+                        view! {
+                            <crate::components::format_view::DocumentPane body=loaded.source />
+                        }
                             .into_any()
                     }
                     Err(e) => catalog_error_view(&e),
@@ -835,6 +827,55 @@ fn example_tab(
 #[cfg(test)]
 mod tests {
     use crate::pages::template_detail::tab_href;
+
+    /// The operational template the console's own e2e stack is seeded with
+    /// (`scripts/ui-e2e.sh`), so the derivation is pinned against the same
+    /// document the browser journeys inspect.
+    #[cfg(feature = "ssr")]
+    const OPT_FIXTURE: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
+    ));
+
+    #[cfg(feature = "ssr")]
+    #[test]
+    fn one_parse_yields_the_source_the_meta_and_the_catalog() {
+        // The screen's three panes come out of ONE parse: the source travels
+        // verbatim, the identity card reads the typed OPT, and the path
+        // catalog the Web Template built from it.
+        let detail =
+            crate::pages::template_detail::template_detail_from_opt(OPT_FIXTURE.to_owned())
+                .expect("the seeded OPT parses");
+        assert_eq!(detail.source, OPT_FIXTURE, "the source pane is verbatim");
+        assert_eq!(detail.meta.template_id, "minimal_evaluation.en.v1");
+        assert_eq!(detail.meta.concept, "Minimal evaluation");
+        assert_eq!(detail.meta.uid, "711d7d49-b3c6-4a6a-a6b4-a4bd02fc353d");
+        assert_eq!(detail.meta.language, "en");
+        assert!(
+            detail.meta.languages.contains(&"en".to_owned()),
+            "the Web Template's language list carries the original language, got {:?}",
+            detail.meta.languages
+        );
+        assert!(
+            !detail.catalog.children.is_empty(),
+            "the path catalog carries the template's own nodes"
+        );
+    }
+
+    #[cfg(feature = "ssr")]
+    #[test]
+    fn a_defective_opt_names_the_failing_stage() {
+        // A refusal is a named diagnostic, never a panic — the screen renders
+        // it inline where the panes would be.
+        let error = crate::pages::template_detail::template_detail_from_opt(
+            "<template>not an OPT</template>".to_owned(),
+        )
+        .expect_err("a defective OPT is refused");
+        assert!(
+            error.to_string().contains("OPT 1.4 parse"),
+            "the diagnostic names the stage that failed, got {error}"
+        );
+    }
 
     #[test]
     fn tab_href_leaves_a_url_safe_template_id_alone() {

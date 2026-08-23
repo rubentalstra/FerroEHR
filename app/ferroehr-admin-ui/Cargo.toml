@@ -88,8 +88,9 @@ tower-sessions = { workspace = true, optional = true, features = ["memory-store"
 # headers are a response property, so the hydrate target never needs it.
 tower-http = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
-# Bounded concurrent fan-out for the dashboard namespace tiles (ssr only —
-# the client never runs the tile queries).
+# Bounded concurrent fan-out for the BFF's multi-request reads — the dashboard
+# namespace tiles, the repository-usage counts, the directory history window
+# (ssr only; the client never issues those reads).
 futures = { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true }
 # Percent-encoding is ALWAYS the `urlencoding` crate (owner hard rule —
