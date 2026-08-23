@@ -39,7 +39,8 @@ fn seeded() -> Option<(String, String)> {
 
 /// The EHR detail screen renders the seeded EHR: the status tab shows the
 /// queryable badge, and the compositions tab lists the seeded composition
-/// whose link opens the viewer.
+/// whose link opens the viewer — in its RENDERED clinical reading, which is
+/// what the row's `?view=rendered` deep link asks for.
 #[tokio::test]
 async fn ehr_detail_lists_seeded_composition() {
     let Some(h) = Harness::start("ehr-detail").await else {
@@ -65,7 +66,10 @@ async fn ehr_detail_lists_seeded_composition() {
     h.shot(2, "compositions-tab").await;
     link.click().await.expect("open the composition viewer");
     h.wait_url_contains(&format!("/compositions/{vo_id}")).await;
-    h.wait_css("pre").await;
+    // The row deep-links the pane's mode, so the document arrives as the
+    // clinical reading (label/value rows) rather than the raw text pane.
+    h.wait_url_contains("view=rendered").await;
+    h.wait_css("[data-doc-row]").await;
     h.assert_console_clean(&["401", "Failed to load resource"])
         .await;
     h.finish().await;

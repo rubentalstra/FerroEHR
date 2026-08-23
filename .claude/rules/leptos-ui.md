@@ -107,6 +107,14 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   unambiguous; `use_context` is a runtime lookup — `expect_context` only
   where provision is structurally guaranteed.
 
+- Toolchain trap (pinned 1.97, bisected 2026-08-23): calling
+  `use_query_map().with_untracked(…)` directly in a `#[component]` fn body
+  makes `clippy::must_use_candidate` stop firing on that fn — so the
+  crate-idiom `#[expect(clippy::must_use_candidate)]` on the component turns
+  into an `unfulfilled_lint_expectations` build failure. Put the URL read in
+  a private helper fn instead (`ehrs.rs::find_from_url`,
+  `composition.rs::pane_view_from_url` are the precedents).
+
 ## 3. Components & props
 
 - Props that change over time are signal types, not plain values

@@ -186,7 +186,9 @@ screen out of how many (`26–50 of 137 templates`), previous/next, and a
 rows-per-page choice of 25/50/100 — `?page=` and `?size=`. The AQL-backed
 listings (EHRs, an EHR's compositions) page through `?offset=` links, and the
 audit browser through `?page=` beside its filters. Every one of these controls
-is a plain link, so paging works before the page's WebAssembly loads.
+is a plain link, so paging works before the page's WebAssembly loads, and a
+page link carries the screen's other parameters — the tab you are on, the
+filters you set — across with it.
 
 ## Audit log
 

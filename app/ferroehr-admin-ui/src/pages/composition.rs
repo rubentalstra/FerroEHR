@@ -48,7 +48,7 @@ use crate::components::empty_state::EmptyState;
 use crate::components::field::{
     BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA,
 };
-use crate::components::format_view::{DocumentPane, FormatSelector};
+use crate::components::format_view::{DocumentPane, FormatSelector, PaneView};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::{toast_error, toast_success};
@@ -536,6 +536,24 @@ fn json_str(value: &Value, path: &[&str]) -> String {
     current.as_str().unwrap_or_default().to_owned()
 }
 
+/// The document pane's OPENING mode, from `?view=` — how the compositions
+/// tab's rows link straight to the rendered clinical reading.
+///
+/// Read UNTRACKED at setup: the pane's own tabs own the mode from then on, and
+/// an effect chasing the address bar would be exactly the signal-writes-signal
+/// shape rules §2 forbids. Untracked is sound because every way of arriving
+/// with a `?view=` is a fresh render of this route — a pasted URL is a document
+/// load, and an in-app link comes from a different path. Anything that adds an
+/// in-app link toggling `?view=` on THIS path must make the pane's mode
+/// reactive instead (the `/ehrs?find=` precedent).
+fn pane_view_from_url() -> PaneView {
+    leptos_router::hooks::use_query_map()
+        .with_untracked(|q| q.get("view"))
+        .as_deref()
+        .and_then(PaneView::from_param)
+        .unwrap_or_default()
+}
+
 /// The composition viewer screen.
 #[expect(
     clippy::must_use_candidate,
@@ -552,6 +570,7 @@ pub fn CompositionPage() -> impl IntoView {
     let uid = Signal::derive(move || params.with(|p| p.get("uid").unwrap_or_default()));
 
     let format = RwSignal::new(ReprFormat::CanonicalJson);
+    let initial_view = pane_view_from_url();
     // Empty = "latest" (fetch by the bare versioned-object id); a non-empty
     // value is a specific OBJECT_VERSION_ID.
     let selected_version = RwSignal::new(String::new());
@@ -709,7 +728,7 @@ pub fn CompositionPage() -> impl IntoView {
         version_at_time,
         at_time_input,
     );
-    let body = document_section(document);
+    let body = document_section(document, initial_view);
     let edit = edit_section(
         ehr_id,
         uid,
@@ -1152,7 +1171,14 @@ fn version_select(entries: Vec<VersionEntry>, selected: RwSignal<String>) -> Any
 /// `(version, format)` selection, under a `<Transition>` so switching either
 /// keeps the prior document visible. A `406` (declined representation) or any
 /// other CDR error renders through the boundary.
-fn document_section(document: Resource<Result<String, AdminUiError>>) -> AnyView {
+///
+/// `initial_view` is the deep-linked opening mode (`?view=`), read in the
+/// screen's setup — a plain value, so every Suspend re-run mounts the pane the
+/// same way on both sides of hydration.
+fn document_section(
+    document: Resource<Result<String, AdminUiError>>,
+    initial_view: PaneView,
+) -> AnyView {
     view! {
         <Transition fallback=|| {
             view! {
@@ -1167,7 +1193,7 @@ fn document_section(document: Resource<Result<String, AdminUiError>>) -> AnyView
                         let body_sig = RwSignal::new(body);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
-                        view! { <DocumentPane body=body_sig /> }
+                        view! { <DocumentPane body=body_sig initial_view=initial_view /> }
                             .into_any()
                     }
                     Err(e) => crate::components::format_view::inline_error(&e),

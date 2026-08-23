@@ -342,7 +342,7 @@ pub(super) fn commit_section(ehr_id: Signal<String>, selected: Memo<String>) -> 
         },
         |on| async move {
             match on {
-                Some((id, _)) => crate::pages::ehr_detail::compositions::list_compositions(id, 0)
+                Some((id, _)) => crate::pages::ehr_detail::compositions::all_compositions(id, 0)
                     .await
                     .map(Some),
                 None => Ok(None),

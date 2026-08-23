@@ -90,6 +90,10 @@ pub struct EhrStatusState {
     /// The subject's external reference id (`subject.external_ref.id.value`),
     /// empty for a bare `PARTY_SELF` subject.
     pub subject: String,
+    /// The issuing namespace of that reference
+    /// (`subject.external_ref.namespace`), empty when the subject carries no
+    /// external reference.
+    pub subject_namespace: String,
     /// `EHR_STATUS.other_details` pretty-printed as canonical JSON, empty when
     /// the status carries none (the attribute is optional).
     pub other_details: String,
@@ -454,6 +458,7 @@ fn parse_status_state(body: &str) -> Result<EhrStatusState, AdminUiError> {
             .and_then(Value::as_bool)
             .unwrap_or(false),
         subject: json_str(&doc, &["subject", "external_ref", "id", "value"]),
+        subject_namespace: json_str(&doc, &["subject", "external_ref", "namespace"]),
         other_details,
     })
 }
@@ -502,31 +507,43 @@ fn json_str(value: &Value, path: &[&str]) -> String {
     current.as_str().unwrap_or_default().to_owned()
 }
 
-/// The current-status resource shared by the tab's sections.
-type StatusResource = Resource<Result<Option<EhrStatusState>, AdminUiError>>;
+/// The current-status resource shared by the tab's sections and the EHR
+/// header.
+pub type StatusResource = Resource<Result<EhrStatusState, AdminUiError>>;
 
-/// The toast detail for a committed status version: the new version, or a
-/// generic line when the CDR answered `204` (no representation to read a uid
-/// from).
-fn status_toast_detail(uid: &str) -> String {
-    if uid.is_empty() {
-        "A new EHR_STATUS version was committed.".to_owned()
-    } else {
-        format!("New version {uid}")
+/// The console's ONE read of an EHR's current `EHR_STATUS`, plus the action
+/// whose successful saves refetch it.
+///
+/// Created once per EHR-detail screen by [`status_feed`] and handed to BOTH
+/// consumers — the page header's identity strip and the Status tab — because
+/// they show the same claim and the crate's one-reader-per-claim rule forbids a
+/// second GET for it. The resource is therefore UNGATED by the active tab: the
+/// header shows on every tab, so the read is needed on every tab.
+#[derive(Clone, Copy)]
+pub struct StatusFeed {
+    /// The current `EHR_STATUS`, read once per `(ehr_id, successful save)`.
+    pub resource: StatusResource,
+    /// The save whose successful commits advance the resource's source.
+    save: Action<StatusEdit, Result<String, AdminUiError>>,
+}
+
+impl std::fmt::Debug for StatusFeed {
+    /// Reactive handles carry no readable content outside a reactive owner, so
+    /// the impl names the type only — and deliberately never a clinical value
+    /// (the PHI caveat in `.claude/rules/reliability.md`).
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("StatusFeed")
     }
 }
 
-/// Status tab: the current-status facts, the edit form, and the document.
+/// Create the shared current-status read for one EHR.
 ///
-/// One resource, created in setup and gated on the tab being active so it
-/// fetches only when shown (rules §6 — never fetch-in-effect). Its source also
-/// carries a stamp that advances ONLY on a successful save, so a refused save (a
-/// `412` conflict, a rejected body) leaves the operator's input on screen
-/// instead of re-seeding the form from the server.
-pub(super) fn status_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
-    let toaster = thaw::ToasterInjection::expect_context();
-
-    // Created BEFORE the resource: its stamp is the resource's refetch trigger.
+/// Call this ONCE, in the EHR-detail screen's setup: the save action has to
+/// exist before the resource (its stamp is the resource's refetch trigger), and
+/// resource ids are allocated in creation order, so both consumers taking the
+/// same handle is what keeps the server pass and hydration in step (rules §4).
+#[must_use]
+pub fn status_feed(ehr_id: Signal<String>) -> StatusFeed {
     let save: Action<StatusEdit, Result<String, AdminUiError>> =
         Action::new(|edit: &StatusEdit| {
             let edit = edit.clone();
@@ -554,16 +571,38 @@ pub(super) fn status_section(ehr_id: Signal<String>, selected: Memo<String>) -> 
             prev.copied().unwrap_or(0)
         }
     });
-
     let resource = Resource::new(
-        move || (selected.get() == "status").then(|| (ehr_id.get(), saved.get())),
-        |active| async move {
-            match active {
-                Some((id, _)) => fetch_ehr_status(id).await.map(Some),
-                None => Ok(None),
-            }
-        },
+        move || (ehr_id.get(), saved.get()),
+        |(id, _)| async move { fetch_ehr_status(id).await },
     );
+    StatusFeed { resource, save }
+}
+
+/// The toast detail for a committed status version: the new version, or a
+/// generic line when the CDR answered `204` (no representation to read a uid
+/// from).
+fn status_toast_detail(uid: &str) -> String {
+    if uid.is_empty() {
+        "A new EHR_STATUS version was committed.".to_owned()
+    } else {
+        format!("New version {uid}")
+    }
+}
+
+/// Status tab: the current-status facts, the edit form, and the document.
+///
+/// Reads the screen's SHARED [`StatusFeed`] rather than opening its own — the
+/// page header renders the same claim (crate `CLAUDE.md` §One reader per
+/// claim). The feed's source carries a stamp that advances ONLY on a successful
+/// save, so a refused save (a `412` conflict, a rejected body) leaves the
+/// operator's input on screen instead of re-seeding the form from the server.
+pub(super) fn status_section(
+    feed: StatusFeed,
+    ehr_id: Signal<String>,
+    selected: Memo<String>,
+) -> AnyView {
+    let toaster = thaw::ToasterInjection::expect_context();
+    let StatusFeed { resource, save } = feed;
 
     // Both outcomes toast (an outside-world side-effect — rules §2; the
     // console's mutation-feedback rule, crate `CLAUDE.md`). A `412` is the
@@ -615,11 +654,10 @@ fn facts_section(resource: StatusResource, form: StatusForm) -> AnyView {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
                 match resource.await {
-                    Ok(Some(state)) => {
+                    Ok(state) => {
                         seed(form, &state);
                         facts_card(&state)
                     }
-                    Ok(None) => ().into_any(),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -628,14 +666,27 @@ fn facts_section(resource: StatusResource, form: StatusForm) -> AnyView {
     .into_any()
 }
 
+/// How the EHR's subject reads, from the `EHR_STATUS` document alone.
+///
+/// `EHR_STATUS.subject` is a `PARTY_SELF`, whose optional `external_ref`
+/// (a `PARTY_REF`) is the only place an outside identity appears
+/// (`docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`).
+/// So there are exactly three honest readings, and a bare `PARTY_SELF` is an
+/// ABSENCE of an external reference, never an unknown subject. Pure, so the
+/// header and the Status tab spell the subject identically.
+#[must_use]
+pub(super) fn subject_label(state: &EhrStatusState) -> String {
+    match (state.subject.as_str(), state.subject_namespace.as_str()) {
+        ("", _) => "self — no external subject reference".to_owned(),
+        (id, "") => id.to_owned(),
+        (id, namespace) => format!("{id} ({namespace})"),
+    }
+}
+
 /// Render the current status's facts as a card.
 fn facts_card(state: &EhrStatusState) -> AnyView {
     let queryable = state.is_queryable;
-    let subject = if state.subject.is_empty() {
-        "self (no external subject)".to_owned()
-    } else {
-        state.subject.clone()
-    };
+    let subject = subject_label(state);
     let version = if state.version_uid.is_empty() {
         "—".to_owned()
     } else {
@@ -644,8 +695,8 @@ fn facts_card(state: &EhrStatusState) -> AnyView {
     view! {
         <div class=format!("{CARD_PAD} flex flex-col gap-3")>
             <div class="flex flex-wrap gap-2 items-center">
-                {capability_badge("queryable", queryable)}
-                {capability_badge("modifiable", state.is_modifiable)}
+                {capability_badge("tab", "queryable", queryable)}
+                {capability_badge("tab", "modifiable", state.is_modifiable)}
             </div>
             <div class="text-sm">
                 <span class="font-medium text-ink-muted">"subject: "</span>
@@ -682,7 +733,7 @@ fn document_section(resource: StatusResource) -> AnyView {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
                 match resource.await {
-                    Ok(Some(state)) => {
+                    Ok(state) => {
                         let pretty = crate::components::format_view::pretty_body(
                             &state.body,
                             crate::format::ReprFormat::CanonicalJson,
@@ -690,7 +741,7 @@ fn document_section(resource: StatusResource) -> AnyView {
                         let doc = RwSignal::new(pretty);
                         view! { <DocumentPane body=doc /> }.into_any()
                     }
-                    Ok(None) | Err(_) => ().into_any(),
+                    Err(_) => ().into_any(),
                 }
             })}
         </Transition>
@@ -700,8 +751,10 @@ fn document_section(resource: StatusResource) -> AnyView {
 
 /// An ok/danger capability chip for an `EHR_STATUS` boolean flag. The
 /// `data-status-flag`/`data-status-value` pair is the stable E2E hook on the
-/// rendered state of that flag.
-fn capability_badge(label: &'static str, on: bool) -> AnyView {
+/// rendered state of that flag, and `data-status-scope` says WHERE it is
+/// rendered — the page header (`header`) and the Status tab (`tab`) show the
+/// same flag from the same read, so a selector has to be able to name one.
+pub(super) fn capability_badge(scope: &'static str, label: &'static str, on: bool) -> AnyView {
     let (icon, class) = if on {
         (icondata_lu::LuCheck, "bg-ok-subtle text-ok")
     } else {
@@ -713,6 +766,7 @@ fn capability_badge(label: &'static str, on: bool) -> AnyView {
             class=format!(
                 "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-xs font-medium {class}",
             )
+            data-status-scope=scope
             data-status-flag=label
             data-status-value=rendered_state
         >
@@ -725,7 +779,7 @@ fn capability_badge(label: &'static str, on: bool) -> AnyView {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{parse_status_state, parse_versioned_status, status_toast_detail};
+    use super::{parse_status_state, parse_versioned_status, status_toast_detail, subject_label};
 
     /// A canonical `EHR_STATUS` as the wire carries it — the shape of the
     /// example shape of RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`.
@@ -755,6 +809,8 @@ mod tests {
         assert!(state.is_queryable);
         assert!(!state.is_modifiable);
         assert_eq!(state.subject, "p-42");
+        assert_eq!(state.subject_namespace, "demographic");
+        assert_eq!(subject_label(&state), "p-42 (demographic)");
         // The body is kept VERBATIM — it is the merge base of every edit.
         assert_eq!(state.body, STATUS);
         // `other_details` reaches the textarea pretty-printed.
@@ -772,9 +828,22 @@ mod tests {
         }"#;
         let state = parse_status_state(body).expect("valid EHR_STATUS");
         assert_eq!(state.subject, "");
+        assert_eq!(state.subject_namespace, "");
         assert_eq!(state.other_details, "");
         assert_eq!(state.version_uid, "");
         assert!(state.is_queryable && state.is_modifiable);
+        // An absent external_ref is an ABSENCE, said as one — never a blank.
+        assert_eq!(
+            subject_label(&state),
+            "self — no external subject reference"
+        );
+        // An external_ref with no namespace reads as the bare id.
+        let no_namespace = parse_status_state(
+            r#"{"_type":"EHR_STATUS","subject":{"_type":"PARTY_SELF",
+                "external_ref":{"id":{"value":"p-7"}}}}"#,
+        )
+        .expect("valid EHR_STATUS");
+        assert_eq!(subject_label(&no_namespace), "p-7");
         // A sparse body never fails the tab; a non-JSON one does.
         assert!(parse_status_state("not json").is_err());
     }
