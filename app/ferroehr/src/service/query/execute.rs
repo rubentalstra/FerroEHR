@@ -463,6 +463,27 @@ fn map_plan_error(e: AqlError) -> SmError {
 /// ([`internal_fault`]).
 fn map_exec_error(e: AqlError) -> SmError {
     match e {
+        // A data-exception the DRIVER raises on this path is the caller's own
+        // binding failing Postgres coercion — the lowered literals are typed,
+        // so only client `query_parameters` reach text→type casts here. 22007
+        // invalid_datetime_format / 22008 datetime_field_overflow / 22P02
+        // invalid_text_representation (PostgreSQL Appendix A, errcodes) are
+        // therefore a 400 naming the defect class, never the write paths'
+        // opaque 500 (#2593: "not-a-date" against a temporal predicate
+        // answered 500).
+        AqlError::Exec(ExecError::Database(db))
+            if matches!(
+                db.as_database_error()
+                    .and_then(sqlx::error::DatabaseError::code)
+                    .as_deref(),
+                Some("22007" | "22008" | "22P02")
+            ) =>
+        {
+            SmError::precondition(
+                "a query parameter value cannot be coerced to the type its                  predicate compares against (an invalid date/time or text                  representation); correct the parameter value",
+            )
+            .with_source(db)
+        }
         AqlError::Exec(ExecError::Database(db)) => crate::storage::error::classify_sqlx(&db),
         AqlError::Exec(ExecError::Assembly(a)) => internal_fault("assemble the RESULT_SET", &a),
         AqlError::Exec(ExecError::Terminology(msg)) => SmError::exception(msg),
