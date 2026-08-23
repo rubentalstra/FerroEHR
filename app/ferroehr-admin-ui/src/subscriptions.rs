@@ -14,7 +14,7 @@
 //! whole group (paths, payloads, status codes) is the CDR's own design.
 //!
 //! A subscription is a flat predicate record — `kind` / `change_type` /
-//! `template_id` / `archetype`, each absent value meaning "any" — plus a name
+//! `template_id`, each absent value meaning "any" — plus a name
 //! and an `enabled` flag, so the screen edits it with ordinary form fields
 //! rather than a document editor.
 //!
@@ -53,7 +53,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::AdminUiError;
 
 /// One subscription as the CDR serves it
-/// (`{id, name, kind, change_type, template_id, archetype, enabled,
+/// (`{id, name, kind, change_type, template_id, enabled,
 /// created_at}`).
 ///
 /// Every wire value is a string, including the id and the timestamp: the record
@@ -73,8 +73,6 @@ pub struct SubscriptionRow {
     pub change_type: String,
     /// The template-id predicate (empty = any template).
     pub template_id: String,
-    /// The root-archetype predicate (empty = any archetype).
-    pub archetype: String,
     /// Whether the CDR delivers this subscription's events.
     pub enabled: bool,
     /// The record's creation instant, verbatim from the wire.
@@ -96,8 +94,6 @@ pub struct SubscriptionPredicates {
     pub change_type: String,
     /// The template id to match (empty = any).
     pub template_id: String,
-    /// The root archetype to match (empty = any).
-    pub archetype: String,
     /// Whether the subscription is delivered.
     pub enabled: bool,
 }
@@ -233,7 +229,6 @@ pub fn match_summary(row: &SubscriptionRow) -> String {
         ("kind", row.kind.as_str()),
         ("change type", row.change_type.as_str()),
         ("template", row.template_id.as_str()),
-        ("archetype", row.archetype.as_str()),
     ] {
         if !value.trim().is_empty() {
             parts.push(format!("{label} {}", value.trim()));
@@ -482,7 +477,6 @@ fn subscription_definition(name: &str, predicates: &SubscriptionPredicates) -> S
         "kind": predicate_value(&predicates.kind),
         "change_type": predicate_value(&predicates.change_type),
         "template_id": predicate_value(&predicates.template_id),
-        "archetype": predicate_value(&predicates.archetype),
         "enabled": predicates.enabled,
     })
     .to_string()
@@ -497,7 +491,6 @@ fn subscription_update(predicates: &SubscriptionPredicates) -> String {
         "kind": predicate_value(&predicates.kind),
         "change_type": predicate_value(&predicates.change_type),
         "template_id": predicate_value(&predicates.template_id),
-        "archetype": predicate_value(&predicates.archetype),
         "enabled": predicates.enabled,
     })
     .to_string()
@@ -529,7 +522,6 @@ fn subscription_row(item: &serde_json::Value) -> SubscriptionRow {
         kind: text("kind"),
         change_type: text("change_type"),
         template_id: text("template_id"),
-        archetype: text("archetype"),
         enabled: item
             .get("enabled")
             .and_then(serde_json::Value::as_bool)
@@ -553,7 +545,6 @@ mod tests {
             kind: "COMPOSITION".to_owned(),
             change_type: "249".to_owned(),
             template_id: "minimal_evaluation.en.v1".to_owned(),
-            archetype: String::new(),
             enabled: true,
             created_at: "2026-08-23T02:39:05.656092Z".to_owned(),
         }
@@ -631,14 +622,6 @@ mod tests {
             ..row()
         };
         assert_eq!(match_summary(&wildcard), "Matches every committed version.");
-        let archetype_only = SubscriptionRow {
-            archetype: "openEHR-EHR-COMPOSITION.minimal.v1".to_owned(),
-            ..wildcard
-        };
-        assert_eq!(
-            match_summary(&archetype_only),
-            "Matches archetype openEHR-EHR-COMPOSITION.minimal.v1."
-        );
     }
 
     #[test]
@@ -707,7 +690,6 @@ mod tests {
             "kind": "COMPOSITION",
             "change_type": "249",
             "template_id": "minimal_evaluation.en.v1",
-            "archetype": serde_json::Value::Null,
             "enabled": true,
             "created_at": "2026-08-23T02:39:05.656092Z",
         });
@@ -720,13 +702,12 @@ mod tests {
             "kind": serde_json::Value::Null,
             "change_type": serde_json::Value::Null,
             "template_id": serde_json::Value::Null,
-            "archetype": serde_json::Value::Null,
             "enabled": true,
             "created_at": "2026-08-23T02:39:05.678466Z",
         });
         let parsed = super::subscription_row(&minimal);
         assert_eq!(parsed.name, "probe-min");
-        assert!(parsed.kind.is_empty() && parsed.archetype.is_empty());
+        assert!(parsed.kind.is_empty());
         assert!(parsed.enabled);
     }
 
@@ -737,7 +718,6 @@ mod tests {
             kind: " COMPOSITION ".to_owned(),
             change_type: "249".to_owned(),
             template_id: "minimal_evaluation.en.v1".to_owned(),
-            archetype: "  ".to_owned(),
             enabled: false,
         };
         let created: serde_json::Value =
@@ -748,7 +728,6 @@ mod tests {
         assert_eq!(created["change_type"], "249");
         assert_eq!(created["template_id"], "minimal_evaluation.en.v1");
         // A blank predicate is sent as the CDR's own wildcard, never as "".
-        assert_eq!(created["archetype"], serde_json::Value::Null);
         assert_eq!(created["enabled"], false);
 
         // The update carries the same predicates and NO name: the CDR treats

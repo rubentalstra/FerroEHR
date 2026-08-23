@@ -78,7 +78,7 @@ pub(crate) async fn event_subscription_list(
 
 /// Create a subscription (`POST /admin/event_subscription`).
 ///
-/// Body: `{name, kind?, change_type?, template_id?, archetype?, enabled?}`
+/// Body: `{name, kind?, change_type?, template_id?, enabled?}`
 /// (`enabled` defaults to `true`).
 ///
 /// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
@@ -138,7 +138,7 @@ pub(crate) async fn event_subscription_get(
 #[utoipa::path(
     put, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
-    request_body(content = serde_json::Value, description = "The updated subscription definition (canonical JSON)."),
+    request_body(content = serde_json::Value, description = "The replacement subscription definition (canonical JSON). The update is a FULL REPLACE: `enabled` is required (omitting it is a 400 — a defaulted value could silently re-enable a disabled subscription), an omitted predicate becomes the wildcard, the `name` is immutable (an echoed one is ignored), and any unknown key is refused."),
     responses(
         (status = 200, description = "Updated; the stored subscription record is returned.", body = serde_json::Value),
         (status = 400, description = "`subscription_id` is not a valid UUID, or the body is not valid JSON.", body = serde_json::Value),

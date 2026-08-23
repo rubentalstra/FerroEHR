@@ -60,22 +60,12 @@ facet of a committed version:
 | Kind | the versioned object's type | `COMPOSITION`, `EHR_STATUS`, `FOLDER` |
 | Change type | the audit change-type code | `249` (creation), `251` (modification), `523` (deletion) |
 | Template id | the template a composition was committed against | `vital_signs.v2` |
-| Archetype | the root archetype | `openEHR-EHR-COMPOSITION.encounter.v1` |
 
 **A field left empty matches anything.** The console says so in every cell —
 an unset predicate reads `any`, never a blank — and each row carries a
 plain-words line saying what it selects, so "matches every committed version"
 is visible rather than inferred from four empty boxes.
 
-> [!WARNING]
-> Only the first three predicates reach the broker. A subscription's queue is
-> bound with the three-field routing key
-> [`<kind>.<change_type>.<template_id>`](../beyond-core/amqp.md#routing-keys-and-subscriptions),
-> which has no archetype segment — so **Archetype** is stored on the
-> subscription but does not narrow what is delivered today. A subscription
-> whose only predicate is an archetype is bound as a full wildcard and
-> receives everything; narrow it by kind, change type or template as well, or
-> filter on the archetype in the consumer.
 
 The **name** is unique on the CDR and is also the suffix of the queue the
 server declares for the subscription (`ferroehr.events.<name>` with the default

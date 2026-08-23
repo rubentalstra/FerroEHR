@@ -89,8 +89,6 @@ struct Draft {
     change_type: RwSignal<String>,
     /// The template-id predicate draft.
     template_id: RwSignal<String>,
-    /// The archetype predicate draft.
-    archetype: RwSignal<String>,
     /// The enabled flag draft.
     enabled: RwSignal<bool>,
 }
@@ -102,7 +100,6 @@ impl Draft {
             kind: RwSignal::new(String::new()),
             change_type: RwSignal::new(String::new()),
             template_id: RwSignal::new(String::new()),
-            archetype: RwSignal::new(String::new()),
             enabled: RwSignal::new(true),
         }
     }
@@ -114,7 +111,6 @@ impl Draft {
         self.kind.set(row.kind.clone());
         self.change_type.set(row.change_type.clone());
         self.template_id.set(row.template_id.clone());
-        self.archetype.set(row.archetype.clone());
         self.enabled.set(row.enabled);
     }
 
@@ -123,7 +119,6 @@ impl Draft {
         self.kind.set(String::new());
         self.change_type.set(String::new());
         self.template_id.set(String::new());
-        self.archetype.set(String::new());
         self.enabled.set(true);
     }
 
@@ -134,7 +129,6 @@ impl Draft {
             kind: self.kind.get_untracked(),
             change_type: self.change_type.get_untracked(),
             template_id: self.template_id.get_untracked(),
-            archetype: self.archetype.get_untracked(),
             enabled: self.enabled.get_untracked(),
         }
     }
@@ -450,12 +444,6 @@ fn predicate_fields(form: &'static str, draft: Draft) -> AnyView {
             "blank = any",
             draft.template_id,
         )}
-        {text_field(
-            format!("subscription-{form}-archetype"),
-            "Archetype",
-            "blank = any",
-            draft.archetype,
-        )}
     }
     .into_any()
 }
@@ -645,16 +633,7 @@ fn rows_view(
     let footer = table_footer("/subscriptions", "subscriptions", paging, total);
     view! {
         {table_shell(
-            &[
-                "Subscription",
-                "Kind",
-                "Change type",
-                "Template",
-                "Archetype",
-                "State",
-                "Created",
-                "",
-            ],
+            &["Subscription", "Kind", "Change type", "Template", "State", "Created", ""],
             body,
         )}
         {footer}
@@ -700,9 +679,6 @@ fn row_view(
             </td>
             <td class=CELL_MONO data-subscription-cell="template">
                 {predicate_label(&row.template_id)}
-            </td>
-            <td class=CELL_MONO data-subscription-cell="archetype">
-                {predicate_label(&row.archetype)}
             </td>
             <td class=CELL>
                 <span class=state_class data-subscription-state=state_value>
