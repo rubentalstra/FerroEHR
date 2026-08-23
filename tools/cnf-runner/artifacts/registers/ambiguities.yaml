@@ -9751,3 +9751,44 @@ AMB-216:
     #1530; this entry is only the negotiation contradiction.)
   disposition: fixed_handling
   upstream_issue: 2539
+AMB-217:
+  ambiguity: >-
+    The release's error-body story is self-inconsistent and almost entirely
+    unassigned. The overview's §HTTP status codes makes any 4xx/5xx body a
+    MAY ("services MAY return additional error details if the
+    `Prefer: return=representation` header is present") and illustrates it
+    with an example of the shape `{message, code, errors[DV_CODED_TEXT]}`,
+    while the only published error schema — `schemas/others/Error.yaml`,
+    attached by exactly two response files (`400.yaml`,
+    `400_CONTRIBUTION.yaml`) — requires `{message, validationErrors[]}` and
+    defines neither `code` nor `errors`; the two shapes share only
+    `message`, so the release's own example is invalid against its own
+    schema. Every other error response file (404/409/412/422/…) declares no
+    content at all, so no source assigns those bodies any shape.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §HTTP
+    status codes (the MAY sentence + the example error response block, read
+    first-hand — an example under a MAY, not a shape assignment); ITS-REST
+    specifications/responses/400.yaml + responses/400_CONTRIBUTION.yaml
+    (content schema $ref ../schemas/others/Error.yaml — the only two
+    attachments, cited as the OAS, docs text silent on the shape); ITS-REST
+    specifications/schemas/others/Error.yaml (required [message,
+    validationErrors], no additionalProperties bound, cited as the OAS);
+    ITS-REST specifications/responses/422.yaml (description only, no
+    content — the semantic-validation response the shape would most
+    naturally serve).
+  handling: >-
+    Fixed handling: the server emits ONE uniform error body,
+    {error, message, validationErrors} — the Error.yaml members (so the
+    assigned 400 surface satisfies the schema's required list; the list is
+    populated with "<path>: <message>" violations on semantic-validation
+    failures and empty elsewhere) plus a tolerated extra `error`
+    reason-phrase member. The shape beyond the 400 surface is our own
+    design, flagged in `ferroehr-rest::overview::error`. The docs-text
+    example is not followed: an example under a MAY assigns nothing, and
+    following it would make every body invalid against the release's own
+    schema. No catalogue case pins body members: the body itself is a MAY,
+    so a bodyless 400 is conformant and a member assertion would invent a
+    prohibition; the shape is pinned by the server's own wire tests instead.
+  disposition: editorial
+  upstream_issue: 2612

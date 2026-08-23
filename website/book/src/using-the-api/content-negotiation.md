@@ -404,14 +404,16 @@ against the versioned object only, so both headers carry the same list there.)
 ## Error responses
 
 Errors use conventional HTTP status codes (see the summary in
-[Resource walkthroughs](resources.md#status-code-summary)) with one of two JSON
-body shapes:
+[Resource walkthroughs](resources.md#status-code-summary)) with **one uniform
+JSON body shape** — the openEHR `Error` object's members plus a
+machine-readable `error` reason phrase:
 
-- **Validation errors** (a composition that fails its template) use the openEHR
-  error shape:
+- **Validation errors** (a composition that fails its template) populate the
+  list:
 
   ```json
   {
+    "error": "Unprocessable Entity",
     "message": "Composition validation failed",
     "validationErrors": [
       "/content[0]/data/events[0]/data/items[1]/value/magnitude: value out of range",
@@ -423,10 +425,10 @@ body shapes:
   Each entry is `"<path>: <message>"`, so a client can point the user at the
   exact offending node.
 
-- **All other errors** use a simple shape — the status reason plus a message:
+- **All other errors** carry the same shape with an empty list:
 
   ```json
-  { "error": "Not Found", "message": "No EHR with id …" }
+  { "error": "Not Found", "message": "No EHR with id …", "validationErrors": [] }
   ```
 
   This shape is used consistently — including for `405 Method Not Allowed` and
@@ -451,7 +453,7 @@ HTTP/1.1 405 Method Not Allowed
 Allow: GET,HEAD,PUT
 Content-Type: application/json
 
-{ "error": "Method Not Allowed", "message": "the request method is not allowed on this resource" }
+{ "error": "Method Not Allowed", "message": "the request method is not allowed on this resource", "validationErrors": [] }
 ```
 
 When a resource is switched off by configuration — the
