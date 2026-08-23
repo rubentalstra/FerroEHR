@@ -53,6 +53,7 @@ pub mod pages;
 pub mod queries_api;
 pub mod query_namespace;
 pub mod scopes;
+pub mod subscriptions;
 pub mod system_api;
 pub mod tenants;
 pub mod terminology;

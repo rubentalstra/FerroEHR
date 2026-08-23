@@ -157,6 +157,9 @@ bearer tokens never reach the browser.
 - **Demographics** — browse and edit the five demographic party kinds, their
   relationships, version history, and tags. See
   [Demographics](demographics.md).
+- **FHIR** — the connector's mapping-store editor, a read-path viewer, and a
+  validate-only dry-run panel; appears only when the CDR's FHIR API is
+  enabled. See [FHIR connector admin](fhir.md).
 - **Terminology** — browse the terminologies the CDR serves, define a code,
   expand a value set, and test membership or subsumption. See
   [Terminology](terminology.md).
@@ -175,6 +178,10 @@ bearer tokens never reach the browser.
   resolves to. Appears only when the CDR runs with multi-tenancy on. There is
   no tenant switcher: tenancy is credential-derived, and the console displays
   it rather than choosing it. See [Tenant registry](tenants.md).
+- **Subscriptions** — the event subscriptions that decide which committed
+  versions the CDR publishes to a message broker. Appears only when the CDR
+  serves its subscription API. See
+  [Event subscriptions](subscriptions.md).
 
 ### Paging
 
