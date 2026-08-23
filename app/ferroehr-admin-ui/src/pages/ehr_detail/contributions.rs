@@ -347,7 +347,10 @@ fn contributions_table(page: &ContributionPage, offset: RwSignal<u32>) -> AnyVie
     });
     view! {
         {table_shell(&["Contribution", "Committed", "Committer", "Change type"], body)}
-        <p class="mt-2 text-xs text-ink-muted">{total} " contribution(s) total"</p>
+        <p id="contribution-total" class="mt-2 text-xs text-ink-muted">
+            {total}
+            " contribution(s) total"
+        </p>
         <div class="mt-3 flex gap-2">{prev} {next}</div>
     }
     .into_any()

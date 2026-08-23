@@ -152,6 +152,15 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   format-negotiating one), commit history ← the revision history, the VERSION's
   envelope facts (lifecycle state, preceding version, contribution, signature)
   ← the direct VERSIONED_COMPOSITION version read.
+- **CONTRIBUTION authoring has ONE writer and no readers of its own.** The EHR
+  detail's Commit tab (`pages::ehr_detail::commit`) is the console's only caller
+  of `POST /ehr/{ehr_id}/contribution` — the openEHR-native atomic change set —
+  and it re-uses the existing readers for everything it shows: the template list,
+  the EHR's composition list, the composition body, and the current `EHR_STATUS`.
+  It adds no viewer either: a committed contribution opens in the Contributions
+  tab. Its staging list is component state, never a store (§No console-local
+  domain state), and the body it posts is built by the component-free,
+  unit-tested `commit::staged` — never inline in a view.
 - **Two windows of ONE endpoint are not two readers.** The contributions tab
   reads `GET /ehr/{id}/contribution` twice — a page for the list, a wider window
   for the activity timeline — because those are different claims; what the rule
