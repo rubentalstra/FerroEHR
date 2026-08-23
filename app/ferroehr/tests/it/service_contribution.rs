@@ -2016,3 +2016,99 @@ async fn contribution_audit_change_type_is_required_not_derived() {
         "the client's own change type is stored verbatim"
     );
 }
+
+/// Every member-scoped CONTRIBUTION refusal names `versions[i]` (#2590):
+/// measured live, the declared-key check named the member while the data
+/// parse and validation refusals did not — on the one route whose purpose is
+/// a multi-member change set, a client could not tell which member failed.
+#[tokio::test]
+async fn member_scoped_refusals_name_the_offending_version_index() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr = ehr_id.parse().expect("ehr uuid");
+
+    let good = json!({
+        "data": composition("attributed-good"),
+        "lifecycle_state": { "_type": "DV_CODED_TEXT", "value": "complete", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "532" } },
+        "commit_audit": { "change_type": change_type("249", "creation"), "committer": committer("conformance tester") }
+    });
+    let audit = json!({
+        "change_type": change_type("249", "creation"),
+        "committer": committer("conformance tester")
+    });
+
+    // (a) the second member's data fails the strict canonical parse
+    // (`language` removed) — the 400 names versions[1].
+    let mut broken = composition("attributed-parse");
+    broken.as_object_mut().expect("object").remove("language");
+    let bad_parse = json!({
+        "data": broken,
+        "lifecycle_state": good["lifecycle_state"],
+        "commit_audit": good["commit_audit"]
+    });
+    let err = svc
+        .create_ehr_contribution(
+            ehr,
+            json!({ "audit": audit, "versions": [good.clone(), bad_parse] }),
+        )
+        .await
+        .expect_err("a non-decoding member is refused");
+    let sm = err;
+    assert!(
+        sm.message.contains("versions[1]"),
+        "the parse refusal names the member: {}",
+        sm.message
+    );
+
+    // (b) the second member's change_type contradicts its shape — 422 naming
+    // versions[1].
+    let bad_change = json!({
+        "data": composition("attributed-change"),
+        "lifecycle_state": good["lifecycle_state"],
+        "preceding_version_uid": format!("{}::ferroehr.local::1", uuid::Uuid::nil()),
+        "commit_audit": { "change_type": change_type("249", "creation"), "committer": committer("conformance tester") }
+    });
+    let err = svc
+        .create_ehr_contribution(
+            ehr,
+            json!({ "audit": audit, "versions": [good, bad_change] }),
+        )
+        .await
+        .expect_err("creation with a preceding version is refused");
+    let sm = err;
+    assert!(
+        sm.message.contains("versions[1]"),
+        "the change-type refusal names the member: {}",
+        sm.message
+    );
+
+    // (c) the second member names a template the store does not hold — the
+    // validation 422 names versions[1].
+    let mut templated = composition("attributed-template");
+    templated["archetype_details"]["template_id"] =
+        json!({ "_type": "TEMPLATE_ID", "value": "no_such_template.v1" });
+    let good = json!({
+        "data": composition("attributed-good-2"),
+        "lifecycle_state": { "_type": "DV_CODED_TEXT", "value": "complete", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "532" } },
+        "commit_audit": { "change_type": change_type("249", "creation"), "committer": committer("conformance tester") }
+    });
+    let bad_template = json!({
+        "data": templated,
+        "lifecycle_state": good["lifecycle_state"],
+        "commit_audit": good["commit_audit"]
+    });
+    let err = svc
+        .create_ehr_contribution(
+            ehr,
+            json!({ "audit": audit, "versions": [good, bad_template] }),
+        )
+        .await
+        .expect_err("an unknown template is refused");
+    let sm = err;
+    assert!(
+        sm.message.contains("versions[1]") && sm.message.contains("no_such_template.v1"),
+        "the template refusal names the member and the template: {}",
+        sm.message
+    );
+}
