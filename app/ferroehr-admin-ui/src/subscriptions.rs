@@ -306,7 +306,7 @@ pub async fn probe_event_subscriptions() -> Result<SubscriptionAvailability, Adm
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the body is not valid JSON.
 #[server]
@@ -340,7 +340,7 @@ pub async fn list_event_subscriptions() -> Result<Option<Vec<SubscriptionRow>>, 
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] when the name cannot be accepted;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the created record is not valid JSON.
 #[server]
@@ -387,7 +387,7 @@ pub async fn create_event_subscription(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the stored record is not valid JSON.
 #[server]
@@ -428,7 +428,7 @@ pub async fn update_event_subscription(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn delete_event_subscription(

@@ -262,7 +262,7 @@ pub async fn probe_tenant_registry() -> Result<TenantAvailability, AdminUiError>
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the body is not valid JSON.
 #[server]
@@ -294,7 +294,7 @@ pub async fn list_tenants() -> Result<Option<Vec<TenantRow>>, AdminUiError> {
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the body is not valid JSON.
 #[server]
@@ -324,7 +324,7 @@ pub async fn fetch_current_tenant() -> Result<Option<CurrentTenant>, AdminUiErro
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] when a field is blank;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the created record is not valid JSON.
 #[server]
@@ -366,7 +366,7 @@ pub async fn create_tenant(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id or a blank field;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the stored record is not valid JSON.
 #[server]
@@ -413,7 +413,7 @@ pub async fn update_tenant(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn delete_tenant(

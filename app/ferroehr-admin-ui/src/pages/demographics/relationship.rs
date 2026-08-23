@@ -93,8 +93,9 @@ pub struct RelationshipState {
     /// The canonical relationship JSON exactly as the CDR served it — the base
     /// every edit is applied to.
     pub body: String,
-    /// `uid.value` — the served version's `OBJECT_VERSION_ID`, which is both
-    /// the `If-Match` value of an update and the path of a delete.
+    /// The served version's `OBJECT_VERSION_ID`, which is both the `If-Match`
+    /// value of an update and the path of a delete. Read from the `ETag` the
+    /// CDR answered, falling back to the document's own `uid.value`.
     pub version_uid: String,
     /// The version container the routes address.
     pub versioned_object_uid: String,
@@ -167,8 +168,9 @@ pub async fn fetch_relationship(
     if response.is(http::StatusCode::NO_CONTENT) {
         return Ok(None);
     }
-    let body = crate::cdr::CdrClient::expect_success(response)?.body;
-    parse_relationship_state(&body).map(Some)
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    let served_etag = response.etag_version_uid();
+    parse_relationship_state(&response.body, served_etag.as_deref()).map(Some)
 }
 
 /// Create a relationship (`POST /demographic/party_relationship` — extension).
@@ -524,12 +526,21 @@ fn apply_relationship_edits(base: &str, name: &str, details: &str) -> Result<Str
 /// Flatten a canonical `PARTY_RELATIONSHIP` body into a [`RelationshipState`],
 /// keeping the body verbatim.
 ///
+/// `served_etag` is the identifier the CDR's own `ETag` named
+/// ([`CdrResponse::etag_version_uid`](crate::cdr::CdrResponse::etag_version_uid));
+/// it wins over the document's `uid.value`, because the header is what the
+/// server offers for the conditional round-trip. `None` falls back to the body.
+///
 /// # Errors
 /// [`AdminUiError::Internal`] when the body is not valid JSON.
-fn parse_relationship_state(body: &str) -> Result<RelationshipState, AdminUiError> {
+fn parse_relationship_state(
+    body: &str,
+    served_etag: Option<&str>,
+) -> Result<RelationshipState, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("PARTY_RELATIONSHIP JSON: {e}")))?;
-    let version_uid = crate::uid::uid_value_of_document(&doc);
+    let version_uid =
+        served_etag.map_or_else(|| crate::uid::uid_value_of_document(&doc), str::to_owned);
     Ok(RelationshipState {
         body: body.to_owned(),
         versioned_object_uid: container_uid_of(&version_uid),
@@ -1738,7 +1749,7 @@ mod wire_tests {
 
     #[test]
     fn parses_a_relationships_facts_and_both_ends() {
-        let state = parse_relationship_state(RELATIONSHIP).expect("a valid relationship");
+        let state = parse_relationship_state(RELATIONSHIP, None).expect("a valid relationship");
         assert_eq!(state.name, "employment");
         assert_eq!(state.version_uid, "7d44aa01::example.org::2");
         assert_eq!(state.versioned_object_uid, "7d44aa01");
@@ -1750,7 +1761,14 @@ mod wire_tests {
         assert!(state.details.contains("ITEM_TREE"));
         assert!(state.time_validity.contains("2026-01-01"));
         assert_eq!(state.body, RELATIONSHIP);
-        assert!(parse_relationship_state("not json").is_err());
+        assert!(parse_relationship_state("not json", None).is_err());
+        // The served `ETag` is the precondition an update echoes back, not a
+        // value re-derived from the document (ITS-REST overview §ETag and
+        // Last-Modified).
+        let served = parse_relationship_state(RELATIONSHIP, Some("7d44aa01::example.org::6"))
+            .expect("a valid relationship");
+        assert_eq!(served.version_uid, "7d44aa01::example.org::6");
+        assert_eq!(served.versioned_object_uid, "7d44aa01");
     }
 
     #[test]

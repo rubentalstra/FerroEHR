@@ -59,6 +59,15 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
             ),
             _ => format!("The CDR answered {status} to {object}: {message}. Nothing was saved."),
         },
+        // 401 and 403 are different refusals with different next actions: the
+        // credential is not accepted any more versus it is accepted and not
+        // authorized (ITS-REST
+        // `specifications/docs/overview/Requests_and_responses.md`
+        // §HTTP status codes).
+        AdminUiError::CdrUnauthorized(message) => format!(
+            "The CDR no longer accepts this session, so {object} was not saved ({message}). Sign \
+             in again and retry."
+        ),
         AdminUiError::Forbidden(message) => format!(
             "This session may not write {object} ({message}). Sign in with an account that \
              carries the required role and retry."
@@ -118,6 +127,10 @@ pub fn logical_delete_failure_copy(object: &str, error: &AdminUiError) -> String
             "This session may not delete {object} ({message}). Sign in with an account that \
              carries the required role and retry."
         ),
+        AdminUiError::CdrUnauthorized(message) => format!(
+            "The CDR no longer accepts this session, so nothing was deleted ({message}). Sign in \
+             again and retry."
+        ),
         other => write_failure_copy(object, other),
     }
 }
@@ -140,6 +153,40 @@ pub fn toast_write_failure(
 mod tests {
     use super::{logical_delete_failure_copy, write_failure_copy};
     use crate::error::AdminUiError;
+
+    #[test]
+    fn the_two_refusals_ask_for_two_different_next_actions() {
+        // 401: the credential is not accepted any more — sign in AGAIN.
+        let stale = write_failure_copy(
+            "the directory",
+            &AdminUiError::CdrUnauthorized("the bearer token has expired".to_owned()),
+        );
+        assert!(stale.contains("the bearer token has expired"), "{stale}");
+        assert!(stale.contains("Sign in again"), "{stale}");
+        assert!(!stale.contains("required role"), "{stale}");
+
+        // 403: the credential IS accepted — sign in as someone ELSE. This copy
+        // is unchanged by the split.
+        let refused = write_failure_copy(
+            "the directory",
+            &AdminUiError::Forbidden("operation requires the 'ADMIN' role".to_owned()),
+        );
+        assert_eq!(
+            refused,
+            "This session may not write the directory (operation requires the 'ADMIN' role). \
+             Sign in with an account that carries the required role and retry."
+        );
+
+        // The delete vocabulary splits the same way.
+        let deleted = logical_delete_failure_copy(
+            "this composition version",
+            &AdminUiError::CdrUnauthorized("token expired".to_owned()),
+        );
+        assert!(
+            deleted.contains("nothing was deleted") && deleted.contains("Sign in again"),
+            "{deleted}"
+        );
+    }
 
     #[test]
     fn a_logical_delete_conflict_says_reload_the_history() {

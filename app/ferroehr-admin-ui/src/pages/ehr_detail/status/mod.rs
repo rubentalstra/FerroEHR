@@ -80,8 +80,10 @@ pub struct EhrStatusState {
     /// base every edit is applied to, so nothing outside the edited fields can
     /// be lost.
     pub body: String,
-    /// `EHR_STATUS.uid.value` (`OBJECT_VERSION_ID`), empty when the CDR served
-    /// none — the `If-Match` value of an update.
+    /// The served version's `OBJECT_VERSION_ID` — the `If-Match` value of an
+    /// update. Read from the `ETag` the CDR answered, falling back to the
+    /// document's own `uid.value` when it sent none; empty when neither
+    /// carries one.
     pub version_uid: String,
     /// `EHR_STATUS.is_queryable`.
     pub is_queryable: bool,
@@ -157,8 +159,9 @@ pub async fn fetch_ehr_status(
         .cdr
         .get(&session.credential, &url, "application/json")
         .await?;
-    let body = crate::cdr::CdrClient::expect_success(response)?.body;
-    parse_status_state(&body)
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    let served_etag = response.etag_version_uid();
+    parse_status_state(&response.body, served_etag.as_deref())
 }
 
 /// One VERSION of the EHR's `EHR_STATUS`, pretty-printed for the document pane
@@ -215,8 +218,9 @@ pub async fn fetch_ehr_status_version(
 /// (the merge is `edit::apply_status_edits`), so an edit can never silently
 /// drop an attribute the console does not render.
 ///
-/// `current_version_uid` is the loaded version's `OBJECT_VERSION_ID` and travels
-/// quoted in `If-Match`. The docs text mandates the header's EFFECT — a received
+/// `current_version_uid` is the identifier the seeding read's `ETag` named (its
+/// `uid.value` only when the CDR sent no `ETag`) and travels quoted in
+/// `If-Match`. The docs text mandates the header's EFFECT — a received
 /// condition that evaluates to false "MUST" be answered `412 Precondition Failed`
 /// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
 /// §If-Match and accidental overwrites) — and is silent on its VALUE, which the
@@ -394,7 +398,7 @@ pub async fn fetch_versioned_status(
 ///
 /// The `datetime-local` → RFC 3339 completion is the composition viewer's
 /// shared
-/// `crate::pages::composition::datetime_local_to_rfc3339`.
+/// `crate::format::datetime_local_to_rfc3339`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -411,7 +415,7 @@ pub async fn fetch_status_version_at_time(
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    let at_time = crate::pages::composition::datetime_local_to_rfc3339(&at_time);
+    let at_time = crate::format::datetime_local_to_rfc3339(&at_time);
     if at_time.is_empty() {
         return Err(AdminUiError::Invalid(
             "pick a date and time to travel to".to_owned(),
@@ -435,9 +439,18 @@ pub async fn fetch_status_version_at_time(
 /// body itself verbatim. Defensive throughout — an absent attribute reads as its
 /// `false`/empty default rather than failing the tab.
 ///
+/// `served_etag` is the identifier the CDR's own `ETag` named
+/// ([`CdrResponse::etag_version_uid`](crate::cdr::CdrResponse::etag_version_uid));
+/// it wins over the document's `uid.value`, because the header is what the
+/// server offers for the conditional round-trip and the body's copy is only a
+/// convenience. `None` falls back to the body.
+///
 /// # Errors
 /// [`AdminUiError::Internal`] when the body is not valid JSON.
-fn parse_status_state(body: &str) -> Result<EhrStatusState, AdminUiError> {
+fn parse_status_state(
+    body: &str,
+    served_etag: Option<&str>,
+) -> Result<EhrStatusState, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("ehr_status JSON: {e}")))?;
     let other_details = doc
@@ -447,7 +460,8 @@ fn parse_status_state(body: &str) -> Result<EhrStatusState, AdminUiError> {
         .unwrap_or_default();
     Ok(EhrStatusState {
         body: body.to_owned(),
-        version_uid: crate::uid::uid_value_of_document(&doc),
+        version_uid: served_etag
+            .map_or_else(|| crate::uid::uid_value_of_document(&doc), str::to_owned),
         is_queryable: doc
             .get("is_queryable")
             .and_then(Value::as_bool)
@@ -805,7 +819,7 @@ mod tests {
 
     #[test]
     fn parses_the_status_flags_subject_version_and_other_details() {
-        let state = parse_status_state(STATUS).expect("valid EHR_STATUS");
+        let state = parse_status_state(STATUS, None).expect("valid EHR_STATUS");
         assert_eq!(state.version_uid, "8849182c::example.org::1");
         assert!(state.is_queryable);
         assert!(!state.is_modifiable);
@@ -820,6 +834,19 @@ mod tests {
     }
 
     #[test]
+    fn the_served_etag_is_the_precondition_and_the_body_uid_only_the_fallback() {
+        // The `ETag` is what the CDR offers for the conditional round-trip
+        // (ITS-REST overview §ETag and Last-Modified), so an update echoes it
+        // back — never a value re-derived from the document.
+        let state =
+            parse_status_state(STATUS, Some("8849182c::example.org::7")).expect("valid EHR_STATUS");
+        assert_eq!(state.version_uid, "8849182c::example.org::7");
+        // Without an ETag the document's own uid is all there is.
+        let fallback = parse_status_state(STATUS, None).expect("valid EHR_STATUS");
+        assert_eq!(fallback.version_uid, "8849182c::example.org::1");
+    }
+
+    #[test]
     fn a_party_self_subject_and_absent_other_details_read_as_empty() {
         let body = r#"{
             "_type": "EHR_STATUS",
@@ -827,7 +854,7 @@ mod tests {
             "is_queryable": true,
             "is_modifiable": true
         }"#;
-        let state = parse_status_state(body).expect("valid EHR_STATUS");
+        let state = parse_status_state(body, None).expect("valid EHR_STATUS");
         assert_eq!(state.subject, "");
         assert_eq!(state.subject_namespace, "");
         assert_eq!(state.other_details, "");
@@ -842,11 +869,12 @@ mod tests {
         let no_namespace = parse_status_state(
             r#"{"_type":"EHR_STATUS","subject":{"_type":"PARTY_SELF",
                 "external_ref":{"id":{"value":"p-7"}}}}"#,
+            None,
         )
         .expect("valid EHR_STATUS");
         assert_eq!(subject_label(&no_namespace), "p-7");
         // A sparse body never fails the tab; a non-JSON one does.
-        assert!(parse_status_state("not json").is_err());
+        assert!(parse_status_state("not json", None).is_err());
     }
 
     #[test]

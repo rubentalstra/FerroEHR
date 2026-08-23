@@ -478,6 +478,14 @@ fn config_card() -> AnyView {
                             }
                                 .into_any()
                         }
+                        Err(AdminUiError::CdrUnauthorized(_)) => {
+                            view! {
+                                <p class="text-sm text-ink-muted">
+                                    "The CDR no longer accepts this session — sign in again to read the configuration."
+                                </p>
+                            }
+                                .into_any()
+                        }
                         Err(e) => crate::components::format_view::inline_error(&e),
                     }
                 })

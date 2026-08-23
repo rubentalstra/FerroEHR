@@ -173,6 +173,10 @@ pub fn delete_failure_copy(object: &str, error: &AdminUiError) -> String {
             "This session may not delete {object} ({message}). Sign in with an ADMIN-role \
              account and retry."
         ),
+        AdminUiError::CdrUnauthorized(message) => format!(
+            "The CDR no longer accepts this session, so {object} was not deleted ({message}). \
+             Sign in again and retry."
+        ),
         AdminUiError::Unauthenticated => format!(
             "The console session expired before {object} was deleted — sign in again and retry."
         ),
@@ -193,7 +197,7 @@ pub fn delete_failure_copy(object: &str, error: &AdminUiError) -> String {
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn admin_delete_template(
@@ -223,7 +227,7 @@ pub async fn admin_delete_template(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty name or version;
-/// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn admin_delete_stored_query(
@@ -259,7 +263,7 @@ pub async fn admin_delete_stored_query(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn admin_delete_ehr(
