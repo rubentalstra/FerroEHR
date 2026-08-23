@@ -112,6 +112,22 @@ workflow refuses a tag that has no matching section here.
   its deliberate R4B identity — the two vocabularies are intentionally
   different, and the documentation says which is which.
 
+### Changed
+
+- An event-subscription update is an explicit full replace: `enabled` is now
+  required on the body — omitting it previously defaulted to `true` and
+  silently re-enabled a deliberately disabled subscription — and any unknown
+  body key is refused instead of silently dropped (echoed read-only members
+  from a prior read stay tolerated).
+
+### Removed
+
+- The event subscription's `archetype` predicate: it was stored and served
+  but consulted by nothing — the AMQP routing key carries no archetype
+  segment, so the predicate never filtered anything in any combination.
+  Filter by template instead (an operational template names its root
+  archetype).
+
 ### Fixed
 
 - An AQL query parameter whose value cannot be coerced to the type its

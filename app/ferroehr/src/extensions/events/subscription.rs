@@ -10,7 +10,7 @@
 //! inert unless the publisher is spawned to bind its queue).
 //!
 //! A subscription is a small predicate record (`kind` / `change_type` /
-//! `template_id` / `archetype`, each NULL = wildcard) that the publisher turns
+//! `template_id`, each NULL = wildcard) that the publisher turns
 //! into an AMQP topic binding on the events exchange so the broker fans events
 //! out to a durable per-subscription queue ([`super`]). This module owns only
 //! the CRUD; queue declaration is the drainer's concern (it re-syncs the
@@ -43,8 +43,6 @@ pub struct SubscriptionRecord {
     pub change_type: Option<String>,
     /// The template-id predicate (`None` = wildcard).
     pub template_id: Option<String>,
-    /// The root-archetype predicate (`None` = wildcard).
-    pub archetype: Option<String>,
     /// Whether the publisher binds this subscription's queue.
     pub enabled: bool,
     /// The row's creation instant.
@@ -55,7 +53,7 @@ pub struct SubscriptionRecord {
 /// optional predicates (absent/`null`/empty = wildcard), `enabled` default
 /// `true`.
 #[derive(Debug, serde::Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct SubscriptionDefinition {
     /// The subscription name (required; validated to `[A-Za-z0-9_.-]`). An
     /// absent name arrives empty and is refused by `validated_name`.
@@ -66,8 +64,6 @@ pub struct SubscriptionDefinition {
     pub change_type: Option<String>,
     /// The template-id predicate (absent/`null` = wildcard).
     pub template_id: Option<String>,
-    /// The root-archetype predicate (absent/`null` = wildcard).
-    pub archetype: Option<String>,
     /// Whether the subscription starts enabled (default `true`).
     pub enabled: bool,
 }
@@ -79,7 +75,6 @@ impl Default for SubscriptionDefinition {
             kind: None,
             change_type: None,
             template_id: None,
-            archetype: None,
             enabled: true,
         }
     }
@@ -89,31 +84,32 @@ impl Default for SubscriptionDefinition {
 ///
 /// The `name` is immutable — it is the queue key — so an echoed `name` from a
 /// prior GET is tolerated and ignored, like the other echoed read-only fields.
-#[derive(Debug, serde::Deserialize)]
-#[serde(default)]
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct SubscriptionUpdate {
+    /// Echoed read-only members from a prior GET, tolerated and ignored so a
+    /// client can round-trip the whole record; every OTHER unknown key is
+    /// refused (`deny_unknown_fields`), so a removed or misspelled predicate
+    /// fails loudly instead of silently dropping.
+    #[serde(rename = "name")]
+    pub echoed_name: Option<serde::de::IgnoredAny>,
+    /// See [`Self::echoed_name`].
+    #[serde(rename = "id")]
+    pub echoed_id: Option<serde::de::IgnoredAny>,
+    /// See [`Self::echoed_name`].
+    #[serde(rename = "created_at")]
+    pub echoed_created_at: Option<serde::de::IgnoredAny>,
     /// The versioned-object kind predicate (absent/`null` = wildcard).
     pub kind: Option<String>,
     /// The audit change-type predicate (absent/`null` = wildcard).
     pub change_type: Option<String>,
     /// The template-id predicate (absent/`null` = wildcard).
     pub template_id: Option<String>,
-    /// The root-archetype predicate (absent/`null` = wildcard).
-    pub archetype: Option<String>,
-    /// Whether the publisher binds this subscription's queue (default `true`).
-    pub enabled: bool,
-}
-
-impl Default for SubscriptionUpdate {
-    fn default() -> Self {
-        Self {
-            kind: None,
-            change_type: None,
-            template_id: None,
-            archetype: None,
-            enabled: true,
-        }
-    }
+    /// Whether the publisher binds this subscription's queue. REQUIRED on an
+    /// update: the operation is a full replace, and a defaulted `true` here
+    /// silently re-enabled a deliberately disabled subscription (#2598) — the
+    /// caller states the whole intent or the request is refused.
+    pub enabled: Option<bool>,
 }
 
 impl FerroEhrService {
@@ -125,7 +121,6 @@ impl FerroEhrService {
             kind: row.try_get("kind")?,
             change_type: row.try_get("change_type")?,
             template_id: row.try_get("template_id")?,
-            archetype: row.try_get("archetype")?,
             enabled: row.try_get("enabled")?,
             created_at: row
                 .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
@@ -136,7 +131,7 @@ impl FerroEhrService {
     /// List every stored subscription (newest first).
     async fn list_subscriptions(&self) -> Result<Vec<SubscriptionRecord>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT id, name, kind, change_type, template_id, archetype, enabled, created_at \
+            "SELECT id, name, kind, change_type, template_id, enabled, created_at \
              FROM event_subscription ORDER BY created_at DESC, id",
         )
         .fetch_all(&self.pool)
@@ -147,7 +142,7 @@ impl FerroEhrService {
     /// Fetch one subscription by id, or `NotFound`.
     async fn get_subscription(&self, id: Uuid) -> Result<SubscriptionRecord, ServiceError> {
         let row = sqlx::query(
-            "SELECT id, name, kind, change_type, template_id, archetype, enabled, created_at \
+            "SELECT id, name, kind, change_type, template_id, enabled, created_at \
              FROM event_subscription WHERE id = $1",
         )
         .bind(id)
@@ -172,15 +167,14 @@ impl FerroEhrService {
         let name = validated_name(&body.name)?;
         let row = sqlx::query(
             "INSERT INTO event_subscription \
-             (name, kind, change_type, template_id, archetype, enabled) \
-             VALUES ($1, $2, $3, $4, $5, $6) \
-             RETURNING id, name, kind, change_type, template_id, archetype, enabled, created_at",
+             (name, kind, change_type, template_id, enabled) \
+             VALUES ($1, $2, $3, $4, $5) \
+             RETURNING id, name, kind, change_type, template_id, enabled, created_at",
         )
         .bind(&name)
         .bind(predicate(body.kind.as_deref()))
         .bind(predicate(body.change_type.as_deref()))
         .bind(predicate(body.template_id.as_deref()))
-        .bind(predicate(body.archetype.as_deref()))
         .bind(body.enabled)
         .fetch_one(&self.pool)
         .await
@@ -195,18 +189,23 @@ impl FerroEhrService {
         id: Uuid,
         body: &SubscriptionUpdate,
     ) -> Result<SubscriptionRecord, ServiceError> {
+        let Some(enabled) = body.enabled else {
+            return Err(ServiceError::precondition(
+                "event subscription update is a full replace: 'enabled' must be                  stated explicitly — omitting it would silently re-enable a                  disabled subscription"
+                    .to_owned(),
+            ));
+        };
         let row = sqlx::query(
             "UPDATE event_subscription \
-             SET kind = $2, change_type = $3, template_id = $4, archetype = $5, enabled = $6 \
+             SET kind = $2, change_type = $3, template_id = $4, enabled = $5 \
              WHERE id = $1 \
-             RETURNING id, name, kind, change_type, template_id, archetype, enabled, created_at",
+             RETURNING id, name, kind, change_type, template_id, enabled, created_at",
         )
         .bind(id)
         .bind(predicate(body.kind.as_deref()))
         .bind(predicate(body.change_type.as_deref()))
         .bind(predicate(body.template_id.as_deref()))
-        .bind(predicate(body.archetype.as_deref()))
-        .bind(body.enabled)
+        .bind(enabled)
         .fetch_optional(&self.pool)
         .await?
         .ok_or_else(|| {
