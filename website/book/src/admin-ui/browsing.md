@@ -131,14 +131,43 @@ form: it works in a browser with JavaScript disabled, and
 
 ![EHRs](img/ehrs/ehrs.png)
 
-The EHR detail screen opens with a **summary header** read from the EHR
-itself — its id, the system that created it, when it was created, and the
+The EHR detail screen opens with a **summary header**. Its top line answers
+"whose record is this, and what may be done with it": the **subject** — the
+external id and namespace the EHR status references, or an explicit "self — no
+external subject reference" when the EHR is bound to no outside identity — next
+to the **queryable** and **modifiable** badges. Below it are the EHR resource's
+own facts: its id, the system that created it, when it was created, and the
 reference to its current EHR status. A mistyped or unknown id is reported
-there, once, instead of once per tab. Below it, the tabs resolve the EHR
-status (queryable / modifiable) and list the EHR's compositions with their
-template, time, and version count.
+there, once, instead of once per tab.
+
+The identity line and the Status tab read the *same* EHR status document, so
+they can never disagree: saving a status change updates both at once.
 
 ![EHR detail](img/ehrs/compositions/list.png)
+
+### Filtering an EHR's compositions
+
+The compositions tab lists the EHR's compositions newest first, with their
+template, context start time and composer, and narrows on four filters:
+
+- **Template** — matches anywhere in the composition's template id.
+- **From** / **To** — bound the composition's context start time. Each is a
+  date and covers its whole UTC day, so a From and To of the same day keeps
+  everything recorded during it.
+- **Composer** — matches anywhere in the composer's name.
+
+Every filter lives in the URL (`?template=`, `?from=`, `?to=`, `?composer=`),
+so a filtered view is a link you can share or bookmark, a reload keeps it, and
+the browser's back button walks the filters you tried. Applying a filter starts
+again at the first page. Leave them all empty for the plain list.
+
+The filtering happens in the CDR, as one AQL query: what you type is bound as a
+query parameter, never pasted into the query text, so an id containing quotes,
+wildcards or anything else is matched literally. An empty result says whether
+the EHR holds no compositions at all or simply none that match.
+
+Clicking a composition opens it in the viewer's **Rendered** clinical reading
+(below) rather than the raw document — the other views are one click away.
 
 ### Deleting an EHR
 
@@ -273,6 +302,11 @@ tabs — is the same viewer:
   bookkeeping (language, territory, category, uid) is folded away — the raw
   views remain the complete record.
 - **Copy** puts the raw document text on the clipboard.
+
+Which view a composition opens in is part of its link: `?view=rendered`,
+`?view=raw` or `?view=highlighted` on the viewer's URL. That is how the
+compositions tab's rows land straight on the clinical reading, and it makes
+"open this composition the way I am looking at it" a shareable link.
 
 **Edit as new version** opens the currently displayed canonical JSON in
 an editor and commits it as the next version (`If-Match` on the latest

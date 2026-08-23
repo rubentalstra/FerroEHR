@@ -87,9 +87,15 @@ pub fn FormatSelector(
 }
 
 /// Which view of the document the pane is showing.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum PaneView {
+///
+/// Deep-linkable: a screen that carries a `?view=` query parameter reads it
+/// with [`PaneView::from_param`] in SETUP and hands the answer to
+/// [`DocumentPane`] as its opening mode, which is how a composition row can
+/// open straight into the rendered clinical reading.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum PaneView {
     /// The document text with syntax tokens (the default).
+    #[default]
     Highlighted,
     /// The document text, unstyled.
     Raw,
@@ -106,6 +112,26 @@ impl PaneView {
             Self::Rendered => "Rendered",
         }
     }
+
+    /// The `?view=` value that deep-links this mode.
+    #[must_use]
+    pub fn param(self) -> &'static str {
+        match self {
+            Self::Highlighted => "highlighted",
+            Self::Raw => "raw",
+            Self::Rendered => "rendered",
+        }
+    }
+
+    /// The mode a `?view=` value names, or `None` for anything else — the
+    /// parameter is user input, so an unknown value simply leaves the pane on
+    /// its default view.
+    #[must_use]
+    pub fn from_param(value: &str) -> Option<Self> {
+        [Self::Highlighted, Self::Raw, Self::Rendered]
+            .into_iter()
+            .find(|mode| mode.param() == value)
+    }
 }
 
 /// The document pane: view tabs and a copy button above a scrollable rendering
@@ -118,6 +144,11 @@ impl PaneView {
 /// nothing to highlight), and Rendered only for a canonical openEHR JSON
 /// document. Every one of those decisions is a pure function of the body, so
 /// the server and the browser always render the same tabs.
+///
+/// `initial_view` is the mode the pane OPENS in — a plain value, taken once, so
+/// the server pass and hydration agree (rules §8); the reader switches tabs
+/// freely afterwards. Callers derive it from the URL in their own setup, never
+/// from an effect chasing the address bar.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -127,8 +158,12 @@ pub fn DocumentPane(
     /// The document text to display.
     #[prop(into)]
     body: Signal<String>,
+    /// The view the pane opens in; omitted leaves it on
+    /// [`PaneView::Highlighted`].
+    #[prop(optional)]
+    initial_view: PaneView,
 ) -> impl IntoView {
-    let view_mode = RwSignal::new(PaneView::Highlighted);
+    let view_mode = RwSignal::new(initial_view);
     // Deterministic, memoized derivations of the body — never effects writing
     // signals (rules §2).
     let tokens = Memo::new(move |_| body.with(|text| crate::highlight::tokenize(text.as_str())));
@@ -463,5 +498,17 @@ mod tests {
         assert_eq!(PaneView::Highlighted.label(), "Highlighted");
         assert_eq!(PaneView::Raw.label(), "Raw");
         assert_eq!(PaneView::Rendered.label(), "Rendered");
+    }
+
+    #[test]
+    fn every_mode_round_trips_through_its_deep_link_value() {
+        for mode in [PaneView::Highlighted, PaneView::Raw, PaneView::Rendered] {
+            assert_eq!(PaneView::from_param(mode.param()), Some(mode));
+        }
+        // The parameter is user input: anything else leaves the default.
+        assert_eq!(PaneView::from_param("Rendered"), None);
+        assert_eq!(PaneView::from_param(""), None);
+        assert_eq!(PaneView::from_param("pretty"), None);
+        assert_eq!(PaneView::default(), PaneView::Highlighted);
     }
 }

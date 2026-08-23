@@ -455,14 +455,18 @@ async fn capture_documentation_screenshots() {
     if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
         // The EHR detail shot shows the compositions tab (the seeded row),
         // reached the way the journey proves works: navigate, open the tab,
-        // wait for the seeded composition's link.
+        // wait for the seeded composition's link. Two more markers, because
+        // both are published surfaces in their own right: the header's
+        // identity strip (subject + capability badges) and the row-filter bar.
         h.goto(&format!("/ehrs/{ehr_id}")).await;
         h.wait_css("footer").await;
+        h.wait_css("#ehr-identity").await;
         h.wait_xpath("//a[contains(., 'Compositions')]")
             .await
             .click()
             .await
             .expect("open the compositions tab");
+        h.wait_css("#compositions-filter").await;
         h.wait_css(&format!("a[href*='{vo_id}']")).await;
         shot_to(&h, &dir, "ehrs/compositions/list").await;
         capture(

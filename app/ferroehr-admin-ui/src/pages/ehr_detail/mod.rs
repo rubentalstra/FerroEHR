@@ -18,17 +18,22 @@
 //! `class:hidden`, keeping the server and client view structure identical
 //! (rules §8 — no `cfg!`-branched structure).
 //!
-//! This module owns the [`EhrDetailPage`] shell, the EHR summary header (the
-//! one read of the EHR resource itself — `GET /ehr/{ehr_id}`, so an unknown id
-//! fails once at the top of the screen instead of once per tab), and the shared
-//! `tab_bar` strip. A commit's new version uid is read by the console's ONE
-//! reader, [`uid_value_of`](crate::uid::uid_value_of).
+//! This module owns the [`EhrDetailPage`] shell, the EHR summary header and the
+//! shared `tab_bar` strip. The header carries two reads, neither of them
+//! duplicated anywhere else on the screen: the EHR resource itself
+//! (`GET /ehr/{ehr_id}`, so an unknown id fails once at the top instead of once
+//! per tab) and — through [`status_feed`] — the current `EHR_STATUS`, which is
+//! the ONE read of the subject and the capability flags the Status tab also
+//! renders. That one is therefore NOT tab-gated: the header shows on every tab.
+//! A commit's new version uid is read by the console's ONE reader,
+//! [`uid_value_of`](crate::uid::uid_value_of).
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound (ITS-REST EHR + Query APIs). User input
-//! NEVER concatenates into AQL — the fixed query is a validated const and the
-//! `ehr_id` travels as an AQL `query_parameters` binding; path segments are
-//! percent-encoded server-side.
+//! NEVER concatenates into AQL — the compositions listing's statement is
+//! assembled from compile-time fragments by [`composition_filter`] and every
+//! value, the `ehr_id` included, travels as an AQL `query_parameters` binding;
+//! path segments are percent-encoded server-side.
 //!
 //! Every co-located `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (rules §0), and
@@ -42,6 +47,7 @@
 )]
 
 pub mod commit;
+pub mod composition_filter;
 pub mod compositions;
 pub mod contributions;
 pub mod directory;
@@ -64,7 +70,9 @@ use crate::pages::ehr_detail::compositions::compositions_section;
 use crate::pages::ehr_detail::contributions::contributions_section;
 use crate::pages::ehr_detail::directory::directory_section;
 use crate::pages::ehr_detail::status::history::status_history_section;
-use crate::pages::ehr_detail::status::status_section;
+use crate::pages::ehr_detail::status::{
+    StatusFeed, capability_badge, status_feed, status_section, subject_label,
+};
 
 /// The EHR resource's own summary facts, flattened for the detail header.
 ///
@@ -159,52 +167,112 @@ fn json_path(value: &Value, path: &[&str]) -> String {
     current.as_str().unwrap_or_default().to_owned()
 }
 
-/// The EHR summary header: the EHR resource's own facts above the tabs.
+/// The EHR summary header: WHO this EHR is about and what may be done with it,
+/// above the EHR resource's own facts, above the tabs.
 ///
-/// One resource, created in setup and read inside a `<Suspense>` that resolves
-/// its `Result` there (an SSR'd `ErrorBoundary` fallback mismatches at
-/// hydration in leptos 0.8 — rules §4). A `404` renders as the explicit
-/// "no such EHR" state: this is where a mistyped id is reported, once.
-fn summary_section(ehr_id: Signal<String>) -> AnyView {
+/// Two reads, two claims, one card. The identity strip is the screen's SHARED
+/// current-`EHR_STATUS` read ([`StatusFeed`]) — the subject and the two
+/// capability flags live on that document and nowhere else, and the Status tab
+/// shows them from this very same resource rather than fetching them again
+/// (crate `CLAUDE.md` §One reader per claim). The fact grid is the EHR resource
+/// itself. Both resolve their `Result` INSIDE their own boundary (an SSR'd
+/// `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — rules §4),
+/// and a `404` renders as the explicit "no such EHR" state: this is where a
+/// mistyped id is reported, once.
+fn summary_section(ehr_id: Signal<String>, status: StatusFeed) -> AnyView {
     let resource = Resource::new(
         move || ehr_id.get(),
         |id| async move { fetch_ehr_summary(id).await },
     );
+    let identity = identity_strip(status);
     view! {
         <div class="mb-4">
-            <Suspense fallback=|| {
-                view! {
-                    <thaw::Skeleton>
-                        <thaw::SkeletonItem class="h-16" />
-                    </thaw::Skeleton>
-                }
-            }>
-                {move || Suspend::new(async move {
-                    match resource.await {
-                        Ok(summary) => summary_card(&summary),
-                        Err(AdminUiError::Cdr { status: 404, .. }) => {
-                            view! {
-                                <div
-                                    role="alert"
-                                    id="ehr-not-found"
-                                    class="rounded-card border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-                                >
-                                    "The CDR holds no EHR with this id — check the id, or create it on the EHRs screen."
-                                </div>
-                            }
-                                .into_any()
-                        }
-                        Err(e) => crate::components::format_view::inline_error(&e),
+            <section class=CARD_PAD id="ehr-summary">
+                {identity}
+                <Suspense fallback=|| {
+                    view! {
+                        <thaw::Skeleton>
+                            <thaw::SkeletonItem class="h-16" />
+                        </thaw::Skeleton>
                     }
-                })}
-            </Suspense>
+                }>
+                    {move || Suspend::new(async move {
+                        match resource.await {
+                            Ok(summary) => summary_facts(&summary),
+                            Err(AdminUiError::Cdr { status: 404, .. }) => {
+                                view! {
+                                    <div
+                                        role="alert"
+                                        id="ehr-not-found"
+                                        class="rounded-card border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+                                    >
+                                        "The CDR holds no EHR with this id — check the id, or create it on the EHRs screen."
+                                    </div>
+                                }
+                                    .into_any()
+                            }
+                            Err(e) => crate::components::format_view::inline_error(&e),
+                        }
+                    })}
+                </Suspense>
+            </section>
         </div>
     }
     .into_any()
 }
 
-/// Render the EHR summary as a compact fact card.
-fn summary_card(summary: &EhrSummary) -> AnyView {
+/// The header's identity line: the EHR's subject and its two capability
+/// badges, from the shared current-`EHR_STATUS` read.
+///
+/// A `<Transition>`, because the same resource reloads after a status save and
+/// the header must not flash a skeleton while it does (rules §6). A failed read
+/// renders NOTHING here: an unknown `ehr_id` fails both reads, and the fact
+/// grid below already reports it once — the screen never renders an error as
+/// nothing (rules §4), it renders it in one place.
+fn identity_strip(status: StatusFeed) -> AnyView {
+    let resource = status.resource;
+    view! {
+        <Transition fallback=|| {
+            view! {
+                <thaw::Skeleton>
+                    <thaw::SkeletonItem class="h-6 mb-3" />
+                </thaw::Skeleton>
+            }
+        }>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(state) => {
+                        let subject = subject_label(&state);
+                        view! {
+                            <div
+                                id="ehr-identity"
+                                class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-edge pb-3"
+                            >
+                                <span class="text-sm">
+                                    <span class="font-medium text-ink-muted mr-1">"subject:"</span>
+                                    <span
+                                        class="font-mono break-all text-ink"
+                                        data-ehr-fact="subject"
+                                    >
+                                        {subject}
+                                    </span>
+                                </span>
+                                {capability_badge("header", "queryable", state.is_queryable)}
+                                {capability_badge("header", "modifiable", state.is_modifiable)}
+                            </div>
+                        }
+                            .into_any()
+                    }
+                    Err(_) => ().into_any(),
+                }
+            })}
+        </Transition>
+    }
+    .into_any()
+}
+
+/// Render the EHR resource's own facts as the header's grid.
+fn summary_facts(summary: &EhrSummary) -> AnyView {
     let status_label = if summary.ehr_status_type.is_empty() {
         "ehr_status".to_owned()
     } else {
@@ -217,11 +285,9 @@ fn summary_card(summary: &EhrSummary) -> AnyView {
         summary_fact(status_label, summary.ehr_status_uid.clone()),
     ];
     view! {
-        <section class=CARD_PAD id="ehr-summary">
-            <div class="grid grid-cols-1 sm:grid-cols-2 items-start gap-x-4 gap-y-2 text-sm">
-                {facts}
-            </div>
-        </section>
+        <div class="grid grid-cols-1 sm:grid-cols-2 items-start gap-x-4 gap-y-2 text-sm">
+            {facts}
+        </div>
     }
     .into_any()
 }
@@ -268,7 +334,13 @@ pub fn EhrDetailPage() -> impl IntoView {
             .unwrap_or_else(|| "status".to_owned())
     });
 
-    let status = status_section(ehr_id, selected);
+    // The screen's ONE current-`EHR_STATUS` read, created before every consumer
+    // so its resource id is allocated in the same place on both sides of
+    // hydration (rules §4): the header's identity strip and the Status tab both
+    // take this handle.
+    let status_feed = status_feed(ehr_id);
+
+    let status = status_section(status_feed, ehr_id, selected);
     let status_history = status_history_section(ehr_id, selected);
     let directory = directory_section(ehr_id, selected);
     let compositions = compositions_section(ehr_id, offset, selected);
@@ -282,7 +354,7 @@ pub fn EhrDetailPage() -> impl IntoView {
         format!("EHR {short}…")
     });
 
-    let summary = summary_section(ehr_id);
+    let summary = summary_section(ehr_id, status_feed);
     let tabs = tab_bar(ehr_id, selected);
     let delete_action = delete_section(ehr_id);
 
