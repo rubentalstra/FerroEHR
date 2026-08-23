@@ -125,10 +125,10 @@ pub struct FhirAnswer {
 }
 
 impl FhirAnswer {
-    /// Whether the CDR completed the operation (`200`).
+    /// Whether the CDR completed the operation (any success status).
     #[must_use]
     pub fn completed(&self) -> bool {
-        self.status == http::StatusCode::OK.as_u16()
+        http::StatusCode::from_u16(self.status).is_ok_and(|s| s.is_success())
     }
 
     /// Whether the body is a FHIR `OperationOutcome` rather than a resource.
@@ -220,8 +220,8 @@ impl FhirAvailability {
 /// sits under `/admin`, which the coarse RBAC gate classes as admin work) — the
 /// surface exists, which is what the nav gate asks about.
 #[must_use]
-pub fn availability_of_status(status: u16) -> FhirAvailability {
-    if status == http::StatusCode::NOT_FOUND.as_u16() {
+pub fn availability_of_status(status: http::StatusCode) -> FhirAvailability {
+    if status == http::StatusCode::NOT_FOUND {
         FhirAvailability::Disabled
     } else {
         FhirAvailability::Available
@@ -339,20 +339,23 @@ pub fn read_request_is_complete(resource_type: &str, patient: &str) -> bool {
 #[must_use]
 pub fn mapping_failure_copy(object: &str, error: &AdminUiError) -> String {
     match error {
-        AdminUiError::Cdr {
-            status: 409,
-            message,
-        } => format!(
-            "The mapping store already holds {object}: {message}. A mapping name is immutable — \
-             register the new mapping under a different name, or edit the existing one."
-        ),
-        AdminUiError::Cdr {
-            status: 404,
-            message,
-        } => format!(
-            "{object} is not in the mapping store any more ({message}) — another operator may have \
-             deleted it. Reload this screen."
-        ),
+        AdminUiError::Cdr { message, .. }
+            if error.status_code() == Some(http::StatusCode::CONFLICT) =>
+        {
+            format!(
+                "The mapping store already holds {object}: {message}. A mapping name is \
+                 immutable — register the new mapping under a different name, or edit the \
+                 existing one."
+            )
+        }
+        AdminUiError::Cdr { message, .. }
+            if error.status_code() == Some(http::StatusCode::NOT_FOUND) =>
+        {
+            format!(
+                "{object} is not in the mapping store any more ({message}) — another operator may \
+                 have deleted it. Reload this screen."
+            )
+        }
         AdminUiError::Forbidden(message) => format!(
             "This session may not administer the FHIR mapping store ({message}). Sign in with an \
              ADMIN-role account and retry."
@@ -699,7 +702,7 @@ fn fhir_answer(response: &crate::cdr::CdrResponse) -> Result<FhirAnswer, AdminUi
         .and_then(|value| serde_json::to_string_pretty(value).ok())
         .unwrap_or_else(|| response.body.clone());
     Ok(FhirAnswer {
-        status: response.status,
+        status: response.status.as_u16(),
         body,
         issues,
     })
@@ -802,9 +805,17 @@ mod tests {
 
     #[test]
     fn only_a_404_means_the_connector_is_not_mounted() {
-        assert_eq!(availability_of_status(404), FhirAvailability::Disabled);
+        assert_eq!(
+            availability_of_status(http::StatusCode::NOT_FOUND),
+            FhirAvailability::Disabled
+        );
         // Mounted-but-refused, and mounted-and-served, are both "it exists".
-        for status in [200_u16, 401, 403, 500] {
+        for status in [
+            http::StatusCode::OK,
+            http::StatusCode::UNAUTHORIZED,
+            http::StatusCode::FORBIDDEN,
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+        ] {
             assert_eq!(
                 availability_of_status(status),
                 FhirAvailability::Available,
@@ -1093,7 +1104,7 @@ mod tests {
         // OperationOutcome refusals and the auth layer's openEHR bodies both
         // go through the shared `expect_success`.
         let outcome = crate::cdr::CdrResponse {
-            status: 409,
+            status: http::StatusCode::CONFLICT,
             content_type: Some("application/fhir+json".to_owned()),
             body: r#"{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"conflict","diagnostics":"a FHIR mapping with that name exists"}]}"#.to_owned(),
         };
@@ -1105,7 +1116,7 @@ mod tests {
             }
         );
         let refused = crate::cdr::CdrResponse {
-            status: 403,
+            status: http::StatusCode::FORBIDDEN,
             content_type: Some("application/json".to_owned()),
             body: r#"{"error":"Forbidden","message":"forbidden: operation requires the 'ADMIN' role"}"#.to_owned(),
         };
@@ -1120,7 +1131,7 @@ mod tests {
     fn an_operation_outcome_is_content_and_only_an_auth_refusal_is_an_error() {
         // A 400 the connector authored is a document the panel renders.
         let missing_scope = crate::cdr::CdrResponse {
-            status: 400,
+            status: http::StatusCode::BAD_REQUEST,
             content_type: Some("application/fhir+json".to_owned()),
             body: r#"{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"required","diagnostics":"the `patient` query parameter is required"}]}"#.to_owned(),
         };
@@ -1132,7 +1143,7 @@ mod tests {
         assert!(answered.body.contains("\n  \"issue\""), "{}", answered.body);
 
         let refused = crate::cdr::CdrResponse {
-            status: 401,
+            status: http::StatusCode::UNAUTHORIZED,
             content_type: Some("application/json".to_owned()),
             body: r#"{"error":"Unauthorized","message":"unauthorized: authentication failed"}"#
                 .to_owned(),

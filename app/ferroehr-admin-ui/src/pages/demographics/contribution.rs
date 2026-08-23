@@ -171,7 +171,7 @@ pub fn DemographicContributionPage() -> impl IntoView {
             {move || Suspend::new(async move {
                 match resource.await {
                     Ok(state) => contribution_view(&state),
-                    Err(AdminUiError::Cdr { status: 404, .. }) => {
+                    Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
                         view! {
                             <div
                                 role="alert"

@@ -154,7 +154,7 @@ pub(crate) fn directory_toast_detail(uid: &str) -> String {
 /// `If-Match` version is stale), which the UI surfaces as a distinct
 /// "reload" toast rather than the generic inline diagnostic.
 pub(crate) fn is_conflict(error: &AdminUiError) -> bool {
-    matches!(error, AdminUiError::Cdr { status: 412, .. })
+    error.status_code() == Some(http::StatusCode::PRECONDITION_FAILED)
 }
 
 /// The EHR's directory (root `FOLDER`) as a [`DirectoryState`], or `None` when
@@ -430,8 +430,8 @@ pub async fn fetch_directory_at_time(
         .get(&session.credential, &url, "application/json")
         .await?;
     match response.status {
-        204 => Ok(DirectoryAtTime::DeletedAtTime),
-        404 => Ok(DirectoryAtTime::NoneAtTime),
+        http::StatusCode::NO_CONTENT => Ok(DirectoryAtTime::DeletedAtTime),
+        http::StatusCode::NOT_FOUND => Ok(DirectoryAtTime::NoneAtTime),
         _ => {
             let body = crate::cdr::CdrClient::expect_success(response)?.body;
             let version_uid = uid_value_of(&body);

@@ -277,7 +277,7 @@
     [
       "Versioning",
       {
-        "passed": 73,
+        "passed": 75,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1098,
-    "driven": 1060,
-    "passed": 1060,
+    "selected": 1100,
+    "driven": 1062,
+    "passed": 1062,
     "failed": 0,
     "inconclusive": 0
   }

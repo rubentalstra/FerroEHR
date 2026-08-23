@@ -425,13 +425,15 @@ fn row_view(row: RenderedRow) -> AnyView {
 /// Used by data sections that resolve their `Result` inside `<Suspense>`
 /// (SSR'd `ErrorBoundary` fallbacks mismatch at hydration in leptos 0.8, so
 /// sections render content-or-this directly; errors never render as nothing).
+/// Newlines survive (`whitespace-pre-line`), because a CDR diagnostic carrying
+/// `validationErrors` puts one violation per line.
 #[must_use]
 pub fn inline_error(error: &crate::error::AdminUiError) -> AnyView {
     let message = error.to_string();
     view! {
         <div
             role="alert"
-            class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+            class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger whitespace-pre-line"
         >
             {message}
         </div>

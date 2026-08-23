@@ -671,7 +671,7 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
         .expect("create_composition")
         .version_uid();
     let deleted = svc
-        .delete_composition(ehr, &doomed.parse().expect("ovid"), None)
+        .delete_composition(ehr, &doomed.parse().expect("ovid"), None, None)
         .await
         .expect("delete_composition")
         .version_uid();

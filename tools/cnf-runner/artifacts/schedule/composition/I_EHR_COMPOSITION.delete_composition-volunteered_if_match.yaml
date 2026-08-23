@@ -1,0 +1,81 @@
+# A COMPOSITION delete that VOLUNTEERS a stale `If-Match` is refused as a
+# failed precondition — even though everything else about the request is
+# valid: the path names the genuine latest version, the EHR is modifiable,
+# and without the header the delete would have succeeded.
+#
+# Decisive docs-text sentence (ITS-REST overview Requests_and_responses.md
+# §"If-Match and accidental overwrites"): "If a service receives this header,
+# and the condition evaluates to `false`, it MUST NOT perform the requested
+# method. Instead, it MUST respond with HTTP status code `412 Precondition
+# Failed`, and SHOULD return also latest `version_uid` in the `ETag` response
+# headers." The receipt sentence is unconditional — it does not care that
+# composition_delete declares no If-Match parameter (the scoping sentence
+# about the path segment governs when a client MUST send the header, not
+# what a service does with one it receives).
+#
+# THE CONTRAST WITH THE SIBLING 409: the stale-PATH case (the sibling
+# not-latest case) is a state CONFLICT because the version travels in the
+# path there; HERE the path is correct and only the client's separately
+# stated condition is false — a pure precondition failure. Pinning this
+# branch is what catches a server that parses the path but silently drops a
+# received precondition header (the "MUST NOT perform" half is proven by
+# step 4's live read).
+#
+# Step 3's path addresses v2 (the latest) while the If-Match offers v1 —
+# manufactured staleness, the directory stale_if_match pattern.
+id: I_EHR_COMPOSITION.delete_composition-volunteered_if_match
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.delete_composition
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+test_purpose: >-
+  A composition delete whose volunteered If-Match names a superseded version is
+  refused with a precondition failure carrying the latest version uid, and the
+  composition remains live.
+description: "Delete a COMPOSITION with a stale volunteered If-Match precondition"
+spec_refs:
+  - "ITS-REST overview Requests_and_responses §If-Match and accidental overwrites"
+  - "ITS-REST overview Requests_and_responses §ETag and Last-Modified"
+  - "RM common §change_control (master06 — VERSION.uid is an OBJECT_VERSION_ID)"
+  - "SM openehr_platform §I_EHR_COMPOSITION.delete_composition"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_event.v2]
+flow:
+  - step: 1
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+    capture:
+      stale_version_uid: created.version_uid
+      versioned_object_uid: created.versioned_object_uid
+  - step: 2                              # v2 — makes the step-1 uid a superseded condition
+    call: update_composition
+    with:
+      ehr_id: "${ehr_id}"
+      composition: "${ds:cnf.composition.minimal_event.v2}"
+      preceding_version_uid: "${stale_version_uid}"
+    expect: updated
+    capture: { latest_version_uid: updated.version_uid }
+  - step: 3                              # path = the LATEST, condition = the stale v1 uid
+    call: delete_composition
+    variant: volunteered_if_match
+    with:
+      ehr_id: "${ehr_id}"
+      preceding_version_uid: "${latest_version_uid}"
+      if_match_version_uid: "${stale_version_uid}"
+    expect: precondition_failed
+  - step: 4                              # "it MUST NOT perform the requested method" — still live
+    call: get_composition_at_version
+    with: { ehr_id: "${ehr_id}", version_uid: "${latest_version_uid}" }
+    expect: ok
+    assert:
+      - { assert: equivalent, to: "${ds:cnf.composition.minimal_event.v2}", ignoring: server_assigned }
+postconditions:
+  # the refused delete committed nothing: the create + the update only
+  - { assert: version, count: 2 }

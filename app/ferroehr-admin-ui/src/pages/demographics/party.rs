@@ -769,7 +769,7 @@ fn party_section(
             toast_success(toaster, "Party updated", &detail);
         }
         Some(Err(error)) => {
-            let title = if matches!(error, AdminUiError::Cdr { status: 412, .. }) {
+            let title = if error.status_code() == Some(http::StatusCode::PRECONDITION_FAILED) {
                 "Party changed on the server"
             } else {
                 "Save failed"
@@ -811,7 +811,7 @@ fn facts_section(
                         facts_card(&state)
                     }
                     Ok(None) => deleted_card(),
-                    Err(AdminUiError::Cdr { status: 404, .. }) => {
+                    Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
                         // The delete affordance's precondition, published from
                         // the screen's ONE read of the party.
                         view! {

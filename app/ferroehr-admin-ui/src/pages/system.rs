@@ -140,6 +140,9 @@ pub async fn fetch_openapi(
     let response = state.cdr.get_public(&url, "application/json").await?;
     // Public surface; if a deployment happens to gate it, retry with the
     // session credential before giving up.
+    // NOTE: the credential's audience is exactly the configured CDR origin —
+    // `url` is built by `origin_url`, so the retry can only ever re-send it to
+    // the same host the session authenticated against.
     let response = if response.is(http::StatusCode::UNAUTHORIZED) {
         state
             .cdr
@@ -177,6 +180,34 @@ pub async fn fetch_admin_config() -> Result<String, AdminUiError> {
         .unwrap_or(body))
 }
 
+/// The fixed count-AQL behind the repository-usage card: one row per template,
+/// the template id supplied as the `$template` binding.
+///
+/// The id is never concatenated into the text. It is CDR-supplied but
+/// operator-authored data, and AQL escapes inside a literal with a backslash
+/// (`docs/specs/openehr/QUERY/docs/AQL/master03-syntax.adoc` §LIKE — "escaped
+/// by using the backslash `\` character"), so no quote-doubling makes
+/// interpolation safe; the binding travels in `query_parameters`
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/query/Request.md`
+/// §Query parameters) and is matched as data.
+#[cfg(feature = "ssr")]
+const TEMPLATE_USAGE_AQL: &str = "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c \
+                                  WHERE c/archetype_details/template_id/value = $template";
+
+#[cfg(feature = "ssr")]
+/// Build the `POST query/aql` request body counting the compositions committed
+/// under `template_id`.
+///
+/// The AQL text is [`TEMPLATE_USAGE_AQL`] verbatim for every template; only the
+/// `query_parameters` object differs.
+fn template_usage_body(template_id: &str) -> String {
+    crate::pages::ehrs::aql_request_body(
+        TEMPLATE_USAGE_AQL,
+        &serde_json::json!({ "template": template_id }),
+        0,
+    )
+}
+
 /// Per-template composition counts ("repo usage"; measured ~0.3 s per
 /// count AQL — plain AQL suffices, no CDR stats endpoint). Bounded to the
 /// first 25 templates, sorted by count descending.
@@ -191,12 +222,7 @@ pub async fn template_usage() -> Result<Vec<(String, i64)>, AdminUiError> {
     let templates = crate::pages::templates::list_templates().await?;
     let mut usage = Vec::new();
     for row in templates.into_iter().take(25) {
-        let aql = format!(
-            "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c \
-             WHERE c/archetype_details/template_id/value = '{}'",
-            row.template_id.replace('\'', "''")
-        );
-        let body = crate::pages::ehrs::aql_request_body(&aql, &serde_json::json!({}), 0);
+        let body = template_usage_body(&row.template_id);
         let url = state.cdr.rest_v1("query/aql");
         let response = state
             .cdr
@@ -436,7 +462,7 @@ fn config_card() -> AnyView {
                             }
                                 .into_any()
                         }
-                        Err(AdminUiError::Cdr { status: 404, .. }) => {
+                        Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
                             view! {
                                 <p class="text-sm text-ink-muted">
                                     "The CDR's admin API is disabled — enable [admin] to expose the configuration view."
@@ -697,7 +723,7 @@ fn openapi_card(family: Memo<String>) -> AnyView {
                     });
                 match rendered {
                     Ok(view) => view,
-                    Err(AdminUiError::Cdr { status: 404, .. }) => {
+                    Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
                         view! {
                             <p class="text-sm text-ink-muted">
                                 "This CDR serves no document for that API family — pick another, or the complete surface."
@@ -888,6 +914,48 @@ fn group_openapi_paths(doc: &serde_json::Value) -> Vec<(String, Vec<(String, Str
 #[cfg(test)]
 mod tests {
     use super::{OPENAPI_FAMILIES, group_openapi_paths, openapi_family_slug, scalar_rows};
+
+    #[cfg(feature = "ssr")]
+    #[test]
+    fn a_template_id_travels_as_a_binding_and_never_as_query_text() {
+        use super::{TEMPLATE_USAGE_AQL, template_usage_body};
+
+        let read = |body: &str| -> serde_json::Value {
+            serde_json::from_str(body).expect("the request body is JSON")
+        };
+        let benign = read(&template_usage_body("vital_signs.v2"));
+        // A quote and a backslash are AQL syntax, so an id carrying either one
+        // must not change a single byte of the statement.
+        for hostile in [
+            "o'brien.v1",
+            r"back\slash.v1",
+            "x' OR 1=1 --",
+            r"x\' OR 1=1 --",
+        ] {
+            let sent = read(&template_usage_body(hostile));
+            assert_eq!(
+                sent.get("q"),
+                benign.get("q"),
+                "the AQL text must be identical for {hostile:?}"
+            );
+            assert_eq!(sent["q"], serde_json::json!(TEMPLATE_USAGE_AQL));
+            assert_eq!(sent["query_parameters"]["template"], hostile);
+        }
+        // The statement names the parameter, and quotes no value at all.
+        assert!(
+            TEMPLATE_USAGE_AQL.contains("= $template"),
+            "{TEMPLATE_USAGE_AQL}"
+        );
+        assert!(!TEMPLATE_USAGE_AQL.contains('\''), "{TEMPLATE_USAGE_AQL}");
+    }
+
+    #[cfg(feature = "ssr")]
+    #[test]
+    fn the_repository_usage_statement_is_valid_aql() {
+        // The fixed text is parsed by the real grammar, so a typo in the
+        // constant fails here rather than as a CDR 400 on the card.
+        openehr_query::parser::parse_str(super::TEMPLATE_USAGE_AQL).expect("the count AQL parses");
+    }
 
     #[test]
     fn the_family_selector_offers_the_complete_document_first_and_unique_slugs() {

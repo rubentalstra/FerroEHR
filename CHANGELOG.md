@@ -103,6 +103,28 @@ workflow refuses a tag that has no matching section here.
   worked blood-pressure example are now documented in the book's FHIR
   chapter.
 
+### Fixed
+
+- A composition `DELETE` that volunteers an `If-Match` precondition now
+  honours it: a stale condition is refused with `412 Precondition Failed`
+  carrying the latest version's `ETag`, evaluated only when the delete would
+  otherwise have proceeded (RFC 9110 precondition precedence). Previously
+  the received header was silently ignored and the delete performed.
+
+- Admin console, from the close-out wire audit: a refused commit's
+  per-path validation details (`validationErrors`) now render line by line
+  instead of collapsing to one generic message; opening a deleted
+  composition version shows a first-class "deleted at this instant" state
+  instead of a blank pane; the `/system` repository-usage card sends the
+  template id as a query-parameter binding (an apostrophe-bearing template
+  id previously broke the card's AQL — and could escape the string
+  literal); every time-travel picker states that the entered instant is
+  interpreted as UTC; the conformance-manifest reader tolerates a peer CDR
+  omitting optional members instead of hiding the admin affordances; the
+  composition delete no longer sends a self-satisfying `If-Match`; tag
+  updates state `Prefer: return=minimal` explicitly; and a FHIR connector
+  answer now counts any success status as completed, not only `200`.
+
 ### Changed
 
 - The FHIR connector's release identity is recorded as **FHIR R4**: every

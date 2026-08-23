@@ -1,0 +1,60 @@
+# The TRUE-condition twin of the stale volunteered-If-Match case: a delete
+# whose volunteered `If-Match` names the genuine latest version PERFORMS —
+# the presence of an undeclared-but-received precondition header must not
+# derail an otherwise valid delete.
+#
+# Decisive docs-text sentence (ITS-REST overview Requests_and_responses.md
+# §"If-Match and accidental overwrites"): "If a service receives this header,
+# and the condition evaluates to `false`, it MUST NOT perform the requested
+# method." The contrapositive branch — condition TRUE — has no refusal
+# ground anywhere in the section, so the operation proceeds to its own
+# declared outcome (204_version_deleted.yaml via the OAS, docs text silent on
+# the success shape beyond §"HTTP status codes").
+#
+# Without this twin the binding's `deleted` outcome would be a declared but
+# never-exercised branch (the coverage law: every declared branch is
+# exercised or exception-registered) — and a server that answers 412 to ANY
+# received If-Match on this route (over-refusal, the inverse defect of
+# dropping the header) would go uncaught.
+id: I_EHR_COMPOSITION.delete_composition-volunteered_if_match_current
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.delete_composition
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+test_purpose: >-
+  A composition delete whose volunteered If-Match names the current latest
+  version performs the logical delete exactly as the header-less form would.
+description: "Delete a COMPOSITION with a current volunteered If-Match precondition"
+spec_refs:
+  - "ITS-REST overview Requests_and_responses §If-Match and accidental overwrites"
+  - "RM common §change_control (master06 §Logical Deletion)"
+  - "SM openehr_platform §I_EHR_COMPOSITION.delete_composition"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+    capture:
+      latest_version_uid: created.version_uid
+      versioned_object_uid: created.versioned_object_uid
+  - step: 2                              # path AND condition both name the latest → performs
+    call: delete_composition
+    variant: volunteered_if_match
+    with:
+      ehr_id: "${ehr_id}"
+      preceding_version_uid: "${latest_version_uid}"
+      if_match_version_uid: "${latest_version_uid}"
+    expect: deleted
+    capture: { deleted_uid: deleted.version_uid }
+postconditions:
+  # the create + the performed delete
+  - { assert: version, count: 2 }
+  - { assert: version, of: "${deleted_uid}", change_type: DELETED, lifecycle_state: "openehr::523|deleted|" }

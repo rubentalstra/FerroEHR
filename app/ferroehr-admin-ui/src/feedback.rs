@@ -34,10 +34,6 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
         AdminUiError::Invalid(message) => {
             format!("{object} was not sent: {message}. Correct the input and retry.")
         }
-        AdminUiError::Cdr {
-            status: 400 | 422,
-            message,
-        } => format!("The CDR rejected {object}: {message}. Fix the reported problem and retry."),
         // 412 and 409 are different failures on the wire, so they get
         // different next actions: `412` is "one or more conditions given in
         // the request header fields evaluated to false" (the stale `If-Match`
@@ -45,30 +41,24 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
         // might generate a duplicate or a conflict" — ITS-REST
         // `specifications/docs/overview/Requests_and_responses.md`
         // §status codes.
-        AdminUiError::Cdr {
-            status: 412,
-            message,
-        } => format!(
-            "{object} changed in the CDR since this screen loaded ({message}). Reload the latest \
-             version, then reapply your change."
-        ),
-        AdminUiError::Cdr {
-            status: 409,
-            message,
-        } => format!(
-            "The CDR already holds a conflicting object, so {object} was not created ({message}). \
-             Open the existing one, or change the identifier and retry."
-        ),
-        AdminUiError::Cdr {
-            status: 404,
-            message,
-        } => format!(
-            "{object} is not in the CDR ({message}) — it may have been deleted meanwhile. Reload \
-             this screen and retry."
-        ),
-        AdminUiError::Cdr { status, message } => {
-            format!("The CDR answered {status} to {object}: {message}. Nothing was saved.")
-        }
+        AdminUiError::Cdr { status, message } => match error.status_code() {
+            Some(http::StatusCode::BAD_REQUEST | http::StatusCode::UNPROCESSABLE_ENTITY) => {
+                format!("The CDR rejected {object}: {message}. Fix the reported problem and retry.")
+            }
+            Some(http::StatusCode::PRECONDITION_FAILED) => format!(
+                "{object} changed in the CDR since this screen loaded ({message}). Reload the \
+                 latest version, then reapply your change."
+            ),
+            Some(http::StatusCode::CONFLICT) => format!(
+                "The CDR already holds a conflicting object, so {object} was not created \
+                 ({message}). Open the existing one, or change the identifier and retry."
+            ),
+            Some(http::StatusCode::NOT_FOUND) => format!(
+                "{object} is not in the CDR ({message}) — it may have been deleted meanwhile. \
+                 Reload this screen and retry."
+            ),
+            _ => format!("The CDR answered {status} to {object}: {message}. Nothing was saved."),
+        },
         AdminUiError::Forbidden(message) => format!(
             "This session may not write {object} ({message}). Sign in with an account that \
              carries the required role and retry."
@@ -106,29 +96,24 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
 #[must_use]
 pub fn logical_delete_failure_copy(object: &str, error: &AdminUiError) -> String {
     match error {
-        AdminUiError::Cdr {
-            status: 409 | 412,
-            message,
-        } => format!(
-            "{object} moved on in the CDR since this screen loaded, so nothing was deleted \
-             ({message}). Reload the version history and delete the version that is latest now."
-        ),
-        // `400_already_deleted` on the COMPOSITION delete: the version is
-        // already logically deleted, so there is nothing left to do.
-        AdminUiError::Cdr {
-            status: 400,
-            message,
-        } => format!(
-            "The CDR refused to delete {object}: {message}. It may already be deleted — reload \
-             this screen to see the current history."
-        ),
-        AdminUiError::Cdr {
-            status: 404,
-            message,
-        } => format!(
-            "{object} is not in the CDR ({message}) — it may have been deleted meanwhile. Reload \
-             this screen."
-        ),
+        AdminUiError::Cdr { message, .. } => match error.status_code() {
+            Some(http::StatusCode::CONFLICT | http::StatusCode::PRECONDITION_FAILED) => format!(
+                "{object} moved on in the CDR since this screen loaded, so nothing was deleted \
+                 ({message}). Reload the version history and delete the version that is latest \
+                 now."
+            ),
+            // `400_already_deleted` on the COMPOSITION delete: the version is
+            // already logically deleted, so there is nothing left to do.
+            Some(http::StatusCode::BAD_REQUEST) => format!(
+                "The CDR refused to delete {object}: {message}. It may already be deleted — \
+                 reload this screen to see the current history."
+            ),
+            Some(http::StatusCode::NOT_FOUND) => format!(
+                "{object} is not in the CDR ({message}) — it may have been deleted meanwhile. \
+                 Reload this screen."
+            ),
+            _ => write_failure_copy(object, error),
+        },
         AdminUiError::Forbidden(message) => format!(
             "This session may not delete {object} ({message}). Sign in with an account that \
              carries the required role and retry."

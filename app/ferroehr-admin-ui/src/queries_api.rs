@@ -4,6 +4,9 @@
 //! The query surfaces' shared server API: ad-hoc AQL execution, BFF-local
 //! validation, and stored-query CRUD over the ITS-REST Definition/Query APIs.
 //!
+//! One call is an extension rather than a released operation: the unfiltered
+//! stored-query listing ([`list_stored_queries`]), which flags itself.
+//!
 //! The console persists nothing of its own here (nor anywhere): a stored
 //! query's grouping is derived from the namespace in its qualified name
 //! (`crate::query_namespace`), so it lives in the CDR and reads identically
@@ -55,6 +58,10 @@ pub async fn validate_aql(
 /// Run ad-hoc AQL via `POST query/aql` with parameter bindings (a JSON
 /// object as text), one page at `offset`.
 ///
+/// A query that carries its own AQL window is sent bare. The spec bars only
+/// `fetch` beside an AQL top; withholding `offset` as well is the console's own
+/// conservative choice, so such a query reaches the CDR exactly as written.
+///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a session;
 /// [`AdminUiError::Invalid`] when `parameters_json` is not a JSON object;
@@ -83,10 +90,9 @@ pub async fn run_aql(
         ));
     }
     let url = state.cdr.rest_v1("query/aql");
-    // ITS-REST forbids combining the `fetch`/`offset` request parameters
-    // with an AQL LIMIT/TOP clause (QUERY §Query structure/LIMIT) — when
-    // the query carries its own window, send it bare; otherwise page with
-    // fetch/offset as usual.
+    // NOTE: `fetch` "cannot be combined with AQL-top" —
+    // `docs/specs/openehr/ITS-REST/specifications/docs/query/Request.md`
+    // §Common Headers and Query Parameters.
     let has_own_window = crate::aql_text::carries_own_window(&aql);
     let body = if has_own_window {
         serde_json::json!({ "q": aql, "query_parameters": parameters }).to_string()
@@ -109,6 +115,12 @@ pub async fn run_aql(
 }
 
 /// List the CDR's stored queries (`GET definition/query`).
+///
+/// NOTE: no openEHR spec governs this — our own design/extension. The released
+/// Definition API declares only `GET /definition/query/{qualified_query_name}`,
+/// whose wildcard is a PATH segment
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_query_list.yaml`),
+/// so the segment-less listing the console reads is the CDR's own route.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a session; CDR errors
@@ -387,9 +399,18 @@ pub async fn run_stored_query(
 }
 
 /// Run one stored query (`GET query/{name}/{version}`) and return its match
-/// count — the dashboard namespace-tile primitive. The count is the RESULT_SET
-/// row count of a `fetch`-limited run when the query has no aggregate;
-/// tiles built from `SELECT COUNT(*)` queries read the single cell.
+/// count — the dashboard namespace-tile primitive.
+///
+/// A `SELECT COUNT(*)` query answers one 1×1 numeric cell, and that cell IS the
+/// count. Every other query answers rows, and the count is how many rows came
+/// back on ONE page: the request sends no `fetch`, so the window is the stored
+/// definition's own AQL top, or — when it has none — the CDR's default page,
+/// whose size "depends on the implementation"
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/query/Request.md`
+/// §Common Headers and Query Parameters). The console adds no `fetch` of its
+/// own deliberately: the parameter "cannot be combined with AQL-top" (same
+/// section), and a console-sized window would cap every tile at the table page
+/// size instead of reporting a magnitude.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a session; CDR errors

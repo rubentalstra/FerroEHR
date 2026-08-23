@@ -311,7 +311,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // A stale preceding_version_uid (v1, but latest is v2) → 409 Conflict.
     let comp_ovid_v1_id: ObjectVersionId = comp_ovid_v1.parse().expect("ovid");
     let stale_delete = svc
-        .delete_composition(ehr_uuid, &comp_ovid_v1_id, None)
+        .delete_composition(ehr_uuid, &comp_ovid_v1_id, None, None)
         .await;
     assert!(
         matches!(stale_delete, Err(ServiceError::Conflict(_))),
@@ -320,6 +320,28 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // NOTE: `delete_composition` takes a typed `ObjectVersionId`, so a bare
     // HIER_OBJECT_ID cannot be constructed as an argument; that decode + 400
     // lives in the protocol adapter (`ferroehr-rest`), where it is exercised.
+
+    // A volunteered If-Match naming a superseded version refuses the delete
+    // as a failed PRECONDITION (412), even though the path names the latest
+    // (overview §"If-Match and accidental overwrites": a received condition
+    // that is false → the method MUST NOT be performed) — and performs
+    // nothing: the composition still reads live afterwards.
+    let comp_ovid_v2_path: ObjectVersionId = comp_ovid_v2.parse().expect("ovid");
+    let volunteered_stale = svc
+        .delete_composition(ehr_uuid, &comp_ovid_v2_path, Some(&comp_ovid_v1_id), None)
+        .await;
+    assert!(
+        matches!(volunteered_stale, Err(ServiceError::VersionConflict(_))),
+        "a stale volunteered If-Match must 412, got {volunteered_stale:?}"
+    );
+    let still_live = svc
+        .get_composition_latest(ehr_uuid, comp_vo_uuid)
+        .await
+        .expect("the refused delete performed nothing");
+    assert!(
+        !still_live.is_null(),
+        "the composition must still read live after the 412"
+    );
 
     // A fabricated creating_system_id names NO version here — the version_uid
     // identity is the full three-part tuple (ITS-REST overview Resources.md
@@ -333,7 +355,8 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let fabricated_id: ObjectVersionId = fabricated.parse().expect("ovid");
     assert!(
         matches!(
-            svc.delete_composition(ehr_uuid, &fabricated_id, None).await,
+            svc.delete_composition(ehr_uuid, &fabricated_id, None, None)
+                .await,
             Err(ServiceError::Conflict(_))
         ),
         "a fabricated creating_system_id must not delete"
@@ -357,7 +380,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     };
     let comp_ovid_v2_id: ObjectVersionId = case_variant.parse().expect("ovid");
     let deleted = svc
-        .delete_composition(ehr_uuid, &comp_ovid_v2_id, None)
+        .delete_composition(ehr_uuid, &comp_ovid_v2_id, None, None)
         .await
         .expect("composition_delete (case-variant creating_system_id)")
         .version_uid();
@@ -377,7 +400,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // Re-deleting an already-deleted composition → 400 (400_already_deleted).
     assert!(
         matches!(
-            svc.delete_composition(ehr_uuid, &comp_ovid_v2_id, None)
+            svc.delete_composition(ehr_uuid, &comp_ovid_v2_id, None, None)
                 .await,
             Err(ServiceError::BadRequest(_))
         ),
@@ -517,7 +540,9 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     );
 
     let comp_ovid_id: ObjectVersionId = comp_ovid.parse().expect("ovid");
-    let delete = svc.delete_composition(ehr_uuid, &comp_ovid_id, None).await;
+    let delete = svc
+        .delete_composition(ehr_uuid, &comp_ovid_id, None, None)
+        .await;
     assert!(
         comp_blocked(&delete),
         "delete must 409 when inactive: {delete:?}"

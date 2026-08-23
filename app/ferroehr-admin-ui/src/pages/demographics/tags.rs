@@ -170,6 +170,9 @@ pub async fn set_party_tag(
         target_path.trim(),
     );
     let url = tags_url(&state, kind, &uid);
+    // NOTE: clients are "strongly encouraged to always include the `Prefer`
+    // request header explicitly" — ITS-REST
+    // `specifications/docs/overview/Requests_and_responses.md` §Deprecated headers.
     let response = state
         .cdr
         .put(
@@ -177,7 +180,7 @@ pub async fn set_party_tag(
             &url,
             "application/json",
             "application/json",
-            &[],
+            &[("Prefer", "return=minimal")],
             body,
         )
         .await?;

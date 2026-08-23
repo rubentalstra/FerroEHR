@@ -71,6 +71,11 @@ pub struct ContributionPage {
 /// (`GET /ehr/{ehr_id}/contribution?offset&fetch`). `fetch` is fixed at
 /// `CONTRIBUTION_FETCH`.
 ///
+/// NOTE: no openEHR spec governs this — our own design/extension: the released
+/// EHR API declares only `contribution_create` and `contribution_get` (one
+/// CONTRIBUTION by uid), never a listing, so the paged route and its
+/// `{rows, total}` envelope are the CDR's own.
+///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via

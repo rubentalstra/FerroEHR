@@ -29,7 +29,13 @@ use crate::error::AdminUiError;
 ///
 /// Every field is a plain `String`/`Vec<String>` (no `usize`), so the type is
 /// safe across the server-fn boundary on the 32-bit WASM target (rules §1).
+///
+/// Every member is optional-tolerant: `Options.yaml` declares no `required`
+/// list at all, so a conformant peer may omit any of them and the reader fills
+/// the gap from [`Default`] rather than failing the whole manifest — which
+/// would hide every affordance the `endpoints` list gates.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ConformanceManifest {
     /// The product name the CDR advertises.
     pub solution: String,
@@ -139,5 +145,23 @@ mod tests {
         assert_eq!(parsed.restapi_specs_version, "1.1.0");
         assert_eq!(parsed.conformance_profile, "STANDARD");
         assert!(parsed.advertises("/admin"));
+    }
+
+    #[test]
+    fn a_manifest_declaring_only_one_member_still_reads() {
+        // `Options.yaml` carries no `required` list, so a conformant peer may
+        // send any subset; an absent member must not lose the whole manifest.
+        let parsed: ConformanceManifest = serde_json::from_str(r#"{"solution":"otherEHR"}"#)
+            .expect("an Options body with one member parses");
+        assert_eq!(parsed.solution, "otherEHR");
+        assert_eq!(parsed.vendor, String::new());
+        assert_eq!(parsed.restapi_specs_version, String::new());
+        assert!(parsed.endpoints.is_empty());
+        // An empty list is an honest "advertises nothing", not a parse failure.
+        assert!(!parsed.advertises("/admin"));
+        // The empty document is the same story.
+        let empty: ConformanceManifest =
+            serde_json::from_str("{}").expect("an empty Options body parses");
+        assert_eq!(empty, ConformanceManifest::default());
     }
 }

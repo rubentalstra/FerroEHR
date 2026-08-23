@@ -20,8 +20,8 @@ use crate::session::Credential;
 /// A normalized CDR response: status, declared content type, raw body.
 #[derive(Debug, Clone)]
 pub struct CdrResponse {
-    /// HTTP status code.
-    pub status: u16,
+    /// The HTTP status the CDR answered with.
+    pub status: http::StatusCode,
     /// The `Content-Type` the CDR declared, if any.
     pub content_type: Option<String>,
     /// The raw body bytes as text (all ITS-REST representations are text).
@@ -31,13 +31,13 @@ pub struct CdrResponse {
 impl CdrResponse {
     /// Whether the response carries exactly this status.
     ///
-    /// The one comparison seam (owner directive 2026-08-06): callers name an
-    /// [`http::StatusCode`] constant, so a transposed code is a compile
-    /// error, never a silent wrong branch; the numeric field itself stays
-    /// `u16` because it is deserialized from and rendered into wire JSON.
+    /// The status is typed all the way from `reqwest` to the branch that reads
+    /// it (owner directive 2026-08-06), so callers name an
+    /// [`http::StatusCode`] constant and a transposed code is a compile error
+    /// rather than a silent wrong branch.
     #[must_use]
     pub fn is(&self, code: http::StatusCode) -> bool {
-        self.status == code.as_u16()
+        self.status == code
     }
 }
 
@@ -298,13 +298,18 @@ impl CdrClient {
     /// [`AdminUiError::Forbidden`] on 401/403, [`AdminUiError::Cdr`] on any
     /// other non-2xx status.
     pub fn expect_success(response: CdrResponse) -> Result<CdrResponse, AdminUiError> {
-        if (200..300).contains(&response.status) {
+        if response.status.is_success() {
             return Ok(response);
         }
         let message = diagnostic_of(&response);
         match response.status {
-            401 | 403 => Err(AdminUiError::Forbidden(message)),
-            status => Err(AdminUiError::Cdr { status, message }),
+            http::StatusCode::UNAUTHORIZED | http::StatusCode::FORBIDDEN => {
+                Err(AdminUiError::Forbidden(message))
+            }
+            status => Err(AdminUiError::Cdr {
+                status: status.as_u16(),
+                message,
+            }),
         }
     }
 
@@ -325,7 +330,7 @@ impl CdrClient {
             .send()
             .await
             .map_err(|e| AdminUiError::CdrUnreachable(e.to_string()))?;
-        let status = response.status().as_u16();
+        let status = response.status();
         let content_type = response
             .headers()
             .get(http::header::CONTENT_TYPE)
@@ -343,12 +348,37 @@ impl CdrClient {
     }
 }
 
+/// The `validationErrors` entries of an openEHR error body, one string each.
+///
+/// The released error shape declares the member as required and carries one
+/// string per violation
+/// (`docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`),
+/// so a `422` can name every offending path instead of one generic line.
+fn validation_errors(value: &serde_json::Value) -> Vec<String> {
+    value
+        .get("validationErrors")
+        .and_then(serde_json::Value::as_array)
+        .map(|entries| {
+            entries
+                .iter()
+                .map(|entry| {
+                    entry
+                        .as_str()
+                        .map_or_else(|| entry.to_string(), str::to_owned)
+                })
+                .filter(|text| !text.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// Pull the human diagnostic out of a refused body, whatever its vocabulary:
-/// the openEHR error shape (`{"error": …, "message": …}` per ITS-REST) or a
-/// FHIR `OperationOutcome` (the connector authors its refusals as outcomes —
-/// their `issue[].diagnostics` join into one line), falling back to the raw
-/// body or the bare status. ONE reader for both vocabularies, so no screen
-/// ever hands raw JSON to a toast (#2581).
+/// the openEHR error shape (`{"message": …, "validationErrors": […]}` per
+/// ITS-REST — the message first, then one line per violation) or a FHIR
+/// `OperationOutcome` (the connector authors its refusals as outcomes — their
+/// `issue[].diagnostics` join into one line), falling back to the raw body or
+/// the bare status. ONE reader for both vocabularies, so no screen ever hands
+/// raw JSON to a toast (#2581).
 fn diagnostic_of(response: &CdrResponse) -> String {
     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&response.body) {
         if value
@@ -377,14 +407,21 @@ fn diagnostic_of(response: &CdrResponse) -> String {
                 return joined;
             }
         }
+        let details = validation_errors(&value);
         for key in ["message", "error"] {
             if let Some(text) = value.get(key).and_then(serde_json::Value::as_str) {
-                return text.to_owned();
+                return std::iter::once(text.to_owned())
+                    .chain(details)
+                    .collect::<Vec<_>>()
+                    .join("\n");
             }
+        }
+        if !details.is_empty() {
+            return details.join("\n");
         }
     }
     if response.body.is_empty() {
-        format!("HTTP {}", response.status)
+        format!("HTTP {}", response.status.as_u16())
     } else {
         let mut text = response.body.clone();
         text.truncate(500);
@@ -397,7 +434,7 @@ mod tests {
     use super::{CdrClient, CdrResponse, diagnostic_of};
     use crate::error::AdminUiError;
 
-    fn response(status: u16, body: &str) -> CdrResponse {
+    fn response(status: http::StatusCode, body: &str) -> CdrResponse {
         CdrResponse {
             status,
             content_type: Some("application/json".to_owned()),
@@ -409,7 +446,7 @@ mod tests {
     fn an_operation_outcome_refusal_yields_its_diagnostics_never_raw_json() {
         // #2581: the shared reader speaks the FHIR refusal vocabulary too.
         let response = CdrResponse {
-            status: 400,
+            status: http::StatusCode::BAD_REQUEST,
             content_type: Some("application/fhir+json".to_owned()),
             body: r#"{"resourceType":"OperationOutcome","issue":[
                 {"severity":"error","code":"invalid","diagnostics":"missing field `template_id`"},
@@ -424,7 +461,7 @@ mod tests {
     #[test]
     fn diagnostic_prefers_the_openehr_message_field() {
         let r = response(
-            400,
+            http::StatusCode::BAD_REQUEST,
             r#"{"error":"Bad Request","message":"AQL syntax error at line 1"}"#,
         );
         assert_eq!(diagnostic_of(&r), "AQL syntax error at line 1");
@@ -433,11 +470,53 @@ mod tests {
     #[test]
     fn diagnostic_falls_back_to_error_then_raw_then_status() {
         assert_eq!(
-            diagnostic_of(&response(409, r#"{"error":"duplicate"}"#)),
+            diagnostic_of(&response(
+                http::StatusCode::CONFLICT,
+                r#"{"error":"duplicate"}"#
+            )),
             "duplicate"
         );
-        assert_eq!(diagnostic_of(&response(418, "teapot")), "teapot");
-        assert_eq!(diagnostic_of(&response(502, "")), "HTTP 502");
+        assert_eq!(
+            diagnostic_of(&response(http::StatusCode::IM_A_TEAPOT, "teapot")),
+            "teapot"
+        );
+        assert_eq!(
+            diagnostic_of(&response(http::StatusCode::BAD_GATEWAY, "")),
+            "HTTP 502"
+        );
+    }
+
+    #[test]
+    fn every_validation_error_gets_its_own_line_under_the_message() {
+        // `Error.yaml` declares `validationErrors` as a required member: a 422
+        // names each offending path, so the reader renders all of them.
+        let r = response(
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            r#"{"message":"Validation failed","validationErrors":[
+                "/content[0]/data: missing mandatory element",
+                "/content[0]/items[1]: cardinality 1..1 violated",
+                "/context/start_time: value is not a DV_DATE_TIME"]}"#,
+        );
+        assert_eq!(
+            diagnostic_of(&r),
+            "Validation failed\n/content[0]/data: missing mandatory element\n/content[0]/items[1]: \
+             cardinality 1..1 violated\n/context/start_time: value is not a DV_DATE_TIME"
+        );
+    }
+
+    #[test]
+    fn validation_errors_render_even_without_a_message_member() {
+        let r = response(
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            r#"{"validationErrors":["/content: missing"]}"#,
+        );
+        assert_eq!(diagnostic_of(&r), "/content: missing");
+        // An empty list leaves the message exactly as it was.
+        let plain = response(
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            r#"{"message":"Validation failed","validationErrors":[]}"#,
+        );
+        assert_eq!(diagnostic_of(&plain), "Validation failed");
     }
 
     #[test]
@@ -472,9 +551,13 @@ mod tests {
 
     #[test]
     fn expect_success_maps_auth_statuses_to_forbidden() {
-        let err = CdrClient::expect_success(response(403, r#"{"message":"scope"}"#)).unwrap_err();
+        let err = CdrClient::expect_success(response(
+            http::StatusCode::FORBIDDEN,
+            r#"{"message":"scope"}"#,
+        ))
+        .unwrap_err();
         assert_eq!(err, AdminUiError::Forbidden("scope".to_owned()));
-        let err = CdrClient::expect_success(response(404, "")).unwrap_err();
+        let err = CdrClient::expect_success(response(http::StatusCode::NOT_FOUND, "")).unwrap_err();
         assert_eq!(
             err,
             AdminUiError::Cdr {
@@ -482,6 +565,8 @@ mod tests {
                 message: "HTTP 404".to_owned()
             }
         );
-        assert!(CdrClient::expect_success(response(201, "ok")).is_ok());
+        // The typed status survives the round trip into the error's own reader.
+        assert_eq!(err.status_code(), Some(http::StatusCode::NOT_FOUND));
+        assert!(CdrClient::expect_success(response(http::StatusCode::CREATED, "ok")).is_ok());
     }
 }

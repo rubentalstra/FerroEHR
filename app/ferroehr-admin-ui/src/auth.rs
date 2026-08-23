@@ -55,9 +55,9 @@ pub async fn login_basic(
             "wrong username or password".to_owned(),
         ));
     }
-    if probe.status >= http::StatusCode::INTERNAL_SERVER_ERROR.as_u16() {
+    if probe.status.is_server_error() {
         return Err(AdminUiError::Cdr {
-            status: probe.status,
+            status: probe.status.as_u16(),
             message: "CDR error while validating credentials".to_owned(),
         });
     }

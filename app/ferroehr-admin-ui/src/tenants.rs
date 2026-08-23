@@ -116,8 +116,8 @@ impl TenantAvailability {
 /// under `/admin`, which the coarse RBAC gate classes as admin work) — the
 /// surface exists, which is what the nav gate asks about.
 #[must_use]
-pub fn availability_of_status(status: u16) -> TenantAvailability {
-    if status == http::StatusCode::NOT_FOUND.as_u16() {
+pub fn availability_of_status(status: http::StatusCode) -> TenantAvailability {
+    if status == http::StatusCode::NOT_FOUND {
         TenantAvailability::Disabled
     } else {
         TenantAvailability::Available
@@ -209,19 +209,22 @@ pub fn draft_is_complete(name: &str, system_id: &str) -> bool {
 #[must_use]
 pub fn tenant_failure_copy(object: &str, error: &AdminUiError) -> String {
     match error {
-        AdminUiError::Cdr {
-            status: 409,
-            message,
-        } => format!(
-            "The CDR refused the change to {object}: {message}. Resolve that first, then retry."
-        ),
-        AdminUiError::Cdr {
-            status: 404,
-            message,
-        } => format!(
-            "{object} is not in the registry any more ({message}) — another operator may have \
-             deleted it. Reload this screen."
-        ),
+        AdminUiError::Cdr { message, .. }
+            if error.status_code() == Some(http::StatusCode::CONFLICT) =>
+        {
+            format!(
+                "The CDR refused the change to {object}: {message}. Resolve that first, then \
+                 retry."
+            )
+        }
+        AdminUiError::Cdr { message, .. }
+            if error.status_code() == Some(http::StatusCode::NOT_FOUND) =>
+        {
+            format!(
+                "{object} is not in the registry any more ({message}) — another operator may have \
+                 deleted it. Reload this screen."
+            )
+        }
         AdminUiError::Forbidden(message) => format!(
             "This session may not administer {object} ({message}). Sign in with an ADMIN-role \
              account and retry."
@@ -506,9 +509,17 @@ mod tests {
 
     #[test]
     fn only_a_404_means_the_registry_is_not_mounted() {
-        assert_eq!(availability_of_status(404), TenantAvailability::Disabled);
+        assert_eq!(
+            availability_of_status(http::StatusCode::NOT_FOUND),
+            TenantAvailability::Disabled
+        );
         // Mounted-but-refused, and mounted-and-served, are both "it exists".
-        for status in [200_u16, 401, 403, 500] {
+        for status in [
+            http::StatusCode::OK,
+            http::StatusCode::UNAUTHORIZED,
+            http::StatusCode::FORBIDDEN,
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+        ] {
             assert_eq!(
                 availability_of_status(status),
                 TenantAvailability::Available,
