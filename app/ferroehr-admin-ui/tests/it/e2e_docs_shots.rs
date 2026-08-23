@@ -34,7 +34,7 @@ use reqwest::StatusCode;
 
 use std::path::{Path, PathBuf};
 
-use common::{Harness, env, login_basic, login_basic_as};
+use common::{Harness, env, login_basic, login_basic_as, wait_enabled};
 use thirtyfour::prelude::*;
 
 /// The detail-route id of the fixture template the browse journeys upload; its
@@ -147,6 +147,35 @@ async fn capture(h: &Harness, dir: &Path, path: &str, slug: &str, content: Optio
         .await
         .expect("write the documentation screenshot");
     println!("captured {slug} -> {}", out.display());
+}
+
+/// Pick a `<select>` option by its value.
+///
+/// # Panics
+/// When the control is not a select or the option is absent.
+async fn pick_option(h: &Harness, css: &str, value: &str) {
+    let element = h.wait_css(css).await;
+    thirtyfour::components::SelectElement::new(&element)
+        .await
+        .expect("the control is a select")
+        .select_by_value(value)
+        .await
+        .expect("pick the option");
+}
+
+/// Pick the first real composition in the Commit tab's amend picker (index 0 is
+/// the "— pick a composition —" placeholder).
+///
+/// # Panics
+/// When the picker holds no composition — the seeded EHR always has one.
+async fn pick_composition(h: &Harness) {
+    let element = h.wait_css("#stage-composition").await;
+    thirtyfour::components::SelectElement::new(&element)
+        .await
+        .expect("the composition picker is a select")
+        .select_by_index(1)
+        .await
+        .expect("pick the seeded composition");
 }
 
 /// Write a full-window PNG for an already-prepared page state.
@@ -487,6 +516,39 @@ async fn capture_documentation_screenshots() {
             Some("table tbody"),
         )
         .await;
+        // EHR detail: the Commit tab with TWO changes staged — a composition
+        // amend and the EHR status modification, both seeded from the CDR, so
+        // the published shot shows a real change set rather than an empty
+        // staging area. Nothing is committed: staging is session-only, so the
+        // seeded EHR the later captures depend on is untouched.
+        h.goto(&format!("/ehrs/{ehr_id}?tab=commit")).await;
+        h.wait_css("#stage-notice").await;
+        pick_option(&h, "#stage-kind", "amend").await;
+        pick_composition(&h).await;
+        wait_enabled(&h, "#stage-body").await;
+        h.wait_css("#stage-add-change")
+            .await
+            .click()
+            .await
+            .expect("stage the composition amendment");
+        pick_option(&h, "#stage-kind", "status").await;
+        wait_enabled(&h, "#stage-body").await;
+        h.wait_css("#stage-add-change")
+            .await
+            .click()
+            .await
+            .expect("stage the status modification");
+        h.wait_css("#stage-description")
+            .await
+            .send_keys("Encounter amended; EHR status refreshed")
+            .await
+            .expect("describe the change set");
+        h.wait_css("#stage-list")
+            .await
+            .scroll_into_view()
+            .await
+            .expect("scroll to the staging list");
+        shot_to(&h, &dir, "ehrs/contributions/commit").await;
         // EHR detail: the directory tab (the create-empty state — the seeded
         // EHR has no directory).
         capture(

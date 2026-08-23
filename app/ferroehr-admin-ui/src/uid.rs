@@ -34,7 +34,11 @@ pub fn container_uid_of(uid: &str) -> String {
 /// container (RM
 /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc`)
 /// — so one reader serves every body the console has to identify.
-#[cfg(feature = "ssr")]
+///
+/// Compiled on BOTH targets: a BFF write reads the uid out of the answer it
+/// just received, and the Commit tab's amend seed reads it out of the document
+/// the browser already holds — rather than a second endpoint read for the same
+/// claim.
 #[must_use]
 pub fn uid_value_of(body: &str) -> String {
     #[expect(
@@ -51,7 +55,6 @@ pub fn uid_value_of(body: &str) -> String {
 ///
 /// The reader for a caller that has parsed the body for other attributes too —
 /// the string form above parses and then calls this, so both answer identically.
-#[cfg(feature = "ssr")]
 #[expect(
     clippy::disallowed_types,
     reason = "the console reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
@@ -86,7 +89,6 @@ mod tests {
         assert_eq!(container_uid_of("   "), "");
     }
 
-    #[cfg(feature = "ssr")]
     #[test]
     fn a_served_bodys_uid_reads_back_or_is_empty() {
         // Every versioned family the console commits answers the same shape.
@@ -102,7 +104,6 @@ mod tests {
         assert_eq!(super::uid_value_of("not json"), "");
     }
 
-    #[cfg(feature = "ssr")]
     #[test]
     fn the_parsed_form_answers_exactly_as_the_string_form() {
         let body =
