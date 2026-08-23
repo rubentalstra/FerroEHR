@@ -53,7 +53,7 @@ use std::time::Duration;
 
 use reqwest::StatusCode;
 
-use common::{Harness, env, login_basic};
+use common::{Harness, env, login_basic, wait_attr, wait_attr_change};
 use thirtyfour::prelude::*;
 
 /// The two stored queries this journey owns, qualified `namespace::name` (the
@@ -425,58 +425,6 @@ async fn ehr_count(http: &reqwest::Client, v1: &str, user: &str, pass: &str) -> 
     usize::try_from(count).unwrap_or(usize::MAX)
 }
 
-/// One attempt at reading the first row link's `href`, or `None`.
-///
-/// `None` covers both "no row yet" and a STALE element handle: the window swap
-/// this journey drives re-renders the whole table, so a handle found one moment
-/// can be detached the next and `attr` then answers
-/// `stale element reference` — a retry, never a failure.
-async fn read_first_link(h: &Harness, css: &str) -> Option<String> {
-    h.driver
-        .find(By::Css(css))
-        .await
-        .ok()?
-        .attr("href")
-        .await
-        .ok()
-        .flatten()
-}
-
-/// The `href` of the first row's link matching `css` — the window's identity.
-///
-/// # Panics
-/// When no such row is readable within the wait budget.
-async fn first_link_href(h: &Harness, css: &str) -> String {
-    for _ in 0..75 {
-        if let Some(href) = read_first_link(h, css).await {
-            return href;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    let url = h.driver.current_url().await.expect("current url");
-    panic!("no row link matched `{css}` (at {url})");
-}
-
-/// Poll until the first row link at `css` is no longer `previous`, and return
-/// the new one. This is the window-moved condition (never a sleep): a paging
-/// link is a real navigation and a `<Transition>` keeps the previous rows on
-/// screen while the next window loads.
-///
-/// # Panics
-/// When the window has not moved after 15 s.
-async fn wait_link_change(h: &Harness, css: &str, previous: &str) -> String {
-    for _ in 0..75 {
-        if let Some(current) = read_first_link(h, css).await
-            && current != previous
-        {
-            return current;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    let url = h.driver.current_url().await.expect("current url");
-    panic!("the row window never moved off `{previous}` (at {url})");
-}
-
 /// How many rows matching `css` are currently rendered.
 async fn link_count(h: &Harness, css: &str) -> usize {
     h.driver
@@ -582,7 +530,7 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
             .is_err(),
         "the composer filter must exclude the other composer's composition"
     );
-    let first = first_link_href(&h, rows).await;
+    let first = wait_attr(&h, rows, "href").await;
     h.shot(1, "compositions-first-page").await;
 
     // Forward: the offset lands in the URL, the window moves to the last row,
@@ -593,7 +541,7 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
         .await
         .expect("page the compositions forward");
     h.wait_url_contains("offset=25").await;
-    let second = wait_link_change(&h, rows, &first).await;
+    let second = wait_attr_change(&h, rows, "href", &first).await;
     wait_link_count(&h, rows, 1).await;
     assert_url_keeps(
         &h,
@@ -623,7 +571,7 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
         .await
         .expect("page the compositions back");
     h.wait_url_not_contains("offset=").await;
-    let back = wait_link_change(&h, rows, &second).await;
+    let back = wait_attr_change(&h, rows, "href", &second).await;
     assert_eq!(back, first, "paging back must restore the first window");
     wait_link_count(&h, rows, PAGE_SIZE).await;
     assert_url_keeps(
@@ -671,7 +619,7 @@ async fn the_ehr_finder_pages_by_offset() {
     let rows = "tr a[href^='/ehrs/']";
     h.goto("/ehrs").await;
     wait_link_count(&h, rows, PAGE_SIZE).await;
-    let first = first_link_href(&h, rows).await;
+    let first = wait_attr(&h, rows, "href").await;
     h.shot(1, "ehrs-first-page").await;
 
     h.wait_css("a[data-page='next']")
@@ -680,7 +628,7 @@ async fn the_ehr_finder_pages_by_offset() {
         .await
         .expect("page the EHRs forward");
     h.wait_url_contains("offset=25").await;
-    let second = wait_link_change(&h, rows, &first).await;
+    let second = wait_attr_change(&h, rows, "href", &first).await;
     h.shot(2, "ehrs-second-page").await;
 
     h.wait_css("a[data-page='prev']")
@@ -689,7 +637,7 @@ async fn the_ehr_finder_pages_by_offset() {
         .await
         .expect("page the EHRs back");
     h.wait_url_not_contains("offset=").await;
-    let back = wait_link_change(&h, rows, &second).await;
+    let back = wait_attr_change(&h, rows, "href", &second).await;
     assert_eq!(back, first, "paging back must restore the first window");
     wait_link_count(&h, rows, PAGE_SIZE).await;
     h.shot(3, "ehrs-back-on-the-first-page").await;

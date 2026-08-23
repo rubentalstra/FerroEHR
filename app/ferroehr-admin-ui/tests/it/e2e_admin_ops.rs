@@ -206,17 +206,15 @@ async fn admin_deletes_a_template_from_the_detail_screen() {
 }
 
 /// Stored-query save + delete: save a query through the raw-AQL editor's
-/// namespace + name fields, see it listed AND grouped under its namespace on
-/// `/queries`, then delete that version from the CDR store and the row is gone.
+/// namespace + name fields, see it listed on `/queries` under the namespace
+/// card DERIVED from the qualified name it composed, then delete that version
+/// from the CDR store and watch the row go.
 ///
-/// Retargeted from the console-local query-group journey this replaced: the
-/// grouping is no longer created through a group form, it is DERIVED from the
-/// namespace the save composed, so the journey asserts the derived card
-/// (`data-query-namespace`) appears for the namespace it typed. Nothing was
-/// dropped — the delete half is unchanged and the save half now additionally
-/// proves the two fields compose the spec's `namespace::name`.
+/// The namespace card (`data-query-namespace`) is the assertion that the two
+/// fields composed exactly the spec's `namespace::name`: the console creates no
+/// grouping of its own, it reads the namespace back out of the stored name.
 #[tokio::test]
-async fn admin_saves_groups_and_deletes_a_stored_query() {
+async fn admin_saves_a_namespaced_stored_query_and_deletes_it() {
     let Some(h) = Harness::start("admin-stored-query-delete").await else {
         return;
     };

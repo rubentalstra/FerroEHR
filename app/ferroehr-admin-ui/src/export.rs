@@ -1,9 +1,13 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! `RESULT_SET` export: a plain BFF axum route (NOT a `#[server]` fn) so a
-//! plain HTML `<form method="post">` downloads the file — the export works
-//! before WASM loads and without JavaScript entirely.
+//! `RESULT_SET` export over a native `<form method="post">` download.
+//!
+//! A plain BFF axum route (NOT a `#[server]` fn), so the download itself is a
+//! form submission the client router never intercepts. It is not a no-JS path
+//! end to end: the forms only render on a hydrated results pane and their
+//! hidden inputs are `prop:value`-bound (nothing lands in SSR markup), so a
+//! WASM-less browser never reaches a filled form.
 //!
 //! The route enforces the console session exactly like every server fn (the
 //! public-endpoint rule) and runs the AQL through the same CDR client.

@@ -1,4 +1,4 @@
-# Cluster hardening: what the chart does, and what you must
+# Cluster hardening
 
 The [Kubernetes chapter](kubernetes.md) documents the chart. This section is the
 other half: an audit of this deployment against the [OWASP Kubernetes Security

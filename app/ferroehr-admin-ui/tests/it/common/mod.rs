@@ -594,6 +594,120 @@ pub(crate) async fn wait_hidden(h: &Harness, css: &str) {
     panic!("`{css}` never hid (at {url})");
 }
 
+/// Poll until `css` is VISIBLE — the mirror of [`wait_hidden`].
+///
+/// thaw keeps a closed dialog in the DOM, so "the dialog opened" is a
+/// visibility condition and never mere presence ([`is_visible`]).
+///
+/// # Panics
+/// When it is still not visible after 15 s.
+pub(crate) async fn wait_visible(h: &Harness, css: &str) {
+    for _ in 0..75 {
+        if is_visible(h, css).await {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let url = h.driver.current_url().await.expect("current url");
+    panic!("`{css}` never became visible (at {url})");
+}
+
+/// Empty the field at `css` BY TYPING.
+///
+/// Deliberately not `WebDriver`'s element-clear command: measured on the
+/// event-subscription journey, clearing that way empties the DOM value without
+/// the console's `on:input` listener ever running, so the form's state keeps
+/// the old value and the save sends it back — a green screen and a wrong wire.
+/// Backspacing is what a person does, and it fires the events the binding
+/// listens for. ([`retype`] is unaffected: the keystrokes it sends after
+/// clearing re-deliver the whole value.)
+///
+/// # Panics
+/// On any interaction failure, or when the field is not empty afterwards.
+pub(crate) async fn clear_field(h: &Harness, css: &str) {
+    let field = h.wait_css(css).await;
+    let held = field
+        .prop("value")
+        .await
+        .expect("read the field's value")
+        .unwrap_or_default();
+    let mut keys = String::from(Key::End.value());
+    keys.extend(std::iter::repeat_n(
+        Key::Backspace.value(),
+        held.chars().count(),
+    ));
+    field.send_keys(keys).await.expect("erase the field");
+    let left = field
+        .prop("value")
+        .await
+        .expect("read the field's value")
+        .unwrap_or_default();
+    assert!(
+        left.is_empty(),
+        "`{css}` still reads `{left}` after erasing"
+    );
+}
+
+/// One attempt at reading `attribute` off the first element matching `css`,
+/// or `None`.
+///
+/// `None` covers both "nothing matches yet" and a STALE element handle: a
+/// re-rendering table detaches the handle between the find and the read, and
+/// `attr` then answers `stale element reference` — a retry, never a failure.
+pub(crate) async fn read_attr(h: &Harness, css: &str, attribute: &str) -> Option<String> {
+    h.driver
+        .find(By::Css(css))
+        .await
+        .ok()?
+        .attr(attribute)
+        .await
+        .ok()
+        .flatten()
+}
+
+/// `attribute` of the first element matching `css`, waited for — the rendered
+/// window's identity.
+///
+/// # Panics
+/// When nothing readable matches within the wait budget.
+pub(crate) async fn wait_attr(h: &Harness, css: &str, attribute: &str) -> String {
+    for _ in 0..75 {
+        if let Some(value) = read_attr(h, css, attribute).await {
+            return value;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let url = h.driver.current_url().await.expect("current url");
+    panic!("no element matched `{css}` with a readable `{attribute}` (at {url})");
+}
+
+/// Poll until `attribute` of the first element matching `css` is no longer
+/// `previous`, and return the new value.
+///
+/// This is the content-moved condition (never a sleep): a paging link is a real
+/// navigation and a `<Transition>` keeps the previous rows on screen while the
+/// next window loads.
+///
+/// # Panics
+/// When it has not changed after 15 s.
+pub(crate) async fn wait_attr_change(
+    h: &Harness,
+    css: &str,
+    attribute: &str,
+    previous: &str,
+) -> String {
+    for _ in 0..75 {
+        if let Some(current) = read_attr(h, css, attribute).await
+            && current != previous
+        {
+            return current;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let url = h.driver.current_url().await.expect("current url");
+    panic!("`{css}`'s `{attribute}` never moved off `{previous}` (at {url})");
+}
+
 /// Drive one action through its confirmation MODAL: click the trigger, wait for
 /// the dialog to become visible, then click its confirm button. Explicit
 /// conditions, never a sleep.
