@@ -69,8 +69,9 @@ pub struct PartyState {
     /// The canonical party JSON exactly as the CDR served it — the base every
     /// edit is applied to, so nothing outside the edited attributes is lost.
     pub body: String,
-    /// `PARTY.uid.value` — the served version's `OBJECT_VERSION_ID`, which is
-    /// both the `If-Match` value of an update and the path of a delete.
+    /// The served version's `OBJECT_VERSION_ID`, which is both the `If-Match`
+    /// value of an update and the path of a delete. Read from the `ETag` the
+    /// CDR answered, falling back to the document's own `uid.value`.
     pub version_uid: String,
     /// The version container the routes address ([`container_uid_of`] of
     /// [`Self::version_uid`]).
@@ -135,8 +136,9 @@ pub async fn fetch_party(
     if response.is(http::StatusCode::NO_CONTENT) {
         return Ok(None);
     }
-    let body = crate::cdr::CdrClient::expect_success(response)?.body;
-    parse_party_state(&body).map(Some)
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    let served_etag = response.etag_version_uid();
+    parse_party_state(&response.body, served_etag.as_deref()).map(Some)
 }
 
 /// Create the first version of a party (`POST /demographic/{kind}` —
@@ -197,8 +199,9 @@ pub async fn create_party(
 /// The path carries the version CONTAINER — the update's `uid_based_id` "can
 /// take only a form of an HIER_OBJECT_ID identifier taken from
 /// VERSIONED_OBJECT.uid.value" (`operations/person_update.yaml`) — and
-/// `If-Match` carries the loaded version, since "the existing latest
-/// `version_uid` of PERSON resource (i.e. the `preceding_version_uid`) must be
+/// `If-Match` carries the version the loading read's `ETag` named, since "the
+/// existing latest `version_uid` of PERSON resource (i.e. the
+/// `preceding_version_uid`) must be
 /// specified in the `If-Match` header" (same file), quoted per the overview
 /// (`docs/overview/Requests_and_responses.md` §"If-Match and accidental
 /// overwrites"). A stale value is the operation's `412`, which reaches the UI
@@ -352,12 +355,18 @@ fn checked_party_body(body: &str, kind: PartyKind) -> Result<String, AdminUiErro
 /// verbatim. Defensive throughout — an absent attribute reads as its empty
 /// default rather than failing the tab.
 ///
+/// `served_etag` is the identifier the CDR's own `ETag` named
+/// ([`CdrResponse::etag_version_uid`](crate::cdr::CdrResponse::etag_version_uid));
+/// it wins over the document's `uid.value`, because the header is what the
+/// server offers for the conditional round-trip. `None` falls back to the body.
+///
 /// # Errors
 /// [`AdminUiError::Internal`] when the body is not valid JSON.
-fn parse_party_state(body: &str) -> Result<PartyState, AdminUiError> {
+fn parse_party_state(body: &str, served_etag: Option<&str>) -> Result<PartyState, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("party JSON: {e}")))?;
-    let version_uid = crate::uid::uid_value_of_document(&doc);
+    let version_uid =
+        served_etag.map_or_else(|| crate::uid::uid_value_of_document(&doc), str::to_owned);
     let identities = doc.get("identities").filter(|value| !value.is_null());
     Ok(PartyState {
         body: body.to_owned(),
@@ -1222,7 +1231,7 @@ mod wire_tests {
 
     #[test]
     fn parses_the_partys_facts_and_keeps_the_body_verbatim() {
-        let state = parse_party_state(PERSON).expect("a valid PERSON");
+        let state = parse_party_state(PERSON, None).expect("a valid PERSON");
         assert_eq!(state.rm_type, "PERSON");
         assert_eq!(state.name, "PERSON");
         assert_eq!(
@@ -1242,14 +1251,32 @@ mod wire_tests {
     }
 
     #[test]
+    fn the_party_precondition_is_the_served_etag_not_the_body_uid() {
+        // The `ETag` is the identifier the CDR offers for the conditional
+        // round-trip (ITS-REST overview §ETag and Last-Modified); the update's
+        // `If-Match` echoes exactly it, and the container follows from it.
+        let state =
+            parse_party_state(PERSON, Some("8849182c::example.org::5")).expect("a valid PERSON");
+        assert_eq!(state.version_uid, "8849182c::example.org::5");
+        assert_eq!(state.versioned_object_uid, "8849182c");
+        // Without an ETag the document's own uid is all there is.
+        assert_eq!(
+            parse_party_state(PERSON, None)
+                .expect("a valid PERSON")
+                .version_uid,
+            "8849182c::example.org::2"
+        );
+    }
+
+    #[test]
     fn a_sparse_party_reads_as_empty_facts_and_a_bad_body_errors() {
-        let state = parse_party_state(r#"{"_type":"ROLE"}"#).expect("an object parses");
+        let state = parse_party_state(r#"{"_type":"ROLE"}"#, None).expect("an object parses");
         assert_eq!(state.rm_type, "ROLE");
         assert_eq!(state.version_uid, "");
         assert_eq!(state.versioned_object_uid, "");
         assert_eq!(state.identities, "");
         assert_eq!(state.identity_count, 0);
-        assert!(parse_party_state("not json").is_err());
+        assert!(parse_party_state("not json", None).is_err());
     }
 
     #[test]

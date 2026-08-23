@@ -283,7 +283,8 @@ fn require_value(value: &str, what: &str) -> Result<String, AdminUiError> {
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] when the CDR refuses this session;
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] when the CDR
+/// refuses this session;
 /// [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnreachable`] from the CDR;
 /// [`AdminUiError::Internal`] when the body is not JSON.
 #[server]

@@ -554,12 +554,14 @@ fn listing_table(
 ///
 /// The group sits under `/admin`, so the CDR's coarse RBAC classes every call
 /// here as admin work: a session without the role is answered `403`, and
-/// "forbidden" alone tells the reader nothing about what to do next. Capability
+/// "forbidden" alone tells the reader nothing about what to do next. A `401` —
+/// the credential itself no longer accepted — lands here too, with its own next
+/// action. Capability
 /// is not authorization — the screen renders because the surface EXISTS, and
 /// this is where the per-request refusal lands.
 fn read_error(error: &AdminUiError, object: &str) -> AnyView {
     match error {
-        AdminUiError::Forbidden(_) => view! {
+        AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => view! {
             <p
                 id="subscription-refused"
                 role="alert"

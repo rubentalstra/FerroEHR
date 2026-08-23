@@ -337,8 +337,9 @@ fn scalar_rows(value: &serde_json::Value) -> Vec<(String, String)> {
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] when the endpoint's access level refuses this
-/// session; [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnreachable`] from the
+/// [`AdminUiError::CdrUnauthorized`] when the CDR no longer accepts this
+/// session, [`AdminUiError::Forbidden`] when the endpoint's access level
+/// refuses it; [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnreachable`] from the
 /// CDR; [`AdminUiError::Internal`] when the body is not JSON.
 #[server]
 pub async fn fetch_build_info() -> Result<Option<BuildInfoView>, AdminUiError> {
@@ -607,7 +608,7 @@ pub async fn fetch_loggers() -> Result<Option<LoggerView>, AdminUiError> {
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty filter;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the body is not JSON.
 #[server]

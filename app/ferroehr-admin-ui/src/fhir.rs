@@ -449,7 +449,7 @@ pub async fn probe_fhir_connector() -> Result<FhirAvailability, AdminUiError> {
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the body is not valid JSON.
 #[server]
@@ -484,7 +484,7 @@ pub async fn list_fhir_mappings() -> Result<Option<Vec<FhirMappingRow>>, AdminUi
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] when the draft cannot be sent;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the stored record is not valid JSON.
 #[server]
@@ -523,7 +523,7 @@ pub async fn create_fhir_mapping(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id or an unsendable document;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the stored record is not valid JSON.
 #[server]
@@ -564,7 +564,7 @@ pub async fn update_fhir_mapping(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn delete_fhir_mapping(
@@ -598,7 +598,8 @@ pub async fn delete_fhir_mapping(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] when either scope field is blank;
-/// [`AdminUiError::Forbidden`] on an authentication/authorization refusal;
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] on an
+/// authentication or authorization refusal;
 /// [`AdminUiError::CdrUnreachable`] on transport failure.
 #[server]
 pub async fn read_fhir_resources(
@@ -638,7 +639,8 @@ pub async fn read_fhir_resources(
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for a blank resource type or body;
-/// [`AdminUiError::Forbidden`] on an authentication/authorization refusal;
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] on an
+/// authentication or authorization refusal;
 /// [`AdminUiError::CdrUnreachable`] on transport failure.
 #[server]
 pub async fn dry_run_fhir_resource(
@@ -682,18 +684,17 @@ pub async fn dry_run_fhir_resource(
 /// A body the CDR authored travels through whatever its status: the panels show
 /// the document, so a `400`/`404`/`501` `OperationOutcome` is content, not an
 /// error. Only a refusal from the authentication layer above the handler — which
-/// carries the openEHR error body, never an outcome — becomes an `Err`.
+/// carries the openEHR error body, never an outcome — becomes an `Err`, and
+/// which refusal it was (`401` or `403`) is the shared reader's call.
 #[cfg(feature = "ssr")]
 fn fhir_answer(response: &crate::cdr::CdrResponse) -> Result<FhirAnswer, AdminUiError> {
-    if response.is(http::StatusCode::UNAUTHORIZED) || response.is(http::StatusCode::FORBIDDEN) {
+    if (response.is(http::StatusCode::UNAUTHORIZED) || response.is(http::StatusCode::FORBIDDEN))
         // NOTE: the shared reader speaks both refusal vocabularies (#2581),
-        // so the auth layer's openEHR body needs no FHIR-side shim.
-        return Err(
-            match crate::cdr::CdrClient::expect_success(response.clone()) {
-                Err(e) => e,
-                Ok(_) => AdminUiError::Forbidden(String::new()),
-            },
-        );
+        // so the auth layer's openEHR body needs no FHIR-side shim; the
+        // refusal statuses always classify as Err, so no filler arm exists.
+        && let Err(e) = crate::cdr::CdrClient::expect_success(response.clone())
+    {
+        return Err(e);
     }
     let parsed = serde_json::from_str::<serde_json::Value>(&response.body).ok();
     let issues = parsed.as_ref().map(outcome_issues).unwrap_or_default();
@@ -1106,6 +1107,10 @@ mod tests {
         let outcome = crate::cdr::CdrResponse {
             status: http::StatusCode::CONFLICT,
             content_type: Some("application/fhir+json".to_owned()),
+            etag: None,
+            location: None,
+            last_modified: None,
+            preference_applied: None,
             body: r#"{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"conflict","diagnostics":"a FHIR mapping with that name exists"}]}"#.to_owned(),
         };
         assert_eq!(
@@ -1118,6 +1123,10 @@ mod tests {
         let refused = crate::cdr::CdrResponse {
             status: http::StatusCode::FORBIDDEN,
             content_type: Some("application/json".to_owned()),
+            etag: None,
+            location: None,
+            last_modified: None,
+            preference_applied: None,
             body: r#"{"error":"Forbidden","message":"forbidden: operation requires the 'ADMIN' role"}"#.to_owned(),
         };
         assert_eq!(
@@ -1133,6 +1142,10 @@ mod tests {
         let missing_scope = crate::cdr::CdrResponse {
             status: http::StatusCode::BAD_REQUEST,
             content_type: Some("application/fhir+json".to_owned()),
+            etag: None,
+            location: None,
+            last_modified: None,
+            preference_applied: None,
             body: r#"{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"required","diagnostics":"the `patient` query parameter is required"}]}"#.to_owned(),
         };
         let answered = super::fhir_answer(&missing_scope).expect("a FHIR document, not an error");
@@ -1145,12 +1158,18 @@ mod tests {
         let refused = crate::cdr::CdrResponse {
             status: http::StatusCode::UNAUTHORIZED,
             content_type: Some("application/json".to_owned()),
+            etag: None,
+            location: None,
+            last_modified: None,
+            preference_applied: None,
             body: r#"{"error":"Unauthorized","message":"unauthorized: authentication failed"}"#
                 .to_owned(),
         };
+        // A 401 is the "credential no longer accepted" refusal, not the
+        // wrong-role one — the panel's copy differs, so the variant does too.
         assert!(matches!(
             super::fhir_answer(&refused),
-            Err(AdminUiError::Forbidden(_))
+            Err(AdminUiError::CdrUnauthorized(_))
         ));
     }
 }

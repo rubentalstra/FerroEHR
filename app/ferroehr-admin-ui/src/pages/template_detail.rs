@@ -40,7 +40,8 @@ use crate::format::ReprFormat;
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Cdr`] (e.g. `404` for an unknown template) /
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::CdrUnreachable`] from the CDR.
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn fetch_template_opt(
     /// The template whose OPT source to read.
@@ -163,7 +164,7 @@ pub async fn fetch_template_meta(
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn fetch_example(

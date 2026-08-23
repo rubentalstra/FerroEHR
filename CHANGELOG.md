@@ -116,6 +116,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Admin console: a CDR-refused session (`401`) and a wrong-role refusal
+  (`403`) now read as two different situations with two different next
+  actions — previously both collapsed into the same "forbidden" copy. The
+  update flows send back the very `ETag` the CDR served instead of
+  re-deriving the precondition from the body, and an already-zoned
+  date-time entered in a time-travel picker (e.g. `…+02:00`) is no longer
+  double-stamped with `Z`.
+
 - A composition `DELETE` that volunteers an `If-Match` precondition now
   honours it: a stale condition is refused with `412 Precondition Failed`
   carrying the latest version's `ETag`, evaluated only when the delete would
