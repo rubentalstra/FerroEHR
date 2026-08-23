@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / status history /
-//! directory / compositions / contributions / tags tabs.
+//! directory / compositions / contributions / commit / tags tabs.
 //!
-//! Six URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
+//! Seven URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
 //! `#[server]` fn co-located with the tab in its own submodule — [`status`]
 //! (which owns BOTH status tabs: the current document plus its
 //! `VERSIONED_EHR_STATUS` history), [`directory`], [`compositions`],
-//! [`contributions`], and the EHR-wide tag browser in
+//! [`contributions`], [`commit`] (the atomic multi-change CONTRIBUTION
+//! staging area), and the EHR-wide tag browser in
 //! [`crate::pages::ehr_tags`] (which also owns the per-target tag panels the
 //! Status tab and the composition viewer mount). The resources are
 //! created once and their sources are gated on the active tab (a `Memo` over
@@ -40,6 +41,7 @@
               hydrate target"
 )]
 
+pub mod commit;
 pub mod compositions;
 pub mod contributions;
 pub mod directory;
@@ -57,6 +59,7 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::CARD_PAD;
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
+use crate::pages::ehr_detail::commit::commit_section;
 use crate::pages::ehr_detail::compositions::compositions_section;
 use crate::pages::ehr_detail::contributions::contributions_section;
 use crate::pages::ehr_detail::directory::directory_section;
@@ -270,6 +273,7 @@ pub fn EhrDetailPage() -> impl IntoView {
     let directory = directory_section(ehr_id, selected);
     let compositions = compositions_section(ehr_id, offset, selected);
     let contributions = contributions_section(ehr_id, selected);
+    let commit = commit_section(ehr_id, selected);
     let tag_browser = crate::pages::ehr_tags::ehr_tags_section(ehr_id, selected);
 
     let heading = Signal::derive(move || {
@@ -303,6 +307,7 @@ pub fn EhrDetailPage() -> impl IntoView {
                 <div class:hidden=move || {
                     selected.get() != "contributions"
                 }>{contributions}</div>
+                <div class:hidden=move || selected.get() != "commit">{commit}</div>
                 <div class:hidden=move || selected.get() != "tags">{tag_browser}</div>
             </div>
         </div>
@@ -393,7 +398,7 @@ fn delete_section(ehr_id: Signal<String>) -> AnyView {
     })
 }
 
-/// The URL-driven tab bar: five pill anchors (`?tab=…`) replacing the thaw
+/// The URL-driven tab bar: seven pill anchors (`?tab=…`) replacing the thaw
 /// `TabList`. Selected = `bg-accent-subtle text-accent-ink`; idle =
 /// `text-ink-muted hover:bg-sunken`. Plain anchors keep the tabs working
 /// before hydration (the router intercepts them once WASM loads).
@@ -417,7 +422,8 @@ fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
         <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
             {link("status", "Status")} {link("status-history", "Status history")}
             {link("directory", "Directory")} {link("compositions", "Compositions")}
-            {link("contributions", "Contributions")} {link("tags", "Tags")}
+            {link("contributions", "Contributions")} {link("commit", "Commit")}
+            {link("tags", "Tags")}
         </div>
     }
     .into_any()

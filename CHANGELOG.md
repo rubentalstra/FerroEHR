@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: a **Commit** tab on the EHR detail — stage several changes
+  (create a composition, amend one, modify the EHR status), set the
+  contribution's audit, and commit them as ONE contribution, all-or-nothing:
+  the openEHR-native way to make correlated changes. A refused commit keeps
+  the staging intact and shows the per-version diagnostics verbatim; staged
+  changes live only in the open session.
+
 - Admin console: a **FHIR** screen (shown only when the CDR's FHIR API is
   enabled) — the mapping-store editor (list, create, edit, and two-step
   delete of the connector's mapping definitions, edited as JSON documents

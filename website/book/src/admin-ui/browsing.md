@@ -177,6 +177,45 @@ The contributions tab opens with a **contribution activity** timeline —
 writes to this EHR per calendar day, bucketed from a wider window of the same
 contribution data the paged list below it shows.
 
+### Committing several changes at once
+
+Each form above commits one thing. When changes belong *together* — a new
+composition and the EHR status that goes with it — the **Commit** tab commits
+them as one openEHR **contribution**: an atomic change set. Every staged
+change is committed together, or none of them is. Nothing is written halfway.
+
+![Commit staging area](img/ehrs/contributions/commit.png)
+
+Build the change set one entry at a time. Each entry is one of three things:
+
+- **Composition — create**: pick the template and paste the canonical JSON
+  document. This commits a brand-new composition.
+- **Composition — amend**: pick one of the EHR's existing compositions. Its
+  current version is loaded into the editor for you, and the change carries
+  that version as the one it supersedes, so a concurrent write is refused
+  rather than overwritten.
+- **EHR status — modify**: the EHR's current status is loaded the same way;
+  edit it and it commits as a new status version.
+
+The **change type** offered for each entry is exactly what the openEHR wire
+accepts for it: a creation for a new composition, an amendment or a
+modification for anything that supersedes an existing version. The
+**contribution audit** below the list carries the change set's description
+and, optionally, a committer name — leave it blank and your console identity
+is used. The commit button always states what it is about to do
+("Commit 2 changes as one contribution").
+
+> [!NOTE]
+> Staged changes live in the open browser tab only. The console stores nothing
+> of its own, so leaving the screen discards them — and nothing reaches the
+> CDR until you press commit.
+
+On success the tab names the new contribution and every version it created,
+and links straight to the Contributions tab, where the contribution opens with
+all of its versions. On refusal nothing at all was committed: the staging list
+is left exactly as it was, and the CDR's own diagnostic is shown verbatim so
+you can correct the offending document and commit again.
+
 ### Directory editing
 
 The Directory tab creates the EHR's FOLDER directory when none exists: it
