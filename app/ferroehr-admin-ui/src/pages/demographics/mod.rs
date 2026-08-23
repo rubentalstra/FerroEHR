@@ -452,7 +452,7 @@ pub async fn resolve_demographic_version_at_time(
     let state: crate::state::AppState = leptos::prelude::expect_context();
     let family = VersionedFamily::from_segment(&family)
         .ok_or_else(|| unknown_segment(&family, "versioned-object family"))?;
-    let at_time = crate::pages::composition::datetime_local_to_rfc3339(&at_time);
+    let at_time = crate::format::datetime_local_to_rfc3339(&at_time);
     if at_time.is_empty() {
         return Err(AdminUiError::Invalid(
             "pick a date and time to travel to".to_owned(),

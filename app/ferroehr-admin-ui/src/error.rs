@@ -21,8 +21,12 @@ pub enum AdminUiError {
     /// No console session — the UI redirects to `/login`.
     #[error("not authenticated")]
     Unauthenticated,
-    /// Authenticated but the CDR refused (401/403 from the CDR — the
-    /// "insufficient scope" surface).
+    /// The CDR answered `401`: the credential this session carries is no
+    /// longer valid for the CDR, whatever the console's own session says.
+    #[error("unauthorized: {0}")]
+    CdrUnauthorized(String),
+    /// The CDR answered `403`: the credential is valid and the CDR refuses to
+    /// authorize it — the wrong-role / insufficient-scope surface.
     #[error("forbidden: {0}")]
     Forbidden(String),
     /// A non-2xx CDR answer, normalized: status + the diagnostic the CDR
@@ -52,15 +56,17 @@ impl AdminUiError {
     /// [`AdminUiError::Cdr`] transports the status as a `u16` because the enum
     /// crosses the server-fn boundary as JSON; every branch on it reads it back
     /// through here, so a status comparison names an [`http::StatusCode`]
-    /// constant instead of a bare literal (owner directive 2026-08-06).
-    /// [`AdminUiError::Forbidden`] deliberately answers `None`: it collapses
-    /// `401` and `403`, so it can no longer say which one the CDR sent.
+    /// constant instead of a bare literal (owner directive 2026-08-06). The two
+    /// refusals answer their own status, so a caller can tell "sign in again"
+    /// from "sign in as someone else"; [`AdminUiError::Unauthenticated`] answers
+    /// `None` because no CDR request was ever made.
     #[must_use]
     pub fn status_code(&self) -> Option<http::StatusCode> {
         match self {
             Self::Cdr { status, .. } => http::StatusCode::from_u16(*status).ok(),
+            Self::CdrUnauthorized(_) => Some(http::StatusCode::UNAUTHORIZED),
+            Self::Forbidden(_) => Some(http::StatusCode::FORBIDDEN),
             Self::Unauthenticated
-            | Self::Forbidden(_)
             | Self::CdrUnreachable(_)
             | Self::Invalid(_)
             | Self::Internal(_) => None,

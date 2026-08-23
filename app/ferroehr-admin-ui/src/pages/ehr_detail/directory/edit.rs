@@ -4,10 +4,11 @@
 //! Pure, component-free helpers for the structured directory tree editor.
 //!
 //! Navigation and mutation of a canonical `FOLDER` tree held as
-//! `serde_json::Value`, `OBJECT_REF` construction, tree statistics, and the
-//! `version_at_time` datetime normalization. Kept out of the view code so the
-//! editing logic is unit-tested directly (rules §10 — business logic lives in
-//! plain types).
+//! `serde_json::Value`, `OBJECT_REF` construction, and tree statistics. Kept
+//! out of the view code so the editing logic is unit-tested directly (rules
+//! §10 — business logic lives in plain types). The time-travel panel's
+//! `version_at_time` value goes through the console's one normalizer,
+//! [`crate::format::datetime_local_to_rfc3339`].
 //!
 //! The FOLDER shape these operate on IS spec-bound (ITS-REST
 //! `specifications/schemas/ehr/Folder.yaml`; RM common
@@ -362,37 +363,6 @@ pub(crate) fn count_tree(root: &Value) -> (i32, i32) {
     (folders, items)
 }
 
-/// Normalize a browser `datetime-local` value (`YYYY-MM-DDTHH:MM[:SS]`, no
-/// zone) into an ISO 8601 datetime for the `version_at_time` query parameter
-/// (ITS-REST `parameters/query/version_at_time.yaml`).
-///
-/// NOTE: the browser's timezone offset is not available without JavaScript
-/// (the console is JS-free), so a zone-less input is interpreted as UTC and
-/// stamped with `Z`. An input that already carries a zone (`Z` or an offset)
-/// passes through unchanged.
-#[must_use]
-pub(crate) fn normalize_datetime(input: &str) -> String {
-    let s = input.trim();
-    if s.is_empty() {
-        return String::new();
-    }
-    let has_zone = s
-        .get(10..)
-        .is_some_and(|tail| tail.contains('Z') || tail.contains('+') || tail.contains('-'));
-    if has_zone {
-        return s.to_owned();
-    }
-    match s.len() {
-        16 => format!("{s}:00Z"),
-        19 => format!("{s}Z"),
-        // Deliberately lenient: a `datetime-local` widget only emits the two
-        // lengths above; anything else is hand-typed and passed through
-        // verbatim so the CDR's own `version_at_time` validation (400) is the
-        // arbiter rather than a second client-side parser.
-        _ => s.to_owned(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use serde_json::{Value, json};
@@ -400,7 +370,7 @@ mod tests {
     use super::{
         add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_item_index,
         find_path_by_key, item_count, item_node_keys, item_summary, node_key_at, node_name,
-        normalize_datetime, object_ref, remove_item, rename_folder, stamp_keys, strip_keys,
+        object_ref, remove_item, rename_folder, stamp_keys, strip_keys,
     };
     use crate::pages::ehr_detail::directory::{DIRECTORY_ARCHETYPE, folder_json};
 
@@ -662,26 +632,5 @@ mod tests {
         );
         // Folders a, a1, b = 3; one item.
         assert_eq!(count_tree(&tree), (3, 1));
-    }
-
-    #[test]
-    fn datetime_normalization_stamps_utc_and_respects_zones() {
-        assert_eq!(
-            normalize_datetime("2026-07-18T14:30"),
-            "2026-07-18T14:30:00Z"
-        );
-        assert_eq!(
-            normalize_datetime("2026-07-18T14:30:15"),
-            "2026-07-18T14:30:15Z"
-        );
-        assert_eq!(
-            normalize_datetime("2026-07-18T14:30:00Z"),
-            "2026-07-18T14:30:00Z"
-        );
-        assert_eq!(
-            normalize_datetime("2026-07-18T14:30:00+02:00"),
-            "2026-07-18T14:30:00+02:00"
-        );
-        assert_eq!(normalize_datetime("  "), "");
     }
 }

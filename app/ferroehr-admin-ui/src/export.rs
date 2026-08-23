@@ -41,9 +41,12 @@ pub struct ExportForm {
 
 /// `POST /export/aql` — run the query and answer with a file download.
 ///
-/// Unauthenticated callers are redirected to `/login` (the form is a
-/// full-page navigation, so a redirect is the correct UX and the correct
-/// security answer).
+/// Callers without a console session are redirected to `/login` (the form is
+/// a full-page navigation, so a redirect is the correct UX and the correct
+/// security answer) — both when no session exists and when the session store
+/// refuses it. A CDR-side refusal of the session's credential instead
+/// answers the error branch below (the download never navigates away on a
+/// mid-flight CDR 401).
 pub async fn export_aql(
     axum::Extension(state): axum::Extension<crate::state::AppState>,
     session: tower_sessions::Session,

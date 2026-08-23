@@ -87,8 +87,9 @@ pub struct AuditPage {
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] when the caller lacks the CDR's admin role
-/// (the audit trail is an operator surface); [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] when the CDR no longer accepts this
+/// session, [`AdminUiError::Forbidden`] when the caller lacks the CDR's admin
+/// role (the audit trail is an operator surface); [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// on an unparseable Bundle.
 #[server]

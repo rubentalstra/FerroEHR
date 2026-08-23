@@ -53,16 +53,17 @@ use crate::pages::ehrs::ResultPage;
 /// The EHR's directory as its canonical FOLDER JSON body plus the current
 /// version uid (the FOLDER's `uid.value`, an `OBJECT_VERSION_ID`).
 ///
-/// The uid is the `If-Match` value on update/delete:
-/// [`CdrResponse`](crate::cdr::CdrResponse) carries no header map, so it is
-/// read from the returned FOLDER body — a FOLDER is `VERSIONABLE` and always
-/// carries `uid` (ITS-REST `specifications/schemas/ehr/Folder.yaml`; RM common
+/// The uid is the `If-Match` value on update/delete, and it is the one the
+/// CDR's own `ETag` named; the returned FOLDER body's `uid` is the fallback for
+/// a server that sent no `ETag` — a FOLDER is `VERSIONABLE` and always carries
+/// one (ITS-REST `specifications/schemas/ehr/Folder.yaml`; RM common
 /// `master05-directory_package`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectoryState {
     /// The canonical FOLDER JSON body.
     pub body: String,
-    /// The FOLDER's `uid.value` (`OBJECT_VERSION_ID`), or empty when absent.
+    /// The served version's `OBJECT_VERSION_ID`, or empty when neither the
+    /// `ETag` nor the body carries one.
     pub version_uid: String,
 }
 
@@ -187,9 +188,29 @@ pub async fn fetch_directory(
     if response.is(http::StatusCode::NOT_FOUND) || response.is(http::StatusCode::NO_CONTENT) {
         return Ok(None);
     }
-    let body = crate::cdr::CdrClient::expect_success(response)?.body;
-    let version_uid = uid_value_of(&body);
-    Ok(Some(DirectoryState { body, version_uid }))
+    Ok(Some(directory_state(
+        crate::cdr::CdrClient::expect_success(response)?,
+    )))
+}
+
+#[cfg(feature = "ssr")]
+/// Take a served FOLDER answer as the console's [`DirectoryState`], reading the
+/// version the CDR named in its `ETag` and falling back to the body's `uid`.
+///
+/// The `ETag` "value is usually taken from e.g. `VERSIONED_OBJECT.uid.value`,
+/// `VERSION.uid.value`" and is the identifier the conditional round-trip is
+/// built on (ITS-REST
+/// `specifications/docs/overview/Requests_and_responses.md` §`ETag` and
+/// `Last-Modified`), so it — not a value re-derived from the document — is what
+/// an `If-Match` echoes back.
+fn directory_state(response: crate::cdr::CdrResponse) -> DirectoryState {
+    let version_uid = response
+        .etag_version_uid()
+        .unwrap_or_else(|| uid_value_of(&response.body));
+    DirectoryState {
+        body: response.body,
+        version_uid,
+    }
 }
 
 /// Create the EHR's directory (`POST /ehr/{ehr_id}/directory`) from a canonical
@@ -238,8 +259,8 @@ pub async fn create_directory(
 }
 
 /// Update the EHR's directory (`PUT /ehr/{ehr_id}/directory`) with a new
-/// canonical JSON FOLDER `body`. The current `version_uid` (the
-/// `preceding_version_uid`) is sent quoted in `If-Match`, per ITS-REST
+/// canonical JSON FOLDER `body`. The version the seeding read's `ETag` named
+/// (the `preceding_version_uid`) is sent quoted in `If-Match`, per ITS-REST
 /// `specifications/operations/directory_update.yaml`;
 /// `Prefer: return=representation` yields the new version uid. A stale uid is
 /// answered `412` by the CDR and surfaces as `is_conflict`.
@@ -294,10 +315,11 @@ pub async fn update_directory(
     Ok(uid_value_of(&response.body))
 }
 
-/// Delete the EHR's directory (`DELETE /ehr/{ehr_id}/directory`). The current
-/// `version_uid` (the `preceding_version_uid`) is sent quoted in `If-Match`,
-/// per ITS-REST `specifications/operations/directory_delete.yaml`; a stale uid
-/// is answered `412` and surfaces as `is_conflict`.
+/// Delete the EHR's directory (`DELETE /ehr/{ehr_id}/directory`). The version
+/// the seeding read's `ETag` named (the `preceding_version_uid`) is sent quoted
+/// in `If-Match`, per ITS-REST
+/// `specifications/operations/directory_delete.yaml`; a stale uid is answered
+/// `412` and surfaces as `is_conflict`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -432,14 +454,9 @@ pub async fn fetch_directory_at_time(
     match response.status {
         http::StatusCode::NO_CONTENT => Ok(DirectoryAtTime::DeletedAtTime),
         http::StatusCode::NOT_FOUND => Ok(DirectoryAtTime::NoneAtTime),
-        _ => {
-            let body = crate::cdr::CdrClient::expect_success(response)?.body;
-            let version_uid = uid_value_of(&body);
-            Ok(DirectoryAtTime::Present(DirectoryState {
-                body,
-                version_uid,
-            }))
-        }
+        _ => Ok(DirectoryAtTime::Present(directory_state(
+            crate::cdr::CdrClient::expect_success(response)?,
+        ))),
     }
 }
 
@@ -739,7 +756,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     );
     let at_time = Resource::new(
         move || {
-            let time = edit::normalize_datetime(&time_input.get());
+            let time = crate::format::datetime_local_to_rfc3339(&time_input.get());
             (time_open.get() && !time.is_empty()).then(|| (ehr_id.get(), time))
         },
         |active| async move {
@@ -850,10 +867,41 @@ pub(crate) type PickerResource = Resource<Result<Option<ResultPage>, AdminUiErro
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{
-        DIRECTORY_ARCHETYPE, FOLDER_NODE_ID, directory_toast_detail, empty_root_folder,
-        folder_json, is_conflict, split_version_uid, summarize_directory_version,
+        DIRECTORY_ARCHETYPE, FOLDER_NODE_ID, directory_state, directory_toast_detail,
+        empty_root_folder, folder_json, is_conflict, split_version_uid,
+        summarize_directory_version,
     };
     use crate::error::AdminUiError;
+
+    /// A served directory answer carrying `etag` and a FOLDER body whose own
+    /// `uid` deliberately names a DIFFERENT version, so the two are told apart.
+    fn served_directory(etag: Option<&str>) -> crate::cdr::CdrResponse {
+        crate::cdr::CdrResponse {
+            status: http::StatusCode::OK,
+            content_type: Some("application/json".to_owned()),
+            etag: etag.map(str::to_owned),
+            location: None,
+            last_modified: None,
+            preference_applied: None,
+            body: r#"{"_type":"FOLDER","uid":{"value":"7d44::sys::1"}}"#.to_owned(),
+        }
+    }
+
+    #[test]
+    fn the_directory_precondition_is_the_served_etag_not_the_body_uid() {
+        // The `ETag` is the identifier the CDR offers for the conditional
+        // round-trip (ITS-REST overview §`ETag` and `Last-Modified`), so the
+        // update/delete `If-Match` echoes exactly it.
+        let state = directory_state(served_directory(Some("W/\"7d44::sys::4\"")));
+        assert_eq!(state.version_uid, "7d44::sys::4");
+        // The body still travels verbatim — it is the tree editor's base.
+        assert!(state.body.contains("7d44::sys::1"));
+        // A server that sent no ETag leaves the document's own uid.
+        assert_eq!(
+            directory_state(served_directory(None)).version_uid,
+            "7d44::sys::1"
+        );
+    }
 
     #[test]
     fn folder_json_builds_a_spec_valid_folder_node() {

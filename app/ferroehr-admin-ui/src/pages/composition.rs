@@ -179,7 +179,7 @@ pub async fn fetch_version_at_time(
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    let at_time = datetime_local_to_rfc3339(&at_time);
+    let at_time = crate::format::datetime_local_to_rfc3339(&at_time);
     if at_time.is_empty() {
         return Err(AdminUiError::Invalid(
             "pick a date and time to travel to".to_owned(),
@@ -200,44 +200,17 @@ pub async fn fetch_version_at_time(
     Ok(crate::uid::uid_value_of(&response.body))
 }
 
-#[cfg(feature = "ssr")]
-/// Complete a browser `datetime-local` value (`YYYY-MM-DDTHH:MM`, optionally
-/// with seconds) into an RFC 3339 / extended-ISO-8601 UTC instant for the
-/// ITS-REST `version_at_time` query parameter ("a given time in the extended
-/// ISO 8601 format"). A `datetime-local` control emits no seconds and no zone,
-/// so absent seconds default to `:00` and the zone to `Z`; an already-zoned
-/// value is returned unchanged. Empty input yields an empty string (the caller
-/// rejects it).
-///
-/// NOTE: the zone is stamped deliberately — a zone-less parameter means "the
-/// local timezone is assumed"
-/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
-/// §Datetime format), which on the wire is the CDR's local zone, not the
-/// operator's; every picker feeding this function labels its field as UTC, so
-/// the `Z` states the instant the operator actually asked for.
-pub(crate) fn datetime_local_to_rfc3339(local: &str) -> String {
-    let trimmed = local.trim();
-    if trimmed.is_empty() {
-        return String::new();
-    }
-    if trimmed.ends_with('Z') || trimmed.ends_with('z') {
-        return trimmed.to_owned();
-    }
-    // `HH:MM` carries one colon, `HH:MM:SS` two — add seconds when absent.
-    let with_seconds = if trimmed.matches(':').count() < 2 {
-        format!("{trimmed}:00")
-    } else {
-        trimmed.to_owned()
-    };
-    format!("{with_seconds}Z")
-}
-
 /// Commit a new version of a COMPOSITION
 /// (`PUT /ehr/{ehr_id}/composition/{versioned_object_uid}`). `If-Match` carries
 /// the CURRENT (latest) `version_uid` — the `preceding_version_uid` — so the
 /// update is conditional (ITS-REST COMPOSITION API `composition_update`; the
 /// header value is the `version_uid` enclosed in double quotes). Canonical
 /// JSON body; `Prefer: return=representation` yields the new `uid.value`.
+///
+/// This is the one update whose precondition is NOT a served `ETag`: the
+/// document pane may be showing an older version, so the value comes from the
+/// revision history's newest entry instead — the `ETag` of the read that filled
+/// the editor would name the wrong version.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -982,14 +955,24 @@ fn edit_section(
         }
         edit_open.set(opening);
     };
+    let commit_toaster = thaw::ToasterInjection::expect_context();
     let on_commit = move |_| {
         // If-Match the NEWEST version (entries are newest-first), regardless of
-        // which version the dropdown shows.
-        let current = versions
+        // which version the dropdown shows. An unresolved history refuses the
+        // click loudly — dispatching an empty precondition would surface as a
+        // generic invalid-input failure instead of the real reason.
+        let Some(current) = versions
             .get()
             .and_then(Result::ok)
             .and_then(|entries| entries.first().map(|entry| entry.version_id.clone()))
-            .unwrap_or_default();
+        else {
+            toast_error(
+                commit_toaster,
+                "Version history still loading",
+                "The commit needs the latest version id as its precondition — try again in a moment.",
+            );
+            return;
+        };
         update.dispatch((ehr_id.get(), uid.get(), current, editor_body.get()));
     };
     view! {
@@ -1431,9 +1414,7 @@ fn short_version(version_id: &str) -> String {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{
-        datetime_local_to_rfc3339, parse_versioned_details, parse_versions, short_version,
-    };
+    use super::{parse_versioned_details, parse_versions, short_version};
 
     /// A `VERSIONED_COMPOSITION` container body, as the wire carries it.
     const VERSIONED_OBJECT: &str = r#"{
@@ -1495,32 +1476,6 @@ mod tests {
     fn versioned_details_reject_a_non_json_body_on_either_side() {
         assert!(parse_versioned_details("not json", "{}").is_err());
         assert!(parse_versioned_details(VERSIONED_OBJECT, "not json").is_err());
-    }
-
-    #[test]
-    fn datetime_local_completes_to_rfc3339_utc() {
-        // A `datetime-local` value with no seconds gains `:00` and a `Z` zone.
-        assert_eq!(
-            datetime_local_to_rfc3339("2026-07-12T10:30"),
-            "2026-07-12T10:30:00Z"
-        );
-        // With seconds, only the zone is appended.
-        assert_eq!(
-            datetime_local_to_rfc3339("2026-07-12T10:30:45"),
-            "2026-07-12T10:30:45Z"
-        );
-        // Surrounding whitespace is trimmed.
-        assert_eq!(
-            datetime_local_to_rfc3339("  2026-07-12T08:00  "),
-            "2026-07-12T08:00:00Z"
-        );
-        // Empty stays empty (the server fn rejects it before the round-trip).
-        assert_eq!(datetime_local_to_rfc3339(""), "");
-        // An already-zoned value is returned unchanged (never double-stamped).
-        assert_eq!(
-            datetime_local_to_rfc3339("2026-07-12T10:30:00Z"),
-            "2026-07-12T10:30:00Z"
-        );
     }
 
     #[test]

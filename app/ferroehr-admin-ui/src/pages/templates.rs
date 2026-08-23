@@ -99,7 +99,7 @@ pub struct TemplateRow {
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the CDR body is not valid JSON.
 #[server]
@@ -152,7 +152,7 @@ fn template_row(item: &serde_json::Value) -> TemplateRow {
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for empty content;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
 #[server]
 pub async fn upload_template(
@@ -194,7 +194,7 @@ pub async fn upload_template(
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the CDR body is not valid JSON.
 #[server]
@@ -230,7 +230,7 @@ pub async fn list_adl2_templates() -> Result<Vec<TemplateRow>, AdminUiError> {
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for empty content;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
 #[server]
 pub async fn upload_adl2_template(
@@ -291,7 +291,7 @@ fn accepted_template_id(body: &str) -> String {
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
 /// [`AdminUiError::Invalid`] for an empty id;
-/// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
+/// [`AdminUiError::Cdr`] / [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn delete_adl2_artefact(

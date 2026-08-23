@@ -17,13 +17,30 @@
 use crate::error::AdminUiError;
 use crate::session::Credential;
 
-/// A normalized CDR response: status, declared content type, raw body.
+/// A normalized CDR response: status, the named response headers the ITS-REST
+/// wire contract defines, and the raw body.
+///
+/// The header subset is named rather than a whole map because the console is a
+/// typed client: `ETag` and `Last-Modified` are the state identifiers a
+/// versioned resource carries, `Location` is the created resource's URL, and
+/// `Preference-Applied` reports which `Prefer` the CDR honoured
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §HTTP headers).
 #[derive(Debug, Clone)]
 pub struct CdrResponse {
     /// The HTTP status the CDR answered with.
     pub status: http::StatusCode,
     /// The `Content-Type` the CDR declared, if any.
     pub content_type: Option<String>,
+    /// The `ETag` verbatim, weakness indicator and quotes included — read
+    /// through [`Self::etag_version_uid`] rather than by hand.
+    pub etag: Option<String>,
+    /// The `Location` of a newly created resource (`201` answers only).
+    pub location: Option<String>,
+    /// The `Last-Modified` instant of the served resource, if any.
+    pub last_modified: Option<String>,
+    /// The `Preference-Applied` the CDR reports for the request's `Prefer`.
+    pub preference_applied: Option<String>,
     /// The raw body bytes as text (all ITS-REST representations are text).
     pub body: String,
 }
@@ -39,6 +56,63 @@ impl CdrResponse {
     pub fn is(&self, code: http::StatusCode) -> bool {
         self.status == code
     }
+
+    /// The version identifier the CDR's own `ETag` names, unwrapped from its
+    /// weak form — the value an `If-Match` round-trip sends back.
+    ///
+    /// The header "value is usually taken from e.g. `VERSIONED_OBJECT.uid.value`,
+    /// `VERSION.uid.value`" and "MUST include a weakness indicator `W/`", which a
+    /// pre-1.1.0 server may still omit
+    /// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+    /// §`ETag` and `Last-Modified`), so both shapes reduce to the same identifier
+    /// here. `None` when the CDR sent no `ETag`, or an empty one.
+    #[must_use]
+    pub fn etag_version_uid(&self) -> Option<String> {
+        self.etag
+            .as_deref()
+            .map(strip_etag)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
+    }
+
+    /// Assemble the normalized response from the parts `reqwest` hands back.
+    fn from_parts(status: http::StatusCode, headers: &http::HeaderMap, body: String) -> Self {
+        Self {
+            status,
+            content_type: header_text(headers, http::header::CONTENT_TYPE.as_str()),
+            etag: header_text(headers, http::header::ETAG.as_str()),
+            location: header_text(headers, http::header::LOCATION.as_str()),
+            last_modified: header_text(headers, http::header::LAST_MODIFIED.as_str()),
+            // NOTE: `Preference-Applied` has no `http::header` constant; the
+            // lookup is case-insensitive either way (`http::HeaderMap::get`).
+            preference_applied: header_text(headers, "preference-applied"),
+            body,
+        }
+    }
+}
+
+/// One response header as text, or `None` when it is absent or not ASCII.
+fn header_text(headers: &http::HeaderMap, name: &str) -> Option<String> {
+    headers
+        .get(name)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned)
+}
+
+/// Reduce an `ETag` / `If-Match` field value to the bare identifier it wraps:
+/// the weakness indicator and the surrounding quotes come off.
+///
+/// The weak form is what the release mandates and the bare form is the
+/// deprecated one it still permits
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §`ETag` and `Last-Modified`), so a console that reads either can talk to both.
+fn strip_etag(raw: &str) -> &str {
+    let trimmed = raw.trim();
+    let unweak = trimmed
+        .strip_prefix("W/")
+        .or_else(|| trimmed.strip_prefix("w/"))
+        .unwrap_or(trimmed);
+    unweak.trim().trim_matches('"')
 }
 
 /// The one outbound HTTP client to the CDR.
@@ -294,18 +368,26 @@ impl CdrClient {
     /// the diagnostic from the openEHR error body when present. 2xx passes
     /// through.
     ///
+    /// The two refusals stay apart, because the CDR sends them apart: a `401`
+    /// means the request "lacks valid authentication credentials for the target
+    /// resource" while a `403` means the service "understood the request but
+    /// refuses to authorize it"
+    /// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+    /// §HTTP status codes, mandated as a pair by §Authentication and
+    /// authorization) — one asks the operator to sign in again, the other to
+    /// sign in as someone else.
+    ///
     /// # Errors
-    /// [`AdminUiError::Forbidden`] on 401/403, [`AdminUiError::Cdr`] on any
-    /// other non-2xx status.
+    /// [`AdminUiError::CdrUnauthorized`] on 401, [`AdminUiError::Forbidden`] on
+    /// 403, [`AdminUiError::Cdr`] on any other non-2xx status.
     pub fn expect_success(response: CdrResponse) -> Result<CdrResponse, AdminUiError> {
         if response.status.is_success() {
             return Ok(response);
         }
         let message = diagnostic_of(&response);
         match response.status {
-            http::StatusCode::UNAUTHORIZED | http::StatusCode::FORBIDDEN => {
-                Err(AdminUiError::Forbidden(message))
-            }
+            http::StatusCode::UNAUTHORIZED => Err(AdminUiError::CdrUnauthorized(message)),
+            http::StatusCode::FORBIDDEN => Err(AdminUiError::Forbidden(message)),
             status => Err(AdminUiError::Cdr {
                 status: status.as_u16(),
                 message,
@@ -331,20 +413,12 @@ impl CdrClient {
             .await
             .map_err(|e| AdminUiError::CdrUnreachable(e.to_string()))?;
         let status = response.status();
-        let content_type = response
-            .headers()
-            .get(http::header::CONTENT_TYPE)
-            .and_then(|v| v.to_str().ok())
-            .map(str::to_owned);
+        let headers = response.headers().clone();
         let body = response
             .text()
             .await
             .map_err(|e| AdminUiError::CdrUnreachable(format!("reading body: {e}")))?;
-        Ok(CdrResponse {
-            status,
-            content_type,
-            body,
-        })
+        Ok(CdrResponse::from_parts(status, &headers, body))
     }
 }
 
@@ -431,13 +505,21 @@ fn diagnostic_of(response: &CdrResponse) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{CdrClient, CdrResponse, diagnostic_of};
+    use super::{CdrClient, CdrResponse, diagnostic_of, strip_etag};
     use crate::error::AdminUiError;
+
+    /// A served version identifier, in the shape the overview's own `ETag`
+    /// example carries.
+    const UID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2";
 
     fn response(status: http::StatusCode, body: &str) -> CdrResponse {
         CdrResponse {
             status,
             content_type: Some("application/json".to_owned()),
+            etag: None,
+            location: None,
+            last_modified: None,
+            preference_applied: None,
             body: body.to_owned(),
         }
     }
@@ -448,6 +530,10 @@ mod tests {
         let response = CdrResponse {
             status: http::StatusCode::BAD_REQUEST,
             content_type: Some("application/fhir+json".to_owned()),
+            etag: None,
+            location: None,
+            last_modified: None,
+            preference_applied: None,
             body: r#"{"resourceType":"OperationOutcome","issue":[
                 {"severity":"error","code":"invalid","diagnostics":"missing field `template_id`"},
                 {"severity":"error","code":"structure"}]}"#
@@ -550,13 +636,32 @@ mod tests {
     }
 
     #[test]
-    fn expect_success_maps_auth_statuses_to_forbidden() {
+    fn expect_success_keeps_the_401_and_403_refusals_apart() {
+        // §HTTP status codes: 401 "lacks valid authentication credentials",
+        // 403 "understood the request but refuses to authorize it" — two
+        // different next actions, so two variants.
+        let unauthorized = CdrClient::expect_success(response(
+            http::StatusCode::UNAUTHORIZED,
+            r#"{"message":"the bearer token has expired"}"#,
+        ))
+        .unwrap_err();
+        assert_eq!(
+            unauthorized,
+            AdminUiError::CdrUnauthorized("the bearer token has expired".to_owned())
+        );
+        assert_eq!(
+            unauthorized.status_code(),
+            Some(http::StatusCode::UNAUTHORIZED)
+        );
+
         let err = CdrClient::expect_success(response(
             http::StatusCode::FORBIDDEN,
             r#"{"message":"scope"}"#,
         ))
         .unwrap_err();
         assert_eq!(err, AdminUiError::Forbidden("scope".to_owned()));
+        assert_eq!(err.status_code(), Some(http::StatusCode::FORBIDDEN));
+
         let err = CdrClient::expect_success(response(http::StatusCode::NOT_FOUND, "")).unwrap_err();
         assert_eq!(
             err,
@@ -568,5 +673,68 @@ mod tests {
         // The typed status survives the round trip into the error's own reader.
         assert_eq!(err.status_code(), Some(http::StatusCode::NOT_FOUND));
         assert!(CdrClient::expect_success(response(http::StatusCode::CREATED, "ok")).is_ok());
+    }
+
+    #[test]
+    fn an_etag_reduces_to_its_identifier_in_either_published_shape() {
+        // The weak form is what Release-1.1.0 mandates; the bare one is the
+        // deprecated shape it still permits (§`ETag` and `Last-Modified`).
+        assert_eq!(strip_etag(&format!("W/\"{UID}\"")), UID);
+        assert_eq!(strip_etag(&format!("\"{UID}\"")), UID);
+        assert_eq!(strip_etag(&format!("  w/\"{UID}\"  ")), UID);
+        assert_eq!(strip_etag(UID), UID);
+        assert_eq!(strip_etag("\"\""), "");
+        assert_eq!(strip_etag(""), "");
+    }
+
+    #[test]
+    fn the_named_response_headers_reach_the_caller_whatever_their_case() {
+        let mut headers = http::HeaderMap::new();
+        for (name, value) in [
+            ("Content-Type", "application/json"),
+            ("ETag", "W/\"7d44::sys::3\""),
+            ("LOCATION", "https://cdr.example.org/ehr/1/composition/7d44"),
+            ("last-modified", "Wed, 22 Jul 2026 19:15:56 GMT"),
+            ("Preference-Applied", "return=representation"),
+        ] {
+            let name = http::HeaderName::from_bytes(name.as_bytes()).expect("a header name");
+            let value = http::HeaderValue::from_static(value);
+            assert!(headers.insert(name, value).is_none());
+        }
+        let response =
+            CdrResponse::from_parts(http::StatusCode::CREATED, &headers, "{}".to_owned());
+        assert_eq!(response.content_type.as_deref(), Some("application/json"));
+        assert_eq!(response.etag.as_deref(), Some("W/\"7d44::sys::3\""));
+        assert_eq!(
+            response.location.as_deref(),
+            Some("https://cdr.example.org/ehr/1/composition/7d44")
+        );
+        assert_eq!(
+            response.last_modified.as_deref(),
+            Some("Wed, 22 Jul 2026 19:15:56 GMT")
+        );
+        assert_eq!(
+            response.preference_applied.as_deref(),
+            Some("return=representation")
+        );
+        // The If-Match round-trip reads the identifier, never the raw field.
+        assert_eq!(response.etag_version_uid().as_deref(), Some("7d44::sys::3"));
+
+        // An answer with no ETag at all offers no identifier to echo back.
+        let bare =
+            CdrResponse::from_parts(http::StatusCode::OK, &http::HeaderMap::new(), String::new());
+        assert_eq!(bare.etag_version_uid(), None);
+        assert_eq!(bare.content_type, None);
+        // An empty ETag is an absent identifier, not an empty precondition.
+        let mut empty = http::HeaderMap::new();
+        assert!(
+            empty
+                .insert(http::header::ETAG, http::HeaderValue::from_static("\"\""))
+                .is_none()
+        );
+        assert_eq!(
+            CdrResponse::from_parts(http::StatusCode::OK, &empty, String::new()).etag_version_uid(),
+            None
+        );
     }
 }

@@ -53,7 +53,7 @@ use crate::pages::templates::TemplateRow;
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn fetch_adl2_source(
@@ -88,7 +88,7 @@ pub async fn fetch_adl2_source(
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn fetch_adl2_json(
@@ -123,7 +123,7 @@ pub async fn fetch_adl2_json(
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR (a template that cannot be
 /// compiled into a Web Template answers `422`).
 #[server]
