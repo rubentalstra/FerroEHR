@@ -216,17 +216,16 @@ pub async fn fetch_ehr_status_version(
 /// drop an attribute the console does not render.
 ///
 /// `current_version_uid` is the loaded version's `OBJECT_VERSION_ID` and travels
-/// quoted in `If-Match`: the spec requires "the existing latest `version_uid` of
-/// `EHR_STATUS` resource (i.e. the `preceding_version_uid`)" in that header, whose
-/// format "is always an `version_uid` identifier enclosed by double quotes"
+/// quoted in `If-Match`. The docs text mandates the header's EFFECT — a received
+/// condition that evaluates to false "MUST" be answered `412 Precondition Failed`
 /// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-/// §If-Match and accidental overwrites — a version_uid enclosed in double
-/// quotes). A stale value is answered
-/// `412 Precondition Failed` — "returned when `If-Match` request header doesn't
-/// match the latest version on the service side"
-/// (the same §If-Match prose: the service MUST answer `412 Precondition
-/// Failed`) — which reaches the UI as
-/// [`AdminUiError::Cdr`] with status `412` and gets its own toast.
+/// §If-Match and accidental overwrites) — and is silent on its VALUE, which the
+/// released OAS artifacts ground: "the existing latest `version_uid` of the
+/// resource (i.e. the `preceding_version_uid`)", in a "format … always an
+/// `version_uid` identifier enclosed by double quotes"
+/// (`specifications/parameters/header/If-Match.yaml`), refused with the latest
+/// `version_uid` in the `ETag` (`specifications/responses/412_EHR_STATUS.yaml`).
+/// That `412` reaches the UI as [`AdminUiError::Cdr`] and gets its own toast.
 ///
 /// `Prefer: return=representation` asks for the updated resource, whose
 /// `uid.value` is the new version; the operation also allows a bare `204`
@@ -614,7 +613,7 @@ pub(super) fn status_section(
             toast_success(toaster, "EHR status updated", &status_toast_detail(&uid));
         }
         Some(Err(error)) => {
-            let title = if matches!(error, AdminUiError::Cdr { status: 412, .. }) {
+            let title = if error.status_code() == Some(http::StatusCode::PRECONDITION_FAILED) {
                 "EHR status changed on the server"
             } else {
                 "Save failed"

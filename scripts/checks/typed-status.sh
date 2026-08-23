@@ -78,9 +78,30 @@ for f in $files; do
     -e 'as_u16\(\)[[:space:]]*[=!]=' \
     -e 'status\(\)[[:space:]]*[=!]=[[:space:]]*[0-9]' \
     -e '\b[a-z_]*status[a-z_]*[[:space:]]*[=!]=[[:space:]]*[0-9]' \
+    -e '\b[a-z_]*status[a-z_()]*[[:space:]]*[<>]=?[[:space:]]*[1-9][0-9]{2}([^0-9]|$)' \
     -e 'matches!\([[:space:]]*[a-z_]*status[a-z_]*[[:space:]]*,[[:space:]]*[0-9]' \
     -e 'assert(_eq|_ne)?!\([^,]*status\(\)[^,]*,[[:space:]]*[0-9]' \
     "$f" || true)
+  # A `match` on a status-named scrutinee with bare numeric-literal arms, and a
+  # struct PATTERN pinning a status field to a literal (`{ status: 412, .. }` —
+  # the `..` rest token is what separates a pattern from legal construction).
+  # Both are comparisons the `[=!]=` shapes above cannot see; the arm window is
+  # scrutinee-anchored so openEHR's own 3-digit codes (249/523/…) matched under
+  # non-status scrutinees stay out of scope.
+  while IFS=: read -r line body; do
+    [ -n "${line:-}" ] || continue
+    printf '%s:%s: numeric status comparison (%s) — compare the typed \n' \
+      "$f" "$line" "$(printf '%s' "$body" | sed 's/^[[:space:]]*//' | cut -c1-60)" >&2
+    printf '    `http::StatusCode` constant instead (scripts/checks/typed-status.sh)\n' >&2
+    failures=$((failures + 1))
+  done < <(awk '
+    /match[[:space:]].*status/ { window = 8 }
+    window > 0 && /^[[:space:]]*[0-9]{3}[[:space:]]*(\|[[:space:]]*[0-9]{3}[[:space:]]*)*(=>|\|)/ {
+      printf "%d:%s\n", NR, $0
+    }
+    window > 0 { window-- }
+    /status:[[:space:]]*[0-9]{3}[[:space:]]*,[[:space:]]*\.\./ { printf "%d:%s\n", NR, $0 }
+  ' "$f" || true)
 done
 
 if [ "$failures" -gt 0 ]; then

@@ -303,7 +303,7 @@ fn lookup_section(
     };
     let note = move || {
         match at_time.value().get() {
-        Some(Err(AdminUiError::Cdr { status: 404, .. })) => view! { <p class="mt-2 text-sm text-ink-muted">"No EHR_STATUS version existed at that time."</p> }
+        Some(Err(ref e)) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => view! { <p class="mt-2 text-sm text-ink-muted">"No EHR_STATUS version existed at that time."</p> }
         .into_any(),
         Some(Err(error)) => inline_error(&error),
         _ => ().into_any(),

@@ -666,7 +666,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     // DELETE → folded path (523|deleted|, no node rows); the current version
     // then resolves to an empty body (204), never 404.
     let ovid_v2_id: ObjectVersionId = ovid_v2.parse().expect("ovid");
-    svc.delete_composition(ehr_uuid, &ovid_v2_id, None)
+    svc.delete_composition(ehr_uuid, &ovid_v2_id, None, None)
         .await
         .expect("delete_composition");
     let deleted = svc

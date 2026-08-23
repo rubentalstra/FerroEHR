@@ -358,13 +358,16 @@ pub(super) fn commit_section(ehr_id: Signal<String>, selected: Memo<String>) -> 
         },
         |on| async move {
             match on {
-                Some((id, vo_id, _)) => crate::pages::composition::fetch_composition(
-                    id,
-                    vo_id,
-                    ReprFormat::CanonicalJson,
-                )
-                .await
-                .map(Some),
+                // The reader already answers `None` for a deleted version
+                // (the operation's `204`), which is exactly "nothing to seed".
+                Some((id, vo_id, _)) => {
+                    crate::pages::composition::fetch_composition(
+                        id,
+                        vo_id,
+                        ReprFormat::CanonicalJson,
+                    )
+                    .await
+                }
                 None => Ok(None),
             }
         },

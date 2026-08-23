@@ -1172,7 +1172,7 @@ fn relationship_section(uid: Signal<String>, latest_version: RwSignal<String>) -
             toast_success(toaster, "Relationship updated", &detail);
         }
         Some(Err(error)) => {
-            let title = if matches!(error, AdminUiError::Cdr { status: 412, .. }) {
+            let title = if error.status_code() == Some(http::StatusCode::PRECONDITION_FAILED) {
                 "Relationship changed on the server"
             } else {
                 "Save failed"
@@ -1224,7 +1224,7 @@ fn relationship_section(uid: Signal<String>, latest_version: RwSignal<String>) -
                         }
                             .into_any()
                     }
-                    Err(AdminUiError::Cdr { status: 404, .. }) => {
+                    Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
                         view! {
                             <div
                                 role="alert"

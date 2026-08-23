@@ -7,12 +7,12 @@ Runner: cnf-runner 3.20.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 1060 |
+| passed | 1062 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 38 |
-| total | 1098 |
+| total | 1100 |
 
 ## By chapter
 
@@ -20,10 +20,10 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 470 | 0 | 0 | 18 |
+| **EHR** | 472 | 0 | 0 | 18 |
 | — EHR resource | 25 | 0 | 0 | 2 |
 | — EHR_STATUS | 47 | 0 | 0 | 5 |
-| — COMPOSITION | 140 | 0 | 0 | 0 |
+| — COMPOSITION | 142 | 0 | 0 | 0 |
 | — DIRECTORY | 80 | 0 | 0 | 6 |
 | — CONTRIBUTION | 110 | 0 | 0 | 5 |
 | — Item tags | 62 | 0 | 0 | 0 |
@@ -87,7 +87,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | CompositionOps | pass | 60 | 0 | 0 | 0 |
 | DirectoryOps | pass | 78 | 0 | 0 | 8 |
 | ChangeSets | pass | 102 | 0 | 0 | 5 |
-| Versioning | pass | 73 | 0 | 0 | 0 |
+| Versioning | pass | 75 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
 | PartyOperations | pass | 88 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 19 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1060 of 1098 selected cases driven.
+Coverage: 1062 of 1100 selected cases driven.
 
 Not-executed verdicts (each cited):
 

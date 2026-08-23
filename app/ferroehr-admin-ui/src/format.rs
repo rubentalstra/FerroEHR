@@ -3,9 +3,13 @@
 
 //! Representation formats the console negotiates with the CDR.
 //!
-//! The ITS-REST canonical forms plus the Simplified Formats media types (spec:
-//! `docs/specs/openehr/ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
-//! — negotiation is strict `Accept`/`Content-Type`, no `?format=` parameter).
+//! The ITS-REST canonical forms plus the Simplified Formats media types.
+//! FLAT and STRUCTURED are the two the format spec itself defines
+//! (`docs/specs/openehr/ITS-REST/docs/simplified_formats/master02-overview.adoc`
+//! §MIME Types); the Web Template type is named by the REST spec
+//! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+//! §Data representation / Simplified Formats). Negotiation is strict
+//! `Accept`/`Content-Type` — there is no `?format=` parameter.
 
 use serde::{Deserialize, Serialize};
 
@@ -56,7 +60,9 @@ mod tests {
 
     #[test]
     fn media_types_match_the_simplified_formats_spec() {
-        // docs/specs/openehr/ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc
+        // FLAT + STRUCTURED: simplified_formats/master02-overview.adoc §MIME
+        // Types; wt+json: specifications/docs/overview/Resources.md §Data
+        // representation.
         assert_eq!(
             ReprFormat::Flat.media_type(),
             "application/openehr.wt.flat+json"

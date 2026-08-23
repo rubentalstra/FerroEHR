@@ -46,6 +46,28 @@ pub enum AdminUiError {
     Internal(String),
 }
 
+impl AdminUiError {
+    /// The CDR's HTTP status, typed, when this error carries one.
+    ///
+    /// [`AdminUiError::Cdr`] transports the status as a `u16` because the enum
+    /// crosses the server-fn boundary as JSON; every branch on it reads it back
+    /// through here, so a status comparison names an [`http::StatusCode`]
+    /// constant instead of a bare literal (owner directive 2026-08-06).
+    /// [`AdminUiError::Forbidden`] deliberately answers `None`: it collapses
+    /// `401` and `403`, so it can no longer say which one the CDR sent.
+    #[must_use]
+    pub fn status_code(&self) -> Option<http::StatusCode> {
+        match self {
+            Self::Cdr { status, .. } => http::StatusCode::from_u16(*status).ok(),
+            Self::Unauthenticated
+            | Self::Forbidden(_)
+            | Self::CdrUnreachable(_)
+            | Self::Invalid(_)
+            | Self::Internal(_) => None,
+        }
+    }
+}
+
 impl leptos::server_fn::error::FromServerFnError for AdminUiError {
     type Encoder = leptos::server_fn::codec::JsonEncoding;
 

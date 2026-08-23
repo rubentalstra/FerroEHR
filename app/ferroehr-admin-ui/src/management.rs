@@ -108,8 +108,8 @@ impl ManagementAvailability {
 /// facility is absent — both are the surface existing, which is what the panel
 /// gate asks about.
 #[must_use]
-pub fn availability_of_status(status: u16) -> ManagementAvailability {
-    if status == http::StatusCode::NOT_FOUND.as_u16() {
+pub fn availability_of_status(status: http::StatusCode) -> ManagementAvailability {
+    if status == http::StatusCode::NOT_FOUND {
         ManagementAvailability::Disabled
     } else {
         ManagementAvailability::Available
@@ -692,16 +692,20 @@ mod tests {
     #[test]
     fn only_a_404_means_the_surface_is_absent() {
         assert_eq!(
-            availability_of_status(200),
+            availability_of_status(http::StatusCode::OK),
             ManagementAvailability::Available
         );
         assert_eq!(
-            availability_of_status(404),
+            availability_of_status(http::StatusCode::NOT_FOUND),
             ManagementAvailability::Disabled
         );
         // Mounted but refused (Private/AdminOnly), and mounted but without its
         // telemetry facility, are both the surface EXISTING.
-        for status in [401, 403, 503] {
+        for status in [
+            http::StatusCode::UNAUTHORIZED,
+            http::StatusCode::FORBIDDEN,
+            http::StatusCode::SERVICE_UNAVAILABLE,
+        ] {
             assert_eq!(
                 availability_of_status(status),
                 ManagementAvailability::Available,

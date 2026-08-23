@@ -761,6 +761,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.delete_composition-volunteered_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.delete_composition-volunteered_if_match_current",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_composition_at_time-bad_composition",
       "status": "passed",
       "rows_driven": 1,

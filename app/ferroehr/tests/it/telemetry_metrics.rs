@@ -212,7 +212,7 @@ async fn compositions_committed_total_counts_every_committed_composition_version
 
     // (4) The direct delete route: one 523|deleted| version.
     let latest: ObjectVersionId = v2.parse().expect("OBJECT_VERSION_ID");
-    svc.delete_composition(ehr_id, &latest, None)
+    svc.delete_composition(ehr_id, &latest, None, None)
         .await
         .expect("delete_composition");
     assert_eq!(

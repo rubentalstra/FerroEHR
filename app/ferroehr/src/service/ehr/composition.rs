@@ -517,6 +517,7 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         a_version_uid: &ObjectVersionId,
+        volunteered_if_match: Option<&ObjectVersionId>,
         update_audit: Option<&openehr_its::rest::generated::common::UpdateAudit>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
@@ -570,6 +571,21 @@ impl FerroEhrService {
             return Err(ServiceError::conflict(format!(
                 "preceding_version_uid names version {}, latest is {latest_uid}",
                 a_version_uid.value()
+            )));
+        }
+        // A client MAY volunteer `If-Match` although this route carries the
+        // version in the path. It is evaluated HERE — after the 404/400/409
+        // pre-checks — so the RFC 9110 §13.2.1 precedence holds by
+        // construction (preconditions are ignored when the unconditioned
+        // answer would not be 2xx), and a false condition refuses the
+        // delete (ITS-REST overview Requests_and_responses §"If-Match and
+        // accidental overwrites": the method MUST NOT be performed → 412).
+        if let Some(condition) = volunteered_if_match
+            && !composite_ids_equal(&latest_uid, condition.value())
+        {
+            return Err(ServiceError::version_conflict(format!(
+                "If-Match names version {}, latest is {latest_uid}",
+                condition.value()
             )));
         }
         let _ = expected;
