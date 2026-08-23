@@ -9,20 +9,19 @@
 //! REST layer wraps it in [`RestError`] so handlers can use `?` and every error
 //! leaves the server as a structured JSON body.
 //!
-//! Two body shapes, both from the ITS-REST 1.1.0 spec:
+//! ONE body shape, uniform across every non-2xx (adjudicated on #2604):
+//! `{ "error", "message", "validationErrors" }` — the openEHR `Error`
+//! object's members
+//! (`docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`:
+//! `required: [message, validationErrors]`, additional members tolerated)
+//! plus our `error` reason-phrase extra. A semantic-validation failure
+//! ([`ApiError::ValidationFailed`], HTTP `422`) populates the list with its
+//! `"<path>: <message>"` violations; every other error carries it empty.
 //!
-//! * A semantic-validation failure ([`ApiError::ValidationFailed`], HTTP `422`)
-//!   renders the openEHR `Error` object —
-//!   `docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`:
-//!   `{ "message", "validationErrors": ["<path>: <message>", …] }` — via the
-//!   generated [`openehr_its::rest::generated::common::Error`] DTO.
-//!
-//!   NOTE: `422.yaml` declares no `content`/`schema` (the 422
-//!   body is spec-silent); the `Error` object is formally bound only to the
-//!   `400` response. Reusing that `{ message, validationErrors[] }` shape for
-//!   the `422` validation case is a deliberate, documented choice.
-//! * Every other error renders `{ "error", "message" }` (the status reason
-//!   phrase + human-readable detail).
+//! NOTE: the released assignment is narrow — only the OAS `400.yaml` /
+//! `400_CONTRIBUTION.yaml` attach `Error.yaml`, the docs text makes the body
+//! a MAY with no shape, and `422.yaml` declares no content at all — so the
+//! uniform shape beyond the 400 surface is our own design, flagged here.
 
 #![allow(
     clippy::disallowed_types,
@@ -173,13 +172,28 @@ impl From<ServiceError> for RestError {
     }
 }
 
-/// The JSON error body the ITS-REST spec prescribes for most non-2xx responses.
+/// The ONE JSON error body this server emits, uniform across every non-2xx.
+///
+/// The released assignment is narrow (adjudicated on #2604): only the OAS
+/// `responses/400.yaml` / `400_CONTRIBUTION.yaml` attach
+/// `schemas/others/Error.yaml` (`required: [message, validationErrors]`,
+/// additional members tolerated) to a 400 JSON body, and the docs text
+/// (`Requests_and_responses.md` §HTTP status codes) makes the body itself a
+/// MAY with no shape assignment — the `{message, code, errors}` block there
+/// is an example. Every other status's body is assigned by no source — our
+/// own design, kept uniform so a client parses one shape everywhere; `error`
+/// (the reason phrase) is our extra member on all of them.
 #[derive(Debug, Serialize)]
 struct ErrorBody {
     /// Machine-readable status label (the reason phrase, e.g. `Not Found`).
     error: String,
     /// Human-readable detail.
     message: String,
+    /// Per-path violations (`"<path>: <message>"`); empty when the failure
+    /// carries none — always emitted, so the 400 surface satisfies
+    /// `Error.yaml`'s required member list.
+    #[serde(rename = "validationErrors")]
+    validation_errors: Vec<String>,
 }
 
 /// Render an arbitrary status as the `{ error, message }` openEHR error body.
@@ -191,6 +205,7 @@ pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Respon
     let body = ErrorBody {
         error: status.canonical_reason().unwrap_or("Error").to_owned(),
         message: message.to_owned(),
+        validation_errors: Vec::new(),
     };
     let json = serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec());
     let mut resp = (status, json).into_response();
@@ -279,25 +294,24 @@ impl IntoResponse for RestError {
         }
         let status = self.0.status();
         let message = self.0.to_string();
-        // Semantic-validation failure → the ITS-REST `Error` object with the
-        // per-path violations as `validationErrors` (`schemas/others/Error.yaml`);
-        // every other error → the `{ error, message }` shape.
-        let json = if let ApiError::ValidationFailed(errors) = self.0 {
-            let body = openehr_its::rest::generated::common::Error {
-                message,
-                validation_errors: errors
-                    .into_iter()
-                    .map(|e| format!("{}: {}", e.path, e.message))
-                    .collect(),
-            };
-            serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec())
+        // One uniform body (see [`ErrorBody`]): a semantic-validation failure
+        // populates `validationErrors` with its per-path violations
+        // (`schemas/others/Error.yaml`); every other error carries the empty
+        // list.
+        let validation_errors = if let ApiError::ValidationFailed(errors) = &self.0 {
+            errors
+                .iter()
+                .map(|e| format!("{}: {}", e.path, e.message))
+                .collect()
         } else {
-            let body = ErrorBody {
-                error: status.canonical_reason().unwrap_or("Error").to_owned(),
-                message,
-            };
-            serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec())
+            Vec::new()
         };
+        let body = ErrorBody {
+            error: status.canonical_reason().unwrap_or("Error").to_owned(),
+            message,
+            validation_errors,
+        };
+        let json = serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec());
         let mut resp = (status, json).into_response();
         resp.headers_mut().insert(
             header::CONTENT_TYPE,
@@ -347,7 +361,8 @@ mod tests {
         .await;
 
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
-        // ITS-REST `Error` shape: { message, validationErrors: [ "<path>: <message>" ] }.
+        // The uniform body: Error.yaml's members plus our `error` extra.
+        assert_eq!(body["error"], "Unprocessable Entity");
         assert!(body.get("message").and_then(Value::as_str).is_some());
         let errors = body["validationErrors"]
             .as_array()
@@ -358,12 +373,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn other_errors_keep_the_error_message_shape() {
+    async fn other_errors_carry_the_uniform_body_with_an_empty_list() {
         let (status, body) = body_json(ApiError::NotFound("EHR x".to_owned())).await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert_eq!(body["error"], "Not Found");
         assert!(body.get("message").and_then(Value::as_str).is_some());
-        assert!(body.get("validationErrors").is_none());
+        // Always present (Error.yaml `required` on the assigned 400 surface;
+        // uniform everywhere else) — empty when no per-path violations exist.
+        assert_eq!(body["validationErrors"], serde_json::json!([]));
     }
 
     async fn handler_body(resp: axum::response::Response) -> (StatusCode, Value) {

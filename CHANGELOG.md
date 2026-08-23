@@ -103,6 +103,17 @@ workflow refuses a tag that has no matching section here.
   worked blood-pressure example are now documented in the book's FHIR
   chapter.
 
+### Changed
+
+- Every JSON error body now has ONE uniform shape:
+  `{"error", "message", "validationErrors"}`. Semantic-validation failures
+  populate `validationErrors` with their `"<path>: <message>"` entries (as
+  before); every other error now carries the member as an empty list, and
+  validation refusals additionally gain the machine-readable `error` reason
+  phrase. This makes the `400` bodies satisfy the released `Error.yaml`
+  schema's required member list; clients matching on the previous
+  two-shape split keep working (the change is additive on both shapes).
+
 ### Fixed
 
 - A composition `DELETE` that volunteers an `If-Match` precondition now
