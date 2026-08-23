@@ -322,7 +322,7 @@
     [
       "AqlBasic",
       {
-        "passed": 35,
+        "passed": 36,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1097,
-    "driven": 1059,
-    "passed": 1059,
+    "selected": 1098,
+    "driven": 1060,
+    "passed": 1060,
     "failed": 0,
     "inconclusive": 0
   }

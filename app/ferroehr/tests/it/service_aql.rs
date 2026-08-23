@@ -1679,3 +1679,39 @@ async fn like_and_matches_are_any_match_on_multi_valued_paths() {
     .await;
     assert_eq!(rows(&none).len(), 0, "no node satisfies: {none}");
 }
+
+/// An uncoercible client binding is the CALLER's 400, never a 500 (#2593):
+/// measured live, `"not-a-date"` against a temporal predicate reached the
+/// driver as sqlstate 22007 and answered the opaque internal error.
+#[tokio::test]
+async fn an_uncoercible_temporal_binding_is_the_callers_400() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 120.0).await;
+
+    let aql = "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+               WHERE c/context/start_time/value >= $from"
+        .to_owned();
+    let mut req = ehr_scope(&ehr_id);
+    req.parameters = BTreeMap::from([("from".to_owned(), json!("not-a-date"))]);
+    let err = svc
+        .execute_ad_hoc_query(aql, req)
+        .await
+        .expect_err("an uncoercible binding is refused");
+    assert_eq!(
+        err.status,
+        CallStatusType::PreconditionViolation,
+        "the caller's defect classifies 400, got {err:?}"
+    );
+    assert!(
+        err.message.contains("cannot be coerced"),
+        "the message names the defect class without internals: {}",
+        err.message
+    );
+    assert!(
+        !err.message.contains("not-a-date") && !err.message.contains("timestamp"),
+        "no driver internals echo to the wire: {}",
+        err.message
+    );
+}

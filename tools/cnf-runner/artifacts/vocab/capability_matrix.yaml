@@ -24,7 +24,7 @@ ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 
 PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 92, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
 PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 19, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Relationship Operations)" }
 DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 11, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
-AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 35, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
+AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 36, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
 AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
 AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 6, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
 ActivityReport: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 15, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Activity Report)" }
