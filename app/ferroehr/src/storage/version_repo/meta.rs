@@ -648,13 +648,12 @@ pub async fn current_demographic_meta(
 ///   (RM common master06 §Version Identification / §Committal);
 /// - the EHR's promoted `is_modifiable` flag (the content-write guard, RM ehr
 ///   master04 §EHR Active Status) via the `ehr` join;
-/// - the **root node fragment** (`num = 0`, children pruned) from which the
-///   modify path reads the declared `archetype_details.template_id.value` —
-///   **without** reassembling every node the full
-///   [`crate::storage::version_repo::read::read_current`] pays.
+/// - the stored `archetype_details.template_id.value` as ONE text scalar off
+///   the materialized `vo_version.body` — the modify path's template-stability
+///   check needs nothing else from the content.
 ///
-/// `root_data` is `None` for a deleted current (a logical delete stores no node
-/// rows). `None` when the object has no current trunk version (a COMPOSITION
+/// `stored_template` is `None` for a deleted current (`body` is NULL) or an
+/// undeclared template. `None` when the object has no current trunk version (a COMPOSITION
 /// always owns an `ehr`, so the inner join never drops a live row). No openEHR
 /// spec governs the SQL — our own design.
 #[derive(Debug, Clone)]
@@ -675,9 +674,9 @@ pub struct CurrentCompositionMeta {
     pub time_committed: jiff::Timestamp,
     /// The EHR's promoted `is_modifiable` flag — the content-write guard.
     pub is_modifiable: bool,
-    /// The root node's canonical JSON fragment (children pruned), or `None`
-    /// for a deleted current, which stores no node rows.
-    pub root_data: Option<Value>,
+    /// The stored `archetype_details.template_id.value`, or `None` for a
+    /// deleted current (NULL `body`) or an undeclared template.
+    pub stored_template: Option<String>,
 }
 
 /// Read the lean [`CurrentCompositionMeta`] for a COMPOSITION's current version.
@@ -688,16 +687,16 @@ pub async fn current_composition_meta(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<CurrentCompositionMeta>, StorageError> {
-    // On the cold-tier retry `node` resolves to the archival mirror while `ehr`
-    // and `audit`, which are never moved, keep resolving to the primary schema.
+    // On the cold-tier retry `vo_version` resolves to the archival mirror while
+    // `ehr` and `audit`, which are never moved, keep resolving to the primary
+    // schema.
     const SQL: &str = "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, a.time_committed, \
-                       e.is_modifiable, n.data AS root_data \
+                       e.is_modifiable, \
+                       v.body #>> '{archetype_details,template_id,value}' AS stored_template \
                        FROM vo_version v \
                        JOIN audit a ON a.id = v.audit_id \
                        JOIN ehr e ON e.id = v.ehr_id \
-                       LEFT JOIN node n ON n.vo_id = v.vo_id \
-                       AND n.sys_version = v.sys_version AND n.num = 0 \
                        WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0";
     let mut found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
     if found.is_none() {
@@ -720,7 +719,7 @@ pub async fn current_composition_meta(
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff(),
         is_modifiable: row.try_get("is_modifiable")?,
-        root_data: row.try_get("root_data")?,
+        stored_template: row.try_get("stored_template")?,
     }))
 }
 

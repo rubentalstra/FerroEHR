@@ -337,20 +337,26 @@ pub async fn read_subtrees_canonical(
     Ok(out)
 }
 
-/// The root node fragment (`num = 0`) of the FIRST stored content version of
-/// an object — the anchor for cross-version invariants (a root fragment is
-/// small: children are pruned by the decomposition).
+/// The `(archetype_node_id, category code)` of the FIRST stored content
+/// version of an object — the two scalars the cross-version invariants
+/// compare, read as text off the materialized `vo_version.body`.
 ///
-/// `None` when no content version exists (e.g. every prior version deleted).
+/// `None` when no content version exists (e.g. every prior version deleted);
+/// either scalar is `None` when the stored body lacks that field.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn first_version_root(
     tx: &mut PgConnection,
     vo_id: VoId,
-) -> Result<Option<Value>, StorageError> {
-    Ok(sqlx::query_scalar(
-        "SELECT data FROM node WHERE vo_id = $1 AND num = 0 ORDER BY sys_version LIMIT 1",
+) -> Result<Option<(Option<String>, Option<String>)>, StorageError> {
+    // Two text scalars off the materialized body — never a fragment fetch and
+    // a Value parse for a two-field comparison.
+    Ok(sqlx::query_as(
+        "SELECT body ->> 'archetype_node_id', \
+         body #>> '{category,defining_code,code_string}' \
+         FROM vo_version WHERE vo_id = $1 AND body IS NOT NULL \
+         ORDER BY sys_version LIMIT 1",
     )
     .bind(vo_id)
     .fetch_optional(&mut *tx)

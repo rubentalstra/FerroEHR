@@ -27,6 +27,14 @@ workflow refuses a tag that has no matching section here.
   the node rows remain the AQL source of truth. Storage grows by roughly
   the size of each stored version's canonical JSON.
 
+- Commit and update paths do less per-request work: the version body is
+  assembled once per commit (it previously reassembled twice — once for the
+  signature, once for storage), the composition-update pre-read and the
+  cross-version invariant checks read two text scalars off the materialized
+  body instead of fetching and parsing JSON fragments, and the per-request
+  EHR_ACCESS gate shares the cached settings instead of cloning the access
+  list.
+
 ### Added
 
 - Admin console: the ADL 2 template detail shows the path catalog — the same

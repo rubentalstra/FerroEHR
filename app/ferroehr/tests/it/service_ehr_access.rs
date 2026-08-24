@@ -112,7 +112,9 @@ async fn ehr_access_settings_round_trip_through_contribution() {
     let settings = svc
         .current_ehr_access_settings(ehr_id)
         .await
-        .expect("read settings")
+        .expect("read settings");
+    let settings = (*settings)
+        .as_ref()
         .expect("scheme settings present after commit");
     assert_eq!(settings.gate_keeper.as_deref(), Some("user:alice"));
     assert_eq!(settings.default_access, DefaultAccess::Restricted);
