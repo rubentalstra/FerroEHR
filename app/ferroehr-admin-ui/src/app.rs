@@ -208,8 +208,12 @@ pub fn App() -> impl IntoView {
 
 /// The router's real 404 fallback: sets a distinct title and offers a link
 /// back to the dashboard.
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
-fn NotFound() -> impl IntoView {
+pub fn NotFound() -> impl IntoView {
     view! {
         <Title text="Not found" />
         <div class="p-6">
