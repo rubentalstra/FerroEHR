@@ -102,7 +102,7 @@ configs:
         "annotations": { "list": [] },
         "editable": true,
         "graphTooltip": 1,
-        "title": "ferroehr — service overview",
+        "title": "FerroEHR — service overview",
         "uid": "ferroehr-overview",
         "tags": ["ferroehr", "openehr"],
         "schemaVersion": 39,
@@ -110,176 +110,221 @@ configs:
         "templating": { "list": [] },
         "panels": [
           {
-            "type": "row",
-            "title": "RED — requests, errors, duration",
-            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
-          },
-          {
-            "type": "timeseries",
-            "title": "Request rate by route (req/s)",
+            "type": "stat",
+            "title": "Version",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
-            "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+            "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+            "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^version$/" }, "textMode": "name" },
             "targets": [
-              {
-                "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count[5m]))",
-                "legendFormat": "{{http_route}}"
-              }
+              { "expr": "ferroehr_build_info", "format": "table", "instant": true }
             ]
           },
           {
             "type": "stat",
-            "title": "5xx error ratio",
+            "title": "Uptime",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 6, "x": 12, "y": 1 },
-            "fieldConfig": {
-              "defaults": {
-                "unit": "percentunit",
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    { "color": "green", "value": null },
-                    { "color": "red", "value": 0.01 }
-                  ]
-                }
-              },
-              "overrides": []
-            },
+            "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+            "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 }, "overrides": [] },
             "targets": [
-              {
-                "expr": "sum(rate(http_server_request_duration_seconds_count{status_class=\"5xx\"}[5m])) / clamp_min(sum(rate(http_server_request_duration_seconds_count[5m])), 1)",
-                "legendFormat": "5xx ratio"
-              }
+              { "expr": "time() - process_start_time_seconds", "legendFormat": "uptime" }
             ]
           },
           {
             "type": "stat",
             "title": "In-flight requests",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
+            "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+            "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
             "targets": [
-              { "expr": "sum(http_server_active_requests)", "legendFormat": "active" }
+              { "expr": "sum(http_server_active_requests)", "legendFormat": "in flight" }
+            ]
+          },
+          {
+            "type": "stat",
+            "title": "5xx error ratio (1h)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percentunit",
+                "thresholds": { "mode": "absolute", "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 0.001 },
+                  { "color": "red", "value": 0.01 }
+                ] }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(http_server_request_duration_seconds_count{status_class=\"5xx\"}[1h])) / sum(rate(http_server_request_duration_seconds_count[1h]))",
+                "legendFormat": "5xx ratio"
+              }
+            ]
+          },
+          {
+            "type": "stat",
+            "title": "DB pool in use",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+            "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+            "targets": [
+              { "expr": "sum(db_pool_connections{state=\"in_use\"})", "legendFormat": "in use" }
+            ]
+          },
+          {
+            "type": "row",
+            "title": "RED — requests, errors, duration",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 }
+          },
+          {
+            "type": "timeseries",
+            "title": "Request rate by route (req/s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+            "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+            "targets": [
+              {
+                "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count[$$__rate_interval]))",
+                "legendFormat": "{{http_route}}"
+              }
             ]
           },
           {
             "type": "timeseries",
-            "title": "Request duration p50/p95/p99 (s)",
+            "title": "Error rate by status class (req/s)",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+            "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+            "targets": [
+              {
+                "expr": "sum by (status_class) (rate(http_server_request_duration_seconds_count{status_class=~\"4xx|5xx\"}[$$__rate_interval]))",
+                "legendFormat": "{{status_class}}"
+              }
+            ]
+          },
+          {
+            "type": "timeseries",
+            "title": "Request latency (p50 / p95 / p99)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
             "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
             "targets": [
               {
-                "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))",
+                "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket[$$__rate_interval])))",
                 "legendFormat": "p50"
               },
               {
-                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))",
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[$$__rate_interval])))",
                 "legendFormat": "p95"
               },
               {
-                "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))",
+                "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket[$$__rate_interval])))",
                 "legendFormat": "p99"
               }
             ]
           },
           {
             "type": "timeseries",
-            "title": "Auth failures by mechanism/status (/s)",
+            "title": "p95 latency by route",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
-            "targets": [
-              {
-                "expr": "sum by (mechanism, status) (rate(auth_failures_total[5m]))",
-                "legendFormat": "{{mechanism}} {{status}}"
-              }
-            ]
-          },
-          {
-            "type": "row",
-            "title": "Persistence & AQL",
-            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 }
-          },
-          {
-            "type": "timeseries",
-            "title": "DB pool connections",
-            "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
-            "targets": [
-              {
-                "expr": "db_pool_connections",
-                "legendFormat": "{{state}}"
-              },
-              {
-                "expr": "histogram_quantile(0.95, sum by (le) (rate(db_pool_acquire_duration_seconds_bucket[5m])))",
-                "legendFormat": "acquire p95 (s)"
-              }
-            ]
-          },
-          {
-            "type": "timeseries",
-            "title": "AQL query latency by phase (p95, s)",
-            "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
             "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
             "targets": [
               {
-                "expr": "histogram_quantile(0.95, sum by (le, phase) (rate(aql_query_duration_seconds_bucket[5m])))",
-                "legendFormat": "{{phase}}"
-              },
-              {
-                "expr": "sum by (outcome) (rate(aql_queries_total[5m]))",
-                "legendFormat": "queries {{outcome}}"
+                "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket[$$__rate_interval])))",
+                "legendFormat": "{{http_route}}"
               }
             ]
           },
           {
             "type": "row",
-            "title": "Clinical writes, validation & audit",
-            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 }
+            "title": "AQL",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 }
           },
           {
             "type": "timeseries",
-            "title": "Compositions committed & validation failures (/s)",
+            "title": "AQL query rate by outcome (q/s)",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+            "gridPos": { "h": 8, "w": 8, "x": 0, "y": 22 },
+            "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
             "targets": [
               {
-                "expr": "sum by (change_type) (rate(compositions_committed_total[5m]))",
-                "legendFormat": "committed {{change_type}}"
-              },
-              {
-                "expr": "sum by (pass) (rate(validation_failures_total[5m]))",
-                "legendFormat": "validation fail {{pass}}"
+                "expr": "sum by (outcome) (rate(aql_queries_total[$$__rate_interval]))",
+                "legendFormat": "{{outcome}}"
               }
             ]
           },
           {
             "type": "timeseries",
-            "title": "ATNA audit pipeline (/s)",
+            "title": "AQL p95 latency by phase",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+            "gridPos": { "h": 8, "w": 8, "x": 8, "y": 22 },
+            "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
             "targets": [
               {
-                "expr": "rate(atna_audit_sent_total[5m])",
-                "legendFormat": "sent"
-              },
-              {
-                "expr": "rate(atna_audit_dropped_total[5m])",
-                "legendFormat": "dropped"
-              },
-              {
-                "expr": "rate(atna_audit_send_failed_total[5m])",
-                "legendFormat": "send_failed"
+                "expr": "histogram_quantile(0.95, sum by (le, phase) (rate(aql_query_duration_seconds_bucket[$$__rate_interval])))",
+                "legendFormat": "{{phase}}"
               }
             ]
           },
           {
-            "type": "table",
-            "title": "Build info",
+            "type": "timeseries",
+            "title": "AQL plan-cache hit ratio",
             "datasource": { "type": "prometheus" },
-            "gridPos": { "h": 6, "w": 24, "x": 0, "y": 35 },
+            "gridPos": { "h": 8, "w": 8, "x": 16, "y": 22 },
+            "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] },
             "targets": [
-              { "expr": "ferroehr_build_info", "format": "table", "instant": true }
+              {
+                "expr": "sum(rate(aql_plan_cache_events_total{event=\"hit\"}[$$__rate_interval])) / sum(rate(aql_plan_cache_events_total[$$__rate_interval]))",
+                "legendFormat": "hit ratio"
+              }
+            ]
+          },
+          {
+            "type": "row",
+            "title": "Database and runtime",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 }
+          },
+          {
+            "type": "timeseries",
+            "title": "DB pool connections by state",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+            "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+            "targets": [
+              {
+                "expr": "sum by (state) (db_pool_connections)",
+                "legendFormat": "{{state}}"
+              }
+            ]
+          },
+          {
+            "type": "timeseries",
+            "title": "Tokio runtime (tasks, queue depth, workers)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+            "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+            "targets": [
+              { "expr": "tokio_alive_tasks", "legendFormat": "alive tasks" },
+              { "expr": "tokio_global_queue_depth", "legendFormat": "global queue depth" },
+              { "expr": "tokio_workers", "legendFormat": "workers" }
+            ]
+          },
+          {
+            "type": "row",
+            "title": "Audit (IHE ATNA)",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 }
+          },
+          {
+            "type": "timeseries",
+            "title": "Audit events emitted vs forwarded (events/s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+            "fieldConfig": { "defaults": { "unit": "cps" }, "overrides": [] },
+            "targets": [
+              { "expr": "sum(rate(atna_audit_emitted_total[$$__rate_interval]))", "legendFormat": "emitted" },
+              { "expr": "sum(rate(atna_audit_sent_total[$$__rate_interval]))", "legendFormat": "forwarded" }
             ]
           }
         ]

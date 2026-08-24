@@ -578,6 +578,8 @@ jobs:
           persist-credentials: false
       - name: Compose artifacts stay hardened
         run: bash scripts/checks/compose-hardening.sh
+      - name: The overlay's inline dashboard matches the chart's canonical copy
+        run: bash scripts/checks/dashboard-drift.sh
 
   # RFC 0201: an error carries its cause. No clippy lint covers this, so the
   # gate is a per-tree ratchet — the flattened-site counts may only fall while

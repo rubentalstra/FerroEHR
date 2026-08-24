@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- Helm chart 6.0.16: `metrics.grafanaDashboard.enabled` ships the default
+  "FerroEHR — service overview" Grafana dashboard as a ConfigMap the Grafana
+  dashboard sidecar (kube-prometheus-stack) auto-imports; the compose
+  observability overlay provisions the same dashboard, now extended to AQL
+  rate and phase latency, plan-cache hit ratio, database pool, Tokio runtime,
+  and audit throughput — every panel query written against the served metric
+  names.
+
 ### Fixed
 
 - Compose: `docker compose --profile s3 up -d --wait` no longer fails after

@@ -262,6 +262,16 @@ metrics:
     interval: 30s
     # -- Per-scrape timeout. Must be shorter than the interval.
     scrapeTimeout: 10s
+  grafanaDashboard:
+    # -- Ship the default "FerroEHR — service overview" Grafana dashboard as a
+    # ConfigMap labelled `grafana_dashboard: "1"`, the label the Grafana Helm
+    # chart's dashboard sidecar (and therefore kube-prometheus-stack) discovers
+    # and auto-imports. The sidecar searches its own release namespace unless
+    # its `sidecar.dashboards.searchNamespace` says otherwise.
+    enabled: false
+    # -- Value for the `grafana_folder` annotation. Applied only when the
+    # sidecar's `folderAnnotation` feature is configured; harmless otherwise.
+    folder: "FerroEHR"
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ferroehr.toml — rendered VERBATIM into the ConfigMap as /etc/ferroehr/ferroehr.toml

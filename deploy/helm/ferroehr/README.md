@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 6.0.15](https://img.shields.io/badge/Version-6.0.15-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.0.1](https://img.shields.io/badge/AppVersion-4.0.1-informational?style=flat-square)
+![Version: 6.0.16](https://img.shields.io/badge/Version-6.0.16-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.0.1](https://img.shields.io/badge/AppVersion-4.0.1-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.15 \
+  --version 6.0.16 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.0.1
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `6.0.15` |
+| the **chart** (templates, defaults, this document) | `--version` | `6.0.16` |
 | the **server image** | `image.tag` | `4.0.1` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.15 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.16 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.15 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.15 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.16 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.1 \
   -R rubentalstra/FerroEHR
@@ -275,6 +275,8 @@ Kubernetes: `>=1.36.0-0`
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls | list | `[]` | TLS blocks, passed through verbatim. |
 | metrics.enabled | bool | `false` | Add prometheus.io scrape annotations to the pods. |
+| metrics.grafanaDashboard.enabled | bool | `false` | Ship the default "FerroEHR — service overview" Grafana dashboard as a ConfigMap labelled `grafana_dashboard: "1"`, the label the Grafana Helm chart's dashboard sidecar (and therefore kube-prometheus-stack) discovers and auto-imports. The sidecar searches its own release namespace unless its `sidecar.dashboards.searchNamespace` says otherwise. |
+| metrics.grafanaDashboard.folder | string | `"FerroEHR"` | Value for the `grafana_folder` annotation. Applied only when the sidecar's `folderAnnotation` feature is configured; harmless otherwise. |
 | metrics.serviceMonitor.enabled | bool | `false` | Render a Prometheus Operator ServiceMonitor. Needs the monitoring.coreos.com CRDs installed, or the install fails on an unknown kind. |
 | metrics.serviceMonitor.interval | string | `"30s"` | Scrape interval / timeout. |
 | metrics.serviceMonitor.labels | object | `{}` | Extra labels, for the `serviceMonitorSelector` your Prometheus matches on. |

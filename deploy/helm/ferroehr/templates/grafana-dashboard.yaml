@@ -1,0 +1,27 @@
+{{- if .Values.metrics.grafanaDashboard.enabled }}
+# The default Grafana dashboard, shipped for sidecar auto-import: the Grafana
+# Helm chart's dashboard sidecar (which kube-prometheus-stack embeds) watches
+# ConfigMaps carrying the `grafana_dashboard` label — any value matches its
+# default `sidecar.dashboards.labelValue: ""` — and imports every data key as
+# a dashboard (github.com/grafana-community/helm-charts, charts/grafana
+# values). The sidecar searches its own release namespace unless configured
+# otherwise, so install this release there or widen `searchNamespace`. The
+# `grafana_folder` annotation takes effect only where the sidecar's
+# `folderAnnotation` feature is turned on; it is inert otherwise.
+#
+# The JSON is the canonical copy at files/dashboards/ferroehr-overview.json;
+# the compose observability overlay inlines the same document, and
+# scripts/checks/dashboard-drift.sh holds the two identical.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ferroehr.fullname" . }}-grafana-dashboard
+  labels:
+    {{- include "ferroehr.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: {{ .Values.metrics.grafanaDashboard.folder | quote }}
+data:
+  ferroehr-overview.json: |-
+{{ .Files.Get "files/dashboards/ferroehr-overview.json" | indent 4 }}
+{{- end }}
