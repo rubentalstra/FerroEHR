@@ -90,6 +90,8 @@ pub enum Adl2Tab {
     Source,
     /// The `OperationalTemplateV2` canonical JSON, read as `application/json`.
     Json,
+    /// The Web-Template path catalog, built console-side from that JSON.
+    Catalog,
     /// The CDR-generated example composition.
     Example,
 }
@@ -102,6 +104,7 @@ impl Adl2Tab {
         match self {
             Self::Source => "source",
             Self::Json => "json",
+            Self::Catalog => "catalog",
             Self::Example => "example",
         }
     }
@@ -112,6 +115,7 @@ impl Adl2Tab {
         match self {
             Self::Source => "Source",
             Self::Json => "AOM2 JSON",
+            Self::Catalog => "Path catalog",
             Self::Example => "Example",
         }
     }
@@ -122,6 +126,7 @@ impl Adl2Tab {
     pub fn from_query(value: &str) -> Self {
         match value {
             "json" => Self::Json,
+            "catalog" => Self::Catalog,
             "example" => Self::Example,
             _ => Self::Source,
         }
@@ -297,7 +302,12 @@ mod tests {
 
     #[test]
     fn the_detail_tabs_round_trip_their_query_value() {
-        for tab in [Adl2Tab::Source, Adl2Tab::Json, Adl2Tab::Example] {
+        for tab in [
+            Adl2Tab::Source,
+            Adl2Tab::Json,
+            Adl2Tab::Catalog,
+            Adl2Tab::Example,
+        ] {
             assert_eq!(Adl2Tab::from_query(tab.as_query()), tab);
         }
         assert_eq!(Adl2Tab::from_query("nonsense"), Adl2Tab::Source);

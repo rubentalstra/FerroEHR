@@ -41,6 +41,17 @@ job and the badges-branch machinery are gone — the README's coverage badge
 is Sonar's own, measured over the hand-written scan scope. SQL is excluded from scope entirely: the
 PLSQL analyzer assumes Oracle and this tree's SQL is PostgreSQL (#2643).
 
+## Sonar Architecture — adjudicated unavailable (2026-08-24, #2655)
+
+The Architecture feature (current/intended architecture maps, deviations as
+issues) is not in play here, for two independent reasons verified first-hand:
+the organization is on the FREE plan and the feature requires Team/Enterprise
+(`api/navigation/organization` → `"subscription":"FREE"`), and its language
+support is C#/Java/JavaScript/Python/TypeScript — no Rust — so even a plan
+upgrade would only ever cover the website's JS/TS. Re-evaluate if Sonar ships
+Rust support for it AND the plan changes; the architecture record remains
+`docs/architecture.md`, which no analyzer output outranks.
+
 ## It does not gate a merge, and it never writes
 
 No quality gate blocks a merge. Findings worth acting on are written by

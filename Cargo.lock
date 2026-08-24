@@ -2777,6 +2777,7 @@ dependencies = [
  "leptos_icons",
  "leptos_meta",
  "leptos_router",
+ "openehr-am",
  "openehr-its",
  "openehr-query",
  "openidconnect",
