@@ -23,7 +23,7 @@ metadata:
     kubernetes.io/description: >-
       Ingress for the CDR: only the API port (and the management port when enabled), and only from the networkPolicy.ingressFrom peers.
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -97,7 +97,7 @@ metadata:
     kubernetes.io/description: >-
       Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -118,7 +118,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -150,7 +150,7 @@ kind: Secret
 metadata:
   name: ferroehr-env
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -176,7 +176,7 @@ kind: Secret
 metadata:
   name: ferroehr-config
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -197,7 +197,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -382,13 +382,277 @@ data:
     
 
 ---
+# Source: ferroehr/templates/grafana-dashboard.yaml
+# The default Grafana dashboard, shipped for sidecar auto-import: the Grafana
+# Helm chart's dashboard sidecar (which kube-prometheus-stack embeds) watches
+# ConfigMaps carrying the `grafana_dashboard` label — any value matches its
+# default `sidecar.dashboards.labelValue: ""` — and imports every data key as
+# a dashboard (github.com/grafana-community/helm-charts, charts/grafana
+# values). The sidecar searches its own release namespace unless configured
+# otherwise, so install this release there or widen `searchNamespace`. The
+# `grafana_folder` annotation takes effect only where the sidecar's
+# `folderAnnotation` feature is turned on; it is inert otherwise.
+#
+# The JSON is the canonical copy at files/dashboards/ferroehr-overview.json;
+# the compose observability overlay inlines the same document, and
+# scripts/checks/dashboard-drift.sh holds the two identical.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ferroehr-grafana-dashboard
+  labels:
+    helm.sh/chart: ferroehr-6.0.16
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "FerroEHR"
+data:
+  ferroehr-overview.json: |-
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "title": "FerroEHR — service overview",
+      "uid": "ferroehr-overview",
+      "tags": ["ferroehr", "openehr"],
+      "schemaVersion": 39,
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": { "list": [] },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Version",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^version$/" }, "textMode": "name" },
+          "targets": [
+            { "expr": "ferroehr_build_info", "format": "table", "instant": true }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Uptime",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 }, "overrides": [] },
+          "targets": [
+            { "expr": "time() - process_start_time_seconds", "legendFormat": "uptime" }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "In-flight requests",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            { "expr": "sum(http_server_active_requests)", "legendFormat": "in flight" }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "5xx error ratio (1h)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 0.001 },
+                { "color": "red", "value": 0.01 }
+              ] }
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_request_duration_seconds_count{status_class=\"5xx\"}[1h])) / sum(rate(http_server_request_duration_seconds_count[1h]))",
+              "legendFormat": "5xx ratio"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "DB pool in use",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            { "expr": "sum(db_pool_connections{state=\"in_use\"})", "legendFormat": "in use" }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "RED — requests, errors, duration",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 }
+        },
+        {
+          "type": "timeseries",
+          "title": "Request rate by route (req/s)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count[$__rate_interval]))",
+              "legendFormat": "{{http_route}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Error rate by status class (req/s)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum by (status_class) (rate(http_server_request_duration_seconds_count{status_class=~\"4xx|5xx\"}[$__rate_interval]))",
+              "legendFormat": "{{status_class}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Request latency (p50 / p95 / p99)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket[$__rate_interval])))",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[$__rate_interval])))",
+              "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket[$__rate_interval])))",
+              "legendFormat": "p99"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "p95 latency by route",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket[$__rate_interval])))",
+              "legendFormat": "{{http_route}}"
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "AQL",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 }
+        },
+        {
+          "type": "timeseries",
+          "title": "AQL query rate by outcome (q/s)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 22 },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum by (outcome) (rate(aql_queries_total[$__rate_interval]))",
+              "legendFormat": "{{outcome}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "AQL p95 latency by phase",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 22 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, phase) (rate(aql_query_duration_seconds_bucket[$__rate_interval])))",
+              "legendFormat": "{{phase}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "AQL plan-cache hit ratio",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 22 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(rate(aql_plan_cache_events_total{event=\"hit\"}[$__rate_interval])) / sum(rate(aql_plan_cache_events_total[$__rate_interval]))",
+              "legendFormat": "hit ratio"
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Database and runtime",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 }
+        },
+        {
+          "type": "timeseries",
+          "title": "DB pool connections by state",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum by (state) (db_pool_connections)",
+              "legendFormat": "{{state}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Tokio runtime (tasks, queue depth, workers)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            { "expr": "tokio_alive_tasks", "legendFormat": "alive tasks" },
+            { "expr": "tokio_global_queue_depth", "legendFormat": "global queue depth" },
+            { "expr": "tokio_workers", "legendFormat": "workers" }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Audit (IHE ATNA)",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 }
+        },
+        {
+          "type": "timeseries",
+          "title": "Audit events emitted vs forwarded (events/s)",
+          "datasource": { "type": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+          "fieldConfig": { "defaults": { "unit": "cps" }, "overrides": [] },
+          "targets": [
+            { "expr": "sum(rate(atna_audit_emitted_total[$__rate_interval]))", "legendFormat": "emitted" },
+            { "expr": "sum(rate(atna_audit_sent_total[$__rate_interval]))", "legendFormat": "forwarded" }
+          ]
+        }
+      ]
+    }
+    
+
+---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -422,7 +686,7 @@ metadata:
     kubernetes.io/description: >-
       The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -653,7 +917,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -687,7 +951,7 @@ kind: Ingress
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"
@@ -725,7 +989,7 @@ kind: ServiceMonitor
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.15
+    helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.0.1"

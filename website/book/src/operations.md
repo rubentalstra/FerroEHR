@@ -383,6 +383,24 @@ annotation-discovering Prometheus, and neither is needed if you push over OTLP
 instead. **To turn telemetry off**, drop `otlp_endpoint`; the tracing layer is
 not installed at all when it is unset.
 
+**The default dashboard.** The "FerroEHR — service overview" Grafana
+dashboard (request rate/errors/latency, AQL rate and phase latency,
+plan-cache hit ratio, database pool, Tokio runtime, audit throughput — every
+query written against the served metric names) reaches Grafana three ways:
+
+- **Compose**: the observability overlay provisions it automatically;
+  nothing to do.
+- **Kubernetes**: set `metrics.grafanaDashboard.enabled: true` and the chart
+  ships it as a ConfigMap labelled `grafana_dashboard: "1"`, which the
+  Grafana Helm chart's dashboard sidecar (kube-prometheus-stack includes it)
+  discovers and imports. The sidecar watches its own release namespace by
+  default — install FerroEHR there, or widen the sidecar's
+  `searchNamespace`. `metrics.grafanaDashboard.folder` sets the
+  `grafana_folder` annotation for sidecars with folder routing configured.
+- **Anywhere else**: import
+  `deploy/helm/ferroehr/files/dashboards/ferroehr-overview.json` by hand
+  (Grafana → Dashboards → Import).
+
 > [!WARNING]
 > With the chart's default-deny egress policy on, add the collector to
 > `networkPolicy.egress.rules` (port 4317). An OTLP exporter that cannot reach
