@@ -83,6 +83,10 @@ static PARAM_REF: LazyLock<Regex> = LazyLock::new(|| {
 /// literal form, `Null` as `NULL`; a `$name` with no binding is left verbatim
 /// (the engine already rejects an unbound parameter at planning time).
 pub(super) fn substitute_params(aql: &str, params: &Params) -> String {
+    if params.is_empty() {
+        // Nothing to substitute — skip the regex scan of the query text.
+        return aql.to_owned();
+    }
     PARAM_REF
         .replace_all(aql, |caps: &regex::Captures<'_>| {
             match params.get(&caps[1]) {
@@ -127,7 +131,7 @@ pub(super) fn result_set_json(
     aql: &str,
     executed: &str,
     name: Option<&str>,
-    result: &QueryResult,
+    result: QueryResult,
 ) -> Value {
     let columns: Vec<ResultSetColumn> = result
         .columns
@@ -166,7 +170,10 @@ pub(super) fn result_set_json(
         name: name.map(ToOwned::to_owned),
         q: Some(aql.to_owned()),
         columns: Some(columns),
-        rows: result.rows.clone(),
+        // The envelope serializes with EMPTY rows; the real rows are MOVED
+        // into the serialized map below, so a page of documents is never
+        // deep-copied by `to_value`.
+        rows: Vec::new(),
     };
 
     // Every optional property the DTOs leave `None` is OMITTED, not rendered as
@@ -176,5 +183,12 @@ pub(super) fn result_set_json(
     // an OpenAPI 3.0 `type: string` property does not admit `null`
     // (<https://spec.openapis.org/oas/v3.0.3#schema-object>). `rows` cells are
     // untouched — an unset AQL leaf is a genuine `null` there.
-    serde_json::to_value(&set).unwrap_or(Value::Null)
+    let mut envelope = serde_json::to_value(&set).unwrap_or(Value::Null);
+    if let Value::Object(map) = &mut envelope {
+        map.insert(
+            "rows".to_owned(),
+            Value::Array(result.rows.into_iter().map(Value::Array).collect()),
+        );
+    }
+    envelope
 }
