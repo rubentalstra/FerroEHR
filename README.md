@@ -629,3 +629,11 @@ above deliberately does not flatten — an MPL 1.1 election under a tri-licensed
 corpus, and one upstream file whose own header contradicts its repository's
 license — are set out with the rest on the documentation site's
 [Licensing & legal](https://ferroehr.eu/docs/latest/licensing.html) page.
+
+## How this is built
+
+Substantial parts of FerroEHR are written with AI coding tools, directed and
+reviewed by the maintainer, with every change gated by the machine-enforced
+checks this page describes. The full statement — what that means, what
+bounds it, and what you can verify instead of trusting it — is
+[AI_STATEMENT.md](AI_STATEMENT.md).
