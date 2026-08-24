@@ -16,7 +16,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B63718%2FFerroEHR.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B63718%2FFerroEHR?ref=badge_shield&issueType=license)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B63718%2FFerroEHR.svg?type=shield&issueType=security)](https://app.fossa.com/projects/custom%2B63718%2FFerroEHR?ref=badge_shield&issueType=security)
 
-[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=rubentalstra_FerroEHR&metric=coverage)](https://sonarcloud.io/component_measures?id=rubentalstra_FerroEHR&metric=coverage)
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=rubentalstra_FerroEHR&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rubentalstra_FerroEHR)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13982/badge)](https://www.bestpractices.dev/projects/13982)

@@ -33,9 +33,12 @@ complexity metrics. That run uses the workspace DEFAULT features, a
 deliberately independent second Clippy configuration beside our deny-tier
 lanes; for pure Rust it mostly re-reports what the gates already enforce,
 and its added value is the multi-language sweep, PR decoration on new code,
-and a stable rule taxonomy to adjudicate class-by-class. Coverage import is
-deliberately not wired (an instrumented build plus a PG-backed test run is
-too heavy for an advisory lane). SQL is excluded from scope entirely: the
+and a stable rule taxonomy to adjudicate class-by-class. Coverage IS wired
+(owner directive 2026-08-24, reversing the #2630 deferral): the sonar lane
+runs the instrumented nextest suites against a real PG18 and imports the
+merged lcov via `sonar.rust.lcov.reportPaths`; the former ci.yml coverage
+job and the badges-branch machinery are gone — the README's coverage badge
+is Sonar's own, measured over the hand-written scan scope. SQL is excluded from scope entirely: the
 PLSQL analyzer assumes Oracle and this tree's SQL is PostgreSQL (#2643).
 
 ## It does not gate a merge, and it never writes
