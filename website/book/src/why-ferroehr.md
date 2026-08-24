@@ -147,6 +147,13 @@ standing in for review capacity a bigger group would have. The
 [threat model](threat-model.md) and the repository's own governance and
 maintainer documents say so plainly.
 
+The same honesty covers how the code gets written: substantial parts of
+FerroEHR are built with AI coding tools, directed and reviewed by the
+maintainer, with every change held to the machine-enforced gates described
+above. The full statement — what that means, what bounds it, and what you
+can verify instead of trusting it — is the repository's
+[AI statement](https://github.com/rubentalstra/FerroEHR/blob/develop/AI_STATEMENT.md).
+
 ---
 
 _Maintained by Ruben Talstra and the FerroEHR contributors. If your
