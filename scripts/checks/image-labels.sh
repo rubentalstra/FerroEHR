@@ -37,12 +37,14 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 WORKFLOW=.github/workflows/containers.yml
-# image name : Dockerfile : the workflow env var naming that lane's image.
-# The lane is keyed by the env var, not by the image name: `ferroehr` is a prefix
-# of `ferroehr-admin-ui`, so a name match reads the wrong lane's labels.
-IMAGES="ferroehr:docker/Dockerfile:APP_IMAGE
-ferroehr-admin-ui:docker/admin-ui/Dockerfile:ADMIN_UI_IMAGE
-ferroehr-postgres:docker/postgres/Dockerfile:POSTGRES_IMAGE"
+# image name : Dockerfile. Each publishing lane is a `uses:` call of the
+# reusable build-image.yml, keyed by its full `image:` input ref matched to
+# end-of-line — `ferroehr` is a prefix of `ferroehr-admin-ui`, so a bare name
+# match would read the wrong lane's labels.
+IMAGES="ferroehr:docker/Dockerfile
+ferroehr-admin-ui:docker/admin-ui/Dockerfile
+ferroehr-postgres:docker/postgres/Dockerfile"
+BUILD_WORKFLOW=.github/workflows/build-image.yml
 
 # The keys both places must declare, identically.
 SHARED="title description url documentation source vendor authors licenses base.name base.digest"
@@ -61,12 +63,17 @@ dockerfile_label() {
     }' "$1"
 }
 
-# The value declared in the workflow's `labels:` block for one lane. The lane
-# opens at its `images: ${{ env.<VAR> }}` line and closes at the next lane's, so
-# a key is always read from the lane that declared it.
+# The value declared in the workflow's `labels:` block for one lane. A lane is
+# one `uses: build-image.yml` call; it opens at its `image: ghcr.io/...<name>`
+# input (matched to end-of-line, so a name that prefixes another cannot open
+# the wrong lane) and closes at the next lane's.
 workflow_label() {
-  awk -v var="images: \${{ env.$1 }}" -v key="org.opencontainers.image.$2=" '
-    index($0, "images: ${{ env.") && index($0, "_IMAGE }}") { inlane = index($0, var) > 0 }
+  awk -v lane="image: ghcr.io/rubentalstra/$1" -v key="org.opencontainers.image.$2=" '
+    /image: ghcr\.io\// {
+      line = $0
+      sub(/^[[:space:]]*/, "", line); sub(/[[:space:]]*$/, "", line)
+      inlane = (line == lane)
+    }
     inlane && index($0, key) {
       i = index($0, key) + length(key)
       v = substr($0, i)
@@ -77,14 +84,12 @@ workflow_label() {
 
 for entry in $IMAGES; do
   image=${entry%%:*}
-  rest=${entry#*:}
-  dockerfile=${rest%%:*}
-  envvar=${rest#*:}
+  dockerfile=${entry#*:}
   [ -f "$dockerfile" ] || { report "image-labels: missing $dockerfile"; continue; }
 
   for key in $SHARED; do
     d=$(dockerfile_label "$dockerfile" "$key" || true)
-    w=$(workflow_label "$envvar" "$key" || true)
+    w=$(workflow_label "$image" "$key" || true)
     if [ -z "$d" ]; then
       report "image-labels: $dockerfile declares no org.opencontainers.image.$key"
       continue
@@ -140,13 +145,17 @@ else
 fi
 
 # Annotations must reach the INDEX, which is the only place GHCR reads a package
-# description from. Three lanes, three declarations.
-levels=$(grep -c 'DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest' "$WORKFLOW" || true)
-[ "$levels" -eq 3 ] \
-  || report "image-labels: expected 3 metadata steps with DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest, found $levels"
-annots=$(grep -c 'annotations: ${{ steps.meta.outputs.annotations }}' "$WORKFLOW" || true)
-[ "$annots" -eq 3 ] \
-  || report "image-labels: expected 3 build steps passing the annotations output, found $annots"
+# description from. The publishing mechanics live ONCE in the reusable
+# build-image.yml lane; containers.yml calls it once per image.
+levels=$(grep -c 'DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest' "$BUILD_WORKFLOW" || true)
+[ "$levels" -eq 1 ] \
+  || report "image-labels: expected the one reusable metadata step with DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest in $BUILD_WORKFLOW, found $levels"
+annots=$(grep -c 'annotations: ${{ steps.meta.outputs.annotations }}' "$BUILD_WORKFLOW" || true)
+[ "$annots" -eq 1 ] \
+  || report "image-labels: expected the one reusable build step passing the annotations output in $BUILD_WORKFLOW, found $annots"
+lanes=$(grep -c 'uses: ./.github/workflows/build-image.yml' "$WORKFLOW" || true)
+[ "$lanes" -eq 3 ] \
+  || report "image-labels: expected 3 publishing lanes calling build-image.yml in $WORKFLOW, found $lanes"
 
 # The one predefined key we deliberately leave unset, recorded rather than
 # silently skipped: `ref.name` is "name of the reference for a target", which the

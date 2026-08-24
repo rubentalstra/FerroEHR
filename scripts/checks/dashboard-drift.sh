@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
 # The default Grafana dashboard has ONE canonical home — the Helm chart file —
 # and one embedded copy: the compose observability overlay must stay standalone
 # (downloadable with no repo checkout), so it inlines the same JSON with `$`
