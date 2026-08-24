@@ -2112,3 +2112,142 @@ async fn member_scoped_refusals_name_the_offending_version_index() {
         sm.message
     );
 }
+
+/// The [`ehr_status`] shape with an explicit `is_modifiable` (queryable stays
+/// `true`) — the mixed-CONTRIBUTION gate fixtures.
+fn ehr_status_modifiable(modifiable: bool) -> Value {
+    let mut status = ehr_status(true);
+    status["is_modifiable"] = json!(modifiable);
+    status
+}
+
+/// An `ORIGINAL_VERSION` contribution member (raw wire shape).
+fn member(data: Value, change: (&str, &str), preceding: Option<&str>) -> Value {
+    let mut m = json!({
+        "_type": "ORIGINAL_VERSION",
+        "commit_audit": {
+            "change_type": change_type(change.0, change.1),
+            "committer": committer("author")
+        },
+        "lifecycle_state": change_type("532", "complete")
+    });
+    m["data"] = data;
+    if let Some(p) = preceding {
+        m["preceding_version_uid"] = json!({ "value": p });
+    }
+    m
+}
+
+/// The current `EHR_STATUS` version uid of an EHR.
+async fn current_status_uid(svc: &FerroEhrService, ehr: ferroehr::ids::EhrId) -> String {
+    svc.get_ehr_status_at_time(ehr, None)
+        .await
+        .expect("current EHR_STATUS")["uid"]["value"]
+        .as_str()
+        .expect("status uid")
+        .to_owned()
+}
+
+/// A deactivating CONTRIBUTION may carry its final content updates: content
+/// members beside an `EHR_STATUS` member setting `is_modifiable = false` are
+/// accepted against an ACTIVE EHR (RM ehr master04 §EHR Active Status's own
+/// first deactivation scenario — the death-related updates land in the act
+/// that deactivates; the gate mechanics are spec-silent, adjudicated on
+/// #2673), and the deactivation takes effect for every LATER write.
+#[tokio::test]
+async fn deactivating_contribution_carries_its_final_content() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+    let status_uid = current_status_uid(&svc, ehr_uuid).await;
+
+    let mixed = json!({
+        "versions": [
+            member(composition("final note"), ("249", "creation"), None),
+            member(ehr_status_modifiable(false), ("251", "modification"), Some(&status_uid)),
+        ],
+        "audit": { "change_type": change_type("251", "modification"), "committer": committer("author") }
+    });
+    svc.create_ehr_contribution(ehr_uuid, mixed)
+        .await
+        .expect("write-then-deactivate in one CONTRIBUTION is accepted");
+
+    // The deactivation holds from the next act on.
+    let blocked = svc
+        .create_composition(ehr_uuid, uv(&composition("too late"), "249", None))
+        .await
+        .expect_err("the EHR is deactivated after the mixed commit");
+    assert!(
+        matches!(blocked, ServiceError::Conflict(_)),
+        "post-deactivation content write → 409, got {blocked:?}"
+    );
+}
+
+/// The gate over a deactivated EHR, order-independently: content beside a
+/// REACTIVATING `EHR_STATUS` member is accepted (content listed FIRST, so list
+/// order proves nothing); content beside a still-`false` status member — and
+/// content alone — stay refused with the existing 409 (adjudication #2673).
+#[tokio::test]
+async fn reactivating_contribution_unlocks_its_own_content() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+
+    // Deactivate up front.
+    let status_uid = current_status_uid(&svc, ehr_uuid).await;
+    svc.replace_ehr_status(
+        ehr_uuid,
+        uv(&ehr_status_modifiable(false), "251", Some(&status_uid)),
+    )
+    .await
+    .expect("EHR_STATUS deactivation");
+
+    // (1) Content alone → refused.
+    let content_only = json!({
+        "versions": [ member(composition("blocked"), ("249", "creation"), None) ],
+        "audit": { "change_type": change_type("249", "creation"), "committer": committer("author") }
+    });
+    let blocked = svc
+        .create_ehr_contribution(ehr_uuid, content_only)
+        .await
+        .expect_err("content against a deactivated EHR is refused");
+    assert!(
+        blocked.message.contains("not modifiable"),
+        "the deactivated-EHR refusal names the cause: {blocked:?}"
+    );
+
+    // (2) Content beside a status member that KEEPS is_modifiable = false →
+    // still refused (no reactivation happens).
+    let status_uid = current_status_uid(&svc, ehr_uuid).await;
+    let still_off = json!({
+        "versions": [
+            member(composition("still blocked"), ("249", "creation"), None),
+            member(ehr_status_modifiable(false), ("251", "modification"), Some(&status_uid)),
+        ],
+        "audit": { "change_type": change_type("251", "modification"), "committer": committer("author") }
+    });
+    svc.create_ehr_contribution(ehr_uuid, still_off)
+        .await
+        .expect_err("a non-reactivating mixed CONTRIBUTION stays refused");
+
+    // (3) Content FIRST, the reactivating status member SECOND → accepted:
+    // the rule reads the atomic change set, not the list order.
+    let status_uid = current_status_uid(&svc, ehr_uuid).await;
+    let reactivating = json!({
+        "versions": [
+            member(composition("welcome back"), ("249", "creation"), None),
+            member(ehr_status_modifiable(true), ("251", "modification"), Some(&status_uid)),
+        ],
+        "audit": { "change_type": change_type("251", "modification"), "committer": committer("author") }
+    });
+    svc.create_ehr_contribution(ehr_uuid, reactivating)
+        .await
+        .expect("a reactivating mixed CONTRIBUTION is accepted");
+
+    // The EHR is active again: a plain content write goes through.
+    svc.create_composition(ehr_uuid, uv(&composition("active again"), "249", None))
+        .await
+        .expect("content write after the reactivating commit");
+}

@@ -1,0 +1,77 @@
+# The other mixed twin of -ehr_not_modifiable: a deactivating CONTRIBUTION may
+# carry its FINAL content updates. An active EHR accepts a change set holding
+# a content member beside an EHR_STATUS member that sets is_modifiable ->
+# false; the deactivation binds every LATER write.
+#
+# The workflow is the RM's own: master04 §EHR Active Status opens its
+# deactivation scenarios with "the patient has died, and no further updates
+# (typically relating to the death) are required" — the deactivating act
+# carrying the death-related updates is the described business event, and
+# "no further updates" begins after it. The commit is one atomic act (RM
+# common master06 §Committal and Audits) and the gate reads the state the
+# change set found (is_modifiable = true), so the content is legal however
+# the members are ordered. Per-member gate timing is spec-silent (AMB-82's
+# mechanics side); adjudicated in-repo on issue #2673.
+id: I_EHR_CONTRIBUTION.commit_contribution-deactivating_mixed_change_set
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [EhrStatus]
+profiles: [CORE]
+ambiguities: [AMB-82]
+test_purpose: >-
+  A CONTRIBUTION carrying a content member beside an EHR_STATUS member that
+  sets is_modifiable = false is accepted against an active EHR (the
+  deactivating act carries its final updates), and the deactivation refuses
+  the next content commit.
+description: "Commit deactivating mixed CONTRIBUTION carrying final content"
+spec_refs:
+  - "RM ehr §EHR Active Status (master04 — the deactivation scenarios; the scope of is_modifiable)"
+  - "RM common §Committal and Audits (master06 — the commit is one atomic act)"
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}; its EHR_STATUS v1 is is_modifiable = true
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: I_EHR_STATUS.get_ehr_status
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    capture: { status_version_uid: ok.status_version_uid }
+  - step: 2                              # final content + the deactivating status member, one act
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.minimal_event.v1}", change_type: creation }
+        - data:
+            _type: EHR_STATUS
+            archetype_node_id: "openEHR-EHR-EHR_STATUS.generic.v1"
+            archetype_details:
+              _type: ARCHETYPED
+              archetype_id: { _type: ARCHETYPE_ID, value: "openEHR-EHR-EHR_STATUS.generic.v1" }
+              rm_version: "1.2.0"
+            name: { value: "EHR Status" }
+            subject: { _type: PARTY_SELF }
+            is_modifiable: false
+            is_queryable: true
+          change_type: modification
+          preceding_version_uid: "${status_version_uid}"   # body property: OAS UpdateVersion.preceding_version_uid
+    expect: created
+  - step: 3                              # the deactivation binds from the next act on
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.minimal_event.v1}", change_type: creation }
+    expect: conflict
+postconditions:
+  - assert: state
+    text: >-
+      The deactivating mixed commit landed atomically and the follow-up
+      content commit was refused: one COMPOSITION, two EHR_STATUS versions
+  - { assert: version, count: 3 }        # default EHR_STATUS + the deactivating modification + the final COMPOSITION
