@@ -38,6 +38,30 @@ jobs:
     permissions:
       contents: read
       pull-requests: read # PR decoration reads the PR metadata
+    # Coverage rides this lane (owner directive 2026-08-24): the instrumented
+    # nextest run below produces the lcov the scan imports
+    # (sonar.rust.lcov.reportPaths — docs.sonarsource.com/sonarqube-cloud/
+    # analyzing-source-code/test-coverage/test-coverage-parameters), so the
+    # DB-backed suite needs the same PostgreSQL the CI test job uses. The
+    # former ci.yml `coverage` job is folded in here, and the README's
+    # coverage badge is Sonar's own — the badges-branch orphan-commit
+    # machinery is gone with it.
+    services:
+      postgres:
+        image: postgres:18.6@sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
+        env:
+          POSTGRES_USER: openehr
+          POSTGRES_PASSWORD: openehr
+          POSTGRES_DB: openehr_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U openehr"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://openehr:openehr@localhost:5432/openehr_test
+      # The shared test-database harness (tools/testkit) uses this server
+      # directly — no per-test containers in CI at all.
+      FERROEHR_TEST_PG_URL: postgres://openehr:openehr@localhost:5432/postgres
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,12 +69,36 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # Build cache for the analyzer's own Clippy run. This lane publishes
+      - name: Install xmllint (C14N parity gate) + non-durable test tuning
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client libxml2-utils
+          PGPASSWORD=openehr psql -h localhost -U openehr -d postgres \
+            -c "ALTER SYSTEM SET fsync = off" -c "ALTER SYSTEM SET synchronous_commit = off" -c "ALTER SYSTEM SET full_page_writes = off" -c "SELECT pg_reload_conf()"
+
+      # Build cache for the analyzer's own Clippy run and the instrumented
+      # build (cargo-llvm-cov keeps its own target dir). This lane publishes
       # nothing, so restoring a cache is inside the reliability.md rule
       # (only publishing lanes must run cache-free).
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          shared-key: sonar
+          components: llvm-tools-preview
+          cache-shared-key: sonar
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+        with:
+          tool: cargo-llvm-cov,cargo-nextest
+
+      # The same two lanes as the CI test job (the console is excluded from
+      # --all-features — mutually exclusive hydrate/ssr — and measured under
+      # the ssr shape it ships): --no-report accumulates both into one
+      # profile, `report` merges them into the single lcov the scan imports.
+      - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-admin-ui --all-features --no-tests=pass --profile ci
+      - run: cargo llvm-cov --no-report nextest --locked -p ferroehr-admin-ui --features ssr --no-tests=pass --profile ci
+      - run: cargo llvm-cov report --lcov --output-path lcov.info
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-lcov
+          path: lcov.info
 
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
