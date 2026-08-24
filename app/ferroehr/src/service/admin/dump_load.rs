@@ -125,7 +125,6 @@ use crate::service::admin::types::{
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::storage::codec::decompose;
-use crate::storage::version_repo::tier::Tier;
 use crate::storage::{node_repo, version_repo};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
@@ -1741,7 +1740,7 @@ impl FerroEhrService {
         let body = if lifecycle_state == DELETED_LIFECYCLE {
             Value::Null
         } else {
-            node_repo::read_version_canonical_in(&self.pool, vo_id, sys_version, Tier::Both).await?
+            node_repo::read_version_canonical_all(&self.pool, vo_id, sys_version).await?
         };
         Ok(VersionRecord {
             vo_id,
@@ -1856,8 +1855,7 @@ impl FerroEhrService {
             let body = if lifecycle_state == DELETED_LIFECYCLE {
                 Value::Null
             } else {
-                node_repo::read_version_canonical_in(&self.pool, vo_id, sys_version, Tier::Both)
-                    .await?
+                node_repo::read_version_canonical_all(&self.pool, vo_id, sys_version).await?
             };
             versions.push(VersionRecord {
                 vo_id,

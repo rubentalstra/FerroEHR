@@ -15,85 +15,14 @@
 //!
 //! - a **write** always thaws first ([`thaw`]), so a versioned object is never
 //!   split across tiers;
-//! - a **read** consults the cold tier only after the primary tier misses
-//!   (`on_cold`), so an unarchived read pays nothing at all.
-//!
-//! `on_cold` runs the caller's own statement — verbatim, no cold twin of the
-//! SQL — inside a transaction whose `SET LOCAL search_path` resolves the
-//! versioned-object spine to `cold`
-//! (<https://www.postgresql.org/docs/18/sql-set.html>: `SET LOCAL` reverts at
-//! transaction end, so the pooled connection is never left altered).
+//! - a **read** goes through the `*_all` union views (`vo_version_all` /
+//!   `node_all` / `vo_attestation_all`), so ONE statement serves both tiers
+//!   and a miss never pays a retry transaction.
 
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
-
-/// Search path resolving the versioned-object spine to the cold archival tier
-/// while `audit` / `ehr` / the `ext` helpers keep resolving normally.
-const COLD_SEARCH_PATH_SQL: &str = "SET LOCAL search_path TO cold, ehr, ext, public";
-
-/// Which storage tier a read addresses.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Tier {
-    /// The primary tier — every unarchived object, and the only tier a hot read
-    /// touches.
-    Primary,
-    /// The cold archival tier alone — used on a primary-tier miss, once the
-    /// version row itself has been found there.
-    Cold,
-    /// Both tiers at once, through the `*_all` union views — for the
-    /// whole-repository readers (admin export, physical delete) that must see
-    /// archived content by definition.
-    Both,
-}
-
-/// Begins a transaction whose statements read the cold archival tier.
-///
-/// The caller runs its ordinary primary-tier SQL on the returned transaction
-/// and commits it; every unqualified `vo_version` / `node` / `vo_attestation`
-/// reference resolves to the `cold` mirror instead.
-///
-/// # Errors
-/// Returns [`StorageError::Database`] when the transaction or the `SET LOCAL`
-/// fails.
-pub async fn begin_cold(pool: &PgPool) -> Result<Transaction<'_, Postgres>, StorageError> {
-    let mut tx = pool.begin().await?;
-    sqlx::query(COLD_SEARCH_PATH_SQL).execute(&mut *tx).await?;
-    Ok(tx)
-}
-
-/// Runs one read statement against the cold archival tier.
-///
-/// The body is the SAME statement the primary-tier read uses — there is no
-/// second copy of the SQL to drift — evaluated on a [`begin_cold`] transaction
-/// that is committed before the value is returned.
-///
-/// # Examples
-///
-/// ```text
-/// let kind: Option<String> = on_cold!(pool, |c| sqlx::query_scalar(SQL)
-///     .bind(vo_id)
-///     .fetch_optional(&mut *c)
-///     .await);
-/// ```
-macro_rules! on_cold {
-    ($pool:expr, |$conn:ident| $body:expr) => {{
-        // Boxed so the archival retry's transaction state lives on the heap
-        // instead of widening every calling future — the read seams sit deep
-        // inside the request futures `clippy::large_futures` measures.
-        let cold = ::std::boxed::Box::pin(async {
-            let mut tx = $crate::storage::version_repo::tier::begin_cold($pool).await?;
-            let $conn = &mut *tx;
-            let outcome = $body;
-            tx.commit().await?;
-            ::std::result::Result::<_, $crate::storage::error::StorageError>::Ok(outcome?)
-        });
-        cold.await?
-    }};
-}
-
-pub(crate) use on_cold;
 
 /// Moves every row of `vo_ids` from the primary tier to the cold archival tier.
 ///
