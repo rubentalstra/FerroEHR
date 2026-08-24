@@ -8,11 +8,13 @@
 # signed on every read and refuses to serve a provably corrupt record. That is a
 # strong claim, and it had never been watched work.
 #
-# The probe that matters is the TAMPER one: a signing feature with no
-# demonstrated detection is decoration. So this reaches past the API into the
-# stored rows, changes a byte of clinical content, and asserts the next read
-# FAILS — the only way to show the verification is real rather than a field
-# nobody checks.
+# The probes that matter are the TAMPER ones: a signing feature with no
+# demonstrated detection is decoration. So they reach past the API into the
+# stored rows, change a byte of clinical content, and assert it is caught — the
+# only way to show the verification is real rather than a field nobody checks.
+# There are two stored copies of a version's content and one probe per copy:
+# vo_version.body, caught by the read path, and the node rows, caught by the
+# admin storage-parity sweep.
 #
 # Sourced by scripts/deploy-probe.sh; never run directly.
 
@@ -48,9 +50,9 @@ probes_signing() {
   # The one that makes the feature more than decoration. Reaching past the API
   # into the stored rows is the point: an attacker or a corrupt disk does not
   # go through the write path, so neither does this. The tamper target is
-  # vo_version.body — the materialized projection every point read serves
-  # (the node rows are the AQL index; the parity between the two copies is
-  # pinned by the persistence suite, not by this probe).
+  # vo_version.body — the materialized projection every point read serves. The
+  # node rows are the storage's OTHER copy, and P-NODE-TAMPER below covers
+  # them through the channel that does see them.
   probe "P-SIGN-TAMPER" "broken" "server" "-" \
     "a tampered stored version is REFUSED on read, not served"
   local before after rows
@@ -71,6 +73,46 @@ probes_signing() {
       *)  probe_fail "a 5xx integrity refusal" "$after" \
             "verify_on_read is strict by default, so a corrupt record must not be served (was $before before tampering)" ;;
     esac
+  fi
+  probe_done
+
+  # The storage keeps every version's content twice: vo_version.body, which the
+  # probe above covers, and the decomposed node rows the AQL engine queries. A
+  # read-time signature check recomputes only the first, so a tampered node row
+  # is invisible to it; the admin storage-parity sweep is the channel that sees
+  # it. Same reach-past-the-API shape, aimed at the other copy.
+  probe "P-NODE-TAMPER" "broken" "server" "-" \
+    "a tampered node row is reported by the admin storage-parity sweep"
+  local node_ehr node_vo node_rows sweep sweep_code
+  node_ehr="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
+    | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
+  node_vo="$(probe_psql "SELECT vo_id FROM ehr.vo_version
+                          WHERE ehr_id = '$node_ehr'::uuid AND kind = 'EHR_STATUS';" \
+             | tr -d '[:space:]')"
+  if [ -z "$node_ehr" ] || [ -z "$node_vo" ]; then
+    probe_fail "a committed EHR_STATUS version" "ehr='$node_ehr' vo='$node_vo'" \
+      "the probe could not locate the stored version, so detection was never tested"
+    probe_done
+    return 0
+  fi
+  node_rows="$(probe_psql "UPDATE ehr.node
+                              SET data = jsonb_set(data, '{archetype_node_id}', '\"tampered\"')
+                            WHERE vo_id = '$node_vo'::uuid AND num = 0;" \
+               && probe_psql "SELECT count(*) FROM ehr.node
+                               WHERE vo_id = '$node_vo'::uuid
+                                 AND data #>> '{archetype_node_id}' = 'tampered';")"
+  if [ "${node_rows:-0}" = "0" ]; then
+    probe_fail "a tampered node row" "the UPDATE matched nothing" \
+      "the probe could not reach the AQL index copy, so detection was never tested"
+  else
+    sweep_code="$(http_code -u "$BASIC" -X POST "$API/admin/integrity/verify")"
+    assert_eq "200" "$sweep_code" \
+      "the sweep itself must succeed — a finding is reported in the body, not as a failed request"
+    sweep="$(curl -s -u "$BASIC" -X POST "$API/admin/integrity/verify")"
+    assert_contains "$sweep" "$node_vo" \
+      "the sweep must name the tampered versioned object"
+    assert_contains "$sweep" '"defect":"content_differs"' \
+      "a node row that no longer matches the materialized body is a content_differs mismatch"
   fi
   probe_done
 }

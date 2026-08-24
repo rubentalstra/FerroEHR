@@ -19,6 +19,8 @@
 //!   / `versioned_composition_count` / `composition_version_count`.
 //! - `archive` — `I_ADMIN_ARCHIVE.archive_ehrs` / `archive_parties`.
 //! - `dump_load` — `I_ADMIN_DUMP_LOAD.export_ehrs` / `load_ehrs`.
+//! - [`integrity`] — the storage-parity sweep, our own extension: no SM
+//!   interface declares it and no openEHR spec governs storage mechanics.
 //! - [`types`] — the SM information classes of the ADMIN group
 //!   (`EXPORT_SPEC`, `DUMP_LOAD_FAIL_REPORT`, the format enumerations).
 //!
@@ -26,7 +28,9 @@
 //!
 //! - **`crate::storage`** — `dump_load` reassembles/decomposes version bodies
 //!   through the storage codec (`node_repo::read_version_canonical` /
-//!   `decompose` + `write_nodes`).
+//!   `decompose` + `write_nodes`); `integrity` reassembles every stored
+//!   version through `node_repo::read_version_canonical_all` to compare it
+//!   with the materialized `vo_version.body`.
 //! - **`archive`** marks EHR/party versioned objects archived and physically
 //!   moves their rows into the spec-silent cold tier
 //!   ([`crate::storage::version_repo::tier`]), reversibly; `delete` and
@@ -38,6 +42,7 @@ mod delete;
 mod dump_load;
 mod statistics;
 
+pub mod integrity;
 pub mod types;
 
 use uuid::Uuid;

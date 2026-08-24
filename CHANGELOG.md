@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- `POST {base}/admin/integrity/verify` sweeps the stored data for
+  content-copy disagreement. Every version's content is stored twice — as
+  the materialized document a point read serves and as the decomposed rows
+  the AQL engine queries — and read-time signature verification only ever
+  recomputed the first, so a row edited behind the server's back could reach
+  a client through an AQL scalar result with no integrity signal. The sweep
+  re-derives every stored version from its decomposed rows, compares, and
+  reports every mismatch by identifier with a defect of `content_differs`,
+  `nodes_missing`, `nodes_unreadable`, or `unexpected_nodes`. It reads the
+  archived tier too, takes no lock, runs off the request path, and never logs
+  or returns content. A finding is reported in the **200** body, not as a
+  failed request. Behind the existing admin switch and admin role.
+
 ### Changed
 
 - Commit latency's tail shrinks: the large stored JSON columns

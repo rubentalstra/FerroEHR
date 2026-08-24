@@ -107,6 +107,22 @@ tamper-detection control against accidental corruption and against an actor
 who reaches the data but not the write path. Authorship and non-repudiation
 need a key, which is [PGP mode](pgp.md).
 
+It also covers one of the two copies FerroEHR stores. Every version's
+content is written twice in the same transaction: as the materialized
+document a point read serves, and as the decomposed rows the AQL engine
+queries. The digest is computed over the first one, and read-time
+verification recomputes it from the same place. The decomposed rows are
+never recomputed on a read, so a row edited behind the server's back is
+invisible to this check and can still reach a client through an AQL scalar
+result.
+
+That copy has its own channel: `POST {base}/admin/integrity/verify`
+re-derives every stored version from its decomposed rows and reports any
+that no longer match the stored document. It is an admin route, it runs
+outside the request path, and it reports by identifier rather than by
+content. The [admin API reference](../operations-admin-apis.md#storage-integrity)
+documents the report and its four defect values.
+
 ## Verification at read
 
 `signing.verify_on_read` resolves to `strict` whenever signing is enabled,
@@ -126,7 +142,9 @@ Verification runs where the server serves a VERSION object: the
 CONTRIBUTION read resolves under `Prefer: resolve_refs`. A plain content read
 (`GET /ehr/{ehr_id}/composition/{uid_based_id}`) returns the COMPOSITION
 rather than the VERSION that carries the signature, and runs no check. AQL
-reads storage rows directly and runs no check either.
+reads the decomposed storage rows directly and runs no check either; the
+[storage-parity sweep](../operations-admin-apis.md#storage-integrity) is what
+covers those.
 
 > [!WARNING]
 > A `strict` mismatch is a `500` on purpose. The alternative is serving a
