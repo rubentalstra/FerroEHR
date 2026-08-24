@@ -872,3 +872,83 @@ async fn materialized_body_matches_node_reassembly_on_a_real_commit() {
         Some("EHR_STATUS")
     );
 }
+
+/// The fixed-text `unnest` node insert has no per-row parameter cost, so a
+/// composition decomposing to more than 4,095 node rows — past the 65,535
+/// extended-protocol parameter cap the old per-row shape hit — commits in one
+/// statement (#2668).
+#[tokio::test]
+async fn write_nodes_survives_more_than_4095_rows() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let (vo, ehr_id) = seed_version(&pool).await;
+
+    let n = 5_000;
+    let mut rows = Vec::with_capacity(n);
+    for i in 0..n {
+        let num = i32::try_from(i).expect("row ordinal fits i32");
+        rows.push(NodeRow {
+            num,
+            num_cap: num,
+            parent_num: 0,
+            citem_num: None,
+            rm_type: "ELEMENT".to_owned(),
+            archetype: None,
+            arch_entity: None,
+            arch_concept: None,
+            arch_major: None,
+            name: None,
+            path: if i == 0 {
+                String::new()
+            } else {
+                format!("items{i}.")
+            },
+            data: serde_json::json!({"_type": "ELEMENT", "archetype_node_id": "at0001"}),
+            promoted: Vec::new(),
+        });
+    }
+    let mut tx = pool.begin().await.expect("begin");
+    ferroehr::storage::node_repo::write_nodes(
+        &mut tx,
+        ferroehr::ids::VoId(vo),
+        1,
+        Some(ferroehr::ids::EhrId(ehr_id)),
+        &rows,
+    )
+    .await
+    .expect("a 5,000-row version must write in one statement");
+    tx.commit().await.expect("commit");
+
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM node WHERE vo_id = $1")
+        .bind(vo)
+        .fetch_one(&pool)
+        .await
+        .expect("count");
+    assert_eq!(count, 5_000);
+}
+
+/// The tenant-scoped pool applies the SAME session settings the base pool
+/// does — `statement_timeout` included (#2669: the tenant `after_connect`
+/// previously replaced the base hook and silently dropped the DB-side
+/// runaway-query guard).
+#[tokio::test]
+async fn tenant_scoped_pool_applies_statement_timeout() {
+    let db = testkit::db().await.expect("testkit database");
+    let mut settings = ferroehr::db::DbConfig::default();
+    settings.url = ferroehr::config::secret::SecretUrl::new(db.url());
+    settings.statement_timeout_ms = 12_345;
+    settings.max_connections = 2;
+    settings.min_connections = 0;
+
+    let pool = ferroehr::db::connect_tenant_scoped(&settings)
+        .await
+        .expect("tenant-scoped pool");
+    let timeout: String = sqlx::query_scalar("SHOW statement_timeout")
+        .fetch_one(&pool)
+        .await
+        .expect("read timeout");
+    assert_eq!(
+        timeout, "12345ms",
+        "the tenant-scoped connection must carry the configured statement_timeout"
+    );
+}
