@@ -1,11 +1,19 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The one admin-console e2e integration binary (`testing.md` §Where tests
-//! live): every journey battery is a module here; the shared
-//! browser/router/DB fixture lives in `common`.
+//! The one admin-console integration binary (`testing.md` §Where tests live):
+//! every journey battery is a module here; the shared browser/router/DB
+//! fixture lives in `common`.
+//!
+//! Two kinds of module live here. The `e2e_*` journeys drive a real browser
+//! against a composed stack and skip-with-reason when it is absent;
+//! `ssr_components` renders components in-process with no external process at
+//! all, so the component/page code is exercised by the ordinary
+//! `--features ssr` test lane (and by the coverage lane over it).
 
 mod common;
+
+mod ssr_components;
 
 mod e2e_adl2;
 mod e2e_admin_ops;
