@@ -2217,6 +2217,7 @@ async fn insert_version(
             signature_client_supplied: v.signature_client_supplied,
             creating_system_id: &v.creating_system_id,
             wrapped_original: v.wrapped_original.as_ref(),
+            body: (!v.body.is_null()).then_some(&v.body),
         },
     )
     .await?;

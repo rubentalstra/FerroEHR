@@ -342,6 +342,7 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
             signature_client_supplied: false,
             creating_system_id: system,
             wrapped_original: None,
+            body: None,
         }
     };
 
@@ -458,6 +459,7 @@ async fn an_as_of_read_resolves_along_the_trunk() {
         signature_client_supplied: false,
         creating_system_id: "sysB.example.org",
         wrapped_original: None,
+        body: None,
     };
     let mut conn = pool.acquire().await.expect("connection");
 
@@ -832,4 +834,41 @@ fn corpus_sample() -> Value {
     );
     serde_json::from_str(&std::fs::read_to_string(path).expect("read ips_canonical.json"))
         .expect("parse composition")
+}
+
+/// The materialized `vo_version.body` is byte-identical to the node-row
+/// reassembly on a REAL service commit — the parity the body column's whole
+/// design rests on (reads serve `body`; AQL reads the nodes; both must be the
+/// same canonical value, RM common master06 §Copying: a stored version is
+/// served verbatim).
+#[tokio::test]
+async fn materialized_body_matches_node_reassembly_on_a_real_commit() {
+    use ferroehr::service::FerroEhrService;
+    use ferroehr::storage::node_repo::read_version_canonical;
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let service = FerroEhrService::new(pool.clone());
+    let ehr_id = service.create_ehr(None).await.expect("ehr create");
+
+    // The EHR create commits an EHR_STATUS through the full commit path.
+    let (vo, body): (Uuid, Option<Value>) = sqlx::query_as(
+        "SELECT vo_id, body FROM vo_version WHERE ehr_id = $1 AND kind = 'EHR_STATUS'",
+    )
+    .bind(ehr_id.0)
+    .fetch_one(&pool)
+    .await
+    .expect("status version row");
+    let body = body.expect("a content-bearing version materializes its body");
+    let reassembled = read_version_canonical(&pool, ferroehr::ids::VoId(vo), 1)
+        .await
+        .expect("node reassembly");
+    assert_eq!(
+        body, reassembled,
+        "vo_version.body must equal the node-row reassembly"
+    );
+    assert_eq!(
+        body.get("_type").and_then(Value::as_str),
+        Some("EHR_STATUS")
+    );
 }
