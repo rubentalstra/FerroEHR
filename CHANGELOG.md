@@ -34,6 +34,22 @@ workflow refuses a tag that has no matching section here.
   signature rules, key configuration and rotation, and the
   `IMPORTED_VERSION` wrapper signature.
 
+- Admin console: the ADL 2 template detail shows the path catalog — the same
+  expandable tree and node inspector the ADL 1.4 detail has — built by the
+  console from the served AOM2 JSON. The CDR's REST surface is unchanged (the
+  released API defines no Web Template representation on the ADL 2 resource).
+- Helm chart 6.0.16: `metrics.grafanaDashboard.enabled` ships the default
+  "FerroEHR — service overview" Grafana dashboard as a ConfigMap the Grafana
+  dashboard sidecar (kube-prometheus-stack) auto-imports; the compose
+  observability overlay provisions the same dashboard, now extended to AQL
+  rate and phase latency, plan-cache hit ratio, database pool, Tokio runtime,
+  and audit throughput — every panel query written against the served metric
+  names.
+
+- Docs: the compose installation page states the supported container
+  engines — the quickstart, both profiles and both overlays are verified on
+  Docker and Podman.
+
 ### Changed
 
 - Current-version lookups gained dedicated partial indexes: EHR-scoped
@@ -114,20 +130,6 @@ workflow refuses a tag that has no matching section here.
   EHR_ACCESS gate shares the cached settings instead of cloning the access
   list.
 
-### Added
-
-- Admin console: the ADL 2 template detail shows the path catalog — the same
-  expandable tree and node inspector the ADL 1.4 detail has — built by the
-  console from the served AOM2 JSON. The CDR's REST surface is unchanged (the
-  released API defines no Web Template representation on the ADL 2 resource).
-- Helm chart 6.0.16: `metrics.grafanaDashboard.enabled` ships the default
-  "FerroEHR — service overview" Grafana dashboard as a ConfigMap the Grafana
-  dashboard sidecar (kube-prometheus-stack) auto-imports; the compose
-  observability overlay provisions the same dashboard, now extended to AQL
-  rate and phase latency, plan-cache hit ratio, database pool, Tokio runtime,
-  and audit throughput — every panel query written against the served metric
-  names.
-
 ### Fixed
 
 - A composition decomposing to more than 4,095 node rows now commits: the
@@ -153,14 +155,6 @@ workflow refuses a tag that has no matching section here.
   create under Podman (its root directory ships mode 555 and the overlay
   drops all capabilities); a `tmpfs` mount at `/data` fixes it on both
   engines.
-
-### Added
-
-- Docs: the compose installation page states the supported container
-  engines — the quickstart, both profiles and both overlays are verified on
-  Docker and Podman.
-
-### Fixed
 
 - Helm chart 6.0.15: the chart-signing step retries transient Sigstore
   failures instead of stranding a published version unsigned. Chart 6.0.14
@@ -305,6 +299,19 @@ workflow refuses a tag that has no matching section here.
   schema's required member list; clients matching on the previous
   two-shape split keep working (the change is additive on both shapes).
 
+- The FHIR connector's release identity is recorded as **FHIR R4**: every
+  resource and element it touches is unchanged in R4B (HL7's own R4B scope
+  statement), so the wire's `/fhir/r4` is truthful and connector-side text
+  and citations now say R4 consistently. The terminology integration keeps
+  its deliberate R4B identity — the two vocabularies are intentionally
+  different, and the documentation says which is which.
+
+- An event-subscription update is an explicit full replace: `enabled` is now
+  required on the body — omitting it previously defaulted to `true` and
+  silently re-enabled a deliberately disabled subscription — and any unknown
+  body key is refused instead of silently dropped (echoed read-only members
+  from a prior read stay tolerated).
+
 ### Fixed
 
 - Admin console: the directory history panel loads a bounded window of the
@@ -342,33 +349,6 @@ workflow refuses a tag that has no matching section here.
   composition delete no longer sends a self-satisfying `If-Match`; tag
   updates state `Prefer: return=minimal` explicitly; and a FHIR connector
   answer now counts any success status as completed, not only `200`.
-
-### Changed
-
-- The FHIR connector's release identity is recorded as **FHIR R4**: every
-  resource and element it touches is unchanged in R4B (HL7's own R4B scope
-  statement), so the wire's `/fhir/r4` is truthful and connector-side text
-  and citations now say R4 consistently. The terminology integration keeps
-  its deliberate R4B identity — the two vocabularies are intentionally
-  different, and the documentation says which is which.
-
-### Changed
-
-- An event-subscription update is an explicit full replace: `enabled` is now
-  required on the body — omitting it previously defaulted to `true` and
-  silently re-enabled a deliberately disabled subscription — and any unknown
-  body key is refused instead of silently dropped (echoed read-only members
-  from a prior read stay tolerated).
-
-### Removed
-
-- The event subscription's `archetype` predicate: it was stored and served
-  but consulted by nothing — the AMQP routing key carries no archetype
-  segment, so the predicate never filtered anything in any combination.
-  Filter by template instead (an operational template names its root
-  archetype).
-
-### Fixed
 
 - An AQL query parameter whose value cannot be coerced to the type its
   predicate compares against (an invalid date/time or text representation)
@@ -449,6 +429,14 @@ workflow refuses a tag that has no matching section here.
   import was refused with a bare `409 Conflict`. A stale receipt (a branch
   version at or below the stored tip) is now refused with a message naming
   the stored tip, exactly like a stale trunk re-import.
+
+### Removed
+
+- The event subscription's `archetype` predicate: it was stored and served
+  but consulted by nothing — the AMQP routing key carries no archetype
+  segment, so the predicate never filtered anything in any combination.
+  Filter by template instead (an operational template names its root
+  archetype).
 
 ## [3.20.0] - 2026-08-21
 
