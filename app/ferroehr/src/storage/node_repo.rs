@@ -26,14 +26,17 @@ use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
 
-/// The FIXED-text node insert: one array bind per column over `unnest`, so
-/// the statement carries the same 16 parameters at ANY row count — no
+/// Build the FIXED-text node insert: one array bind per column over `unnest`,
+/// so the statement carries the same parameter count at ANY row count — no
 /// per-row placeholders (PostgreSQL caps a statement at 65,535 parameters,
 /// which a per-row shape hits at ~4,095 nodes), one prepared statement
-/// forever. Built once from the shared promoted-leaf registry
+/// forever. Built from the shared promoted-leaf registry
 /// (`crate::storage::promoted`), each leaf bound through its kind's
-/// conversion (non-castable text becomes NULL, the ext baseline).
-static WRITE_NODES_SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+/// conversion (non-castable text becomes NULL, the ext baseline). With
+/// `per_row_context` the storage context (`vo_id`/`sys_version`/`ehr_id`)
+/// unnests per row (the archive-load batch across versions); without, it
+/// binds as three constant scalars (the single-version commit write).
+fn write_nodes_sql(per_row_context: bool) -> String {
     use std::fmt::Write;
     let mut columns = String::new();
     let mut selects = String::new();
@@ -50,17 +53,35 @@ static WRITE_NODES_SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|
         let _ = write!(arrays, ", ${}::text[]", 16 + i);
         let _ = write!(names, ", p{i}");
     }
+    let (context_select, context_arrays, context_names) = if per_row_context {
+        (
+            "t.vo_id, t.sys_version, t.ehr_id",
+            "$1::uuid[], $2::int[], $3::uuid[]",
+            "vo_id, sys_version, ehr_id, ",
+        )
+    } else {
+        ("$1, $2, $3", "", "")
+    };
+    let separator = if per_row_context { ", " } else { "" };
     format!(
         "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, citem_num, \
          rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data{columns}) \
-         SELECT $1, $2, $3, t.num, t.num_cap, t.parent_num, t.citem_num, t.rm_type, \
+         SELECT {context_select}, t.num, t.num_cap, t.parent_num, t.citem_num, t.rm_type, \
          t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.path, t.data{selects} \
-         FROM unnest($4::int[], $5::int[], $6::int[], $7::int[], $8::text[], $9::text[], \
+         FROM unnest({context_arrays}{separator}$4::int[], $5::int[], $6::int[], $7::int[], $8::text[], $9::text[], \
          $10::text[], $11::text[], $12::int[], $13::text[], $14::text[], $15::jsonb[]{arrays}) \
-         AS t(num, num_cap, parent_num, citem_num, rm_type, archetype, arch_entity, \
+         AS t({context_names}num, num_cap, parent_num, citem_num, rm_type, archetype, arch_entity, \
          arch_concept, arch_major, name, path, data{names})"
     )
-});
+}
+
+/// The single-version node insert (constant-scalar storage context).
+static WRITE_NODES_SQL: std::sync::LazyLock<String> =
+    std::sync::LazyLock::new(|| write_nodes_sql(false));
+
+/// The cross-version batch node insert (per-row storage context).
+static WRITE_NODES_BATCH_SQL: std::sync::LazyLock<String> =
+    std::sync::LazyLock::new(|| write_nodes_sql(true));
 
 /// Bulk-insert the decomposed node rows of one stored version — ONE
 /// fixed-text `unnest` statement whatever the row count.
@@ -90,6 +111,59 @@ pub async fn write_nodes(
     if rows.is_empty() {
         return Ok(());
     }
+    let query = sqlx::query(sqlx::AssertSqlSafe(WRITE_NODES_SQL.as_str()))
+        .bind(vo_id)
+        .bind(sys_version)
+        .bind(ehr_id);
+    let refs: Vec<&NodeRow> = rows.iter().collect();
+    bind_node_arrays(query, &refs).execute(&mut *tx).await?;
+    Ok(())
+}
+
+/// Bulk-insert the decomposed node rows of MANY stored versions — still ONE
+/// fixed-text `unnest` statement, with the storage context
+/// (`vo_id`/`sys_version`/`ehr_id`) unnesting per row instead of binding as
+/// constants. The archive load writes a whole record's node rows through this
+/// (never one statement per version).
+///
+/// # Errors
+///
+/// Returns [`StorageError::Database`] on any driver/insert failure.
+pub async fn write_nodes_batch(
+    tx: &mut PgConnection,
+    versions: &[(VoId, i32, Option<EhrId>, Vec<NodeRow>)],
+) -> Result<(), StorageError> {
+    let n: usize = versions.iter().map(|(_, _, _, rows)| rows.len()).sum();
+    if n == 0 {
+        return Ok(());
+    }
+    let mut vo_ids: Vec<Uuid> = Vec::with_capacity(n);
+    let mut sys_versions: Vec<i32> = Vec::with_capacity(n);
+    let mut ehr_ids: Vec<Option<Uuid>> = Vec::with_capacity(n);
+    let mut refs: Vec<&NodeRow> = Vec::with_capacity(n);
+    for (vo_id, sys_version, ehr_id, rows) in versions {
+        for row in rows {
+            vo_ids.push(vo_id.0);
+            sys_versions.push(*sys_version);
+            ehr_ids.push(ehr_id.map(|e| e.0));
+            refs.push(row);
+        }
+    }
+    let query = sqlx::query(sqlx::AssertSqlSafe(WRITE_NODES_BATCH_SQL.as_str()))
+        .bind(vo_ids)
+        .bind(sys_versions)
+        .bind(ehr_ids);
+    bind_node_arrays(query, &refs).execute(&mut *tx).await?;
+    Ok(())
+}
+
+/// Bind the twelve per-node column arrays plus the promoted-leaf arrays onto a
+/// node-insert statement whose storage-context parameters (`$1..$3`) are
+/// already bound.
+fn bind_node_arrays<'q>(
+    mut query: sqlx::query::Query<'q, sqlx::Postgres, sqlx::postgres::PgArguments>,
+    rows: &[&'q NodeRow],
+) -> sqlx::query::Query<'q, sqlx::Postgres, sqlx::postgres::PgArguments> {
     let n = rows.len();
     let mut nums = Vec::with_capacity(n);
     let mut num_caps = Vec::with_capacity(n);
@@ -117,22 +191,19 @@ pub async fn write_nodes(
         paths.push(&row.path);
         datas.push(&row.data);
     }
-    let mut query = sqlx::query(sqlx::AssertSqlSafe(WRITE_NODES_SQL.as_str()))
-        .bind(vo_id)
-        .bind(sys_version)
-        .bind(ehr_id)
-        .bind(&nums)
-        .bind(&num_caps)
-        .bind(&parent_nums)
-        .bind(&citem_nums)
-        .bind(&rm_types)
-        .bind(&archetypes)
-        .bind(&arch_entities)
-        .bind(&arch_concepts)
-        .bind(&arch_majors)
-        .bind(&names)
-        .bind(&paths)
-        .bind(&datas);
+    query = query
+        .bind(nums)
+        .bind(num_caps)
+        .bind(parent_nums)
+        .bind(citem_nums)
+        .bind(rm_types)
+        .bind(archetypes)
+        .bind(arch_entities)
+        .bind(arch_concepts)
+        .bind(arch_majors)
+        .bind(names)
+        .bind(paths)
+        .bind(datas);
     for (i, _leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
         let leaf_values: Vec<Option<&str>> = rows
             .iter()
@@ -140,8 +211,7 @@ pub async fn write_nodes(
             .collect();
         query = query.bind(leaf_values);
     }
-    query.execute(&mut *tx).await?;
-    Ok(())
+    query
 }
 
 /// The lean read-row statement: **only** the five columns

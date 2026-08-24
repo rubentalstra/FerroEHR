@@ -213,52 +213,141 @@ pub async fn insert_version_verbatim(
     tx: &mut PgConnection,
     row: &VerbatimVersionRow<'_>,
 ) -> Result<(), StorageError> {
-    if row.branch_number == 0 {
-        let held_by: Option<String> = sqlx::query_scalar(
-            "SELECT creating_system_id FROM vo_version \
-             WHERE vo_id = $1 AND trunk_version = $2 AND branch_number = 0",
+    insert_versions_verbatim(tx, std::slice::from_ref(row)).await
+}
+
+/// Insert MANY verbatim `vo_version` rows in ONE statement — the archive-load
+/// batch (a whole record's versions, never a round trip per version), with
+/// the trunk-position invariant of [`insert_version_verbatim`] checked for
+/// the whole batch in one probe first.
+///
+/// The probe checks the batch against PRE-EXISTING rows; a corrupt record
+/// that duplicates a trunk position within itself falls to the
+/// `uq_vo_version_trunk_position` unique-index backstop instead of the named
+/// error.
+///
+/// # Errors
+/// Returns [`StorageError::TrunkPositionInUse`] when another creating system
+/// already holds a batch member's trunk position, or
+/// [`StorageError::Database`] on a driver/insert failure.
+pub async fn insert_versions_verbatim(
+    tx: &mut PgConnection,
+    rows: &[VerbatimVersionRow<'_>],
+) -> Result<(), StorageError> {
+    if rows.is_empty() {
+        return Ok(());
+    }
+    let trunk_vos: Vec<Uuid> = rows
+        .iter()
+        .filter(|r| r.branch_number == 0)
+        .map(|r| r.vo_id.0)
+        .collect();
+    if !trunk_vos.is_empty() {
+        let trunk_positions: Vec<i32> = rows
+            .iter()
+            .filter(|r| r.branch_number == 0)
+            .map(|r| r.trunk_version)
+            .collect();
+        let clash = sqlx::query(
+            "SELECT v.vo_id, v.trunk_version, v.creating_system_id FROM vo_version v \
+             JOIN unnest($1::uuid[], $2::int[]) AS q(vo_id, trunk_version) \
+             ON q.vo_id = v.vo_id AND q.trunk_version = v.trunk_version \
+             WHERE v.branch_number = 0 LIMIT 1",
         )
-        .bind(row.vo_id)
-        .bind(row.trunk_version)
+        .bind(&trunk_vos)
+        .bind(&trunk_positions)
         .fetch_optional(&mut *tx)
         .await?;
-        if let Some(held_by) = held_by {
+        if let Some(hit) = clash {
             return Err(StorageError::TrunkPositionInUse {
-                vo_id: row.vo_id.0,
-                trunk_version: row.trunk_version,
-                held_by,
+                vo_id: hit.try_get::<Uuid, _>("vo_id")?,
+                trunk_version: hit.try_get("trunk_version")?,
+                held_by: hit.try_get("creating_system_id")?,
             });
         }
+    }
+    let n = rows.len();
+    let mut vo_ids: Vec<Uuid> = Vec::with_capacity(n);
+    let mut kinds: Vec<&str> = Vec::with_capacity(n);
+    let mut ehr_ids: Vec<Option<Uuid>> = Vec::with_capacity(n);
+    let mut sys_versions: Vec<i32> = Vec::with_capacity(n);
+    let mut trunks: Vec<i32> = Vec::with_capacity(n);
+    let mut branch_numbers: Vec<i32> = Vec::with_capacity(n);
+    let mut branch_versions: Vec<i32> = Vec::with_capacity(n);
+    let mut precedings: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut other_inputs: Vec<Option<&Value>> = Vec::with_capacity(n);
+    let mut lowers: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut uppers: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut lifecycles: Vec<&str> = Vec::with_capacity(n);
+    let mut contribution_ids: Vec<Uuid> = Vec::with_capacity(n);
+    let mut audit_ids: Vec<Uuid> = Vec::with_capacity(n);
+    let mut template_ids: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut signatures: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut sig_client: Vec<bool> = Vec::with_capacity(n);
+    let mut creating: Vec<&str> = Vec::with_capacity(n);
+    let mut wrappeds: Vec<Option<&Value>> = Vec::with_capacity(n);
+    let mut bodies: Vec<Option<&Value>> = Vec::with_capacity(n);
+    for r in rows {
+        vo_ids.push(r.vo_id.0);
+        kinds.push(r.kind);
+        ehr_ids.push(r.ehr_id.map(|e| e.0));
+        sys_versions.push(r.sys_version);
+        trunks.push(r.trunk_version);
+        branch_numbers.push(r.branch_number);
+        branch_versions.push(r.branch_version);
+        precedings.push(r.preceding_version_uid);
+        other_inputs.push(r.other_input_version_uids);
+        lowers.push(r.sys_period_lower);
+        uppers.push(r.sys_period_upper);
+        lifecycles.push(r.lifecycle_state);
+        contribution_ids.push(r.contribution_id);
+        audit_ids.push(r.audit_id);
+        template_ids.push(r.template_id);
+        signatures.push(r.signature);
+        sig_client.push(r.signature_client_supplied);
+        creating.push(r.creating_system_id);
+        wrappeds.push(r.wrapped_original);
+        bodies.push(r.body);
     }
     sqlx::query(
         "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
          branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
          lifecycle_state, contribution_id, audit_id, template_id, signature, \
          signature_client_supplied, creating_system_id, wrapped_original, body) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
-         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17, $18, \
-         $19, $20)",
+         SELECT t.vo_id, t.kind, t.ehr_id, t.sys_version, t.trunk_version, t.branch_number, \
+         t.branch_version, t.preceding_version_uid, t.other_input, \
+         tstzrange(t.lower::timestamptz, t.upper::timestamptz, '[)'), t.lifecycle_state, \
+         t.contribution_id, t.audit_id, t.template_id, t.signature, t.sig_client, \
+         t.creating_system_id, t.wrapped_original, t.body \
+         FROM unnest($1::uuid[], $2::text[], $3::uuid[], $4::int[], $5::int[], $6::int[], \
+         $7::int[], $8::text[], $9::jsonb[], $10::text[], $11::text[], $12::text[], \
+         $13::uuid[], $14::uuid[], $15::text[], $16::text[], $17::bool[], $18::text[], \
+         $19::jsonb[], $20::jsonb[]) \
+         AS t(vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+         preceding_version_uid, other_input, lower, upper, lifecycle_state, contribution_id, \
+         audit_id, template_id, signature, sig_client, creating_system_id, wrapped_original, \
+         body)",
     )
-    .bind(row.vo_id)
-    .bind(row.kind)
-    .bind(row.ehr_id)
-    .bind(row.sys_version)
-    .bind(row.trunk_version)
-    .bind(row.branch_number)
-    .bind(row.branch_version)
-    .bind(row.preceding_version_uid)
-    .bind(row.other_input_version_uids)
-    .bind(row.sys_period_lower)
-    .bind(row.sys_period_upper)
-    .bind(row.lifecycle_state)
-    .bind(row.contribution_id)
-    .bind(row.audit_id)
-    .bind(row.template_id)
-    .bind(row.signature)
-    .bind(row.signature_client_supplied)
-    .bind(row.creating_system_id)
-    .bind(row.wrapped_original)
-    .bind(row.body)
+    .bind(vo_ids)
+    .bind(kinds)
+    .bind(ehr_ids)
+    .bind(sys_versions)
+    .bind(trunks)
+    .bind(branch_numbers)
+    .bind(branch_versions)
+    .bind(precedings)
+    .bind(other_inputs)
+    .bind(lowers)
+    .bind(uppers)
+    .bind(lifecycles)
+    .bind(contribution_ids)
+    .bind(audit_ids)
+    .bind(template_ids)
+    .bind(signatures)
+    .bind(sig_client)
+    .bind(creating)
+    .bind(wrappeds)
+    .bind(bodies)
     .execute(&mut *tx)
     .await?;
     Ok(())

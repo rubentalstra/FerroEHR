@@ -273,7 +273,7 @@ impl FerroEhrService {
         // template surfaces through `web_template_for` as content_invalid.
         if !self.template_stored(&envelope.template_id).await? {
             return Err(SmError::from(ServiceError::sm(
-                crate::service::status::CallStatusType::TemplateDoesNotExist,
+                CallStatusType::TemplateDoesNotExist,
                 format!("template {}", envelope.template_id),
             )));
         }

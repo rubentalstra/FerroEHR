@@ -934,13 +934,13 @@ async fn write_nodes_survives_more_than_4095_rows() {
 #[tokio::test]
 async fn tenant_scoped_pool_applies_statement_timeout() {
     let db = testkit::db().await.expect("testkit database");
-    let mut settings = ferroehr::db::DbConfig::default();
+    let mut settings = db::DbConfig::default();
     settings.url = ferroehr::config::secret::SecretUrl::new(db.url());
     settings.statement_timeout_ms = 12_345;
     settings.max_connections = 2;
     settings.min_connections = 0;
 
-    let pool = ferroehr::db::connect_tenant_scoped(&settings)
+    let pool = db::connect_tenant_scoped(&settings)
         .await
         .expect("tenant-scoped pool");
     let timeout: String = sqlx::query_scalar("SHOW statement_timeout")
