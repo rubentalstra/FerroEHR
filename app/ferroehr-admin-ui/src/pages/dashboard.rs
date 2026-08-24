@@ -146,53 +146,68 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
 
     crate::session::require_session().await?;
     let rows = crate::queries_api::list_stored_queries().await?;
-    let mut tiles = Vec::new();
-    for group in crate::query_namespace::group_by_namespace(&rows) {
-        // The grouping is DERIVED — there is no stored member list to narrow
-        // by — so every member runs, fanned out with the shared bounded
-        // concurrency instead of a serial await chain.
-        //
-        // The identifiers are collected into owned pairs BEFORE the stream: an
-        // async block borrowing out of `group` is not general enough over
-        // lifetimes for the `#[server]` boundary's future.
-        let members: Vec<(String, String)> = group
-            .members
-            .iter()
-            .map(|member| (member.name.clone(), member.version.clone()))
-            .collect();
-        let counts = futures::stream::iter(members.into_iter().map(|(name, version)| async move {
+    let groups = crate::query_namespace::group_by_namespace(&rows);
+
+    // The grouping is DERIVED — there is no stored member list to narrow
+    // by — so every member runs. ONE bounded stream drives every count
+    // across ALL groups; a per-group stream inside a serial group loop paid
+    // serial latency namespace by namespace (#2615, the class #2610 fixed
+    // on the repository-usage card). The identifiers are collected into
+    // owned, group-indexed triples BEFORE the stream: an async block
+    // borrowing out of `groups` is not general enough over lifetimes for
+    // the `#[server]` boundary's future.
+    let members: Vec<(usize, String, String)> = groups
+        .iter()
+        .enumerate()
+        .flat_map(|(index, group)| {
+            group
+                .members
+                .iter()
+                .map(move |member| (index, member.name.clone(), member.version.clone()))
+        })
+        .collect();
+    let counts = futures::stream::iter(members.into_iter().map(
+        |(index, name, version)| async move {
             let counted = crate::queries_api::run_stored_count(name.clone(), version.clone())
                 .await
                 .ok();
-            (name, version, counted)
-        }))
-        .buffered(crate::cdr::FANOUT_CONCURRENCY)
-        .collect::<Vec<_>>()
-        .await;
-        let mut matches: Option<i64> = Some(0);
-        for (name, version, counted) in counts {
-            let Some(count) = counted else {
-                // Identifiers only, never the diagnostic: a CDR error body can
-                // quote the query text, and query text can carry clinical
-                // values — logs name shapes, not payloads. Naming the query is
-                // enough for an operator to run it and read the CDR's answer.
-                tracing::warn!(
-                    query = %name,
-                    version = %version,
-                    "stored query failed to run for its dashboard namespace tile"
-                );
-                matches = None;
-                continue;
-            };
-            matches = matches.map(|total| total.saturating_add(count));
-        }
-        tiles.push(NamespaceTile {
+            (index, name, version, counted)
+        },
+    ))
+    .buffered(crate::cdr::FANOUT_CONCURRENCY)
+    .collect::<Vec<_>>()
+    .await;
+
+    let mut matches: Vec<Option<i64>> = vec![Some(0); groups.len()];
+    for (index, name, version, counted) in counts {
+        let Some(slot) = matches.get_mut(index) else {
+            continue;
+        };
+        let Some(count) = counted else {
+            // Identifiers only, never the diagnostic: a CDR error body can
+            // quote the query text, and query text can carry clinical
+            // values — logs name shapes, not payloads. Naming the query is
+            // enough for an operator to run it and read the CDR's answer.
+            tracing::warn!(
+                query = %name,
+                version = %version,
+                "stored query failed to run for its dashboard namespace tile"
+            );
+            *slot = None;
+            continue;
+        };
+        *slot = slot.map(|total| total.saturating_add(count));
+    }
+
+    Ok(groups
+        .iter()
+        .zip(matches)
+        .map(|(group, matches)| NamespaceTile {
             label: crate::query_namespace::group_label(group.namespace.as_deref()).to_owned(),
             matches,
             members: u32::try_from(group.members.len()).unwrap_or(u32::MAX),
-        });
-    }
-    Ok(tiles)
+        })
+        .collect())
 }
 
 /// The recent commit-activity trend, one [`ActivityPoint`] per calendar day
