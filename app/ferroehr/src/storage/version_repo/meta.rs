@@ -72,6 +72,10 @@ pub struct VersionMeta {
     pub audit_attestation: Option<Value>,
     /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
+    /// The version's `ATTESTATION` fragments in commit order (RM common
+    /// master06 §Attestation), folded into the meta row so a revision history
+    /// never issues a second attestation query; `[]` in the common case.
+    pub attestations: Vec<Value>,
 }
 
 /// All version metadata rows of an object, ordered by storage ordinal.
@@ -85,8 +89,14 @@ pub async fn all_version_meta(
     const SQL: &str = "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, v.lifecycle_state, \
                        a.system_id, a.change_type, a.description, a.committer, a.attestation, \
-                       a.time_committed \
+                       a.time_committed, att.attestations \
                        FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                       LEFT JOIN LATERAL ( \
+                       SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), \
+                       '[]'::jsonb) AS attestations \
+                       FROM vo_attestation_all x \
+                       WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version \
+                       ) att ON true \
                        WHERE v.vo_id = $1 ORDER BY v.sys_version";
     let rows = sqlx::query(SQL).bind(vo_id).fetch_all(pool).await?;
     rows.iter()
@@ -108,6 +118,11 @@ pub async fn all_version_meta(
                 time_committed: row
                     .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
                     .to_jiff(),
+                attestations: row
+                    .try_get::<Value, _>("attestations")?
+                    .as_array()
+                    .cloned()
+                    .unwrap_or_default(),
             })
         })
         .collect()
@@ -132,32 +147,38 @@ pub async fn time_created(
     Ok(stamp.map(jiff_sqlx::Timestamp::to_jiff))
 }
 
-/// The commit instants bounding an object's held versions, in one scalar read.
+/// The owning EHR and the commit instants bounding an object's held
+/// versions, in ONE read.
 ///
-/// The earliest is `VERSIONED_OBJECT.time_created` (RM common master06
-/// §Versioned Objects; earliest **held**, so a latest-only import clone starts
-/// above version 1) and the latest is the container resource's last-modified
-/// instant (ITS-REST overview `Requests_and_responses.md` §"`ETag` and
-/// Last-Modified" derives `Last-Modified` from
+/// The earliest instant is `VERSIONED_OBJECT.time_created` (RM common
+/// master06 §Versioned Objects; earliest **held**, so a latest-only import
+/// clone starts above version 1) and the latest is the container resource's
+/// last-modified instant (ITS-REST overview `Requests_and_responses.md`
+/// §"`ETag` and Last-Modified" derives `Last-Modified` from
 /// `VERSION.commit_audit.time_committed.value`, and for a `VERSIONED_OBJECT`
-/// response the newest held version carries that instant). `None` when the
-/// object does not exist.
+/// response the newest held version carries that instant). The owner is
+/// `None` for an ehr-less demographic object; the whole result is `None`
+/// when the object does not exist.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn commit_bounds(
     pool: &PgPool,
     vo_id: VoId,
-) -> Result<Option<(jiff::Timestamp, jiff::Timestamp)>, StorageError> {
-    const SQL: &str = "SELECT min(a.time_committed) AS created, \
+) -> Result<Option<(Option<EhrId>, jiff::Timestamp, jiff::Timestamp)>, StorageError> {
+    // The owner rides the same aggregate row (constant across an object's
+    // versions), so a container read never pays a separate ownership probe.
+    const SQL: &str = "SELECT (array_agg(v.ehr_id))[1] AS ehr_id, \
+                       min(a.time_committed) AS created, \
                        max(a.time_committed) AS modified \
                        FROM vo_version_all v JOIN audit a ON a.id = v.audit_id WHERE v.vo_id = $1";
     let row = sqlx::query(SQL).bind(vo_id).fetch_one(pool).await?;
+    let owner: Option<EhrId> = row.try_get("ehr_id")?;
     let created: Option<jiff_sqlx::Timestamp> = row.try_get("created")?;
     let modified: Option<jiff_sqlx::Timestamp> = row.try_get("modified")?;
     Ok(created
         .zip(modified)
-        .map(|(c, m)| (c.to_jiff(), m.to_jiff())))
+        .map(|(c, m)| (owner, c.to_jiff(), m.to_jiff())))
 }
 
 /// The stored `template_id` of one version of an object — the current open

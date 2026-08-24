@@ -50,18 +50,28 @@ impl FerroEhrService {
         ehr_id: EhrId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let (vo_id, _) = self
-            .current_vo(ehr_id, Kind::EhrStatus)
-            .await?
-            .ok_or_else(|| {
-                ServiceError::sm(
-                    CallStatusType::EhrIdDoesNotExist,
-                    format!("EHR_STATUS for EHR {ehr_id}"),
-                )
-            })?;
+        // ONE statement: the container resolution and the version read merged
+        // (an EHR holds exactly one EHR_STATUS container — RM ehr `ehr.adoc`).
         let read = match at {
-            Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
-            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
+            Some(at) => {
+                crate::versioning::read::version_at_of_kind(
+                    &self.pool,
+                    self.spec_profile,
+                    ehr_id,
+                    Kind::EhrStatus,
+                    at,
+                )
+                .await?
+            }
+            None => {
+                crate::versioning::read::read_current_of_kind(
+                    &self.pool,
+                    self.spec_profile,
+                    ehr_id,
+                    Kind::EhrStatus,
+                )
+                .await?
+            }
         }
         .ok_or_else(|| {
             ServiceError::sm(
@@ -69,6 +79,7 @@ impl FerroEhrService {
                 format!("EHR_STATUS for EHR {ehr_id}"),
             )
         })?;
+        let vo_id = read.vo_id;
         Ok(self.version_response(ehr_id, vo_id, read)?)
     }
 
@@ -255,7 +266,14 @@ impl FerroEhrService {
                 )
             })?;
         let (body, last_modified) =
-            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS").await?;
+            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS")
+                .await?
+                .ok_or_else(|| {
+                    ServiceError::sm(
+                        CallStatusType::VersionedObjectDoesNotExist,
+                        format!("versioned object {vo_id}"),
+                    )
+                })?;
         Ok(ServiceResponse::new(
             body,
             super::meta::container_meta(ehr_id, vo_id, last_modified),

@@ -357,6 +357,59 @@ pub(crate) async fn version_at(
         .transpose()
 }
 
+/// Read the current version of the EHR's one container of `kind` — the
+/// container resolution and the version read in ONE statement (`EHR_STATUS`;
+/// see the storage fn's single-container precondition).
+///
+/// # Errors
+/// The storage read error, or the `spec_profile` refusal of [`version_read`].
+pub(crate) async fn read_current_of_kind(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    ehr_id: EhrId,
+    kind: Kind,
+) -> Result<Option<VersionRead>, ServiceError> {
+    crate::storage::version_repo::read::read_current_of_kind(pool, ehr_id, kind.as_str())
+        .await?
+        .map(|stored| version_read(profile, stored))
+        .transpose()
+}
+
+/// [`read_current_of_kind`]'s time-travel form (the container's TRUNK version
+/// whose validity contains `at`).
+///
+/// # Errors
+/// The storage read error, or the `spec_profile` refusal of [`version_read`].
+pub(crate) async fn version_at_of_kind(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    ehr_id: EhrId,
+    kind: Kind,
+    at: jiff::Timestamp,
+) -> Result<Option<VersionRead>, ServiceError> {
+    crate::storage::version_repo::read::version_at_of_kind(pool, ehr_id, kind.as_str(), at)
+        .await?
+        .map(|stored| version_read(profile, stored))
+        .transpose()
+}
+
+/// Read the current version of the EHR's DIRECTORY folder — the `ehr_folder`
+/// slot resolution and the version read in ONE statement, with the same slot
+/// choice `storage::ehr_repo::directory_vo` makes.
+///
+/// # Errors
+/// The storage read error, or the `spec_profile` refusal of [`version_read`].
+pub(crate) async fn read_current_directory(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    ehr_id: EhrId,
+) -> Result<Option<VersionRead>, ServiceError> {
+    crate::storage::version_repo::read::read_current_directory(pool, ehr_id)
+        .await?
+        .map(|stored| version_read(profile, stored))
+        .transpose()
+}
+
 /// The kind of the current version of an object, or `None` if it does not
 /// exist.
 ///
