@@ -69,7 +69,7 @@ them.
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
 | **ferroehr** | 1100 | 1062 | 1062 | 0 | 0 |
-| **EHRbase** | 645 | 571 | 148 | 148 | 275 |
+| **EHRbase** | 648 | 571 | 148 | 148 | 275 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused
