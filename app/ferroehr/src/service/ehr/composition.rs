@@ -385,10 +385,7 @@ impl FerroEhrService {
         // is_persistent across versions but not
         // archetype_details.template_id) — our own design convention,
         // consistent with those container invariants.
-        let stored_template = current
-            .root_data
-            .as_ref()
-            .and_then(|d| composition_template_id(d));
+        let stored_template = current.stored_template.as_deref();
         if let (Some(stored), Some(incoming)) =
             (stored_template, composition_template_id(&composition))
             && stored != incoming

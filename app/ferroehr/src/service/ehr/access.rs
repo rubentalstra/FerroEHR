@@ -139,13 +139,15 @@ impl FerroEhrService {
         Ok(EhrAccessSettings::from_ehr_access(&read.canonical))
     }
 
-    /// The EHR's current `EHR_ACCESS` scheme settings, cached per EHR — the
-    /// `EhrAccessAdapter` native-API extension: the protocol adapter
-    /// (`ferroehr-rest`) — the out-of-band access-decision point (SM
-    /// `openehr_platform/master02-overview.adoc`) — reads the settings through
-    /// this seam. The SM defines no `I_EHR_ACCESS` interface — no openEHR spec
-    /// governs this adapter, our own extension. `None` = default-open (no
-    /// settings, or a scheme this server does not understand).
+    /// The EHR's current `EHR_ACCESS` scheme settings, cached per EHR and
+    /// returned as the cache's own [`std::sync::Arc`] (the per-request gate
+    /// never clones an access list) — the `EhrAccessAdapter` native-API
+    /// extension: the protocol adapter (`ferroehr-rest`) — the out-of-band
+    /// access-decision point (SM `openehr_platform/master02-overview.adoc`)
+    /// — reads the settings through this seam. The SM defines no
+    /// `I_EHR_ACCESS` interface — no openEHR spec governs this adapter, our
+    /// own extension. `None` = default-open (no settings, or a scheme this
+    /// server does not understand).
     ///
     /// # Errors
     /// [`SmError`] when the cache-miss load (the `current_vo` + `read_current`
@@ -154,19 +156,17 @@ impl FerroEhrService {
     pub async fn current_ehr_access_settings(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Option<EhrAccessSettings>, SmError> {
+    ) -> Result<std::sync::Arc<Option<EhrAccessSettings>>, SmError> {
         // Clone the (cheap, Arc-backed) service into an owned, `'static` load
         // future so `moka`'s single-flight `try_get_with` can drive it.
         let svc = self.clone();
-        let cached = self
-            .ehr_access
+        self.ehr_access
             .get_or_load(
                 ehr_id,
                 async move { svc.load_ehr_access_settings(ehr_id).await },
             )
             .await
-            .map_err(|e| (*e).clone())?;
-        Ok((*cached).clone())
+            .map_err(|e| (*e).clone())
     }
 }
 

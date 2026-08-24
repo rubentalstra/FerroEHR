@@ -259,7 +259,7 @@ pub(crate) async fn enforce(
             ));
         }
     };
-    let settings = settings.as_ref();
+    let settings = (*settings).as_ref();
 
     // 1. The per-EHR gate (every EHR-scoped route). A setting-less EHR falls
     // back to the server-wide disposition; with authz absent entirely there is
