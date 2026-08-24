@@ -397,7 +397,7 @@ CREATE TABLE vo_version (
     -- act of committal" true for time_created / Last-Modified / time travel.
     -- The wrapped contribution CANNOT be a foreign key: it names a CONTRIBUTION
     -- in the SOURCE system, which this repository does not hold.
-    wrapped_original jsonb,
+    wrapped_original jsonb COMPRESSION lz4,
     -- ORIGINAL_VERSION.other_input_version_uids: merge provenance (RM common
     -- master06 §Version Merging). PRODUCE-only on the released wire: the commit
     -- wire declares no merge shape, so a CONTRIBUTION member carrying it is
@@ -416,7 +416,7 @@ CREATE TABLE vo_version (
     -- out of the main row, so meta-only scans stay slim). The node rows
     -- remain the AQL source of truth; NULL on a logically deleted version
     -- (no content — RM common master06 §Logical Deletion).
-    body            jsonb,
+    body            jsonb COMPRESSION lz4,
     CONSTRAINT pk_vo_version PRIMARY KEY (vo_id, sys_version),
     CONSTRAINT uq_vo_version_tree UNIQUE
         (vo_id, creating_system_id, trunk_version, branch_number, branch_version),
