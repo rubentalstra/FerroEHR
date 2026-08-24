@@ -75,6 +75,14 @@ services:
     environment:
       # Keep collected data in the container's lifetime (dev).
       - ENABLE_LOGS_ALL=true
+    # Every LGTM component mkdirs its state under /data at startup. The image
+    # ships `/` as mode 555, and with cap_drop ALL (no DAC_OVERRIDE) even root
+    # cannot create it: Docker normalizes the root inode to 755 so this never
+    # surfaced there; Podman preserves the image's 555 and every component died
+    # at mkdir (issue #2636). A tmpfs matches the dev-lifetime intent above and
+    # behaves identically on both engines.
+    tmpfs:
+      - /data
     configs:
       # Inline provisioning so the downloaded overlay is self-sufficient
       # (docs.docker.com/reference/compose-file/configs — the `content`

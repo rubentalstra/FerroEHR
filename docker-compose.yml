@@ -158,6 +158,14 @@ services:
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
+      # Inert without the s3 profile (required: false). With it, this edge does
+      # two jobs: the server starts only after the bucket initializer exits 0,
+      # and `up -d --wait` learns the initializer is a one-shot — Compose v5.4
+      # otherwise fails --wait on ANY exited container, even a successful one
+      # (measured on Docker and Podman alike, 2026-08-24, issue #2636).
+      seaweedfs-init:
+        condition: service_completed_successfully
+        required: false
     environment:
       # FERROEHR_ env overrides use the mechanical `__` mapping (TOML path,
       # upper-cased, `__` between segments); they layer on top of the mounted
@@ -292,7 +300,7 @@ services:
   #        export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
   #        export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
   #        export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true   # dev only; prod S3 is HTTPS
-  #   2. docker compose --profile s3 up -d --wait ferroehr seaweedfs seaweedfs-init
+  #   2. docker compose --profile s3 up -d --wait ferroehr seaweedfs
   #      `seaweedfs-init` creates the bucket; the gateway ships with none, and an
   #      S3 PUT into a missing bucket answers 403 AccessDenied, which reads as a
   #      credentials problem and is not one.
