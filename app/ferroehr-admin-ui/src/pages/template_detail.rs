@@ -492,7 +492,7 @@ fn wt_tab(
                                     }
                                         .into_any()
                                 }
-                                Err(e) => catalog_error_view(&e),
+                                Err(e) => catalog_error_view(&e, "/templates"),
                             }
                         })}
                     </Transition>
@@ -507,8 +507,9 @@ fn wt_tab(
     .into_any()
 }
 
-/// The `<Transition>` fallback while the catalog builds.
-fn tree_skeleton() -> impl IntoView {
+/// The `<Transition>` fallback the template detail panes share (both ADL
+/// families — the ADL2 screen imports it rather than re-declaring a copy).
+pub(crate) fn tree_skeleton() -> impl IntoView {
     view! {
         <thaw::Skeleton>
             <thaw::SkeletonItem class="h-4 mb-2" />
@@ -519,18 +520,19 @@ fn tree_skeleton() -> impl IntoView {
 }
 
 /// The catalog error state (e.g. a `404` unknown template, or a `WebTemplate`
-/// build failure naming the offending node) with a back link to the list. Used
+/// build failure naming the offending node) with a back link to `back_href` —
+/// the caller's own listing, so the ADL2 screens point at their family. Used
 /// by the tabs that resolve their `Result` inside the `<Transition>` — an SSR'd
 /// `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so the error
 /// (with its back link) renders directly from the resolved `Err` branch.
-fn catalog_error_view(error: &AdminUiError) -> AnyView {
+pub(crate) fn catalog_error_view(error: &AdminUiError, back_href: &'static str) -> AnyView {
     let message = error.to_string();
     view! {
         <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
             <thaw::MessageBarBody>
                 {message} " — "
                 <leptos_router::components::A
-                    href="/templates"
+                    href=back_href
                     attr:class="text-accent hover:underline"
                 >
                     "back to templates"
@@ -548,11 +550,16 @@ fn catalog_error_view(error: &AdminUiError) -> AnyView {
 /// component recurse (an un-erased recursive view would be an infinite type)
 /// and keeps rustc's layout-recursion depth bounded on plain `cargo` builds
 /// (rules §1).
-///
-/// # Errors
-/// Infallible — renders whatever the (already-fetched) catalog node contains.
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "a component prop is owned data; the node is cloned into the row's selection and its children"
+)]
 #[component]
-fn CatalogTreeNode(
+pub(crate) fn CatalogTreeNode(
     /// The catalog node to render (static data; the component runs once).
     node: CatalogNode,
     /// The shared "inspected node" selection, set when a label is clicked.
@@ -656,7 +663,7 @@ fn CatalogTreeNode(
 
 /// The node inspector: nothing until a node is picked, then its aqlPath,
 /// rmType, node id, selectability, and any unit / code options as chips.
-fn node_inspector(selected: RwSignal<Option<CatalogNode>>) -> AnyView {
+pub(crate) fn node_inspector(selected: RwSignal<Option<CatalogNode>>) -> AnyView {
     view! {
         {move || match selected.get() {
             None => {
@@ -777,7 +784,7 @@ fn opt_tab(detail: Resource<Result<TemplateDetail, AdminUiError>>) -> AnyView {
                         }
                             .into_any()
                     }
-                    Err(e) => catalog_error_view(&e),
+                    Err(e) => catalog_error_view(&e, "/templates"),
                 }
             })}
         </Transition>
@@ -815,7 +822,7 @@ fn example_tab(
                             view! { <crate::components::format_view::DocumentPane body=pretty /> }
                                 .into_any()
                         }
-                        Err(e) => catalog_error_view(&e),
+                        Err(e) => catalog_error_view(&e, "/templates"),
                     }
                 })}
             </Transition>

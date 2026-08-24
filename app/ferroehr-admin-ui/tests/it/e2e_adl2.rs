@@ -21,9 +21,10 @@
 //! What they pin is the whole ADL2 surface the console consumes: the
 //! `text/plain` source upload with the openEHR-ADL engine's diagnostics
 //! surfaced verbatim, the listing, the stored SOURCE and `OperationalTemplateV2`
-//! JSON representations, the CDR-generated example composition, and the
-//! versioned get — both an exact release version and the wire's
-//! `{major}` prefix resolution, driven through the screen's own version bar.
+//! JSON representations, the console-built path catalog over that JSON, the
+//! CDR-generated example composition, and the versioned get — both an exact
+//! release version and the wire's `{major}` prefix resolution, driven through
+//! the screen's own version bar.
 //!
 //! …and, since #2568, the per-row DELETE the ADL2 rows now carry over the
 //! artefact resource.
@@ -184,8 +185,9 @@ async fn ensure_adl2_template_present(h: &Harness, relative: &str, hrid: &str) -
 }
 
 /// Uploading an ADL2 source lists it under the ADL2 family, and its detail
-/// screen serves both stored representations: the artefact SOURCE verbatim and
-/// the `OperationalTemplateV2` canonical JSON.
+/// screen serves both stored representations — the artefact SOURCE verbatim and
+/// the `OperationalTemplateV2` canonical JSON — plus the path catalog the
+/// console builds from that JSON.
 #[tokio::test]
 async fn adl2_upload_lists_and_serves_source_and_json() {
     let Some(h) = Harness::start("adl2-detail").await else {
@@ -219,9 +221,6 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     // HRID on the artefact-identifier line.
     wait_text_contains(&h, "#adl2-source-pane", "operational_template").await;
     wait_text_contains(&h, "#adl2-source-pane", VERSIONED_V100).await;
-    // No path catalog is claimed for ADL2 — the screen says so rather than
-    // faking one.
-    h.wait_css("#adl2-no-catalog").await;
     h.shot(3, "adl2-source-pane").await;
 
     // The AOM2 JSON pane serves the OperationalTemplateV2 projection. The
@@ -236,6 +235,24 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     wait_text_contains(&h, "#adl2-json-pane", "OPERATIONAL_TEMPLATE").await;
     wait_text_contains(&h, "#adl2-json-pane", "\"release_version\": \"1.0.0\"").await;
     h.shot(4, "adl2-json-pane").await;
+
+    // The path catalog is built by the console from that same JSON, and it
+    // renders with the ADL 1.4 screen's own tree + inspector components: a tree
+    // node exists only once the AOM2 parse and the WebTemplate build both
+    // succeeded. The standing "no path catalog" note is gone with it.
+    h.wait_css("a[data-adl2-tab='catalog']")
+        .await
+        .click()
+        .await
+        .expect("open the path-catalog pane");
+    h.wait_url_contains("tab=catalog").await;
+    h.wait_css("#adl2-catalog-pane ul.text-sm li button").await;
+    wait_text_contains(&h, "#adl2-catalog-pane", "Node inspector").await;
+    assert!(
+        h.driver.find(By::Css("#adl2-no-catalog")).await.is_err(),
+        "the ADL2 screen no longer claims it has no path catalog"
+    );
+    h.shot(5, "adl2-catalog-pane").await;
 
     h.assert_console_clean(&["Failed to load resource"]).await;
     remove_adl2_artefacts(&[VERSIONED_V100]).await;

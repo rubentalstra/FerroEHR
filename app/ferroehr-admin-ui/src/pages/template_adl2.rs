@@ -3,8 +3,8 @@
 
 //! The `/templates/adl2/{template_id}` screen — ADL2 template detail.
 //!
-//! Three panes over one stored ADL2 operational template, matching what the
-//! ITS-REST Definition API actually serves for the resource: **Source** (the
+//! Four panes over one stored ADL2 operational template. Three of them are
+//! what the ITS-REST Definition API serves for the resource: **Source** (the
 //! stored artefact verbatim, `Accept: text/plain`), **AOM2 JSON** (the
 //! `OperationalTemplateV2` canonical-JSON projection,
 //! `Accept: application/json`), and **Example** (the CDR-generated example
@@ -13,10 +13,12 @@
 //! (`definition/template/adl2/{template_id}/{version}`) as `?version=` URL
 //! state, so a pinned view is shareable.
 //!
-//! There is deliberately no path-catalog pane: the console's catalog is built
-//! from an ADL 1.4 OPT's Web Template, and the ADL2 resource serves no Web
-//! Template representation (an `Accept` asking for one is refused `406`), so
-//! the screen says so rather than inventing one.
+//! The fourth, **Path catalog**, is built console-side: the ADL2 resource
+//! serves no Web Template representation, so the BFF reads the same
+//! `application/json` body, parses the AOM2 operational template, builds its
+//! Web Template and projects the [`crate::builder::catalog::CatalogNode`] tree
+//! the ADL 1.4 detail screen renders — same tree component, same node
+//! inspector, one code path for both families.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension;
 //! the wire it reads is the ITS-REST Definition API.
@@ -34,11 +36,15 @@ use leptos_meta::Title;
 use leptos_router::hooks::{use_params_map, use_query_map};
 
 use crate::adl2::{Adl2Tab, TemplateFamily};
+use crate::builder::catalog::CatalogNode;
 use crate::components::field::{BTN_SECONDARY, INPUT};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
+use crate::pages::template_detail::{
+    CatalogTreeNode, catalog_error_view, node_inspector, tree_skeleton,
+};
 use crate::pages::templates::TemplateRow;
 
 /// Fetch the stored ADL2 operational-template SOURCE.
@@ -113,6 +119,73 @@ pub async fn fetch_adl2_json(
     Ok(Some(crate::cdr::CdrClient::expect_success(response)?.body))
 }
 
+/// Build the Web-Template path catalog of one `OperationalTemplateV2`
+/// canonical-JSON body.
+///
+/// The body is read with
+/// [`openehr_its::json::from_canonical_json`] into the AOM2
+/// [`OperationalTemplate`](openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate)
+/// — the exact type the CDR serialized — then
+/// [`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]
+/// produces the Web Template and [`crate::builder::catalog::from_web_template`]
+/// the slim tree the views render. Both stages are named in the error, so a
+/// reader can tell a body the console could not read from a template whose Web
+/// Template does not build.
+///
+/// # Errors
+/// [`AdminUiError::Internal`] when the AOM2 JSON fails to parse or the Web
+/// Template fails to build (the diagnostic named, never a panic).
+#[cfg(feature = "ssr")]
+pub fn adl2_catalog_from_json(json: &str) -> Result<CatalogNode, AdminUiError> {
+    let opt = openehr_its::json::from_canonical_json::<
+        openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate,
+    >(json)
+    .map_err(|e| AdminUiError::Internal(format!("OperationalTemplateV2 parse: {e}")))?;
+    let web_template = openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4(&opt)
+        .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
+    Ok(crate::builder::catalog::from_web_template(&web_template))
+}
+
+/// Fetch the Web-Template path catalog of a stored ADL2 template.
+///
+/// The same resource and `Accept` as [`fetch_adl2_json`]: the ADL2 template
+/// GET's `application/json` 200 body IS the `OperationalTemplateV2` canonical
+/// form (`docs/specs/openehr/ITS-REST/specifications/responses/
+/// 200_Template_adl2_retrieved.yaml`). The catalog is then built console-side
+/// by [`adl2_catalog_from_json`] — by design, because the resource serves no
+/// `wt+json` representation to read one from. `404` → `Ok(None)`, the same
+/// absence the other panes render.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::CdrUnauthorized`] / [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
+/// [`AdminUiError::CdrUnreachable`] from the CDR;
+/// [`AdminUiError::Internal`] when the served JSON fails to parse or its Web
+/// Template fails to build.
+#[server]
+pub async fn fetch_adl2_catalog(
+    /// The ADL2 template to build the path catalog from.
+    template_id: String,
+    /// The release version to pin the read to, or `None`.
+    version: Option<String>,
+) -> Result<Option<CatalogNode>, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = expect_context();
+    let url = state.cdr.rest_v1(&crate::adl2::template_path(
+        &template_id,
+        version.as_deref(),
+    ));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    if response.is(http::StatusCode::NOT_FOUND) {
+        return Ok(None);
+    }
+    let body = crate::cdr::CdrClient::expect_success(response)?.body;
+    adl2_catalog_from_json(&body).map(Some)
+}
+
 /// Fetch the CDR-generated example composition for a stored ADL2 template, in
 /// `format`.
 ///
@@ -174,13 +247,40 @@ impl PaneBody {
     }
 }
 
+/// What the path-catalog pane holds — [`PaneBody`]'s three states over the
+/// catalog tree instead of a served representation, for the same reason: an
+/// unopened tab has fetched nothing, while a `404` is a real answer to report.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+enum CatalogBody {
+    /// This pane's tab is not selected; nothing has been requested.
+    Idle,
+    /// The CDR answered `404` — no such template at the selected version.
+    Absent,
+    /// The catalog built from the served `OperationalTemplateV2`.
+    Loaded(CatalogNode),
+}
+
+impl CatalogBody {
+    /// Read one built catalog: `Some` is the tree, `None` the CDR's `404`.
+    fn of(built: Option<CatalogNode>) -> Self {
+        match built {
+            Some(node) => Self::Loaded(node),
+            None => Self::Absent,
+        }
+    }
+}
+
 /// The ADL2 template detail screen: the version bar, the tab bar, and the
-/// source / AOM2-JSON / example panes.
+/// source / AOM2-JSON / path-catalog / example panes.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
 )]
 #[component]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one setup pass: the URL state, one resource per pane, the tab bar"
+)]
 pub fn Adl2TemplateDetailPage() -> impl IntoView {
     // NOTE: the route param arrives ALREADY percent-decoded on both targets
     // (`leptos_router`'s `ParamsMap::insert` runs every value through
@@ -201,6 +301,7 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
             .filter(|value| !value.is_empty())
     });
     let example_format = RwSignal::new(ReprFormat::CanonicalJson);
+    let selected_node = RwSignal::new(None::<CatalogNode>);
 
     // Each pane's resource is gated on its tab being active so only the
     // visible one fetches — the example fetch in particular runs the CDR's
@@ -223,6 +324,15 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
             }
         },
     );
+    let catalog: Resource<Result<CatalogBody, AdminUiError>> = Resource::new(
+        move || (tab.get() == Adl2Tab::Catalog).then(|| (template_id.get(), version.get())),
+        |active| async move {
+            match active {
+                Some((id, version)) => Ok(CatalogBody::of(fetch_adl2_catalog(id, version).await?)),
+                None => Ok(CatalogBody::Idle),
+            }
+        },
+    );
     let example: Resource<Result<PaneBody, AdminUiError>> = Resource::new(
         move || (tab.get() == Adl2Tab::Example).then(|| (template_id.get(), example_format.get())),
         |active| async move {
@@ -242,9 +352,9 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
     );
 
     let versions = version_section(template_id, tab, version, listing);
-    let catalog_note = no_catalog_note();
     let source_pane = source_tab(source);
     let json_pane = json_tab(json);
+    let catalog_pane = catalog_tab(catalog, selected_node);
     let example_pane = example_tab(example, example_format);
 
     let tab_link = move |value: Adl2Tab| {
@@ -279,10 +389,10 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
                 mono=true
             />
             {versions}
-            {catalog_note}
             <nav aria-label="ADL2 template views" class="flex gap-1 mb-4">
                 {tab_link(Adl2Tab::Source)}
                 {tab_link(Adl2Tab::Json)}
+                {tab_link(Adl2Tab::Catalog)}
                 {tab_link(Adl2Tab::Example)}
             </nav>
             <div>
@@ -291,6 +401,9 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
                 </div>
                 <div id="adl2-json-pane" class:hidden=move || tab.get() != Adl2Tab::Json>
                     {json_pane}
+                </div>
+                <div id="adl2-catalog-pane" class:hidden=move || tab.get() != Adl2Tab::Catalog>
+                    {catalog_pane}
                 </div>
                 <div id="adl2-example-pane" class:hidden=move || tab.get() != Adl2Tab::Example>
                     {example_pane}
@@ -443,34 +556,49 @@ fn version_form(
     .into_any()
 }
 
-/// The standing statement that this screen has no path catalog, and why.
-///
-/// Verified against the CDR's own answer: the ADL2 template resource serves
-/// `text/plain` source and `application/json` `OperationalTemplateV2` only,
-/// and an `Accept` asking for a Web Template is refused `406`. The ADL 1.4
-/// detail screen's catalog is built from an OPT 1.4 Web Template, so there is
-/// nothing equivalent to show here — and a fabricated one would be worse than
-/// none.
-fn no_catalog_note() -> AnyView {
+/// The Path catalog pane: the recursive path-catalog tree (left) and the node
+/// inspector (right), the SAME components the ADL 1.4 detail screen uses
+/// ([`CatalogTreeNode`], [`node_inspector`]) over a tree the BFF built from the
+/// served `OperationalTemplateV2`.
+fn catalog_tab(
+    catalog: Resource<Result<CatalogBody, AdminUiError>>,
+    selected: RwSignal<Option<CatalogNode>>,
+) -> AnyView {
     view! {
-        <p id="adl2-no-catalog" class="mb-4 text-sm text-ink-muted">
-            "No path catalog: the Web Template tree on the ADL 1.4 detail screen is built from an
-             OPT 1.4, and the CDR serves no Web Template representation of an ADL2 artefact. Use
-             the AOM2 JSON pane to read the template's constraint structure."
-        </p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            <section class=CARD_PAD>
+                <h2 class=CARD_TITLE>"Path catalog (WT tree)"</h2>
+                <p class="mb-2 text-xs text-ink-muted">
+                    "Built by the console from the served OperationalTemplateV2: the ADL2 resource
+                     serves no Web Template representation of its own."
+                </p>
+                <div class="overflow-auto max-h-[70vh]">
+                    <Transition fallback=tree_skeleton>
+                        {move || Suspend::new(async move {
+                            match catalog.await {
+                                Ok(CatalogBody::Idle) => ().into_any(),
+                                Ok(CatalogBody::Loaded(node)) => {
+                                    view! {
+                                        <ul class="text-sm">
+                                            <CatalogTreeNode node=node selected=selected depth=0 />
+                                        </ul>
+                                    }
+                                        .into_any()
+                                }
+                                Ok(CatalogBody::Absent) => absent_view("path catalog"),
+                                Err(e) => catalog_error_view(&e, "/templates?family=adl2"),
+                            }
+                        })}
+                    </Transition>
+                </div>
+            </section>
+            <section class=CARD_PAD>
+                <h2 class=CARD_TITLE>"Node inspector"</h2>
+                <div>{node_inspector(selected)}</div>
+            </section>
+        </div>
     }
     .into_any()
-}
-
-/// The `<Transition>` fallback every pane shares.
-fn pane_skeleton() -> impl IntoView {
-    view! {
-        <thaw::Skeleton>
-            <thaw::SkeletonItem class="h-4 mb-2" />
-            <thaw::SkeletonItem class="h-4 mb-2 ml-4" />
-            <thaw::SkeletonItem class="h-4 ml-4" />
-        </thaw::Skeleton>
-    }
 }
 
 /// The absence state: the CDR answered `404` for the template (or the pinned
@@ -500,7 +628,7 @@ fn absent_view(what: &str) -> AnyView {
 /// pane (monospace, scrollable, copyable).
 fn source_tab(source: Resource<Result<PaneBody, AdminUiError>>) -> AnyView {
     view! {
-        <Transition fallback=pane_skeleton>
+        <Transition fallback=tree_skeleton>
             {move || Suspend::new(async move {
                 match source.await {
                     Ok(PaneBody::Idle) => ().into_any(),
@@ -521,7 +649,7 @@ fn source_tab(source: Resource<Result<PaneBody, AdminUiError>>) -> AnyView {
 /// pretty-printed into the shared document pane.
 fn json_tab(json: Resource<Result<PaneBody, AdminUiError>>) -> AnyView {
     view! {
-        <Transition fallback=pane_skeleton>
+        <Transition fallback=tree_skeleton>
             {move || Suspend::new(async move {
                 match json.await {
                     Ok(PaneBody::Idle) => ().into_any(),
@@ -562,7 +690,7 @@ fn example_tab(
                  it."
             </p>
             <crate::components::format_view::FormatSelector offered=offered selected=format />
-            <Transition fallback=pane_skeleton>
+            <Transition fallback=tree_skeleton>
                 {move || Suspend::new(async move {
                     match example.await {
                         Ok(PaneBody::Idle) => ().into_any(),
