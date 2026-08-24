@@ -113,15 +113,15 @@ A few more conventions worth knowing before you open a pull request:
 
 ## Review
 
-Two things review a pull request. The maintainers, who decide; and CodeRabbit,
-which comments on every pull request from the committed `.coderabbit.yaml`.
+Two things review a pull request. The maintainers, who decide; and SonarQube
+Cloud, which analyzes every pull request (with CodeQL as the security
+scanner beside it).
 
-The bot is a second opinion, and deliberately nothing more. Its check is not
-required, it blocks no merge, and every commit-producing suggestion is turned
-off in the configuration; if one of its comments is right, the change is
-written by hand. A finding that contradicts the vendored openEHR specification
-text, the repository's own rules, or a local gate is wrong by construction, and
-saying so on the thread is the correct response.
+The analysis is a second opinion, and deliberately nothing more. Its check
+is not required and it blocks no merge; if one of its findings is right, the
+change is written by hand. A finding that contradicts the vendored openEHR
+specification text, the repository's own rules, or a local gate is wrong by
+construction, and saying so on the thread is the correct response.
 
 ## Profiling: finding where the time goes
 
