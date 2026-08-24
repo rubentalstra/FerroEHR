@@ -177,32 +177,32 @@ fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
 /// trunk history whose lowest version is `> 1`; `time_created` is then the
 /// earliest version this repository received.
 ///
-/// # Errors
 /// Returns the wire body plus the newest held version's commit instant — the
 /// container resource's `Last-Modified` value (ITS-REST overview
 /// `Requests_and_responses.md` §"`ETag` and Last-Modified": both headers
 /// "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
 /// resources that have versioning or unique state identifiers", the value
-/// "derived from `VERSION.commit_audit.time_committed.value`").
+/// "derived from `VERSION.commit_audit.time_committed.value`"). `None` when
+/// the object has no stored version OR is not owned by `ehr_id` — ownership
+/// rides the same statement as the bounds, and each caller maps the miss to
+/// its own resource's 404.
 ///
 /// # Errors
-/// [`ServiceError::NotFound`] when the object has no stored version; the
-/// storage read error of `version_repo::meta::commit_bounds`.
+/// The storage read error of `version_repo::meta::commit_bounds`;
+/// [`ServiceError::Internal`] when the built body fails to serialize.
 pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: VoId,
     ehr_id: EhrId,
     rm_type: &str,
-) -> Result<(Value, jiff::Timestamp), ServiceError> {
-    let (time_created, last_modified) =
+) -> Result<Option<(Value, jiff::Timestamp)>, ServiceError> {
+    let Some((_, time_created, last_modified)) =
         crate::storage::version_repo::meta::commit_bounds(pool, vo_id)
             .await?
-            .ok_or_else(|| {
-                ServiceError::sm(
-                    CallStatusType::VersionedObjectDoesNotExist,
-                    format!("versioned object {vo_id}"),
-                )
-            })?;
+            .filter(|(owner, _, _)| *owner == Some(ehr_id))
+    else {
+        return Ok(None);
+    };
     // Both keys are UUIDs by type, so the conversions are total (BASE
     // `master05-identification_package.adoc` §Syntaxes:
     // `uid = iso_oid | uuid | internet_id`).
@@ -246,10 +246,10 @@ pub(crate) async fn versioned_object(
             time_created,
         }),
     };
-    Ok((
+    Ok(Some((
         openehr_its::json::to_canonical_value(&container),
         last_modified,
-    ))
+    )))
 }
 
 /// The VERSION resource's wire form for a loaded version: an

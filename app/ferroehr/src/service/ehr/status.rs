@@ -266,7 +266,14 @@ impl FerroEhrService {
                 )
             })?;
         let (body, last_modified) =
-            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS").await?;
+            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS")
+                .await?
+                .ok_or_else(|| {
+                    ServiceError::sm(
+                        CallStatusType::VersionedObjectDoesNotExist,
+                        format!("versioned object {vo_id}"),
+                    )
+                })?;
         Ok(ServiceResponse::new(
             body,
             super::meta::container_meta(ehr_id, vo_id, last_modified),

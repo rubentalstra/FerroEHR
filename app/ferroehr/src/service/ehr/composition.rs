@@ -192,20 +192,17 @@ impl FerroEhrService {
         ehr_id: EhrId,
         vo_id: VoId,
     ) -> Result<ServiceResponse, ServiceError> {
-        // Ownership gate only — one scalar read (`vo_version.ehr_id`), never
-        // the full current-version reassembly this metadata-shaped response
-        // would immediately discard.
-        crate::storage::version_repo::meta::vo_owner(&self.pool, vo_id)
-            .await?
-            .filter(|owner| *owner == Some(ehr_id))
-            .ok_or_else(|| {
-                ServiceError::sm(
-                    CallStatusType::CompositionDoesNotExist,
-                    format!("COMPOSITION {vo_id}"),
-                )
-            })?;
+        // Ownership rides the container statement itself (the ehr_id filter
+        // inside `versioned_object`) — no separate ownership probe.
         let (body, last_modified) =
-            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION").await?;
+            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION")
+                .await?
+                .ok_or_else(|| {
+                    ServiceError::sm(
+                        CallStatusType::CompositionDoesNotExist,
+                        format!("COMPOSITION {vo_id}"),
+                    )
+                })?;
         Ok(ServiceResponse::new(
             body,
             super::meta::container_meta(ehr_id, vo_id, last_modified),
