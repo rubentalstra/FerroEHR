@@ -6,5 +6,6 @@
 //! <https://doc.rust-lang.org/cargo/reference/cargo-targets.html>). Each topic
 //! is a module; nextest still runs every test in its own process.
 
+mod emit_targets;
 mod emitter_invariants;
 mod model_query;

@@ -18,6 +18,7 @@
 )]
 use crate::analyze::invariants::{self, Bucket};
 use crate::analyze::{Model, augment_with_reemit, class_paths, cross_schema_reemit};
+use crate::cli;
 use crate::load::bmm::BmmSchema;
 use crate::load::impls::SiblingImpls;
 use crate::load::oas;
@@ -530,6 +531,61 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
         }
     }
     Ok(out)
+}
+
+/// Render the canonical-JSON `serde` impls and `_type` dispatch (`emit-json`)
+/// to an in-memory map, keyed by each file's path relative to the workspace
+/// `crates/` directory.
+///
+/// Drives `cli::render_json_files` — the same text production the `emit-json`
+/// subcommand drives — and applies the value-carrier guard and SPDX header the
+/// subcommand writes, so a value equals the on-disk file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if a composition's BMM files cannot be loaded.
+pub fn emit_json_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_json_files()?))
+}
+
+/// Render the canonical-XML `ToXml`/`FromXml` impls (`emit-xml`) to an
+/// in-memory map, keyed by each file's path relative to the workspace `crates/`
+/// directory.
+///
+/// Drives `cli::render_xml_files` — the same text production the `emit-xml`
+/// subcommand drives — and applies the value-carrier guard and SPDX header the
+/// subcommand writes, so a value equals the on-disk file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if the RM/BASE compositions or the vendored XSD bundles
+/// cannot be loaded, or if the XML emission itself fails.
+pub fn emit_xml_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_xml_files()?.files))
+}
+
+/// Render the ITS-REST contract (`emit-rest`) to an in-memory map, keyed by
+/// each file's path relative to the workspace `crates/` directory.
+///
+/// Drives `cli::render_rest_files` — the same text production the `emit-rest`
+/// subcommand drives — and applies the value-carrier guard and SPDX header the
+/// subcommand writes, so a value equals the on-disk file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if the RM/BASE compositions or a vendored OAS bundle cannot
+/// be loaded.
+pub fn emit_rest_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_rest_files()?))
+}
+
+/// Turn an emit target's rendered files into the path → bytes map the tests
+/// compare, applying the same [`cli::generated_bytes`] the CLI writes through.
+fn to_memory(files: Vec<cli::EmittedFile>) -> BTreeMap<String, String> {
+    files
+        .into_iter()
+        .map(|f| {
+            let bytes = cli::generated_bytes(f.crate_name, &f.body);
+            (f.path, bytes)
+        })
+        .collect()
 }
 
 /// The hand-written `*_impl.rs` siblings of a generated crate — the same
