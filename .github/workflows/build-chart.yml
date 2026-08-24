@@ -299,9 +299,19 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          # A tag publishes that release's section; a chart-only dispatch between
-          # releases publishes what is currently unreleased.
-          if [ "$IS_TAG" = "true" ]; then section="$APP"; else section="Unreleased"; fi
+          # A tag publishes that release's section. A dispatch between releases
+          # publishes what is currently unreleased — and when Unreleased is
+          # EMPTY (the recover-a-failed-tag-publish case, twice live: 6.0.13
+          # and 6.0.14), it falls back to the appVersion's own released
+          # section, which is what the chart being recovered actually ships.
+          if [ "$IS_TAG" = "true" ]; then
+            section="$APP"
+          elif awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{exit} f && (/^- /||/^### /){found=1} END{exit !found}' CHANGELOG.md; then
+            section="Unreleased"
+          else
+            echo "Unreleased is empty — falling back to the ${APP} section (tag-publish recovery)"
+            section="$APP"
+          fi
           bash deploy/helm/artifacthub-changes.sh "$section" --inject
           # An `-rc` tag is a chart pre-release, matching release.yml's own rule.
           case "$TAG" in
