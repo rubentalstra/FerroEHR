@@ -98,7 +98,7 @@ signature over the chart's digest:
 
 ```shell
 cosign verify ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
-  --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/build-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
