@@ -127,9 +127,16 @@ impl FerroEhrService {
         .with_last_modified(at)
     }
 
-    /// Inject the `uid` (`OBJECT_VERSION_ID`, RM common master06 §Version
-    /// Identification) into a versioned object's canonical JSON so a bare read
-    /// carries its wire identity.
+    /// Ensure the versioned object's canonical JSON carries its `uid`
+    /// (`OBJECT_VERSION_ID`, RM common master06 §Version Identification) so a
+    /// bare read serves its wire identity.
+    ///
+    /// The write path already stamps the uid into the stored body
+    /// (`crate::versioning::change` — `stamp_version_uid` runs before
+    /// decomposition), so on a locally committed version this is a no-op:
+    /// when the stored `uid` is an `OBJECT_VERSION_ID` whose value matches,
+    /// the body passes through untouched. Only a body that lacks or mismatches
+    /// it (e.g. a verbatim-imported foreign version) pays the re-stamp.
     #[expect(
         clippy::unused_self,
         reason = "call-site ergonomics: every caller already holds the service, \
@@ -143,14 +150,14 @@ impl FerroEhrService {
         version: TreeId,
     ) -> Result<Value, VersionIdError> {
         if let Value::Object(map) = &mut canonical {
-            map.insert(
-                "uid".to_owned(),
-                openehr_its::json::to_canonical_value(&version_id(
-                    vo_id,
-                    creating_system_id,
-                    version,
-                )?),
-            );
+            let id = version_id(vo_id, creating_system_id, version)?;
+            let already_stamped = map.get("uid").is_some_and(|uid| {
+                uid.get("_type").and_then(Value::as_str) == Some("OBJECT_VERSION_ID")
+                    && uid.get("value").and_then(Value::as_str) == Some(id.value())
+            });
+            if !already_stamped {
+                map.insert("uid".to_owned(), openehr_its::json::to_canonical_value(&id));
+            }
         }
         Ok(canonical)
     }

@@ -27,6 +27,11 @@ workflow refuses a tag that has no matching section here.
   the node rows remain the AQL source of truth. Storage grows by roughly
   the size of each stored version's canonical JSON.
 
+- Response compression now runs at the fastest level for every negotiated
+  encoding (it previously used the libraries' default levels — real clients
+  negotiating brotli paid visible per-response compression CPU for a
+  marginal ratio gain), and a bare object read no longer re-stamps a `uid`
+  the stored body already carries.
 - Every object-addressed read (full version reads and the metadata/existence
   lookups behind `ETag`s, revision histories, and 404 checks) queries the
   two-tier union view in ONE statement instead of retrying the cold archival
