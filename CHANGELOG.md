@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.2] - 2026-08-24
+
 ### Added
 
 - A mixed CONTRIBUTION now honours its own EHR_STATUS member when the
@@ -7350,7 +7352,10 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.20.0...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...HEAD
+[4.0.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.1...v4.0.2
+[4.0.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.0...v4.0.1
+[4.0.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.20.0...v4.0.0
 [3.20.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.19.0...v3.20.0
 [3.19.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.18.0...v3.19.0
 [3.18.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.8...v3.18.0

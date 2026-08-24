@@ -21,7 +21,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -93,7 +93,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -121,7 +121,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -142,7 +142,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -157,7 +157,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
@@ -187,7 +187,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -204,7 +204,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 data:
@@ -335,7 +335,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -358,7 +358,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
   annotations:
@@ -388,7 +388,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -424,7 +424,7 @@ spec:
         supplementalGroupsPolicy: Strict
       containers:
         - name: admin-ui
-          image: "ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.1"
+          image: "ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.2"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -495,7 +495,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.16
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.1"
+    app.kubernetes.io/version: "4.0.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -543,7 +543,7 @@ spec:
         supplementalGroupsPolicy: Strict
       containers:
         - name: ferroehr
-          image: "ghcr.io/rubentalstra/ferroehr:4.0.1"
+          image: "ghcr.io/rubentalstra/ferroehr:4.0.2"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
