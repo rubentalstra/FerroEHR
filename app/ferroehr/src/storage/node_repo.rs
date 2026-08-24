@@ -25,7 +25,6 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
-use crate::storage::version_repo::tier::{Tier, on_cold};
 
 /// Bulk-insert the decomposed node rows of one stored version.
 ///
@@ -113,37 +112,25 @@ const READ_ROWS_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
 const READ_ROWS_ALL_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
                                  FROM node_all WHERE vo_id = $1 AND sys_version = $2 ORDER BY num";
 
-/// Fetch the lean read rows of one stored version, ordered by `num`, from the
-/// requested storage tier (no openEHR spec governs storage tiering — our own
-/// design; see [`crate::storage::version_repo::tier`]).
+/// Fetch the lean read rows of one stored version, ordered by `num` —
+/// primary tier only, or both tiers through the `node_all` union view (no
+/// openEHR spec governs storage tiering — our own design).
 async fn read_rows(
     pool: &PgPool,
     vo_id: VoId,
     sys_version: i32,
-    tier: Tier,
+    both_tiers: bool,
 ) -> Result<Vec<ReadRow>, StorageError> {
-    let rows = match tier {
-        Tier::Primary => {
-            sqlx::query(READ_ROWS_SQL)
-                .bind(vo_id)
-                .bind(sys_version)
-                .fetch_all(pool)
-                .await?
-        }
-        Tier::Cold => on_cold!(pool, |conn| sqlx::query(READ_ROWS_SQL)
-            .bind(vo_id)
-            .bind(sys_version)
-            .fetch_all(&mut *conn)
-            .await),
-        Tier::Both => {
-            sqlx::query(READ_ROWS_ALL_SQL)
-                .bind(vo_id)
-                .bind(sys_version)
-                .fetch_all(pool)
-                .await?
-        }
+    let sql = if both_tiers {
+        READ_ROWS_ALL_SQL
+    } else {
+        READ_ROWS_SQL
     };
-
+    let rows = sqlx::query(sql)
+        .bind(vo_id)
+        .bind(sys_version)
+        .fetch_all(pool)
+        .await?;
     let mut read = Vec::with_capacity(rows.len());
     for row in rows {
         read.push(ReadRow {
@@ -157,9 +144,8 @@ async fn read_rows(
     Ok(read)
 }
 
-/// Reassemble one stored version's canonical JSON from its `node` rows — the
-/// single consolidated node→canonical reload (the version read path and the
-/// message/admin exports all call this by name).
+/// Reassemble one stored version's canonical JSON from its primary-tier
+/// `node` rows — the consolidated node→canonical reload.
 ///
 /// A version with no stored nodes (a logical delete — data Void, RM common
 /// master06 §Logical Deletion) reassembles to [`Value::Null`], so callers need
@@ -174,26 +160,27 @@ pub async fn read_version_canonical(
     vo_id: VoId,
     sys_version: i32,
 ) -> Result<Value, StorageError> {
-    read_version_canonical_in(pool, vo_id, sys_version, Tier::Primary).await
+    let rows = read_rows(pool, vo_id, sys_version, false).await?;
+    if rows.is_empty() {
+        return Ok(Value::Null);
+    }
+    reassemble(&rows)
 }
 
-/// Reassemble one stored version's canonical JSON from the requested storage
-/// tier ([`crate::storage::version_repo::tier`]).
-///
-/// [`read_version_canonical`] is the primary-tier form every ordinary caller
-/// uses.
+/// [`read_version_canonical`] over BOTH storage tiers (the `node_all` union
+/// view) — for the whole-repository readers (admin export, physical delete)
+/// that must see archived content by definition.
 ///
 /// # Errors
 ///
 /// Returns [`StorageError`] on a DB error or if a non-empty row set does not
 /// form one tree rooted at `num = 0`.
-pub async fn read_version_canonical_in(
+pub async fn read_version_canonical_all(
     pool: &PgPool,
     vo_id: VoId,
     sys_version: i32,
-    tier: Tier,
 ) -> Result<Value, StorageError> {
-    let rows = read_rows(pool, vo_id, sys_version, tier).await?;
+    let rows = read_rows(pool, vo_id, sys_version, true).await?;
     if rows.is_empty() {
         return Ok(Value::Null);
     }

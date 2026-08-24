@@ -12,11 +12,10 @@
 //! (§Versioned Objects, §Logical Deletion) and master08 §Change Management
 //! (time-travel).
 //!
-//! NOTE (no openEHR spec governs storage tiering — our own design): each read
-//! retries against the cold archival tier
-//! ([`crate::storage::version_repo::tier`]) ONLY when the primary tier has no
-//! such version, so an archived object stays retrievable while an unarchived
-//! read is untouched.
+//! NOTE (no openEHR spec governs storage tiering — our own design): every
+//! full version read queries the `vo_version_all`/`vo_attestation_all` union
+//! views, so ONE statement serves both tiers — an archived object stays
+//! retrievable and a miss never pays a cold-tier retry transaction.
 
 #![expect(
     clippy::disallowed_types,
@@ -31,7 +30,6 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
-use crate::storage::version_repo::tier::on_cold;
 
 /// A loaded `vo_version`⋈`audit` row plus its reassembled content and
 /// attestations — the storage read shape the versioning layer maps into a
@@ -151,13 +149,13 @@ macro_rules! version_select {
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
-            "FROM vo_version v JOIN audit a ON a.id = v.audit_id ",
+            "FROM vo_version_all v JOIN audit a ON a.id = v.audit_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
             "coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE NOT x.at_committal), '[]'::jsonb) AS attestations_after_committal ",
-            "FROM vo_attestation x ",
+            "FROM vo_attestation_all x ",
             "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
             ") att ON true ",
             $tail
@@ -334,18 +332,12 @@ pub async fn read_current(
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str =
         version_select!("WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0");
-    let primary = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
-    if let Some(row) = primary {
-        return Ok(Some(stored_version(vo_id, &row)?));
-    }
-    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
+    sqlx::query(SQL)
         .bind(vo_id)
-        .fetch_optional(&mut *conn)
-        .await)
-    else {
-        return Ok(None);
-    };
-    Ok(Some(stored_version(vo_id, &row)?))
+        .fetch_optional(pool)
+        .await?
+        .map(|row| stored_version(vo_id, &row))
+        .transpose()
 }
 
 /// Read a specific version by its STORAGE ORDINAL (`sys_version`) — for internal
@@ -360,23 +352,13 @@ pub async fn read_version_by_ordinal(
     ordinal: i32,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2");
-    let primary = sqlx::query(SQL)
+    sqlx::query(SQL)
         .bind(vo_id)
         .bind(ordinal)
         .fetch_optional(pool)
-        .await?;
-    if let Some(row) = primary {
-        return Ok(Some(stored_version(vo_id, &row)?));
-    }
-    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
-        .bind(vo_id)
-        .bind(ordinal)
-        .fetch_optional(&mut *conn)
-        .await)
-    else {
-        return Ok(None);
-    };
-    Ok(Some(stored_version(vo_id, &row)?))
+        .await?
+        .map(|row| stored_version(vo_id, &row))
+        .transpose()
 }
 
 /// Read a specific version by its `VERSION_TREE_ID` column ints (for
@@ -395,27 +377,15 @@ pub async fn read_version(
         "WHERE v.vo_id = $1 AND v.trunk_version = $2 \
          AND v.branch_number = $3 AND v.branch_version = $4"
     );
-    let primary = sqlx::query(SQL)
+    sqlx::query(SQL)
         .bind(vo_id)
         .bind(trunk_version)
         .bind(branch_number)
         .bind(branch_version)
         .fetch_optional(pool)
-        .await?;
-    if let Some(row) = primary {
-        return Ok(Some(stored_version(vo_id, &row)?));
-    }
-    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
-        .bind(vo_id)
-        .bind(trunk_version)
-        .bind(branch_number)
-        .bind(branch_version)
-        .fetch_optional(&mut *conn)
-        .await)
-    else {
-        return Ok(None);
-    };
-    Ok(Some(stored_version(vo_id, &row)?))
+        .await?
+        .map(|row| stored_version(vo_id, &row))
+        .transpose()
 }
 
 /// Read the version of an object current at a given instant (time-travel):
@@ -455,21 +425,11 @@ pub async fn version_at(
          AND v.branch_number = 0"
     );
     let at = at.to_string();
-    let primary = sqlx::query(SQL)
+    sqlx::query(SQL)
         .bind(vo_id)
         .bind(&at)
         .fetch_optional(pool)
-        .await?;
-    if let Some(row) = primary {
-        return Ok(Some(stored_version(vo_id, &row)?));
-    }
-    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
-        .bind(vo_id)
-        .bind(&at)
-        .fetch_optional(&mut *conn)
-        .await)
-    else {
-        return Ok(None);
-    };
-    Ok(Some(stored_version(vo_id, &row)?))
+        .await?
+        .map(|row| stored_version(vo_id, &row))
+        .transpose()
 }
