@@ -30,3 +30,4 @@
 - [This is a rewrite, not inherited code](rewrite-not-inherited-code.md) — existing code is never assumed correct; read the ancestor spec + existing code before implementing; breaking changes preferred over preserving bad code; distrust instruments too
 - [One Closes keyword per issue; current milestone always](pr-closes-one-keyword-per-issue.md) — "Closes #1, #2, #3" closes only #1, verify after merge; every en-route issue goes in the CURRENT milestone, never the next
 - [Greenfield migrations editable](greenfield-migrations-editable.md) — migration files are edited in place while greenfield (deployments recreate); never add checksum/immutability machinery or re-file it as a defect
+- [Rewrite fn docs on update](rewrite-fn-docs-on-update.md) — always fully rewrite a touched function's doc comment; include the /// block in old_string so docs never orphan

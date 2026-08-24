@@ -753,17 +753,8 @@ async fn commit_resolved(
     .map(openehr_its::json::to_canonical_value)
     .collect();
 
-    let (signature, signature_client_supplied) =
-        version_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
-
-    // NOTE: `vo_version.body` reassembles from the SAME rows `write_nodes`
-    // stores below, so the materialized body is byte-identical to the node
-    // reassembly point reads formerly performed; empty rows = logical delete.
-    let body = if r.rows.is_empty() {
-        None
-    } else {
-        Some(reassemble(&r.rows)?)
-    };
+    let (body, signature, signature_client_supplied) =
+        body_and_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
 
     let folded = crate::storage::version_repo::commit::FoldedVersion {
         vo_id: r.vo_id,
@@ -839,16 +830,46 @@ async fn commit_resolved(
     ))
 }
 
+/// Reassemble the version body ONCE and derive the signature over it.
+///
+/// The value the signature covers, the stored `vo_version.body`, and the value
+/// point reads serve are the same bytes by construction — the rows are the
+/// ones `write_nodes` stores; empty rows = logical delete (`None` body).
+///
+/// # Errors
+/// The reassembly [`ServiceError`] or the signer's failure.
+fn body_and_signature(
+    ctx: &SigningCtx<'_>,
+    audit: &AuditInput,
+    contribution_id: Uuid,
+    r: &ResolvedWrite,
+    at_committal_attestations: &[Value],
+) -> Result<(Option<Value>, Option<String>, bool), ServiceError> {
+    let body = if r.rows.is_empty() {
+        None
+    } else {
+        Some(reassemble(&r.rows)?)
+    };
+    let (signature, client_supplied) = version_signature(
+        ctx,
+        audit,
+        contribution_id,
+        r,
+        body.as_ref(),
+        at_committal_attestations,
+    )?;
+    Ok((body, signature, client_supplied))
+}
+
 /// The signature stored with the version, and whether it is **client-supplied**
 /// (foreign — stored verbatim, never re-verified at read; master06 §Digital
 /// Signature) vs server-generated. A client-supplied signature is kept verbatim;
-/// otherwise, with server signing enabled, the version's canonical form is
-/// signed — a logically deleted version has no nodes → Void (master06 §Logical
-/// Deletion); a content version signs the reassembled served bytes so the digest
-/// recomputes at read time. Reassembly runs only when a signature will actually
-/// be computed. `at_committal_attestations` are the completed `ATTESTATION`s
-/// committed with the version, which the signed form includes (master06
-/// §Digital Signature: "the entire Version object").
+/// otherwise, with server signing enabled, the pre-reassembled `body` is signed
+/// — a logically deleted version signs Void (master06 §Logical Deletion), and a
+/// content version signs the same served bytes reads return, so the digest
+/// recomputes at read time. `at_committal_attestations` are the completed
+/// `ATTESTATION`s committed with the version, which the signed form includes
+/// (master06 §Digital Signature: "the entire Version object").
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
@@ -858,6 +879,7 @@ fn version_signature(
     audit: &AuditInput,
     contribution_id: Uuid,
     r: &ResolvedWrite,
+    body: Option<&Value>,
     at_committal_attestations: &[Value],
 ) -> Result<(Option<String>, bool), ServiceError> {
     if let Some(client) = &r.client_signature {
@@ -866,11 +888,8 @@ fn version_signature(
     if !ctx.signer.enabled() {
         return Ok((None, false));
     }
-    let served = if r.rows.is_empty() {
-        Value::Null
-    } else {
-        reassemble(&r.rows)?
-    };
+    // The signed content is the SAME reassembled value the caller stores as
+    // `vo_version.body` — computed once, never re-reassembled here.
     let signature = integrity::sign_version(
         ctx,
         audit,
@@ -880,7 +899,7 @@ fn version_signature(
         r.preceding_uid.as_deref(),
         contribution_id,
         &r.lifecycle,
-        &served,
+        body.unwrap_or(&Value::Null),
         at_committal_attestations,
     )?;
     Ok((signature, false))
