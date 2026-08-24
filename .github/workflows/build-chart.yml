@@ -192,7 +192,7 @@ jobs:
       # A `v*` tag starts containers.yml and this workflow at the same instant,
       # and the tag the acceptance step pulls is the one that run is still
       # pushing (#2149). The dependency is made explicit here, against the
-      # other run's `app image` JOB rather than against the registry: a failed
+      # other run's `app image / build` JOB (the reusable build-image.yml renders the composite name) rather than against the registry: a failed
       # or skipped image lane then fails this one immediately with its URL,
       # instead of polling for a tag that will never appear.
       #
@@ -227,25 +227,25 @@ jobs:
           url="https://github.com/${REPO}/actions/runs/${run_id}"
           while :; do
             line=$(gh api "/repos/${REPO}/actions/runs/${run_id}/jobs?per_page=100" \
-              --jq '[.jobs[] | select(.name == "app image")] | map("\(.status) \(.conclusion // "")") | first // ""')
+              --jq '[.jobs[] | select(.name == "app image / build")] | map("\(.status) \(.conclusion // "")") | first // ""')
             status=""; conclusion=""
             read -r status conclusion <<<"$line" || true
             # The coupling is a job NAME, so a rename in containers.yml would
             # otherwise present as a silent hour-long wait.
             if [ -z "$status" ] && [ "$(gh api "/repos/${REPO}/actions/runs/${run_id}" --jq .status)" = "completed" ]; then
-              echo "::error::the containers.yml run for ${REF_NAME} finished with no job named 'app image' (${url}) — the job was renamed or removed; this wait names it explicitly and must be updated with it."
+              echo "::error::the containers.yml run for ${REF_NAME} finished with no job named 'app image / build' (${url}) — the job was renamed or removed; this wait names it explicitly and must be updated with it."
               exit 1
             fi
             if [ "$status" = "completed" ]; then
               if [ "$conclusion" != "success" ]; then
-                echo "::error::containers.yml 'app image' concluded '${conclusion}' for ${REF_NAME} — the image this chart deploys was not published, so the acceptance check below has nothing correct to judge against. ${url}"
+                echo "::error::containers.yml 'app image / build' concluded '${conclusion}' for ${REF_NAME} — the image this chart deploys was not published, so the acceptance check below has nothing correct to judge against. ${url}"
                 exit 1
               fi
               echo "the image lane published ${REF_NAME} (${url})"
               break
             fi
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::containers.yml 'app image' is still '${status:-not started}' after 60 minutes (${url}) — this run waited on the image lane and it has not finished. Nothing is wrong with the chart; re-run this workflow once that run completes."
+              echo "::error::containers.yml 'app image / build' is still '${status:-not started}' after 60 minutes (${url}) — this run waited on the image lane and it has not finished. Nothing is wrong with the chart; re-run this workflow once that run completes."
               exit 1
             fi
             echo "containers.yml 'app image' is ${status:-not started} — waiting (${url})"
