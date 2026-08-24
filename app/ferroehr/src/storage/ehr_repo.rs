@@ -385,30 +385,37 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: EhrId) -> Result<Option<bo
     )
 }
 
-/// The two content-write pre-checks in ONE round trip: whether the EHR
-/// exists, and whether it is modifiable.
+/// The two content-write pre-checks plus the server clock in ONE round trip:
+/// whether the EHR exists, whether it is modifiable, and the database `now()`.
 ///
 /// Reads the `ehr` row directly — a present row is the existence signal and
 /// carries the promoted `is_modifiable` column (synced with the current
 /// `EHR_STATUS` by `sync_ehr_subject` and its import/archive-load
 /// re-promotion over [`current_status_root`]). Returns `(exists,
-/// is_modifiable)` where `is_modifiable` is `None` exactly when the EHR does
-/// not exist. The concepts guarded are RM ehr master04 §EHR Creation
-/// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
-/// openEHR spec governs the promoted column — our own storage design.
+/// is_modifiable, now)` where `is_modifiable` is `None` exactly when the EHR
+/// does not exist and `now` is the database transaction timestamp of this
+/// probe, carried forward as the commit instant of a create that follows it
+/// (the database stays the only clock; the fresh versioned object has no
+/// stored interval the slightly earlier instant could disorder). The concepts
+/// guarded are RM ehr master04 §EHR Creation (existence) and §EHR Active
+/// Status (`EHR_STATUS.is_modifiable`); no openEHR spec governs the promoted
+/// column or the probe shape — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn ehr_writability(
     pool: &PgPool,
     ehr_id: EhrId,
-) -> Result<(bool, Option<bool>), StorageError> {
-    let is_modifiable: Option<bool> =
-        sqlx::query_scalar("SELECT is_modifiable FROM ehr WHERE id = $1")
-            .bind(ehr_id)
-            .fetch_optional(pool)
-            .await?;
-    Ok((is_modifiable.is_some(), is_modifiable))
+) -> Result<(bool, Option<bool>, jiff::Timestamp), StorageError> {
+    let row = sqlx::query(
+        "SELECT (SELECT is_modifiable FROM ehr WHERE id = $1) AS is_modifiable, now() AS ts",
+    )
+    .bind(ehr_id)
+    .fetch_one(pool)
+    .await?;
+    let is_modifiable: Option<bool> = row.try_get("is_modifiable")?;
+    let now = row.try_get::<jiff_sqlx::Timestamp, _>("ts")?.to_jiff();
+    Ok((is_modifiable.is_some(), is_modifiable, now))
 }
 
 /// Whether ANY live (non-deleted) folder hierarchy is indexed for the EHR —

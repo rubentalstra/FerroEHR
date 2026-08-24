@@ -180,15 +180,28 @@ impl FerroEhrService {
         // Query-level execution budget (`[query].timeout_ms`, our own
         // operational extension — no openEHR spec governs a query timeout):
         // when set, the DB execution is bounded so an over-long query is
-        // reported as `408 Request Timeout` rather than hanging until the
-        // global request timeout. On by default (`QueryConfig::default`,
-        // 30 s); `0` disables it.
-        let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx, self.spec_profile);
-        let result = match self.query_timeout {
-            Some(budget) => tokio::time::timeout(budget, exec)
+        // `408` instead of hanging to the global request timeout. The ABAC
+        // scope collection (our own access-control extension) stays a
+        // separate statement — the main query is paged, folding the sets in
+        // would scope only the served page — but runs CONCURRENTLY with it,
+        // both under the one budget.
+        let run = async {
+            let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx, self.spec_profile);
+            if request.collect_attributes {
+                let (result, scope) = tokio::try_join!(
+                    exec,
+                    aql::exec::collect_scope(&self.pool, &ir, &params, &ctx)
+                )?;
+                Ok((result, Some(scope)))
+            } else {
+                Ok((exec.await?, None))
+            }
+        };
+        let (result, scope) = match self.query_timeout {
+            Some(budget) => tokio::time::timeout(budget, run)
                 .await
                 .map_err(|_elapsed| Failure::timeout(budget))?,
-            None => exec.await,
+            None => run.await,
         }
         .map_err(Failure::exec)?;
         record_phase("execute", exec_start);
@@ -197,13 +210,7 @@ impl FerroEhrService {
         // the original query as submitted.
         let executed = substitute_params(aql, &params);
         let mut outcome = QueryOutcome::plain(result_set_json(aql, &executed, name, result));
-        // ABAC query post-check attributes (no openEHR spec governs this —
-        // our own access-control extension): collect the touched EHR/template
-        // sets independently of the projection, when the PEP asked for them.
-        if request.collect_attributes {
-            let scope = aql::exec::collect_scope(&self.pool, &ir, &params, &ctx)
-                .await
-                .map_err(Failure::exec)?;
+        if let Some(scope) = scope {
             outcome.ehr_ids = scope.ehr_ids;
             outcome.template_ids = scope.template_ids;
         }

@@ -95,10 +95,16 @@ pub static PROMOTED_LEAVES: &[PromotedLeaf] = &[
 /// `EVENT_CONTEXT`) is still reachable.
 #[must_use]
 pub fn extract(num: i32, rm_type: &str, json: &Value) -> Vec<Option<String>> {
+    // Only a versioned-object root carries promoted leaves; every other row
+    // returns the EMPTY vec (allocation-free — `Vec::new` does not allocate),
+    // which the node writer's positional `.get(i)` reads as all-`None`.
+    if num != 0 {
+        return Vec::new();
+    }
     PROMOTED_LEAVES
         .iter()
         .map(|leaf| {
-            if num == 0 && rm_type == leaf.rm_type {
+            if rm_type == leaf.rm_type {
                 leaf_text(json, leaf.path)
             } else {
                 None
@@ -162,8 +168,12 @@ mod tests {
             "_type": "COMPOSITION",
             "context": {"start_time": {"value": "2021-01-02T03:04:05Z"}}
         });
-        // Not the root (num != 0).
-        assert_eq!(extract(2, "COMPOSITION", &comp), vec![None]);
+        // Not the root (num != 0): the allocation-free empty vec, which the
+        // node writer's positional `.get(i)` reads as all-`None`.
+        assert_eq!(
+            extract(2, "COMPOSITION", &comp),
+            Vec::<Option<String>>::new()
+        );
         // Root, but not a registered rm_type.
         let obs = json!({"_type": "OBSERVATION"});
         assert_eq!(extract(0, "OBSERVATION", &obs), vec![None]);

@@ -46,7 +46,7 @@ use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
-use crate::versioning::read::{read_current, read_version_by_ordinal};
+use crate::versioning::read::{read_currents, read_version_by_ordinal};
 use crate::versioning::wire::{original_version, revision_history, versioned_object};
 use openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec;
 
@@ -455,6 +455,30 @@ impl FerroEhrService {
         Ok(out)
     }
 
+    /// The stored-version counts of a set of versioned objects, in ONE
+    /// statement — the demographics chapter's `total_version_count` source
+    /// (never a count round trip per party).
+    async fn vo_version_counts(
+        &self,
+        vo_ids: &[VoId],
+    ) -> Result<std::collections::HashMap<VoId, i64>, ServiceError> {
+        if vo_ids.is_empty() {
+            return Ok(std::collections::HashMap::new());
+        }
+        let ids: Vec<Uuid> = vo_ids.iter().map(|v| v.0).collect();
+        let rows = sqlx::query(
+            "SELECT vo_id, count(*) AS n FROM vo_version_all WHERE vo_id = ANY($1) GROUP BY vo_id",
+        )
+        .bind(&ids)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut out = std::collections::HashMap::with_capacity(rows.len());
+        for r in rows {
+            out.insert(r.try_get::<VoId, _>("vo_id")?, r.try_get::<i64, _>("n")?);
+        }
+        Ok(out)
+    }
+
     /// Build one `OPENEHR_CONTENT_ITEM` wrapping the `X_VERSIONED_<kind>` for a
     /// version container (`master05-openehr_extract_package.adoc`). `versions`
     /// are the exact `ORIGINAL_VERSION`s the read path serves;
@@ -590,9 +614,13 @@ impl FerroEhrService {
         for item in content_items {
             collect_party_ids(item, &mut party_ids);
         }
+        // One statement resolves every referenced party, one more counts their
+        // stored versions — never a round-trip pair per party.
+        let mut currents = read_currents(&self.pool, self.spec_profile, &party_ids).await?;
+        let totals = self.vo_version_counts(&party_ids).await?;
         let mut out = Vec::new();
         for vo_id in party_ids {
-            let Some(read) = read_current(&self.pool, self.spec_profile, vo_id).await? else {
+            let Some(read) = currents.remove(&vo_id) else {
                 continue; // not held locally — cannot be written in
             };
             if read.ehr_id.is_some() {
@@ -602,7 +630,7 @@ impl FerroEhrService {
             if !sel.include_multimedia {
                 strip_inline_multimedia(&mut version);
             }
-            let total = self.vo_version_numbers(vo_id).await?.len();
+            let total = totals.get(&vo_id).copied().unwrap_or(0);
             out.push(json!({
                 "_type": "OPENEHR_CONTENT_ITEM",
                 "name": { "_type": "DV_TEXT", "value": "PARTY" },

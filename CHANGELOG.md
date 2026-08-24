@@ -15,7 +15,44 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- The book gained a Version signing chapter: a digest-signing page and a
+  PGP-signing page, each with a flow diagram (commit-time signing and
+  read-time verification), covering what is signed, the client-supplied
+  signature rules, key configuration and rotation, and the
+  `IMPORTED_VERSION` wrapper signature.
+
 ### Changed
+
+- Current-version lookups gained dedicated partial indexes: EHR-scoped
+  current-row reads (EHR_STATUS/FOLDER resolution, EHR summaries, the
+  directory join) and the persistent-COMPOSITION duplicate probe now hit an
+  index that holds exactly one entry per live object instead of walking an
+  EHR's version history. Deployments recreate their database to pick the
+  baseline change up (greenfield migration policy).
+- The composition-create write transaction no longer spends a round trip
+  reading the clock: the commit instant rides the EHR writability gate's
+  own statement, and the folded commit statements now BIND that instant as
+  the audit time and version validity open bound — the stored commit time
+  and the signed one are a single value by construction.
+- A signed commit stopped copying the composition body twice: the signature's
+  canonical form is produced over a shallow reference view (the `data`
+  subtree and the `signature` drop are joined/filtered by reference, never a
+  deep copy of the version body).
+- The admin archive load batches per relation — one `unnest` statement each
+  for version rows, node rows, audits, contributions, attestations, item
+  tags, folder ranks and archive markers — instead of a statement per row
+  (a 1,000-version EHR record previously cost ~2,000+ round trips); the
+  EHR-Extract export's demographics chapter batches its party reads and
+  version counts the same way.
+- ABAC-checked AQL queries run the scope collection concurrently with the
+  main query under the one execution budget (wall-clock is the maximum of
+  the two, not their sum).
+- Template existence checks on the TDD prepare and template-example surfaces
+  probe with `EXISTS` instead of moving the stored OPT XML; commit
+  decomposition and content negotiation shed their per-node and per-request
+  allocations.
 
 - Version point reads (composition, EHR_STATUS, directory, party — every
   `.../{uid}` and `version_at_time` read) execute as ONE SQL statement, and

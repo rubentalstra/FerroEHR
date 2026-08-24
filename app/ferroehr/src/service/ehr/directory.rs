@@ -109,6 +109,7 @@ impl FerroEhrService {
             &audit,
             envelope,
             &self.signing_ctx(),
+            None,
         )
         .await?;
         tx.commit().await?;

@@ -772,7 +772,11 @@ async fn commit_resolved(
         signature_client_supplied,
         stable_compatible: r.stable_compatible,
         body: body.as_ref(),
+        time_committed: r.time_committed,
     };
+    // The folded statements BIND `r.time_committed` (the instant the signature
+    // was computed over) as the audit time and the `sys_period` open bound, so
+    // stored == signed holds by construction.
     let time_committed = match contribution {
         ContributionCtx::New => {
             let (_cid, _aid, tc) = crate::storage::version_repo::commit::commit_new_version(
@@ -792,10 +796,6 @@ async fn commit_resolved(
             tc
         }
     };
-    debug_assert_eq!(
-        time_committed, r.time_committed,
-        "the stored commit instant is the transaction timestamp read up front"
-    );
 
     // The shared commit tail: node rows, folder membership, attestations.
     crate::storage::node_repo::write_nodes(tx, r.vo_id, r.ordinal, r.ehr_id, &r.rows).await?;
@@ -931,6 +931,11 @@ async fn write_single_outbox(
 /// Create the first version of a new versioned object under its own
 /// contribution.
 ///
+/// `known_now` is a database `now()` a caller already fetched on this request
+/// (e.g. piggybacked on a pre-commit gate read); when `Some`, the write
+/// transaction spends no extra round trip on the clock. `None` fetches it
+/// in-transaction.
+///
 /// # Errors
 /// [`ServiceError::Unprocessable`] for an out-of-group / non-first lifecycle
 /// state; the [`commit_resolved`] storage/signing errors; a multimedia offload
@@ -949,6 +954,7 @@ pub(crate) async fn create(
     audit: &AuditInput,
     envelope: WriteEnvelope,
     ctx: &SigningCtx<'_>,
+    known_now: Option<jiff::Timestamp>,
 ) -> Result<Committed, ServiceError> {
     let (committed, contribution_id) = apply_change(
         tx,
@@ -958,7 +964,7 @@ pub(crate) async fn create(
             audit,
             ctx,
             committer_fallback: &audit.committer,
-            known_now: None,
+            known_now,
         },
         Change::Create {
             kind,
