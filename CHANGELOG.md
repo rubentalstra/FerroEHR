@@ -17,6 +17,28 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Compose: `docker compose --profile s3 up -d --wait` no longer fails after
+  everything succeeded. Current Compose (v5.4, Docker and Podman alike)
+  treats any exited container as a `--wait` failure, including the bucket
+  initializer's successful exit; the server now declares a
+  `service_completed_successfully` dependency on the initializer (inert
+  without the `s3` profile), which both orders startup after bucket creation
+  and marks the initializer as a one-shot. The documented invocation drops
+  the initializer from the service list.
+- Compose: the observability overlay boots under Podman. Every component of
+  the LGTM container creates its state under `/data`, which the image cannot
+  create under Podman (its root directory ships mode 555 and the overlay
+  drops all capabilities); a `tmpfs` mount at `/data` fixes it on both
+  engines.
+
+### Added
+
+- Docs: the compose installation page states the supported container
+  engines — the quickstart, both profiles and both overlays are verified on
+  Docker and Podman.
+
+### Fixed
+
 - Helm chart 6.0.15: the chart-signing step retries transient Sigstore
   failures instead of stranding a published version unsigned. Chart 6.0.14
   was pushed but lost its signature and provenance attestation to a single
