@@ -154,7 +154,9 @@ impl FerroEhrService {
             });
         }
         let mut tx = self.pool.begin().await?;
-        crate::storage::tag_repo::replace_tags(
+        // The replace RETURNS the stored collection (list order), so the
+        // response never re-reads the rows the transaction just wrote.
+        let stored = crate::storage::tag_repo::replace_tags(
             &mut tx,
             Some(ehr_id),
             target_vo_id,
@@ -163,8 +165,10 @@ impl FerroEhrService {
         )
         .await?;
         tx.commit().await?;
-        self.target_tags(ehr_id, target_vo_id, tag_target_tail(target_version))
-            .await
+        stored
+            .iter()
+            .map(|r| Self::stored_item_tag(ehr_id, r))
+            .collect::<Result<Vec<_>, _>>()
     }
 
     /// The tag-target guard: the addressed versioned object must exist in

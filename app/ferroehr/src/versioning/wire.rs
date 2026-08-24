@@ -79,27 +79,19 @@ pub(crate) async fn revision_history(
         ));
     }
 
-    // Attestations for the object, keyed by version, in commit order.
-    let att_rows =
-        crate::storage::version_repo::attestation::read_attestations_all(pool, vo_id).await?;
-    let mut attestations: std::collections::HashMap<i32, Vec<Value>> =
-        std::collections::HashMap::new();
-    for (sys_version, data) in att_rows {
-        attestations.entry(sys_version).or_default().push(data);
-    }
-
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
         // "there will always be at least one commit audit … there may also be
         // further attestations" — the commit audit first, then the version's
-        // attestations in commit order (master04 §Revision History).
+        // attestations in commit order (master04 §Revision History), folded
+        // into the one meta statement (`VersionMeta::attestations`).
         // The commit audit makes the `1..*` bound of
         // `REVISION_HISTORY_ITEM.audits` hold by construction.
         let mut audits = openehr_base::containers::NonEmptyVec::of(
             AuditInput::from_meta(row)?.typed(&row.time_committed),
         );
-        for stored in attestations.remove(&row.sys_version).unwrap_or_default() {
-            audits.push(stored_attestation(&stored)?);
+        for stored in &row.attestations {
+            audits.push(stored_attestation(stored)?);
         }
         items.push(RevisionHistoryItem {
             version_id: version_id(
@@ -185,32 +177,32 @@ fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
 /// trunk history whose lowest version is `> 1`; `time_created` is then the
 /// earliest version this repository received.
 ///
-/// # Errors
 /// Returns the wire body plus the newest held version's commit instant — the
 /// container resource's `Last-Modified` value (ITS-REST overview
 /// `Requests_and_responses.md` §"`ETag` and Last-Modified": both headers
 /// "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
 /// resources that have versioning or unique state identifiers", the value
-/// "derived from `VERSION.commit_audit.time_committed.value`").
+/// "derived from `VERSION.commit_audit.time_committed.value`"). `None` when
+/// the object has no stored version OR is not owned by `ehr_id` — ownership
+/// rides the same statement as the bounds, and each caller maps the miss to
+/// its own resource's 404.
 ///
 /// # Errors
-/// [`ServiceError::NotFound`] when the object has no stored version; the
-/// storage read error of `version_repo::meta::commit_bounds`.
+/// The storage read error of `version_repo::meta::commit_bounds`;
+/// [`ServiceError::Internal`] when the built body fails to serialize.
 pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: VoId,
     ehr_id: EhrId,
     rm_type: &str,
-) -> Result<(Value, jiff::Timestamp), ServiceError> {
-    let (time_created, last_modified) =
+) -> Result<Option<(Value, jiff::Timestamp)>, ServiceError> {
+    let Some((_, time_created, last_modified)) =
         crate::storage::version_repo::meta::commit_bounds(pool, vo_id)
             .await?
-            .ok_or_else(|| {
-                ServiceError::sm(
-                    CallStatusType::VersionedObjectDoesNotExist,
-                    format!("versioned object {vo_id}"),
-                )
-            })?;
+            .filter(|(owner, _, _)| *owner == Some(ehr_id))
+    else {
+        return Ok(None);
+    };
     // Both keys are UUIDs by type, so the conversions are total (BASE
     // `master05-identification_package.adoc` §Syntaxes:
     // `uid = iso_oid | uuid | internet_id`).
@@ -254,10 +246,10 @@ pub(crate) async fn versioned_object(
             time_created,
         }),
     };
-    Ok((
+    Ok(Some((
         openehr_its::json::to_canonical_value(&container),
         last_modified,
-    ))
+    )))
 }
 
 /// The VERSION resource's wire form for a loaded version: an
