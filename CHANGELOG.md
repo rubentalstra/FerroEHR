@@ -27,6 +27,12 @@ workflow refuses a tag that has no matching section here.
   the node rows remain the AQL source of truth. Storage grows by roughly
   the size of each stored version's canonical JSON.
 
+- AQL whole-object projections got cheaper end to end: a root-anchored
+  projection (`SELECT c FROM … CONTAINS COMPOSITION c`) serves the
+  materialized version body directly instead of re-aggregating and
+  reassembling the node subtree, and the `RESULT_SET` assembly moves each
+  document into its cell and into the response envelope instead of
+  deep-copying the page three times on the way out.
 - Commit and update paths do less per-request work: the version body is
   assembled once per commit (it previously reassembled twice — once for the
   signature, once for storage), the composition-update pre-read and the

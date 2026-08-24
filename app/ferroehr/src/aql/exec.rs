@@ -133,18 +133,34 @@ pub async fn execute(
         crate::versioning::profile::gate_result_bodies(pool, profile, &anchors)
             .await
             .map_err(ExecError::Profile)?;
-        let subtrees = crate::storage::node_repo::read_subtrees_canonical(pool, &anchors)
+        let mut subtrees = crate::storage::node_repo::read_subtrees_canonical(pool, &anchors)
             .await
             .map_err(ExecError::from)?;
+        // Each reassembled document MOVES into its last pending cell; only a
+        // repeated anchor (the same version projected more than once on the
+        // page) pays a clone for the earlier cells.
+        let mut remaining: std::collections::HashMap<SubtreeAnchor, usize> =
+            std::collections::HashMap::new();
+        for (_, _, anchor) in &pending {
+            *remaining.entry(*anchor).or_insert(0) += 1;
+        }
         for (ri, ci, anchor) in pending {
+            let last_use = remaining.get_mut(&anchor).is_none_or(|n| {
+                *n -= 1;
+                *n == 0
+            });
+            let value = if last_use {
+                subtrees.remove(&anchor)
+            } else {
+                subtrees.get(&anchor).cloned()
+            };
             // `(ri, ci)` was recorded while building `out_rows`, so the cell
             // exists; fetched rather than indexed so a future refactor cannot
             // turn a bookkeeping slip into a panic on a request path.
-            if let (Some(value), Some(cell)) = (
-                subtrees.get(&anchor),
-                out_rows.get_mut(ri).and_then(|row| row.get_mut(ci)),
-            ) {
-                *cell = value.clone();
+            if let (Some(value), Some(cell)) =
+                (value, out_rows.get_mut(ri).and_then(|row| row.get_mut(ci)))
+            {
+                *cell = value;
             }
         }
     }

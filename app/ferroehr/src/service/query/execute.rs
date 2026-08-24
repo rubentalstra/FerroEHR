@@ -196,7 +196,7 @@ impl FerroEhrService {
         // `_executed_aql` carries the parameter-SUBSTITUTED text; `q` keeps
         // the original query as submitted.
         let executed = substitute_params(aql, &params);
-        let mut outcome = QueryOutcome::plain(result_set_json(aql, &executed, name, &result));
+        let mut outcome = QueryOutcome::plain(result_set_json(aql, &executed, name, result));
         // ABAC query post-check attributes (no openEHR spec governs this —
         // our own access-control extension): collect the touched EHR/template
         // sets independently of the projection, when the PEP asked for them.

@@ -156,7 +156,7 @@ impl FerroEhrService {
     pub async fn current_ehr_access_settings(
         &self,
         ehr_id: EhrId,
-    ) -> Result<std::sync::Arc<Option<EhrAccessSettings>>, SmError> {
+    ) -> Result<Arc<Option<EhrAccessSettings>>, SmError> {
         // Clone the (cheap, Arc-backed) service into an owned, `'static` load
         // future so `moka`'s single-flight `try_get_with` can drive it.
         let svc = self.clone();

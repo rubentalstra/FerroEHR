@@ -238,6 +238,13 @@ pub struct SubtreeAnchor {
 /// data Void, RM common master06 §Logical Deletion) is **absent** from the map;
 /// the caller treats a miss as [`Value::Null`], its empty-subtree result.
 ///
+/// A ROOT anchor (`num == 0` — the whole version, the dominant projection
+/// shape `SELECT c FROM … CONTAINS COMPOSITION c`) is served straight from the
+/// materialized `vo_version.body` with zero node rows and zero reassembly;
+/// only genuine sub-tree anchors take the interval join. The two forms are
+/// byte-identical by the commit-time parity invariant (`body` is written from
+/// the same rows the node store holds).
+///
 /// # Errors
 /// Returns [`StorageError`] on a driver failure, or if any anchor's fetched rows
 /// do not reassemble into one tree.
@@ -258,6 +265,16 @@ pub async fn read_subtrees_canonical(
             distinct.push(*anchor);
             distinct.len() - 1
         });
+    }
+
+    // Root anchors (`num == 0`) are whole versions — served from the
+    // materialized body with no node rows; only genuine sub-tree anchors
+    // proceed to the interval join.
+    let roots: Vec<SubtreeAnchor> = distinct.iter().filter(|a| a.num == 0).copied().collect();
+    let mut out = read_root_bodies(pool, &roots).await?;
+    let distinct: Vec<SubtreeAnchor> = distinct.into_iter().filter(|a| a.num != 0).collect();
+    if distinct.is_empty() {
+        return Ok(out);
     }
 
     let idx: Vec<i32> = (0..distinct.len())
@@ -298,7 +315,6 @@ pub async fn read_subtrees_canonical(
         ));
     }
 
-    let mut out: HashMap<SubtreeAnchor, Value> = HashMap::with_capacity(distinct.len());
     for (group_idx, mut nodes) in grouped {
         // The anchor is the lowest-`num` row (the queried `num`); its path is the
         // prefix to strip so descendants re-root at it (the anchor-relative
@@ -333,6 +349,52 @@ pub async fn read_subtrees_canonical(
             })
             .collect();
         out.insert(anchor, reassemble(&read_rows)?);
+    }
+    Ok(out)
+}
+
+/// The materialized bodies of whole-version (root) anchors, keyed by anchor —
+/// one `unnest` join against `vo_version.body`, no node rows, no reassembly.
+///
+/// An anchor whose version has a `NULL` body (a logical delete) is absent
+/// from the map — the same miss contract the interval join produces.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+async fn read_root_bodies(
+    pool: &PgPool,
+    roots: &[SubtreeAnchor],
+) -> Result<HashMap<SubtreeAnchor, Value>, StorageError> {
+    let mut out: HashMap<SubtreeAnchor, Value> = HashMap::with_capacity(roots.len());
+    if roots.is_empty() {
+        return Ok(out);
+    }
+    let vo_ids: Vec<Uuid> = roots.iter().map(|a| a.vo_id.0).collect();
+    let sys_versions: Vec<i32> = roots.iter().map(|a| a.sys_version).collect();
+    let rows = sqlx::query(
+        "SELECT v.vo_id, v.sys_version, v.body \
+         FROM unnest($1::uuid[], $2::int[]) AS a(vo_id, sys_version) \
+         JOIN vo_version v \
+           ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
+         WHERE v.body IS NOT NULL",
+    )
+    .bind(&vo_ids)
+    .bind(&sys_versions)
+    .fetch_all(pool)
+    .await?;
+    let mut by_key: HashMap<(Uuid, i32), Value> = rows
+        .into_iter()
+        .map(|row| {
+            Ok((
+                (row.try_get("vo_id")?, row.try_get("sys_version")?),
+                row.try_get("body")?,
+            ))
+        })
+        .collect::<Result<_, StorageError>>()?;
+    for anchor in roots {
+        if let Some(body) = by_key.remove(&(anchor.vo_id.0, anchor.sys_version)) {
+            out.insert(*anchor, body);
+        }
     }
     Ok(out)
 }
