@@ -1,109 +1,67 @@
-# The AI reviewer (CodeRabbit) — what it is and what it is not
+# Machine review (SonarQube Cloud) — what it is and what it is not
 
-Every pull request here is reviewed by CodeRabbit, configured entirely by
-the committed `.coderabbit.yaml` (issue #2142). It exists because the local
-gates catch what a lint can catch, while the properties this repository
-actually turns on — a hard rule bent, a spec citation that does not support
-the behaviour it justifies, a defect swallowed into an `Option` — are
-marked "review-enforced" in `reliability.md`, and review is one person.
+Every pull request and every develop push is analyzed by SonarQube Cloud
+(`.github/workflows/sonar.yml`; scope in `sonar-project.properties`; #2630).
+It exists because the local gates catch what a lint can catch, review is one
+person, and a deterministic multi-language sweep also covers trees the Rust
+gates never see: shell scripts, workflow YAML, the website's JS/HTML/CSS,
+Dockerfiles.
 
-It is a **second opinion**. It is not authority, not a gate, and not a
-committer.
+It is a **second opinion**. It is not authority, and it gates no merge.
 
 ## Precedence — a finding never outranks the sources
 
 1. The vendored openEHR spec text (`docs/specs/openehr/`) — the oracle.
 2. The hard rules: root `CLAUDE.md`, the crate `CLAUDE.md` files, `.claude/rules/*.md`.
 3. The local gates: `cargo fmt`, `clippy`, `cargo nextest`, the CNF suite, the CI guards.
-4. The reviewer.
+4. The analyzer.
 
 A finding that contradicts a spec citation is wrong by construction — the
 spec text is never a suspect (`spec-adherence.md`). A finding that asks for
-something the rules forbid is wrong the same way. Nothing it says relaxes
+something the rules forbid is wrong the same way. Nothing it reports relaxes
 `testing.md`: never weaken a test, never adjust a CNF expectation, and never
-edit a corpus fixture because a review comment suggested it.
+edit a corpus fixture because a finding suggested it. A rule that contradicts
+a deliberate recorded decision (the RFC 2008 rejection, zero re-exports, …)
+is rejected as a class in the quality profile, with the reason recorded on
+the triage program (#2640).
 
-## It never writes
+## How Rust is analyzed
 
-Every commit-producing recipe is disabled in `.coderabbit.yaml` —
-`docstrings`, `unit_tests`, `simplify`, `autofix`, `fix_ci`,
-`resolve_merge_conflict`. **Do not apply a committable suggestion through
-the GitHub UI**: GitHub attributes the resulting commit to the bot with a
-co-author trailer, which the no-AI-attribution hard rule forbids without
-exception. If a suggestion is right, write the change yourself.
+Rust is first-party in SonarQube Cloud (announced 2025-04-17): the analyzer
+runs Clippy itself — 85 Clippy rules managed as quality-profile rules, plus
+complexity metrics. That run uses the workspace DEFAULT features, a
+deliberately independent second Clippy configuration beside our deny-tier
+lanes; for pure Rust it mostly re-reports what the gates already enforce,
+and its added value is the multi-language sweep, PR decoration on new code,
+and a stable rule taxonomy to adjudicate class-by-class. Coverage import is
+deliberately not wired (an instrumented build plus a PG-backed test run is
+too heavy for an advisory lane). SQL is excluded from scope entirely: the
+PLSQL analyzer assumes Oracle and this tree's SQL is PostgreSQL (#2643).
 
-The installed app does hold `code: write` — a GitHub App's permission set is
-declared by the app and cannot be narrowed by the installer — so this
-property is a configuration choice, not a capability boundary.
+## It does not gate a merge, and it never writes
 
-## It does not gate a merge — a measured decision, not a default
-
-No pre-merge check is at `error`, and `request_changes_workflow` is off. The
-app publishes a check run named `CodeRabbit`; it is **not required**. Merge
-authority stays where it was: the local gates green, and the owner's call.
-
-That standing was **measured, then kept** (issue #2148, 2026-08-20): over the
-25 merged PRs the reviewer actually reviewed under the committed
-configuration, its 137 actionable findings graded 82 true positives, 29
-false positives, 26 noise — ≈60% precision. The true positives included
-genuinely severe catches (an `f64` pre-rounding in `DvCount::multiply`, a
-fail-open Helm gate, an unchecked RSA signing key), which is why it is kept;
-the 40% FP+noise band is why it does not gate — a blocking check at that
-precision trains override-slapping, which also mutes the 60%. Two structural
-facts from the measurement shape how to read its comments: it fabricates
-citations for files excluded from its checkout (the vendored specs are
-path-filtered out), and it reviews only PRs open long enough to finish — a
-fast-merge cadence means most PRs get no review at all. Re-promotion is a
-future re-measurement, not a config toggle.
-
-A pre-merge check reported as a warning is information. It does not block,
-and it is not a reason to reword a PR description that is already correct.
-
-## The configuration lives in git, and only the base branch's copy runs
-
-`.coderabbit.yaml` at the repository root is the whole configuration; the
-web dashboard holds nothing (verify with `@coderabbitai configuration` on
-any PR — it prints the resolved settings annotated with their source).
-
-Two mechanics to know before editing it:
-
-- **A config change cannot be previewed.** On public repositories CodeRabbit
-  ignores the branch's copy and applies the base branch's: *"For security,
-  only the configuration from the base branch is applied for open source
-  repositories."* An edit takes effect only once merged.
-- **Validate before committing** against
-  <https://coderabbit.ai/integrations/schema.v2.json>; an invalid key is
-  accepted silently by git and simply never applies.
-
-## The rules are the source; the config points at them
-
-`knowledge_base.code_guidelines` reads `**/CLAUDE.md`, `.claude/rules/*.md`,
-`docs/architecture.md` and `docs/VERSIONS.md`, so a rule change reaches the
-reviewer with no configuration edit. The `path_instructions` in
-`.coderabbit.yaml` are per-path reminders of what to look for — never a
-second copy of a rule. When the two disagree, the rule file is right and the
-instruction is the defect.
+No quality gate blocks a merge. Findings worth acting on are written by
+hand in a normal change — never applied through any UI that would attribute
+a commit to a bot (the no-AI-attribution rule has no exceptions). Promotion
+to a gating check would follow a precision measurement, the same bar every
+reviewer here has been held to.
 
 ## False positives are data
 
-The reviewer reads the rule text itself, so it will occasionally flag prose
-that *describes* a rule as if it violated one. Record such a finding on the
-measurement issue rather than silencing it; an instruction is only edited
-when the instruction is actually wrong, never to make a comment go away.
+Record a wrong finding on the triage program (#2640) rather than silencing
+it; a scope or profile change is made when the scope is actually wrong,
+never to make a number go down.
 
-## SonarQube Cloud — the third machine opinion, same standing (#2630)
+## History: CodeRabbit (removed 2026-08-24, #2638)
 
-SonarQube Cloud analyzes every PR and every develop push
-(`.github/workflows/sonar.yml`, scope in `sonar-project.properties`). Rust
-is first-party there: the analyzer runs Clippy itself — at workspace
-default features, a deliberately independent second Clippy configuration
-beside our deny-tier lanes. Everything above applies unchanged: findings
-are advisory, the precedence order is identical, no quality gate blocks a
-merge, and nothing it says relaxes `testing.md`. A finding worth acting on
-is written by hand in a normal change; a false positive is data, not a
-reason to tune the scanner. Promotion to a gating check would follow a
-precision measurement, exactly like the CodeRabbit decision recorded above.
+CodeRabbit (an LLM reviewer) held this role from #2142. Its measured
+precision over 25 PRs was ~60% true positives (#2148) — kept advisory for
+exactly that reason — and it was removed in favor of the deterministic
+analyzer once SonarQube Cloud landed. The measurement record stays in those
+closed issues. CodeQL continues to run separately as the security scanner
+(`.github/workflows/codeql.yml`).
 
 Official documentation (durable citations):
-<https://docs.coderabbit.ai/configure-coderabbit/> ·
-<https://docs.coderabbit.ai/reference/yaml-template>
+<https://docs.sonarsource.com/sonarqube-cloud/> ·
+<https://www.sonarsource.com/knowledge/languages/rust/> ·
+<https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/languages/rust>
