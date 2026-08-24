@@ -151,7 +151,7 @@ fn observation(mapping: &str, patient: &str, magnitude: f64) -> serde_json::Valu
 async fn seed_template(cdr: &str) {
     let source = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
+        "/tests/fixtures/minimal_evaluation.opt"
     ))
     .expect("the shared OPT fixture exists");
     let (user, pass) = admin_credentials();
