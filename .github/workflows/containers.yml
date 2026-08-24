@@ -51,15 +51,24 @@ jobs:
     permissions:
       contents: read
     outputs:
-      app: ${{ steps.filter.outputs.app }}
-      admin_ui: ${{ steps.filter.outputs.admin_ui }}
-      postgres: ${{ steps.filter.outputs.postgres }}
+      # Tag pushes and manual dispatches build everything BY DECLARATION
+      # rather than by the filter degrading (dispatch payloads carry no
+      # `before`, so paths-filter used to warn and diff the whole tree —
+      # same outcome, accidental mechanism).
+      app: ${{ steps.everything.outputs.all || steps.filter.outputs.app }}
+      admin_ui: ${{ steps.everything.outputs.all || steps.filter.outputs.admin_ui }}
+      postgres: ${{ steps.everything.outputs.all || steps.filter.outputs.postgres }}
     steps:
+      - name: Tag or dispatch builds everything
+        id: everything
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+        run: echo "all=true" >> "$GITHUB_OUTPUT" 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
+        if: steps.everything.outcome == 'skipped'
         with:
           # The app filter mirrors the ui-e2e-binary cache key in ci.yml (the
           # inputs the server build reads); admin_ui mirrors the ui-e2e-console
