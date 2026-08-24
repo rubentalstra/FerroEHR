@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- The Helm chart publishes again as 6.0.13, carrying the v4.0.0 server as
+  its `appVersion`: the v4.0.0 cut changed packaged chart content
+  (`appVersion`, the generated README, the image annotations) without
+  bumping the chart's own version, so the tag-triggered publish was
+  correctly refused by the immutability guard and no chart for v4.0.0
+  existed until this one.
+
 ## [4.0.0] - 2026-08-24
 
 ### Added
