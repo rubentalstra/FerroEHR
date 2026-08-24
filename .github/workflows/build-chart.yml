@@ -449,10 +449,10 @@ jobs:
         run: |
           set -euo pipefail
           cosign verify "${CHART_REF}@${DIGEST}" \
-            --certificate-identity-regexp "^https://github\.com/${REPO}/\.github/workflows/publish-chart\.yml@" \
+            --certificate-identity-regexp "^https://github\.com/${REPO}/\.github/workflows/build-chart\.yml@" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             > /dev/null
-          echo "the signature verifies against ${REPO}/.github/workflows/publish-chart.yml"
+          echo "the signature verifies against ${REPO}/.github/workflows/build-chart.yml"
 
           # The OCI fallback tag for a subject digest: `sha256:<hex>` → `sha256-<hex>`.
           fallback="${CHART_REF}:${DIGEST/:/-}"
