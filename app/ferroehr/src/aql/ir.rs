@@ -751,6 +751,12 @@ impl Params {
     pub fn get(&self, name: &str) -> Option<&ParamValue> {
         self.values.get(name)
     }
+
+    /// Whether no parameter is bound.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
 }
 
 /// A typed query-parameter value.
