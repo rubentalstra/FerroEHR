@@ -5,7 +5,7 @@ Instead of querying hidden database tables, you query the clinical model
 directly: you name the RM types and archetypes you want, express structural
 nesting with `CONTAINS`, and select values by their path within an archetype. The
 same query runs unchanged on any conformant openEHR system. This chapter is a
-practical walkthrough — the language, how to run queries over HTTP, parameters,
+practical walkthrough: the language, how to run queries over HTTP, parameters,
 stored queries, version scope, terminology, pagination and limits, and the
 supported feature envelope.
 
@@ -33,12 +33,12 @@ ORDER BY systolic DESC
   **parent** archetype also returns data recorded under its specialisations, as
   openEHR requires: for ADL 1.4 identifiers the specialisation is the
   hyphen-extended concept (`…blood_pressure` matches `…blood_pressure-cuff`),
-  and for ADL 2 identifiers — where the hyphen carries no such meaning — the
+  and for ADL 2 identifiers (where the hyphen carries no such meaning) the
   lineage is read from the ADL 2 archetypes and templates you have uploaded, so
   the parent matches every stored specialisation of it whatever its concept is
   named. In both cases the major version is a hard boundary: `.v1` never matches
   `.v2` data.
-- **`CONTAINS`** expresses structural containment — "an EHR that contains a
+- **`CONTAINS`** expresses structural containment: "an EHR that contains a
   composition that contains a blood-pressure observation". Chains can nest
   several deep, and combine with `AND`, `OR`, and `NOT`.
 - **`SELECT`** projects values by path. Paths use archetype node ids (`at0004`)
@@ -47,7 +47,7 @@ ORDER BY systolic DESC
   `MATCHES`, and boolean combinators. Comparisons over multi-valued paths use
   any-match semantics: when a path matches several nodes, the predicate holds if
   **any** matched value satisfies it (the AQL specification is silent here;
-  any-match is this engine's documented convention — deterministic and
+  any-match is this engine's documented convention, deterministic and
   index-friendly).
 - **`ORDER BY`**, **`LIMIT`**, and **`OFFSET`** behave as you expect; quantities
   order by their openEHR magnitude semantics.
@@ -74,7 +74,7 @@ The body fields are:
 | `query_parameters` | An object of named parameter values (see below). |
 
 There is also a `GET /query/aql` form taking `q`, `offset`, `fetch`, an optional
-`ehr_id`, and `query_parameters` as query-string parameters — convenient for
+`ehr_id`, and `query_parameters` as query-string parameters, convenient for
 simple, cacheable reads.
 
 `offset`, `fetch`, `ehr_id` and named parameters are accepted in the query string
@@ -88,7 +88,7 @@ The query API is **JSON only** (`Accept: application/json`).
 
 You can restrict a query to one EHR without writing the constraint into the AQL:
 pass an `ehr_id` query-string parameter, or the `openehr-ehr-id` request header.
-Both forms work on **every** execution endpoint — ad-hoc and stored, `GET` and
+Both forms work on **every** execution endpoint: ad-hoc and stored, `GET` and
 `POST` alike. (`openEHR-EHR-id` is the deprecated spelling of the same header and
 still resolves, HTTP header names being case-insensitive.)
 
@@ -126,14 +126,14 @@ tuples.
 }
 ```
 
-Each entry in `columns` names the column — the `AS` alias, or `#<index>` when you
-did not alias it — and its `path`. Each row in `rows` is an array of cells, one
+Each entry in `columns` names the column (the `AS` alias, or `#<index>` when you
+did not alias it) and its `path`. Each row in `rows` is an array of cells, one
 per column in column order. A cell can be a scalar or a full RM object (for
 example `{"_type":"DV_TEXT","value":"Labs"}`) depending on what you selected. A
 stored-query execution additionally carries the query's `name`.
 
 The `meta` block's `_executed_aql` field is the AQL the server actually ran, with
-your named parameters substituted in as literals — paste it straight back into an
+your named parameters substituted in as literals. Paste it straight back into an
 ad-hoc query when debugging a parameterised call. The top-level `q` keeps the
 text exactly as you submitted it, and `_created` stamps when this response was
 produced.
@@ -141,7 +141,7 @@ produced.
 Query responses carry a weak **`ETag`** that is a content digest of the result
 set: two runs returning identical results carry the identical tag, so a client
 can cheaply detect "nothing changed" between polls. The digest deliberately
-covers the query, the executed AQL, the columns and the rows — and **not** the
+covers the query, the executed AQL, the columns and the rows, and **not** the
 per-response `_created` stamp, so an unchanged result does not mint a new tag
 every second.
 
@@ -149,7 +149,7 @@ every second.
 
 Parameterise a query with named placeholders (a name preceded by a dollar sign)
 and supply the values in `query_parameters`. This is the safe way to inject
-values — no string concatenation:
+values, with no string concatenation:
 
 ```shell
 curl -u ferroehr:ferroehr -H 'Content-Type: application/json' -d '{
@@ -202,14 +202,14 @@ curl -u ferroehr:ferroehr \
 `Location` header naming exactly the version that was written:
 
 - `PUT /definition/query/{name}/{version}` stores at that exact SemVer. The pair
-  is immutable — re-storing an existing `(name, version)` is a **409 Conflict**,
-  never an overwrite — and a partial or malformed version segment is a **400**.
+  is immutable (re-storing an existing `(name, version)` is a **409 Conflict**,
+  never an overwrite) and a partial or malformed version segment is a **400**.
 - `PUT /definition/query/{name}` (no version) stores or updates at the default
   version `1.0.0`.
 
 The body must be `text/plain`: declaring another media type is a **415**, and an
 absent `Content-Type` reads as the plain-text body. The AQL is parsed at store
-time, so a syntactically invalid query is rejected **400** — the server never
+time, so a syntactically invalid query is rejected **400**; the server never
 stores a query it cannot execute. An optional `query_type` parameter names the
 formalism, default `AQL` (case-insensitive); anything else is rejected **400**
 with an honest "unsupported formalism" message rather than a misleading "invalid
@@ -220,14 +220,14 @@ three-part `{namespace}::{formalism}::{query-name}` form is recognised as well.
 The namespace is optional: a bare name is stored under the assumed namespace
 `misc`, so `my_compositions` and `misc::my_compositions` are the same query and
 listings show the qualified form. Identity is case-insensitive while the casing
-you stored is preserved. The query-name `aql` is **reserved** (case-insensitive —
-it would collide with the ad-hoc `/query/aql` route) and is rejected with a
+you stored is preserved. The query-name `aql` is **reserved** (case-insensitive; it would collide with
+the ad-hoc `/query/aql` route) and is rejected with a
 **400**.
 
 **Reading and executing.**
 
 - `GET /definition/query/{name}` lists the queries under that name as a prefix
-  pattern; `GET /definition/query` (no name at all) lists every stored query — a
+  pattern; `GET /definition/query` (no name at all) lists every stored query, a
   FerroEHR convenience, since the openEHR API defines only the named form.
 - `GET /definition/query/{name}/{version}` fetches one, by exact SemVer or by
   prefix (`1`, `1.0` → the highest matching stored version).
@@ -236,13 +236,13 @@ it would collide with the ad-hoc `/query/aql` route) and is rejected with a
   or prefix. Both take the same `offset`, `fetch`, `ehr_id` and named parameters
   as ad-hoc queries; a `POST` body of `{}` executes a parameterless stored query.
 
-Deleting a stored query is an admin operation — see
+Deleting a stored query is an admin operation; see
 [Admin & messaging APIs](operations-admin-apis.md).
 
 ## Version scope: LATEST_VERSION and ALL_VERSIONS
 
 By default a query sees the **latest** version of each object. FerroEHR also
-supports querying the **entire version history** — a capability many CDRs lack.
+supports querying the **entire version history**, a capability many CDRs lack.
 Wrap a source in `VERSION` and choose the scope:
 
 ```text
@@ -253,8 +253,8 @@ FROM EHR e
 ```
 
 `LATEST_VERSION` (the default) reads only current trunk versions;
-`ALL_VERSIONS` reads across history — including branch versions, where a version
-tree has any — so you can see how a record changed over time. A version
+`ALL_VERSIONS` reads across history (including branch versions, where a version
+tree has any) so you can see how a record changed over time. A version
 predicate on `commit_audit/time_committed` reads the trunk version current at
 that instant. The `VERSION` variable also exposes commit metadata: the audit, the
 committed time, and the version uid.
@@ -268,7 +268,7 @@ Value filters can be backed by terminology in three ways:
   hand;
 - `TERMINOLOGY('validate'|'subsumes', …) = true` as a boolean condition
   evaluates a code-membership or subsumption test once per query;
-- a terminology URI operand — `matches { terminology://… }` — expands the set the
+- a terminology URI operand (`matches { terminology://… }`) expands the set the
   URI identifies.
 
 These require a terminology source; if external terminology is not configured,
@@ -295,7 +295,7 @@ which one you hit:
 | [`query.max_result_rows`](installation/config-integrations.md#query) | server config, default `10000` | The ceiling applied when neither the AQL nor the request bounds the result. `0` means unbounded. |
 | [`query.timeout_ms`](installation/config-integrations.md#query) | server config, default `30000` | Per-query database execution budget. **On by default**; `0` disables it. |
 
-A query that exceeds the time budget returns **408 Request Timeout** — narrow it
+A query that exceeds the time budget returns **408 Request Timeout**; narrow it
 (add archetype constraints, an `ehr_id` scope, or a `WHERE` filter) rather than
 retrying it unchanged. A result truncated by the row ceiling is a signal to page
 explicitly with `offset`/`fetch` instead of relying on the default.
@@ -315,9 +315,8 @@ results. Supported today includes:
 
 - `SELECT` of paths, literals, aliases, `DISTINCT`, and the aggregates `COUNT`
   (including `COUNT(DISTINCT)`), `MIN`, `MAX`, `SUM`, `AVG`. `MIN` and `MAX`
-  order their operand by type — a quantity by its openEHR magnitude, a date/time
-  chronologically, text lexically — so they work over non-numeric leaves, not
-  just numbers;
+  order their operand by type (a quantity by its openEHR magnitude, a date/time
+  chronologically, text lexically) so they work over non-numeric leaves;
 - `FROM` over `EHR`, `VERSION` (`LATEST_VERSION` / `ALL_VERSIONS`), and the RM
   structure classes, with archetype and name predicates;
 - `CONTAINS` trees with `AND`, `OR`, and `NOT CONTAINS`;
@@ -342,7 +341,7 @@ silently incorrect answer:
 - **`TOP … BACKWARD`.** `TOP` is deprecated as of AQL 1.1.0 and the direction
   variant is not implemented; the error carries the specification's own rewrite
   (`ORDER BY <path> DESC LIMIT n`). `TOP` and `LIMIT` in one query are also
-  refused — pick one.
+  refused; pick one.
 - **Regex and `OR` node predicates.** `[{/…/}]` is archetype-definition syntax,
   not AQL value matching, and a disjunctive node predicate is outside the
   accepted subset.
@@ -352,7 +351,7 @@ silently incorrect answer:
 - **`SELECT DISTINCT` ordered by an unselected expression.** De-duplication and
   sorting by something the projection dropped have no defined meaning together;
   sort by a selected column.
-- **Analysis failures**, which are precise rather than generic: an unknown RM
+- **Analysis failures**, which are precise: an unknown RM
   class or attribute, an unbound `$parameter`, a duplicate `FROM` variable name,
   `LIMIT 0`, a negative `OFFSET`, wrong function arity, `SUM`/`AVG` over a
   non-numeric path, and an `archetype_node_id` criterion that is neither an
@@ -366,7 +365,7 @@ deployment's [`spec_profile`](installation/configuration.md#spec_profile). On th
 default `development` profile the query surface is the full RM 1.2.0 model. On
 `stable` (RM 1.1.0), a `FROM` class or a path attribute that only a newer
 generation defines is refused with **400 Bad Request**, and the message names
-both the offending class or attribute and the active profile — a server of that
+both the offending class or attribute and the active profile. A server of that
 generation would answer "unknown", so returning rows instead would silently
 overclaim the profile the deployment advertises.
 

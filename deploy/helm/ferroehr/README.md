@@ -12,8 +12,8 @@ single static binary. This chart deploys the server.
 
 **This chart does not deploy a database.** It expects an **external PostgreSQL
 18** (18.6 or newer) and will not start without one. Point it at your own
-instance, a managed service, or a separate PostgreSQL chart — `database.url` or,
-for production, `database.existingSecret`.
+instance, a managed service, or a separate PostgreSQL chart: `database.url`
+or, for production, `database.existingSecret`.
 
 **With no authentication mechanism configured, the server boots and answers
 `401` to everything.** `auth.enabled` defaults to `true`, and a deployment with
@@ -23,13 +23,13 @@ serving patient data to anonymous callers. Configure a mechanism, or set
 `config.auth.enabled: false` for a throwaway evaluation.
 
 **A secret set in the wrong place fails the render on purpose.** See
-[Secrets](#secrets) — this chart refuses to put a credential in a ConfigMap
-rather than doing it quietly.
+[Secrets](#secrets): this chart refuses to put a credential in a ConfigMap
+and says so, never quietly.
 
 ## Install
 
-The chart is published as an **OCI artifact**. There is no chart repository to
-add — `helm repo add` does not apply to this chart and never will:
+The chart is published as an **OCI artifact**. There is no chart repository
+to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
@@ -56,7 +56,7 @@ is what keeps an upgrade of one from silently moving the other.
 ### Verify what you pulled
 
 The chart carries two keyless Sigstore artifacts, and they answer different
-questions. A **cosign signature** — who signed this:
+questions. A **cosign signature:** who signed this:
 
 ```console
 cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.13 \
@@ -64,7 +64,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.13 \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-A **SLSA build provenance attestation** — what source it was built from, and how:
+A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
 gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.13 \
@@ -74,7 +74,7 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.0 \
 ```
 
 `helm install --verify` does **not** apply: it reads a PGP `.prov` provenance
-file, and this chart ships none — deliberately, because keeping a long-lived
+file, and this chart ships none, deliberately: keeping a long-lived
 private key in CI is a worse posture than not having one. The two commands above
 are what replace it.
 
@@ -82,7 +82,7 @@ are what replace it.
 
 The chart ships a `values.schema.json`, so `helm install`, `upgrade`, `lint` and
 `template` refuse a values file that misspells a key of the chart's own
-vocabulary, gets a type wrong, or names a value outside the permitted set —
+vocabulary, gets a type wrong, or names a value outside the permitted set,
 instead of rendering and ignoring it.
 
 Everything under `config:` stays deliberately open: that vocabulary is the
@@ -96,13 +96,13 @@ Every value under `secrets:` is carried by a chart-managed Secret, and **how it
 reaches the process differs by design**. A secret with a `*_file` sibling in the
 server's configuration is **mounted read-only** at
 `/etc/ferroehr-secrets/<config.path>`, and only the *path* is passed as an
-environment variable — because an environment variable is readable through
+environment variable, because an environment variable is readable through
 `/proc/<pid>/environ` and inherited by every child process. The few keys with no
 `*_file` sibling still pass their value as env; that is a gap in the
 configuration tree, not a choice this chart made.
 
 **Setting a secret under `config:` refuses to render.** Values under `config:`
-become a ConfigMap, which is not a sensitive object — it is readable with
+become a ConfigMap, which is not a sensitive object: it is readable with
 namespace read, collected by backup tooling that skips Secrets, and unencrypted
 at rest even where Secret encryption is enabled. The refusal names the
 `secrets:` key that carries the value safely.
@@ -120,7 +120,7 @@ remembering to update this chart.
 
 The pod runs as uid/gid 65532 with `runAsNonRoot`, an empty capability set,
 `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, and
-`seccompProfile: RuntimeDefault` — the Pod Security Standards **Restricted**
+`seccompProfile: RuntimeDefault`: the Pod Security Standards **Restricted**
 profile. `automountServiceAccountToken` is off because the workload never calls
 the Kubernetes API, and `enableServiceLinks` is off because the kubelet's
 injected `FERROEHR_*` Service variables would otherwise collide with the
@@ -135,7 +135,7 @@ so the shipped policy reads as default-deny while admitting everything on that
 port. Set `ingressFrom` to your ingress controller, or set
 `networkPolicy.ingressAllowAll=false` to have the chart refuse to render the
 open state at all. And note that **none of it does anything unless your CNI
-enforces NetworkPolicy** — check yours; several do not.
+enforces NetworkPolicy**. Check yours; several do not.
 
 ## Requirements
 
@@ -143,8 +143,8 @@ Kubernetes: `>=1.36.0-0`
 
 > [!NOTE]
 > Rows under `config.*` carry no description here on purpose. Those keys are the
-> **server's**, not the chart's — the chart renders the `config` tree verbatim
-> into `ferroehr.toml` — and they are documented once, in the configuration
+> **server's**, not the chart's (the chart renders the `config` tree verbatim
+> into `ferroehr.toml`), and they are documented once, in the configuration
 > reference. Restating them here would fork two copies that drift. The same
 > reasoning keeps `config.*` out of `values.schema.json`.
 >

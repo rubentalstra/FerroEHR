@@ -3,7 +3,7 @@
 The console's query surfaces are three views of the same thing: the dashboard
 summarises what the repository holds, the Query Builder assembles AQL from a
 template's own paths, and the raw editor runs AQL you wrote yourself. All three
-save to, and run against, the CDR's own stored-query registry — nothing is kept
+save to, and run against, the CDR's own stored-query registry; nothing is kept
 on the console's side.
 
 <!-- toc -->
@@ -16,7 +16,7 @@ queries in it), and a commit-activity trend rendered as pure SVG.
 
 The namespace tiles are live: each one runs every stored query in that
 namespace as a count. If one of them fails, the tile reports no number rather
-than a misleading total — run that query on the Queries screen to read the
+than a misleading total. Run that query on the Queries screen to read the
 CDR's own diagnostic.
 
 ![Dashboard](img/dashboard/dashboard.png)
@@ -24,11 +24,11 @@ CDR's own diagnostic.
 ## The Query Builder
 
 Build AQL without writing it: pick a template, pick paths from its tree,
-and add typed conditions — each data type gets the right widget, populated
+and add typed conditions: each data type gets the right widget, populated
 from the template's own constraints (coded value sets, ordinal scales,
 quantity units). Conditions combine into arbitrarily nested ALL/ANY groups
 with per-condition and per-group negation. The generated AQL is previewed
-live and is always grammatically valid — the builder assembles the same
+live and is always grammatically valid, since the builder assembles the same
 query syntax tree the server parses, then prints it, so it never hand-builds
 query text.
 
@@ -36,14 +36,14 @@ query text.
 
 A **coded condition** can go further than the template's own list. Its
 terminology field is backed by the terminologies the CDR serves, offered as
-suggestions while staying free text — an AQL author must be able to name a
+suggestions while staying free text: an AQL author must be able to name a
 terminology this server does not host. Beside the code box, **look up** asks the
 CDR what the code means and adds it as `code — text`; a code the terminology
 does not define is still added, marked *unvalidated*, because the builder never
 refuses a code the CDR happens not to know. **Expand** a value set and its
 members become one-click chips. Typing a code and pressing **add** works exactly
 as it always has, and whichever route a code took, the query carries the bare
-code — the rubric is only how it reads on screen. When the CDR does not serve
+code, and the rubric is only how it reads on screen. When the CDR does not serve
 its [terminology surface](terminology.md) the field is simply a plain text box.
 
 Choose what comes back: whole compositions, projected data points (with
@@ -65,13 +65,13 @@ reachable from each other for the same stored definition.
 
 Every non-empty result set offers a **Table | Chart** toggle. The chart draws
 **one line per numeric column**, named by that column's alias, and its legend
-switches a series on and off — the last visible series stays on, so the chart
+switches a series on and off; the last visible series stays on, so the chart
 never empties. When a column holds ISO-8601 date/times it is offered as the
 **X axis** and used by default: a real time scale, where points sit at their
 true distance apart whatever order the rows came back in. The row order stays
 available as the fallback axis, and a single numeric column still draws as one
-plain line. A result set with nothing to chart — no numeric column, or a single
-row — says so in the chart pane rather than showing a blank box.
+plain line. A result set with nothing to chart (no numeric column, or a single
+row) says so in the chart pane rather than showing a blank box.
 
 ![Query results](img/queries/query-aql-results.png)
 
@@ -80,7 +80,7 @@ row — says so in the chart pane rather than showing a blank box.
 ## Exporting results
 
 Both results panes (the builder and the raw editor) offer **Export CSV**
-and **Export JSON** — a plain form download that works even before the
+and **Export JSON**, a plain form download that works even before the
 page's WebAssembly loads. The export runs the query's own `LIMIT` window,
 or the server's default fetch limit when the query has none. CSV cells
 hold scalar values verbatim; structured values are embedded as compact
@@ -97,7 +97,7 @@ editor to run it.
 
 ![Stored queries](img/queries/queries.png)
 
-The table is paged by the shared footer under it — rows on screen out of how
+The table is paged by the shared footer under it: rows on screen out of how
 many, previous/next, and 25/50/100 rows per page, all in the URL (see
 [Paging](index.md#paging)). The namespace panel beside it is derived from the
 same listing and shows every namespace, whichever page you are on.
@@ -106,27 +106,27 @@ Each stored query row offers three hand-offs:
 
 | Action | What it opens |
 | --- | --- |
-| **Run** | The [stored-query runner](#running-a-stored-query) — executes *that stored query* on the CDR, with its parameters prompted |
+| **Run** | The [stored-query runner](#running-a-stored-query), which executes *that stored query* on the CDR, with its parameters prompted |
 | **Open in editor** | The raw AQL editor, seeded with that version's query text |
-| **Open in builder** | The [query builder](#the-query-builder), with the query loaded back into its controls — when it fits (see [Opening a stored query in the builder](#opening-a-stored-query-in-the-builder)) |
+| **Open in builder** | The [query builder](#the-query-builder), with the query loaded back into its controls, when it fits (see [Opening a stored query in the builder](#opening-a-stored-query-in-the-builder)) |
 
-Both editing hand-offs pre-fill the namespace, name, and version fields — with
+Both editing hand-offs pre-fill the namespace, name, and version fields, with
 the version set to the *next* one, so saving again publishes a new version
 instead of colliding with the one you opened (see [Versions](#versions)).
 
 ### Opening a stored query in the builder
 
 The builder writes one shape of AQL, and it will only load a stored query back
-into its controls when it can reproduce that query **byte for byte** — it
+into its controls when it can reproduce that query **byte for byte**; it
 re-lowers what it recognised and compares the result against the stored text.
 Anything else opens with a notice naming exactly what the builder cannot
-express — a `$parameter` it has no field for, a query over other RM classes, an
-aggregate outside its output shapes — beside a link to work on it in the raw
+express (a `$parameter` it has no field for, a query over other RM classes, an
+aggregate outside its output shapes) beside a link to work on it in the raw
 editor instead. There is no partial load: a builder that showed *most* of a
 stored query would quietly rewrite it on the next save.
 
-A query that does load arrives complete — template, conditions (including
-nested ALL/ANY groups and negation), output shape, ordering, limit — with its
+A query that does load arrives complete (template, conditions including
+nested ALL/ANY groups and negation, output shape, ordering, limit) with its
 condition labels and value lists taken from the template's own constraints, and
 the next version proposed in the save field.
 
@@ -134,7 +134,7 @@ the next version proposed in the save field.
 
 **Run** on a stored-query row opens the runner for that query. It shows the
 stored AQL, prompts one field per parameter the query declares, and executes the
-*stored definition* on the CDR — not a copy of its text — so what runs is what
+*stored definition* on the CDR, not a copy of its text, so what runs is what
 every other openEHR client would get.
 
 Values are read as JSON first: `38.5` is sent as a number and `true` as a
@@ -143,7 +143,7 @@ quoting. To force a numeric-looking value to stay text, quote it: `"0123"`. A
 field left blank is not sent at all, so the CDR can apply its own default or say
 what is missing.
 
-Results render in the same results pane as the other query screens — table or
+Results render in the same results pane as the other query screens: table or
 chart, with previous/next paging. A query that sets its own row window (an AQL
 `LIMIT` or `TOP`) is run as stored and the pane says so rather than paging it,
 because openEHR does not allow a request window and a query window together.
@@ -166,7 +166,7 @@ sent.
 
 ### Grouping is the namespace
 
-A stored query is identified by a qualified name — `namespace::name`, the
+A stored query is identified by a qualified name, `namespace::name`, the
 namespace optional and, when present, a reverse domain name whose purpose in
 the openEHR REST specification is exactly "separation of use of stored
 queries by teams, companies, etc."
@@ -174,7 +174,7 @@ queries by teams, companies, etc."
 The console therefore does **not** invent a grouping of its own: a query's
 group *is* its namespace, chosen when you save it. The right-hand panel on
 **Queries** and the cohort tiles on the **Dashboard** are both derived live
-from `GET /definition/query`. There is nothing to create, edit, or remove —
+from `GET /definition/query`. There is nothing to create, edit, or remove:
 and nothing kept on the console's disk, so the grouping is durable in the
 CDR and reads identically for every openEHR client and every console
 replica. Queries saved without a namespace collect under **unqualified**.
@@ -187,18 +187,18 @@ field works too.
 ### Versions
 
 A stored query is identified by its qualified name **and a version**, and the
-version is SEMVER-style — `major.minor.patch`. The save surfaces expose it as
+version is SEMVER-style, `major.minor.patch`. The save surfaces expose it as
 an optional **Version** field, and the line under the fields always states
 which of the two openEHR store operations a click will perform:
 
 | Version field | What a save does |
 | --- | --- |
-| empty | `PUT /definition/query/{name}` — the CDR files it at the default slot `1.0.0` and **replaces** whatever was stored there |
-| `1.2.0` | `PUT /definition/query/{name}/{version}` — stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the console says so |
+| empty | `PUT /definition/query/{name}`; the CDR files it at the default slot `1.0.0` and **replaces** whatever was stored there |
+| `1.2.0` | `PUT /definition/query/{name}/{version}`; stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the console says so |
 
 Because an explicit version is immutable, **Open in editor** and **Open in
 builder** both propose the next minor version (opening `1.0.0` fills the field
-with `1.1.0`) — edit, save, and both versions are then listed side by side.
+with `1.1.0`): edit, save, and both versions are then listed side by side.
 Which part to bump is yours to change; the field is free text and only checks
 that a version you type is a complete triple.
 
@@ -211,7 +211,7 @@ later lookups would treat as a pattern. The CDR refuses one too, with a `400`:
 a prefix names no version a store could create, and openEHR assigns the write
 no other outcome.
 
-The default slot `1.0.0` is the CDR's own choice — openEHR does not say which
+The default slot `1.0.0` is the CDR's own choice; openEHR does not say which
 version a version-less store mints, so the version-less form always writes and
 reports that one slot, even when higher versions of the same name already
 exist. If you need a specific version, type it.
@@ -219,9 +219,9 @@ exist. If you need a specific version, type it.
 ### Deleting a stored query
 
 **Delete from CDR** (on a stored-query row) deletes *that version* of the
-query from the CDR's stored-query store, for every client — the only
+query from the CDR's stored-query store, for every client. The only
 destructive action on the screen. It appears only when the CDR's admin API is
-enabled (`admin.enabled` / `FERROEHR__ADMIN__ENABLED`, off by default — see
+enabled (`admin.enabled` / `FERROEHR__ADMIN__ENABLED`, off by default; see
 [`[admin]`](../installation/config-auth.md#admin)); the delete itself
 additionally needs the ADMIN role, and a session without it is refused with
 a message naming what is missing.

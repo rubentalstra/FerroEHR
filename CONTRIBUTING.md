@@ -3,24 +3,24 @@
 Thank you for your interest in contributing. This document covers the practical
 rules; the architectural ground rules live in
 [`docs/architecture.md`](docs/architecture.md) and the root `CLAUDE.md`, and
-the project's position — why it exists, and what it asks of the companies that
-build on it — is
+the project's position (why it exists, and what it asks of the companies
+that build on it) is
 [Why FerroEHR exists](https://ferroehr.eu/docs/latest/why-ferroehr.html).
 
 There is no contributor licence agreement and no copyright assignment: you keep
 your copyright, and the licence stays MIT for everyone. Contributions are not
-only code — a bug report with a reproducing request, a conformance case for
+only code: a bug report with a reproducing request, a conformance case for
 uncovered behaviour, a specification ambiguity you had to resolve, a
 documentation correction, or measurement from your own hardware all count.
 
 ## Before you start
 
-- **Read [`docs/architecture.md`](docs/architecture.md) first** — it explains
+- **Read [`docs/architecture.md`](docs/architecture.md) first.** It explains
   the two-layer split (generated `openehr-*` spec crates, hand-written
   `ferroehr-*` application) every change must respect.
 - For anything spec-facing (RM semantics, REST wire behaviour, AQL, canonical
   JSON/XML, templates, terminology), **the vendored openEHR specification text at
-  [`docs/specs/openehr/`](docs/specs/openehr/) is the authority** — cite the spec
+  [`docs/specs/openehr/`](docs/specs/openehr/) is the authority.** Cite the spec
   file and section in your PR description. EHRbase and other CDRs are prior art,
   not oracles.
 
@@ -86,7 +86,7 @@ render/boot lanes; nothing is advisory.
 ## Reporting issues
 
 Use the GitHub issue tracker. For suspected security vulnerabilities, **do not
-open a public issue** — see [SECURITY.md](SECURITY.md).
+open a public issue**; see [SECURITY.md](SECURITY.md).
 
 ## Code of conduct
 

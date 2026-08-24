@@ -3,7 +3,7 @@
 Where the release's boundaries are drawn: namespace scoping, the two ways to
 isolate tenants, the decisions not to adopt a mesh or a second policy engine,
 resource bounds in four nested layers, the ingress policy that narrows ports
-before it narrows sources, and deny-by-default egress — the one control on these
+before it narrows sources, and deny-by-default egress: the one control on these
 pages that is not free.
 
 <!-- toc -->
@@ -11,7 +11,7 @@ pages that is not free.
 ## Namespaces and the two tenant models
 
 **Ours, and satisfied by construction.** Every object the chart renders is
-namespace-scoped — Deployment, Service, ConfigMap, Secret, ServiceAccount,
+namespace-scoped: Deployment, Service, ConfigMap, Secret, ServiceAccount,
 NetworkPolicy, PodDisruptionBudget, HorizontalPodAutoscaler, Ingress,
 ServiceMonitor, the migration Job, and the admin console's own Deployment,
 Service, ServiceAccount, NetworkPolicy and Ingress when that workload is enabled.
@@ -20,7 +20,7 @@ cluster-scoped object of any kind**, and no template hard-codes a namespace: eve
 reference resolves within the release's own namespace. So two releases in two
 namespaces cannot collide, and neither can reach the other's Secrets.
 
-Two ways to isolate tenants, with genuinely different blast radii — choose
+Two ways to isolate tenants, with genuinely different blast radii; choose
 deliberately:
 
 | | Namespace per tenant | In-process multi-tenancy (`config.tenancy.enabled`) |
@@ -46,9 +46,9 @@ What a mesh would provide, and what already provides it:
 | Mesh benefit | Already covered by |
 |---|---|
 | mTLS between services | the server terminates TLS natively (`config.server.tls`), including client-certificate authentication for the IHE ATNA node-authentication posture; the database connection uses `sslmode=verify-full` |
-| East-west traffic restriction | the shipped NetworkPolicy — and, for the admin console, an egress policy that admits the CDR Service, DNS and outbound HTTPS and nothing else |
+| East-west traffic restriction | the shipped NetworkPolicy, and for the admin console an egress policy that admits the CDR Service, DNS and outbound HTTPS and nothing else |
 | Request-level observability | OTLP traces and Prometheus metrics from the application, which sees openEHR operations rather than an L7 proxy's view of opaque HTTP |
-| An audit trail of access | the ATNA/BALP audit trail, which records *who read which patient's record* — a property no proxy can reconstruct |
+| An audit trail of access | the ATNA/BALP audit trail, which records *who read which patient's record*, a property no proxy can reconstruct |
 
 Against that: a mesh is a second control plane, a sidecar in every pod (which the
 Restricted profile and the empty capability set then have to accommodate), and an
@@ -56,11 +56,11 @@ opinionated platform to upgrade in lockstep. For **one workload plus an external
 database**, the lateral-movement problem a mesh exists to solve barely exists.
 
 **A genuine gap, named rather than glossed:** a mesh would give *workload
-identity* — SPIFFE-style cryptographic identity per pod, so the database could
+identity*: SPIFFE-style cryptographic identity per pod, so the database could
 authenticate the client workload rather than a shared password held in a Secret.
 Nothing in this deployment provides that; the DSN is a bearer credential, and any
 process that can read the Secret can use it. The mitigations available without a
-mesh are an external secret manager plus short-lived credentials — for example
+mesh are an external secret manager plus short-lived credentials, for example
 cloud IAM database authentication, where the DSN carries a rotating token rather
 than a password, bound through `serviceAccount.annotations`. If you run a mesh
 anyway, expect the overlaps above rather than double-implementing them, and note
@@ -71,13 +71,13 @@ that its sidecar will need its own Pod Security accommodation.
 **Operator's, and only for one of the three use cases a general policy engine is
 usually proposed for.**
 
-- **Application authorization — already solved, do not add a second engine.** This
+- **Application authorization: already solved, do not add a second engine.** This
   server ships a policy-driven authorization layer: RBAC, plus ABAC with an
   embedded Cedar engine or an external policy decision point. Adding a second
   engine for application decisions would mean two policy engines disagreeing about
   one question, and the one that loses is whichever is consulted second.
-- **Service-mesh authorization — moot**, no mesh ([above](#service-mesh-a-recorded-decision)).
-- **Admission control — applies**, and it is the same lever image provenance and
+- **Service-mesh authorization: moot**, no mesh ([above](#service-mesh-a-recorded-decision)).
+- **Admission control: applies**, and it is the same lever image provenance and
   Pod Security enforcement need.
 
 **Decision: Kyverno**, chosen for what it must enforce rather than on general
@@ -87,7 +87,7 @@ verification, and its policies can enforce pod-security constraints beyond what
 namespace labels express. `sigstore-policy-controller` does provenance only, so it
 would have to be paired with something else. Kubernetes' built-in
 **ValidatingAdmissionPolicy** (CEL, no external controller) is attractive for pod
-shape and is the right tool for cheap structural rules — but it **cannot verify
+shape and is the right tool for cheap structural rules, but it **cannot verify
 signatures at all**, because CEL evaluation makes no network calls and cannot
 reach a transparency log, so it cannot be the answer to the control that matters
 most here.
@@ -96,44 +96,44 @@ If you already run OPA/Gatekeeper for other reasons, keep it and add
 `sigstore-policy-controller` alongside for provenance; do not run two general
 admission engines. The copyable provenance policies are in
 [Images](hardening-supply-chain.md#image-provenance-at-admission), and Pod
-Security enforcement needs no engine at all — it is
+Security enforcement needs no engine at all: it is
 [the namespace label](hardening-workload.md#pod-security-admission-complying-versus-being-refused).
 
 ## Resource bounds: four layers
 
 **Split exactly.** Container requests and limits are the chart's; namespace
 `ResourceQuota` and `LimitRange` are cluster-admin objects, and a workload chart
-that created one would be claiming the whole namespace for itself — wrong the
+that created one would be claiming the whole namespace for itself, wrong the
 moment anything else shares it.
 
 The chart's bounds, and where they come from:
 
 | | Value | Derivation |
 |---|---|---|
-| `resources.requests.cpu` | `250m` | the scheduling floor: enough to boot, run migrations and serve steady traffic. An idle-but-serving pod uses far less, so this is deliberately generous rather than tuned to observed idle — a request is what the scheduler reserves, and a too-tight one gets the pod placed on a node with nothing left for a traffic spike. |
+| `resources.requests.cpu` | `250m` | the scheduling floor: enough to boot, run migrations and serve steady traffic. An idle-but-serving pod uses far less, so this is deliberately generous rather than tuned to observed idle: a request is what the scheduler reserves, and a too-tight one gets the pod placed on a node with nothing left for a traffic spike. |
 | `resources.requests.memory` | `256Mi` | observed steady-state resident use is a fraction of this, and the headroom is for the connection pool, the template and WebTemplate caches, and the per-request AQL working set. |
 | `resources.limits.cpu` | `2` | AQL execution is the CPU-heavy path and is bounded per query by `config.query.timeout_ms`; two cores lets a query and normal traffic proceed without throttling. CPU limits throttle rather than kill, so this trades latency, not availability. |
 | `resources.limits.memory` | `1Gi` | a **hard** ceiling: exceeding it is an OOM kill, so it sits well above observed use. The application-level body and result limits below are what keep a single request from approaching it. |
 
 Those figures are for a modest replica. Tune them from your own metrics rather than
-treating them as a recommendation — and remember that raising `replicaCount`
+treating them as a recommendation, and remember that raising `replicaCount`
 multiplies the request, which is what a namespace quota will notice first. The
 admin console has its own, smaller bounds under `adminUi.resources`.
 
-**The layering is the point**, and an operator should see it as one story — four
+**The layering is the point**, and an operator should see it as one story: four
 nested bounds, each catching what the next cannot:
 
-1. **Per request** — `config.server.limits.body_bytes` (413 on an over-large
+1. **Per request:** `config.server.limits.body_bytes` (413 on an over-large
    body), `config.query.timeout_ms` and `config.query.max_result_rows` (a query
    cannot return an unbounded row set), `config.db.statement_timeout_ms` as the
    backstop the HTTP timeout cannot be, because dropping a handler future does not
    cancel the statement PostgreSQL is running.
-2. **Per connection / per caller** — `config.server.connection.header_read_timeout_secs`
+2. **Per connection / per caller:** `config.server.connection.header_read_timeout_secs`
    and its HTTP/2 siblings bound a socket before a request exists;
    `config.server.rate_limit` refuses `429`; `config.server.max_in_flight` sheds
    `503` when the server is full.
-3. **Per container** — the requests and limits above.
-4. **Per namespace** — the operator's, and the only layer that protects *other*
+3. **Per container:** the requests and limits above.
+4. **Per namespace:** the operator's, and the only layer that protects *other*
    workloads from this one:
 
 ```yaml
@@ -167,14 +167,14 @@ spec:
 ```
 
 Size the quota above `replicaCount` × requests with headroom for a rolling
-upgrade — `maxSurge: 1` means one extra pod exists mid-rollout, and a quota with
+upgrade: `maxSurge: 1` means one extra pod exists mid-rollout, and a quota with
 no room for it makes upgrades stall rather than fail, which looks like a hung
 deployment. The migration Job needs its share too when
 `migrations.job.enabled` is on.
 
 ## Ingress: ports are narrowed, sources are yours
 
-**The chart's mechanism, your peers** — and the one control on this page whose
+**The chart's mechanism, your peers:** and the one control on this page whose
 default looks stronger than it is.
 
 `networkPolicy.enabled` ships **on**, and the policy it renders admits inbound
@@ -182,13 +182,13 @@ traffic to the API port (plus the management port when that runs on its own
 listener) and to nothing else. That half is unconditional. The other half is not:
 the rule's **sources** are narrowed only when you set `networkPolicy.ingressFrom`.
 While that list is empty the rule carries no `from` clause at all, and in the
-NetworkPolicy API a rule with no `from` admits **every** source — other
+NetworkPolicy API a rule with no `from` admits **every** source, other
 namespaces and off-cluster clients included, not "any pod in this namespace"
 ([NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)).
 
 So the shipped posture is: **ports restricted, sources open**. Nothing about
 `kubectl get networkpolicy`, the object's own name, or a summary that says
-"NetworkPolicy: enabled" distinguishes that from a policy that restricts both —
+"NetworkPolicy: enabled" distinguishes that from a policy that restricts both:
 which is why the chart now states it as a value you can see and change rather
 than leaving it implicit in an empty list.
 
@@ -212,13 +212,13 @@ being down.
 
 **The console's own policy works exactly the same way**, under
 `adminUi.networkPolicy.ingressFrom` and `adminUi.networkPolicy.ingressAllowAll`,
-with the same refusal on `false` + empty. Its egress half is genuinely closed —
-the CDR Service and DNS, nothing else — but its ingress half ships open like the
+with the same refusal on `false` + empty. Its egress half is genuinely closed
+(the CDR Service and DNS, nothing else) but its ingress half ships open like the
 CDR's, and what sits behind it is a login page. Narrow both.
 
 > [!IMPORTANT]
 > **`networkPolicy.ingressAllowAll: false` makes "no open ingress" a checked
-> fact.** With it set, an empty `ingressFrom` is refused at render time — the same
+> fact.** With it set, an empty `ingressFrom` is refused at render time, the same
 > treatment [egress](#egress-deny-by-default-and-what-it-breaks) gives a policy
 > with no database destination, and for the same reason: an absent selector is a
 > decision, and this one is invisible in the place an operator would look for it.
@@ -227,7 +227,7 @@ CDR's, and what sits behind it is a login page. Narrow both.
 > instead of quietly reopening the port.
 >
 > It ships as `true`, which is the honest name for what the chart has always
-> rendered: a stock `helm install` produces the open rule, and now says so — in
+> rendered: a stock `helm install` produces the open rule, and now says so, in
 > the values file, in the object's `kubernetes.io/description`, and in the notes
 > printed at install. A non-empty `ingressFrom` always narrows, whatever this key
 > is set to; it decides the empty case only.
@@ -236,12 +236,12 @@ CDR's, and what sits behind it is a login page. Narrow both.
 > **A NetworkPolicy is only as real as the CNI that implements it.** On a cluster
 > whose network plugin does not enforce NetworkPolicy, the object is accepted,
 > stored and displayed with no effect and no warning. Verify by attempting a
-> connection the policy should refuse — from a pod in another namespace, since
+> connection the policy should refuse, from a pod in another namespace, since
 > that is precisely the source an empty `ingressFrom` admits.
 
 ## Egress: deny by default, and what it breaks
 
-**The mechanism is the chart's; the destinations are yours** — and this is the
+**The mechanism is the chart's; the destinations are yours:** and this is the
 control where a NetworkPolicy stops being free.
 
 Enabling `networkPolicy.egress.enabled` refuses **all** outbound traffic except
@@ -262,8 +262,8 @@ networkPolicy:
 ```
 
 > [!IMPORTANT]
-> Enabling egress with **no destinations at all** — neither
-> `networkPolicy.egress.database.to` nor `networkPolicy.egress.rules` — is refused
+> Enabling egress with **no destinations at all** (neither
+> `networkPolicy.egress.database.to` nor `networkPolicy.egress.rules`) is refused
 > at render time rather than at rollout, because that mistake presents as a
 > database fault: readiness reports the database down, the log shows a connect
 > timeout, and nothing mentions the network policy. Supplying `rules` but omitting
@@ -277,7 +277,7 @@ only the rows you have switched on:
 | Destination | Turned on by | Port | Typically |
 |---|---|---|---|
 | Cluster DNS | always | UDP+TCP 53 | in-cluster (always allowed) |
-| PostgreSQL | the DSN — **never optional** | the DSN's (5432) | off-cluster (managed) |
+| PostgreSQL | the DSN, **never optional** | the DSN's (5432) | off-cluster (managed) |
 | OTLP collector | `config.telemetry.otlp_endpoint` | 4317 gRPC / 4318 HTTP | in-cluster |
 | OIDC issuer (discovery + JWKS) | `config.auth.oidc.issuer`, **unless** `config.auth.oidc.jwks_json` or `config.auth.oidc.jwks_json_file` is supplied | 443 | off-cluster |
 | External policy decision point | `config.authz.abac.engine: remote` plus `config.authz.abac.remote.server` | the URL's (3001) | in-cluster |
@@ -301,13 +301,13 @@ identity provider. Narrow that last rule to your issuer's address if you can.
 > server behind a rotating CDN address, will break under a CIDR that was correct
 > when written. Where a provider publishes no stable range, the honest options are
 > an egress gateway with a fixed address, or leaving egress off and accepting that
-> outbound traffic is unrestricted — not a `0.0.0.0/0` rule that pretends to be a
+> outbound traffic is unrestricted, not a `0.0.0.0/0` rule that pretends to be a
 > policy.
 
 **Two failure modes worth knowing before you tighten this.**
 
 **An over-tight policy silently stops observability.** A blocked OTLP exporter
-does **not** fail the request that generated the span — it drops the span, with no
+does **not** fail the request that generated the span: it drops the span, with no
 log line and no error. So a policy that forgets the collector produces a server
 that is healthy by every check and has quietly stopped being observable. If you
 enable egress and traces disappear, look at the policy before the collector.
@@ -315,7 +315,7 @@ enable egress and traces disappear, look at the policy before the collector.
 **Tightening egress under a running pod appears to work when it has not.** A
 NetworkPolicy is enforced on new connections; existing conntrack flows survive. So
 a pod whose connection pool is already established keeps serving after you remove
-its database rule — and fails at the next restart, which may be a node drain in
+its database rule, and fails at the next restart, which may be a node drain in
 the middle of the night. Observed on a live cluster:
 
 ```text
@@ -330,5 +330,5 @@ restore the rule        → ready again, with no restart
 
 So: **verify an egress policy by restarting a pod, not by watching the one that is
 already running.** (The recovery in the last line needing no restart is the
-readiness check re-testing its dependencies on every probe — the same property
+readiness check re-testing its dependencies on every probe, the same property
 described for [migrations](kubernetes.md#health-probes).)

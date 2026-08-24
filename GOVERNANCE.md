@@ -3,9 +3,9 @@
 How decisions get made in FerroEHR, who makes them, and how that changes.
 
 This document describes the project as it actually operates. Where the honest
-description is "one person decides", it says so — a governance document that
-describes a committee that does not meet is worse than none, because it invites
-a reviewer to rely on a control that is not there.
+description is "one person decides", it says so. A governance document that
+describes a committee that does not meet is worse than none, because it
+invites a reviewer to rely on a control that is not there.
 
 ## Current structure: benevolent dictator, one maintainer
 
@@ -17,7 +17,7 @@ no technical oversight body, no foundation, and no vote.
 This is the standard structure for a project of this age and size, and it has
 the standard trade-off: decisions are fast and coherent, and the project's
 resilience is one person's. The second half of that sentence is treated as a
-finding rather than a footnote — see
+finding rather than a footnote; see
 [MAINTAINERS.md § If the maintainer is unavailable](MAINTAINERS.md#if-the-maintainer-is-unavailable).
 
 ## Where decisions are recorded
@@ -27,21 +27,21 @@ that is deliberate: an architecture decision record that outlives the code it
 justified becomes a false authority, so this project keeps decisions in the
 places that cannot drift out of sync with the tree.
 
-| Kind of decision | Where it lives |
-|---|---|
-| What to work on next | a [GitHub issue](https://github.com/rubentalstra/FerroEHR/issues); the open list is the worklist |
-| Direction and status, publicly | the [FerroEHR Roadmap project board](https://github.com/rubentalstra/FerroEHR/projects), a view over the tracker |
-| Why a change looks the way it does | the pull request description that landed it, and the issue's closing comment |
-| What a release contains | [`CHANGELOG.md`](CHANGELOG.md) and the `vX.Y.Z` milestone |
-| Standing architectural rules | [`docs/architecture.md`](docs/architecture.md) and the `CLAUDE.md` files |
-| What conformance means | the committed artifacts under `docs/conformance/`, produced by the CNF runner |
+| Kind of decision                   | Where it lives                                                                                                   |
+|------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| What to work on next               | a [GitHub issue](https://github.com/rubentalstra/FerroEHR/issues); the open list is the worklist                 |
+| Direction and status, publicly     | the [FerroEHR Roadmap project board](https://github.com/rubentalstra/FerroEHR/projects), a view over the tracker |
+| Why a change looks the way it does | the pull request description that landed it, and the issue's closing comment                                     |
+| What a release contains            | [`CHANGELOG.md`](CHANGELOG.md) and the `vX.Y.Z` milestone                                                        |
+| Standing architectural rules       | [`docs/architecture.md`](docs/architecture.md) and the `CLAUDE.md` files                                         |
+| What conformance means             | the committed artifacts under `docs/conformance/`, produced by the CNF runner                                    |
 
 A decision that exists only in a conversation is not a decision this project
 made.
 
 ## How a change gets in
 
-1. **An issue carries the contract** — what is wrong or missing, and the
+1. **An issue carries the contract**: what is wrong or missing, and the
    acceptance criteria that settle it.
 2. **A pull request implements it** on a conventional-type branch, declaring
    `Closes #N`.
@@ -84,8 +84,8 @@ an issue. Those are the reports this project most wants.
 
 The route is open and it is the ordinary one:
 
-1. **Contribute.** Sustained, merged, self-directed work — not a headcount of
-   pull requests, but the point at which review stops finding things.
+1. **Contribute.** Sustained, merged, self-directed work. The bar is the
+   point at which review stops finding things, not a pull-request count.
 2. **Show judgement in the areas that matter here.** The signal is
    specification discipline: reading the normative text first-hand, citing it,
    refusing to resolve a question from another implementation's behaviour, and
@@ -127,6 +127,6 @@ occupies. Enforcement is the maintainer's, at the contact address given there.
 
 Governance changes are pull requests against this file, like anything else, and
 they take effect when they merge. If the structure described here stops being
-true — a second maintainer joins, a legal entity forms, a decision body is
-created — this file changes in the same pull request that makes it true, not
+true (a second maintainer joins, a legal entity forms, a decision body is
+created), this file changes in the same pull request that makes it true, not
 afterwards.

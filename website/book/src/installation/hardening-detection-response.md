@@ -8,7 +8,7 @@ takes controls out of your hands.
 
 ## Secrets at rest, and what ours contain
 
-**Operator's** — encryption at rest is an API-server flag
+**Operator's:** encryption at rest is an API-server flag
 (`--encryption-provider-config`), and **Kubernetes does not encrypt Secrets by
 default**. A `Secret` is base64-encoded, which is an encoding and not a
 protection: without that configuration, everything below sits readable in etcd,
@@ -35,12 +35,12 @@ The rendered `ferroehr.toml` itself is **not** in that list, and that is worth
 stating because it used to be: while a Basic user's hash had nowhere secure to go,
 configuring one moved the whole configuration file into a Secret. Every credential
 the server models now has either a `*_file` sibling or a Secret-borne environment
-route, so no key takes that branch today — the chart keeps it only so that a
+route, so no key takes that branch today; the chart keeps it only so that a
 secret key added upstream tomorrow fails safe instead of landing in a ConfigMap.
 
 The first row is the one that matters most, and it has a property worth naming:
 **the DSN is a bearer credential.** Any process that can read it can use it, from
-anywhere the database is reachable — there is no binding to the workload that was
+anywhere the database is reachable: there is no binding to the workload that was
 issued it. That is the same gap named under [service
 mesh](hardening-network-policy.md#service-mesh-a-recorded-decision) (workload
 identity), reached from the other direction, and the mitigation is the same: a
@@ -52,7 +52,7 @@ long-lived password in an object.
 on every API server. Prefer a KMS provider over `aescbc`/`secretbox` with a local
 key: a key sitting in a file on the control-plane node is protected by the same
 boundary as the etcd data it encrypts. On a managed cluster this is usually one
-setting (envelope encryption with the provider's KMS) — check whether it is on,
+setting (envelope encryption with the provider's KMS); check whether it is on,
 because it generally is not by default. Existing Secrets are only re-encrypted
 when rewritten, so follow the documented `kubectl get secrets --all-namespaces -o
 json | kubectl replace -f -` step, or the encryption applies to new writes only.
@@ -64,12 +64,12 @@ them from a secret manager:
 - **A CSI driver** ([Secrets Store CSI
   Driver](https://secrets-store-csi-driver.sigs.k8s.io/) with the Vault, AWS,
   Azure or GCP provider) mounts the value as a file. Point `extraVolumes` and
-  `extraVolumeMounts` at it and set the matching `*_file` configuration key —
+  `extraVolumeMounts` at it and set the matching `*_file` configuration key;
   `config.auth.oidc.hmac_secret_file`, `config.signing.key_passphrase_file`,
   `config.multimedia.secret_access_key_file`, a terminology client's
   `client_secret_file`. Nothing reaches a Kubernetes Secret at all.
 - **An operator that syncs into a Secret** (External Secrets Operator, Vault
-  Agent Injector) still lands in etcd, so it buys rotation rather than removal —
+  Agent Injector) still lands in etcd, so it buys rotation rather than removal:
   worth having, but pair it with encryption at rest.
 - **The DSN** is mounted too, from `database.existingSecret`, so a
   CSI-provided Secret carries it like any other. What a mount does **not** fix is
@@ -87,8 +87,8 @@ published image, so a credential committed to the repository or baked into a lay
 fails a job. The deliberate development credentials were checked against it and are
 not flagged, so nothing is exempted to make it pass.
 
-The volume-versus-environment half of this control — mounting secrets as read-only
-files rather than passing them as environment variables — is
+The volume-versus-environment half of this control (mounting secrets as read-only
+files rather than passing them as environment variables) is
 [covered on the Kubernetes page](kubernetes.md#secrets-and-mounted-config) and is
 already the chart's behaviour for every secret whose configuration key has a
 `*_file` sibling.
@@ -105,11 +105,11 @@ heuristics stop being heuristics:
 
 | Signal | Why it is unambiguous for this image |
 |---|---|
-| **Any `execve` of anything other than `/usr/local/bin/ferroehr`** | the image contains no other executable to run — a second process means one arrived from outside |
+| **Any `execve` of anything other than `/usr/local/bin/ferroehr`** | the image contains no other executable to run, so a second process means one arrived from outside |
 | **A shell process in the container** | impossible under normal operation; there is no shell in the filesystem |
 | **A write outside `/tmp`** | the root filesystem is read-only and `/tmp` is the only declared writable mount |
 | **An outbound connection to anything not in the egress table** | the [inventory](hardening-network-policy.md#egress-deny-by-default-and-what-it-breaks) is complete and small |
-| **Any attempt to load a kernel module, mount, or change namespaces** | the capability bounding set is empty, so these cannot succeed — an *attempt* is still a signal |
+| **Any attempt to load a kernel module, mount, or change namespaces** | the capability bounding set is empty, so these cannot succeed, but an *attempt* is still a signal |
 
 A starter Falco rule set exploiting exactly that:
 
@@ -143,10 +143,10 @@ third rule is that the list is short enough to be worth writing. The macro match
 the console's image too, whose only expected process is its own server binary.
 
 **What each layer sees, and cannot.** The syscall layer sees process execution,
-file writes and raw connections — a compromise of the *container* — but it has no
+file writes and raw connections (a compromise of the *container*) but it has no
 idea which patient's record was read, because to it every request is bytes on an
 established socket. The **ATNA audit trail** sees exactly that: which subject
-accessed which EHR, through which operation, under which authenticated identity —
+accessed which EHR, through which operation, under which authenticated identity:
 but it is emitted *by* the application, so a compromise deep enough to control the
 process can stop or falsify it. They are complementary and neither substitutes:
 runtime detection is how you learn the process is not itself any more; the audit
@@ -157,7 +157,7 @@ first alarm.
 
 ## Replica deviation and the outbound inventory
 
-**Operator's practice, from material the server already publishes** — which makes
+**Operator's practice, from material the server already publishes:** which makes
 it more actionable here than the generic advice.
 
 Replicas of this Deployment are interchangeable: same image, same configuration,
@@ -170,7 +170,7 @@ Worth alerting on a divergence between pods rather than on an absolute value:
 | request rate per pod | a load-balancing fault, or one pod being addressed directly, bypassing the Service |
 | error ratio (5xx over total) per pod | a pod-local fault: a broken database connection, an exhausted pool, a failing dependency one pod reaches and others do not |
 | tail latency per pod | a throttled pod (CPU limit), a noisy neighbour, or a degraded node |
-| authentication-failure rate per pod | credential stuffing aimed at one endpoint — or a token-validation path failing on one pod (an unreachable JWKS endpoint) |
+| authentication-failure rate per pod | credential stuffing aimed at one endpoint, or a token-validation path failing on one pod (an unreachable JWKS endpoint) |
 | resident memory slope per pod | a leak or an unbounded working set on one replica only |
 | database pool acquire-wait per pod | that pod's pool is starved while others are not |
 
@@ -178,8 +178,8 @@ The management surface's `prometheus` endpoint (opened with
 `config.management.endpoints.prometheus`) is the source, and
 `metrics.serviceMonitor.enabled` is how an operator-managed Prometheus discovers
 it. Two things worth knowing: the ATNA audit trail gives a second, independent
-view — an access pattern that deviates per pod is visible there at
-patient-and-operation granularity — and a pod that fails readiness leaves the
+view (an access pattern that deviates per pod is visible there at
+patient-and-operation granularity) and a pod that fails readiness leaves the
 Service, so "one pod has zero traffic" can mean it is unready rather than
 unreachable.
 
@@ -188,7 +188,7 @@ unreachable.
 derived from the configuration tree. In the chart's default posture, read from node
 conntrack on a running pod, the complete set is **two destinations**: TCP 5432 to
 the database and UDP 53 to cluster DNS. Nothing else. That is what makes a
-deny-by-default egress policy tractable — the base allowance is two rules, and
+deny-by-default egress policy tractable: the base allowance is two rules, and
 every addition is a named, configured endpoint rather than an open range. Compare
 live traffic against the policy periodically: a connection the policy permits and
 nothing makes is a rule to remove.
@@ -198,18 +198,18 @@ nothing makes is a rule to remove.
 **Scaling to zero is a clinical-safety decision, and it should be made before you
 need it.** `kubectl scale deploy/ferroehr --replicas=0` is the Kubernetes-native
 containment action, and for this workload it means **clinical access stops
-immediately** — no reads, no commits, for everyone. That is the point during a
+immediately**: no reads, no commits, for everyone. That is the point during a
 breach, and it is also an outage of a system clinicians may be depending on at
 that moment. Decide in advance who is authorized to make that call.
 
 What scaling to zero **does**:
 
 - stops all new requests, including whatever the attacker is doing through the API;
-- leaves the database untouched — it is external, so its data, its contents and
+- leaves the database untouched: it is external, so its data, its contents and
   its own access controls are unaffected;
 - preserves the pod's evidence only **partially**: scaling to zero terminates the
   pods, so anything in memory is gone. To preserve a pod for forensics, cordon its
-  node and remove the pod from the Service by editing its labels instead — the
+  node and remove the pod from the Service by editing its labels instead; the
   ReplicaSet then creates a replacement while the original keeps running,
   detached from traffic.
 
@@ -220,7 +220,7 @@ What it does **not** do:
   there and still retrievable.
 - **it does not stop an attacker who has the DSN.** The database is reachable
   independently of these pods; a leaked DSN is used from anywhere the database
-  admits, which is why rotating it (below) — not scaling — is the containment
+  admits, which is why rotating it (below), not scaling, is the containment
   action for that particular compromise.
 - **it does not truncate the audit trail.** Records already written to the local
   store, or already forwarded to an external repository, survive. Records still in
@@ -232,7 +232,7 @@ What it does **not** do:
 ### Rotating each credential
 
 Every secret except two is a mounted file, so rotation is: update the Secret, then
-**restart the pods**. The restart is not optional — configuration is read at boot,
+**restart the pods**. The restart is not optional: configuration is read at boot,
 and Kubernetes propagating a new Secret into the volume does not make a running
 process re-read it:
 
@@ -272,7 +272,7 @@ certificate is a primary key plus its subkeys ([RFC 9580
 §10.1](https://www.rfc-editor.org/rfc/rfc9580.html)), the primary key certifies
 while a subkey signs, and rotating means issuing a *new signing subkey* on the
 same certificate. The retired subkey stays in the certificate, so every version
-it signed keeps verifying — with no configuration change, no second key file,
+it signed keeps verifying, with no configuration change, no second key file,
 and no window where history is unreadable. It is also the only path that keeps
 the primary key's identity intact; replacing a primary key discards everything
 that has ever been said about it.
@@ -290,7 +290,7 @@ so the switch is invisible to readers.
 
 **The exception: a whole certificate is replaced.** A compromised primary key,
 an organisational change, or migrating from a different signer means a genuinely
-new certificate — and then the old one must be retained, because a stored
+new certificate, and then the old one must be retained, because a stored
 signature carries no key identifier and a version signature is an immutable
 committed fact that cannot be re-issued. Keep the retired **public** key:
 
@@ -309,7 +309,7 @@ Under Helm these are `config.signing.key_path` and
 > Retired entries are **public** keys, which is what makes the safety property
 > structural rather than a promise: no secret key is loaded for them, so a
 > retired certificate can verify and can never sign again. Verification does not
-> become permissive either — a signature matching neither the active certificate
+> become permissive either: a signature matching neither the active certificate
 > nor any retired one still fails, and tampered content still fails.
 
 This is the same mechanism Debian uses for its archive: `debian-archive-keyring`
@@ -329,12 +329,12 @@ If you are mid-rotation and need reads to keep working before either mechanism
 is in place, `config.signing.verify_on_read: warn` downgrades a verification
 failure from a 5xx to a logged and metered event
 (`version_signature_invalid_total{verdict="pgp_invalid"}`). That is a deliberate,
-recorded reduction in an integrity guarantee — not a setting to leave on.
+recorded reduction in an integrity guarantee, not a setting to leave on.
 
 ## Logging: two streams that are not interchangeable
 
 **Container logging is ours, and already the right shape.** The server writes to
-stdout and stderr and never to a file inside the container — which is both the
+stdout and stderr and never to a file inside the container, which is both the
 [Kubernetes logging
 architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/)'s
 expectation and a requirement of `readOnlyRootFilesystem: true`: there is nowhere
@@ -351,12 +351,12 @@ record:**
 | Format | JSON lines, ours | DICOM PS3.15 plus FHIR `AuditEvent` (IHE BALP), standardised |
 | Retrieval | your log tool | the ITI-81 FHIR `AuditEvent` search endpoint |
 | Retention | your collector's policy | `config.audit.store.retention_days` (`0` keeps forever) |
-| May it be sampled or dropped? | **yes** — it is diagnostics | **no** |
+| May it be sampled or dropped? | **yes**, it is diagnostics | **no** |
 
 > [!IMPORTANT]
 > **Do not treat the audit trail as "logs".** A collector configured to sample a
 > noisy stream, or to drop under volume, is a reasonable policy for diagnostics and
-> a compliance failure for the audit trail — it silently discards the record of who
+> a compliance failure for the audit trail: it silently discards the record of who
 > read which patient's data. The two travel by different paths precisely so that
 > one can be lossy: the audit trail does not go through stdout at all. If you also
 > ship audit records to your log platform for convenience, that copy is a
@@ -365,7 +365,7 @@ record:**
 The audit trail's own failure behaviour is configurable, and the default is worth
 knowing rather than inheriting: **`config.audit.fail_mode` defaults to `open`**, so
 an operation whose audit record cannot be written still proceeds, and the failure
-is metered rather than refused. `closed` answers `503` instead — the stronger
+is metered rather than refused. `closed` answers `503` instead, the stronger
 compliance posture, and one that turns an audit outage into a clinical outage.
 Which is correct depends on whether your regulatory position can tolerate an
 unaudited access more or less than a refused one; it is a policy choice either way,
@@ -375,13 +375,13 @@ and the shipped default chooses availability.
 an audit policy (`None` / `Metadata` / `Request` / `RequestResponse` per rule).
 `Metadata` for most resources with `Request`-level detail for Secret and RBAC
 changes is a reasonable starting shape. Two things worth alerting on specifically:
-**authorization failures** (`Forbidden` responses — a principal probing what it can
+**authorization failures** (`Forbidden` responses, a principal probing what it can
 reach), and any read of Secrets in this namespace by a principal that is not the
 kubelet, since that is what reading the DSN looks like from the API side.
 
 **Kubernetes `Events` are a third source**, and distinct from both: they are the
 cluster's account of what happened to your objects, they expire (typically an
-hour), and they are where this chart's failures show up first —
+hour), and they are where this chart's failures show up first:
 `Readiness probe failed: HTTP probe failed with statuscode: 503` when a dependency
 is down, `FailedCreate … violates PodSecurity "restricted:latest"` when a pod spec
 regresses under enforcement, `Unhealthy` and `Killing` during a rollout. Check
@@ -392,7 +392,7 @@ because the container never ran.
 ## On a managed control plane
 
 On EKS, GKE, AKS or an equivalent, **several controls in this audit stop being
-yours** — you cannot set API-server flags, reach etcd, or configure kubelet
+yours**: you cannot set API-server flags, reach etcd, or configure kubelet
 authentication. In exchange you inherit the provider's defaults, which may be
 stronger or weaker than this sheet assumes, and which you should verify rather
 than assume.
@@ -401,19 +401,19 @@ than assume.
 |---|---|
 | Host hardening, node OS patching | provider's, though **node images and upgrades are usually still yours to trigger** |
 | API-server flags, authorization mode | provider's (RBAC is on by default everywhere mainstream) |
-| etcd access + encryption at rest | provider's — but **envelope encryption with your own KMS key is usually opt-in**, and it is the control [our Secrets need](#secrets-at-rest-and-what-ours-contain) |
+| etcd access + encryption at rest | provider's, but **envelope encryption with your own KMS key is usually opt-in**, and it is the control [our Secrets need](#secrets-at-rest-and-what-ours-contain) |
 | Kubelet authentication | provider's |
 | Control-plane audit logging | provider's to enable, **often off or short-retention by default**, and usually billed |
 | User namespaces (`hostUsers: false`) | depends on the **node image's** runtime version, which is why the pod fails loudly rather than downgrading |
 | Pod Security Admission | yours (namespace labels) |
-| NetworkPolicy | yours to write — **enforcement depends on the CNI** |
+| NetworkPolicy | yours to write; **enforcement depends on the CNI** |
 | Everything the chart sets | unchanged: it is a workload |
 
 **Check the CNI before relying on the shipped NetworkPolicy.** This is the item
 that varies most and fails most silently: a NetworkPolicy on a cluster whose
 network plugin does not enforce it is an object the API accepts, stores and
 displays, with no effect and no warning. Provider defaults differ, versions change
-them, and some require enabling enforcement at cluster creation — which cannot be
+them, and some require enabling enforcement at cluster creation, which cannot be
 changed afterwards on some platforms. Do not read your provider's documentation
 and conclude; **test it**:
 
@@ -430,7 +430,7 @@ project's own deployment probe harness declares NetworkPolicy enforcement as
 something it does **not** exercise: a green result on one cluster's CNI would say
 nothing about yours.
 
-Provider audit tooling exists — for EKS,
+Provider audit tooling exists: for EKS,
 [hardeneks](https://github.com/aws-samples/hardeneks) is the commonly cited one.
 **We have not run it**, so it is named as a starting point rather than a
 recommendation: treat its output as input to the same ownership question this

@@ -67,6 +67,13 @@ ENV REVISION=${REVISION}
 # wall-clock and changes no shipped byte: parallelism only decides how many
 # translation units compile at once.
 ARG CARGO_BUILD_JOBS=2
+# cargo-auditable embeds the compressed dependency list in the binary's own
+# `.dep-v0` linker section (allocated, so it SURVIVES the strip below —
+# verified first-hand on a built binary), letting syft/trivy/grype/osv-scanner
+# read the crate graph from the shipped artifact itself
+# (https://github.com/rust-secure-code/cargo-auditable).
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    cargo install cargo-auditable --version 0.7.5 --locked
 # Both caches are mounts, per the official pattern (docs.docker.com/guides/rust):
 # /app/target holds the compile state (fingerprints included, so cargo's
 # freshness survives across builds — the thing an image layer can never give
@@ -76,7 +83,7 @@ ARG CARGO_BUILD_JOBS=2
 # the image, so nothing under /app/target survives past this step.
 RUN --mount=type=cache,target=/app/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo build --release --locked --jobs "${CARGO_BUILD_JOBS}" -p ferroehr-server \
+    cargo auditable build --release --locked --jobs "${CARGO_BUILD_JOBS}" -p ferroehr-server \
     && cp target/release/ferroehr /usr/local/bin/ferroehr \
     && strip /usr/local/bin/ferroehr
 

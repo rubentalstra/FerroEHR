@@ -9,18 +9,18 @@ favours either server is reported exactly like one that favours the other.
 
 EHRbase is prior art here, never an oracle. Every expected outcome comes from
 the openEHR specification text, so a row is red because the specification says
-otherwise — never because the two servers disagree.
+otherwise, never because the two servers disagree.
 
 > [!NOTE]
 > The two systems are **not** built or hosted alike, and the generated tables
 > below say so. FerroEHR is built from this repository's current sources;
 > EHRbase runs from its official published container images. The two runs were
-> also measured on different machines — each committed report records its own
+> also measured on different machines; each committed report records its own
 > environment. Read the conformance columns as comparable (identical catalogue,
 > identical runner, each side's own declarations) and the performance columns as
 > two separate measurements rather than a like-for-like hardware race.
 
-Each side runs with its **own committed party set** — an ixit describing the
+Each side runs with its **own committed party set**: an ixit describing the
 reachable instances (EHRbase's Basic auth carries one clinical and one admin
 principal and no read-only one, so its ixit declares none) and a statement (the
 ICS) declaring the capabilities, specification versions, and
@@ -32,7 +32,7 @@ That is how the comparison stays fair without weakening a single case.
 
 Every number and every curve on this page is generated at build time from the
 committed run records (`results.json`, `verdicts.json`, `stress.json` under
-`docs/conformance/`) — nothing here is hand-typed, and a CI stale-numbers gate
+`docs/conformance/`); nothing here is hand-typed, and a CI stale-numbers gate
 rejects any attempt to hand-type it. To reproduce either side yourself, see
 [Conformance](conformance.md#running-the-suite-yourself) and
 [Benchmarks](benchmarks.md).
@@ -45,7 +45,7 @@ rejects any attempt to hand-type it. To reproduce either side yourself, see
 {{#include ../generated/comparison-conformance.md}}
 
 Both servers' capability conformance, from each party's committed verdicts
-(generated, diff-guarded — see [Conformance](conformance.md) for how to read
+(generated, diff-guarded; see [Conformance](conformance.md) for how to read
 the grid):
 
 ![FerroEHR capability conformance](conformance-assets/conformance-heat-grid.svg)
@@ -55,7 +55,7 @@ the grid):
 And the per-chapter outcomes side by side. Both charts render the same
 chapter-and-band taxonomy, so they read band-for-band: a band EHRbase did not
 exercise shows as an explicit `no cases` row in the same position. Compare the
-printed counts, not the bar lengths — each chart scales its bars to its own
+printed counts, not the bar lengths: each chart scales its bars to its own
 widest band, and the legend states that scale.
 
 ![FerroEHR outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
@@ -84,17 +84,17 @@ visible in the committed record:
   was refused. The runner never guesses a verdict, and an inconclusive row is
   never counted as a failure of the behaviour under test.
 - **Report-only grounds.** Where a case rests on an openEHR silence our
-  ambiguity register marks report-only — an upstream problem report still open
-  — the row is recorded but does not gate either party's verdicts.
+  ambiguity register marks report-only (an upstream problem report still open)
+  the row is recorded but does not gate either party's verdicts.
 
 Where the red rows *do* concentrate is the content chapter: no content case
-passed — each one either failed or never established its ground — and the
+passed (each one either failed or never established its ground) and the
 direction is the opposite of a permissive server. The catalogue's content cases
 are accept/reject decision tables committed against a template the case itself
 provisions, and in the ones that ran, EHRbase's rejected rows pass while its
 **accepted** rows fail: it refuses documents its own template admits. Some rows
 require a plain bad request rather than a semantic refusal (the document is
-malformed, not merely invalid), and there EHRbase refuses too — in the wrong
+malformed, not merely invalid), and there EHRbase refuses too, in the wrong
 class.
 
 ### The principal EHRbase divergences, stated plainly
@@ -102,24 +102,24 @@ class.
 Each item below is a red row in the committed EHRbase record, restated from what
 that record holds: the outcome the specification-cited expectation required
 versus the outcome observed. Except where marked, every one was selected for
-EHRbase's own declared ITS-REST 1.0.3 — the Release-1.1.0-dated behaviours never
+EHRbase's own declared ITS-REST 1.0.3; the Release-1.1.0-dated behaviours never
 reach this list. The record carries the case id, the failing step, the rows
-driven and the reason string — it is not a wire transcript, so nothing is quoted
+driven and the reason string. It is not a wire transcript, so nothing is quoted
 here beyond what it actually captured.
 
 - **Every `EHR_STATUS` write is refused.** Setting or clearing
   `is_queryable`/`is_modifiable` is realized as a read-modify-write: read the
   status, flip the flag, `PUT` it back with the version identifier from the
-  server's own `ETag` in a quoted `If-Match` — the exact form the released
+  server's own `ETag` in a quoted `If-Match`, the exact form the released
   overview's own example shows. Every one of those rows, including the plain
   happy path, answers `400` instead of updating: the status the same released
   section reserves for a client that did **not** provide `If-Match` at all. The
-  rest of that path is therefore unreadable — a row meant to distinguish a
+  rest of that path is therefore unreadable: a row meant to distinguish a
   semantic refusal from a malformed request gets that same `400`, so the record
   cannot say what EHRbase's validation would have done.
 - **No `Last-Modified` anywhere.** The released overview says both `ETag` and
   `Last-Modified` SHOULD be included for versioned resources; EHRbase sends no
-  `Last-Modified` on any of them — contribution commits, contribution reads,
+  `Last-Modified` on any of them: contribution commits, contribution reads,
   directory reads, updates and deletes, and the versioned `EHR_STATUS` reads in
   JSON and XML alike. It is the single widest header difference in the record.
   Relatedly, a stale `If-Match` on a directory update is refused without the
@@ -128,7 +128,7 @@ here beyond what it actually captured.
   `EHR_STATUS` that is an archetype root carrying no `archetype_details` is
   created rather than refused, while the four sibling rows in the same case
   (missing mandatory members, an undecodable polymorphic slot) are refused
-  correctly — so this is a validation gap, not a missing validator. A directory
+  correctly, so this is a validation gap, not a missing validator. A directory
   whose root archetype identifier does not match the one required is likewise
   accepted, on both the create and the update path, and a CONTRIBUTION member
   marked deleted that still carries data commits instead of being refused.
@@ -141,7 +141,7 @@ here beyond what it actually captured.
   directory that does not exist answers a failed precondition.
 - **A missing directory is dressed as a failed precondition.** Both the update
   and the delete of a directory on an EHR that has none answer
-  `412 Precondition Failed` where the released text requires not-found — HTTP
+  `412 Precondition Failed` where the released text requires not-found. HTTP
   requires the opposite order, since a failure detectable before the
   precondition is evaluated takes precedence over evaluating it. On the same
   operation a genuinely stale `If-Match` answers `409`, a status the
@@ -156,7 +156,7 @@ here beyond what it actually captured.
   `my_compositions` among its valid examples) and puts the dot inside the
   query-name character set, with `::` as the only separator. Both a plain
   unqualified name and a namespace-less dotted name are refused as bad
-  requests. A third store — a fully qualified name whose AQL carries a `TOP` —
+  requests. A third store (a fully qualified name whose AQL carries a `TOP`)
   is refused as well, so the paging conflict that case exists to test never got
   driven.
 - **The stored-query listing does not honour the prefix.** The released list
@@ -185,7 +185,7 @@ here beyond what it actually captured.
   not exist answers an ordinary result set rather than reporting the unknown
   EHR. Reproduced live against a composed EHRbase, its own response metadata
   discloses the query it actually executed, with a row limit appended and no
-  EHR predicate added — the header behaves exactly like the parameter. Naming
+  EHR predicate added; the header behaves exactly like the parameter. Naming
   the EHR *inside* the AQL works, so what is dropped is specifically the
   request-level scope. Stated at its true strength: the released REST text puts
   *support* for these parameters at SHOULD and the semantics are the service
@@ -196,8 +196,8 @@ here beyond what it actually captured.
   lower-case `ehr` type where the Reference Model's object reference spells it
   `EHR`.
 - *(1.1.0-grounded)* **The template upload refuses a JSON `Accept`.** Asked for
-  `application/json` it answers `406` — the refusal body the record captured
-  reads `"No acceptable representation"` — and serves XML only, while the
+  `application/json` it answers `406` (the refusal body the record captured
+  reads `"No acceptable representation"`) and serves XML only, while the
   released parameter enumeration for that header lists JSON first. This single
   refusal is what makes most content-chapter rows inconclusive: the runner's
   provisioning uploads ask for JSON, EHRbase refuses, and the case's ground
@@ -206,7 +206,7 @@ here beyond what it actually captured.
 Two things the record deliberately does **not** support, and therefore are not
 claimed here: it captures no response bodies beyond the few a case records, so
 no error text is quoted above that the record does not contain; and it says
-nothing about EHRbase's canonical-XML root namespace — the case that would have
+nothing about EHRbase's canonical-XML root namespace: the case that would have
 established it never got past provisioning, and the negotiated-namespace
 siblings are out of scope for EHRbase's declared options.
 
@@ -226,12 +226,12 @@ One half of the EHR-scope row above is a silence too, and a much narrower one
 than this page previously claimed: the service model declares an error for a
 query scoped to an EHR that does not exist, and the released REST text binds
 that error to no status, so *which* refusal a conformant server owes is
-genuinely open — our suite resolves it to not-found. What the scope *does* is
+genuinely open, and our suite resolves it to not-found. What the scope *does* is
 not open, which is why that row is published as a divergence rather than as a
 reading.
 
 Every silence is recorded in the runner's typed ambiguity register and
-reported upstream — a specification silence is never resolved privately, and
+reported upstream: a specification silence is never resolved privately, and
 never resolved by looking at what a server happens to do.
 
 ## Performance
@@ -241,13 +241,13 @@ never resolved by looking at what a server happens to do.
 ### Reading the stress table honestly
 
 The step-load ladder declares a rate *sustained* only if the whole envelope
-holds at that rate — the latency budget **and** the error budget. EHRbase's
+holds at that rate: the latency budget **and** the error budget. EHRbase's
 ladder found no sustained rung, and its own report records two simultaneous
 breaches on every rung it tried, down to the lowest one:
 
 - **The error tolerance.** Composition commits and updates, contribution
   commits, `EHR_STATUS` updates, directory creates and the item-tag operations
-  error deterministically — these are the same wire refusals the conformance
+  error deterministically; these are the same wire refusals the conformance
   section above lists, met again under load.
 - **The latency budget**, on the ward-round query, by more than an order of
   magnitude.
@@ -261,7 +261,7 @@ observations from those same rungs.
 ## Method, in one paragraph
 
 The conformance instrument derives every expected outcome from the openEHR
-specifications — never from either server's observed behaviour — and runs
+specifications (never from either server's observed behaviour) and runs
 against real composed deployments of both systems (`scripts/conformance.sh`,
 `CONF_SUT=ehrbase` for the EHRbase side). The stress instrument drives the same
 hospital-simulation workload (admissions, observations, medication rounds, lab

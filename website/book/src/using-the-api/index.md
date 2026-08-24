@@ -1,10 +1,10 @@
 # Using the API
 
-FerroEHR exposes the openEHR **REST API** (ITS-REST Release-1.1.0 — the version
+FerroEHR exposes the openEHR **REST API** (ITS-REST Release-1.1.0, the version
 the server reports and is conformance-tested against): a resource-based HTTP
 interface for creating EHRs, committing and retrieving versioned clinical
 documents, managing folders and contributions, and running queries. This part is
-the practical reference for client developers — the resources and their
+the practical reference for client developers: the resources and their
 operations, the headers that drive versioning and content negotiation, and the
 error contract. The complete, machine-generated endpoint reference (every path,
 parameter, and schema) is published separately as the **API reference** on the
@@ -56,7 +56,7 @@ The response carries an `Allow` header and a JSON body:
 Two things to know before you build discovery on it:
 
 - **`endpoints` is the live set**, not a fixed list: `/admin` appears only when
-  the admin API is enabled. It covers the **standardised** openEHR groups only —
+  the admin API is enabled. It covers the **standardised** openEHR groups only;
   FerroEHR's own extension families (health, management, messaging, item tags,
   the archetype-source routes) declare themselves through the served OpenAPI
   document instead.
@@ -67,7 +67,7 @@ Two things to know before you build discovery on it:
 
 > [!NOTE]
 > The manifest lives at the API base path and nowhere else. A bare `/` alias
-> existed in earlier versions and was removed — point discovery at the base
+> existed in earlier versions and was removed. Point discovery at the base
 > path.
 
 ## Authentication
@@ -75,16 +75,16 @@ Two things to know before you build discovery on it:
 Requests are authenticated unless auth is explicitly disabled. Two mechanisms
 ship:
 
-- **HTTP Basic** — a configured user store; send `Authorization: Basic …`.
+- **HTTP Basic:** a configured user store; send `Authorization: Basic …`.
   The examples in this book use `-u user:password` with curl.
-- **OAuth2 / OIDC bearer tokens** — send `Authorization: Bearer <token>`,
+- **OAuth2 / OIDC bearer tokens:** send `Authorization: Bearer <token>`,
   validated against a configured issuer (Keycloak, Entra ID, any
   standards-compliant provider).
 
 Authorization is coarse role-based access control by default (a `USER` role for
 clinical operations, an `ADMIN` role for admin operations), with optional
-attribute-based policies on top. The full picture — mechanisms, roles,
-multi-tenancy — is in [Security & multi-tenancy](../security.md).
+attribute-based policies on top. The full picture (mechanisms, roles,
+multi-tenancy) is in [Security & multi-tenancy](../security.md).
 
 ### Which status a credential problem gets
 
@@ -94,15 +94,15 @@ means "fix your credential":
 | Situation | Status | What it means |
 |---|---|---|
 | No `Authorization` header | `401` | with a `WWW-Authenticate` challenge listing the schemes this server implements, and **no** `error=` code — nothing has gone wrong yet ([RFC 6750 §3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)) |
-| Credential presented and rejected | `401` | the challenge carries `error="invalid_token"` — expired, revoked, malformed, or simply wrong |
+| Credential presented and rejected | `401` | the challenge carries `error="invalid_token"`: expired, revoked, malformed, or simply wrong |
 | `Authorization` header malformed | `400` | an unparsable header, an unknown scheme, or a bearer token outside the [RFC 6750 §2.1](https://www.rfc-editor.org/rfc/rfc6750#section-2.1) `b64token` grammar. The server never got as far as a credential, so this is a request defect (`error="invalid_request"`) |
 | Authenticated, not permitted | `403` | for a bearer caller the challenge carries `error="insufficient_scope"`, naming what is missing |
-| The token issuer is unreachable | `503` | with `Retry-After`. No token can be validated, so the server cannot decide — it is **not** a statement about your credential ([RFC 9110 §15.6.4](https://www.rfc-editor.org/rfc/rfc9110#section-15.6.4)). Retry; do not discard the token |
+| The token issuer is unreachable | `503` | with `Retry-After`. No token can be validated, so the server cannot decide; it is **not** a statement about your credential ([RFC 9110 §15.6.4](https://www.rfc-editor.org/rfc/rfc9110#section-15.6.4)). Retry; do not discard the token |
 
 Two Basic-auth details worth knowing: the credential must be **padded** base64
 (RFC 7617 §2 defers to RFC 4648, whose
 [§3.2](https://www.rfc-editor.org/rfc/rfc4648#section-3.2) requires the pad
-characters — an unpadded credential is refused), and an unknown username costs
+characters; an unpadded credential is refused), and an unknown username costs
 the same time as a known one, so response timing reveals nothing about which
 accounts exist.
 
@@ -112,10 +112,10 @@ accounts exist.
 
 ## The chapters here
 
-- **[Resource walkthroughs](resources.md)** — EHR, EHR_STATUS, COMPOSITION,
+- **[Resource walkthroughs](resources.md):** EHR, EHR_STATUS, COMPOSITION,
   DIRECTORY, and CONTRIBUTION, each with real curl examples, the headers they
   need, and the status codes they return.
-- **[Content negotiation & errors](content-negotiation.md)** — choosing JSON or
+- **[Content negotiation & errors](content-negotiation.md):** choosing JSON or
   XML, the simplified formats, the `Prefer` header, `ETag`/`If-Match` optimistic
   concurrency, the commit-metadata headers, and the error response shape.
 

@@ -56,3 +56,12 @@ answered with a second target dir; subagents never run cargo in parallel
 session start and after any rewrite-scale change, `cargo clean` above
 ~30 GB. Never pkill -9 rustc to "fix" slowness — it corrupts incremental
 caches. Full discipline in CLAUDE.md §"Target-dir & warm-build discipline".
+
+**Never `git stash` the shared tree while a worker is live (2026-08-24 incident).**
+A stash scoops EVERY tracked modification, including a running subagent's
+uncommitted edits — the worker then continues onto a silently cleaned tree and
+its Edit-tool old_strings stop matching. If develop is needed mid-worker:
+commit the orchestrator's own files first, or branch-switch with the changes
+carried, or restore later by EXPLICIT PATH (`git checkout stash@{0} -- <paths>`)
+— never `stash pop` onto a tree the worker kept writing to. Back up the stash
+as a patch before dropping it.

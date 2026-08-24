@@ -205,7 +205,7 @@ jobs:
   #
   # This job is a CALL AND NOTHING ELSE, deliberately. SLSA Build L3 requires the
   # signing material to be out of reach of user-defined build steps
-  # (https://slsa.dev/spec/v1.0/levels), and a job's steps all share one runner
+  # (https://slsa.dev/spec/v1.2/build-requirements), and a job's steps all share one runner
   # VM. Moving the build and its attestation into a reusable workflow puts them on
   # their own VM with a build definition a caller cannot add steps to, which is
   # GitHub's documented construction for Build L3

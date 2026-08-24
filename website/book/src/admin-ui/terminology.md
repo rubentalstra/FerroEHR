@@ -3,7 +3,7 @@
 The **Terminology** screen browses the coded vocabularies the CDR can answer
 questions about: which terminologies it serves, what a code means, which codes a
 value set holds, whether a given code is one of them, and whether one code
-subsumes another. Everything on it is a read of the CDR's public API — nothing
+subsumes another. Everything on it is a read of the CDR's public API; nothing
 is stored on the console's side.
 
 ![The terminology browser](img/terminology/terminology.png)
@@ -29,7 +29,7 @@ api_enabled = true
 
 or, as an environment override, `FERROEHR__TERMINOLOGY__API_ENABLED=true`.
 
-Turning it on exposes only lookups over terminologies the server already holds —
+Turning it on exposes only lookups over terminologies the server already holds:
 the bundled openEHR terminology plus the external code sets beside it. Binding
 an external FHIR terminology server is a separate setting, and it changes what
 these lookups can answer; both are covered in
@@ -44,7 +44,7 @@ terminology is shareable and survives a reload, and the choice works before the
 page's WebAssembly has loaded.
 
 The **Descriptor** card beside it shows what the CDR publishes about that
-terminology — publisher, identifying URI, available versions, and the
+terminology: publisher, identifying URI, available versions, and the
 meta-model attributes an extract request may ask for. Fields the server does not
 publish are not shown at all rather than filled in with a guess.
 
@@ -58,7 +58,7 @@ a blank.
 
 An **effective date** is optional. Supplied, it asks for the definition as it
 stood on that date; left empty, it asks for the current one. The openEHR bundle
-is a single pinned release, so a date does not change its answer — an external
+is a single pinned release, so a date does not change its answer; an external
 terminology server can.
 
 A code the terminology does not define is reported as a plain note on the card
@@ -73,27 +73,27 @@ whether something exists is a legitimate question, and "no" is an answer.
 
 ## Expanding a value set
 
-A value set is addressed by its id — for the `openehr` terminology, an openEHR
+A value set is addressed by its id: for the `openehr` terminology, an openEHR
 vocabulary group such as `audit_change_type` or `version_lifecycle_state`, by
 its identifier or its display name. Expanding one lists its members as
 `code — text`.
 
 Under it, **Validate** answers one question: is this code a member of that value
 set? Both verdicts read as a sentence, and a value set the CDR does not know
-simply has no members — so a code is reported as *not* a member rather than the
+simply has no members, so a code is reported as *not* a member rather than the
 question being refused.
 
 ## Testing subsumption
 
 Subsumption asks whether one code is an ancestor of another. The test is
 **strict**, so a code never subsumes itself, and the openEHR vocabulary is flat
-— it defines no is-a hierarchy — so the honest verdict for any pair of openEHR
+(it defines no is-a hierarchy) so the honest verdict for any pair of openEHR
 codes is "does not subsume". Hierarchical answers come from an external
 terminology server when one is bound.
 
 ## Picking codes in the Query Builder
 
 The same lookups back the Query Builder's **coded condition** editor, so a
-coded criterion no longer has to be typed from memory — see
+coded criterion no longer has to be typed from memory; see
 [Dashboard & queries](queries.md#the-query-builder). The model is unchanged:
 whatever route a code took into the criterion, the query carries the bare code.

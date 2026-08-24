@@ -2,7 +2,7 @@
 
 <img src="assets/brand/ferroehr-lockup-auto.svg" alt="FerroEHR" width="290">
 
-**A pure-Rust openEHR® Clinical Data Repository — spec-conformant, measured, and built for production.**
+**A pure-Rust openEHR® Clinical Data Repository. Every conformance claim is measured.**
 
 *Pronounced "FER-ro-E-H-R" — from **ferrum**, iron. Rust is just iron oxide, so we went straight to the element.\
 (Saying "ferro-air" is unsupported, but we can't stop you.)*
@@ -26,8 +26,9 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 
 [![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
 [![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![SLSA Build L3](https://slsa.dev/images/gh-badge-level3.svg)](https://ferroehr.eu/docs/latest/verifying-releases.html#what-slsa-level-each-artifact-reaches)
 
-[**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
+[**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -37,34 +38,33 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 software: applications store and query structured health records through a
 vendor-neutral REST API and the Archetype Query Language, against a shared
 clinical information model. **FerroEHR** implements that standard natively
-in Rust — a headless, API-first Clinical Data Repository shipped as a single
-self-contained binary on PostgreSQL 18. No JVM, no language runtime, and every
+in Rust: a headless, API-first Clinical Data Repository shipped as a single
+self-contained binary on PostgreSQL 18. No JVM, no language runtime. Every
 compliance claim it makes is **machine-verified**: the full conformance
 catalogue is executed against a live server by a committed runner, the run
 records are committed alongside the code, and the published Conformance
-Statement, Certificate and every quoted number are derived from those
-records — never hand-typed.
+Statement, Certificate and every quoted number derive from those records.
+None of them are hand-typed.
 
 ## Why this project exists
 
 openEHR is one of the few places in health IT where clinical meaning is
-written down as a shared, computable, vendor-neutral model — which is what
+written down as a shared, computable, vendor-neutral model. That is what
 lets a record outlive the application, the vendor and the procurement cycle
 that produced it. A specification that good deserves an implementation anyone
 can actually run: complete, openly developed, permissively licensed, and
-measured against the specification rather than asserted to match it. That is
-what FerroEHR is for.
+measured against the specification itself. That is what FerroEHR is for.
 
-So the whole thing is MIT, with no open-core tier — multi-tenancy, RBAC/ABAC,
+So the whole thing is MIT, with no open-core tier. Multi-tenancy, RBAC/ABAC,
 ATNA audit, signatures, FHIR, events and the admin console are all in this
 repository under the same licence, and nothing is held back to be sold back
-to you. **Build on it, ship it, sell it: that is the point.** Integrate it,
-embed it, host it, white-label it, build closed products on top and charge
-for them. There is no contributor licence agreement, no copyright assignment
-and no "commercial licence" conversation to have — contributors keep their
-copyright, and what you build stays yours.
+to you. **Build on it and sell what you build: that is the point.**
+Integrate it, embed it, host it, white-label it, build closed products on
+top and charge for them. There is no contributor licence agreement, no
+copyright assignment and no "commercial licence" conversation to have.
+Contributors keep their copyright, and what you build stays yours.
 
-What we ask in return — and cannot require — is that improvements come back.
+What we ask in return, and cannot require, is that improvements come back.
 A private fork inherits the entire maintenance surface (spec releases,
 advisories, database upgrades, conformance re-runs, a re-merge every release)
 and pays for it alone; upstreamed, the same work is maintained once for
@@ -82,21 +82,23 @@ on the documentation site.
 
 ## What makes it different
 
-- **Compliance you can verify, not just read.** The built-in CNF 2.0
+- **Compliance you can verify.** The built-in CNF 2.0
   conformance runner executes the complete machine-readable catalogue across
   the claimed wire formats and computes the openEHR profile verdicts as pure
   functions of the run records. The conformance badges above render straight
-  from the committed run artifacts — generated from real runs, never
-  hand-edited. Every badge on this page is computed by something that can
-  disagree with us: the conformance ones by the runner, the workflow ones by
-  GitHub, and the security score by OpenSSF Scorecard, which grades this
-  repository's supply chain — digest-pinned actions, minimal workflow token
-  permissions, code scanning, signed releases — independently of anything we
-  claim here. There is no self-asserted "hardened" badge, because it would
-  prove nothing. And the
+  from the committed run artifacts of real runs; none are hand-edited.
+  Every badge on this page is computed by something that can disagree with
+  us: the conformance ones by the runner, the workflow ones by GitHub, and
+  the security score by OpenSSF Scorecard, which grades this repository's
+  supply chain (digest-pinned actions, minimal workflow token permissions,
+  code scanning, signed releases) independently of anything we claim here.
+  The SLSA badge is the one static image on the page, and its claim is
+  falsifiable: it links to the verification guide whose pinned-signer
+  command either passes or does not. There is no self-asserted "hardened"
+  badge, because it would prove nothing. The
   [Conformance Report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
   carries the full per-case record.
-- **Performance is a verdict, not a slogan.** Volumetric deployment classes
+- **Performance classes are earned by measurement.** Volumetric deployment classes
   are *earned* by open-loop measured runs (population-anchored offered-load
   floors held for at least the normative hour, extendable to half-day
   holds), with re-checkable latency histograms embedded in the committed
@@ -105,20 +107,20 @@ on the documentation site.
   committed records, guarded in CI.
 - **Two openEHR specification generations, and you choose which one runs.**
   The specification layer is generated from the official machine-readable
-  models — and both the latest RELEASED generations and the development ones
-  are generated, side by side, as complete peers. One configuration key picks
+  models. Both the latest RELEASED generations and the development ones are
+  generated, side by side, as complete peers. One configuration key picks
   the set the server serves, so staying on released specifications is a
-  setting rather than a fork. See
+  setting, not a fork. See
   [Choose your openEHR specification generation](#choose-your-openehr-specification-generation).
-- **A specification update is a regeneration, not a rewrite**, and a CI
+- **A specification update means regenerating the crates**, and a CI
   drift-check makes silent divergence impossible: REST API 1.1.0, AQL 1.1,
   RM, BASE, Archetype Model 1.4 + 2.4, Terminology 3.1 all come from the
   vendored machine-readable models, pinned per component.
 - **Both generations of the archetype language, end to end.** ADL 2.4
   source templates are parsed, validated against the full AOM2 validity
   catalogue, specialisation-flattened, and compiled to operational
-  templates; ADL 1.4 OPTs and source archetypes are validated against
-  their own 1.4 rules — and can be migrated to ADL 2 in-CDR. Every
+  templates. ADL 1.4 OPTs and source archetypes are validated against
+  their own 1.4 rules and can be migrated to ADL 2 in-CDR. Every
   template, either dialect, generates spec-valid example compositions
   that pass the server's own validation.
 - **One static Rust binary.** Predictable memory, fast cold starts, a
@@ -126,67 +128,67 @@ on the documentation site.
   write path.
 - **PostgreSQL 18-native clinical storage.** Temporal versioning with
   database-enforced non-overlap, time-ordered UUIDv7 keys, and canonical
-  openEHR JSON stored verbatim — what you store is exactly what the API
+  openEHR JSON stored verbatim. What you store is exactly what the API
   serves.
 
 ## Features
 
 ### openEHR platform
 
-- **REST API (ITS-REST 1.1.0)** — EHR, EHR_STATUS, COMPOSITION, DIRECTORY,
+- **REST API (ITS-REST 1.1.0):** EHR, EHR_STATUS, COMPOSITION, DIRECTORY,
   CONTRIBUTION, query, template, and admin resources, with canonical JSON
   *and* XML on the wire
-- **AQL 1.1 engine** — typed path analysis over a spec-generated Reference
+- **AQL 1.1 engine:** typed path analysis over a spec-generated Reference
   Model, compiled to efficient SQL; including `ALL_VERSIONS`,
   terminology-backed `TERMINOLOGY()` expansion inside `matches`, and stored
   parameterised queries
-- **Full versioning semantics** — contribution-atomic commits, indelible
+- **Full versioning semantics:** contribution-atomic commits, indelible
   version history, logical delete, attestations, per-version digital
   signatures, point-in-time reads
-- **Templates & validation, both ADL generations** — ADL 2.4 source
+- **Templates & validation, both ADL generations:** ADL 2.4 source
   templates (full ADL2/cADL/ODIN parser, the AOM2 validity catalogue with
   typed rule codes on the wire, specialisation flattening, OPT2
   compilation) and OPT 1.4 ingestion with artefact validity checking;
   WebTemplate, FLAT and STRUCTURED formats from either dialect; deep
   archetype-constraint validation plus the RM invariant catalogue
   (including the terminology-backed invariants) on every write
-- **Example generation** — every stored template, ADL 1.4 or 2.4, serves
+- **Example generation:** every stored template, ADL 1.4 or 2.4, serves
   deterministic example compositions that pass the server's own full
   validation, in canonical JSON/XML and the simplified formats
-- **ADL 1.4 → ADL 2 migration** — stored 1.4 archetypes convert to ADL 2
+- **ADL 1.4 → ADL 2 migration:** stored 1.4 archetypes convert to ADL 2
   source in-CDR, with a reproducible conversion log
-- **EHR Extract & messaging** — whole-EHR export/import with preserved
+- **EHR Extract & messaging:** whole-EHR export/import with preserved
   distributed version identity, EHR cloning across systems, TDD import
-- **Demographics** — a versioned party store (person, organisation, group,
+- **Demographics:** a versioned party store (person, organisation, group,
   agent, role) with relationships
-- **Terminology** — the bundled openEHR terminology plus pluggable external
+- **Terminology:** the bundled openEHR terminology plus pluggable external
   FHIR terminology servers (validate, expand, subsume)
 
 ### Integration
 
-- **Change events** — a transactional outbox publishes every commit to
+- **Change events:** a transactional outbox publishes every commit to
   AMQP/RabbitMQ with per-EHR ordering, filterable server-side
   subscriptions, and PHI-free payloads by default
-- **FHIR R4B connectors** — bidirectional and mapping-driven: ingest FHIR
+- **FHIR R4B connectors:** bidirectional and mapping-driven: ingest FHIR
   resources as validated compositions with full provenance, expose
   committed data through a FHIR read façade, emit FHIR resources on change
-- **Binary & object storage** — large multimedia is content-addressed into
+- **Binary & object storage:** large multimedia is content-addressed into
   any S3-compatible store with cryptographic integrity verification;
   SeaweedFS works out of the box for self-hosted setups
 
 ### Security & operations
 
-- **Authentication** — Basic and OAuth2/OIDC (Keycloak, Active Directory,
+- **Authentication:** Basic and OAuth2/OIDC (Keycloak, Active Directory,
   any standards-compliant identity provider)
-- **Authorization** — role-based access control plus attribute-based
+- **Authorization:** role-based access control plus attribute-based
   policies, via the embedded policy engine or an external policy decision
   point
-- **Multi-tenancy** — fully integrated: each tenant is an isolated logical
+- **Multi-tenancy:** fully integrated: each tenant is an isolated logical
   openEHR system, enforced by PostgreSQL row-level security
-- **ATNA audit logging** — IHE ATNA-compliant system log (DICOM audit
+- **ATNA audit logging:** IHE ATNA-compliant system log (DICOM audit
   messages over TLS syslog), alongside the openEHR contribution audit
   trail; identified data never enters telemetry
-- **Hardened by default** — layered database roles, a pure-Rust TLS stack,
+- **Hardened by default:** layered database roles, a pure-Rust TLS stack,
   and built-in observability: Prometheus metrics, OpenTelemetry traces,
   structured logs, health probes
 
@@ -202,8 +204,8 @@ on the documentation site.
 
 ## Quick start
 
-Run the full stack (server + PostgreSQL 18) with Docker Compose — one
-downloaded file, no configuration, no checkout (needs Compose 2.23.1+). Grab
+Run the full stack (server + PostgreSQL 18) with Docker Compose: one
+downloaded file, no checkout (needs Compose 2.23.1+). Grab
 `docker-compose.yml` from the [latest release](https://github.com/rubentalstra/FerroEHR/releases/latest)
 and start it:
 
@@ -226,9 +228,9 @@ curl -u ferroehr:ferroehr -H 'Content-Type: application/json' \
 ```
 
 Interactive OpenAPI documentation is served at
-`http://localhost:8080/ferroehr/rest/swagger-ui`. The admin console is opt-in —
-`docker compose --profile admin-ui up`, then `http://localhost:3000` with the
-same credentials.
+`http://localhost:8080/ferroehr/rest/swagger-ui`. The admin console is
+opt-in: `docker compose --profile admin-ui up`, then `http://localhost:3000`
+with the same credentials.
 
 To try OAuth2/OIDC instead of Basic auth, download the
 `docker-compose.keycloak.yml` overlay from the same release beside the base
@@ -249,7 +251,7 @@ runs its own migrations at boot), and
 (the admin console). The Compose file pins the release's exact image versions.
 Configuration is environment-driven (`FERROEHR_*`) on top of the config the
 Compose file carries inline; that config ships **one** development user with
-role-based access control **disabled** — dev defaults that must be replaced
+role-based access control **disabled:** dev defaults that must be replaced
 outside development. In a checkout, `docker compose up --build` builds
 everything from source and uses the fuller development configuration in
 [`docker/ferroehr.dev.toml`](docker/ferroehr.dev.toml) instead (three users,
@@ -280,9 +282,9 @@ a tunable alert-rule starter pack lives in
 
 openEHR publishes released specification versions and keeps developing the
 next ones. Most implementations pick one and hard-wire it. FerroEHR generates
-**both** — every generation is a complete peer with its own type model,
+**both:** every generation is a complete peer with its own type model,
 canonical JSON/XML codecs, Reference Model attribute model, invariant cores
-and validation behaviour — and one configuration key decides which set the
+and validation behaviour. One configuration key decides which set the
 server runs:
 
 ```toml
@@ -303,23 +305,22 @@ that it includes BASE 1.2.0), so incoherent combinations are not
 representable. The active profile appears on the boot banner and at
 `/management/info`.
 
-Changing it later is a documented contract, not a gamble.
-`stable → development` is always safe, because openEHR minor releases are
-additive by the Foundation's own release strategy — everything stored under
-the released generations is valid under the development ones. The reverse
-direction is supported only for data that never used a development-only
-construct; anything that did is **refused loudly at read**, naming the
-profile conflict, and never silently down-converted or hidden. Under
-`stable`, a request that addresses surface the released generations do not
-define is refused with an error naming the profile — and released surface the
-development line later dropped stays accepted, so the boundary is exact in
-both directions.
+Changing it later is a documented contract. `stable → development` is
+always safe, because openEHR minor releases are additive by the Foundation's
+own release strategy: everything stored under the released generations is
+valid under the development ones. The reverse direction is supported only
+for data that never used a development-only construct; anything that did is
+**refused loudly at read**, naming the profile conflict, never silently
+down-converted or hidden. Under `stable`, a request that addresses surface
+the released generations do not define is refused with an error naming the
+profile, and released surface the development line later dropped stays
+accepted, so the boundary is exact in both directions.
 
 ## The openEHR specification layer, as Rust crates
 
 You do not need the whole CDR to get the openEHR specifications in Rust. The
 generated specification layer is published on crates.io as eight
-independently usable crates — the same code this server runs on:
+independently usable crates, the same code this server runs on:
 
 | Crate                                                                                                                                                              | What it gives you                                                                                                                |
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
@@ -336,7 +337,7 @@ The multi-generation crates expose their generations as version-named modules
 (`openehr_rm::v1_2`, `openehr_rm::v1_1`, `openehr_am::v2_4`, …), with the
 current generation re-exported from the crate prelude and the others reachable
 by full path. Each crate's emitted `Generation` enum is the single authority on
-which openEHR version a generation implements — `Generation::default()` is the
+which openEHR version a generation implements: `Generation::default()` is the
 current one, and `spec_version()` tells you its version string.
 
 These crates version on **their own SemVer line**, deliberately decoupled from
@@ -348,7 +349,7 @@ from the package version.
 
 ## Architecture
 
-Three directories, one strict dependency direction — the application
+Three directories, one strict dependency direction: the application
 consumes the generated specification layer (`app/* → crates/*`), and the
 tools verify from outside (the conformance runner drives the deployed
 server purely over HTTP):
@@ -386,14 +387,14 @@ flowchart TB
 
 The service layer follows the openEHR **SM Platform Service Model**: one
 service module per SM component, whose concrete methods carry the spec's
-call names and error vocabulary — the "native API behind protocol
+call names and error vocabulary: the "native API behind protocol
 adapters" architecture the SM itself prescribes. The specification layer
 carries no serde: canonical JSON and XML are native codecs generated
 alongside the types, so the wire contract is explicit, tested code. The
 full design is documented in
 [`docs/architecture.md`](docs/architecture.md).
 
-## Conformance, measured not asserted
+## Conformance, measured
 
 <!-- CNF 2.0 profile badges: shields.io endpoint scheme over the
      runner-generated badge JSONs on develop — auto-updating on every merged
@@ -418,8 +419,8 @@ of this page are generated from real runs.
 
 Performance is graded the same way. A volumetric deployment class is
 **earned** by holding its population-anchored offered-load floor for the
-sustained window — the normative hour by default, extendable to longer
-demonstrations, never shorter — with every latency histogram embedded in the
+sustained window (the normative hour by default, extendable to longer
+demonstrations, never shorter), with every latency histogram embedded in the
 committed results so the verdict re-derives from the artifact alone:
 
 ```shell
@@ -435,13 +436,13 @@ cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
   --out docs/conformance/ferroehr/stress.json
 ```
 
-The published performance visuals — the class ladder, per-operation latency
-percentiles, and the latency-throughput stress curve — regenerate from the
+The published performance visuals (the class ladder, per-operation latency
+percentiles, and the latency-throughput stress curve) regenerate from the
 committed records (`bash scripts/render/perf-assets.sh`) and are diff-guarded
 in CI, exactly like the conformance numbers.
 
-The committed stress run's latency-throughput curve — the knee, the p99
-budget line, and the class floors as context — renders straight from
+The committed stress run's latency-throughput curve (the knee, the p99
+budget line, and the class floors as context) renders straight from
 [`docs/conformance/ferroehr/stress.json`](docs/conformance/ferroehr/stress.json)
 (exploration only; the chart carries the measured numbers so none are typed
 here):
@@ -450,8 +451,9 @@ here):
 
 Every measured class run and every stress step also records **resource
 telemetry**: per-container CPU, resident memory, and block/network I/O for
-the server and the database separately — plus, on class runs, the database
-volume's disk anchors down to the storage cost per committed composition.
+the server and the database separately. A class run also records the
+database volume's disk anchors, down to the storage cost per committed
+composition.
 The committed record shows what a run cost the machine and where saturation
 lives; telemetry is measured context only and never influences a verdict:
 
@@ -470,7 +472,7 @@ number derives from committed run artifacts — nothing here is hand-typed.
 
 The stress ladder climbs geometrically until the system leaves the envelope
 (p99 over budget or errors past tolerance), then bisects to the **maximum
-sustainable throughput** — every load step embeds its own re-checkable
+sustainable throughput:** every load step embeds its own re-checkable
 histograms and per-container resource telemetry, and a breached step is
 reported with the exact violation. Where EHRbase sustains a higher rate,
 its curve is drawn exactly like one where it doesn't:
@@ -510,7 +512,7 @@ deploys, and listed on
 
 ```shell
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 5.0.1 --set database.existingSecret=my-db-secret
+  --version 6.0.13 --set database.existingSecret=my-db-secret
 ```
 
 There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the
@@ -545,16 +547,16 @@ spec-codegen drift, comment style, and a container smoke test. See [CONTRIBUTING
 
 ## Documentation
 
-|                                                                       |                                                                       |
-|-----------------------------------------------------------------------|-----------------------------------------------------------------------|
-| [Documentation website](https://ferroehr.eu/)                         | The user guide + OpenAPI endpoint reference (versioned per release)   |
-| [Architecture](docs/architecture.md)                                  | How the system is built, and why                                      |
-| [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case                            |
-| [Version matrix](docs/VERSIONS.md)                                    | Every pin: openEHR spec generations, Rust toolchain, PostgreSQL       |
-| [`openehr-*` crates](https://crates.io/search?q=openehr)              | The specification layer as standalone Rust libraries                  |
-| [Roadmap board](https://github.com/users/rubentalstra/projects/4)     | Where the product goes next — planned, in progress, and shipped, live |
-| [Developer documentation](docs/README.md)                             | Contributing, design decisions, specifications                        |
-| [Vendored openEHR specifications](docs/specs/openehr/)                | The oracle every spec-facing decision cites                           |
+|                                                                       |                                                                     |
+|-----------------------------------------------------------------------|---------------------------------------------------------------------|
+| [Documentation website](https://ferroehr.eu/)                         | The user guide + OpenAPI endpoint reference (versioned per release) |
+| [Architecture](docs/architecture.md)                                  | How the system is built, and why                                    |
+| [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case                          |
+| [Version matrix](docs/VERSIONS.md)                                    | Every pin: openEHR spec generations, Rust toolchain, PostgreSQL     |
+| [`openehr-*` crates](https://crates.io/search?q=openehr)              | The specification layer as standalone Rust libraries                |
+| [Roadmap board](https://github.com/users/rubentalstra/projects/4)     | The plan and its live status                                        |
+| [Developer documentation](docs/README.md)                             | Contributing, design decisions, specifications                      |
+| [Vendored openEHR specifications](docs/specs/openehr/)                | The oracle every spec-facing decision cites                         |
 
 For the openEHR standard itself, see the
 [openEHR specifications](https://specifications.openehr.org/). The
@@ -589,14 +591,14 @@ rather than left to be discovered.
 
 ### Acknowledgments
 
-- **[EHRbase](https://github.com/ehrbase/ehrbase)** — FerroEHR began as a
+- **[EHRbase](https://github.com/ehrbase/ehrbase):** FerroEHR began as a
   fork of EHRbase, developed by
   [vitasystems GmbH](https://www.vitagroup.ag/) and the
   [Peter L. Reichertz Institute](https://www.plri.de/), and keeps that
   lineage in its git history. It is not affiliated with or endorsed by the
   EHRbase project; EHRbase itself remains Apache-2.0, and no code from it
   is present in this tree.
-- **[openEHR Foundation](https://www.openehr.org/)** — publishes the openEHR
+- **[openEHR Foundation](https://www.openehr.org/):** publishes the openEHR
   specifications and the machine-readable models this project generates
   from. openEHR® is the registered trademark of the openEHR Foundation;
   FerroEHR is an independent implementation of the openEHR® specifications
@@ -610,11 +612,11 @@ rather than left to be discovered.
 
 ### Licensing
 
-| Material                                                                                                                                                                                              | License                                                                                 |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| **FerroEHR's own code** — the application, the tooling, and the generated crates                                                                                                                      | [MIT](LICENSE)                                                                          |
-| openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                        |
-| openEHR **specification text** (vendored for conformance work)                                                                                                                                        | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0)                                                    |
+| Material                                                                                                                                                                                              | License                                                                                                                   |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| **FerroEHR's own code:** the application, the tooling, and the generated crates                                                                                                                       | [MIT](LICENSE)                                                                                                            |
+| openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                                                          |
+| openEHR **specification text** (vendored for conformance work)                                                                                                                                        | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0)                                                                                      |
 | **CKM-derived clinical models** (test corpora)                                                                                                                                                        | per-file `licence` metadata — a mix of [CC-BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) |
 
 Each vendored tree documents its exact origin and license in a

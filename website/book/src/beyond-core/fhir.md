@@ -3,7 +3,7 @@
 Many systems around a CDR speak FHIR. FerroEHR ships a set of
 [FHIR R4](https://hl7.org/fhir/R4/) connectors so it can take FHIR resources in,
 hand openEHR data back out as FHIR,
-and emit FHIR resources to downstream systems — all driven by mappings you
+and emit FHIR resources to downstream systems, all driven by mappings you
 control. It is not a full FHIR server; it is a focused, mapping-driven bridge
 between the FHIR and openEHR worlds.
 
@@ -11,13 +11,13 @@ There are **two independent switches**, an inbound/read-façade one and an
 outbound-emission one, because the two have very different data-exposure
 characteristics. All FHIR routes are relative to the API base path
 (`/ferroehr/rest/openehr/v1`) and speak `application/fhir+json`; every response
-on this surface — success or failure — is a FHIR resource, so an error arrives as
+on this surface (success or failure) is a FHIR resource, so an error arrives as
 an `OperationOutcome` rather than the openEHR error body.
 
 > [!NOTE]
 > **R4, and what that means if you run R4B.** The connector's routes are
-> `/fhir/r4/…`, and the resources it exchanges — `Bundle`, `OperationOutcome`,
-> `AuditEvent` — are identical in R4 and R4B, so an R4B client can use this
+> `/fhir/r4/…`, and the resources it exchanges (`Bundle`, `OperationOutcome`,
+> `AuditEvent`) are identical in R4 and R4B, so an R4B client can use this
 > surface unchanged: HL7 states that "implementers that do not use the specific
 > portions where changes have been made can continue to use either R4 or R4B
 > without any functional difference"
@@ -43,8 +43,8 @@ Outcomes worth designing against:
 - A successful ingest is `201`, with `ETag` and `Location` headers pointing at the
   openEHR composition that was created.
 - A mapped composition that fails validation is `422`, and nothing is stored.
-- A resource type outside the connector's starter set — `Patient`,
-  `Observation`, `Condition`, `DocumentReference` — is `501`, refused before the
+- A resource type outside the connector's starter set (`Patient`,
+  `Observation`, `Condition`, `DocumentReference`) is `501`, refused before the
   backend is touched.
 - A type inside the starter set with **no enabled mapping** stored for it is
   `404`. This is the common first-run surprise: the connector is on, but nothing
@@ -59,19 +59,19 @@ ingested record is always distinguishable from one authored in openEHR.
 `POST /fhir/r4/{resource_type}/$validate` is the ingest door's dry twin,
 following FHIR R4's own
 [validation operation](https://hl7.org/fhir/R4/resource-operation-validate.html)
-convention. It runs the whole ingest pipeline — mapping resolution, the FLAT
+convention. It runs the whole ingest pipeline (mapping resolution, the FLAT
 build, the `FEEDER_AUDIT` stamp, and the *same validation the real commit
-runs* — and **commits nothing**: no composition, no version, and no EHR is
+runs*) and **commits nothing**: no composition, no version, and no EHR is
 created (the target EHR is resolved and reported, never touched).
 
 The response is a FHIR `OperationOutcome`, and a completed validation is
 `200` whichever way the verdict falls:
 
-- **Valid**: `information` issues — the verdict naming the resolved template,
+- **Valid**: `information` issues, the verdict naming the resolved template,
   plus the EHR disposition (`would commit into existing EHR <id>`, or
   `would create a new EHR for subject '<id>'`).
 - **Invalid**: an `error` issue carrying the openEHR validator's rejection
-  **verbatim** — the exact text the real ingest would refuse with as a `422` —
+  **verbatim** (the exact text the real ingest would refuse with as a `422`)
   plus the same disposition issue.
 
 Operation-level failures mirror the ingest door: no enabled mapping is `404`,
@@ -92,14 +92,14 @@ curl -s -X POST "$CDR/fhir/r4/Observation/\$validate" \
 reverse-mapped into a FHIR `searchset` Bundle. Each entry is produced from a
 stored composition by running the mapping in reverse.
 
-The `patient` parameter is **mandatory** — a missing or blank one is a `400`. This
+The `patient` parameter is **mandatory**; a missing or blank one is a `400`. This
 is a targeted façade, not a general FHIR search engine: there is no free-text
 search, no chained parameter, and no `_include`. An optional `_count` caps the
 entries returned per mapping.
 
 ## Outbound emission
 
-Outbound emission publishes the mapped FHIR resource for every relevant commit —
+Outbound emission publishes the mapped FHIR resource for every relevant commit,
 but the target is an **AMQP broker (RabbitMQ), not an HTTP FHIR server**. A
 background task drains the same commit outbox used by
 [change events](amqp.md), reverse-maps each committed **composition** through
@@ -109,14 +109,14 @@ resource to a topic exchange (default `ferroehr.fhir`) with a routing key of
 keys are. Delivery is at-least-once.
 
 Only composition versions produce messages: an `EHR_STATUS` or a `FOLDER` carries
-no mappable template. A row that fails to reverse-map *deterministically* — a
-defective stored mapping or template — is retried a few times and then parked:
+no mappable template. A row that fails to reverse-map *deterministically* (a
+defective stored mapping or template) is retried a few times and then parked:
 logged at error level, naming the row, and skipped, so one bad commit cannot
 head-of-line-block every later one. Broker and database failures are treated as
 transient and never park a row.
 
 > [!WARNING]
-> Outbound FHIR messages carry **PHI** — the payload *is* the mapped clinical FHIR
+> Outbound FHIR messages carry **PHI**: the payload *is* the mapped clinical FHIR
 > resource, unlike the PHI-free [change-event](amqp.md) envelopes. That is exactly
 > why they are a separate switch on a separate exchange (`ferroehr.fhir`, not
 > `ferroehr.events`): broker access control can then isolate the PHI-bearing
@@ -143,20 +143,20 @@ through an admin API (classed under admin authorization):
 | `DELETE` | `/admin/fhir_mapping/{mapping_id}` | delete a mapping (`204`) |
 
 A mapping definition binds **one FHIR resource type** (optionally scoped to a
-`meta.profile` URL) to **one openEHR template**, and lists field bindings — each
+`meta.profile` URL) to **one openEHR template**, and lists field bindings, each
 mapping an openEHR FLAT path to a FHIR path, or to a constant, shaped by a
 transform.
 
 **Resolution is two-step and deterministic.** An incoming resource resolves by
 its type plus the *first* entry of `meta.profile` (only `meta.profile[0]` is
 consulted): an enabled mapping whose `profile_url` **exactly matches** that URL
-wins; otherwise the type's enabled mapping with **no `profile_url`** — the
-type default — applies. A resource declaring no profile matches only the type
+wins; otherwise the type's enabled mapping with **no `profile_url`** (the
+type default) applies. A resource declaring no profile matches only the type
 default. When neither exists, the ingest (and `$validate`) answer `404`.
 
-The stored definition is the deployable artifact — the CDR stores it verbatim
+The stored definition is the deployable artifact: the CDR stores it verbatim
 and interprets it at ingest time, so a mapping deploys, updates, and rolls
-back without a server release. Its shape (this is the whole contract — no
+back without a server release. Its shape (this is the whole contract, with no
 openEHR specification governs FHIR interop; the wire vocabulary follows
 [HL7 FHIR R4](https://hl7.org/fhir/R4/)):
 
@@ -227,11 +227,11 @@ code translation** at ingest time:
 The server resolves each such code through a configured FHIR terminology
 server's `ConceptMap/$translate` (routed by the openEHR terminology the
 `code_map` binds the target system to; `concept_map` optionally pins one map).
-Only a **strictly equivalent** match is taken — a `wider`, `narrower`, or
+Only a **strictly equivalent** match is taken; a `wider`, `narrower`, or
 `relatedto` mapping is treated as no translation, because writing a
 non-equivalent code would silently change clinical meaning. When no
 translation exists, a required entry refuses the ingest and an optional one
-writes nothing — the untranslated source code is never passed through under
+writes nothing, and the untranslated source code is never passed through under
 the target terminology. A mapping that declares `translate` on a deployment
 with no terminology server configured is refused as a server configuration
 error rather than silently skipped.
@@ -239,14 +239,14 @@ error rather than silently skipped.
 The FHIR-path support is a deliberate subset of
 [FHIRPath](https://hl7.org/fhirpath/): object-field navigation, zero-based
 array indexing, `first()`, and single-condition `where(path = literal)`
-filters — for example `code.coding[0].code`,
+filters, for example `code.coding[0].code`,
 `code.coding.where(system = 'http://loinc.org').code`, and
-`component.where(code.coding[0].code = '8480-6').valueQuantity.value` — not
+`component.where(code.coding[0].code = '8480-6').valueQuantity.value`, not
 the full FHIRPath language (no other functions, unions, or arithmetic).
 FHIRPath's `where()` filters a collection; because a FLAT leaf holds a single
 value, this subset takes the first matching element. The mapping
-is symmetric — the same definition drives inbound ingest, the read façade, and
-outbound emission — so a field you can ingest is a field you can serve back
+is symmetric (the same definition drives inbound ingest, the read façade, and
+outbound emission) so a field you can ingest is a field you can serve back
 (a translated entry serves back the stored, translated coding).
 
 Each mapping also carries an `enabled` flag (default on). Only enabled mappings
@@ -255,7 +255,7 @@ disabling one a reversible way to take a resource type out of service.
 
 > [!NOTE]
 > The template a mapping references must already be ingested (see
-> [Templates & validation](../templates-validation.md)) — creating a mapping
+> [Templates & validation](../templates-validation.md)); creating a mapping
 > against an unknown template is a `400`. A mapping's name is immutable once set,
 > because it is its deployable identity, and a duplicate name is a `409`.
 
@@ -288,7 +288,7 @@ Batch size, poll interval, and publish retries are tunable as well.
 When the inbound switch is off, `/fhir/r4/*` and `/admin/fhir_mapping` answer
 `404` without touching the backend. When the outbound switch is off, no emitter
 task runs. With authentication on, an unauthenticated request to a disabled group
-is answered `401` first — the group gate sits behind authentication.
+is answered `401` first: the group gate sits behind authentication.
 
 > [!NOTE]
 > The connectors are also a **cargo feature** (`fhir`), on in the published images
@@ -303,7 +303,7 @@ is answered `401` first — the group gate sits behind authentication.
 ### On Kubernetes
 
 Both switches are reachable through the chart's `config` passthrough
-([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here)).
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable)).
 The outbound broker URL carries credentials, so it goes through
 `secrets.fhirOutboundUrl`, which the chart mounts as a file:
 
@@ -313,7 +313,7 @@ config:
   fhir:
     api_enabled: true          # the read façade + mapping API
     outbound:
-      enabled: true            # the emitter — carries PHI
+      enabled: true            # the emitter; carries PHI
       exchange: ferroehr.fhir
       tls: true
 secrets:
@@ -321,6 +321,6 @@ secrets:
 ```
 
 **Before you enable outbound:** a reachable broker, an egress rule that admits it
-if the chart's default-deny egress policy is on, and a deliberate decision — it
+if the chart's default-deny egress policy is on, and a deliberate decision: it
 carries PHI off this system. **To turn either off**, set its switch to `false` and
 upgrade: the inbound routes go back to answering `404`, and no emitter task runs.

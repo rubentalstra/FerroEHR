@@ -34,7 +34,11 @@ optional:
   + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
   fallbacks the standalone quickstart pulls, guarded by
   `scripts/checks/compose-image-tags.sh` / the `compose-version-guard` CI
-  job), merge the release PR, then tag
+  job, + the book's pinned versions — `website/book/src/installation/
+  kubernetes.md` pins the chart `--version` and `image.tag`, and
+  `website/book/src/verifying-releases.md` pins the release tag in its
+  examples; `docs-claims` catches the chart/image pins, learned at the
+  v4.0.0 cut which shipped them stale), merge the release PR, then tag
   `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
   Release from the matching changelog section and **fails if the section or
   version match is missing**. Releases publish as OFFICIAL

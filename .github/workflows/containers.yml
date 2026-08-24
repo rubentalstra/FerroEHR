@@ -238,124 +238,34 @@ jobs:
   # out its timeout.
   app-image:
     name: app image
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    needs: binary
     permissions:
       contents: read
-      packages: write # push the app image to GHCR
+      packages: write # push the image to GHCR
       id-token: write # Sigstore, for the signed attestations
       attestations: write # store them against this repository
-    needs: binary
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+    # The build + its attestation live in the reusable build-image.yml — the
+    # SLSA Build L3 construction (#2140): this caller passes data-only inputs
+    # and cannot add steps beside the signing. Labels mirror the Dockerfile's;
+    # scripts/checks/image-labels.sh fails if the two ever disagree.
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image: ghcr.io/rubentalstra/ferroehr
+      dockerfile: docker/Dockerfile
+      target: runtime-prebuilt
+      binary-artifact-prefix: ferroehr
+      labels: |
+        org.opencontainers.image.title=FerroEHR
+        org.opencontainers.image.description=Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)
+        org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+        org.opencontainers.image.url=https://ferroehr.eu/
+        org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+        org.opencontainers.image.vendor=FerroEHR
+        org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+        org.opencontainers.image.licenses=MIT
+        org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
+        org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ferroehr-amd64
-          path: bin/amd64
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ferroehr-arm64
-          path: bin/arm64
-
-      # No QEMU: the runtime Dockerfile is COPY-only, so a multi-arch build
-      # executes no foreign-arch code.
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # ANNOTATIONS_LEVELS is not cosmetic. A LABEL lives in the image config
-      # blob; an ANNOTATION lives in the manifest or the index — and GHCR reads
-      # the package description from the INDEX annotation, which is why a
-      # perfectly good description label showed as "No description provided".
-      # The action attaches annotations to manifests only by default.
-      #
-      # The `labels:` block overrides the action's repository-derived guesses,
-      # which are wrong for a repository that publishes three images: title
-      # comes from the repo NAME, so all three would claim to be "FerroEHR".
-      # These values mirror the Dockerfile's, and scripts/checks/image-labels.sh
-      # fails if the two ever disagree.
-      - name: Metadata
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
-        with:
-          images: ${{ env.APP_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-          labels: |
-            org.opencontainers.image.title=FerroEHR
-            org.opencontainers.image.description=Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)
-            org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
-            org.opencontainers.image.url=https://ferroehr.eu/
-            org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
-            org.opencontainers.image.vendor=FerroEHR
-            org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
-            org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
-
-      - name: Package and push
-        id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: docker/Dockerfile
-          target: runtime-prebuilt
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          # REVISION is the OCI-standard git-SHA arg (org.opencontainers.image.revision).
-          # runtime-prebuilt is COPY-only, so it only sets the label here; the
-          # binary's own /management/info SHA was stamped in the compile job below.
-          build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
-            REVISION=${{ github.sha }}
-          # Full provenance attestation (docs.docker.com/build/metadata/attestations).
-          provenance: mode=max
-          sbom: true
-
-      # Sign the provenance BuildKit already produced. `provenance: mode=max` +
-      # `sbom: true` put SLSA v0.2 provenance and an SPDX SBOM on the image index,
-      # but UNSIGNED — a consumer could read them and had no way to tell they were
-      # not forged. This binds them to this repository's build identity through
-      # Sigstore, the control OWASP's CI/CD cheat sheet asks for beyond commit
-      # signing and lockfile hashes.
-      #
-      # GitHub's native attestation rather than slsa-github-generator: no new
-      # secret, and no third-party reusable workflow inside the publish path.
-      #
-      # This lane is SLSA v1.0 Build **L2**, not L3: the provenance is generated
-      # in the same job that builds, and a job's steps share one runner VM, so
-      # the signing material is not out of reach of the build steps
-      # (https://slsa.dev/spec/v1.0/levels). The release-binaries lane reaches L3
-      # by building inside a reusable workflow (release-build.yml); the same move
-      # is available here and is tracked on #2140 rather than assumed. Until then
-      # this is L2 and says so — the images are genuinely signed, and the level
-      # is the honest one.
-      #
-      #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:TAG -R rubentalstra/FerroEHR
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        with:
-          subject-name: ${{ env.APP_IMAGE }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
   # ── Admin console: server binary per arch + the arch-independent site ───────
   # The WASM/JS/CSS site bundle is architecture-independent, so cargo-leptos
   # runs ONCE (amd64: bin + site); the arm64 job builds only the ssr binary
@@ -466,178 +376,68 @@ jobs:
   # ── Package + push the multi-arch admin-console image (COPY-only) ───────────
   admin-ui-image:
     name: admin-ui image
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    needs: admin-ui-binary
     permissions:
       contents: read
-      packages: write # push the console image to GHCR
+      packages: write # push the image to GHCR
       id-token: write # Sigstore, for the signed attestations
       attestations: write # store them against this repository
-    needs: admin-ui-binary
-    outputs:
-      digest: ${{ steps.build_admin_ui.outputs.digest }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+    # The reusable SLSA Build L3 lane; see the app image above.
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image: ghcr.io/rubentalstra/ferroehr-admin-ui
+      dockerfile: docker/admin-ui/Dockerfile
+      target: runtime-prebuilt
+      binary-artifact-prefix: ferroehr-admin-ui
+      site-artifact: ferroehr-admin-ui-site
+      labels: |
+        org.opencontainers.image.title=FerroEHR admin console
+        org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
+        org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+        org.opencontainers.image.url=https://ferroehr.eu/
+        org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+        org.opencontainers.image.vendor=FerroEHR
+        org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+        org.opencontainers.image.licenses=MIT
+        org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
+        org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ferroehr-admin-ui-amd64
-          path: bin/amd64
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ferroehr-admin-ui-arm64
-          path: bin/arm64
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ferroehr-admin-ui-site
-          path: site
-
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # See the app lane for why ANNOTATIONS_LEVELS and the explicit labels are
-      # both required.
-      - name: Metadata
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
-        with:
-          images: ${{ env.ADMIN_UI_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-          labels: |
-            org.opencontainers.image.title=FerroEHR admin console
-            org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
-            org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
-            org.opencontainers.image.url=https://ferroehr.eu/
-            org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
-            org.opencontainers.image.vendor=FerroEHR
-            org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
-            org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
-
-      - name: Package and push
-        id: build_admin_ui
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: docker/admin-ui/Dockerfile
-          target: runtime-prebuilt
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
-            REVISION=${{ github.sha }}
-          # Full provenance attestation (docs.docker.com/build/metadata/attestations).
-          provenance: mode=max
-          sbom: true
-
-      # Signed provenance, as on the app image above.
-      #
-      #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr-admin-ui:TAG -R rubentalstra/FerroEHR
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        with:
-          subject-name: ${{ env.ADMIN_UI_IMAGE }}
-          subject-digest: ${{ steps.build_admin_ui.outputs.digest }}
-          push-to-registry: true
   # ── PostgreSQL image (only on docker/postgres changes or tags; multi-arch) ──
   # One RUN layer (the Debian security upgrade, #2408) on top of postgres:18.6,
   # so the non-native platform needs QEMU — set up below.
   postgres-image:
     name: postgres image
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: write # push the postgres image to GHCR
-      id-token: write # Sigstore, for the signed attestations
-      attestations: write # store them against this repository
     needs: changes
     if: >-
       needs.changes.outputs.postgres == 'true' ||
       startsWith(github.ref, 'refs/tags/v') ||
       github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      packages: write # push the image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
+    # The reusable SLSA Build L3 lane. QEMU: the one RUN layer (the Debian
+    # security upgrade, #2408) executes on the non-native platform.
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image: ghcr.io/rubentalstra/ferroehr-postgres
+      dockerfile: docker/postgres/Dockerfile
+      context: docker/postgres
+      qemu: true
+      version-build-args: false
+      labels: |
+        org.opencontainers.image.title=FerroEHR PostgreSQL
+        org.opencontainers.image.description=PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr
+        org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+        org.opencontainers.image.url=https://ferroehr.eu/
+        org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+        org.opencontainers.image.vendor=FerroEHR
+        org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+        org.opencontainers.image.licenses=MIT AND PostgreSQL
+        org.opencontainers.image.base.name=postgres:18.6
+        org.opencontainers.image.base.digest=sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
 
-      # See the app lane for why ANNOTATIONS_LEVELS and the explicit labels are
-      # both required. `licenses` is an SPDX expression here because the image
-      # really is mixed: our init scripts over an upstream `postgres` base.
-      - name: Metadata
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
-        with:
-          images: ${{ env.POSTGRES_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-          labels: |
-            org.opencontainers.image.title=FerroEHR PostgreSQL
-            org.opencontainers.image.description=PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr
-            org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
-            org.opencontainers.image.url=https://ferroehr.eu/
-            org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
-            org.opencontainers.image.vendor=FerroEHR
-            org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
-            org.opencontainers.image.licenses=MIT AND PostgreSQL
-            org.opencontainers.image.base.name=postgres:18.6
-            org.opencontainers.image.base.digest=sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
-
-      - name: Build and push
-        id: build_postgres
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: docker/postgres
-          file: docker/postgres/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          # Full provenance attestation (docs.docker.com/build/metadata/attestations).
-          provenance: mode=max
-          sbom: true
-
-      # Signed provenance, as on the app image above.
-      #
-      #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr-postgres:TAG -R rubentalstra/FerroEHR
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        with:
-          subject-name: ${{ env.POSTGRES_IMAGE }}
-          subject-digest: ${{ steps.build_postgres.outputs.digest }}
-          push-to-registry: true
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   image-scan:
     name: image vulnerability scan

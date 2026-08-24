@@ -26,17 +26,17 @@ what you query and what you read back.
 
 ## What makes this implementation different
 
-- **Compliance you can check, not just read.** The openEHR conformance
-  catalogue is executed by a committed runner against a live server, over both
-  canonical JSON and canonical XML, and the profile verdicts are computed from
-  the per-case outcomes rather than asserted. The run records live in the
-  repository, and every number on the [Conformance](conformance.md) page is
-  derived from them at build time — never hand-typed.
+- **Compliance you can run yourself.** The openEHR conformance catalogue is
+  executed by a committed runner against a live server, over both canonical
+  JSON and canonical XML, and the profile verdicts are computed from the
+  per-case outcomes. The run records live in the repository, and every number
+  on the [Conformance](conformance.md) page is derived from them at build time,
+  never hand-typed.
 - **The openEHR specifications, generated** directly from the official
   machine-readable models: the Reference Model, the Archetype Model (1.4 and
   2.4), the serialization schemas, and the REST API contract (Release-1.1.0).
   openEHR's own published terminology (3.1) ships embedded, byte-identical to
-  upstream. A specification update is a regeneration, not a rewrite.
+  upstream. A specification update is a regeneration.
 - **Two selectable specification generations.** One configuration key,
   `spec_profile`, chooses the whole generation set the server runs:
   `development` (Reference Model 1.2.0 with BASE 1.3.0 and LANG 1.1.0 — the
@@ -44,8 +44,8 @@ what you query and what you read back.
   1.1.0 with BASE 1.2.0 and LANG 1.0.0). See
   [`spec_profile`](installation/configuration.md#spec_profile).
 - **One self-contained binary.** No JVM, no language runtime, and a pure-Rust
-  TLS stack, so there is nothing to provision beside PostgreSQL — predictable
-  memory, fast cold starts, and a shell-less, non-root container image.
+  TLS stack, so there is nothing to provision beside PostgreSQL. The container
+  image is shell-less and runs as non-root.
 - **PostgreSQL 18-native storage.** Clinical documents are decomposed into an
   indexed node model with time-bounded, versioned rows; canonical openEHR JSON
   is stored verbatim so storage and API never disagree.
@@ -53,9 +53,9 @@ what you query and what you read back.
 ## How the system is layered
 
 FerroEHR is built in two layers. A **specification layer** is generated
-deterministically from openEHR's published models — the Reference Model types,
+deterministically from openEHR's published models: the Reference Model types,
 canonical JSON/XML serialization, the REST contract, and the AQL front end. On
-top of it sits the **application** — the server, the PostgreSQL-native storage,
+top of it sits the **application**: the server, the PostgreSQL-native storage,
 the AQL execution engine, validation, and security. The
 [System architecture](concepts/architecture.md) chapter walks through this in
 user terms; if you are new to openEHR itself, start with the
@@ -86,9 +86,9 @@ user terms; if you are new to openEHR itself, start with the
 > [!NOTE]
 > FerroEHR began as a fork of **EHRbase** (by vitasystems and the Peter L.
 > Reichertz Institute) and keeps that lineage in its git history, but it is an
-> independent, from-scratch Rust implementation — no EHRbase code is present in
-> this tree — and it is not affiliated with or endorsed by the EHRbase project.
+> independent, from-scratch Rust implementation with no EHRbase code in this
+> tree, and it is not affiliated with or endorsed by the EHRbase project.
 > FerroEHR's own code is MIT-licensed; vendored openEHR material keeps its
-> upstream terms — Apache-2.0 for the machine-readable artifacts, CC-BY-SA 3.0
+> upstream terms: Apache-2.0 for the machine-readable artifacts, CC-BY-SA 3.0
 > for the specification text, and CC-BY-SA 3.0 and 4.0 for the clinical models
 > (see [Licensing & legal](licensing.md)).

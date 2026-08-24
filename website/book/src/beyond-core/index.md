@@ -2,7 +2,7 @@
 
 The core of FerroEHR is the openEHR platform: EHRs, compositions,
 contributions, templates, versioning, and AQL. Around that core the server
-carries capabilities for fitting into the wider systems landscape — moving whole
+carries capabilities for fitting into the systems around it: moving whole
 records between systems, storing the people those records refer to, validating
 codes against an external terminology server, telling downstream systems that
 something changed, bridging to FHIR, and keeping large attachments out of the
@@ -38,22 +38,22 @@ Two different things are collected here, and they behave differently:
 > auditable decision about where clinical data is allowed to go.
 
 Every configuration key these chapters name lives in the
-[configuration reference](../installation/configuration.md) — the integration
+[configuration reference](../installation/configuration.md); the integration
 sections are on
 [Integrations](../installation/config-integrations.md) and
 [Audit & subject proxy](../installation/config-audit.md).
 
 ## Build features, and what a slim build refuses
 
-Three of these capabilities are also **cargo features** of the server build —
-`fhir`, `events`, and `multimedia` — all on in the published binaries and
+Three of these capabilities are also **cargo features** of the server build
+(`fhir`, `events`, and `multimedia`) all on in the published binaries and
 container images, and on in any default build. Their code lives in a separate
 crate the platform pulls in only when the matching feature is on, so a
 `--no-default-features` build contains none of it.
 
 A slim build does not start up quietly missing a capability: it **refuses at
 boot** when the configuration asks for one it was built without. The `fhir`
-feature covers more than the connector — the external FHIR terminology
+feature covers more than the connector: the external FHIR terminology
 providers and the FHIR `AuditEvent` audit sinks need it too, and enabling `fhir`
 also enables `events`, because the outbound emitter drains the same commit
 outbox. See
@@ -69,28 +69,28 @@ for the exact list of settings a slim binary rejects.
 
 ## The capability set
 
-- **[EHR Extract & messaging](messaging.md)** — export a whole EHR, clone it
+- **[EHR Extract & messaging](messaging.md):** export a whole EHR, clone it
   into another system with its distributed version identity intact, import an
   extract into an existing record, and import Template Data Documents (TDDs) as
   compositions.
-- **[Demographics](demographics.md)** — a versioned party store (persons,
+- **[Demographics](demographics.md):** a versioned party store (persons,
   organisations, groups, agents, roles) with relationships, over a REST surface
   that mirrors the EHR APIs.
-- **[Terminology servers](terminology.md)** — the bundled openEHR terminology
+- **[Terminology servers](terminology.md):** the bundled openEHR terminology
   for local codes, plus any number of external FHIR terminology servers for
   validating coded values against external value sets.
-- **[Subject Proxy](subject-proxy.md)** — read facts about a subject
+- **[Subject Proxy](subject-proxy.md):** read facts about a subject
   ("date of birth", "latest blood pressure") through named variables backed by
   data frames: AQL against this CDR, reads from configured external FHIR
   servers, or values pushed in manually. A service-layer capability; it has no
   REST endpoints.
-- **[Change events (AMQP)](amqp.md)** — a transactional outbox that publishes a
+- **[Change events (AMQP)](amqp.md):** a transactional outbox that publishes a
   PHI-free, at-least-once event for every commit to an AMQP broker, so
   downstream systems can respond to changes instead of polling.
-- **[FHIR connectors](fhir.md)** — mapping-driven ingestion of FHIR R4
+- **[FHIR connectors](fhir.md):** mapping-driven ingestion of FHIR R4
   resources, a patient-scoped read façade that returns openEHR data as FHIR, and
   event-driven outbound emission of mapped FHIR resources.
-- **[S3 multimedia](s3-multimedia.md)** — threshold-based, content-addressed
+- **[S3 multimedia](s3-multimedia.md):** threshold-based, content-addressed
   offload of large `DV_MULTIMEDIA` blobs to any S3-compatible object store, with
   integrity verification on the way back in.
 

@@ -1,6 +1,6 @@
 # Terminology servers
 
-openEHR records carry coded values — a diagnosis, a route of administration, a
+openEHR records carry coded values: a diagnosis, a route of administration, a
 laboratory unit. Some codes come from openEHR's own terminology; others must be
 checked against an external code system such as SNOMED CT or LOINC. FerroEHR
 serves the bundled openEHR terminology in-process, and can additionally validate
@@ -23,7 +23,7 @@ configured external server.
 ### Exposing the lookups over REST
 
 You can also expose these lookups over a small read-only REST surface. It is a
-FerroEHR extension — no openEHR REST contract defines a terminology API — and it
+FerroEHR extension (no openEHR REST contract defines a terminology API) and it
 is **off by default**; while disabled, every route answers `404` as if it were
 not mounted. Turn it on with `FERROEHR__TERMINOLOGY__API_ENABLED=true` and it
 serves:
@@ -48,11 +48,11 @@ is a `400`.
 > implement one: you run an off-the-shelf FHIR terminology server and point the
 > CDR at it by URL. HAPI FHIR is a good open, single-container default for
 > development and CI; Snowstorm is the choice for genuine SNOMED CT subsumption
-> (heavier — it needs Elasticsearch and a SNOMED CT licence).
+> (heavier: it needs Elasticsearch and a SNOMED CT licence).
 
 External terminology is off by default, and while it is off nothing is
 requested: validation uses the in-process bundle alone. The keys live under
-`[terminology.external]` — the full table, including timeouts, caching, OAuth2
+`[terminology.external]`; the full table, including timeouts, caching, OAuth2
 and mutual TLS, is on
 [Integrations](../installation/config-integrations.md#terminology). The minimum
 is a master switch and one provider:
@@ -68,7 +68,7 @@ url = "https://tx.example.org/fhir"
 
 Enabling the section with no provider configured is a **boot error**, not a
 silent fall back to the bundle. So is an empty provider URL, an
-`oauth2_client` naming no configured client, and half a mutual-TLS identity —
+`oauth2_client` naming no configured client, and half a mutual-TLS identity:
 a control you configured either works or the server refuses to start.
 
 ### What it changes at commit time
@@ -98,15 +98,15 @@ local terminologies are still answered in-process.
 > parameter, and no openEHR specification defines a mapping between
 > `terminology_id` values (`SNOMED-CT`) and FHIR system URIs
 > (`http://snomed.info/sct`). If your archetypes and your terminology server
-> disagree on that spelling, align them in the terminology-server configuration
-> — the CDR does not rewrite the value.
+> disagree on that spelling, align them in the terminology-server configuration.
+> The CDR does not rewrite the value.
 
 ### Which FHIR operation is used
 
 Membership is tested with `ValueSet/$validate-code` by default: one direct
 yes/no with the least payload. A server that does not offer it can be switched to
 `$expand` plus a membership test with `operation = "expand"` on that provider.
-This is a per-provider configuration choice, not an automatic fallback — the
+This is a per-provider configuration choice, not an automatic fallback: the
 server does not retry a failed `$validate-code` as an `$expand`, so set the
 operation your server actually supports.
 
@@ -143,11 +143,11 @@ url = "https://loinc.example.org/fhir"
 
 Selection is deliberately mechanical, so you can predict which server answers:
 
-1. The caller offers candidate keys in priority order — a terminology id, a
+1. The caller offers candidate keys in priority order: a terminology id, a
    system URI, a value-set URL, the AQL service flavour.
 2. The first candidate with a route entry wins. Keys are matched
    **case-insensitively and whole-string**, never as a prefix.
-3. Otherwise the provider named `default` answers — or, when exactly one
+3. Otherwise the provider named `default` answers, or, when exactly one
    provider is configured, that one.
 4. With two or more providers and no `default`, an unrouted terminology has no
    server at all, and the call falls back to local behaviour.
@@ -164,7 +164,7 @@ checks above.
 
 A provider that needs a bearer token references a client-credentials client by
 name; the token is cached and renewed shortly before it expires. The client
-secret should come from a mounted file rather than an inline value —
+secret should come from a mounted file rather than an inline value;
 `client_secret_file` under
 `[terminology.external.oauth2_clients.<name>]`. A provider that authenticates
 with a certificate instead gets its mutual-TLS identity **per provider**, because
@@ -178,8 +178,8 @@ anchors are trusted, never *whether* the server is verified.
 ### When the terminology server cannot answer
 
 `fail_on_error` decides what happens when a bound value set cannot be resolved at
-all — the server is unreachable, answers an error, or does not know the value
-set:
+all, whether the server is unreachable, answers an error, or does not know the
+value set:
 
 - `false` (the default, *fail-open*): the composition is accepted and a warning
   is logged. The availability of an external service does not block clinical
@@ -208,7 +208,7 @@ docker compose -p ferroehr-cnf --project-directory . --profile terminology \
 The profile starts the terminology server (host port `8090` by default,
 `FERROEHR_TERMINOLOGY_PORT`) plus a one-shot seeding container that uploads the
 fixtures over the server's own FHIR API and verifies `$validate-code` and
-`$expand` before exiting — so a misconfigured server fails there rather than
+`$expand` before exiting, so a misconfigured server fails there rather than
 inside a later run. The overlay file is what points the CDR at it, by switching
 on the `[terminology.external]` providers the development configuration already
 carries in the disabled state.
@@ -220,8 +220,8 @@ terminology server and uses the in-process openEHR terminology only.
 > The seeded content is synthetic and lives under the reserved `example.test`
 > domain: one hierarchical code system shaped like SNOMED CT and one shaped like
 > LOINC, each with an enumerated value set. It carries no licensed terminology
-> content. Point the providers at a real server — and, for SNOMED CT, hold the
-> appropriate licence — for anything beyond experimentation.
+> content. Point the providers at a real server, and for SNOMED CT hold the
+> appropriate licence, for anything beyond experimentation.
 
 The terminology container mounts no volume, so its seeded content lives inside
 the container only: re-create it and the seed is gone. Re-run the profile (or
@@ -237,9 +237,9 @@ just the seeding container) afterwards.
 ## On Kubernetes
 
 Providers and routes are maps, so they are supplied as chart values rather than
-environment variables — the `config` passthrough renders them verbatim into the
+environment variables; the `config` passthrough renders them verbatim into the
 server's configuration file
-([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here)):
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable)):
 
 ```yaml
 # values.yaml
@@ -259,7 +259,7 @@ secrets:
 ```
 
 **Before you enable it:** a reachable terminology server, a decision on
-`fail_on_error`, and — if the chart's default-deny egress policy is on — an
+`fail_on_error`, and (if the chart's default-deny egress policy is on) an
 egress rule that admits the server, or every call fails as a timeout.
 **To turn it off**, set `config.terminology.external.enabled: false`; validation
 falls back to the in-process bundle and no external call is made.

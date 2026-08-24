@@ -3,7 +3,7 @@
 The **Operations** screen is the console's operator view of a running CDR:
 dependency health, what exactly is deployed, the live metric registry, and
 runtime log control. Everything on it comes from the CDR's own operational
-endpoints over HTTP — the console has no privileged channel.
+endpoints over HTTP; the console has no privileged channel.
 
 ![Operations panel](img/operations/operations.png)
 
@@ -13,8 +13,8 @@ endpoints over HTTP — the console has no privileged channel.
 
 The panel is **probe-and-hide**: on every page load the console asks the CDR for
 `GET /management/info`, and the sidebar entry appears only if that endpoint
-exists. A `404` — the CDR's answer when the management surface is off, which is
-the default — hides the entry entirely; any other answer counts as present, so a
+exists. A `404` (the CDR's answer when the management surface is off, which is
+the default) hides the entry entirely; any other answer counts as present, so a
 refusal reaches you as a message on the card that asked rather than as a missing
 screen.
 
@@ -36,12 +36,12 @@ loggers = "admin_only"
 
 The levels are `off` (not mounted, `404`), `private` (any authenticated
 principal), `admin_only`, and `public` (served outside authentication). A card
-whose endpoint is off says so in place instead of failing — but `info` is the
+whose endpoint is off says so in place instead of failing, but `info` is the
 probe, so leaving `info` at `off` hides the whole panel.
 
 If the CDR serves management on its own internal listener
 (`management.port`) or under a renamed base path (`management.base_path`), point
-the console at it with one setting — the full prefix, including the path:
+the console at it with one setting, the full prefix, including the path:
 
 ```bash
 FERROEHR_ADMIN__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9100/management
@@ -51,7 +51,7 @@ Unset, the console derives `{cdr.base_url}/management`.
 
 > [!NOTE]
 > The management endpoints are gated server-side at the level you chose. The
-> console shows the panel whenever the surface exists — being allowed to read a
+> console shows the panel whenever the surface exists; being allowed to read a
 > particular endpoint is the CDR's per-request decision, and a refusal is
 > reported on the card that asked, naming what to do about it.
 
@@ -59,8 +59,8 @@ Unset, the console derives `{cdr.base_url}/management`.
 
 The health card reads the CDR's **public readiness probe**
 (`GET /health/readiness`, always served, no configuration): the aggregate state
-plus one row per dependency the server checks — the database ping, the
-migrations probe, and any optional components — with the CDR's own detail text
+plus one row per dependency the server checks (the database ping, the
+migrations probe, and any optional components) with the CDR's own detail text
 where it gave one.
 
 This is deliberately a different question from the **status pill** in the
@@ -78,7 +78,7 @@ either claim.
 
 Straight from `GET /management/info`: the CDR's version, the git commit the
 binary was built from, its build timestamp and `rustc` version, the PostgreSQL
-target — and, under their own heading, the deployment's active
+target, and under their own heading the deployment's active
 [`spec_profile`](../installation/configuration.md#spec_profile) and the openEHR
 specification versions that profile selects. This is the card to screenshot into
 an incident report: it says exactly what is running.
@@ -88,7 +88,7 @@ an incident report: it says exactly what is running.
 Four headline tiles (in-flight requests, compositions committed, AQL queries,
 database connections in use) sit above a browser over the CDR's whole metric
 registry: pick a metric, and the panel renders its current samples with their
-labels — the same numbers Prometheus scrapes, without a Prometheus.
+labels: the same numbers Prometheus scrapes, without a Prometheus.
 
 ![Operations panel — metric browser](img/operations/operations-metric.png)
 
@@ -97,7 +97,7 @@ view is shareable and survives a refresh, and the picker works before the
 browser app has loaded. A tile reads `—` when the deployment records nothing for
 that metric yet.
 
-For dashboards and alerting, scrape `GET /management/prometheus` instead — the
+For dashboards and alerting, scrape `GET /management/prometheus` instead; the
 panel is for looking, not for collecting.
 
 ## Runtime configuration
@@ -119,7 +119,7 @@ Type `tracing`-style directives (`ferroehr=debug,sqlx=warn`), press **Apply
 filter**, and confirm: the dialog spells out that logging changes immediately
 for every request the instance serves. **Reset to boot filter** puts the startup
 value back. Both outcomes are reported as a toast, and the card re-reads the
-CDR's answer, so what you see is what the server confirmed — not what was asked
+CDR's answer, so what you see is what the server confirmed, not what was asked
 for.
 
 > [!IMPORTANT]
