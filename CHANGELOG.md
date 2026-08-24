@@ -27,6 +27,13 @@ workflow refuses a tag that has no matching section here.
   the node rows remain the AQL source of truth. Storage grows by roughly
   the size of each stored version's canonical JSON.
 
+- Every object-addressed read (full version reads and the metadata/existence
+  lookups behind `ETag`s, revision histories, and 404 checks) queries the
+  two-tier union view in ONE statement instead of retrying the cold archival
+  tier in its own transaction on a primary miss — a miss (an unknown id, a
+  not-yet-created resource, a probing client) no longer costs four extra
+  database round trips, and archived objects stay retrievable exactly as
+  before.
 - AQL whole-object projections got cheaper end to end: a root-anchored
   projection (`SELECT c FROM … CONTAINS COMPOSITION c`) serves the
   materialized version body directly instead of re-aggregating and

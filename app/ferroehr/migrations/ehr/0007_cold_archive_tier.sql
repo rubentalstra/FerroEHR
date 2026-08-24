@@ -132,9 +132,9 @@ CREATE VIEW vo_attestation_all WITH (security_invoker = true) AS
     UNION ALL
     SELECT * FROM cold.vo_attestation;
 
-COMMENT ON VIEW vo_version_all IS 'Both storage tiers of vo_version (primary UNION ALL cold). For whole-repository readers only (admin export, physical delete); serving reads consult the cold tier on a primary miss instead, so the hot path never scans it.';
-COMMENT ON VIEW node_all IS 'Both storage tiers of node (primary UNION ALL cold) — whole-repository readers only.';
-COMMENT ON VIEW vo_attestation_all IS 'Both storage tiers of vo_attestation (primary UNION ALL cold) — whole-repository readers only.';
+COMMENT ON VIEW vo_version_all IS 'Both storage tiers of vo_version (primary UNION ALL cold). Every object-addressed serving read goes through this view — one statement serves both tiers (the empty cold side costs one index probe); AQL and the EHR-wide enumerations stay primary-only.';
+COMMENT ON VIEW node_all IS 'Both storage tiers of node (primary UNION ALL cold) — the whole-repository readers (admin export, physical delete).';
+COMMENT ON VIEW vo_attestation_all IS 'Both storage tiers of vo_attestation (primary UNION ALL cold) — joined by every full version read.';
 
 -- ── vo_archive: the marker now drives a physical move ────────────────────────
 COMMENT ON TABLE vo_archive IS 'Archive markers realizing SM I_ADMIN_ARCHIVE (SM openehr_platform master15-admin_service.adoc); the SM defines no storage form — our own design. A marker records that the object''s rows have been MOVED to the cold archival tier (schema `cold`): serving reads find them there on a primary-tier miss, so archival stays read-neutral on the wire. Intentionally FK-less (vo_id is not a per-version key).';
