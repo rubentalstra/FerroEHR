@@ -931,6 +931,11 @@ async fn write_single_outbox(
 /// Create the first version of a new versioned object under its own
 /// contribution.
 ///
+/// `known_now` is a database `now()` a caller already fetched on this request
+/// (e.g. piggybacked on a pre-commit gate read); when `Some`, the write
+/// transaction spends no extra round trip on the clock. `None` fetches it
+/// in-transaction.
+///
 /// # Errors
 /// [`ServiceError::Unprocessable`] for an out-of-group / non-first lifecycle
 /// state; the [`commit_resolved`] storage/signing errors; a multimedia offload
@@ -949,6 +954,7 @@ pub(crate) async fn create(
     audit: &AuditInput,
     envelope: WriteEnvelope,
     ctx: &SigningCtx<'_>,
+    known_now: Option<jiff::Timestamp>,
 ) -> Result<Committed, ServiceError> {
     let (committed, contribution_id) = apply_change(
         tx,
@@ -958,7 +964,7 @@ pub(crate) async fn create(
             audit,
             ctx,
             committer_fallback: &audit.committer,
-            known_now: None,
+            known_now,
         },
         Change::Create {
             kind,

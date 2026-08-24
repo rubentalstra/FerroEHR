@@ -113,10 +113,11 @@ impl FerroEhrService {
     /// requested [`DetailLevel`], with a deterministic `uid` populated for
     /// the `output` ([`ExampleType::Output`]) form.
     ///
-    /// The store is read unconditionally — the read doubles as the existence
-    /// probe *and* supplies the XML for a cold-cache build in one round-trip —
-    /// so a template deleted from the store is never served from a stale cache
-    /// entry on this surface.
+    /// Existence is probed on every call (a template deleted from the store —
+    /// possibly by another replica whose delete never touched this instance's
+    /// cache — must not be served from a stale cache entry), but the probe is
+    /// `EXISTS`-shaped: the stored XML itself moves only for a cold-cache
+    /// build.
     ///
     /// # Errors
     ///
@@ -136,13 +137,19 @@ impl FerroEhrService {
     ) -> Result<Value, ServiceError> {
         // Resolve existence first so an unknown id is a 404 (not the 422 the
         // WebTemplate cache maps for a commit-time unknown template).
-        let xml = self.get_template_xml(template_id).await?;
+        if !self.template_stored(template_id).await? {
+            return Err(ServiceError::sm(
+                crate::service::status::CallStatusType::TemplateDoesNotExist,
+                format!("template {template_id}"),
+            ));
+        }
         let key = identity::canonical_key(template_id);
         let wt = if let Some(wt) = self.web_templates.get(&key).await {
             note_cache_event("hit");
             wt
         } else {
             note_cache_event("miss");
+            let xml = self.get_template_xml(template_id).await?;
             self.build_cached_web_template(&key, template_id, &xml)
                 .await?
         };

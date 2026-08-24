@@ -85,7 +85,7 @@ impl FerroEhrService {
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
         // Creation / §EHR Active Status). Same errors, same order as the
         // separate `ensure_ehr_exists` + `ensure_content_writable` checks.
-        self.ensure_ehr_content_writable(ehr_id).await?;
+        let commit_now = self.ensure_ehr_content_writable(ehr_id).await?;
         self.validate_composition_for_commit(&composition, incomplete)
             .await?;
         self.reject_duplicate_persistent(ehr_id, &composition)
@@ -110,6 +110,7 @@ impl FerroEhrService {
             &audit,
             envelope,
             &self.signing_ctx(),
+            Some(commit_now),
         ))
         .await?;
         tx.commit().await?;
@@ -653,9 +654,12 @@ impl FerroEhrService {
     /// [`Self::ensure_content_writable`] (a missing EHR → 404 *before* the
     /// non-modifiable 409, unchanged order), but a single
     /// [`crate::storage::ehr_repo::ehr_writability`] read instead of two pool
-    /// round trips. The guarded concepts are RM ehr master04 §EHR Creation
-    /// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
-    /// openEHR spec governs the query shape (our own design).
+    /// round trips. Returns the database `now()` read by that same statement,
+    /// which the create path passes on as the commit instant so the write
+    /// transaction spends no round trip fetching the clock. The guarded
+    /// concepts are RM ehr master04 §EHR Creation (existence) and §EHR Active
+    /// Status (`EHR_STATUS.is_modifiable`); no openEHR spec governs the query
+    /// shape (our own design).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the EHR does not exist;
@@ -664,8 +668,8 @@ impl FerroEhrService {
     pub(in crate::service) async fn ensure_ehr_content_writable(
         &self,
         ehr_id: EhrId,
-    ) -> Result<(), ServiceError> {
-        let (exists, is_modifiable) =
+    ) -> Result<jiff::Timestamp, ServiceError> {
+        let (exists, is_modifiable, now) =
             crate::storage::ehr_repo::ehr_writability(&self.pool, ehr_id).await?;
         if !exists {
             return Err(ServiceError::sm(
@@ -678,7 +682,7 @@ impl FerroEhrService {
         if is_modifiable == Some(false) {
             return Err(Self::not_modifiable_error(ehr_id));
         }
-        Ok(())
+        Ok(now)
     }
 }
 

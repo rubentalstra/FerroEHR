@@ -267,12 +267,16 @@ impl FerroEhrService {
         self.require_tdd_target_ehr(ehr_id).await?;
 
         // Precondition: the referenced operational template is provisioned. An
-        // unknown template_id is `template_does_not_exist` — the template store
-        // names that status at construction and `ServiceError` round-trips it
-        // losslessly (this rejects the corpus `..__invalid_opt_doesnt_exist`
-        // TDD). A stored-but-unbuildable template surfaces through
-        // `web_template_for` as content_invalid.
-        let _stored_xml = self.get_template_xml(&envelope.template_id).await?;
+        // unknown template_id is `template_does_not_exist` (this rejects the
+        // corpus `..__invalid_opt_doesnt_exist` TDD) — probed by EXISTS, so the
+        // stored XML never moves for the check. A stored-but-unbuildable
+        // template surfaces through `web_template_for` as content_invalid.
+        if !self.template_stored(&envelope.template_id).await? {
+            return Err(SmError::from(ServiceError::sm(
+                crate::service::status::CallStatusType::TemplateDoesNotExist,
+                format!("template {}", envelope.template_id),
+            )));
+        }
         let web_template = self.web_template_for(&envelope.template_id).await?;
 
         // OPT-guided body → canonical COMPOSITION. A body that does not conform
