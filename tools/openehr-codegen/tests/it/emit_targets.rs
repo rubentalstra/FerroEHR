@@ -158,10 +158,14 @@ fn assert_file_set(target: &str, files: &BTreeMap<String, String>, expected: &[&
             banner.contains("@generated") && banner.contains(target),
             "{target}: {path} does not open with its generated banner: {banner:?}",
         );
+        // The needle names the SPDX tag WITHOUT an expression, which the
+        // REUSE scanner would otherwise parse and refuse as invalid.
+        // REUSE-IgnoreStart
         assert!(
             body.contains("SPDX-License-Identifier: "),
             "{target}: {path} carries no SPDX licence header",
         );
+        // REUSE-IgnoreEnd
     }
 }
 
