@@ -47,17 +47,20 @@ probes_signing() {
 
   # The one that makes the feature more than decoration. Reaching past the API
   # into the stored rows is the point: an attacker or a corrupt disk does not
-  # go through the write path, so neither does this.
+  # go through the write path, so neither does this. The tamper target is
+  # vo_version.body — the materialized projection every point read serves
+  # (the node rows are the AQL index; the parity between the two copies is
+  # pinned by the persistence suite, not by this probe).
   probe "P-SIGN-TAMPER" "broken" "server" "-" \
     "a tampered stored version is REFUSED on read, not served"
   local before after rows
   before="$(http_code -u "$BASIC" "$API/ehr/$ehr/versioned_ehr_status/version")"
-  rows="$(probe_psql "UPDATE ehr.node
-                         SET data = jsonb_set(data, '{name,value}', '\"tampered\"')
-                       WHERE ehr_id = '$ehr'::uuid AND rm_type = 'EHR_STATUS';" \
-          && probe_psql "SELECT count(*) FROM ehr.node
+  rows="$(probe_psql "UPDATE ehr.vo_version
+                         SET body = jsonb_set(body, '{name,value}', '\"tampered\"')
+                       WHERE ehr_id = '$ehr'::uuid AND kind = 'EHR_STATUS';" \
+          && probe_psql "SELECT count(*) FROM ehr.vo_version
                           WHERE ehr_id = '$ehr'::uuid
-                            AND data #>> '{name,value}' = 'tampered';")"
+                            AND body #>> '{name,value}' = 'tampered';")"
   if [ "${rows:-0}" = "0" ]; then
     probe_fail "a tampered stored row" "the UPDATE matched nothing" \
       "the probe could not reach the stored content, so detection was never tested"

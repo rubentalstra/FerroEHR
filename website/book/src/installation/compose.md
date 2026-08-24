@@ -129,8 +129,8 @@ Podman-specific notes:
   Docker Desktop) you get identical Compose behaviour; with the Python
   `podman-compose` package, flag coverage differs — prefer the Docker Compose
   provider.
-- The default `podman machine` on macOS ships with 2 GiB of memory. That is
-  enough for the quickstart and both overlays, but not for building the
+- The default `podman machine` on macOS ships with 2048 MiB of memory. That
+  is enough for the quickstart and both overlays, but not for building the
   server image from source inside the VM (a single spec-crate compile at
   release optimization holds more than that). If you want the
   build-from-source developer path under Podman, resize the machine first:
