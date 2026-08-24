@@ -91,6 +91,19 @@ that *describes* a rule as if it violated one. Record such a finding on the
 measurement issue rather than silencing it; an instruction is only edited
 when the instruction is actually wrong, never to make a comment go away.
 
+## SonarQube Cloud — the third machine opinion, same standing (#2630)
+
+SonarQube Cloud analyzes every PR and every develop push
+(`.github/workflows/sonar.yml`, scope in `sonar-project.properties`). Rust
+is first-party there: the analyzer runs Clippy itself — at workspace
+default features, a deliberately independent second Clippy configuration
+beside our deny-tier lanes. Everything above applies unchanged: findings
+are advisory, the precedence order is identical, no quality gate blocks a
+merge, and nothing it says relaxes `testing.md`. A finding worth acting on
+is written by hand in a normal change; a false positive is data, not a
+reason to tune the scanner. Promotion to a gating check would follow a
+precision measurement, exactly like the CodeRabbit decision recorded above.
+
 Official documentation (durable citations):
 <https://docs.coderabbit.ai/configure-coderabbit/> ·
 <https://docs.coderabbit.ai/reference/yaml-template>
