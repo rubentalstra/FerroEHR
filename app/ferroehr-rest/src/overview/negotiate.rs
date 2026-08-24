@@ -118,19 +118,25 @@ fn media_token(range: &str) -> &str {
     range.split(';').next().unwrap_or(range).trim()
 }
 
-/// Classify one media type (parameters stripped, ASCII-lowercased) into a
-/// [`WireFormat`]. Exact-match only — the deprecated `…schema+json` and legacy
-/// `…nc.flat+json`/`…tds2+xml` types are deliberately unrecognized
-/// (`Resources.md §Simplified Formats` NOTE + §Alternative data formats), so
-/// they return `None`.
+/// Classify one media type (parameters stripped) into a [`WireFormat`],
+/// comparing case-insensitively in place (RFC 9110 §8.3.1 — media types are
+/// case-insensitive; no lowercased copy is allocated). Exact-match only — the
+/// deprecated `…schema+json` and legacy `…nc.flat+json`/`…tds2+xml` types are
+/// deliberately unrecognized (`Resources.md §Simplified Formats` NOTE +
+/// §Alternative data formats), so they return `None`.
 fn classify_media(media: &str) -> Option<WireFormat> {
-    match media {
-        APPLICATION_JSON => Some(WireFormat::CanonicalJson),
-        APPLICATION_XML | TEXT_XML => Some(WireFormat::CanonicalXml),
-        APPLICATION_WT_FLAT_JSON => Some(WireFormat::Flat),
-        APPLICATION_WT_STRUCTURED_JSON => Some(WireFormat::Structured),
-        APPLICATION_WT_JSON => Some(WireFormat::WebTemplate),
-        _ => None,
+    if media.eq_ignore_ascii_case(APPLICATION_JSON) {
+        Some(WireFormat::CanonicalJson)
+    } else if media.eq_ignore_ascii_case(APPLICATION_XML) || media.eq_ignore_ascii_case(TEXT_XML) {
+        Some(WireFormat::CanonicalXml)
+    } else if media.eq_ignore_ascii_case(APPLICATION_WT_FLAT_JSON) {
+        Some(WireFormat::Flat)
+    } else if media.eq_ignore_ascii_case(APPLICATION_WT_STRUCTURED_JSON) {
+        Some(WireFormat::Structured)
+    } else if media.eq_ignore_ascii_case(APPLICATION_WT_JSON) {
+        Some(WireFormat::WebTemplate)
+    } else {
+        None
     }
 }
 
@@ -141,7 +147,7 @@ fn classify_media(media: &str) -> Option<WireFormat> {
 pub(crate) fn content_type_format(headers: &HeaderMap) -> Option<WireFormat> {
     match header_str(headers, header::CONTENT_TYPE) {
         None => Some(WireFormat::CanonicalJson),
-        Some(ct) => classify_media(&media_token(&ct).to_ascii_lowercase()),
+        Some(ct) => classify_media(media_token(ct)),
     }
 }
 
@@ -163,9 +169,32 @@ pub(crate) fn resolve_accept(
     if accept.trim().is_empty() {
         return Some(default);
     }
+    // ONE pass over the `Accept` ranges: each range is tokenized and
+    // q-parsed once, and every allowed format aggregates its best
+    // `(quality, specificity)` from that same pass (highest q, then
+    // specificity — the per-format aggregation `match_quality` describes).
+    let mut per_format: Vec<Option<(f64, u8)>> = vec![None; allowed.len()];
+    for range in accept.split(',') {
+        let range = range.trim();
+        if range.is_empty() {
+            continue;
+        }
+        let token = media_token(range);
+        let q = quality_of(range);
+        for (slot, &fmt) in per_format.iter_mut().zip(allowed) {
+            let Some(spec) = specificity_for(token, fmt) else {
+                continue;
+            };
+            *slot = Some(match *slot {
+                None => (q, spec),
+                Some((bq, bs)) if q > bq || (q >= bq && spec > bs) => (q, spec),
+                Some(current) => current,
+            });
+        }
+    }
     let mut best: Option<(WireFormat, f64, u8)> = None;
-    for &fmt in allowed {
-        let Some((q, spec)) = match_quality(&accept, fmt) else {
+    for (slot, &fmt) in per_format.iter().zip(allowed) {
+        let Some((q, spec)) = *slot else {
             continue;
         };
         if q <= 0.0 {
@@ -181,38 +210,20 @@ pub(crate) fn resolve_accept(
     best.map(|(fmt, _, _)| fmt)
 }
 
-/// The best `(quality, specificity)` an `Accept` header offers for `fmt`, or
-/// `None` if no media range matches it. specificity: `2` = exact type/subtype,
-/// `1` = a type wildcard (`application/*`, `text/*`), `0` = `*/*`.
-fn match_quality(accept: &str, fmt: WireFormat) -> Option<(f64, u8)> {
-    let mut best: Option<(f64, u8)> = None;
-    for range in accept.split(',') {
-        let range = range.trim();
-        if range.is_empty() {
-            continue;
-        }
-        let token = media_token(range).to_ascii_lowercase();
-        let Some(spec) = specificity_for(&token, fmt) else {
-            continue;
-        };
-        let q = quality_of(range);
-        best = Some(match best {
-            None => (q, spec),
-            Some((bq, bs)) if q > bq || (q >= bq && spec > bs) => (q, spec),
-            Some(current) => current,
-        });
-    }
-    best
-}
-
-/// The specificity with which `token` matches `fmt`, or `None` for no match.
+/// The specificity with which `token` matches `fmt` (compared
+/// case-insensitively in place), or `None` for no match. specificity: `2` =
+/// exact type/subtype, `1` = a type wildcard (`application/*`, `text/*`),
+/// `0` = `*/*`.
 fn specificity_for(token: &str, fmt: WireFormat) -> Option<u8> {
-    match token {
-        "*/*" => Some(0),
+    if token == "*/*" {
+        Some(0)
+    } else if token.eq_ignore_ascii_case("application/*") {
         // Every negotiated format has an `application/*` media type.
-        "application/*" => Some(1),
-        "text/*" => (fmt == WireFormat::CanonicalXml).then_some(1),
-        exact => (classify_media(exact) == Some(fmt)).then_some(2),
+        Some(1)
+    } else if token.eq_ignore_ascii_case("text/*") {
+        (fmt == WireFormat::CanonicalXml).then_some(1)
+    } else {
+        (classify_media(token) == Some(fmt)).then_some(2)
     }
 }
 
@@ -321,8 +332,8 @@ fn best_xml_range(accept: &str) -> Option<&str> {
         if range.is_empty() {
             continue;
         }
-        let token = media_token(range).to_ascii_lowercase();
-        let Some(spec) = specificity_for(&token, WireFormat::CanonicalXml) else {
+        let token = media_token(range);
+        let Some(spec) = specificity_for(token, WireFormat::CanonicalXml) else {
             continue;
         };
         let q = quality_of(range);
@@ -381,8 +392,7 @@ pub(crate) fn require_known_xml_lineage(headers: &HeaderMap) -> Result<(), ApiEr
     let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
         return Ok(());
     };
-    if classify_media(&media_token(&declared).to_ascii_lowercase())
-        != Some(WireFormat::CanonicalXml)
+    if classify_media(media_token(declared)) != Some(WireFormat::CanonicalXml)
     {
         return Ok(());
     }
@@ -466,11 +476,8 @@ pub(crate) fn http_date(at: jiff::Timestamp) -> String {
     at.strftime("%a, %d %b %Y %H:%M:%S GMT").to_string()
 }
 
-fn header_str(headers: &HeaderMap, name: header::HeaderName) -> Option<String> {
-    headers
-        .get(name)
-        .and_then(|v| v.to_str().ok())
-        .map(str::to_owned)
+fn header_str(headers: &HeaderMap, name: header::HeaderName) -> Option<&str> {
+    headers.get(name).and_then(|v| v.to_str().ok())
 }
 
 /// Decode a required JSON body into a `serde_json::Value`.
@@ -604,7 +611,7 @@ where
         }
         _ => Err(ApiError::UnsupportedMediaType(format!(
             "this operation accepts application/json or application/xml only, got {}",
-            header_str(headers, header::CONTENT_TYPE).unwrap_or_else(|| "<none>".to_owned())
+            header_str(headers, header::CONTENT_TYPE).unwrap_or("<none>")
         ))),
     }
 }
@@ -629,7 +636,7 @@ fn require_json(headers: &HeaderMap) -> Result<(), ApiError> {
         Some(WireFormat::CanonicalJson) => Ok(()),
         _ => Err(ApiError::UnsupportedMediaType(format!(
             "this operation accepts application/json only, got {}",
-            header_str(headers, header::CONTENT_TYPE).unwrap_or_else(|| "<none>".to_owned())
+            header_str(headers, header::CONTENT_TYPE).unwrap_or("<none>")
         ))),
     }
 }
@@ -656,7 +663,7 @@ pub(crate) fn require_content_type(
     let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
         return Ok(());
     };
-    match classify_media(&media_token(&declared).to_ascii_lowercase()) {
+    match classify_media(media_token(declared)) {
         Some(fmt) if allowed.contains(&fmt) => Ok(()),
         _ => Err(ApiError::UnsupportedMediaType(format!(
             "this operation accepts {expected} only, got {declared}"
@@ -681,7 +688,7 @@ pub(crate) fn require_text_plain(headers: &HeaderMap) -> Result<(), ApiError> {
     let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
         return Ok(());
     };
-    if media_token(&declared).eq_ignore_ascii_case("text/plain") {
+    if media_token(declared).eq_ignore_ascii_case("text/plain") {
         return Ok(());
     }
     Err(ApiError::UnsupportedMediaType(format!(

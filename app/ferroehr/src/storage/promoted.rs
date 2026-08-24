@@ -95,10 +95,16 @@ pub static PROMOTED_LEAVES: &[PromotedLeaf] = &[
 /// `EVENT_CONTEXT`) is still reachable.
 #[must_use]
 pub fn extract(num: i32, rm_type: &str, json: &Value) -> Vec<Option<String>> {
+    // Only a versioned-object root carries promoted leaves; every other row
+    // returns the EMPTY vec (allocation-free — `Vec::new` does not allocate),
+    // which the node writer's positional `.get(i)` reads as all-`None`.
+    if num != 0 {
+        return Vec::new();
+    }
     PROMOTED_LEAVES
         .iter()
         .map(|leaf| {
-            if num == 0 && rm_type == leaf.rm_type {
+            if rm_type == leaf.rm_type {
                 leaf_text(json, leaf.path)
             } else {
                 None
