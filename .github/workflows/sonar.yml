@@ -100,6 +100,17 @@ jobs:
           name: coverage-lcov
           path: lcov.info
 
+      # sonar.projectVersion anchors the "Previous version" New Code window
+      # (docs.sonarsource.com/sonarqube-cloud/standards/about-new-code): the
+      # workspace version bumps at every release cut, so "new code" means
+      # "since the last release" — the milestones-are-releases model as the
+      # analysis window. Read from the root Cargo.toml at scan time (never a
+      # second hand-maintained copy) and appended to the properties file the
+      # scanner reads, so no context value reaches a shell or the action args.
+      - name: Derive sonar.projectVersion from the workspace version
+        run: |
+          v="$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)"
+          echo "sonar.projectVersion=$v" >> sonar-project.properties
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

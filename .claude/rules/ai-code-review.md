@@ -25,6 +25,18 @@ a deliberate recorded decision (the RFC 2008 rejection, zero re-exports, …)
 is rejected as a class in the quality profile, with the reason recorded on
 the triage program (#2640).
 
+## New Code = since the last release (#2657)
+
+The project's New Code definition is **"Previous version"**, anchored by
+`sonar.projectVersion`: the sonar lane reads the workspace `version` from the
+root `Cargo.toml` at scan time and appends it to the properties file — never
+a second hand-maintained copy. The workspace version bumps at every release
+cut (milestones are releases), so the quality gate's `new_*` conditions, PR
+decoration, and the coverage program (#2656) all measure "since the last
+release" — the same window the changelog section and the conformance baseline
+describe. Do not switch the definition to days/reference-branch without
+re-adjudicating that alignment.
+
 ## How Rust is analyzed
 
 Rust is first-party in SonarQube Cloud (announced 2025-04-17): the analyzer
