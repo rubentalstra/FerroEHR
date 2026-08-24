@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Helm chart 6.0.15: the chart-signing step retries transient Sigstore
+  failures instead of stranding a published version unsigned. Chart 6.0.14
+  was pushed but lost its signature and provenance attestation to a single
+  Fulcio connection reset; it stays published as-is (an OCI push is
+  immutable under this repository's lanes) and 6.0.15 is the signed,
+  attested build of the same content. Kubernetes users should install
+  6.0.15.
+
 ## [4.0.1] - 2026-08-24
 
 ### Added
