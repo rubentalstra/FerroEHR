@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- Version point reads (composition, EHR_STATUS, directory, party — every
+  `.../{uid}` and `version_at_time` read) execute as ONE SQL statement: the
+  stored node rows now ride the version-row select as a lateral aggregate
+  instead of a second round trip, cutting per-read latency on every retrieval
+  path including the cold archival tier.
+
 ### Added
 
 - Admin console: the ADL 2 template detail shows the path catalog — the same
