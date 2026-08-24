@@ -772,7 +772,11 @@ async fn commit_resolved(
         signature_client_supplied,
         stable_compatible: r.stable_compatible,
         body: body.as_ref(),
+        time_committed: r.time_committed,
     };
+    // The folded statements BIND `r.time_committed` (the instant the signature
+    // was computed over) as the audit time and the `sys_period` open bound, so
+    // stored == signed holds by construction.
     let time_committed = match contribution {
         ContributionCtx::New => {
             let (_cid, _aid, tc) = crate::storage::version_repo::commit::commit_new_version(
@@ -792,10 +796,6 @@ async fn commit_resolved(
             tc
         }
     };
-    debug_assert_eq!(
-        time_committed, r.time_committed,
-        "the stored commit instant is the transaction timestamp read up front"
-    );
 
     // The shared commit tail: node rows, folder membership, attestations.
     crate::storage::node_repo::write_nodes(tx, r.vo_id, r.ordinal, r.ehr_id, &r.rows).await?;

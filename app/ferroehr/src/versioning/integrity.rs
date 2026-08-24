@@ -77,6 +77,11 @@ pub(crate) fn sign_version(
     if !ctx.signer.enabled() {
         return Ok(None);
     }
+    // The envelope is built WITHOUT `data` (Null is skipped by the builder)
+    // and the body joins the signed form through a shallow reference view in
+    // `sign_canonical_with_data` — the commit path never deep-copies the body
+    // into the envelope. RFC 8785 orders keys, so the join point is
+    // byte-identical to a fully-assembled ORIGINAL_VERSION's canonical form.
     let ov = build_original_version(&OriginalVersionParts {
         creating_system_id: &ctx.system_id,
         vo_id,
@@ -92,11 +97,38 @@ pub(crate) fn sign_version(
         contribution: &contribution_ref(contribution_id),
         commit_audit: &audit.canonical(&time_committed),
         lifecycle_state,
-        data,
+        data: &Value::Null,
         attestations,
         signature: None,
     })?;
-    sign_canonical(ctx, &ov)
+    sign_canonical_with_data(ctx, &ov, data)
+}
+
+/// JCS-serialize and sign the envelope joined with its `data` through a
+/// shallow reference view — the body is never deep-copied into the envelope.
+///
+/// `ov` carries neither `data` nor `signature` (the sign path builds it that
+/// way), so the view is exactly the `canonical_form()` input; a Null `data`
+/// (logical delete) stays absent, matching the builder's own skip.
+///
+/// # Errors
+/// [`ServiceError::SigningCanonical`] / [`ServiceError::SigningFailed`] as
+/// [`sign_canonical`].
+fn sign_canonical_with_data(
+    ctx: &SigningCtx<'_>,
+    ov: &Value,
+    data: &Value,
+) -> Result<Option<String>, ServiceError> {
+    let canonical =
+        openehr_rm::v1_2::common::change_control::version_impl::canonical_form_of_json_with_data(
+            ov, data,
+        )
+        .map_err(|e| ServiceError::SigningCanonical(e.to_string(), e))?;
+    let signature = ctx
+        .signer
+        .sign(&canonical)
+        .map_err(|e| ServiceError::SigningFailed(e.to_string(), e))?;
+    Ok(Some(signature))
 }
 
 /// Compute the server-generated `VERSION.signature` of the `IMPORTED_VERSION`
