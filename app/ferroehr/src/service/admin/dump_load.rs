@@ -207,9 +207,6 @@ async fn insert_audit_rows(
     audits: &[AuditRow],
     identity_preserving: bool,
 ) -> Result<(), ServiceError> {
-    if audits.is_empty() {
-        return Ok(());
-    }
     const INSERT: &str = "INSERT INTO audit (id, time_committed, system_id, change_type, \
          description, committer, attestation) \
          SELECT t.id, t.time_committed::timestamptz, t.system_id, t.change_type, \
@@ -225,6 +222,9 @@ async fn insert_audit_rows(
          $6::jsonb[], $7::jsonb[]) \
          AS t(id, time_committed, system_id, change_type, description, committer, attestation) \
          ON CONFLICT (id) DO NOTHING";
+    if audits.is_empty() {
+        return Ok(());
+    }
     let sql = if identity_preserving {
         INSERT_IDENTITY_PRESERVING
     } else {

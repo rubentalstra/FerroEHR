@@ -237,35 +237,7 @@ pub async fn insert_versions_verbatim(
     if rows.is_empty() {
         return Ok(());
     }
-    let trunk_vos: Vec<Uuid> = rows
-        .iter()
-        .filter(|r| r.branch_number == 0)
-        .map(|r| r.vo_id.0)
-        .collect();
-    if !trunk_vos.is_empty() {
-        let trunk_positions: Vec<i32> = rows
-            .iter()
-            .filter(|r| r.branch_number == 0)
-            .map(|r| r.trunk_version)
-            .collect();
-        let clash = sqlx::query(
-            "SELECT v.vo_id, v.trunk_version, v.creating_system_id FROM vo_version v \
-             JOIN unnest($1::uuid[], $2::int[]) AS q(vo_id, trunk_version) \
-             ON q.vo_id = v.vo_id AND q.trunk_version = v.trunk_version \
-             WHERE v.branch_number = 0 LIMIT 1",
-        )
-        .bind(&trunk_vos)
-        .bind(&trunk_positions)
-        .fetch_optional(&mut *tx)
-        .await?;
-        if let Some(hit) = clash {
-            return Err(StorageError::TrunkPositionInUse {
-                vo_id: hit.try_get::<Uuid, _>("vo_id")?,
-                trunk_version: hit.try_get("trunk_version")?,
-                held_by: hit.try_get("creating_system_id")?,
-            });
-        }
-    }
+    refuse_held_trunk_positions(tx, rows).await?;
     let n = rows.len();
     let mut vo_ids: Vec<Uuid> = Vec::with_capacity(n);
     let mut kinds: Vec<&str> = Vec::with_capacity(n);
@@ -350,6 +322,47 @@ pub async fn insert_versions_verbatim(
     .bind(bodies)
     .execute(&mut *tx)
     .await?;
+    Ok(())
+}
+
+/// Refuse a batch whose trunk rows would land on a trunk position another
+/// creating system already holds — the named-error probe of
+/// [`insert_versions_verbatim`], run against PRE-EXISTING rows in ONE
+/// statement.
+async fn refuse_held_trunk_positions(
+    tx: &mut PgConnection,
+    rows: &[VerbatimVersionRow<'_>],
+) -> Result<(), StorageError> {
+    let trunk_vos: Vec<Uuid> = rows
+        .iter()
+        .filter(|r| r.branch_number == 0)
+        .map(|r| r.vo_id.0)
+        .collect();
+    if trunk_vos.is_empty() {
+        return Ok(());
+    }
+    let trunk_positions: Vec<i32> = rows
+        .iter()
+        .filter(|r| r.branch_number == 0)
+        .map(|r| r.trunk_version)
+        .collect();
+    let clash = sqlx::query(
+        "SELECT v.vo_id, v.trunk_version, v.creating_system_id FROM vo_version v \
+         JOIN unnest($1::uuid[], $2::int[]) AS q(vo_id, trunk_version) \
+         ON q.vo_id = v.vo_id AND q.trunk_version = v.trunk_version \
+         WHERE v.branch_number = 0 LIMIT 1",
+    )
+    .bind(&trunk_vos)
+    .bind(&trunk_positions)
+    .fetch_optional(&mut *tx)
+    .await?;
+    if let Some(hit) = clash {
+        return Err(StorageError::TrunkPositionInUse {
+            vo_id: hit.try_get::<Uuid, _>("vo_id")?,
+            trunk_version: hit.try_get("trunk_version")?,
+            held_by: hit.try_get("creating_system_id")?,
+        });
+    }
     Ok(())
 }
 

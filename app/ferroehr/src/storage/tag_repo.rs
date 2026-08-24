@@ -112,10 +112,12 @@ pub async fn list_tags(
     rows.iter().map(tag_row).collect()
 }
 
-/// Replace the whole tag collection of one target in one scope: drop the
-/// existing collection, insert the given set (`PUT` full-collection
-/// semantics; an empty set clears all), and return the STORED collection in
-/// the `list_tags` order — the write path never re-reads what it just wrote.
+/// Replaces the whole tag collection of one target in one scope.
+///
+/// Drops the existing collection, inserts the given set (`PUT`
+/// full-collection semantics; an empty set clears all), and returns the
+/// STORED collection in the `list_tags` order — the write path never re-reads
+/// what it just wrote.
 ///
 /// Runs on the caller's transaction.
 ///

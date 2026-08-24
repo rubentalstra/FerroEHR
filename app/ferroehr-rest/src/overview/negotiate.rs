@@ -364,7 +364,7 @@ pub(crate) fn accept_xml_namespace(headers: &HeaderMap) -> Option<Namespace> {
     let Some(accept) = header_str(headers, header::ACCEPT) else {
         return Some(Namespace::V2);
     };
-    let Some(range) = best_xml_range(&accept) else {
+    let Some(range) = best_xml_range(accept) else {
         return Some(Namespace::V2);
     };
     match xml_lineage_of(range) {
@@ -392,11 +392,10 @@ pub(crate) fn require_known_xml_lineage(headers: &HeaderMap) -> Result<(), ApiEr
     let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
         return Ok(());
     };
-    if classify_media(media_token(declared)) != Some(WireFormat::CanonicalXml)
-    {
+    if classify_media(media_token(declared)) != Some(WireFormat::CanonicalXml) {
         return Ok(());
     }
-    match xml_lineage_of(&declared) {
+    match xml_lineage_of(declared) {
         XmlLineage::Default | XmlLineage::Selected(_) => Ok(()),
         XmlLineage::Unrecognized => Err(ApiError::UnsupportedMediaType(format!(
             "canonical XML is served in the openEHR ITS-XML lineages \

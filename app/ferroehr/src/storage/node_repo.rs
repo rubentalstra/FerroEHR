@@ -120,11 +120,13 @@ pub async fn write_nodes(
     Ok(())
 }
 
-/// Bulk-insert the decomposed node rows of MANY stored versions — still ONE
-/// fixed-text `unnest` statement, with the storage context
-/// (`vo_id`/`sys_version`/`ehr_id`) unnesting per row instead of binding as
-/// constants. The archive load writes a whole record's node rows through this
-/// (never one statement per version).
+/// Bulk-insert the decomposed node rows of MANY stored versions in ONE
+/// statement.
+///
+/// The same fixed-text `unnest` shape as [`write_nodes`], with the storage
+/// context (`vo_id`/`sys_version`/`ehr_id`) unnesting per row instead of
+/// binding as constants. The archive load writes a whole record's node rows
+/// through this (never one statement per version).
 ///
 /// # Errors
 ///

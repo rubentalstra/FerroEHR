@@ -168,8 +168,12 @@ mod tests {
             "_type": "COMPOSITION",
             "context": {"start_time": {"value": "2021-01-02T03:04:05Z"}}
         });
-        // Not the root (num != 0).
-        assert_eq!(extract(2, "COMPOSITION", &comp), vec![None]);
+        // Not the root (num != 0): the allocation-free empty vec, which the
+        // node writer's positional `.get(i)` reads as all-`None`.
+        assert_eq!(
+            extract(2, "COMPOSITION", &comp),
+            Vec::<Option<String>>::new()
+        );
         // Root, but not a registered rm_type.
         let obs = json!({"_type": "OBSERVATION"});
         assert_eq!(extract(0, "OBSERVATION", &obs), vec![None]);
