@@ -323,8 +323,8 @@ fn xml_lineage_of(range: &str) -> XmlLineage {
 
 /// The XML media range an `Accept` header offers with the highest
 /// `(quality, specificity)` — the range whose `version` parameter governs the
-/// response lineage. Mirrors [`match_quality`]'s ordering so the parameter is
-/// read off the very range that won the negotiation.
+/// response lineage. Mirrors [`resolve_accept`]'s per-range ordering so the
+/// parameter is read off the very range that won the negotiation.
 fn best_xml_range(accept: &str) -> Option<&str> {
     let mut best: Option<(&str, f64, u8)> = None;
     for range in accept.split(',') {
@@ -356,7 +356,7 @@ fn best_xml_range(accept: &str) -> Option<&str> {
 /// HTTP status code `406 Not Acceptable`").
 ///
 /// NOTE: the lineage is a second gate after the format, not a condition folded
-/// into [`match_quality`], so an `Accept` naming an unserved lineage beside an
+/// into [`resolve_accept`], so an `Accept` naming an unserved lineage beside an
 /// otherwise acceptable format (`application/json;q=0.5, application/xml;version=3`)
 /// answers `406` rather than quietly serving a format the client ranked lower.
 /// No openEHR spec governs the parameter — our own design/extension.

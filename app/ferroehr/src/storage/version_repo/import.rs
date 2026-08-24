@@ -216,10 +216,12 @@ pub async fn insert_version_verbatim(
     insert_versions_verbatim(tx, std::slice::from_ref(row)).await
 }
 
-/// Insert MANY verbatim `vo_version` rows in ONE statement — the archive-load
-/// batch (a whole record's versions, never a round trip per version), with
-/// the trunk-position invariant of [`insert_version_verbatim`] checked for
-/// the whole batch in one probe first.
+/// Insert MANY verbatim `vo_version` rows in ONE statement.
+///
+/// The archive-load batch (a whole record's versions, never a round trip per
+/// version), with the trunk-position invariant of
+/// [`insert_version_verbatim`] checked for the whole batch in one probe
+/// first.
 ///
 /// The probe checks the batch against PRE-EXISTING rows; a corrupt record
 /// that duplicates a trunk position within itself falls to the
