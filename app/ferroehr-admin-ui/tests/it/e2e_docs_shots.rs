@@ -56,7 +56,7 @@ const ADL2_TEMPLATE_ID: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.
 async fn seed_opt_fixture(cdr: &str, user: &str, pass: &str) {
     let source = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
+        "/tests/fixtures/minimal_evaluation.opt"
     ))
     .expect("the OPT fixture exists");
     let status = reqwest::Client::new()

@@ -834,7 +834,7 @@ mod tests {
     #[cfg(feature = "ssr")]
     const OPT_FIXTURE: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
+        "/tests/fixtures/minimal_evaluation.opt"
     ));
 
     #[cfg(feature = "ssr")]

@@ -47,7 +47,7 @@ const TEMPLATE_LINK: &str = "a[href='/templates/minimal_evaluation.en.v1']";
 fn fixture_opt_path() -> String {
     let raw = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
+        "/tests/fixtures/minimal_evaluation.opt"
     );
     std::fs::canonicalize(raw)
         .expect("fixture OPT exists")
