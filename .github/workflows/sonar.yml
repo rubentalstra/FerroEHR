@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 
-# SonarQube Cloud analysis — the THIRD machine opinion beside CodeQL and
-# CodeRabbit (#2630), under the same standing law as the AI reviewer
-# (.claude/rules/ai-code-review.md): findings are advisory, never outrank
+# SonarQube Cloud analysis — the machine opinion beside CodeQL (#2630;
+# CodeRabbit removed in #2638), under the standing law of
+# .claude/rules/ai-code-review.md: findings are advisory, never outrank
 # the vendored specs, the rules, or the local gates, and gate no merge.
 #
 # Rust is analyzed first-party (announced 2025-04-17,

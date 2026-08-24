@@ -61,10 +61,10 @@ independently reviewed by a second human, because there is no second human.
 Requiring two approvals of oneself would be a control that reports "reviewed"
 without anyone having reviewed, and this project would rather report the truth
 and let a deployer weigh it. What stands in for review here is machine
-enforcement: the gates above, an automated reviewer on every pull request
-([`.coderabbit.yaml`](.coderabbit.yaml)) whose findings are advisory and never
-outrank the specifications or these rules, and the conformance suite as an
-external acceptance instrument.
+enforcement: the gates above, deterministic analysis on every pull request
+(SonarQube Cloud and CodeQL) whose findings are advisory and never outrank
+the specifications or these rules, and the conformance suite as an external
+acceptance instrument.
 
 ## The specifications are the authority, not the maintainer
 
