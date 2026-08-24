@@ -18,7 +18,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use serde_json::Value;
-use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
+use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
@@ -26,11 +26,48 @@ use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
 
-/// Bulk-insert the decomposed node rows of one stored version.
+/// The FIXED-text node insert: one array bind per column over `unnest`, so
+/// the statement carries the same 16 parameters at ANY row count — no
+/// per-row placeholders (PostgreSQL caps a statement at 65,535 parameters,
+/// which a per-row shape hits at ~4,095 nodes), one prepared statement
+/// forever. Built once from the shared promoted-leaf registry
+/// (`crate::storage::promoted`), each leaf bound through its kind's
+/// conversion (non-castable text becomes NULL, the ext baseline).
+static WRITE_NODES_SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+    use std::fmt::Write;
+    let mut columns = String::new();
+    let mut selects = String::new();
+    let mut arrays = String::new();
+    let mut names = String::new();
+    for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
+        columns.push_str(", ");
+        columns.push_str(leaf.column);
+        match leaf.kind {
+            crate::storage::promoted::PromotedKind::Timestamp => {
+                let _ = write!(selects, ", ext.openehr_timestamp(t.p{i})");
+            }
+        }
+        let _ = write!(arrays, ", ${}::text[]", 16 + i);
+        let _ = write!(names, ", p{i}");
+    }
+    format!(
+        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, citem_num, \
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data{columns}) \
+         SELECT $1, $2, $3, t.num, t.num_cap, t.parent_num, t.citem_num, t.rm_type, \
+         t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.path, t.data{selects} \
+         FROM unnest($4::int[], $5::int[], $6::int[], $7::int[], $8::text[], $9::text[], \
+         $10::text[], $11::text[], $12::int[], $13::text[], $14::text[], $15::jsonb[]{arrays}) \
+         AS t(num, num_cap, parent_num, citem_num, rm_type, archetype, arch_entity, \
+         arch_concept, arch_major, name, path, data{names})"
+    )
+});
+
+/// Bulk-insert the decomposed node rows of one stored version — ONE
+/// fixed-text `unnest` statement whatever the row count.
 ///
 /// `rows` is the output of [`crate::storage::codec::decompose`]; the storage
 /// context (`vo_id`/`sys_version`/`ehr_id`) is supplied here and written onto
-/// every row.
+/// every row as constant scalars.
 ///
 /// A logically-deleted version (data Void, RM common master06 §Logical
 /// Deletion) has no node rows — the caller simply passes an empty slice and no
@@ -53,52 +90,57 @@ pub async fn write_nodes(
     if rows.is_empty() {
         return Ok(());
     }
-    // Base content columns + the promoted-leaf columns, generated from the
-    // shared registry so adding a promoted column is a migration + one registry
-    // entry, never an edit here (our own storage design — no openEHR spec
-    // governs promoted columns; see `crate::storage::promoted`).
-    let mut header = String::from(
-        "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num, ehr_id, \
-         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data",
-    );
-    for leaf in crate::storage::promoted::PROMOTED_LEAVES {
-        header.push_str(", ");
-        header.push_str(leaf.column);
+    let n = rows.len();
+    let mut nums = Vec::with_capacity(n);
+    let mut num_caps = Vec::with_capacity(n);
+    let mut parent_nums = Vec::with_capacity(n);
+    let mut citem_nums = Vec::with_capacity(n);
+    let mut rm_types: Vec<&str> = Vec::with_capacity(n);
+    let mut archetypes: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut arch_entities: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut arch_concepts: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut arch_majors: Vec<Option<i32>> = Vec::with_capacity(n);
+    let mut names: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut paths: Vec<&str> = Vec::with_capacity(n);
+    let mut datas: Vec<&Value> = Vec::with_capacity(n);
+    for row in rows {
+        nums.push(row.num);
+        num_caps.push(row.num_cap);
+        parent_nums.push(row.parent_num);
+        citem_nums.push(row.citem_num);
+        rm_types.push(&row.rm_type);
+        archetypes.push(row.archetype.as_deref());
+        arch_entities.push(row.arch_entity.as_deref());
+        arch_concepts.push(row.arch_concept.as_deref());
+        arch_majors.push(row.arch_major);
+        names.push(row.name.as_deref());
+        paths.push(&row.path);
+        datas.push(&row.data);
     }
-    header.push_str(") ");
-    let mut qb = QueryBuilder::new(header);
-    qb.push_values(rows, |mut b, row| {
-        b.push_bind(vo_id)
-            .push_bind(sys_version)
-            .push_bind(row.num)
-            .push_bind(row.num_cap)
-            .push_bind(row.parent_num)
-            .push_bind(row.citem_num)
-            .push_bind(ehr_id)
-            .push_bind(&row.rm_type)
-            .push_bind(&row.archetype)
-            .push_bind(&row.arch_entity)
-            .push_bind(&row.arch_concept)
-            .push_bind(row.arch_major)
-            .push_bind(&row.name)
-            .push_bind(&row.path)
-            .push_bind(&row.data);
-        // Each promoted value is bound through its kind's conversion so a
-        // value the AQL query-time cast accepted yields the same stored value,
-        // and non-castable text becomes NULL rather than failing the write
-        // (ext.openehr_timestamp, ext baseline).
-        for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
-            let raw = row.promoted.get(i).and_then(Clone::clone);
-            match leaf.kind {
-                crate::storage::promoted::PromotedKind::Timestamp => {
-                    b.push("ext.openehr_timestamp(")
-                        .push_bind_unseparated(raw)
-                        .push_unseparated(")");
-                }
-            }
-        }
-    });
-    qb.build().execute(&mut *tx).await?;
+    let mut query = sqlx::query(sqlx::AssertSqlSafe(WRITE_NODES_SQL.as_str()))
+        .bind(vo_id)
+        .bind(sys_version)
+        .bind(ehr_id)
+        .bind(&nums)
+        .bind(&num_caps)
+        .bind(&parent_nums)
+        .bind(&citem_nums)
+        .bind(&rm_types)
+        .bind(&archetypes)
+        .bind(&arch_entities)
+        .bind(&arch_concepts)
+        .bind(&arch_majors)
+        .bind(&names)
+        .bind(&paths)
+        .bind(&datas);
+    for (i, _leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
+        let leaf_values: Vec<Option<&str>> = rows
+            .iter()
+            .map(|row| row.promoted.get(i).and_then(Option::as_deref))
+            .collect();
+        query = query.bind(leaf_values);
+    }
+    query.execute(&mut *tx).await?;
     Ok(())
 }
 

@@ -373,12 +373,25 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
 /// authentication, unknown database), or the search-path initialization
 /// statement fails on that first connection.
 pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbError> {
+    let statement_timeout = (settings.statement_timeout_ms > 0)
+        .then(|| format!("SET statement_timeout = {}", settings.statement_timeout_ms));
     let pool = pool_options(settings)
-        // Replaces the base `after_connect` (the setter overwrites), so the
-        // search path is applied here as well.
-        .after_connect(|conn, _meta| {
+        // Replaces the base `after_connect` (the setter overwrites), so EVERY
+        // base session setting is re-applied here — the search path AND the
+        // statement timeout (dropping the timeout silently disarms the
+        // DB-side runaway-query guard; reliability.md — a broken control must
+        // never look like a policy outcome).
+        .after_connect(move |conn, _meta| {
+            let statement_timeout = statement_timeout.clone();
             Box::pin(async move {
                 sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
+                if let Some(statement_timeout) = statement_timeout {
+                    // Session-level SET; the value is our own u64 rendered
+                    // with `{}` (see `pool_options`), never client input.
+                    sqlx::query(sqlx::AssertSqlSafe(statement_timeout))
+                        .execute(&mut *conn)
+                        .await?;
+                }
                 stamp_tenant_guc(conn).await
             })
         })
