@@ -175,7 +175,9 @@ impl FerroEhrService {
             })
             .collect();
         let mut tx = self.pool.begin().await?;
-        tag_repo::replace_tags(
+        // The replace RETURNS the stored collection (list order), so the
+        // response never re-reads the rows the transaction just wrote.
+        let stored = tag_repo::replace_tags(
             &mut tx,
             None,
             vo_id,
@@ -184,8 +186,11 @@ impl FerroEhrService {
         )
         .await?;
         tx.commit().await?;
-        self.party_tags(vo_id, tag_target_tail(target_version))
-            .await
+        let sid = self.effective_system_id();
+        stored
+            .iter()
+            .map(|r| party_item_tag(&sid, r))
+            .collect::<Result<Vec<_>, _>>()
     }
 
     /// Delete a target's tags by key (a SET delete over the `(key,

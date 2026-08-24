@@ -114,7 +114,8 @@ pub async fn list_tags(
 
 /// Replace the whole tag collection of one target in one scope: drop the
 /// existing collection, insert the given set (`PUT` full-collection
-/// semantics; an empty set clears all).
+/// semantics; an empty set clears all), and return the STORED collection in
+/// the `list_tags` order — the write path never re-reads what it just wrote.
 ///
 /// Runs on the caller's transaction.
 ///
@@ -155,7 +156,7 @@ pub async fn replace_tags(
     target_vo_id: VoId,
     target_version: Option<&str>,
     tags: &[NewTag<'_>],
-) -> Result<(), StorageError> {
+) -> Result<Vec<TagRow>, StorageError> {
     // The creation instants of the collection as it stands, keyed by ITEM_TAG
     // identity, so a surviving tag can keep its own.
     let prior = sqlx::query(
@@ -188,7 +189,7 @@ pub async fn replace_tags(
     .execute(&mut *tx)
     .await?;
     if tags.is_empty() {
-        return Ok(());
+        return Ok(Vec::new());
     }
     // One multi-row insert for the whole set (never a per-tag round trip).
     // The ITEM_TAG identity within one target is the (key, target_path) PAIR
@@ -222,11 +223,16 @@ pub async fn replace_tags(
             .unwrap_or(now);
         created.push(jiff_sqlx::Timestamp::from(carried));
     }
-    sqlx::query(
+    // RETURNING hands back the stored collection (the replace's insert IS the
+    // whole new set), in the same order `list_tags` serves, so the write path
+    // never re-reads the collection it just wrote.
+    let stored = sqlx::query(
         "INSERT INTO item_tag \
          (ehr_id, target_vo_id, target_version, target_type, key, value, target_path, created_at) \
          SELECT $1, $2, $3, t.* \
-         FROM UNNEST($4::text[], $5::text[], $6::text[], $7::text[], $8::timestamptz[]) AS t",
+         FROM UNNEST($4::text[], $5::text[], $6::text[], $7::text[], $8::timestamptz[]) AS t \
+         RETURNING target_vo_id, target_version, target_type, key, value, target_path \
+         ",
     )
     .bind(ehr_scope)
     .bind(target_vo_id)
@@ -236,9 +242,23 @@ pub async fn replace_tags(
     .bind(&values)
     .bind(&paths)
     .bind(&created)
-    .execute(&mut *tx)
+    .fetch_all(&mut *tx)
     .await?;
-    Ok(())
+    let mut out = Vec::with_capacity(stored.len());
+    for row in &stored {
+        out.push(tag_row(row)?);
+    }
+    out.sort_by(|a, b| {
+        a.key
+            .cmp(&b.key)
+            .then_with(|| match (&a.target_path, &b.target_path) {
+                (None, None) => std::cmp::Ordering::Equal,
+                (None, Some(_)) => std::cmp::Ordering::Less,
+                (Some(_), None) => std::cmp::Ordering::Greater,
+                (Some(x), Some(y)) => x.cmp(y),
+            })
+    });
+    Ok(out)
 }
 
 /// Delete a target collection's tags by key, returning whether any row was
