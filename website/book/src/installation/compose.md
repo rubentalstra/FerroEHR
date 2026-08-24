@@ -111,6 +111,37 @@ Swagger UI at `http://localhost:8080/ferroehr/rest/swagger-ui`.
 > pre-18 `/var/lib/postgresql/data`. The bundled Compose file already does this
 > correctly; keep the convention if you adapt it.
 
+## Container engines: Docker and Podman
+
+The quickstart runs on Docker and on Podman. Both were verified first-hand on
+2026-08-24: the core stack, the `admin-ui` and `s3` profiles, and both
+overlays boot to healthy under `podman compose` exactly as under
+`docker compose`, with the same commands:
+
+```shell
+podman compose up -d --wait
+```
+
+Podman-specific notes:
+
+- `podman compose` delegates to an external Compose provider. With Docker's
+  own Compose CLI installed (the common case on a machine that has ever run
+  Docker Desktop) you get identical Compose behaviour; with the Python
+  `podman-compose` package, flag coverage differs — prefer the Docker Compose
+  provider.
+- The default `podman machine` on macOS ships with 2 GiB of memory. That is
+  enough for the quickstart and both overlays, but not for building the
+  server image from source inside the VM (a single spec-crate compile at
+  release optimization holds more than that). If you want the
+  build-from-source developer path under Podman, resize the machine first:
+  `podman machine set --memory 8192`.
+- Building from source under Podman (Buildah) is not part of the verified
+  quickstart surface; the supported quickstart path is the published images.
+
+The repository's own CI and measurement lanes run Docker; the compose-driven
+scripts (`scripts/conformance.sh`, the deployment probe, the UI journey
+battery) are exercised against Docker only.
+
 ## The isolation posture
 
 Every service in every committed compose file drops **all** Linux capabilities
@@ -234,7 +265,7 @@ you ask for them:
   export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
   export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true    # dev only; production S3 is HTTPS
 
-  docker compose --profile s3 up -d --wait ferroehr seaweedfs seaweedfs-init
+  docker compose --profile s3 up -d --wait ferroehr seaweedfs
   ```
 
   The compose file passes the whole `FERROEHR__MULTIMEDIA__*` set through from
