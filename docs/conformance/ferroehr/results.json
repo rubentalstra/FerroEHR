@@ -2149,6 +2149,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-deactivating_mixed_change_set",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete",
       "status": "passed",
       "rows_driven": 1,
@@ -2483,6 +2489,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-quantity_rich",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-reactivating_mixed_change_set",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
