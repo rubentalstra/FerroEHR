@@ -305,6 +305,38 @@ const EXISTS_SQL: &str = "SELECT EXISTS(SELECT 1 FROM vo_version_all WHERE vo_id
                           AND trunk_version = $2 AND branch_number = $3 \
                           AND branch_version = $4)";
 
+/// Whether the EHR holds a LIVE persistent COMPOSITION for `template_id`.
+///
+/// One `EXISTS` over the promoted `template_id` column plus the body's
+/// category code, primary tier (the live operational store, like every
+/// EHR-wide read here).
+///
+/// `persistent_code`/`deleted_state` are the domain's openEHR codes, passed
+/// in so this stays a dumb row probe.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn persistent_template_exists(
+    pool: &PgPool,
+    ehr_id: EhrId,
+    template_id: &str,
+    persistent_code: &str,
+    deleted_state: &str,
+) -> Result<bool, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
+         AND upper_inf(sys_period) AND branch_number = 0 AND lifecycle_state <> $2 \
+         AND template_id = $3 \
+         AND body #>> '{category,defining_code,code_string}' = $4)",
+    )
+    .bind(ehr_id)
+    .bind(deleted_state)
+    .bind(template_id)
+    .bind(persistent_code)
+    .fetch_one(pool)
+    .await?)
+}
+
 // ── current-version identity reads ────────────────────────────────────────────
 
 /// The current version of an EHR-owned object of one kind: its `vo_id` and

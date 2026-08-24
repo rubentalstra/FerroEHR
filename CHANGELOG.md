@@ -27,6 +27,11 @@ workflow refuses a tag that has no matching section here.
   the node rows remain the AQL source of truth. Storage grows by roughly
   the size of each stored version's canonical JSON.
 
+- Two per-item read loops became single statements: a resolved CONTRIBUTION
+  read (`Prefer: resolve_refs`) loads all its member versions in one batched
+  query instead of one read per member, and the persistent-COMPOSITION
+  uniqueness pre-check is one `EXISTS` probe instead of reading every live
+  composition body in the EHR.
 - Response compression now runs at the fastest level for every negotiated
   encoding (it previously used the libraries' default levels — real clients
   negotiating brotli paid visible per-response compression CPU for a
