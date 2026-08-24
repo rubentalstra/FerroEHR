@@ -32,7 +32,13 @@ compose_down() { dc down -v --remove-orphans >/dev/null 2>&1 || true; }
 # path the book tells an operator to use.
 compose_up() {
   local -a services=("$@")
-  dc -f docker-compose.yml --profile s3 up -d "${services[@]}" >/dev/null 2>&1
+  # --wait is load-bearing: it gates on seaweedfs-init EXITING 0 (the compose
+  # file's own contract — the initializer "exits 0 only in a state the probe
+  # accepts, and `up --wait` gates on that exit"), which is also the recipe
+  # exactly as the compose file documents it. Without it P-MM-BUCKET races
+  # the one-shot initializer on a slow runner and measures the race, not the
+  # deployment (the CI flake on the #2617 push run).
+  dc -f docker-compose.yml --profile s3 up -d --wait "${services[@]}" >/dev/null 2>&1
 }
 
 # A composition-free way to commit a large DV_MULTIMEDIA: an EHR_STATUS carrying
