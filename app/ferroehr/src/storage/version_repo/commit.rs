@@ -272,6 +272,10 @@ pub struct FoldedVersion<'a> {
     /// `spec_profile` gate consults. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: bool,
+    /// The assembled canonical body (`vo_version.body`) — the SAME in-memory
+    /// value the node rows are decomposed from; `None` on a logical delete
+    /// (no content — RM common master06 §Logical Deletion).
+    pub body: Option<&'a Value>,
 }
 
 /// A **standalone** folded commit: `audit` + `contribution` + `vo_version` in
@@ -318,9 +322,9 @@ pub async fn commit_new_version(
                (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                 contribution_id, audit_id, template_id, signature, \
-                signature_client_supplied, stable_compatible) \
+                signature_client_supplied, stable_compatible, body) \
              SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange(now(), NULL, '[)'), \
-                    $14, $15, $16, c.id, a.id, $17, $18, $19, $20 \
+                    $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21 \
              FROM a, c \
              RETURNING 1 \
          ) \
@@ -347,6 +351,7 @@ pub async fn commit_new_version(
     .bind(v.signature)
     .bind(v.signature_client_supplied)
     .bind(v.stable_compatible)
+    .bind(v.body)
     .fetch_one(&mut *tx)
     .await?;
     let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
@@ -387,9 +392,9 @@ pub async fn commit_version_into(
                (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                 contribution_id, audit_id, template_id, signature, \
-                signature_client_supplied, stable_compatible) \
+                signature_client_supplied, stable_compatible, body) \
              SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange(now(), NULL, '[)'), \
-                    $13, $14, $15, $16, a.id, $17, $18, $19, $20 \
+                    $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21 \
              FROM a \
              RETURNING 1 \
          ) \
@@ -415,6 +420,7 @@ pub async fn commit_version_into(
     .bind(v.signature)
     .bind(v.signature_client_supplied)
     .bind(v.stable_compatible)
+    .bind(v.body)
     .fetch_one(&mut *tx)
     .await?;
     let audit_id: Uuid = row.try_get("audit_id")?;

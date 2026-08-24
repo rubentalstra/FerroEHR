@@ -409,6 +409,14 @@ CREATE TABLE vo_version (
     contribution_id uuid NOT NULL,
     audit_id        uuid NOT NULL,
     template_id     text,
+    -- The version's assembled canonical body (openEHR canonical JSON, the
+    -- openehr-its encoding), materialized at write from the SAME in-memory
+    -- value the node rows are decomposed from — a point read serves one
+    -- detoast instead of re-aggregating the node subtree (TOAST keeps it
+    -- out of the main row, so meta-only scans stay slim). The node rows
+    -- remain the AQL source of truth; NULL on a logically deleted version
+    -- (no content — RM common master06 §Logical Deletion).
+    body            jsonb,
     CONSTRAINT pk_vo_version PRIMARY KEY (vo_id, sys_version),
     CONSTRAINT uq_vo_version_tree UNIQUE
         (vo_id, creating_system_id, trunk_version, branch_number, branch_version),

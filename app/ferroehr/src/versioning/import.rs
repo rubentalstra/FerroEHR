@@ -577,6 +577,7 @@ async fn commit_import_scoped(
                     wrapped_original: &wrapped_original,
                     lower,
                     upper,
+                    body: (!served.is_null()).then_some(&served),
                 },
             )
             .await?;
