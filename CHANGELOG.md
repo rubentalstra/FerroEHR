@@ -82,6 +82,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- A composition decomposing to more than 4,095 node rows now commits: the
+  node insert previously bound 16 parameters per row against PostgreSQL's
+  65,535-parameter statement cap, so a sufficiently large document failed
+  the write outright. The insert is now one fixed-text `unnest` statement
+  with one array bind per column at any row count (which also ends the
+  per-commit statement-text churn in the prepared-statement cache).
+- Multi-tenant deployments carry `db.statement_timeout_ms` again: the
+  tenant-scoped pool's connection hook replaced the base hook and silently
+  dropped the timeout, leaving those deployments without the database-side
+  runaway-query guard.
 - Compose: `docker compose --profile s3 up -d --wait` no longer fails after
   everything succeeded. Current Compose (v5.4, Docker and Podman alike)
   treats any exited container as a `--wait` failure, including the bucket
