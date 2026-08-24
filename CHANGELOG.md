@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- A mixed CONTRIBUTION now honours its own EHR_STATUS member when the
+  content-write gate runs: content members beside an `EHR_STATUS` member
+  setting `is_modifiable = true` are accepted against a deactivated EHR
+  (reactivate-and-write in one atomic commit), and a deactivating
+  CONTRIBUTION may carry its final content updates. Content against a
+  deactivated EHR without a reactivating member stays a 409. The rule is
+  order-independent over the change set (community report; adjudication
+  with citations on the tracker).
+
 - The book gained a Version signing chapter: a digest-signing page and a
   PGP-signing page, each with a flow diagram (commit-time signing and
   read-time verification), covering what is signed, the client-supplied

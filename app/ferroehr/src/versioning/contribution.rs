@@ -739,9 +739,29 @@ pub(crate) async fn commit_version_set(
     // EHR_STATUS.is_modifiable = False forbids content writes (RM ehr master04
     // §EHR Active Status): a CONTRIBUTION that creates/modifies/deletes any EHR
     // content (everything other than the EHR_STATUS object) is refused when the
-    // EHR is deactivated. An EHR_STATUS-only CONTRIBUTION stays allowed.
+    // EHR is deactivated. An EHR_STATUS-only CONTRIBUTION stays allowed (the
+    // EHR_STATUS "can always be written to" — the ehr_status class docs), and
+    // so is a REACTIVATING mixed CONTRIBUTION: content is refused exactly when
+    // the EHR is deactivated AND this change set carries no EHR_STATUS member
+    // with is_modifiable = true, order-independently over the atomic set.
+    // NOTE: no openEHR spec governs per-member gate timing (the versions list
+    // has no spec-assigned order semantics) — our own design, adjudicated
+    // with the full citation record on issue #2673.
     if let Some(ehr_id) = ehr_id
         && changes.iter().any(|(_, c)| c.kind() != Kind::EhrStatus)
+        && !changes.iter().any(|(_, c)| match c {
+            Change::Create {
+                kind: Kind::EhrStatus,
+                canonical,
+                ..
+            }
+            | Change::Modify {
+                kind: Kind::EhrStatus,
+                canonical,
+                ..
+            } => canonical.pointer("/is_modifiable").and_then(Value::as_bool) == Some(true),
+            _ => false,
+        })
     {
         cx.ensure_content_writable(ehr_id).await?;
     }

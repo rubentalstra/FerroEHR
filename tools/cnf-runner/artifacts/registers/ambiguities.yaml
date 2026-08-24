@@ -2518,6 +2518,19 @@ AMB-82:
     EHR_STATUS object itself can always be written to"), which is how a
     deactivated EHR is reactivated. Cases exercising the deactivated-EHR
     refusal gate on 409. Reported upstream (#1526): assign the branch.
+    MIXED change sets (the mechanics side, adjudicated 2026-08-24 on
+    issue #2673): no released text defines per-member gate timing, the
+    commit is one atomic act (RM common master06 §Committal and Audits,
+    "similar to nested transactions"), and the versions list's order
+    carries no assigned semantics (its own description calls it a "Set of
+    references" — reported as #2674) — so the gate is evaluated
+    order-independently over the whole change set: content members are
+    refused (the same 409) exactly when the EHR is deactivated AND the
+    CONTRIBUTION carries no EHR_STATUS member with is_modifiable = true.
+    A deactivating change set may carry its final content (master04's own
+    first deactivation scenario: the death-related updates land in the
+    act that deactivates); a reactivating one unlocks its own content.
+    Cases: -reactivating_mixed_change_set / -deactivating_mixed_change_set.
   disposition: fixed_handling
   upstream_issue: 1526
 
