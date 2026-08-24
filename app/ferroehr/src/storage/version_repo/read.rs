@@ -30,9 +30,10 @@ use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
+use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
-use crate::storage::node_repo::read_version_canonical_in;
-use crate::storage::version_repo::tier::{Tier, on_cold};
+use crate::storage::row::ReadRow;
+use crate::storage::version_repo::tier::on_cold;
 
 /// A loaded `vo_version`⋈`audit` row plus its reassembled content and
 /// attestations — the storage read shape the versioning layer maps into a
@@ -135,6 +136,14 @@ pub struct StoredVersion {
 /// ("Attestations can be added at any time after committal", §Attestation) is
 /// not. The split uses the standard aggregate `FILTER` clause
 /// (<https://www.postgresql.org/docs/18/sql-expressions.html#SYNTAX-AGGREGATES>).
+///
+/// The version's `node` rows ride the same statement as a second LATERAL
+/// aggregate (`nd.node_rows`, `[num, num_cap, parent_num, path, data]`
+/// tuples in `num` order), so a point read is ONE round trip — no second
+/// node-subtree query. `NULL` (no node rows) is a logically deleted version
+/// (RM common master06 §Logical Deletion). The unqualified `node` reference
+/// resolves through the connection's `search_path`, so a cold-tier read
+/// (`on_cold!`) aggregates `cold.node` in the same statement.
 macro_rules! version_select {
     ($tail:literal) => {
         concat!(
@@ -144,7 +153,8 @@ macro_rules! version_select {
             "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
-            "att.attestations_at_committal, att.attestations_after_committal ",
+            "att.attestations_at_committal, att.attestations_after_committal, ",
+            "nd.node_rows ",
             "FROM vo_version v JOIN audit a ON a.id = v.audit_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
@@ -154,24 +164,70 @@ macro_rules! version_select {
             "FROM vo_attestation x ",
             "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
             ") att ON true ",
+            "LEFT JOIN LATERAL (",
+            "SELECT jsonb_agg(jsonb_build_array(n.num, n.num_cap, n.parent_num, n.path, n.data) ",
+            "ORDER BY n.num) AS node_rows ",
+            "FROM node n ",
+            "WHERE n.vo_id = v.vo_id AND n.sys_version = v.sys_version",
+            ") nd ON true ",
             $tail
         )
     };
 }
 
-/// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row, resolving the
-/// canonical body through [`read_version_canonical_in`] (which yields
-/// [`Value::Null`] for a logically deleted version — no node rows — so no
-/// lifecycle branch is needed here).
-///
-/// `tier` says which tier the row came from, so the body is reassembled from
-/// the same one ([`crate::storage::version_repo::tier`]).
-async fn stored_version(
-    pool: &PgPool,
-    vo_id: VoId,
-    row: &PgRow,
-    tier: Tier,
-) -> Result<StoredVersion, StorageError> {
+/// Decode the `nd.node_rows` LATERAL aggregate into the lean [`ReadRow`]s and
+/// reassemble the canonical body; `None`/`NULL` (no node rows) is a logically
+/// deleted version and reassembles to [`Value::Null`] (RM common master06
+/// §Logical Deletion).
+fn canonical_from_node_rows(vo_id: VoId, node_rows: Option<Value>) -> Result<Value, StorageError> {
+    let Some(Value::Array(tuples)) = node_rows else {
+        return Ok(Value::Null);
+    };
+    let rows: Vec<ReadRow> = tuples
+        .into_iter()
+        .map(|tuple| {
+            let Value::Array(mut f) = tuple else {
+                return Err(StorageError::InvalidRows(format!(
+                    "node_rows aggregate of {vo_id} holds a non-array element"
+                )));
+            };
+            let bad = |what: &str| {
+                StorageError::InvalidRows(format!(
+                    "node_rows aggregate of {vo_id} has a malformed {what}"
+                ))
+            };
+            if f.len() != 5 {
+                return Err(bad("tuple arity"));
+            }
+            let data = f.pop().unwrap_or(Value::Null);
+            let Some(Value::String(path)) = f.pop() else {
+                return Err(bad("path"));
+            };
+            let int = |v: Option<Value>, what: &str| -> Result<i32, StorageError> {
+                v.and_then(|v| v.as_i64())
+                    .and_then(|n| i32::try_from(n).ok())
+                    .ok_or_else(|| bad(what))
+            };
+            let parent_num = int(f.pop(), "parent_num")?;
+            let num_cap = int(f.pop(), "num_cap")?;
+            let num = int(f.pop(), "num")?;
+            Ok(ReadRow {
+                num,
+                num_cap,
+                parent_num,
+                path,
+                data,
+            })
+        })
+        .collect::<Result<_, _>>()?;
+    reassemble(&rows)
+}
+
+/// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row, the canonical
+/// body reassembled from the row's own `nd.node_rows` LATERAL aggregate —
+/// the whole version read is the ONE statement that produced `row`, on
+/// whichever tier's connection ran it.
+fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageError> {
     let sys_version: i32 = row.try_get("sys_version")?;
     // A stored `other_input_version_uids` that does not decode is OUR data
     // gone wrong (the merge inputs of an IMPORTED_VERSION, RM common master06
@@ -189,7 +245,7 @@ async fn stored_version(
             ))
         })?
         .unwrap_or_default();
-    let canonical = read_version_canonical_in(pool, vo_id, sys_version, tier).await?;
+    let canonical = canonical_from_node_rows(vo_id, row.try_get("node_rows")?)?;
     // The attestations arrive folded into the version-select row (the LATERAL
     // aggregates in `version_select!`), in commit order and already split on
     // `at_committal` — no separate round trip.
@@ -336,9 +392,7 @@ pub async fn read_current(
         version_select!("WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0");
     let primary = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
     if let Some(row) = primary {
-        return Ok(Some(
-            stored_version(pool, vo_id, &row, Tier::Primary).await?,
-        ));
+        return Ok(Some(stored_version(vo_id, &row)?));
     }
     let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
         .bind(vo_id)
@@ -347,7 +401,7 @@ pub async fn read_current(
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
+    Ok(Some(stored_version(vo_id, &row)?))
 }
 
 /// Read a specific version by its STORAGE ORDINAL (`sys_version`) — for internal
@@ -368,9 +422,7 @@ pub async fn read_version_by_ordinal(
         .fetch_optional(pool)
         .await?;
     if let Some(row) = primary {
-        return Ok(Some(
-            stored_version(pool, vo_id, &row, Tier::Primary).await?,
-        ));
+        return Ok(Some(stored_version(vo_id, &row)?));
     }
     let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
         .bind(vo_id)
@@ -380,7 +432,7 @@ pub async fn read_version_by_ordinal(
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
+    Ok(Some(stored_version(vo_id, &row)?))
 }
 
 /// Read a specific version by its `VERSION_TREE_ID` column ints (for
@@ -407,9 +459,7 @@ pub async fn read_version(
         .fetch_optional(pool)
         .await?;
     if let Some(row) = primary {
-        return Ok(Some(
-            stored_version(pool, vo_id, &row, Tier::Primary).await?,
-        ));
+        return Ok(Some(stored_version(vo_id, &row)?));
     }
     let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
         .bind(vo_id)
@@ -421,7 +471,7 @@ pub async fn read_version(
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
+    Ok(Some(stored_version(vo_id, &row)?))
 }
 
 /// Read the version of an object current at a given instant (time-travel):
@@ -467,9 +517,7 @@ pub async fn version_at(
         .fetch_optional(pool)
         .await?;
     if let Some(row) = primary {
-        return Ok(Some(
-            stored_version(pool, vo_id, &row, Tier::Primary).await?,
-        ));
+        return Ok(Some(stored_version(vo_id, &row)?));
     }
     let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
         .bind(vo_id)
@@ -479,5 +527,5 @@ pub async fn version_at(
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
+    Ok(Some(stored_version(vo_id, &row)?))
 }
