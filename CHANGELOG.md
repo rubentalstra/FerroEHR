@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-08-24
+
 ### Added
 
 - Every published artifact class now builds at SLSA Build Level 3: the
@@ -35,6 +37,10 @@ workflow refuses a tag that has no matching section here.
   not provide.
 
 ### Fixed
+
+- The container lane's change detection no longer degrades with a warning
+  on tag pushes and manual dispatches: building everything in those cases
+  is now declared instead of falling out of a missing event field.
 
 - The Helm chart publishes again as 6.0.13, carrying the v4.0.0 server as
   its `appVersion`: the v4.0.0 cut changed packaged chart content
