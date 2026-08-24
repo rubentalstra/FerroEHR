@@ -38,7 +38,6 @@ use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::ehr::category::code;
 use crate::service::error::{ServiceError, Violation};
-use crate::versioning::read::read_current;
 use crate::versioning::{Kind, lifecycle};
 
 impl FerroEhrService {
@@ -67,39 +66,34 @@ impl FerroEhrService {
         let Some(template_id) = composition_template_id(composition) else {
             return Ok(());
         };
-        // The pre-check reads the EHR's live COMPOSITION ids in one SELECT and
-        // reassembles each to read its category + declared template, so cost is
-        // linear in the EHR's live COMPOSITION count. It is paid ONLY on a
+        // ONE statement over the promoted `template_id` column and a body
+        // scalar — never one body read per live COMPOSITION. Paid ONLY on a
         // create whose body is persistent (`431|persistent|`) AND declares a
         // template — every event-composition create returns at the two guards
         // above without touching storage.
         // NOTE: openEHR defines no such cardinality — the criterion is the CNF
         // schedule's, still "under debate in the openEHR SEC"
         // (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
-        let vo_ids = crate::storage::version_repo::meta::current_vo_ids(
+        let exists = crate::storage::version_repo::meta::persistent_template_exists(
             &self.pool,
             ehr_id,
-            "COMPOSITION",
-            Some(lifecycle::state::DELETED),
+            template_id,
+            code::PERSISTENT,
+            lifecycle::state::DELETED,
         )
         .await?;
-        for vo_id in vo_ids {
-            if let Some(read) = read_current(&self.pool, self.spec_profile, vo_id).await?
-                && is_persistent(&read.canonical)
-                && composition_template_id(&read.canonical) == Some(template_id)
-            {
-                // NOTE: SM ehr_call_status_type.adoc declares
-                // composition_already_exists; this refusal is precisely a
-                // COMPOSITION-exists conflict.
-                return Err(ServiceError::sm(
-                    CallStatusType::CompositionAlreadyExists,
-                    format!(
-                        "EHR {ehr_id} already has a persistent COMPOSITION for template \
-                         {template_id}; only one create is allowed (subsequent commits \
-                         must be modifications)"
-                    ),
-                ));
-            }
+        if exists {
+            // NOTE: SM ehr_call_status_type.adoc declares
+            // composition_already_exists; this refusal is precisely a
+            // COMPOSITION-exists conflict.
+            return Err(ServiceError::sm(
+                CallStatusType::CompositionAlreadyExists,
+                format!(
+                    "EHR {ehr_id} already has a persistent COMPOSITION for template \
+                     {template_id}; only one create is allowed (subsequent commits \
+                     must be modifications)"
+                ),
+            ));
         }
         Ok(())
     }

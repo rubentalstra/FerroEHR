@@ -142,7 +142,7 @@ pub struct StoredVersion {
 macro_rules! version_select {
     ($tail:literal) => {
         concat!(
-            "SELECT v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
+            "SELECT v.vo_id, v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
             "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, v.body, ",
@@ -386,6 +386,47 @@ pub async fn read_version(
         .await?
         .map(|row| stored_version(vo_id, &row))
         .transpose()
+}
+
+/// Read a SET of specific versions in ONE statement.
+///
+/// Each is addressed by `(vo_id, VERSION_TREE_ID columns)` — the
+/// resolved-CONTRIBUTION reader's batch (a K-member CONTRIBUTION resolves
+/// its members without K point reads). Absent versions are simply missing
+/// from the result; the caller maps absence to its own refusal.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver/decode failure.
+pub async fn read_versions_by_tree(
+    pool: &PgPool,
+    refs: &[(VoId, (i32, i32, i32))],
+) -> Result<Vec<StoredVersion>, StorageError> {
+    const SQL: &str = version_select!(
+        "JOIN unnest($1::uuid[], $2::int[], $3::int[], $4::int[]) \
+         AS q(vo_id, trunk_version, branch_number, branch_version) \
+         ON q.vo_id = v.vo_id AND q.trunk_version = v.trunk_version \
+         AND q.branch_number = v.branch_number AND q.branch_version = v.branch_version"
+    );
+    if refs.is_empty() {
+        return Ok(Vec::new());
+    }
+    let vo_ids: Vec<Uuid> = refs.iter().map(|(id, _)| id.0).collect();
+    let trunks: Vec<i32> = refs.iter().map(|(_, (t, _, _))| *t).collect();
+    let branches: Vec<i32> = refs.iter().map(|(_, (_, b, _))| *b).collect();
+    let branch_versions: Vec<i32> = refs.iter().map(|(_, (_, _, bv))| *bv).collect();
+    let rows = sqlx::query(SQL)
+        .bind(&vo_ids)
+        .bind(&trunks)
+        .bind(&branches)
+        .bind(&branch_versions)
+        .fetch_all(pool)
+        .await?;
+    rows.into_iter()
+        .map(|row| {
+            let vo_id: VoId = row.try_get("vo_id")?;
+            stored_version(vo_id, &row)
+        })
+        .collect()
 }
 
 /// Read the version of an object current at a given instant (time-travel):

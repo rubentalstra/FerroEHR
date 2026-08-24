@@ -39,7 +39,7 @@ use crate::service::error::ServiceError;
 /// `(branch_number, branch_version)` pair (both `>= 1` per BASE
 /// `VERSION_TREE_ID`; RM common master06 §Local Versioning: "a further pair of
 /// numbers is added … Both of these numbers also start at '1'").
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TreeId {
     /// The trunk version this id sits on (first lexical part).
     pub(crate) trunk: i32,

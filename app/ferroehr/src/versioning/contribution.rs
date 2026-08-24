@@ -1333,18 +1333,29 @@ pub(crate) async fn get_contribution(
     )
     .await?;
 
+    // Resolved members load in ONE batched statement (never one point read
+    // per member — a K-member CONTRIBUTION resolves with K+2 statements
+    // otherwise).
+    let mut resolved = if resolve_refs {
+        let refs: Vec<(VoId, TreeId)> = referenced
+            .iter()
+            .map(|(vo_id, (t, b, v), _, _)| (*vo_id, TreeId::from_columns(*t, *b, *v)))
+            .collect();
+        read::read_versions(pool, profile, &refs).await?
+    } else {
+        std::collections::HashMap::new()
+    };
+
     let mut versions = Vec::with_capacity(referenced.len());
     for (vo_id, (t, b, v), creating_system_id, kind) in referenced {
         let tree = TreeId::from_columns(t, b, v);
         if resolve_refs {
-            let loaded = read::read_version(pool, profile, vo_id, tree)
-                .await?
-                .ok_or_else(|| {
-                    ServiceError::sm(
-                        CallStatusType::ObjectVersionDoesNotExist,
-                        format!("VERSION {vo_id}::{tree}"),
-                    )
-                })?;
+            let loaded = resolved.remove(&(vo_id, tree)).ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("VERSION {vo_id}::{tree}"),
+                )
+            })?;
             // The resolved object is the VERSION the CONTRIBUTION lists
             // (`CONTRIBUTION.versions`, master06 §Contributions: "a
             // CONTRIBUTION object will be created, listing the affected
