@@ -309,6 +309,35 @@ pub(crate) async fn read_version(
         .transpose()
 }
 
+/// Read a SET of specific versions in ONE statement (the
+/// resolved-CONTRIBUTION batch), each passing the same `spec_profile` gate a
+/// point read passes; keyed by `(vo_id, tree)`, with absent versions simply
+/// missing from the map.
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_versions_by_tree`, or
+/// the `spec_profile` refusal of [`version_read`] on any member.
+pub(crate) async fn read_versions(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    refs: &[(VoId, TreeId)],
+) -> Result<std::collections::HashMap<(VoId, TreeId), VersionRead>, ServiceError> {
+    let columns: Vec<(VoId, (i32, i32, i32))> = refs
+        .iter()
+        .map(|(id, tree)| (*id, tree.columns()))
+        .collect();
+    let stored = crate::storage::version_repo::read::read_versions_by_tree(pool, &columns).await?;
+    let mut out = std::collections::HashMap::with_capacity(stored.len());
+    for s in stored {
+        let key = (
+            s.vo_id,
+            TreeId::from_columns(s.trunk_version, s.branch_number, s.branch_version),
+        );
+        out.insert(key, version_read(profile, s)?);
+    }
+    Ok(out)
+}
+
 /// Read the version of an object that was current at a given instant
 /// (time-travel; RM common master08 §Change Management — any previous state is
 /// reconstructable): the row whose `sys_period` contains `at`.
