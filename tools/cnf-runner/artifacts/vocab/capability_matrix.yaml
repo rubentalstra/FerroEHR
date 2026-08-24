@@ -18,7 +18,7 @@ EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, so
 EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 50, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
 CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 60, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 86, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 107, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 109, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 75, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 125, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
 PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 92, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
