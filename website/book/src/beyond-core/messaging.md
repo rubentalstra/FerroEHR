@@ -1,8 +1,8 @@
 # EHR Extract & messaging
 
-Moving a patient's record between openEHR systems — migrating to another CDR,
+Moving a patient's record between openEHR systems (migrating to another CDR,
 replicating an EHR to a downstream repository, or importing an externally
-produced document — is what openEHR's EHR Extract and messaging services are
+produced document) is what openEHR's EHR Extract and messaging services are
 for. FerroEHR implements whole-EHR export, import into a new or an existing EHR
 (including cross-system cloning that preserves version identity), and Template
 Data Document (TDD) import.
@@ -10,7 +10,7 @@ Data Document (TDD) import.
 > [!NOTE]
 > The openEHR **service model** defines a Message component, but the released
 > REST API publishes no extract, message, or TDD endpoint at all. FerroEHR
-> therefore serves these operations under a `/message` group of its own design —
+> therefore serves these operations under a `/message` group of its own design;
 > the routes are ours, not the standard's, and they gate no openEHR conformance
 > claim. Unlike the admin extensions, they are **not** admin-gated: they carry
 > the same ordinary authentication as the clinical API. The six routes, with
@@ -29,16 +29,16 @@ version and assembles them into a single extract. This is the simplest way to
 snapshot or hand off a complete record, and it needs nothing but the EHR's
 identifier.
 
-**Export by specification** takes an `EXTRACT_SPEC` — a manifest naming which
+**Export by specification** takes an `EXTRACT_SPEC`: a manifest naming which
 entities to include (each by EHR id or by subject id, optionally narrowed to
-specific version containers) plus the extract type — and produces one extract
+specific version containers) plus the extract type. It produces one extract
 per manifest entity, in manifest order. Use it for selective or
 policy-controlled export.
 
 > [!TIP]
 > The manifest must name at least one entity: `EXTRACT_MANIFEST.entities` is
 > mandatory and non-empty in the Reference Model, so an empty manifest does not
-> even decode — the request is refused as malformed rather than answered with an
+> even decode: the request is refused as malformed rather than answered with an
 > empty result. If you want "everything", that is whole-EHR export, not an empty
 > spec.
 
@@ -57,7 +57,7 @@ arrived from elsewhere.
 There are exactly two outcomes, and you choose between them with one optional
 parameter:
 
-- **Supply a target EHR id** and the clone lands under that identifier — the
+- **Supply a target EHR id** and the clone lands under that identifier; the
   "same patient, other EHR service" case.
 - **Supply nothing** and the source EHR id the extract carries is re-used, which
   makes it a true clone. The server does not invent a fresh identifier; if the
@@ -65,7 +65,7 @@ parameter:
 
 Either way, the response names the EHR that was created, so a caller that
 supplied no id still learns what it got. An EHR that already exists under the
-target id is a conflict, not a merge — and so is an imported `EHR_STATUS` naming
+target id is a conflict, not a merge, and so is an imported `EHR_STATUS` naming
 a subject some other EHR already holds.
 
 Each original version in the extract is committed wrapped in an
@@ -80,8 +80,8 @@ Together these are the mechanism behind cross-system migration: export from the
 source, import into the destination, and the destination's history faithfully
 reflects where each version came from.
 
-When ATNA auditing is enabled — it is on by default, see
-[Security & multi-tenancy](../security.md#atna-audit-trail) — each completed
+When ATNA auditing is enabled (it is on by default, see
+[Security & multi-tenancy](../security.md#atna-audit-trail)) each completed
 export and import emits a security-audit event under the ATNA `Extract` object
 class, so records moving between systems are captured in the audit trail with
 their direction.
@@ -95,13 +95,13 @@ version's object version id.
 
 The template must already be provisioned through the definition API, and the
 commit goes through the same validated write path as any other composition (see
-[Templates & validation](../templates-validation.md)) — so a malformed document,
+[Templates & validation](../templates-validation.md)) so a malformed document,
 an unknown EHR, or an unknown template is rejected rather than partially stored.
 
 A batch variant imports several TDDs in one call and is **all-or-nothing**:
 every document is converted before any is committed, so one unconvertible
 document rejects the whole batch and commits nothing. An empty array is a
-fulfilled no-op — the target EHR is still checked, and nothing is created.
+fulfilled no-op: the target EHR is still checked, and nothing is created.
 
 ## Divergent copies and version branches
 

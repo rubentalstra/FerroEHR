@@ -7,32 +7,31 @@ and handled with priority.
 
 **Only the most recent release is supported.** There are no maintenance
 branches, no long-term-support line, and no backports. This is a deliberate
-policy for the current release cadence, not an omission — and it is stated
-here rather than left to inference, because an operator running a clinical
-deployment under change control has to plan around it.
+policy for the current release cadence, stated here because an operator
+running a clinical deployment under change control has to plan around it.
 
 | Artifact | Version line | What is supported |
 |---|---|---|
-| The server (GitHub releases, container images) | product SemVer, `3.x` | the newest `vX.Y.Z` tag, and nothing older |
+| The server (GitHub releases, container images) | product SemVer, currently `4.x` | the newest `vX.Y.Z` tag, and nothing older |
 | The Helm chart (`oci://ghcr.io/rubentalstra/charts`) | its own SemVer, independent of the server | the newest published chart version |
 | The `openehr-*` crates (crates.io) | their own lockstep `0.0.x` line | the newest published version of all eight |
 
 **How a security fix reaches you.** The fix lands on `develop` and ships in the
-next tagged release. That is normally the next *patch* on the current minor —
-so a fix does not oblige you to take new behaviour — but the project does not
-promise it: if the fix is only correct alongside a behavioural change, the
+next tagged release. That is normally the next *patch* on the current minor
+(so a fix does not oblige you to take new behaviour), but the project does
+not promise it: if the fix is only correct alongside a behavioural change, the
 release carrying it is the release carrying the change, and the changelog
 entry says so. A chart-only fix ships as a new chart version through the same
 publish lane between server releases.
 
 **When a version stops receiving fixes: the moment a newer release exists.**
-A release is never retro-fitted — GitHub release immutability means a
+A release is never retro-fitted: GitHub release immutability means a
 published release's assets and tag cannot be modified at all, so the only
 remedy for any defect is a new version. If you are not on the newest release,
 you are receiving no security fixes, and the action is to upgrade.
 
-**If you need something stronger than that** — a supported line you can stay
-on, a backport window, a deprecation notice period — it does not exist today
+**If you need something stronger than that** (a supported line you can stay
+on, a backport window, a deprecation notice period), it does not exist today
 and cannot be conjured by a policy document. Say so on the tracker; a
 maintenance line is a commitment that needs people behind it, and the
 [governance and continuity](GOVERNANCE.md) position records honestly how many
@@ -52,7 +51,7 @@ of concept, impact assessment, and any suggested fix.
 ### What you can expect from us
 
 - **An acknowledgement within 5 working days.** If you have not heard anything by
-  then, the report has not reached us — please escalate by opening a public issue
+  then, the report has not reached us; escalate by opening a public issue
   saying only that a private report is awaiting acknowledgement, with no details.
 - An assessment with a severity and an intended fix window within 10 working
   days of the acknowledgement.
@@ -65,7 +64,8 @@ is your call.
 ### Safe harbour
 
 We will not pursue or support legal action against anyone who reports a
-vulnerability in good faith and follows this policy — meaning: you tested against
+vulnerability in good faith and follows this policy. In practice that
+means: you tested against
 your own deployment or a test instance you control, you did not access, modify or
 retain data belonging to anyone else, you did not degrade service for others, and
 you gave us the window above before publishing. If you are unsure whether
@@ -77,7 +77,7 @@ holds patient data.
 ### Credit
 
 We name reporters in the advisory and the changelog by default, using whatever
-name and link you give us. Tell us if you would rather not be named — declining
+name and link you give us. Tell us if you would rather not be named; declining
 credit costs you nothing and changes nothing about how the report is handled.
 
 ## Scope notes

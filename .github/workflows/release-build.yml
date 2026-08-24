@@ -1,20 +1,24 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 
-# The release build, as a REUSABLE workflow — the SLSA v1.0 Build Level 3 lane.
+# The release build, as a REUSABLE workflow — the SLSA Build Level 3 lane
+# (SLSA v1.2, the current spec; v1.0 is marked Retired on slsa.dev and the
+# Build-track requirements are unchanged across v1.0→v1.2).
 #
 # WHY THIS IS A SEPARATE FILE, which is the whole point of it. SLSA Build L3
-# requires the platform to "prevent secret material used to sign the provenance
-# from being accessible to the user-defined build steps"
-# (https://slsa.dev/spec/v1.0/levels). `actions/attest-build-provenance` used
-# inside an ordinary job does not satisfy that: every step of a job shares one
-# runner VM, so a build step could in principle reach the signing material. That
-# single clause is the only thing separating Build L2 from Build L3 here.
+# requires that secret material used for authenticating the provenance "MUST
+# NOT be accessible to the environment running the user-defined build steps"
+# (https://slsa.dev/spec/v1.2/build-requirements §Provenance is Unforgeable).
+# `actions/attest` used inside an ordinary job does not satisfy that: every
+# step of a job shares one runner VM, so a build step could in principle
+# reach the signing material. That single clause is the only thing separating
+# Build L2 from Build L3 here.
 #
 # GitHub's documented remedy is to move the build AND its attestation into a
 # reusable workflow, which runs on its own VM and whose steps a caller cannot
 # add to — a caller passes declared inputs and nothing else
-# (https://docs.github.com/actions/security-guides/using-artifact-attestations-and-reusable-workflows-to-achieve-slsa-v1-build-level-3).
+# (https://docs.github.com/actions/security-guides/using-artifact-attestations-and-reusable-workflows-to-achieve-slsa-v1-build-level-3;
+# GitHub's page still says "SLSA v1.0" — cite v1.2, the semantics match).
 # The build definition therefore stops being caller-defined, and the Fulcio
 # certificate names THIS workflow as the signer, which a consumer can require:
 #
@@ -79,11 +83,20 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache: false
+      # `cargo auditable` embeds the compressed dependency list in the
+      # binary's own `.dep-v0` section (<4 KiB), so the SHIPPED artifact
+      # self-describes to syft/trivy/grype/osv-scanner even when the release
+      # page's SBOM never travelled with it
+      # (https://github.com/rust-secure-code/cargo-auditable).
+      - name: Install cargo-auditable
+        uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+        with:
+          tool: cargo-auditable@0.7.5
       - name: Build server
         # `ferroehr-server` is the binary-producing crate (bin name stays
         # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
         # platform library and yields no binary.
-        run: cargo build --release --locked -p ferroehr-server
+        run: cargo auditable build --release --locked -p ferroehr-server
       - name: Package
         shell: bash
         env:
@@ -155,14 +168,18 @@ jobs:
           mv app/ferroehr-server/ferroehr_bin.cdx.json "$sbom"
           echo "SBOM=$sbom" >> "$GITHUB_ENV"
 
+      # `actions/attest` is the one attestation action now — the former
+      # attest-build-provenance/attest-sbom are thin wrappers whose own READMEs
+      # say new implementations should use it directly. No sbom/predicate
+      # input = provenance mode; `sbom-path` = SBOM mode.
       - name: Attest build provenance
         id: provenance
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ env.ASSET }}
       - name: Attest the SBOM
         id: sbom-attestation
-        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ env.ASSET }}
           sbom-path: ${{ env.SBOM }}

@@ -4,7 +4,7 @@ Every console screen is themed twice, and the pictures below are the proof:
 the same screens the rest of this chapter documents, captured with the topbar's
 dark-mode toggle on. The choice persists per browser (`localStorage`), so it
 survives a reload and follows you across screens; it is a display preference
-and nothing else — no screen, control, or permission changes with it.
+and nothing else: no screen, control, or permission changes with it.
 
 <!-- toc -->
 

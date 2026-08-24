@@ -1,8 +1,8 @@
 # Contributing
 
-FerroEHR is open source — MIT for the project's own code, with vendored
-third-party material under its upstream terms
-([Licensing & legal](licensing.md)) — and welcomes contributions. This chapter
+FerroEHR is open source (MIT for the project's own code, with vendored
+third-party material under its upstream terms; see
+[Licensing & legal](licensing.md)) and welcomes contributions. This chapter
 is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
 repository and are linked below. There is no contributor licence agreement and
@@ -10,7 +10,7 @@ no copyright assignment: you keep your copyright, and the licence stays MIT for
 everyone. [Why FerroEHR exists](why-ferroehr.md) explains what the project asks
 of the companies that build on it, and why.
 
-Contributions are not only code. A bug report with a reproducing request, a
+A bug report with a reproducing request, a
 conformance case for behaviour nothing covers yet, a specification ambiguity you
 had to resolve in your own integration, a documentation correction, or a
 measurement from your own hardware all count.
@@ -32,7 +32,7 @@ The three governing documents are kept in the repository root:
 
 The Rust toolchain is pinned by the repository's `rust-toolchain.toml` (stable
 1.97.1), so `rustup` installs the right version automatically on your first
-build. The declared minimum supported version is lower — Rust 1.96 — and CI
+build. The declared minimum supported version is lower (Rust 1.96) and CI
 verifies it independently with `cargo hack`, so do not reach for a language
 feature newer than that. The edition is 2024.
 
@@ -49,7 +49,7 @@ Install the shared git hooks once with `bash scripts/install-hooks.sh`.
 
 ## The checks every pull request must pass
 
-CI runs the same set of gates locally and on every pull request — none of them
+CI runs the same set of gates locally and on every pull request; none of them
 are advisory:
 
 ```bash
@@ -88,11 +88,11 @@ CI adds a few gates that need more than a checkout: a container smoke test that
 composes the built server image against the database image, the browser
 end-to-end battery for the admin console (`bash scripts/ui-e2e.sh`), the Helm
 chart render and boot lanes, and the changelog, crate-version, and attribution
-guards. Console-only work has its own local battery — see the repository's
+guards. Console-only work has its own local battery; see the repository's
 `CONTRIBUTING.md`.
 
 > [!IMPORTANT]
-> Two rules are absolute. Never hand-edit a generated file — anything under a
+> Two rules are absolute. Never hand-edit a generated file: anything under a
 > `// @generated … DO NOT EDIT` header is produced by the code generator; change
 > the generator and regenerate instead. And never weaken, skip, or delete a test
 > to make a build pass, or edit a test to route around a bug it exposes.
@@ -118,7 +118,7 @@ which comments on every pull request from the committed `.coderabbit.yaml`.
 
 The bot is a second opinion, and deliberately nothing more. Its check is not
 required, it blocks no merge, and every commit-producing suggestion is turned
-off in the configuration — if one of its comments is right, the change is
+off in the configuration; if one of its comments is right, the change is
 written by hand. A finding that contradicts the vendored openEHR specification
 text, the repository's own rules, or a local gate is wrong by construction, and
 saying so on the thread is the correct response.
@@ -127,10 +127,10 @@ saying so on the thread is the correct response.
 
 Four flamegraph instruments, all built on established crates (the sampling is
 [`pprof`](https://docs.rs/pprof/latest/pprof/), the rendering is
-[`inferno`](https://docs.rs/inferno/latest/inferno/)) — pick by situation:
+[`inferno`](https://docs.rs/inferno/latest/inferno/)). Pick by situation:
 
 - **A running server** (composed stack, staging, production): the
-  `GET /management/flamegraph` endpoint — see
+  `GET /management/flamegraph` endpoint; see
   [Operations → Profiling](operations.md#profiling-the-on-demand-cpu-flamegraph).
 - **A code path in isolation**: the criterion benches carry a pprof profiler, so
   any bench emits a flamegraph under `--profile-time`:
@@ -142,7 +142,7 @@ Four flamegraph instruments, all built on established crates (the sampling is
 
 - **Async attribution** (a sampled stack under tokio often blames the executor's
   poll loop; a span flame blames the instrumented operation): set
-  `telemetry.flame_file = "/tmp/ferroehr.folded"` — the
+  `telemetry.flame_file = "/tmp/ferroehr.folded"`; the
   [`tracing-flame`](https://docs.rs/tracing-flame/latest/tracing_flame/) layer
   captures span timings as folded stacks, rendered offline:
 
@@ -152,7 +152,7 @@ Four flamegraph instruments, all built on established crates (the sampling is
   ```
 
 - **A whole local binary run** (no code changes needed):
-  [`cargo flamegraph`](https://crates.io/crates/flamegraph) — a dev tool, not a
+  [`cargo flamegraph`](https://crates.io/crates/flamegraph), a dev tool, not a
   dependency (`cargo install flamegraph`):
 
   ```bash
@@ -160,7 +160,7 @@ Four flamegraph instruments, all built on established crates (the sampling is
   cargo flamegraph --bench aql -- --bench    # profile a bench run end to end
   ```
 
-  On macOS it uses `dtrace`, which needs elevated permissions — run with
+  On macOS it uses `dtrace`, which needs elevated permissions: run with
   `sudo cargo flamegraph …` or grant your terminal Developer-Tools access; on
   Linux you may need `perf` installed and `kernel.perf_event_paranoid` ≤ 2.
 
@@ -175,5 +175,5 @@ Use the GitHub issue tracker for bugs and feature requests.
 > ("Report a vulnerability" on the repository's Security tab). Because the server
 > handles PHI-class data by design, reports about data exposure through the API,
 > AQL, telemetry, or the audit trail are in scope even when they look like "just
-> configuration". Coordinated disclosure is preferred — please allow a reasonable
+> configuration". Coordinated disclosure is preferred; please allow a reasonable
 > window for a fix before publishing details.

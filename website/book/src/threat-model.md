@@ -1,6 +1,6 @@
 # Threat model
 
-This chapter says what FerroEHR defends against, how, and — more usefully —
+This chapter says what FerroEHR defends against, how, and (more usefully)
 **what remains true after the control has done its job**. It exists because the
 parts of this system that actually protect patient data are the parts no
 external specification governs: openEHR's REST specification makes
@@ -20,7 +20,7 @@ that survives the control is stated beside it.
 It is **not** a certification, an audit report, or an assurance case in the
 formal sense, and it does not make FerroEHR compliant with anything. It is also
 not a substitute for your own analysis: your deployment introduces boundaries
-this document cannot see — your identity provider's token policy, your
+this document cannot see: your identity provider's token policy, your
 network, your operators, your backups. The value here is that you do not have
 to reverse-engineer *our* half of it from configuration prose.
 
@@ -32,7 +32,7 @@ configured), [Audit trail](audit.md) (what is recorded),
 owes).
 
 **Where this document and the code disagree, the code is right and this
-document is a defect** — report it.
+document is a defect.** Report it.
 
 ## Assets
 
@@ -40,7 +40,7 @@ What an attacker wants, in the order the loss hurts:
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
-| **Clinical payload** — compositions, EHR status, folders, demographics | the `node` and `vo_version` tables, and the cold-archive mirrors | this is PHI; disclosure is the primary harm and it is not undoable |
+| **Clinical payload:** compositions, EHR status, folders, demographics | the `node` and `vo_version` tables, and the cold-archive mirrors | this is PHI; disclosure is the primary harm and it is not undoable |
 | **The audit trail** | the `audit` schema, plus any configured forwarding sink | it is the evidence that everything else happened; an attacker who can edit it can make an access disappear |
 | **Version history and its integrity** | `vo_version`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
 | **Signing keys** | the configured signing key material for commit attestation | forging an attestation forges provenance of clinical content |
@@ -57,7 +57,7 @@ What an attacker wants, in the order the loss hurts:
 | **Admin / management caller** | the admin, management and messaging surfaces | can delete physically, archive, dump and load; the most dangerous *authorized* actor |
 | **Tenant peer** | their own tenant's API | a legitimate tenant of a shared deployment, trying to reach another's rows |
 | **Database** | everything stored | trusted for confidentiality, but assumed to be a place where a mistake is permanent |
-| **Terminology server (FHIR R4B)** | called out to at validation and commit time | operator-configured; semi-trusted — it answers our questions and can lie |
+| **Terminology server (FHIR R4B)** | called out to at validation and commit time | operator-configured; semi-trusted: it answers our questions and can lie |
 | **Object store (S3)** | called out to for multimedia | operator-configured; semi-trusted, and its responses are parsed |
 | **Message broker (AMQP)** | receives change events | operator-configured; a sink for data, so a confidentiality boundary |
 | **Identity provider** | issues the tokens everything else believes | fully trusted by construction; if it is compromised, no control below it holds |
@@ -116,9 +116,9 @@ admission limit, and a two-tier `tower_governor` rate limit is **on by
 default**. Panics are caught and become a clean `500` rather than a dropped
 connection, and release builds run with overflow checks on so an arithmetic
 mistake is a loud panic rather than a silently wrong number. Response security
-headers are set. Every parser that reads attacker-controlled bytes — canonical
+headers are set. Every parser that reads attacker-controlled bytes (canonical
 JSON, canonical XML, AQL, ADL, OPT 1.4 templates, the simplified formats, and
-the identifier types — has a libFuzzer harness, built on the pull-request path
+the identifier types) has a libFuzzer harness, built on the pull-request path
 and fuzzed on a nightly campaign, and a crash is fixed in the crate, never in
 the harness.
 
@@ -129,7 +129,7 @@ the harness.
   did not enumerate is not covered by anything.
 - **Rate limiting is per-process.** A multi-replica deployment behind a load
   balancer divides the effective limit by the replica count; it is not a
-  distributed limiter. The shipped defaults are also deliberately generous —
+  distributed limiter. The shipped defaults are also deliberately generous:
   they sit above this implementation's own measured whole-server ceiling, so the
   limiter refuses abuse rather than shaping normal load.
 - **Algorithmic complexity in query execution is not bounded by the limiter.**
@@ -146,7 +146,7 @@ issuer. Configuration is validated **at boot**, not on the first request: a
 mandatory audience list, an `https` issuer, an algorithm set bound to its key
 source (with `none` refused outright and two competing key sources refused as a
 contradiction), an HMAC entropy floor, and the OWASP Argon2id parameter floor. A
-malformed `Authorization` header is a `400`, not a `401` — the server never read
+malformed `Authorization` header is a `400`, not a `401`: the server never read
 a credential. An unreachable issuer is a `503`, never a silent pass. A `401` body
 names no reason, so it is not an oracle for expired-versus-forged.
 
@@ -160,7 +160,7 @@ names no reason, so it is not an oracle for expired-versus-forged.
   bearer token replayed from another network location is accepted.
 - **The identity provider is unconditionally trusted.** A compromised issuer,
   or an attacker who can mint tokens with the right audience, defeats every
-  authorization stage below — all of which read their inputs from claims.
+  authorization stage below, all of which read their inputs from claims.
 - **Basic authentication has no session, no lockout and no second factor.** It
   is intended for machine callers and small deployments; the Argon2id cost is
   the only brake on offline cracking if a hash leaks.
@@ -168,12 +168,12 @@ names no reason, so it is not an oracle for expired-versus-forged.
 ### B3 — Authorization
 
 **Control.** Five stages, each of which can only *narrow* what the previous one
-allowed — which is what makes an optional stage safe to leave off:
+allowed, which is what makes an optional stage safe to leave off:
 
 1. **Authentication** produces a principal or a typed refusal.
 2. **`EHR_ACCESS`** is always on and unconditional, from the openEHR Reference
    Model's own gateway clause.
-3. **RBAC** checks the coarse operation class — public, clinical, or admin —
+3. **RBAC** checks the coarse operation class (public, clinical, or admin)
    against roles taken from the RFC 9068 claim carriers. An OAuth2
    scope is deliberately not treated as a role. The read-only restriction
    overrides any grant. (The `/management/*` surface is *not* in this
@@ -188,13 +188,13 @@ allowed — which is what makes an optional stage safe to leave off:
 Deny-by-default throughout, and **fail-closed in both senses**: no stage permits
 by omission (an unconfigured resource kind on the external PDP denies, and the
 missing rule is a boot error), and a stage that cannot *decide* is never read as
-a decision — an unreachable issuer is `503`, a policy server answering `5xx` or a
+a decision: an unreachable issuer is `503`, a policy server answering `5xx` or a
 Cedar policy that errors during evaluation is a fail-closed `500`. Silence is
 never consent, and a broken control never looks like a policy outcome.
 
 **Residual risk.**
 
-- **Coarse by default.** With ABAC off — the default — authorization is
+- **Coarse by default.** With ABAC off (the default) authorization is
   role-level and `EHR_ACCESS`-level. Any authenticated clinical caller can reach
   any EHR that `EHR_ACCESS` does not restrict. If your model is "a clinician may
   read only their own patients", that is ABAC, and you must turn it on and write
@@ -214,8 +214,8 @@ never consent, and a broken control never looks like a policy outcome.
 ### B4 — Content validation and outbound calls
 
 **Control.** Committed content is validated against the operational template
-(the WebTemplate walker), the Reference Model's own invariants — machine-derived
-from the specification's meta-model rather than hand-written — and terminology
+(the WebTemplate walker), the Reference Model's own invariants (machine-derived
+from the specification's meta-model rather than hand-written) and terminology
 bindings. Canonical JSON is read by a **strict** reader that refuses undeclared
 and duplicate keys. Outbound terminology, object-store and broker calls go only
 to operator-configured endpoints.
@@ -235,7 +235,7 @@ to operator-configured endpoints.
   parses nothing. That argument is published as a machine-readable
   [VEX document](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex)
   rather than left in a comment. Read the current documents for the current
-  position — they name the versions, and they are regenerated from the gate.
+  position: they name the versions, and they are regenerated from the gate.
 - **Multimedia blobs are stored, not inspected.** FerroEHR is not an antivirus
   and does not pretend to be; a malicious blob is delivered faithfully to
   whatever opens it.
@@ -269,7 +269,7 @@ falling through to the default.
 - **Row-level security binds a connection, not a request.** The scoping is
   applied per connection from a shared pool; a defect in that plumbing is a
   cross-tenant read, which is why it is enforced by the database rather than by
-  application `WHERE` clauses — the database refuses even if the query forgets.
+  application `WHERE` clauses: the database refuses even if the query forgets.
 - **Tenancy separates rows, not resources.** One tenant's expensive query
   competes with another's for the same CPU, connections and disk. It is not a
   noisy-neighbour control.
@@ -303,8 +303,8 @@ contribution and an audit record in the same transaction.
 
 **Control.** Every access is recorded in both official renderings (DICOM PS3.15
 and FHIR R4 `AuditEvent`/BALP) into a local Audit Record Repository, on by
-default, with optional syslog and ATX:FHIR-Feed forwarding. Refusals — `401`,
-`403`, and the `400` a malformed credential header earns — are always recorded,
+default, with optional syslog and ATX:FHIR-Feed forwarding. Refusals (`401`,
+`403`, and the `400` a malformed credential header earns) are always recorded,
 and an unattributable denial is recorded as unattributed rather than under a
 fabricated subject. Records are **hash-chained**, so
 `SELECT * FROM audit.verify_audit_chain()` names any record that was altered
@@ -315,7 +315,7 @@ node authentication.
 
 - **Tamper *evidence*, not tamper *proof*.** The chain proves alteration
   happened; it does not prevent it. An attacker with write access to the audit
-  schema can rewrite the chain from the point of compromise forward — which is
+  schema can rewrite the chain from the point of compromise forward, which is
   precisely why forwarding to an off-box sink matters, and why the sink should
   not be writable by the same identity.
 - **A local repository shares the blast radius of the thing it audits.** If the
@@ -331,7 +331,7 @@ node authentication.
 **Control.** Releases are built by a reusable workflow that satisfies SLSA v1.0
 Build L3, signed through Sigstore with a signer identity a consumer can pin,
 carrying a CycloneDX dependency SBOM, a SPDX repository SBOM, in-toto
-provenance and a plain `sha256sum` — the verification procedure is
+provenance and a plain `sha256sum`; the verification procedure is
 [Verifying releases](verifying-releases.md). The release is created as a draft
 and only published once its full asset set is present, because a published
 release is immutable. Container base images are digest-pinned, and the published
@@ -372,7 +372,7 @@ Silence is never coverage, so these are stated rather than left to inference.
 - **Traffic analysis.** Request sizes, timings and error-code patterns can leak
   the existence of records; nothing pads or delays.
 - **A legitimate user's authorized misuse**, beyond recording it.
-- **Denial of service by a resource-holding authorized caller** — an expensive
+- **Denial of service by a resource-holding authorized caller:** an expensive
   query, a large commit, a slow client. The rate limiter is on but coarse and
   per-process; database statement timeouts and container limits are the
   operator's.
@@ -385,7 +385,7 @@ Silence is never coverage, so these are stated rather than left to inference.
 ## Reporting a finding
 
 If you believe a control is weaker than stated here, or a residual risk is
-missing, that is a valid security report — including when the defect is in this
+missing, that is a valid security report, including when the defect is in this
 document rather than in the code. Follow
 [SECURITY.md](https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md):
 report privately, never as a public issue.

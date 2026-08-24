@@ -1,12 +1,12 @@
 # Demographics
 
 Alongside clinical records, a CDR often needs to store the people and
-organisations those records refer to — patients, clinicians, care teams,
+organisations those records refer to: patients, clinicians, care teams,
 institutions. FerroEHR provides a versioned demographic store for the openEHR
 party types and the relationships between them, over a REST surface that mirrors
 the EHR APIs.
 
-The demographic endpoints are **always mounted** — there is no feature switch —
+The demographic endpoints are **always mounted** (there is no feature switch)
 and are subject to the same authentication and authorization as the rest of the
 API. See [Security & multi-tenancy](../security.md).
 
@@ -23,14 +23,14 @@ API. See [Security & multi-tenancy](../security.md).
 
 ## What is stored
 
-The store holds the five openEHR party types — `PERSON`, `ORGANISATION`,
-`GROUP`, `AGENT`, and `ROLE` — and `PARTY_RELATIONSHIP` between them.
+The store holds the five openEHR party types (`PERSON`, `ORGANISATION`,
+`GROUP`, `AGENT`, and `ROLE`) and `PARTY_RELATIONSHIP` between them.
 
 Every party is a fully versioned object with no owning EHR: updates create new
 versions, history is retained, and you can read a party as of a point in time or
 by a specific version, exactly as for compositions and `EHR_STATUS`. The
 `ETag` / `Location` / `Prefer` / `If-Match` conventions are the same ones the EHR
-group uses — see [Using the API](../using-the-api/index.md) — and writes are
+group uses (see [Using the API](../using-the-api/index.md)) and writes are
 wrapped in contributions the same way clinical writes are.
 
 Deletion is **logical**, as it is for clinical content: a delete commits a new
@@ -62,8 +62,8 @@ tags (`GET /demographic/tags`, plus
 
 ## Relationships
 
-Party relationships are managed through a parallel set of routes — the FerroEHR
-extension the note above describes — with the same versioned shape as parties:
+Party relationships are managed through a parallel set of routes (the FerroEHR
+extension the note above describes) with the same versioned shape as parties:
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -99,13 +99,13 @@ Two limits are worth knowing because they are deliberate rather than accidental:
 
 The server runs one openEHR specification generation set at a time, chosen by the
 `spec_profile` setting (`development` by default, `stable` for the released
-generations — see the
+generations; see the
 [configuration reference](../installation/configuration.md)). For demographics
 this shows up at the door, because the two generations disagree about one
 attribute:
 
 - Under **`stable`**, a JSON party body may carry
-  `PARTY.reverse_relationships` — the released generation defines it, so
+  `PARTY.reverse_relationships`: the released generation defines it, so
   refusing a valid instance of the generation the server advertises would invent
   a prohibition. The value is accepted and then dropped, because the server
   derives that attribute itself.

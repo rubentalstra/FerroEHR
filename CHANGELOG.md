@@ -15,6 +15,25 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- Every published artifact class now builds at SLSA Build Level 3: the
+  container images and the Helm chart moved into reusable build workflows
+  (`build-image.yml`, `build-chart.yml`) alongside the release binaries'
+  existing lane, so the attestation-signing material is out of reach of any
+  caller-defined step and a consumer can pin the exact signer workflow. The
+  README carries the SLSA Build L3 badge, linked to the verification guide.
+- Release binaries and the server container image are built with
+  `cargo auditable`: the shipped binary carries its own compressed
+  dependency list in a `.dep-v0` section (it survives stripping — verified
+  first-hand), so binary-reading scanners such as syft, trivy, grype and
+  osv-scanner recover the crate graph from the artifact itself.
+- The verifying-releases guide now covers the SBOM-attestation verify
+  command (with its required predicate type), digest-form image
+  verification, the registry-only and fully-offline verification paths,
+  and a plain statement of what crates.io Trusted Publishing does and does
+  not provide.
+
 ### Fixed
 
 - The Helm chart publishes again as 6.0.13, carrying the v4.0.0 server as

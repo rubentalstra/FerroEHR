@@ -1,9 +1,9 @@
 # Why FerroEHR exists
 
-This chapter is the project's position rather than a how-to: what makes openEHR
-worth implementing, what this implementation commits to, and what it asks of the
-organisations that build on it. Read it if you are deciding whether to depend on
-FerroEHR — or whether to contribute to it.
+This chapter is the project's position: what makes openEHR worth implementing,
+what this implementation commits to, and what it asks of the organisations that
+build on it. Read it if you are deciding whether to depend on FerroEHR, or
+whether to contribute to it.
 
 <!-- toc -->
 
@@ -12,8 +12,8 @@ FerroEHR — or whether to contribute to it.
 openEHR does something almost nothing else in health IT does: it separates
 clinical knowledge from software, and then writes both down. What a blood
 pressure, a medication order or a discharge summary *means* lives in
-archetypes and templates authored by clinicians and modellers — published,
-computable, reusable. The Reference Model underneath them is specified. So is
+archetypes and templates authored by clinicians and modellers: published and
+computable. The Reference Model underneath them is specified. So is
 the query language, the REST interface, and the serialization, down to the
 shape of the JSON on the wire.
 
@@ -33,7 +33,7 @@ specification stays an idea that only well-funded organisations can act on.
 
 That is the gap this project set out to close: one complete, openly
 developed, permissively licensed openEHR CDR whose conformance is *measured
-and published* rather than asserted in a datasheet.
+and published*.
 
 ## What we commit to
 
@@ -42,19 +42,18 @@ and published* rather than asserted in a datasheet.
   digital signatures, the FHIR R4 connectors, change events, the admin
   console — one repository, one licence. Nothing is held back to be sold back
   to you. (Vendored openEHR material keeps its own upstream terms, and the
-  spec crates that embed it say so in their own metadata — see
+  spec crates that embed it say so in their own metadata; see
   [Licensing & legal](licensing.md).)
 - **Every claim checkable.** Conformance is executed by a runner against a
   live server, and the run records, per-case results, measured performance and
-  the [comparison with another CDR](comparison.md) — in both directions — are
+  the [comparison with another CDR](comparison.md) (in both directions) are
   committed to the repository. If a number appears on this site, the record it
   came from is in the tree, and a change that moves a verdict cannot land
   quietly.
-- **The specification is the authority, not our opinion.** The normative
-  openEHR text is vendored in the repository and cited decision by decision.
-  Where we find it silent or self-contradictory, the finding is filed in
-  public and reported upstream, rather than quietly implemented one way and
-  forgotten.
+- **The specification is the authority.** The normative openEHR text is
+  vendored in the repository and cited decision by decision. Where we find it
+  silent or self-contradictory, the finding is filed in public and reported
+  upstream.
 - **The specification layer as reusable libraries.** The generated openEHR
   model, the canonical codecs, the REST contract, the ADL engine and the AQL
   parser are published on crates.io as [standalone crates](crates.md), so the
@@ -63,10 +62,9 @@ and published* rather than asserted in a datasheet.
   changelog-driven releases, signed artifacts, and a security policy with a
   private reporting channel.
 
-## Build on it. Ship it. Sell it. That is the point
+## Commercial use is the point
 
-FerroEHR is MIT-licensed, and we mean that as an invitation rather than a
-technicality:
+FerroEHR is MIT-licensed, and we mean it as an invitation:
 
 - Integrate it into your product, embed it in your platform, or run it as a
   hosted service.
@@ -76,17 +74,16 @@ technicality:
   licence and no "commercial licence" conversation to have. Contributors keep
   their copyright, and what you build on top stays yours.
 
-Commercial adoption is not merely tolerated here; it is the goal. Standards
-reach patients through products, and products are built by organisations that
-need to earn a living. What matters is that they can do it on a shared,
-maintained, conformant foundation instead of rebuilding one in private.
+Commercial adoption is the goal here. Standards reach patients through
+products, and products are built by organisations that need to earn a living.
+What matters is that they can do it on a shared, conformant foundation instead
+of rebuilding one in private.
 
-## What we ask in return — and cannot require
+## What we ask in return
 
 Contribute back.
 
-Not because the licence obliges you; it does not. Because of how the
-arithmetic works out:
+The licence does not oblige you. The arithmetic does:
 
 - **A private fork is the expensive option.** Fork it and you inherit the
   whole maintenance surface: specification releases, security advisories,
@@ -103,14 +100,14 @@ arithmetic works out:
   actually agree about a record.
 
 When the same fix is made privately in five places, the standard is no
-stronger and five teams have paid for it. That is not anyone's moral failure
-— it is simply an outcome nobody chose, and an easy one to avoid.
+stronger and five teams have paid for it. Nobody chose that outcome, and it is
+an easy one to avoid.
 
 ## What contributing back can look like
 
 You do not have to write Rust to make this project better:
 
-- **A bug report** with the request that reproduces it — the most valuable
+- **A bug report** with the request that reproduces it, the most valuable
   thing most users will ever send.
 - **A conformance case** for behaviour the catalogue does not cover yet, so
   the next release cannot regress it.
@@ -119,7 +116,7 @@ You do not have to write Rust to make this project better:
   ones upstream to the openEHR Foundation.
 - **Documentation**: a correction, deployment experience from your
   environment, or the paragraph that would have saved you two days.
-- **Measurement** from your own hardware and workload — the instruments that
+- **Measurement** from your own hardware and workload. The instruments that
   produce our published numbers ship in the repository and run against any
   server, including one that is not FerroEHR.
 - **Code**: fixes, features, connectors, packaging for your platform.
@@ -127,7 +124,7 @@ You do not have to write Rust to make this project better:
   engineering time.
 
 [Contributing](contributing.md) is the practical starting point. Security
-issues have their own private channel — please use it rather than the public
+issues have their own private channel; please use it rather than the public
 tracker.
 
 ## What this is not
@@ -144,14 +141,14 @@ directions of the result. FerroEHR is an independent implementation of the
 openEHR® specifications and is not affiliated with or endorsed by the openEHR
 Foundation.
 
-And it is not a large team. The project is maintained by one person today, with
-the machine gates — conformance, the fidelity suites, the CI guards — standing
-in for review capacity a bigger group would have; the
+And it is not a large team. The project is maintained by one person today,
+with the machine gates (conformance, the fidelity suites, the CI guards)
+standing in for review capacity a bigger group would have. The
 [threat model](threat-model.md) and the repository's own governance and
-maintainer documents say so plainly rather than leaving you to find out.
+maintainer documents say so plainly.
 
 ---
 
 _Maintained by Ruben Talstra and the FerroEHR contributors. If your
-organisation is building on FerroEHR, we would like to hear about it — open
+organisation is building on FerroEHR, we would like to hear about it: open
 an issue or say hello on the tracker._

@@ -13,43 +13,43 @@ do it.
 
 | Control | Satisfied by |
 |---|---|
-| Minimal image (distroless) | `gcr.io/distroless/cc-debian13:nonroot` — no shell, no package manager, no libc tooling |
+| Minimal image (distroless) | `gcr.io/distroless/cc-debian13:nonroot`: no shell, no package manager, no libc tooling |
 | Image currency | base images and CI job containers pinned **by digest**, not tag, so a rebuild cannot silently change bytes |
 | Vulnerability identification in CI | Trivy over every published image, hadolint over every Dockerfile, plus secret and misconfiguration scanning over the whole tree |
-| Continuous scanning after release | a scheduled scan of the *published* tags — [below](#continuous-scanning-of-published-images) |
-| Authorized images only | signed provenance published; **enforcement is the operator's** — [below](#image-provenance-at-admission) |
+| Continuous scanning after release | a scheduled scan of the *published* tags; [below](#continuous-scanning-of-published-images) |
+| Authorized images only | signed provenance published; **enforcement is the operator's**; [below](#image-provenance-at-admission) |
 | Non-root by construction | the image declares `USER 65532:65532` (numeric, so the kubelet can verify it without reading `/etc/passwd`), and the pod pins `runAsNonRoot` plus uid 65532 independently |
 
 Three images are published, and they are not equivalent in risk. The server and
 the admin console are distroless and carry almost no OS package surface. The
-PostgreSQL image is a thin, `COPY`-only layer over the upstream `postgres` image —
-it adds initialization scripts and nothing else — so its package set is
+PostgreSQL image is a thin, `COPY`-only layer over the upstream `postgres` image
+(it adds initialization scripts and nothing else) so its package set is
 upstream's, and its CVEs arrive on upstream's schedule rather than ours. The chart
 deploys **none** of the second and third: it takes an external DSN and can
 optionally render the console.
 
 **What distroless costs, stated before an incident rather than during one: there
 is no shell in the image, so `kubectl exec … -- sh` does not work.** That is the
-security property working as intended — an attacker who achieves command
-execution finds no interpreter, no `curl`, no package manager — but it changes how
+security property working as intended (an attacker who achieves command
+execution finds no interpreter, no `curl`, no package manager) but it changes how
 you debug. Use instead:
 
 - `kubectl logs` (the server logs JSON by default, for a collector),
 - the always-on `/health/readiness` body, which names the failing dependency,
 - `/management/*` for the effective configuration, live log filters and an
   on-demand CPU flamegraph,
-- `kubectl debug -it <pod> --image=busybox:1.37 --target=ferroehr` — an ephemeral
+- `kubectl debug -it <pod> --image=busybox:1.37 --target=ferroehr` starts an ephemeral
   container shares the target's namespaces without adding a shell to the image
   that ships.
 
 The registry posture: the images are **public** on GHCR, so a pull needs no
 credential and there is nothing to leak. Public does not mean trusted, which is
-the point of the next section — nothing about a public registry stops a cluster
+the point of the next section: nothing about a public registry stops a cluster
 pulling a *different* image with the same name from somewhere else.
 
 ## Image provenance at admission
 
-**The operator's — and this is provenance nobody in your cluster currently
+**The operator's, and this is provenance nobody in your cluster currently
 checks.**
 
 The publishing lanes attest their artifacts through **keyless Sigstore**, so a
@@ -91,19 +91,19 @@ identity:
 |---|---|---|---|
 | the three images | `containers.yml` | `…/containers.yml@refs/tags/vX.Y.Z` | `…/containers.yml@refs/heads/develop` |
 | the chart | `publish-chart.yml` | `…/publish-chart.yml@refs/tags/vX.Y.Z` | `…/publish-chart.yml@refs/heads/develop` (a `workflow_dispatch` chart-only publish) |
-| the release binaries | `release-build.yml` | `…/release-build.yml@refs/tags/vX.Y.Z` | *(none — the lane only runs on a tag)* |
+| the release binaries | `release-build.yml` | `…/release-build.yml@refs/tags/vX.Y.Z` | *(none; the lane only runs on a tag)* |
 
 All three prefixed with `https://github.com/rubentalstra/FerroEHR/.github/workflows/`,
 and all with issuer `https://token.actions.githubusercontent.com`.
 
 The release binaries are signed by `release-build.yml` rather than by the release
-workflow because the build lives in a **reusable** workflow — the certificate
+workflow because the build lives in a **reusable** workflow: the certificate
 names the workflow that owns the build definition, which is what makes the
 `--signer-workflow` pin below meaningful.
 
 **Pick the ref set deliberately, because the choice is a refusal.** A policy
 matching `refs/tags/v…` only admits released images and **refuses
-`ghcr.io/rubentalstra/ferroehr:develop`** — correct for production, and the
+`ghcr.io/rubentalstra/ferroehr:develop`**, correct for production, and the
 reason a policy tested against `:develop` appears broken when it is working. A
 staging cluster that runs `:develop` needs both refs. Nothing accepts an
 arbitrary branch: `refs/heads/develop` is exact, not a prefix match.
@@ -120,11 +120,11 @@ Two details decide whether this policy works at all:
   reads that format only under this type; the field
   [defaults to `Cosign`](https://kyverno.io/docs/policy-types/cluster-policy/verify-images/sigstore/),
   which looks for a `sha256-<digest>.sig` tag that these images do not have (it
-  returns 404 — the bundle is a referrer, not a cosign tag). Requires
+  returns 404: the bundle is a referrer, not a cosign tag). Requires
   **Kyverno 1.13 or newer**.
 - **`attestations:`, not `attestors:` alone.** Kyverno's own rule is that
   "each `verifyImages` rule can be used to verify signatures or attestations,
-  but not both", and what the image lane produces is a signed *attestation* —
+  but not both", and what the image lane produces is a signed *attestation*:
   there is no detached image signature. A rule with `attestors:` at the top level
   therefore fails **closed** on a perfectly legitimate image.
 
@@ -150,7 +150,7 @@ spec:
             - "ghcr.io/rubentalstra/ferroehr"
             - "ghcr.io/rubentalstra/ferroehr:*"
             - "ghcr.io/rubentalstra/ferroehr-admin-ui*"
-          # Sigstore bundle format — GitHub Artifact Attestations. Omitting
+          # Sigstore bundle format, GitHub Artifact Attestations. Omitting
           # this defaults to Cosign, which looks for a signature that does not
           # exist and refuses every image.
           type: SigstoreBundle
@@ -221,7 +221,7 @@ spec:
 > **What has been checked, and what has not.** The identity, the issuer and the
 > predicate type above are verified first-hand against the published images with
 > `cosign verify --certificate-identity-regexp …`, which admits them and refuses
-> both an unsigned image and, under a tags-only pattern, a `:develop` image — so
+> both an unsigned image and, under a tags-only pattern, a `:develop` image, so
 > the matcher is neither vacuous nor accidentally permissive. The manifests are
 > checked field by field against the published `ClusterPolicy` and
 > `ClusterImagePolicy` CRDs. **Neither policy has been exercised by a running
@@ -232,7 +232,7 @@ spec:
 > deployment pass.
 
 **The chart is signed too, and verifying it is a release-time check rather than a
-per-pod one** — an admission controller sees pods and images, never the Helm
+per-pod one**: an admission controller sees pods and images, never the Helm
 artifact a human pulled. The chart's own commands are on the
 [Kubernetes page](kubernetes.md#verifying-what-you-installed); its identity is the
 `publish-chart.yml` row in the table above.
@@ -246,7 +246,7 @@ other releases had come to depend on. The chart's contribution is the policy
 *document*, here, versioned with the lanes whose identity it encodes.
 
 **Without an admission controller**, the manual equivalent is a release-time check.
-Add `--signer-workflow` to insist on the lane as well as the repository — without
+Add `--signer-workflow` to insist on the lane as well as the repository; without
 it you are trusting that *some* workflow here signed the image:
 
 ```shell
@@ -260,11 +260,11 @@ same.
 
 > [!IMPORTANT]
 > Signing landed in the publishing lanes during the `3.17.4` cycle, so
-> image tags from before it answer `HTTP 404: Not Found` — there is
+> image tags from before it answer `HTTP 404: Not Found`, and there is
 > nothing to verify, which is the correct answer and not a verification failure to
 > work around. Pin a current version instead.
 
-Then deploy **by digest** (`image.digest`), so what you verified is what runs — a
+Then deploy **by digest** (`image.digest`), so what you verified is what runs: a
 tag can be moved afterwards, a digest cannot.
 
 ## Continuous scanning of published images
@@ -299,7 +299,7 @@ candidate, so a fix is proven clean before it merges.
 
 ## The supply-chain map
 
-Each cheat-sheet supply-chain control, and the artifact that satisfies it — so a
+Each cheat-sheet supply-chain control, and the artifact that satisfies it, so a
 reader can check rather than trust:
 
 | Control | Satisfied by | Check it yourself |
@@ -324,7 +324,7 @@ as complete:**
 1. **Nothing verifies the signatures at admission.** We sign; no cluster is
    required to check before running an image. The policies to close it are
    [above](#image-provenance-at-admission), and neither has yet been exercised by
-   a running admission controller — which is why the instruction there is to run
+   a running admission controller, which is why the instruction there is to run
    them in audit mode first.
 2. **Provenance exists only from the `3.17.4` cycle onward.** Images published
    before the signing lane landed carry no attestation and never will, because a

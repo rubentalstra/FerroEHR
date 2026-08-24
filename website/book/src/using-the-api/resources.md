@@ -1,7 +1,7 @@
 # Resource walkthroughs
 
-This chapter walks through the core openEHR resources — **EHR**, **EHR_STATUS**,
-**COMPOSITION**, **DIRECTORY**, **CONTRIBUTION** and **ITEM_TAG** — with real
+This chapter walks through the core openEHR resources (**EHR**, **EHR_STATUS**,
+**COMPOSITION**, **DIRECTORY**, **CONTRIBUTION** and **ITEM_TAG**) with real
 `curl` examples you can adapt. For each resource it shows the operations, the
 headers they need, and the status codes they return. Paths are relative to the
 base `/ferroehr/rest/openehr/v1` (see [Using the API](index.md)); examples use
@@ -12,11 +12,11 @@ uses them in context.
 
 **Datetime parameters.** Several operations below take a point in time
 (`version_at_time`, the CONTRIBUTION `time_range` bounds). Write it in the
-_extended_ ISO 8601 form — `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`, e.g.
+_extended_ ISO 8601 form: `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`, e.g.
 `2016-06-23T13:42:16.117+02:00`. The timezone is optional: leave it off
 (`2016-06-23T13:42:16`) and the value is read in the **server's** local
 timezone, so supply `Z` or an explicit offset whenever the client's timezone may
-differ from the server's. The time itself is required — a bare date
+differ from the server's. The time itself is required: a bare date
 (`2016-06-23`), the compact "basic" ISO form (`20160623T134216Z`), a
 zone-annotated form (`2016-06-23T13:42:16[Europe/Amsterdam]`), and anything
 unparseable all return **400 Bad Request**.
@@ -59,12 +59,12 @@ built from `EHR.ehr_id.value` but no `Last-Modified`.
 
 ## EHR_STATUS
 
-**EHR_STATUS** holds the record's metadata — the link to the subject, and the
+**EHR_STATUS** holds the record's metadata: the link to the subject, and the
 `is_queryable` / `is_modifiable` flags. It is itself versioned.
 
 Setting `is_modifiable` to `false` **deactivates** the EHR: any attempt to
-create, update, or delete its content — a composition, the directory, or a
-folder — is refused with **409 Conflict**, through *every* write path including a
+create, update, or delete its content (a composition, the directory, or a
+folder) is refused with **409 Conflict**, through *every* write path including a
 CONTRIBUTION commit. The EHR_STATUS itself stays writable (so you can set the
 flag back to `true` to reactivate), and reads and queries are unaffected.
 
@@ -101,8 +101,8 @@ Precondition Failed** with the current version id in `ETag`.
 
 The `versioned_ehr_status` sub-resource exposes the full version history:
 
-- `GET …/versioned_ehr_status` — the `VERSIONED_EHR_STATUS` object,
-- `GET …/versioned_ehr_status/revision_history` — the revision history,
+- `GET …/versioned_ehr_status`: the `VERSIONED_EHR_STATUS` object,
+- `GET …/versioned_ehr_status/revision_history`: the revision history,
 - `GET …/versioned_ehr_status/version` (optionally `?version_at_time=`) and
   `…/version/{version_uid}` — a specific version.
 
@@ -122,9 +122,9 @@ curl -u ferroehr:ferroehr \
 ```
 
 `POST /ehr/{ehr_id}/composition` returns **201 Created** with the version id in
-`ETag`. A body that cannot be **constructed** as a COMPOSITION — malformed JSON,
+`ETag`. A body that cannot be **constructed** as a COMPOSITION (malformed JSON,
 an undeclared or repeated member, a missing mandatory attribute, an empty list
-the model requires non-empty, a `_type` foreign to its slot — is **400 Bad
+the model requires non-empty, a `_type` foreign to its slot) is **400 Bad
 Request**: parsing is the shape check, so structural defects never reach
 validation. A body that constructs but fails **semantic** validation (template
 constraints, RM invariants, terminology bindings) returns **422 Unprocessable
@@ -160,7 +160,7 @@ curl -u ferroehr:ferroehr -X DELETE \
 
 `PUT` returns **200**/**204** (per `Prefer`) with the new version id, **412** on
 an `If-Match` mismatch, **422** on validation failure. `DELETE` is a *logical*
-delete — the history is retained — returning **204** with the new deleted
+delete (the history is retained), returning **204** with the new deleted
 version's `ETag`; deleting something already deleted returns **400**, and a
 version id that is not the latest returns **409**.
 
@@ -171,18 +171,18 @@ version id that is not the latest returns **409**.
 
 > [!NOTE]
 > A version's lifecycle state (set through the `openehr-version:
-> lifecycle_state.code_string` header — see
+> lifecycle_state.code_string` header; see
 > [Content negotiation & errors](content-negotiation.md); the default on a
 > commit is `532|complete|`) must follow the openEHR version-lifecycle state
 > machine. An illegal transition is rejected with **422 Unprocessable Entity**
 > naming the states. In particular, a version left in the `801|abandoned|`
-> state cannot be updated straight to `complete` — you must first retrieve it
+> state cannot be updated straight to `complete`: you must first retrieve it
 > back to `553|incomplete|`, then complete it.
 >
 > Two further rules apply to the state a commit may claim:
 >
-> - **`523|deleted|` belongs to `DELETE` alone.** Deleting is one act — a new
->   version whose data is removed and whose state is `deleted` — so a `PUT`
+> - **`523|deleted|` belongs to `DELETE` alone.** Deleting is one act (a new
+>   version whose data is removed and whose state is `deleted`), so a `PUT`
 >   or `POST` that carries content may not claim it. Such a request is
 >   rejected **422**. Conversely, a `DELETE` that supplies a lifecycle other
 >   than `523|deleted|` is rejected **400**: the value would have to be
@@ -191,10 +191,10 @@ version id that is not the latest returns **409**.
 >   unaffected.
 > - **`553|incomplete|` relaxes what a commit must contain.** Content
 >   committed as `incomplete` may leave mandatory attributes absent and
->   `1..*` containers empty — for compositions, folders, and demographic
+>   `1..*` containers empty, for compositions, folders, and demographic
 >   parties and relationships alike. Everything else is still checked: types,
->   terminology codes, patterns and archetype constraints, so content that is
->   *wrong* rather than merely *missing* is still rejected **422**. The
+>   terminology codes, patterns and archetype constraints. Missing content is
+>   allowed here; *wrong* content is still rejected **422**. The
 >   `EHR_STATUS` resource is the one exception: it does not accept the
 >   `incomplete` state.
 
@@ -230,21 +230,21 @@ curl -u ferroehr:ferroehr \
   'http://localhost:8080/ferroehr/rest/openehr/v1/ehr/'$EHR_ID'/directory?path=episodes/2024'
 ```
 
-- `POST /ehr/{ehr_id}/directory` — create the root folder; **201**.
-- `PUT /ehr/{ehr_id}/directory` — update it; requires `If-Match`; **200**/**204**.
-- `DELETE /ehr/{ehr_id}/directory` — logical delete; requires `If-Match`;
+- `POST /ehr/{ehr_id}/directory`: create the root folder; **201**.
+- `PUT /ehr/{ehr_id}/directory`: update it; requires `If-Match`; **200**/**204**.
+- `DELETE /ehr/{ehr_id}/directory`: logical delete; requires `If-Match`;
   **204**.
-- `GET /ehr/{ehr_id}/directory` — the current folder tree, optionally filtered
+- `GET /ehr/{ehr_id}/directory`: the current folder tree, optionally filtered
   by `?version_at_time=` and `?path=` (slash-separated folder names). **204** if
   deleted at that time.
-- `GET /ehr/{ehr_id}/directory/{version_uid}` — a specific version, optionally
+- `GET /ehr/{ehr_id}/directory/{version_uid}`: a specific version, optionally
   `?path=`.
 
 Folder `items` are `OBJECT_REF`s, and the server validates the ones that claim
 **this system**: a reference whose `namespace` is `local` (or the server's
 configured system id) must resolve to a versioned object in that EHR, or the
 commit is refused with **422** naming each unresolvable reference at its tree
-path. References into other namespaces — another system's id, or `unknown` —
+path. References into other namespaces (another system's id, or `unknown`)
 are stored verbatim without a resolvability check, since openEHR object
 references are explicitly allowed to point outside the current system. The
 same rule applies to folder hierarchies committed through the CONTRIBUTION
@@ -274,14 +274,14 @@ Four things about the payload are worth calling out:
 
 - **The shared `audit` must carry its own `change_type` and `committer`.** They
   are your account of the change set as a whole and are never derived or
-  invented by the server — omitting either is a **422**. The server fills in
+  invented by the server; omitting either is a **422**. The server fills in
   `time_committed`, and `system_id` when you do not supply one.
 - **`lifecycle_state` is required on every version** and is not defaulted.
   Omitting it is a **400**. The one exception is an attestation entry (see
   below), which commits no new version and therefore has no lifecycle state.
-- **A version entry carries exactly the six declared members** —
-  `preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
-  `data`, `commit_audit` — plus an optional `_type` self-tag. Anything else is
+- **A version entry carries exactly the six declared members**
+  (`preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
+  `data`, `commit_audit`) plus an optional `_type` self-tag. Anything else is
   refused **400** naming the offending key and its index, never silently
   ignored.
 - **`other_input_version_uids` and `item` are not accepted on a commit.** Merge
@@ -290,7 +290,7 @@ Four things about the payload are worth calling out:
   load), and `item` is the shape of an imported version, which only the import
   route produces. Either one on a version entry is a **400**.
 
-A `commit_audit` may instead be an **`ATTESTATION`** — set its `_type` to
+A `commit_audit` may instead be an **`ATTESTATION`**: set its `_type` to
 `ATTESTATION` (or the wire form `UPDATE_ATTESTATION`) and add `reason`
 (required) plus `is_pending` (required), and optionally `proof`, `items` and
 `attested_view`. This is how content is committed already signed, or marked as
@@ -298,7 +298,7 @@ awaiting signature (`is_pending: true`). A coded `reason` must be a member of
 the openEHR *attestation reason* group, and `items`, when present, must be
 non-empty. The attestation is stored as part of that version's commit audit and
 read back on the version envelope, in the revision history, and in exports. A
-`description` may be a plain string, a `DV_TEXT`, or a `DV_CODED_TEXT` — a coded
+`description` may be a plain string, a `DV_TEXT`, or a `DV_CODED_TEXT`; a coded
 description keeps its `defining_code`.
 
 `GET /ehr/{ehr_id}/contribution/{contribution_uid}` returns **200** with the
@@ -307,7 +307,7 @@ instead of `OBJECT_REF`s (see
 [Content negotiation & errors](content-negotiation.md#prefer-resolve_refs)).
 
 `GET /ehr/{ehr_id}/contribution` (no uid) lists the EHR's contributions, newest
-first — a FerroEHR extension (the openEHR REST API defines only the by-uid
+first, a FerroEHR extension (the openEHR REST API defines only the by-uid
 read). Paginate with `?offset=` (default 0) and `?fetch=` (default 20, capped at
 100). It returns **200** with a JSON summary, or **404** for an unknown EHR:
 
@@ -326,14 +326,14 @@ read). Paginate with `?offset=` (default 0) and `?fetch=` (default 20, capped at
 }
 ```
 
-`committer` is the audit committer's *name* only — the by-uid read returns the
+`committer` is the audit committer's *name* only; the by-uid read returns the
 full `PARTY_PROXY`. `change_type` is the openEHR audit-change-type code and
 `change_type_rubric` its display rubric from the same terminology the by-uid
 read uses, so a client never maps codes locally. `total` counts **all** of the
 EHR's contributions, not just the returned window.
 
 > [!NOTE]
-> The contribution envelope is **canonical JSON only** — openEHR publishes no
+> The contribution envelope is **canonical JSON only**: openEHR publishes no
 > CONTRIBUTION XML document, so an XML `Accept` on these routes is a **406** and
 > an XML `Content-Type` a **415**. The FLAT and STRUCTURED formats, when used,
 > apply only to the inner composition `data` of each version, never to the
@@ -343,8 +343,8 @@ EHR's contributions, not just the returned window.
 
 **ITEM_TAG**s are small `key`/`value` annotations on a versioned object or on
 one specific version, optionally pointing at a node inside the data through
-`target_path`. They carry no clinical meaning and do not create a new version —
-use them for workflow state, review flags, and integration bookkeeping.
+`target_path`. They carry no clinical meaning and do not create a new version.
+Use them for workflow state, review flags, and integration bookkeeping.
 
 ```shell
 # Every tag in an EHR, optionally filtered
@@ -363,7 +363,7 @@ curl -u ferroehr:ferroehr -X DELETE \
   http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition/$OBJECT_UUID/tags/flag
 ```
 
-- `GET /ehr/{ehr_id}/tags` — every tag in the EHR, whatever it targets. The
+- `GET /ehr/{ehr_id}/tags`: every tag in the EHR, whatever it targets. The
   optional `tag_key`, `tag_value` and `tag_target_path` filters are exact,
   case-sensitive, and AND-combined; an omitted filter constrains nothing. An EHR
   with no matching tag answers **200** with `[]`, never 404.
@@ -371,11 +371,11 @@ curl -u ferroehr:ferroehr -X DELETE \
   under `…/ehr_status/{uid_based_id}/tags` — read or **replace** the addressed
   collection. The `PUT` body is a bare JSON array of tags (`key` required,
   `value` and `target_path` optional; `target` and `owner_id` come from the
-  route, and a body that supplies them — or any other undeclared member — is a
+  route, and a body that supplies them, or any other undeclared member, is a
   **400**). An empty array `[]` is the clear-all form, never an error. `PUT`
   answers **204** by default, **200** with the resulting list under
   `Prefer: return=representation`.
-- `DELETE …/tags/{key}` — delete every tag under one key on the addressed
+- `DELETE …/tags/{key}`: delete every tag under one key on the addressed
   collection; **204**.
 
 Two properties shape how you address them:
@@ -390,7 +390,7 @@ Two properties shape how you address them:
 
 Every returned tag carries a server-assigned `target` (the bare uid of what it
 tags) and `owner_id` (an `OBJECT_REF` to the owning EHR). Tags can also ride
-along with a content write instead of taking a second round trip — see
+along with a content write instead of taking a second round trip; see
 [Item tags via headers](content-negotiation.md#item-tags-via-headers).
 
 ## Status-code summary

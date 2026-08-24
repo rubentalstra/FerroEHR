@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="./style.css">
   <meta property="og:type" content="website">
   <meta property="og:title" content="FerroEHR — a pure-Rust openEHR Clinical Data Repository">
-  <meta property="og:description" content="Spec-compliant, measured, built for production. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
+  <meta property="og:description" content="Spec-compliant and measured. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
   <meta property="og:url" content="https://ferroehr.eu/">
   <meta property="og:site_name" content="FerroEHR">
   <meta property="og:image" content="https://ferroehr.eu/assets/social-card.png">
@@ -27,7 +27,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://ferroehr.eu/assets/social-card.png">
   <meta name="twitter:title" content="FerroEHR — a pure-Rust openEHR Clinical Data Repository">
-  <meta name="twitter:description" content="Spec-compliant, measured, built for production. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
+  <meta name="twitter:description" content="Spec-compliant and measured. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
 
   <!-- Structured data. `WebSite` + `Organization` identify the site and its
        publisher; `SoftwareSourceCode` describes what the site is ABOUT (an
@@ -48,7 +48,7 @@
         "@id": "https://ferroehr.eu/#website",
         "url": "https://ferroehr.eu/",
         "name": "FerroEHR",
-        "description": "A pure-Rust openEHR Clinical Data Repository — spec-conformant, measured, and built for production.",
+        "description": "A pure-Rust openEHR Clinical Data Repository, spec-conformant and measured.",
         "inLanguage": "en",
         "publisher": { "@id": "https://ferroehr.eu/#publisher" },
         "hasPart": [
@@ -124,12 +124,12 @@
     <section class="hero">
       <div class="wrap">
         <img class="hero-logo" src="./assets/logo.svg" alt="FerroEHR">
-        <h1>A pure-Rust openEHR Clinical Data Repository — spec-compliant, measured, built for production.</h1>
+        <h1>A pure-Rust openEHR Clinical Data Repository. Spec-compliant and measured.</h1>
         <p class="sub">
           openEHR separates clinical knowledge from software: applications store
           and query structured health records through a vendor-neutral REST API
           and the Archetype Query Language. FerroEHR implements that standard
-          natively in Rust — headless, API-first, one self-contained binary on PostgreSQL 18.
+          natively in Rust: headless, API-first, one self-contained binary on PostgreSQL 18.
         </p>
         <div class="hero-cta">
           <a class="btn btn-primary" href="./docs/latest/getting-started.html">Get started</a>
@@ -145,7 +145,7 @@
         <div class="section-head">
           <span class="eyebrow">Why we built it</span>
           <h2>An open standard deserves an open implementation</h2>
-          <p>openEHR writes clinical meaning down as a shared, computable, vendor-neutral model — which is what lets a record outlive the application, the vendor and the procurement cycle that produced it. A specification that good deserves a CDR anyone can actually run.</p>
+          <p>openEHR writes clinical meaning down as a shared, computable model, which is what lets a record outlive the application, the vendor and the procurement cycle that produced it. A specification that good deserves a CDR anyone can actually run.</p>
         </div>
         <div class="grid">
 
@@ -157,14 +157,14 @@
 
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg></div>
-            <h3>Build on it. Ship it. Sell it.</h3>
-            <p>Integrate it, embed it, host it, white-label it, build closed products on top and charge for them. No contributor licence agreement, no copyright assignment, no commercial-licence conversation — what you build stays yours.</p>
+            <h3>Commercial use is the point</h3>
+            <p>Integrate it, embed it, host it, white-label it, build closed products on top and charge for them. No contributor licence agreement, no copyright assignment, no commercial-licence conversation. What you build stays yours.</p>
           </article>
 
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"/><path d="M17 8h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M8 12h8"/><path d="m13 9 3 3-3 3"/><path d="m11 15-3-3 3-3"/></svg></div>
             <h3>Send the improvements back</h3>
-            <p>The one thing we ask, and cannot require. A private fork pays for the whole maintenance surface alone; upstreamed, the same work is maintained once for everyone — and a defect found once gets fixed everywhere, which is what clinical software should do.</p>
+            <p>The one thing we ask, and cannot require. A private fork pays for the whole maintenance surface alone; upstreamed, the same work is maintained once for everyone. A defect found once gets fixed everywhere, which is what clinical software should do.</p>
           </article>
 
         </div>
@@ -179,7 +179,7 @@
       <div class="wrap">
         <div class="section-head">
           <span class="eyebrow">Conformance</span>
-          <h2>Compliance you can verify, not just read.</h2>
+          <h2>Compliance you can verify.</h2>
           <p>Every release runs the complete conformance catalogue against the live server, in JSON and XML, and computes the openEHR profile verdicts.</p>
         </div>
         <!-- Conformance numbers/verdicts are DERIVED AT BUILD TIME from
@@ -212,20 +212,20 @@
         <div class="section-head">
           <span class="eyebrow">Platform</span>
           <h2>Everything the openEHR standard asks for</h2>
-          <p>Generated from the official machine-readable models — a specification update is a regeneration, not a rewrite.</p>
+          <p>Generated from the official machine-readable models: a specification update is a regeneration.</p>
         </div>
         <div class="grid">
 
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
             <h3>REST API 1.1.0</h3>
-            <p>EHR, EHR_STATUS, COMPOSITION, DIRECTORY, CONTRIBUTION, query, template and admin resources — canonical JSON and XML on the wire.</p>
+            <p>EHR, EHR_STATUS, COMPOSITION, DIRECTORY, CONTRIBUTION, query, template and admin resources. Canonical JSON and XML on the wire.</p>
           </article>
 
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
             <h3>AQL 1.1 engine</h3>
-            <p>Typed path analysis over a spec-generated Reference Model, compiled to efficient SQL — including <code>ALL_VERSIONS</code> and stored queries.</p>
+            <p>Typed path analysis over a spec-generated Reference Model, compiled to efficient SQL, including <code>ALL_VERSIONS</code> and stored queries.</p>
           </article>
 
           <article class="card">
@@ -243,7 +243,7 @@
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h.01M7 12h.01M7 16h.01M11 8h6M11 12h6M11 16h4"/></svg></div>
             <h3>One self-contained binary</h3>
-            <p>Predictable memory, fast cold starts, a minimal distroless image — no garbage-collection pauses in the write path.</p>
+            <p>A minimal distroless image, and no garbage-collection pauses in the write path.</p>
           </article>
 
           <article class="card">
@@ -255,13 +255,13 @@
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
             <h3>Security</h3>
-            <p>OIDC authentication, RBAC/ABAC authorization, multi-tenancy and IHE ATNA audit — production access control, not an afterthought.</p>
+            <p>OIDC authentication, RBAC/ABAC authorization, multi-tenancy and IHE ATNA audit.</p>
           </article>
 
           <article class="card">
             <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M6 8.5v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3M12 13.5v2"/></svg></div>
             <h3>Integration</h3>
-            <p>FHIR R4B connectors, AMQP change events and S3 multimedia storage — bridge openEHR into the systems around it.</p>
+            <p>FHIR R4B connectors, AMQP change events and S3 multimedia storage bridge openEHR into the systems around it.</p>
           </article>
 
         </div>
@@ -274,7 +274,7 @@
         <div class="section-head">
           <span class="eyebrow">Quick start</span>
           <h2>Running in one command</h2>
-          <p>The full stack — server plus PostgreSQL 18 — from one Docker Compose file. No checkout, no configuration.</p>
+          <p>The full stack (server plus PostgreSQL 18) from one Docker Compose file. No checkout, no configuration.</p>
         </div>
         <div class="code">
           <div class="code-head">
@@ -336,7 +336,7 @@
             <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-CC-BY-SA-3.0" rel="noopener">CC-BY-SA 3.0</a>
             and
             <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-CC-BY-SA-4.0" rel="noopener">CC-BY-SA 4.0</a>
-            terms — see <a href="./docs/latest/licensing.html">Licensing &amp; legal</a>.</p>
+            terms; see <a href="./docs/latest/licensing.html">Licensing &amp; legal</a>.</p>
           <p>Began as a fork of EHRbase by vitasystems and the Peter L. Reichertz
             Institute (PLRI). openEHR® is the registered trademark of the openEHR
             Foundation.</p>

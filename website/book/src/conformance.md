@@ -1,24 +1,24 @@
 # Conformance
 
 FerroEHR makes a measured claim: it is an openEHR-spec-conformant Clinical Data
-Repository, and that claim is backed by a test run you can reproduce, not by
-prose. This chapter explains what conformance means here, how to run the suite —
-against this server, against another CDR, or against any deployed endpoint you
-point it at — and how to read the artefacts it produces: the report, the
+Repository, and that claim is backed by a test run you can reproduce. This
+chapter explains what conformance means here, how to run the suite (against
+this server, against another CDR, or against any deployed endpoint you point it
+at) and how to read the artefacts it produces: the report, the
 statement, the certificate, and the cross-server comparison matrix.
 
 <!-- toc -->
 
 ## What is measured
 
-Conformance is checked by the **CNF 2.0 reference runner** — a data-driven
+Conformance is checked by the **CNF 2.0 reference runner**, a data-driven
 interpreter over a committed, machine-readable catalogue authored from the openEHR
 Conformance framework itself: protocol-neutral case cores anchored on the official
 platform test schedule (case ids follow the schedule's own naming, e.g.
 `I_EHR_SERVICE.create_ehr-main`), per-operation bindings mapping every outcome to
 its cited wire expectation, closed vocabularies for outcomes/selectors/captures, a
 provenance-stamped corpus (the official openEHR Robot data sets re-adjudicated to
-spec-text-only evidence), and a typed ambiguity register — a specification silence
+spec-text-only evidence), and a typed ambiguity register; a specification silence
 is never resolved privately. Every expectation traces to specification text, never
 to any server's observed behaviour. The catalogue spans the schedule's chapters:
 
@@ -49,7 +49,7 @@ with a machine-readable citation_ rather than silently omitted.
 > consumer can validate a record without trusting the tool that produced it. The
 > instrument is built from the currently pinned specifications (AQL 1.1.0,
 > Terminology 3.1.0, ITS-REST 1.1.0, and the Reference Model generation the
-> system under test runs — for FerroEHR the default `development` profile,
+> system under test runs, for FerroEHR the default `development` profile,
 > RM 1.2.0; the composed stack takes the profile from configuration, so a
 > `stable`-profile run is the same catalogue against the released generation).
 > The upstream Robot suites are reference material; their official data fixtures
@@ -57,7 +57,7 @@ with a machine-readable citation_ rather than silently omitted.
 
 ## The current result
 
-The whole conformance story in one picture — every capability of the claims
+The whole conformance story in one picture: every capability of the claims
 matrix, grouped by profile tier, colored AND glyph-marked by the evidence its
 cases produced (both charts are generated from the committed runner artefacts and
 regenerate-and-diff guarded in CI; no number on them is hand-typed):
@@ -65,8 +65,8 @@ regenerate-and-diff guarded in CI; no number on them is hand-typed):
 ![Capability conformance heat grid](conformance-assets/conformance-heat-grid.svg)
 
 The same run broken down two levels deep: a header per schedule chapter with its
-total, then one bar per **band** — the surface a case actually exercises (EHR
-resource, EHR_STATUS, COMPOSITION, …) — with the exact outcome counts printed
+total, then one bar per **band**, the surface a case actually exercises (EHR
+resource, EHR_STATUS, COMPOSITION, …), with the exact outcome counts printed
 beside every row. Every band the taxonomy declares is drawn, so one with no case
 for this run shows as an explicit `no cases` row rather than disappearing, and a
 hatched segment marks cited-N/A so it reads as neither a pass nor a failure:
@@ -82,7 +82,7 @@ The published run against FerroEHR reports:
 
 Cases that did not execute are not-applicable with a machine-readable citation (an
 unrealized wire on this technology profile, an undeclared option branch, or a
-ground a shared server cannot establish) — never silent omissions. Options
+ground a shared server cannot establish), never silent omissions. Options
 aggregates optional capabilities under the Profiles book's "any passes" rule.
 
 ## Any server can be assessed
@@ -91,14 +91,14 @@ The runner is deliberately not tied to FerroEHR. It assesses **any openEHR CDR
 reachable over HTTP** and emits the same artefact set for each system under test,
 into its own directory:
 
-- **FerroEHR** (the default) — the composed stack built from the current sources.
+- **FerroEHR** (the default): the composed stack built from the current sources.
   This is the project's own gate: the committed artefacts are regenerated and
   diff-checked, so a change that moves a verdict cannot land quietly.
-- **EHRbase** — `CONF_SUT=ehrbase` composes the official `ehrbase/ehrbase` image
+- **EHRbase:** `CONF_SUT=ehrbase` composes the official `ehrbase/ehrbase` image
   (with its companion PostgreSQL) on fresh volumes and runs the same catalogue
   with EHRbase's own committed party set. Its measured artefacts feed the
   [comparison page](comparison.md).
-- **Bring your own endpoint** — point the runner at any deployed CDR by URL and
+- **Bring your own endpoint:** point the runner at any deployed CDR by URL and
   credentials, with its own party set: an *ixit* naming the instances and
   credential environment variables, and a *statement* (the ICS) declaring the
   capabilities and ambiguity-register options the vendor claims. Option branches
@@ -124,8 +124,8 @@ not-applicable rather than checked against a guess.
 
 ## Running the suite yourself
 
-The suite runs against a real, deployed server — the same container image and
-stack a deployment uses — so the wire under test is always the production
+The suite runs against a real, deployed server (the same container image and
+stack a deployment uses) so the wire under test is always the production
 artefact, never a re-wired in-process stub. From a checkout with Docker
 available:
 
@@ -158,7 +158,7 @@ without re-running.
 
 Some behaviour exists only in a particular server configuration. Rather than
 splitting those into separate runs whose records would have to be merged by hand
-— which is exactly how a claim stops being reproducible — the pipeline brings up
+(which is exactly how a claim stops being reproducible) the pipeline brings up
 **two deployments of the same image** and covers both postures in the **one**
 committed record:
 
@@ -175,11 +175,11 @@ instance, and the cases that check those properties address it by name.
 
 Two consequences worth knowing:
 
-- **SMART is the standard posture, not an extra lane.** The SMART discovery
+- **SMART is the standard posture.** The SMART discovery
   document, the resource-scope grammar, and the fail-closed `403` are executable
   cases in the same record as everything else, driven by principals presenting
   minted Bearer tokens with the roles and resource scopes each case needs. The
-  tokens are signed by a committed test issuer — public test key material for the
+  tokens are signed by a committed test issuer: public test key material for the
   harness, never usable for anything else. A system under test whose ixit declares
   no SMART block (EHRbase) records those cases not-applicable with the citation
   instead.
@@ -191,7 +191,7 @@ Two consequences worth knowing:
   server, and commit-time validation of a bound value set, accepted for a member
   code and refused for a non-member. What a deployment does when the value set
   cannot be resolved *at all* is not decided by any openEHR text, so it is a
-  declared posture rather than a verdict — and both branches execute, one per
+  declared posture rather than a verdict; both branches execute, one per
   deployment.
 
 A measured performance or stress run adds one more posture: rate limiting is
@@ -213,7 +213,7 @@ citation for every not-applicable entry, alongside the system-under-test identit
 the runner's verification-pack status, the technology profile, and the ixit
 digest. `verdicts.json` is the computed verdict report, and
 `run-exceptions.json` registers anything the interpreter itself could not cover.
-Every other artefact — the three documents, the badges, the charts — is generated
+Every other artefact (the three documents, the badges, the charts) is generated
 from these; nothing downstream is hand-edited.
 
 ### The conformance report
@@ -254,7 +254,7 @@ reviewer who wants the capability-by-capability picture.
 
 The multi-system record is fully generated from the two committed
 results/verdicts sets (ours and EHRbase's): profile verdicts, the
-capability-by-capability evidence matrix, and failure tables in both directions —
+capability-by-capability evidence matrix, and failure tables in both directions:
 measured numbers only, no editorial adjustment, both directions always published.
 It renders as the [comparison page](comparison.md).
 
@@ -262,7 +262,7 @@ It renders as the [comparison page](comparison.md).
 > The conformance badges in the project README are generated from the same run
 > and carry the measured amounts (per-profile capability counts, the overall
 > driven-case count, the earned performance class). A badge can never show a pass
-> unless the machine verdict does — so a green badge is a claim you can
+> unless the machine verdict does, so a green badge is a claim you can
 > immediately reproduce with `scripts/conformance.sh`.
 
 ## What conformance does not cover
@@ -275,11 +275,11 @@ functional run are telemetry only, and the measured classes own that claim
 
 The other honest boundary is the gap between openEHR's *service* model and its
 *released* REST wire. Several service operations were never surfaced as
-endpoints — listing an EHR's contributions, counting stored templates or queries,
-deleting a template or a stored query — so a case that addresses one has no wire
+endpoints (listing an EHR's contributions, counting stored templates or queries,
+deleting a template or a stored query) so a case that addresses one has no wire
 to drive on this technology profile. Those cases are excused through the
 schedule's typed ambiguity register, with the citation printed in the report, and
-reported as an explicit scope exclusion on the certificate — never a silent pass
+reported as an explicit scope exclusion on the certificate; never a silent pass
 and never an unavoidable failure. FerroEHR does serve routes of its own design
 for several of them (see
 [Admin & messaging APIs](operations-admin-apis.md) and the archetype routes in

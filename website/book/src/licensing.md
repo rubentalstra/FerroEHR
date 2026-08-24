@@ -9,18 +9,18 @@ summary for evaluators and deployers, not legal advice.
 
 ## FerroEHR's own code — MIT
 
-Everything written for this project — the server and application crates, the
+Everything written for this project (the server and application crates, the
 code generator and tooling, the admin console, and the hand-written
-specification engines (`openehr-query`, `openehr-adl`) — is licensed under the
+specification engines `openehr-query` and `openehr-adl`) is licensed under the
 [MIT License](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE).
 You can use, modify, and redistribute it freely, including commercially,
 provided the copyright and permission notice are preserved. The copyright holder
 is stated as *FerroEHR contributors*, identically in `LICENSE`, in `REUSE.toml`,
-and in every first-party file header — a CI gate compares the three so they
+and in every first-party file header; a CI gate compares the three so they
 cannot drift apart.
 
-Five of the published spec crates that **embed** openEHR-derived material —
-`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its` —
+Five of the published spec crates that **embed** openEHR-derived material
+(`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its`)
 declare `MIT AND Apache-2.0` and ship both license texts in the package: the
 emitted Rust is this project's, while the specification documentation text
 carried in the generated doc comments and the vendored JSON Schema are
@@ -32,7 +32,7 @@ redistributed verbatim with attribution, so it declares
 
 ## Vendored third-party material
 
-The repository vendors external material verbatim — machine-readable
+The repository vendors external material verbatim: machine-readable
 specification artifacts the code generator consumes, the openEHR specification
 text used as the conformance oracle, and real-world clinical models and fixtures
 used as test corpora. Each family keeps its upstream license:
@@ -62,7 +62,7 @@ first-hand count over the vendored CKM material finds both CC-BY-SA 4.0 (the
 majority) and CC-BY-SA 3.0 (several hundred files), so no single version is a
 true statement about the tree. Each archetype carries its own `licence` field
 inside its `description` block, and that per-file metadata is the authority for
-any individual file — which also means licensing for this material already
+any individual file, which also means licensing for this material already
 survives being copied out of the repository.
 
 **Two positions worth stating explicitly**, because both are the kind of thing a
@@ -80,7 +80,7 @@ compliance review finds and a summary table hides:
   Designer / ADL2-tools header offering it under the GNU Affero General Public
   License, inside an upstream repository whose own `LICENSE` is CC-BY-SA 3.0.
   Both cannot be right, the contradiction is upstream's, and re-licensing
-  someone else's file is not ours to do — so it is declared at the **more
+  someone else's file is not ours to do, so it is declared at the **more
   restrictive** of the two readings, the one the file's own text asserts. No
   obligation reaches a consumer: the terminology schemas are excluded from the
   published crate by that crate's `include` list, so the file ships in nothing.
@@ -88,7 +88,7 @@ compliance review finds and a summary table hides:
 ## Machine-readable licensing (REUSE 3.3)
 
 The `PROVENANCE.md` arrangement above is accurate, and it stays. What it does
-not do is survive a file leaving this repository — someone who lifts a single
+not do is survive a file leaving this repository: someone who lifts a single
 archetype out of a test corpus takes a CC-BY-SA file bearing no marking they
 copied. Since the stated premise of this project is that people build on it,
 ship it and sell it, downstream file-level redistribution is the expected case.
@@ -101,9 +101,9 @@ So licensing is **also** published in the machine-readable form the
   named by SPDX identifier: `MIT`, `Apache-2.0`, `CC-BY-SA-3.0`,
   `CC-BY-SA-4.0`, `MPL-1.1`, `AGPL-3.0-only`.
 - **[`REUSE.toml`](https://github.com/rubentalstra/FerroEHR/blob/develop/REUSE.toml)**
-  declares, by glob, which files are offered under which — including the two
+  declares, by glob, which files are offered under which, including the two
   positions above, represented rather than flattened.
-- **Every first-party source file carries the header inside itself** — an
+- **Every first-party source file carries the header inside itself:** an
   `SPDX-FileCopyrightText` line and an `SPDX-License-Identifier` line stating the
   same position `REUSE.toml` declares for it, so a file copied out of this
   repository takes its licensing along. Rust files of the six published spec
@@ -115,21 +115,21 @@ The vendored trees are glob-declared rather than headered for a reason that is
 not convenience: **no vendored file may be edited**, so a header sweep over
 third-party material was never available. `REUSE.toml` is the mechanism that
 makes the declaration complete without touching one. The generated spec-crate
-sources are the mirror case — a hand-written header there would be erased by the
+sources are the mirror case: a hand-written header there would be erased by the
 next code-generation run, so they receive theirs from the code generator, which
 stamps every file it writes.
 
 All of it is gated in CI, and by more than one check, because each one can only
 see part of the picture:
 
-- `reuse lint` proves the declarations are **complete** — every file carries
+- `reuse lint` proves the declarations are **complete**: every file carries
   licensing information and no license text is orphaned.
 - A second check fails the build if the set of licenses declared in `REUSE.toml`,
   the texts present in `LICENSES/`, and the licenses named **on this page** ever
   stop agreeing. A license cannot enter the tree without this chapter acquiring
   it.
 - Two header checks fail the build if a first-party file loses its header or
-  states a license other than the one declared for its path — one for Rust, one
+  states a license other than the one declared for its path: one for Rust, one
   for shell, SQL and YAML.
 - One check fails if the copyright holder is stated differently in `LICENSE`,
   `REUSE.toml`, and the file headers.
@@ -141,7 +141,7 @@ tool can judge that, which is why any change to what the repository
 redistributes updates this chapter in the same pull request.
 
 The CC-BY-SA specification text and clinical models are redistributed
-**verbatim, with attribution** — they are reference and test material, not part
+**verbatim, with attribution**: they are reference and test material, not part
 of the compiled server. The FerroEHR binary you deploy is built from MIT code,
 plus the Apache-2.0 machine-readable inputs the generated crates carry, plus the
 CC-BY-SA 3.0 openEHR terminology bundle `openehr-term` compiles in (five
@@ -159,7 +159,7 @@ MIT-0, CDLA-Permissive-2.0) and deliberately admits two **file-scoped weak
 copyleft** licenses: MPL 2.0, and CDDL 1.0 as a single crate-scoped exception for
 the flamegraph renderer the profiling instruments use. Obligations under both
 attach to those crates' own files, which are consumed unmodified. No strong
-copyleft — GPL, LGPL, AGPL, SSPL — is admitted, and a new dependency carrying one
+copyleft (GPL, LGPL, AGPL, SSPL) is admitted, and a new dependency carrying one
 fails the build.
 
 A separate FOSSA lane publishes dependency and license analysis from the
@@ -183,6 +183,6 @@ no merge; `cargo deny` is the gate.
 ## Questions
 
 If you need a clarification for a compliance review, open a
-[GitHub discussion or issue](https://github.com/rubentalstra/FerroEHR/issues) —
+[GitHub discussion or issue](https://github.com/rubentalstra/FerroEHR/issues);
 provenance questions can usually be answered by pointing at the exact
 `PROVENANCE.md` and upstream pin.
