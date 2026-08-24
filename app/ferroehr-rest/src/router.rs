@@ -59,6 +59,7 @@ use http::header::{AUTHORIZATION, CONTENT_TYPE};
 use http::{HeaderName, HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 use tower::ServiceBuilder;
+use tower_http::CompressionLevel;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
@@ -265,7 +266,10 @@ fn with_shared_stack(
                     StatusCode::REQUEST_TIMEOUT,
                     REQUEST_TIMEOUT,
                 ))
-                .layer(CompressionLayer::new()),
+                // NOTE (docs.rs tower-http `CompressionLayer::quality`):
+                // Fastest — the default brotli/gzip levels spend visible
+                // per-response CPU for a marginal ratio gain on ~KB bodies.
+                .layer(CompressionLayer::new().quality(CompressionLevel::Fastest)),
         )
         .layer(axum::middleware::map_response(align_transport_error_body))
         .layer(
