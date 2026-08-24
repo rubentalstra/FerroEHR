@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-08-24
+
 ### Added
 
 - Admin console: a **Subscriptions** screen (shown only when the CDR's
