@@ -262,6 +262,18 @@
               "$ref": "#/definitions/duration"
             }
           }
+        },
+        "grafanaDashboard": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "folder": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -624,7 +636,7 @@
           }
         },
         "ingressAllowAll": {
-          "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` — which admits every source. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
+          "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` \u2014 which admits every source. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
           "type": "boolean"
         },
         "egress": {
@@ -959,7 +971,7 @@
               "type": "array"
             },
             "ingressAllowAll": {
-              "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` — which admits every source to the console. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
+              "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` \u2014 which admits every source to the console. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
               "type": "boolean"
             }
           }

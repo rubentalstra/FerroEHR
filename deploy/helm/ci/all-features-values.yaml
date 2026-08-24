@@ -26,6 +26,8 @@ metrics:
     enabled: true
     labels:
       release: kube-prometheus-stack
+  grafanaDashboard:
+    enabled: true
 
 config:
   server:
