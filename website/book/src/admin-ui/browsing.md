@@ -77,7 +77,8 @@ diagnostics (the AOM 2 rule codes with their line and column) are shown in
 full above the editor as well as in the failure notification, so the source can
 be corrected in place and re-sent.
 
-Opening a row shows the artefact's three server-side representations:
+Opening a row shows the artefact's three server-side representations plus a
+derived view:
 
 - **Source:** the stored ADL 2 text, exactly as the CDR holds it.
 - **AOM2 JSON:** the same operational template as canonical JSON
@@ -85,6 +86,8 @@ Opening a row shows the artefact's three server-side representations:
   and occurrences are readable.
 - **Example:** a composition the CDR generates from the template, in
   canonical JSON, canonical XML, FLAT or STRUCTURED.
+- **Path catalog:** the same expandable tree and node inspector the ADL 1.4
+  detail shows, built by the console from the AOM2 JSON.
 
 ![ADL 2 template detail](img/templates/template-adl2-detail.png)
 
@@ -99,10 +102,10 @@ named and does not follow the version bar: the CDR publishes no versioned
 example resource.
 
 > [!NOTE]
-> ADL 2 templates have no path catalog. The catalog on the ADL 1.4 detail
-> screen is built from an OPT 1.4 Web Template, and the CDR serves no Web
-> Template representation of an ADL 2 artefact, so the screen says so instead
-> of showing an invented tree. Read the AOM2 JSON pane for the structure.
+> The ADL 2 path catalog is built by the console itself: the CDR serves no
+> Web Template representation of an ADL 2 artefact, so the console reads the
+> AOM2 JSON and derives the same tree the ADL 1.4 detail shows. The CDR wire
+> stays exactly the released REST API.
 
 #### Deleting an ADL 2 template
 

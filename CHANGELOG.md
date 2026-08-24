@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Admin console: the ADL 2 template detail shows the path catalog — the same
+  expandable tree and node inspector the ADL 1.4 detail has — built by the
+  console from the served AOM2 JSON. The CDR's REST surface is unchanged (the
+  released API defines no Web Template representation on the ADL 2 resource).
 - Helm chart 6.0.16: `metrics.grafanaDashboard.enabled` ships the default
   "FerroEHR — service overview" Grafana dashboard as a ConfigMap the Grafana
   dashboard sidecar (kube-prometheus-stack) auto-imports; the compose
