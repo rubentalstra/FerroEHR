@@ -78,8 +78,9 @@ This pulls and starts the two core services (no profile needed):
 
 - **`ferroehr-postgres`:** the database image, with a named data volume, a
   `pg_isready` healthcheck, `pg_stat_statements` preloaded, and a modest tuning
-  floor (shared buffers, WAL size, work memory, and a larger `/dev/shm` than
-  Docker's default, which otherwise starves parallel workers).
+  floor (shared buffers, WAL size, work memory, lz4-compressed WAL full-page
+  images — which cut per-commit WAL volume roughly in half — and a larger
+  `/dev/shm` than Docker's default, which otherwise starves parallel workers).
 - **`ferroehr`:** the server, which waits for the database to report healthy
   (`depends_on: condition: service_healthy`), then boots, migrates, and serves
   on port 8080. Its healthcheck is the binary's own `healthcheck` subcommand,

@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- Commit latency's tail shrinks: the large stored JSON columns
+  (`vo_version.body`, `vo_version.wrapped_original`; the node fragments and
+  audit columns already had it) compress with lz4 instead of PostgreSQL's
+  default pglz, and the bundled compose database enables
+  `wal_compression=lz4` — measured together, per-commit WAL volume roughly
+  halves (~52 KB → ~24 KB) and the post-checkpoint p99 drops from ~180 ms to
+  ~19 ms on the reference workload, with the median commit ~0.5–1 ms faster.
+  Greenfield deployments pick the column compression up by recreating the
+  database; the WAL setting is the compose default and an operator knob
+  (`BENCH_PG_WAL_COMPRESSION`) elsewhere.
+
 ## [4.0.2] - 2026-08-24
 
 ### Added

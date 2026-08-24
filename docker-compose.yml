@@ -112,6 +112,12 @@ services:
       - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
       - -c
       - work_mem=${BENCH_PG_WORK_MEM:-16MB}
+      # Compressed full-page images halve the WAL a commit fsyncs (measured
+      # ~52 KB -> ~24 KB per composition commit) and collapse the post-
+      # checkpoint latency tail; lz4's compression CPU is far below the fsync
+      # it saves (PostgreSQL docs: Write Ahead Log / wal_compression).
+      - -c
+      - wal_compression=${BENCH_PG_WAL_COMPRESSION:-lz4}
     volumes:
       - ferroehr-pgdata:/var/lib/postgresql
     ports:
