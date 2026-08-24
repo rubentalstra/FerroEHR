@@ -18,10 +18,14 @@ workflow refuses a tag that has no matching section here.
 ### Changed
 
 - Version point reads (composition, EHR_STATUS, directory, party — every
-  `.../{uid}` and `version_at_time` read) execute as ONE SQL statement: the
-  stored node rows now ride the version-row select as a lateral aggregate
-  instead of a second round trip, cutting per-read latency on every retrieval
-  path including the cold archival tier.
+  `.../{uid}` and `version_at_time` read) execute as ONE SQL statement, and
+  the served canonical body is now MATERIALIZED at commit
+  (`vo_version.body`, written from the same value the node rows are
+  decomposed from) instead of being reassembled from the node subtree on
+  every read. Measured: point-read latency drops under 1 ms (mean ~0.7 ms
+  at c=1 on reference hardware) with the database-side read cost down ~8×;
+  the node rows remain the AQL source of truth. Storage grows by roughly
+  the size of each stored version's canonical JSON.
 
 ### Added
 

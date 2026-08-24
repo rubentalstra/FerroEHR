@@ -756,6 +756,15 @@ async fn commit_resolved(
     let (signature, signature_client_supplied) =
         version_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
 
+    // NOTE: `vo_version.body` reassembles from the SAME rows `write_nodes`
+    // stores below, so the materialized body is byte-identical to the node
+    // reassembly point reads formerly performed; empty rows = logical delete.
+    let body = if r.rows.is_empty() {
+        None
+    } else {
+        Some(reassemble(&r.rows)?)
+    };
+
     let folded = crate::storage::version_repo::commit::FoldedVersion {
         vo_id: r.vo_id,
         kind: r.kind.as_str(),
@@ -771,6 +780,7 @@ async fn commit_resolved(
         signature: signature.as_deref(),
         signature_client_supplied,
         stable_compatible: r.stable_compatible,
+        body: body.as_ref(),
     };
     let time_committed = match contribution {
         ContributionCtx::New => {

@@ -4,9 +4,9 @@
 //! The full version reads.
 //!
 //! One `vo_version`⋈`audit` statement (attestations folded in as a LATERAL
-//! aggregate) plus the node→canonical reassembly, yielding the
-//! [`StoredVersion`] shape the versioning layer maps into a
-//! `VERSION`/`ORIGINAL_VERSION`.
+//! aggregate, the canonical body read off the row's own materialized `body`
+//! column), yielding the [`StoredVersion`] shape the versioning layer maps
+//! into a `VERSION`/`ORIGINAL_VERSION`.
 //!
 //! No openEHR spec governs the SQL — our own design. The version-access semantics realized are RM common master06
 //! (§Versioned Objects, §Logical Deletion) and master08 §Change Management
@@ -30,9 +30,7 @@ use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
-use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
-use crate::storage::row::ReadRow;
 use crate::storage::version_repo::tier::on_cold;
 
 /// A loaded `vo_version`⋈`audit` row plus its reassembled content and
@@ -103,8 +101,9 @@ pub struct StoredVersion {
     /// `spec_profile` gate assesses on the fly. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: Option<bool>,
-    /// Reassembled canonical JSON, or [`Value::Null`] for a logically deleted
-    /// version (no node rows — master06 §Logical Deletion).
+    /// The materialized canonical body (`vo_version.body` — written from the
+    /// same value the node rows decompose from), or [`Value::Null`] for a
+    /// logically deleted version (master06 §Logical Deletion).
     pub canonical: Value,
     /// The `ORIGINAL_VERSION.attestations` that were on the version AT the act
     /// of committal, in commit order (master06 §Attestation "Signing content at
@@ -137,24 +136,21 @@ pub struct StoredVersion {
 /// not. The split uses the standard aggregate `FILTER` clause
 /// (<https://www.postgresql.org/docs/18/sql-expressions.html#SYNTAX-AGGREGATES>).
 ///
-/// The version's `node` rows ride the same statement as a second LATERAL
-/// aggregate (`nd.node_rows`, `[num, num_cap, parent_num, path, data]`
-/// tuples in `num` order), so a point read is ONE round trip — no second
-/// node-subtree query. `NULL` (no node rows) is a logically deleted version
-/// (RM common master06 §Logical Deletion). The unqualified `node` reference
-/// resolves through the connection's `search_path`, so a cold-tier read
-/// (`on_cold!`) aggregates `cold.node` in the same statement.
+/// The version's canonical body is the row's own `v.body` column — the form
+/// MATERIALIZED at write time from the same value the node rows decompose
+/// from — so a point read is ONE statement and one TOAST detoast, never a
+/// node-subtree re-aggregation. `NULL` is a logically deleted version (RM
+/// common master06 §Logical Deletion).
 macro_rules! version_select {
     ($tail:literal) => {
         concat!(
             "SELECT v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
-            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
+            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, v.body, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
-            "att.attestations_at_committal, att.attestations_after_committal, ",
-            "nd.node_rows ",
+            "att.attestations_at_committal, att.attestations_after_committal ",
             "FROM vo_version v JOIN audit a ON a.id = v.audit_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
@@ -164,69 +160,15 @@ macro_rules! version_select {
             "FROM vo_attestation x ",
             "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
             ") att ON true ",
-            "LEFT JOIN LATERAL (",
-            "SELECT jsonb_agg(jsonb_build_array(n.num, n.num_cap, n.parent_num, n.path, n.data) ",
-            "ORDER BY n.num) AS node_rows ",
-            "FROM node n ",
-            "WHERE n.vo_id = v.vo_id AND n.sys_version = v.sys_version",
-            ") nd ON true ",
             $tail
         )
     };
 }
 
-/// Decode the `nd.node_rows` LATERAL aggregate into the lean [`ReadRow`]s and
-/// reassemble the canonical body; `None`/`NULL` (no node rows) is a logically
-/// deleted version and reassembles to [`Value::Null`] (RM common master06
-/// §Logical Deletion).
-fn canonical_from_node_rows(vo_id: VoId, node_rows: Option<Value>) -> Result<Value, StorageError> {
-    let Some(Value::Array(tuples)) = node_rows else {
-        return Ok(Value::Null);
-    };
-    let rows: Vec<ReadRow> = tuples
-        .into_iter()
-        .map(|tuple| {
-            let Value::Array(mut f) = tuple else {
-                return Err(StorageError::InvalidRows(format!(
-                    "node_rows aggregate of {vo_id} holds a non-array element"
-                )));
-            };
-            let bad = |what: &str| {
-                StorageError::InvalidRows(format!(
-                    "node_rows aggregate of {vo_id} has a malformed {what}"
-                ))
-            };
-            if f.len() != 5 {
-                return Err(bad("tuple arity"));
-            }
-            let data = f.pop().unwrap_or(Value::Null);
-            let Some(Value::String(path)) = f.pop() else {
-                return Err(bad("path"));
-            };
-            let int = |v: Option<Value>, what: &str| -> Result<i32, StorageError> {
-                v.and_then(|v| v.as_i64())
-                    .and_then(|n| i32::try_from(n).ok())
-                    .ok_or_else(|| bad(what))
-            };
-            let parent_num = int(f.pop(), "parent_num")?;
-            let num_cap = int(f.pop(), "num_cap")?;
-            let num = int(f.pop(), "num")?;
-            Ok(ReadRow {
-                num,
-                num_cap,
-                parent_num,
-                path,
-                data,
-            })
-        })
-        .collect::<Result<_, _>>()?;
-    reassemble(&rows)
-}
-
-/// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row, the canonical
-/// body reassembled from the row's own `nd.node_rows` LATERAL aggregate —
-/// the whole version read is the ONE statement that produced `row`, on
-/// whichever tier's connection ran it.
+/// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row; the canonical
+/// body is the row's own materialized `body` column (`NULL` → [`Value::Null`],
+/// a logical delete), so the whole version read is the ONE statement that
+/// produced `row`, on whichever tier's connection ran it.
 fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageError> {
     let sys_version: i32 = row.try_get("sys_version")?;
     // A stored `other_input_version_uids` that does not decode is OUR data
@@ -245,7 +187,9 @@ fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageErro
             ))
         })?
         .unwrap_or_default();
-    let canonical = canonical_from_node_rows(vo_id, row.try_get("node_rows")?)?;
+    let canonical = row
+        .try_get::<Option<Value>, _>("body")?
+        .unwrap_or(Value::Null);
     // The attestations arrive folded into the version-select row (the LATERAL
     // aggregates in `version_select!`), in commit order and already split on
     // `at_committal` — no separate round trip.

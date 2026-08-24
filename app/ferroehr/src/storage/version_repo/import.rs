@@ -73,6 +73,9 @@ pub struct ImportedVersionRow<'a> {
     pub lower: jiff::Timestamp,
     /// Upper bound (`None` = the still-open tip of this lineage).
     pub upper: Option<jiff::Timestamp>,
+    /// The assembled canonical body (`vo_version.body`) — the SAME value the
+    /// node rows are decomposed from; `None` on a content-less version.
+    pub body: Option<&'a Value>,
 }
 
 /// Insert one imported `vo_version` row with an explicit `sys_period`
@@ -96,10 +99,10 @@ pub async fn insert_imported_vo_version(
          (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
           sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
           other_input_version_uids, contribution_id, audit_id, template_id, signature, \
-          signature_client_supplied, wrapped_original) \
+          signature_client_supplied, wrapped_original, body) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, \
                  tstzrange($8::timestamptz, $9::timestamptz, '[)'), \
-                 $10, $11, $12, $13, $14, $15, NULL, $16, false, $17)",
+                 $10, $11, $12, $13, $14, $15, NULL, $16, false, $17, $18)",
     )
     .bind(row.vo_id)
     .bind(row.kind)
@@ -118,6 +121,7 @@ pub async fn insert_imported_vo_version(
     .bind(row.audit_id)
     .bind(row.signature)
     .bind(row.wrapped_original)
+    .bind(row.body)
     .execute(&mut *tx)
     .await?;
     Ok(())
@@ -176,6 +180,9 @@ pub struct VerbatimVersionRow<'a> {
     /// `IMPORTED_VERSION` row (`None` on a locally created one) — preserved
     /// verbatim across the dump/load round-trip.
     pub wrapped_original: Option<&'a Value>,
+    /// The assembled canonical body (`vo_version.body`) — the SAME value the
+    /// node rows are re-decomposed from; `None` on a content-less version.
+    pub body: Option<&'a Value>,
 }
 
 /// Insert one `vo_version` row verbatim from an archive record (explicit
@@ -227,10 +234,10 @@ pub async fn insert_version_verbatim(
         "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
          branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
          lifecycle_state, contribution_id, audit_id, template_id, signature, \
-         signature_client_supplied, creating_system_id, wrapped_original) \
+         signature_client_supplied, creating_system_id, wrapped_original, body) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
          tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17, $18, \
-         $19)",
+         $19, $20)",
     )
     .bind(row.vo_id)
     .bind(row.kind)
@@ -251,6 +258,7 @@ pub async fn insert_version_verbatim(
     .bind(row.signature_client_supplied)
     .bind(row.creating_system_id)
     .bind(row.wrapped_original)
+    .bind(row.body)
     .execute(&mut *tx)
     .await?;
     Ok(())
