@@ -41,7 +41,7 @@ pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
     }
 
     let mut rows = Vec::new();
-    walk(root, "", -1, None, &mut rows)?;
+    walk(root, String::new(), -1, None, &mut rows)?;
 
     // num_cap: children always follow their parents — one reverse pass. `walk`
     // pushes rows in pre-order with `num == index`, so a row's `parent_num` is
@@ -75,7 +75,7 @@ pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
 
 fn walk(
     mut json: Value,
-    path: &str,
+    path: String,
     parent: i32,
     citem: Option<i32>,
     rows: &mut Vec<NodeRow>,
@@ -127,6 +127,8 @@ fn walk(
     // `EVENT_CONTEXT`), aligned to `PROMOTED_LEAVES`. Populated only on a
     // versioned-object root (`num == 0`); every other row carries all-`None`.
     let promoted = crate::storage::promoted::extract(num, &rm_type, &json);
+    // `path` and `data` land in the row at the END of this call (the fragment
+    // after pruning, the path by move — never a second allocation).
     rows.push(NodeRow {
         num,
         num_cap: num,
@@ -138,13 +140,13 @@ fn walk(
         arch_concept,
         arch_major,
         name,
-        path: path.to_owned(),
+        path: String::new(),
         data: Value::Null,
         promoted,
     });
 
     if let Value::Object(map) = &mut json {
-        prune_children(map, path, num, child_citem, rows)?;
+        prune_children(map, &path, num, child_citem, rows)?;
     }
     // `index` is the slot this call pushed above, so it exists; fetched rather
     // than indexed so a future restructuring of `walk` cannot panic here.
@@ -153,11 +155,17 @@ fn walk(
             "node row {index} vanished while decomposing {path}"
         )));
     };
+    row.path = path;
     row.data = json;
     Ok(())
 }
 
 /// Prunes structure children out of `map`, recursing in document order.
+///
+/// Two read passes: the first only IDENTIFIES the structure-carrying
+/// attributes (so nothing is cloned for the — typical — attributes that stay
+/// in place), the second removes and walks them. Document order among the
+/// pruned attributes is preserved.
 fn prune_children(
     map: &mut Map<String, Value>,
     path: &str,
@@ -165,26 +173,36 @@ fn prune_children(
     citem: Option<i32>,
     rows: &mut Vec<NodeRow>,
 ) -> Result<(), StorageError> {
-    let attributes: Vec<String> = map.keys().cloned().collect();
-    for attribute in attributes {
-        match map.get(&attribute) {
-            Some(child @ Value::Object(_)) if is_structure(child) => {
-                let owned = map.shift_remove(&attribute).unwrap_or(Value::Null);
-                walk(owned, &format!("{path}{attribute}."), num, citem, rows)?;
-            }
-            Some(Value::Array(items)) if !items.is_empty() => {
+    let mut structure_attributes: Vec<String> = Vec::new();
+    for (attribute, child) in map.iter() {
+        let prune = match child {
+            Value::Object(_) => is_structure(child),
+            Value::Array(items) if !items.is_empty() => {
                 let structure_count = items.iter().filter(|c| is_structure(c)).count();
                 if structure_count == 0 {
-                    continue;
+                    false
+                } else if structure_count == items.len() {
+                    true
+                } else {
+                    return Err(StorageError::MixedArray {
+                        attribute: attribute.clone(),
+                    });
                 }
-                if structure_count != items.len() {
-                    return Err(StorageError::MixedArray { attribute });
-                }
-                let Some(Value::Array(items)) = map.shift_remove(&attribute) else {
-                    continue;
-                };
+            }
+            _ => false,
+        };
+        if prune {
+            structure_attributes.push(attribute.clone());
+        }
+    }
+    for attribute in structure_attributes {
+        match map.shift_remove(&attribute) {
+            Some(child @ Value::Object(_)) => {
+                walk(child, format!("{path}{attribute}."), num, citem, rows)?;
+            }
+            Some(Value::Array(items)) => {
                 for (i, item) in items.into_iter().enumerate() {
-                    walk(item, &format!("{path}{attribute}{i}."), num, citem, rows)?;
+                    walk(item, format!("{path}{attribute}{i}."), num, citem, rows)?;
                 }
             }
             _ => {}

@@ -190,6 +190,24 @@ impl FerroEhrService {
         })
     }
 
+    /// Whether an OPT 1.4 template with this id is stored (case-insensitive) —
+    /// the one-round-trip existence probe for surfaces that only need the
+    /// 404/422 decision and serve the artefact itself from the WebTemplate
+    /// cache, so the stored XML (often hundreds of KB) never moves for it.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::Database`] — the lookup failed.
+    pub(crate) async fn template_stored(&self, template_id: &str) -> Result<bool, ServiceError> {
+        // §Composite Identifiers and Case: compare case-insensitively.
+        Ok(sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM template_store WHERE lower(template_id) = lower($1))",
+        )
+        .bind(template_id)
+        .fetch_one(&self.pool)
+        .await?)
+    }
+
     /// List every stored template's metadata descriptor (by `template_id`) —
     /// the `GET /definition/template/adl1.4` list surface.
     ///

@@ -224,11 +224,11 @@ pub async fn close_ordinal_at_now(
 /// a stored version EXCEPT `contribution_id`/`audit_id`, which come from the
 /// same statement's `contribution`/`audit` CTEs.
 ///
-/// The versioning layer builds this only when the `VERSION.signature` is
-/// already known without the server-returned `time_committed` (signing
-/// disabled, or a client-supplied signature — RM common master06 §Digital
-/// Signature), so no value has to round-trip back before the version row is
-/// written.
+/// `time_committed` is the caller's pre-read commit instant (master06
+/// §Committal m3 — still server-assigned: it is a database `now()` the caller
+/// fetched earlier on this request). Binding it makes the stored audit time,
+/// the `sys_period` open bound, and the instant the `VERSION.signature` was
+/// computed over one value BY CONSTRUCTION.
 ///
 /// A superseded lineage tip is closed by the caller in a **separate, prior**
 /// statement ([`close_ordinal_at_now`]) — never folded into this insert: the
@@ -276,6 +276,11 @@ pub struct FoldedVersion<'a> {
     /// value the node rows are decomposed from; `None` on a logical delete
     /// (no content — RM common master06 §Logical Deletion).
     pub body: Option<&'a Value>,
+    /// The commit instant: the database `now()` the caller read on this
+    /// request (the placement read, the writability gate, or the owning
+    /// CONTRIBUTION's committal), stored as the audit `time_committed` and
+    /// the `sys_period` open bound.
+    pub time_committed: jiff::Timestamp,
 }
 
 /// A **standalone** folded commit: `audit` + `contribution` + `vo_version` in
@@ -289,14 +294,13 @@ pub struct FoldedVersion<'a> {
 ///
 /// This is the round-trip-collapsed equivalent of [`write_contribution`]
 /// followed by a plain `vo_version` insert: the rows written and the values
-/// returned are byte-identical (the version's `sys_period` opens at the one
-/// `now()` = transaction timestamp, exactly as a separate statement would),
-/// and everything still runs inside the caller's transaction so any failure
-/// rolls the whole set back. It is used only when the `VERSION.signature` is
-/// pre-known ([`FoldedVersion`]); the signing path keeps the split so the
-/// signature can be computed over the returned `time_committed`. Any
-/// lineage-tip close is a separate prior statement (see [`FoldedVersion`]). No
-/// openEHR spec governs statement batching — our own design.
+/// returned are byte-identical (the version's `sys_period` and the audit both
+/// open at the caller's bound [`FoldedVersion::time_committed`] — the instant
+/// the `VERSION.signature` was computed over), and everything still runs
+/// inside the caller's transaction so any failure rolls the whole set back.
+/// Any lineage-tip close is a separate prior statement (see
+/// [`FoldedVersion`]). No openEHR spec governs statement batching — our own
+/// design.
 ///
 /// # Errors
 /// Returns [`StorageError::ContributionUidInUse`] on a duplicate supplied uid
@@ -310,8 +314,9 @@ pub async fn commit_new_version(
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
         "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer, attestation) \
-             VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed \
+             INSERT INTO audit (system_id, change_type, description, committer, attestation, \
+                                time_committed) \
+             VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
          ), c AS ( \
              INSERT INTO contribution (id, ehr_id, audit_id) \
              SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
@@ -323,7 +328,7 @@ pub async fn commit_new_version(
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                 contribution_id, audit_id, template_id, signature, \
                 signature_client_supplied, stable_compatible, body) \
-             SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange(now(), NULL, '[)'), \
+             SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
                     $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21 \
              FROM a, c \
              RETURNING 1 \
@@ -352,6 +357,7 @@ pub async fn commit_new_version(
     .bind(v.signature_client_supplied)
     .bind(v.stable_compatible)
     .bind(v.body)
+    .bind(v.time_committed.to_string())
     .fetch_one(&mut *tx)
     .await?;
     let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
@@ -370,10 +376,10 @@ pub async fn commit_new_version(
 /// Returns `(audit_id, time_committed)`. The CONTRIBUTION and its own audit
 /// were written earlier in the same transaction ([`write_contribution`]);
 /// each change carries its own `commit_audit` (master06 §Committal and
-/// Audits). Byte-identical to [`insert_audit`] followed by a plain
-/// `vo_version` insert; used only when the `VERSION.signature` is pre-known
-/// ([`FoldedVersion`]). Any lineage-tip close is a separate prior statement.
-/// No openEHR spec governs statement batching — our own design.
+/// Audits), opened at the caller's bound [`FoldedVersion::time_committed`]
+/// exactly as [`commit_new_version`] does. Any lineage-tip close is a
+/// separate prior statement. No openEHR spec governs statement batching —
+/// our own design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
@@ -385,15 +391,16 @@ pub async fn commit_version_into(
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
         "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer, attestation) \
-             VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed \
+             INSERT INTO audit (system_id, change_type, description, committer, attestation, \
+                                time_committed) \
+             VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
          ), v AS ( \
              INSERT INTO vo_version \
                (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                 contribution_id, audit_id, template_id, signature, \
                 signature_client_supplied, stable_compatible, body) \
-             SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange(now(), NULL, '[)'), \
+             SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
                     $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21 \
              FROM a \
              RETURNING 1 \
@@ -421,6 +428,7 @@ pub async fn commit_version_into(
     .bind(v.signature_client_supplied)
     .bind(v.stable_compatible)
     .bind(v.body)
+    .bind(v.time_committed.to_string())
     .fetch_one(&mut *tx)
     .await?;
     let audit_id: Uuid = row.try_get("audit_id")?;

@@ -166,11 +166,50 @@ pub enum CanonicalFormError {
 /// Returns [`CanonicalFormError::Canonicalize`] if RFC 8785 canonicalisation
 /// of the value fails.
 pub fn canonical_form_of_json(value: &Value) -> Result<String, CanonicalFormError> {
-    let mut value = value.clone();
-    if let Value::Object(map) = &mut value {
-        map.remove("signature");
+    // The `signature` attribute is dropped through a shallow reference view —
+    // never a deep copy of the (potentially large) version body; RFC 8785
+    // orders keys itself, so the view's map order is immaterial.
+    match value {
+        Value::Object(map) if map.contains_key("signature") => {
+            let trimmed: std::collections::BTreeMap<&str, &Value> = map
+                .iter()
+                .filter(|(k, _)| k.as_str() != "signature")
+                .map(|(k, v)| (k.as_str(), v))
+                .collect();
+            serde_jcs::to_string(&trimmed).map_err(CanonicalFormError::Canonicalize)
+        }
+        _ => serde_jcs::to_string(value).map_err(CanonicalFormError::Canonicalize),
     }
-    serde_jcs::to_string(&value).map_err(CanonicalFormError::Canonicalize)
+}
+
+/// Produces the spec `canonical_form` of a serialised Version JSON value whose
+/// `data` attribute joins by reference.
+///
+/// Byte-identical to [`canonical_form_of_json`] over the fully-assembled value
+/// (RFC 8785 orders keys), without deep-copying the — potentially large —
+/// `data` subtree into the envelope. A JSON-null `data` stays absent, matching
+/// a Version with Void data (RM common §"Logical Deletion"); a `signature` on
+/// the envelope is dropped exactly as [`canonical_form_of_json`] drops it.
+///
+/// # Errors
+/// Returns [`CanonicalFormError::Canonicalize`] if RFC 8785 canonicalisation
+/// of the joined value fails.
+pub fn canonical_form_of_json_with_data(
+    envelope: &Value,
+    data: &Value,
+) -> Result<String, CanonicalFormError> {
+    let Value::Object(map) = envelope else {
+        return canonical_form_of_json(envelope);
+    };
+    let mut view: std::collections::BTreeMap<&str, &Value> = map
+        .iter()
+        .filter(|(k, _)| k.as_str() != "signature")
+        .map(|(k, v)| (k.as_str(), v))
+        .collect();
+    if !data.is_null() {
+        view.insert("data", data);
+    }
+    serde_jcs::to_string(&view).map_err(CanonicalFormError::Canonicalize)
 }
 
 #[cfg(test)]

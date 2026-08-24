@@ -80,6 +80,10 @@ ALTER TABLE cold.vo_attestation
 -- The EHR-scoped lookups: the archive/restore/purge sweeps and the EHR-keyed
 -- read fallbacks address whole EHRs, never single rows.
 CREATE INDEX idx_cold_vo_version_ehr ON cold.vo_version (ehr_id, kind);
+-- Mirror of idx_vo_version_current_ehr so a union-view current lookup plans
+-- the same index path on both legs.
+CREATE INDEX idx_cold_vo_version_current_ehr ON cold.vo_version (ehr_id, kind)
+    WHERE upper_inf(sys_period) AND branch_number = 0;
 CREATE INDEX idx_cold_node_ehr ON cold.node (ehr_id);
 CREATE INDEX idx_cold_vo_attestation_version ON cold.vo_attestation (vo_id, sys_version);
 

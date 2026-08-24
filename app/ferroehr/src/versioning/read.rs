@@ -271,6 +271,28 @@ pub(crate) async fn read_current(
         .transpose()
 }
 
+/// Read the current versions of a SET of objects in ONE statement (the
+/// extract export's demographics batch), each passing the same `spec_profile`
+/// gate a point read passes; keyed by `vo_id`, with absent objects simply
+/// missing from the map.
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_currents`, or the
+/// `spec_profile` refusal of [`version_read`] on any member.
+pub(crate) async fn read_currents(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    vo_ids: &[VoId],
+) -> Result<std::collections::HashMap<VoId, VersionRead>, ServiceError> {
+    let stored = crate::storage::version_repo::read::read_currents(pool, vo_ids).await?;
+    let mut out = std::collections::HashMap::with_capacity(stored.len());
+    for s in stored {
+        let vo_id = s.vo_id;
+        out.insert(vo_id, version_read(profile, s)?);
+    }
+    Ok(out)
+}
+
 /// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
 /// — for internal callers that key rows by ordinal (the FHIR mapping table,
 /// extract export iteration), never for wire version ids.

@@ -590,6 +590,22 @@ nothing" rather than failing loudly. Do **not** set `config.tenancy.header` in
 production. **To turn it off**, set `enabled: false`; the server then behaves
 byte-for-byte as a single-tenant system.
 
+## Version signing
+
+Every version the server commits can carry a `VERSION.signature`, computed
+inside the write transaction over the canonical form of the version itself.
+Signing is **on by default** in `digest` mode, and read-time verification of
+the server's own signatures defaults to `strict`, so a served version that no
+longer matches its stored signature is a `500` rather than a silently served
+record.
+
+The chapter **[Version signing](signing/index.md)** covers the mechanism in two
+pages: [Digest signing](signing/digest.md) (what is signed, when, what the
+stored value proves, and how to reproduce it yourself) and
+[PGP signing](signing/pgp.md) (key configuration and rotation, client-supplied
+signatures, and the signature an import wrapper carries). The `[signing]` keys
+are in the [configuration reference](installation/config-auth.md#signing).
+
 ## ATNA audit trail
 
 Separately from openEHR's own provenance, FerroEHR keeps an IHE ATNA

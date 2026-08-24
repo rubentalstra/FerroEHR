@@ -495,6 +495,15 @@ CREATE UNIQUE INDEX uq_vo_version_branch_current ON vo_version
 CREATE UNIQUE INDEX uq_vo_version_trunk_position ON vo_version (vo_id, trunk_version)
     WHERE branch_number = 0;
 CREATE INDEX idx_vo_version_ehr ON vo_version (ehr_id, kind);
+-- The most-executed predicate family: "the current trunk row(s) of this EHR's
+-- objects of one kind" (EHR_STATUS/FOLDER current reads, EHR summaries, the
+-- directory join) and the persistent-duplicate probe. Partial over open trunk
+-- rows only, so those lookups never touch an EHR's version history and the
+-- index carries exactly one entry per live object.
+CREATE INDEX idx_vo_version_current_ehr ON vo_version (ehr_id, kind)
+    WHERE upper_inf(sys_period) AND branch_number = 0;
+CREATE INDEX idx_vo_version_current_template ON vo_version (ehr_id, template_id)
+    WHERE upper_inf(sys_period) AND branch_number = 0 AND template_id IS NOT NULL;
 CREATE INDEX idx_vo_version_contribution ON vo_version (contribution_id);
 CREATE INDEX idx_vo_version_audit ON vo_version (audit_id);
 CREATE INDEX idx_vo_version_template ON vo_version (template_id) WHERE template_id IS NOT NULL;

@@ -340,6 +340,34 @@ pub async fn read_current(
         .transpose()
 }
 
+/// Read the current TRUNK versions of a SET of objects in ONE statement.
+///
+/// The extract export's demographics chapter resolves every referenced party
+/// with one round trip instead of a point read per party. Objects that never
+/// existed are simply missing from the result.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver/reassembly failure.
+pub async fn read_currents(
+    pool: &PgPool,
+    vo_ids: &[VoId],
+) -> Result<Vec<StoredVersion>, StorageError> {
+    const SQL: &str = version_select!(
+        "WHERE v.vo_id = ANY($1) AND upper_inf(v.sys_period) AND v.branch_number = 0"
+    );
+    if vo_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let ids: Vec<Uuid> = vo_ids.iter().map(|id| id.0).collect();
+    let rows = sqlx::query(SQL).bind(&ids).fetch_all(pool).await?;
+    rows.into_iter()
+        .map(|row| {
+            let vo_id: VoId = row.try_get("vo_id")?;
+            stored_version(vo_id, &row)
+        })
+        .collect()
+}
+
 /// Read a specific version by its STORAGE ORDINAL (`sys_version`) — for internal
 /// callers that key rows by ordinal (the FHIR mapping table, extract export
 /// iteration), never for wire version ids.
