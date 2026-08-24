@@ -25,7 +25,7 @@ openehr-its = "0.0.29"
 ```
 
 All eight are **edition 2024** with an MSRV of **Rust 1.96**, and all eight
-inherit the workspace lint table — including `unsafe_code = "forbid"`, which no
+inherit the workspace lint table, including `unsafe_code = "forbid"`, which no
 attribute anywhere in the crate can relax. There is no `unsafe` block in the
 published specification layer.
 
@@ -34,7 +34,7 @@ published specification layer.
 ## Generations: reaching more than one specification version
 
 A crate generated from more than one openEHR generation exposes each as a
-**version-named module** — `openehr_rm::v1_1` and `openehr_rm::v1_2`,
+**version-named module**: `openehr_rm::v1_1` and `openehr_rm::v1_2`,
 `openehr_base::v1_2` / `v1_3`, `openehr_am::v1_4` / `v2_4`,
 `openehr_lang::v1_0` / `v1_1`, `openehr_term::v3_1`. The crate's `prelude`
 re-exports the **current** generation, so ordinary code needs no module path;
@@ -61,16 +61,16 @@ contain*, because upstream publishes two BMM meta-models side by side. Its
 tool-implemented BMM v2.x model (`bmm`, its persistence form
 `bmm_persistence`, and the `beom` expression model) is on the generation's
 prelude, while the paused BMM3 model (`bmm3`) is reachable only by full module
-path. They cannot be merged — a set of class names, `BmmClass`, `BmmModel` and
+path. They cannot be merged (a set of class names, `BmmClass`, `BmmModel` and
 `BmmPackage` among them, occurs in both units with materially different
-shapes — so the prelude carries the stable units and the choice stays explicit
+shapes) so the prelude carries the stable units and the choice stays explicit
 at the use site. The older `v1_0` generation is what its release actually
 defines: the BMM model plus an ODIN reader, with no BEL or Expression-Language
 notation.
 
 ## Versioning
 
-The package version is the crates' **own independent SemVer line** — it tracks
+The package version is the crates' **own independent SemVer line**: it tracks
 this implementation's code and moves freely with fixes and improvements, never
 with the vendored openEHR specification versions. While the line is `0.0.x`,
 expect breaking changes between releases, which always ship in lockstep across
@@ -78,7 +78,7 @@ all eight crates.
 
 The implemented specification version is therefore a **separate datum, per
 generation**. Each generated crate emits a `Generation` enum that is the only
-authority for it — one variant per generation module, `Default` marking the
+authority for it: one variant per generation module, `Default` marking the
 current one, each variant carrying its specification version as a `const fn`,
 and `Display`/`FromStr` round-tripping the module token:
 
@@ -91,14 +91,14 @@ assert_eq!(openehr_rm::Generation::default().as_str(), "v1_2");
 There is deliberately **no crate-level `SPEC_VERSION` constant in the generated
 crates**: a single constant would contradict a caller using a non-current
 generation. Exactly three crates implement one specification each and do expose
-one — `openehr_its::SPEC_VERSION`, `openehr_query::SPEC_VERSION`,
+one: `openehr_its::SPEC_VERSION`, `openehr_query::SPEC_VERSION`,
 `openehr_adl::SPEC_VERSION`.
 
 ## Building `openehr-its` without its dependencies
 
 `openehr-its` puts every codec behind one default feature, `full`. Taken with
 `default-features = false` it compiles to the SMART App Launch scope grammar
-alone — std-only, with no dependency of any kind — so a REST client targeting
+alone (std-only, with no dependency of any kind) so a REST client targeting
 `wasm32-unknown-unknown` can parse scope strings with the very grammar the CDR
 enforces instead of carrying a second one:
 
@@ -112,7 +112,7 @@ openehr-its = { version = "0.0.29", default-features = false }
 The eight crates are published through a manual release lane that authenticates
 with **crates.io Trusted Publishing** (OIDC, a protected environment, no
 long-lived token anywhere) and publishes them **one at a time in dependency
-order**, treating "already exists on the index" as done — so a run interrupted
+order**, treating "already exists on the index" as done, so a run interrupted
 halfway can simply be re-run to finish the set. The lane then reads the
 registry back and refuses to report success unless all eight resolve at the
 same version, because while the line is `0.0.x` a straggler makes its siblings'
@@ -122,12 +122,12 @@ internal requirements unresolvable for every consumer.
 
 `openehr-query` and `openehr-adl` are plain **MIT**: their packages ship only
 their own Rust sources, the README, and the MIT text. Five of the crates that
-embed material derived from the official openEHR machine-readable artifacts —
-generated types carrying specification documentation text, and the vendored
-ITS-JSON schema — declare **`MIT AND Apache-2.0`** and ship both license texts
+embed material derived from the official openEHR machine-readable artifacts
+(generated types carrying specification documentation text, and the vendored
+ITS-JSON schema) declare **`MIT AND Apache-2.0`** and ship both license texts
 in the package. `openehr-its` is the one of them that packages a third-party
 file as bytes rather than as generated code, so its README carries that file's
-attribution — upstream repository, the exact vendored commit, and the license —
+attribution (upstream repository, the exact vendored commit, and the license)
 inside the package, where it travels with any redistribution.
 
 `openehr-term` carries a third term, because it embeds a different kind of

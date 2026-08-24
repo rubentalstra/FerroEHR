@@ -1,7 +1,7 @@
 # Getting started
 
 This chapter takes you from nothing to a running server with a template loaded,
-a clinical composition stored, and an AQL query returning results — in a few
+a clinical composition stored, and an AQL query returning results in a few
 minutes, using Docker Compose. It is the fastest way to see FerroEHR work end to
 end and to get a feel for the API before reading the reference chapters.
 Everything here uses the built-in development credentials; do not use them
@@ -19,8 +19,8 @@ outside local evaluation.
 ## 1. Start the stack
 
 You need Docker with the Compose plugin (2.23.1 or newer). Download
-`docker-compose.yml` — attached to every
-[release](https://github.com/rubentalstra/FerroEHR/releases/latest) — into an
+`docker-compose.yml` (attached to every
+[release](https://github.com/rubentalstra/FerroEHR/releases/latest)) into an
 empty directory and start it:
 
 ```shell
@@ -30,7 +30,7 @@ docker compose up
 This pulls and starts two services: the server (`ferroehr`) on port **8080**,
 and a preconfigured **PostgreSQL 18** database. The server runs its schema
 migrations automatically on first boot, so the database is ready as soon as it
-reports healthy. Nothing else is needed — the server's configuration travels
+reports healthy. Nothing else is needed: the server's configuration travels
 inside the Compose file, which also ships one Basic-auth user (`ferroehr` /
 `ferroehr`, holding both the `ADMIN` and `USER` roles) so the API authenticates
 out of the box.
@@ -52,14 +52,14 @@ The status endpoint is public and confirms the server is up:
 curl http://localhost:8080/ferroehr/rest/status
 ```
 
-It answers a small JSON document — `status`, `server_version`,
+It answers a small JSON document: `status`, `server_version`,
 `openehr_rest_api_version` and a `timestamp`. All clinical API routes live under
 the base path `/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is
 served at <http://localhost:8080/ferroehr/rest/swagger-ui>, and the full
 endpoint reference is published on the documentation site under `/ferroehr/api/`
 (the **API** tab).
 
-There are also three always-on, unauthenticated health endpoints — `/health`,
+There are also three always-on, unauthenticated health endpoints: `/health`,
 `/health/liveness` and `/health/readiness`; the last one reports each
 dependency it checked. See [Operations → Health probes](operations.md#health-probes).
 
@@ -132,8 +132,8 @@ curl -u ferroehr:ferroehr \
   http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition
 ```
 
-On success you get `201 Created` and — because of `Prefer: return=representation`
-— the stored composition in the body, now carrying a server-assigned version
+On success you get `201 Created` and (because of `Prefer: return=representation`)
+the stored composition in the body, now carrying a server-assigned version
 identifier in its `uid`. If the composition does not conform to its template you
 get `422 Unprocessable Entity` with the validation errors; a malformed request
 gets `400 Bad Request`. The composition walkthrough in
@@ -154,7 +154,7 @@ curl -u ferroehr:ferroehr \
 
 The response is a `RESULT_SET`: a `columns` array describing each selected value
 and a `rows` array of result tuples. To pull values out of the compositions you
-committed, select by their archetype path — for example, every systolic blood
+committed, select by their archetype path, for example every systolic blood
 pressure above 140:
 
 ```shell
@@ -171,10 +171,10 @@ feature set.
 
 Open <http://localhost:8080/ferroehr/rest/swagger-ui> to browse and try every
 endpoint from your browser. The UI's spec selector carries one entry per API
-family — the standardised openEHR groups (EHR, Query, Definition, Demographic,
+family: the standardised openEHR groups (EHR, Query, Definition, Demographic,
 Admin) and the server's own extensions (status & management, terminology, party
 relationships, messaging, event subscriptions, multi-tenancy, the FHIR
-connector, SMART discovery) — plus **FerroEHR — Complete surface** last, which
+connector, SMART discovery), plus **FerroEHR — Complete surface** last, which
 is the whole server in one document. Every entry is filtered from that same
 document, which the server generates from its own handlers, so nothing here can
 drift from the routes it actually serves. When authentication is enabled the

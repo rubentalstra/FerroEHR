@@ -23,21 +23,21 @@ RO mounts        : /etc/ferroehr  /etc/ferroehr-secrets  /sys  /sys/fs/cgroup
 Three things worth drawing out. The capability bounding set is **empty**, so the
 drop is total at the kernel level rather than a subtraction from a runtime's
 default set. `readOnlyRootFilesystem: true` needed exactly **one** writable
-path — the chart's own `/tmp` emptyDir — and no per-integration surprise, which
+path (the chart's own `/tmp` emptyDir) and no per-integration surprise, which
 is what makes it safe to keep rather than the setting an operator relaxes during
 the first incident. And the server pod carries no init containers and no
 sidecars, so the context above is the whole pod.
 
 What keeps it true is not this page. `deploy/helm/validate.sh` parses the rendered
 objects and asserts the Restricted fields **per container, for every workload in
-the render** — including the optional admin console and the migration Job — and
+the render** (including the optional admin console and the migration Job) and
 the golden renders pin the exact bytes, so even a changed default fails a diff.
 Both run in CI on any change to the chart. That structure is deliberate: the gate
 this replaced grepped the rendered file for field names, so one compliant
 container vouched for every other one, and a second workload could ship
 non-compliant while the gate stayed green. The gate also fails when it finds
 nothing to check, because a pod-less render reporting "all containers compliant"
-is a false green — and it fails when a render carries no NetworkPolicy, or when a
+is a false green, and it fails when a render carries no NetworkPolicy, or when a
 multi-replica Deployment has neither spread constraints nor affinity.
 
 A template edit that drops `securityContext.readOnlyRootFilesystem` or
@@ -46,7 +46,7 @@ A template edit that drops `securityContext.readOnlyRootFilesystem` or
 ## Beyond Restricted: the user namespace
 
 The Restricted profile stops a container from *asking* for privilege. It does
-nothing about what a container's UID means **on the node** — and under the
+nothing about what a container's UID means **on the node**, and under the
 Kubernetes default, uid 65532 in the pod is uid 65532 on the host, so a container
 escape arrives as a real host user with whatever that user can reach.
 
@@ -62,8 +62,8 @@ uid=65532 gid=65532 groups=65532
 ```
 
 The process still sees uid 65532; the kernel sees an offset host UID inside that
-mapped range. Root *inside* the pod — which this workload never uses, but a
-compromised process might reach for — maps to the base of the range, which owns
+mapped range. Root *inside* the pod (which this workload never uses, but a
+compromised process might reach for) maps to the base of the range, which owns
 nothing. Capabilities granted inside the namespace do not apply outside it.
 
 This is why the chart's `kubeVersion` floor is **1.36**: that is the release where
@@ -80,7 +80,7 @@ rather than stating the API default, so a future cluster-wide default can still
 apply.
 
 The same reasoning drives `podSecurityContext.supplementalGroupsPolicy: Strict`,
-so the process gets only the groups the manifest names — a group baked into an
+so the process gets only the groups the manifest names: a group baked into an
 image cannot widen file access. And the chart's render gate asserts that this
 isolation set is **identical across every workload of a release**: a console that
 shared the host user namespace while the server did not would be a posture nobody
@@ -100,7 +100,7 @@ STATUS: AppArmor
 Warning  AppArmor  pod/…  Cannot enforce AppArmor: AppArmor is not enabled on the host
 ```
 
-Turn it on once you know your nodes carry it — most Debian and Ubuntu nodes do,
+Turn it on once you know your nodes carry it: most Debian and Ubuntu nodes do,
 while Docker Desktop and several minimal distributions do not:
 
 ```yaml
@@ -145,7 +145,7 @@ moves.
 **Why the chart does not do this itself**, recorded so it is not re-litigated:
 Helm installs *into* a namespace that already exists (or one
 `helm --create-namespace` creates, which is the CLI's action and not a template),
-so a chart that declared its own release namespace would fight the tool — and
+so a chart that declared its own release namespace would fight the tool, and
 `helm uninstall` would then delete a namespace holding objects the release does
 not own. More fundamentally, a PSA label is **namespace-wide policy**: it governs
 every workload in that namespace, including backup jobs, sidecars and any database
@@ -154,7 +154,7 @@ an operator colocates. A single application chart is the wrong scope to claim it
 Observed on a live cluster, in a namespace labelled `enforce=restricted`, with the
 database genuinely external to it:
 
-- **the chart installs and serves unchanged** — both replicas running with no
+- **the chart installs and serves unchanged:** both replicas running with no
   restarts, readiness `UP`, and a real openEHR write accepted. No admission
   warnings for its pods.
 - **a regression of the chart's own pod spec is refused.** Upgrading with
@@ -167,7 +167,7 @@ database genuinely external to it:
   securityContext.privileged=true), allowPrivilegeEscalation != false
   ```
 
-  while the healthy ReplicaSet kept both replicas serving — because
+  while the healthy ReplicaSet kept both replicas serving, because
   `maxUnavailable: 0` means the rollout cannot retire a good pod before a
   replacement is ready. The two controls compose: the label refuses the
   regression, and the strategy means the refusal costs no availability.
@@ -186,8 +186,8 @@ production posture puts the database outside the cluster.
 
 **Not required, and the reason matters more than the conclusion.** The cheat sheet
 scopes sandboxing (Kata, gVisor, Firecracker) to clusters running *untrusted*
-workloads. This is our own code, so the threat it addresses — a container escape
-by hostile software you chose to run — is not the one in front of us. And the
+workloads. This is our own code, so the threat it addresses (a container escape
+by hostile software you chose to run) is not the one in front of us. And the
 escape it hardens against is already narrowed by the pod's own user namespace,
 which is on by default.
 
@@ -195,7 +195,7 @@ which is on by default.
 > **A container sandbox does nothing for this server's multi-tenancy**, and that
 > is the misreading worth preventing. Tenants of a single release share **one
 > process and one database**; they are separated by PostgreSQL row-level security
-> and a per-request session setting — *inside* the container. A sandbox draws a
+> and a per-request session setting, *inside* the container. A sandbox draws a
 > stronger boundary around the whole container, which both tenants are already on
 > the same side of. Hardening the sandbox changes nothing about tenant isolation;
 > only the [namespace-per-tenant
@@ -204,7 +204,7 @@ which is on by default.
 
 A sandbox is worth considering in one case: a cluster where this workload runs
 **beside** third-party or customer-supplied code, and you want to protect this
-workload's node from *that*. Note the cost first — a sandboxed runtime changes the
+workload's node from *that*. Note the cost first: a sandboxed runtime changes the
 syscall surface and the performance profile of a database-bound server, and the
 gVisor/Kata runtimes need a `RuntimeClass` the chart does not set (add it through
 your platform's pod defaults if you adopt one).
@@ -215,8 +215,8 @@ your platform's pod defaults if you adopt one).
 and worth recording precisely rather than deferring.
 
 Loading a kernel module requires **`CAP_SYS_MODULE`**. The container's capability
-bounding set is **empty** — read off the running container rather than merely
-requested in the manifest — and `allowPrivilegeEscalation: false` with
+bounding set is **empty** (read off the running container, not off the
+manifest's request) and `allowPrivilegeEscalation: false` with
 `noNewPrivileges` set means no `setuid` binary can regain it. The pod's own user
 namespace makes the point twice over: a capability held inside it does not apply
 outside it. So this container cannot trigger a module load at all, whatever

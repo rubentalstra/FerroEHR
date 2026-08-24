@@ -1,6 +1,6 @@
 # From source
 
-You can build the `ferroehr` binary yourself — for a platform without a
+You can build the `ferroehr` binary yourself: for a platform without a
 published image, for local development, or to run the test suite. This chapter
 covers the prerequisites and the build. Most operators should prefer the
 published container images ([Docker Compose](compose.md),
@@ -10,11 +10,11 @@ published container images ([Docker Compose](compose.md),
 
 - **The pinned Rust toolchain.** The repository pins Rust **1.96.1** (edition
   2024) via `rust-toolchain.toml`, so `rustup` installs and selects it
-  automatically the first time you build in the checkout — you do not choose a
+  automatically the first time you build in the checkout; you do not choose a
   version by hand.
-- **Docker** — required only for the integration tests, which spin up a real
+- **Docker:** required only for the integration tests, which spin up a real
   PostgreSQL 18 in a container.
-- **`xmllint`** — required only for the canonical-XML tests.
+- **`xmllint`:** required only for the canonical-XML tests.
 
 ## Building
 
@@ -33,7 +33,7 @@ cargo build --release --locked -p ferroehr-server
 
 The binary crate is `ferroehr-server`; the executable it produces is named
 `ferroehr`, so the resulting binary is `target/release/ferroehr`. It links a
-pure-Rust TLS stack — no OpenSSL, no JVM, no runtime dependencies — so it
+pure-Rust TLS stack (no OpenSSL, no JVM, no runtime dependencies) so it
 drops into a minimal base image or runs directly on the host.
 
 ## Running the tests
@@ -45,7 +45,7 @@ cargo nextest run --workspace
 Every database-backed test takes its database from a shared harness: one
 PostgreSQL 18 server, one migrated template database, and a fast clone per
 test. By default the harness starts (or re-adopts) a single reusable `postgres:18` container, so
-Docker must be running — reclaim it afterwards with
+Docker must be running; reclaim it afterwards with
 `docker rm -f ferroehr-testkit-pg18`. To use a PostgreSQL 18 server you already
 run instead, point the suite at it and Docker is not needed at all:
 
@@ -80,12 +80,12 @@ Two global flags and three subcommand groups round the CLI out:
 - `--set <key>=<value>` is a repeatable dotted-path override with the highest
   precedence of all (`--set db.max_connections=40`);
 - `ferroehr config check` validates the effective configuration and prints it
-  redacted, exiting 0 when valid and 1 otherwise — the fastest way to test a
+  redacted, exiting 0 when valid and 1 otherwise, the fastest way to test a
   deployment's configuration before starting it;
 - `ferroehr config default` writes the annotated default configuration
   template to stdout, which is the reference every key in the
   [configuration reference](configuration.md) is drawn from;
-- `ferroehr db migrate` applies the embedded migrations and exits — the
+- `ferroehr db migrate` applies the embedded migrations and exits, the
   out-of-band schema step, run under a `ferroehr_migrator` DSN;
 - `ferroehr db verify` checks, without issuing any DDL, that the database
   carries exactly this build's migrations, exiting 0 when it does;
@@ -95,7 +95,7 @@ Two global flags and three subcommand groups round the CLI out:
   `FERROEHR_HEALTHCHECK_URL`.
 
 > [!NOTE]
-> Building from source gives you the same binary the images use — the container
+> Building from source gives you the same binary the images use: the container
 > Dockerfile pins its Rust version from the same `rust-toolchain.toml`, and CI
 > cross-checks the two so they cannot drift.
 
@@ -116,7 +116,7 @@ cargo build --release --locked -p ferroehr-server --no-default-features
 ```
 
 A slim binary refuses loudly at boot if the configuration enables an
-integration it was built without — `multimedia.enabled`, `events.enabled`,
+integration it was built without: `multimedia.enabled`, `events.enabled`,
 `fhir.outbound.enabled`, `audit.store.enabled`, `audit.fhir_feed.enabled`,
 or a configured external FHIR terminology provider. The syslog ATNA feed and
 the in-process terminology bundle remain available in slim builds.
@@ -125,5 +125,5 @@ the in-process terminology bundle remain available in slim builds.
 > The local audit store is **on in the shipped defaults**, so a slim build
 > refuses to start on an untouched configuration. To run one, disable it
 > explicitly (`FERROEHR__AUDIT__STORE__ENABLED=false`) or configure the
-> syslog feed as the audit sink — silently dropping the audit trail is not
+> syslog feed as the audit sink; silently dropping the audit trail is not
 > a boot mode.

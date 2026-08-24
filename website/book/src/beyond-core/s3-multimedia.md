@@ -1,7 +1,7 @@
 # S3 multimedia
 
-Clinical records sometimes carry large binary attachments — scanned documents,
-images, waveforms — as `DV_MULTIMEDIA` values. Keeping big blobs inline in the
+Clinical records sometimes carry large binary attachments (scanned documents,
+images, waveforms) as `DV_MULTIMEDIA` values. Keeping big blobs inline in the
 database bloats storage and slows queries. FerroEHR can offload large multimedia
 blobs to any S3-compatible object store, keeping a small content-addressed
 reference in the composition, and re-materialize them on demand when a record is
@@ -15,8 +15,8 @@ Offload is a commit-path transformation applied to `DV_MULTIMEDIA` nodes anywher
 in the tree, including a node's nested `thumbnail`, which is itself a multimedia
 value:
 
-1. A node **qualifies** only when it is purely inline — it has `data` and no
-   `uri` — and its **decoded** byte length is **strictly greater** than the
+1. A node **qualifies** only when it is purely inline (it has `data` and no
+   `uri`) and its **decoded** byte length is **strictly greater** than the
    configured threshold. A value at or below the threshold stays inline; a value
    that already references external media is stored verbatim, never touched.
 2. The raw decoded bytes are written to the object store under a key that is the
@@ -29,12 +29,12 @@ value:
    `size` set to the decoded byte length.
 
 Uploads happen before anything is persisted, so a failed upload aborts the commit
-— a record is never half-stored, and the version count is unchanged.
+and a record is never half-stored, so the version count is unchanged.
 
 > [!NOTE]
 > What lives where afterwards: the object store holds the blob bytes; the
 > composition in PostgreSQL holds a compact, spec-legal `DV_MULTIMEDIA` that
-> points at the blob by content hash. Everything stays canonical openEHR JSON —
+> points at the blob by content hash. Everything stays canonical openEHR JSON:
 > the `s3://` reference and the integrity fields are standard Reference Model
 > attributes, not FerroEHR inventions. The digest appears twice in two
 > encodings, because the model asks for it that way: `integrity_check` is a byte
@@ -43,15 +43,15 @@ Uploads happen before anything is persisted, so a failed upload aborts the commi
 
 ## Reading blobs back
 
-By default a read returns the stored form — the compact reference. To get the
+By default a read returns the stored form, the compact reference. To get the
 bytes back inline, ask for expansion on the read with `?expand_multimedia=true`.
 It is available on the reads that can return externalized content: composition
 and versioned-composition reads, `EHR_STATUS` and its versioned reads, and
 directory (folder) reads.
 
-The server fetches each of *its own* externalized blobs — only URIs of the exact
+The server fetches each of *its own* externalized blobs (only URIs of the exact
 form `s3://<configured-bucket>/<hash>` count as its own, so a foreign `https://`
-or other-bucket reference is left alone — **verifies the SHA-256 of the fetched
+or other-bucket reference is left alone) **verifies the SHA-256 of the fetched
 bytes against the key**, and only then re-inlines the `data`. A hash mismatch is a
 hard error, so a corrupted or tampered blob is never quietly served.
 
@@ -62,7 +62,7 @@ subsequent commit of that same body re-offloads cleanly.
 If the object store is unreachable, both halves of the path fail loudly rather
 than losing content: a commit that needs to offload is refused `500` and nothing
 is written, and an expanded read of an already-offloaded record is refused `500`. A
-read **without** `expand_multimedia` still answers `200` — it never touches the
+read **without** `expand_multimedia` still answers `200`; it never touches the
 store.
 
 ## Turning it back off
@@ -81,7 +81,7 @@ store.
 > [!WARNING]
 > **Removing the `endpoint` as well is the decision that matters.** With no store
 > reachable at all, an expansion request against an already-offloaded record
-> **fails** — it does not quietly answer `200` with the compact reference. The
+> **fails**, and does not quietly answer `200` with the compact reference. The
 > bytes are still in your bucket and still reachable with an S3 client; the API
 > refuses rather than pretending the request was honoured. So decide what happens
 > to the blobs already in the bucket before you remove the endpoint, not before
@@ -103,26 +103,26 @@ every default and its meaning is on
 | `FERROEHR__MULTIMEDIA__THRESHOLD_BYTES` | `262144` (256 KiB) | offload blobs larger than this; smaller stay inline |
 | `FERROEHR__MULTIMEDIA__ENDPOINT` | unset | S3 endpoint URL; unset uses default AWS endpoint resolution |
 | `FERROEHR__MULTIMEDIA__BUCKET` | `openehr-multimedia` | target bucket |
-| `FERROEHR__MULTIMEDIA__REGION` | `us-east-1` | S3 region — required even for non-AWS endpoints |
+| `FERROEHR__MULTIMEDIA__REGION` | `us-east-1` | S3 region, required even for non-AWS endpoints |
 | `FERROEHR__MULTIMEDIA__ACCESS_KEY_ID` | unset | access key id |
 | `FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY` | unset | secret key (or `…__SECRET_ACCESS_KEY_FILE` for a mounted secret) |
-| `FERROEHR__MULTIMEDIA__ALLOW_HTTP` | `false` | permit plain-HTTP endpoints — development only |
+| `FERROEHR__MULTIMEDIA__ALLOW_HTTP` | `false` | permit plain-HTTP endpoints, development only |
 
 With both the access key and the secret unset, the client runs unsigned
-(anonymous) — the mode a local development SeaweedFS gateway accepts with no
+(anonymous), the mode a local development SeaweedFS gateway accepts with no
 credentials. Set both to make signed requests against a real store.
 
 An enabled integration is refused at **boot** when its `endpoint` is set but
 blank, relative, or carrying a scheme other than `http` or `https`. That case is
-easy to reach by accident — an unset Compose variable expanding to nothing, an
-empty Helm value, a bare `host:port` — so it is refused where an operator can
+easy to reach by accident (an unset Compose variable expanding to nothing, an
+empty Helm value, a bare `host:port`) so it is refused where an operator can
 still act on it, rather than at the first multimedia commit.
 
 > [!WARNING]
 > **The bucket must already exist.** The server never creates it, and a missing
 > bucket is not distinguishable on the wire: S3 answers a `PUT` into a bucket that
 > does not exist with `403 AccessDenied`, not `404 NoSuchBucket`. So every
-> multimedia commit fails `500` and the log says `Access Denied` — which reads
+> multimedia commit fails `500` and the log says `Access Denied`, which reads
 > like a credentials problem and is not one. Create the bucket before you enable
 > the integration; the SeaweedFS recipe below shows the one-liner.
 
@@ -136,13 +136,13 @@ still act on it, rather than at the first multimedia commit.
 > Externalization is also a **cargo feature** (`multimedia`), on in the published
 > images and any default build. A slim `--no-default-features` build contains none
 > of the object-store code and **refuses to boot** with `multimedia.enabled = true`
-> rather than silently storing every blob inline — see
+> rather than silently storing every blob inline; see
 > [From source → Build features](../installation/from-source.md#build-features).
 
 ### On Kubernetes
 
 Every key above is reachable as `config.multimedia.*`
-([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here));
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable));
 the S3 credentials go through `secrets.*`, which the chart mounts as files:
 
 ```yaml
@@ -158,18 +158,18 @@ secrets:
   multimediaSecretAccessKey: "…"
 ```
 
-**Before you enable it:** the bucket must exist — nothing in the chart creates it
-— and, if the chart's default-deny egress policy is on, an egress rule must admit
+**Before you enable it:** the bucket must exist (nothing in the chart creates it)
+and, if the chart's default-deny egress policy is on, an egress rule must admit
 the endpoint. **To turn it off**, set `config.multimedia.enabled: false` and leave
 the `endpoint` in place so already-externalized content stays readable (see
 [Turning it back off](#turning-it-back-off)).
 
 ## Quick setup with SeaweedFS
 
-Any S3-compatible store works — AWS S3, MinIO, SeaweedFS. SeaweedFS is a light
+Any S3-compatible store works: AWS S3, MinIO, SeaweedFS. SeaweedFS is a light
 option for development and testing: its S3 gateway needs no credentials.
 
-**Step 1 — create the bucket.** The gateway starts with no buckets at all, and
+**Step 1, create the bucket.** The gateway starts with no buckets at all, and
 nothing in it creates one. Against an unauthenticated development gateway a bare
 `PUT` on the bucket path is enough:
 
@@ -184,7 +184,7 @@ exactly that `PUT` once the gateway is healthy, reading the same bucket variable
 the server does so the two cannot disagree. This step is only for a gateway you
 run yourself.
 
-**Step 2 — point the server at the gateway** and allow plain HTTP for local use:
+**Step 2, point the server at the gateway** and allow plain HTTP for local use:
 
 ```bash
 export FERROEHR__MULTIMEDIA__ENABLED=true
@@ -194,10 +194,10 @@ export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true
 ```
 
 The same exports drive the Compose stack, which passes the whole
-`FERROEHR__MULTIMEDIA__*` set through from your shell — only the endpoint changes,
+`FERROEHR__MULTIMEDIA__*` set through from your shell; only the endpoint changes,
 to the in-network hostname `http://seaweedfs:8333`.
 
-**Step 3 — check what the server actually took.** `/management/env` reports the
+**Step 3, check what the server actually took.** `/management/env` reports the
 effective configuration, which is the quickest way to catch a variable that never
 arrived:
 
@@ -217,6 +217,6 @@ the database.
 
 > [!NOTE]
 > Base64 inflates a blob by about a third on the wire, and the whole request body
-> is still subject to `[server.limits] body_bytes` (16 MiB by default) — a
+> is still subject to `[server.limits] body_bytes` (16 MiB by default); a
 > composition that exceeds it is refused `413` before offload is ever considered.
 > See [`[server.limits]`](../installation/config-server.md#serverlimits-request-body-sizes).

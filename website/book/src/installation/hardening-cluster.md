@@ -15,12 +15,12 @@ The part worth stating precisely is the **version window**. Upstream Kubernetes
 maintains release branches for the **three most recent minor releases**, each
 receiving roughly a year of patch support
 ([kubernetes.io/releases](https://kubernetes.io/releases/)). A cluster below that
-window receives **no security backports at all** — a published CVE in the API
+window receives **no security backports at all**: a published CVE in the API
 server or kubelet simply stays open on it.
 
 The chart's `kubeVersion: ">=1.36.0-0"` is a **compatibility** floor, not a
 statement about that window. It sits at the window's newest release because 1.36
-is where the newest field the chart renders — `hostUsers`, user namespaces —
+is where the newest field the chart renders (`hostUsers`, user namespaces)
 became stable, which is what lets every field it renders apply unconditionally
 instead of being gated into silence on the clusters that most needed it. The cost
 is real and worth naming: an operator one minor behind cannot install this chart.
@@ -58,8 +58,8 @@ scheduling capacity a `maxUnavailable: 0` rollout **stalls visibly** instead of
 proceeding at reduced capacity.
 
 Observed on a live cluster rather than argued: a probe pod drove a long run of
-sequential requests at the Service through a full `helm upgrade` — with
-`Killing`/`Started` events for both replicas inside the window — and recorded no
+sequential requests at the Service through a full `helm upgrade`, with
+`Killing`/`Started` events for both replicas inside the window, and recorded no
 failed request, while the ReplicaSet history showed the old revision scaled to
 zero as the new one scaled up (a roll, not a recreate) and the Deployment reported
 `Available=True (MinimumReplicasAvailable)` throughout.
@@ -79,13 +79,13 @@ about them.
 decision, so it is not mistaken for an oversight: we run no cluster and cannot act
 on a node or control-plane CVE, and a watcher that opened issues we could only
 close as "the operator's" would be noise that trains people to ignore it. What we
-*do* track is what we ship — dependency advisories on every change, our own
+*do* track is what we ship: dependency advisories on every change, our own
 container images on a schedule, and the openEHR specifications through release
 watchers.
 
 A vulnerability in Kubernetes itself is reported to
 [Kubernetes](https://kubernetes.io/docs/reference/issues-security/security/), not
-to this project. A vulnerability in FerroEHR — including in the chart — comes to
+to this project. A vulnerability in FerroEHR, including in the chart, comes to
 us, through the security policy published with the source.
 
 ## The dashboard we do not ship
@@ -95,22 +95,22 @@ depends on one. If you install one, the cheat sheet's conditions apply: never
 expose it publicly, give it a limited-privilege ServiceAccount, and put an
 authenticating reverse proxy in front of it if it must be reachable at all.
 
-The reason this section is not simply "not applicable" is that **the same
-reasoning applies to two surfaces that _are_ ours**, and an operator hardening
+This section stays because **the same reasoning applies to two surfaces that
+_are_ ours**, and an operator hardening
 "the dashboard" should find them here:
 
-- **`/management/*`** — the ops-introspection surface (`info`, `prometheus`,
+- **`/management/*`:** the ops-introspection surface (`info`, `prometheus`,
   `metrics`, `env`, `loggers`, `flamegraph`). It is a privileged read onto the
   deployment: `env` renders the effective configuration and `flamegraph` profiles
   the live process. The chart ships the master switch on and **every endpoint
   `off`**, so nothing is exposed until you name an endpoint and a level. Set
   `config.management.port` to move the whole surface onto its own listener so it
   is never reachable on the clinical API port.
-- **The admin console** — a separate image with its own Deployment, which this
+- **The admin console:** a separate image with its own Deployment, which this
   chart can render but leaves off (`adminUi.enabled`). It consumes the CDR
   strictly over the REST API and holds no database credential, but it is a
   privileged UI and belongs behind the same authenticating edge you would put in
-  front of a dashboard — which is what `adminUi.auth.oidc.enabled` and
+  front of a dashboard, which is what `adminUi.auth.oidc.enabled` and
   `adminUi.ingress.enabled` are for.
 
 ## etcd and what our secrets contain
@@ -123,7 +123,7 @@ component can read.
 
 What makes it concrete for this deployment: **anything that can read etcd can read
 every Secret in the cluster**, and this release's Secrets are not incidental. They
-hold the **database DSN** — the credential that reaches patient data — plus the
+hold the **database DSN** (the credential that reaches patient data) plus the
 OIDC HMAC secret, the version-signing passphrase, any Basic user's Argon2id hash,
 and any terminology-server client secret. So "etcd is a cluster concern" is true
 and insufficient: for this workload etcd is the confidentiality boundary of the
@@ -132,7 +132,7 @@ contain](hardening-detection-response.md#secrets-at-rest-and-what-ours-contain).
 
 Two mitigations you can apply without touching etcd's network posture:
 
-1. **Encryption at rest for Secrets** — not on by default in Kubernetes. See
+1. **Encryption at rest for Secrets:** not on by default in Kubernetes. See
    Kubernetes'
    [encryption-at-rest
    configuration](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/),
@@ -145,8 +145,8 @@ Two mitigations you can apply without touching etcd's network posture:
 ## Ports, theirs and ours
 
 **Operator's, for the cluster's ports.** Block untrusted access to the
-control-plane ports — `6443` (API server), `2379-2380` (etcd), `10250-10257`
-(kubelet and controller/scheduler) — and the worker ports `10248-10250`. An
+control-plane ports `6443` (API server), `2379-2380` (etcd), `10250-10257`
+(kubelet and controller/scheduler), and the worker ports `10248-10250`. An
 exposed `10250` is the kubelet case below.
 
 **Ours, for the workload's ports**, and in the default posture the surface is one
@@ -154,13 +154,13 @@ port:
 
 | Port | Serves | Who should reach it |
 |---|---|---|
-| `8080` (`service.port`) | the openEHR REST API, the always-on `/health` family, and `/management/*` when `config.management.port` is unset | your ingress controller or gateway — not the internet directly |
+| `8080` (`service.port`) | the openEHR REST API, the always-on `/health` family, and `/management/*` when `config.management.port` is unset | your ingress controller or gateway, not the internet directly |
 | `config.management.port` (unset by default) | `/management/*` on its own listener when set | operators and your Prometheus, never clinical clients |
 | `3000` (`adminUi.service.port`) | the admin console, only when `adminUi.enabled` | your ingress controller, in front of an authenticating edge |
 
-Read off the running pod rather than the template — the listening sockets in the
-container's own network namespace — the default posture binds one port and nothing
-else:
+Read off the running pod rather than the template, from the listening sockets in
+the container's own network namespace: the default posture binds one port and
+nothing else:
 
 ```text
 LISTENING TCP ports in the container netns: [8080]
@@ -171,7 +171,7 @@ narrowing is **enforced** is a property of your CNI, not of the object: on a
 cluster whose network plugin does not implement NetworkPolicy the object is
 accepted, stored and displayed with no effect and no warning. Verify it the way
 [the managed-cluster
-section](hardening-detection-response.md#on-a-managed-control-plane) shows —
+section](hardening-detection-response.md#on-a-managed-control-plane) shows:
 attempt a connection the policy should refuse, from a pod in another namespace,
 and require it to fail.
 
@@ -179,7 +179,7 @@ Two limits stated in full under [Namespaces, network & policy
 §Ingress](hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours)
 and repeated because they matter here: with `networkPolicy.ingressFrom` empty the
 rule carries no `from` and therefore admits **every** source, including other
-namespaces (only the port list is narrowed in that state — set
+namespaces (only the port list is narrowed in that state; set
 `networkPolicy.ingressAllowAll: false` to have the chart refuse to render that
 state at all, and the same pair exists for the console under
 `adminUi.networkPolicy`); and a NetworkPolicy is only as real as the CNI that
@@ -191,7 +191,7 @@ implements it.
 authorize, and deny by default.
 
 - **Recommended routes:** OIDC, a managed-IAM integration, or user
-  impersonation — with **MFA** on the identities that can reach the cluster API.
+  impersonation, with **MFA** on the identities that can reach the cluster API.
 - **Not suitable for production:** static token files, long-lived X.509 client
   certificates, and service-account tokens used as human credentials. They cannot
   be revoked individually, they do not expire usefully, and they carry no second
@@ -232,7 +232,7 @@ node.
 **If you are reviewing this chart and reaching for a Role to add: don't.** The
 correct fix for a future feature that genuinely needs the Kubernetes API is a
 Role enumerating exactly the verbs and resources it needs, plus turning the token
-mount back on for that ServiceAccount alone — not a broad grant added
+mount back on for that ServiceAccount alone, not a broad grant added
 speculatively.
 
 ## Kubelet access
@@ -245,7 +245,7 @@ Run every kubelet with `--anonymous-auth=false` and
 endpoint permits **arbitrary command execution in any container on the node**.
 
 For this deployment, spelled out: an attacker reaching an unauthenticated kubelet
-gets a process-level foothold in a running CDR — the ability to read the database
+gets a process-level foothold in a running CDR: the ability to read the database
 DSN out of the mounted secret files, to read patient data straight from memory,
 and to do so **beneath** the layer where authentication, RBAC, ABAC and the ATNA
 audit trail operate, so none of them see it and none of them can stop it.
@@ -253,4 +253,4 @@ Non-root, a read-only root filesystem, an empty capability set and a private use
 namespace raise the cost of what happens next; they do not prevent the entry.
 
 This is a cluster-configuration control, and it is worth confirming rather than
-assuming — an exposed `10250` is a routine finding in real clusters.
+assuming; an exposed `10250` is a routine finding in real clusters.

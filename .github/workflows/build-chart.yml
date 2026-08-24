@@ -1,0 +1,556 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# The chart package + publish, as a REUSABLE workflow — the SLSA Build
+# Level 3 lane for the Helm chart (the mirror of release-build.yml and
+# build-image.yml; #2140). The caller (publish-chart.yml) carries only
+# triggers and passes the one data input below — it cannot add steps
+# beside the packaging and the signing, which is the whole property
+# (https://slsa.dev/spec/v1.2/build-requirements §Provenance is
+# Unforgeable; GitHub's reusable-workflow construction). A consumer pins:
+#
+#   gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr@<digest> \
+#     -R rubentalstra/FerroEHR \
+#     --signer-workflow rubentalstra/FerroEHR/.github/workflows/build-chart.yml
+name: Build chart (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      publish:
+        description: Actually push, sign and attest (false = dry run, package only).
+        required: false
+        type: boolean
+        default: false
+
+permissions: {}
+
+env:
+  CHART_DIR: deploy/helm/ferroehr
+  # `helm push` appends the chart name, so the chart lands at
+  # ghcr.io/<owner>/charts/ferroehr.
+  OCI_NAMESPACE: oci://ghcr.io/${{ github.repository_owner }}/charts
+  CHART_REF: ghcr.io/${{ github.repository_owner }}/charts/ferroehr
+  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
+
+jobs:
+  build:
+    name: package + publish
+    runs-on: ubuntu-latest
+    # A tag run spends most of its wall clock WAITING for containers.yml to
+    # publish the image the acceptance step judges the chart against (see that
+    # step). containers.yml's own `binary` job allows 60 minutes for a cold
+    # per-arch compile, so anything shorter here would time out on the image
+    # lane rather than on this one's work.
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      packages: write # push the chart + the artifacthub.io tag to GHCR
+      id-token: write # Sigstore, for the keyless attestation
+      attestations: write # store it against this repository
+      actions: read # read containers.yml's run status for this tag
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The same helm the golden renders are pinned to, from the same file.
+      # `azure/setup-helm` takes `version`, not `version-file` — an unknown input
+      # is only a warning, so passing the wrong one silently installs the latest
+      # helm and the pin stops meaning anything.
+      - name: Read the pinned helm version
+        id: helm-pin
+        run: |
+          set -euo pipefail
+          version="$(awk '$1 == "helm" { print $2 }' deploy/helm/.tool-versions)"
+          [ -n "$version" ] || { echo "::error::no helm line in deploy/helm/.tool-versions"; exit 1; }
+          echo "version=v${version}" >> "$GITHUB_OUTPUT"
+          echo "pinned helm: v${version}"
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ steps.helm-pin.outputs.version }}
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
+
+      # No build cache is restored anywhere in this lane (#2011): everything it
+      # publishes is built from this checkout and nothing else.
+
+      - name: Read the chart's own versions
+        id: chart
+        run: |
+          set -euo pipefail
+          version=$(helm show chart "$CHART_DIR" | sed -nE 's/^version: *"?([^"]+)"?/\1/p')
+          app=$(helm show chart "$CHART_DIR" | sed -nE 's/^appVersion: *"?([^"]+)"?/\1/p')
+          [ -n "$version" ] && [ -n "$app" ] || { echo "::error::could not read version/appVersion from $CHART_DIR/Chart.yaml"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "chart version $version, appVersion $app"
+
+      # A tag push must publish the chart version the tree carries, and the
+      # release cut moves `appVersion` to the released application version, so
+      # they have to agree. A mismatch means the release PR forgot one of them.
+      - name: On a tag, appVersion must be the tag being released
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG: ${{ github.ref_name }}
+          APP: ${{ steps.chart.outputs.app }}
+        run: |
+          set -euo pipefail
+          if [ "${TAG#v}" != "$APP" ]; then
+            echo "::error::tag $TAG does not match Chart.yaml appVersion $APP — the release cut bumps appVersion with the workspace version."
+            exit 1
+          fi
+
+      # The chart gates read the rendered YAML structurally (yq -o=json | jq),
+      # because a grep over a manifest passes as soon as ONE container carries a
+      # field. Pinned by version and verified by checksum: this step runs before
+      # the security gates, so a substituted binary would decide whether they
+      # pass.
+      - name: Install yq
+        env:
+          YQ_VERSION: v4.53.3
+          YQ_SHA256: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/yq             "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
+          yq --version
+      - name: Chart validation + golden renders
+        run: bash deploy/helm/validate.sh
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # A published chart version is taken, exactly like a crates.io version —
+      # except the registry will happily overwrite it, so the refusal has to live
+      # here. `helm show chart` exits 0 when the version resolves and 1 when it
+      # does not (verified against a local registry).
+      - name: Refuse to overwrite an already-published chart version
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+        run: |
+          set -euo pipefail
+          if helm show chart "oci://${CHART_REF}" --version "$VERSION" >/dev/null 2>&1; then
+            echo "::error::chart version $VERSION is already published at ${CHART_REF} — a published version is immutable; bump Chart.yaml version."
+            exit 1
+          fi
+          echo "chart version $VERSION is unpublished — proceeding."
+
+      # WHICH image the chart is judged against is a per-trigger decision,
+      # because `appVersion` and the chart's `config` defaults move on
+      # different clocks (#2144).
+      #
+      # On a tag, `appVersion` IS the version being released (the guard above
+      # refuses the run otherwise), so the image a `helm install` of this chart
+      # will actually pull is the one this cut publishes — judging against it
+      # is exactly right, and it is the only judgement that gates a push.
+      #
+      # Between releases `appVersion` is still the LAST release, while
+      # values.yaml and the server's configuration vocabulary advance together
+      # in-tree. Judging a mid-cycle dry run against it therefore fails from
+      # the first commit that adds a configuration key until the release PR —
+      # a fact about the clock, not about the artifact. A dispatch is judged
+      # against an image built from THIS tree instead: containers.yml's
+      # exact-commit `sha-` tag when it published one, otherwise `develop`.
+      # `develop` is a sound fallback rather than a guess: every path that can
+      # move the server's configuration vocabulary sits inside that workflow's
+      # `app` filter, so the `develop` tag carries this tree's vocabulary even
+      # when the head commit built no image of its own.
+      - name: Select the image the chart is judged against
+        id: judge
+        env:
+          APP: ${{ steps.chart.outputs.app }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$IS_TAG" = "true" ]; then
+            image="${APP_IMAGE}:${APP}"
+            why="the appVersion image — on a tag that is the release being cut"
+          else
+            candidate="${APP_IMAGE}:sha-${SHA:0:7}"
+            if docker manifest inspect "$candidate" >/dev/null 2>&1; then
+              image="$candidate"
+              why="the image built from this commit; appVersion ${APP} predates this tree's configuration vocabulary"
+            else
+              image="${APP_IMAGE}:develop"
+              why="the develop image (containers.yml published none for ${SHA:0:7}); appVersion ${APP} predates this tree's configuration vocabulary"
+            fi
+          fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "why=$why" >> "$GITHUB_OUTPUT"
+          echo "judging the chart against ${image} — ${why}"
+
+      # A `v*` tag starts containers.yml and this workflow at the same instant,
+      # and the tag the acceptance step pulls is the one that run is still
+      # pushing (#2149). The dependency is made explicit here, against the
+      # other run's `app image` JOB rather than against the registry: a failed
+      # or skipped image lane then fails this one immediately with its URL,
+      # instead of polling for a tag that will never appear.
+      #
+      # A shared workflow-level `concurrency` group cannot express this: a
+      # concurrency group has no queue-order guarantee, so the chart lane could
+      # take the group and then wait for a build queued behind itself.
+      - name: Wait for the image lane to publish this tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 3600 ))
+          # The same commit is also pushed to develop, so the run is selected by
+          # tag (a tag push reports the tag as `head_branch`), not by SHA alone.
+          run_id=""
+          until [ -n "$run_id" ]; do
+            run_id=$(gh api \
+              "/repos/${REPO}/actions/workflows/containers.yml/runs?head_sha=${HEAD_SHA}&per_page=100" \
+              --jq '[.workflow_runs[] | select(.head_branch == env.REF_NAME)] | sort_by(.run_number) | last | .id // empty')
+            [ -n "$run_id" ] && break
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::no containers.yml run exists for tag ${REF_NAME} — the image this chart deploys is never going to be published. Re-run containers.yml for the tag, then re-run this workflow."
+              exit 1
+            fi
+            echo "waiting for the containers.yml run for ${REF_NAME} to appear"
+            sleep 15
+          done
+          url="https://github.com/${REPO}/actions/runs/${run_id}"
+          while :; do
+            line=$(gh api "/repos/${REPO}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq '[.jobs[] | select(.name == "app image")] | map("\(.status) \(.conclusion // "")") | first // ""')
+            status=""; conclusion=""
+            read -r status conclusion <<<"$line" || true
+            # The coupling is a job NAME, so a rename in containers.yml would
+            # otherwise present as a silent hour-long wait.
+            if [ -z "$status" ] && [ "$(gh api "/repos/${REPO}/actions/runs/${run_id}" --jq .status)" = "completed" ]; then
+              echo "::error::the containers.yml run for ${REF_NAME} finished with no job named 'app image' (${url}) — the job was renamed or removed; this wait names it explicitly and must be updated with it."
+              exit 1
+            fi
+            if [ "$status" = "completed" ]; then
+              if [ "$conclusion" != "success" ]; then
+                echo "::error::containers.yml 'app image' concluded '${conclusion}' for ${REF_NAME} — the image this chart deploys was not published, so the acceptance check below has nothing correct to judge against. ${url}"
+                exit 1
+              fi
+              echo "the image lane published ${REF_NAME} (${url})"
+              break
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::containers.yml 'app image' is still '${status:-not started}' after 60 minutes (${url}) — this run waited on the image lane and it has not finished. Nothing is wrong with the chart; re-run this workflow once that run completes."
+              exit 1
+            fi
+            echo "containers.yml 'app image' is ${status:-not started} — waiting (${url})"
+            sleep 20
+          done
+
+      # The check that catches the failure nobody could see from a rendered
+      # manifest: `helm install` with no `image.tag` pins `appVersion`, and the
+      # chart's `config` defaults track development between releases, so the
+      # image can REJECT a key the chart ships and every pod crash-loops with
+      # `unknown configuration key …`. Measured against ghcr.io/…/ferroehr:3.17.3:
+      # the rendered defaults carry `server.limits` and `db.statement_timeout_ms`,
+      # and that image's own `config check` refuses the file. A chart that cannot
+      # deploy the image it selects is not published.
+      # The last gate before a chart is published: the image it selects must
+      # actually boot on what the chart renders. `deploy/helm/ci/boot-check.sh`
+      # is the single implementation (the `chart-boot` CI lane runs the same
+      # script against the tree-built image). This step used to carry a second,
+      # hand-rolled copy of that replay, and the two drifted: the copy wrote a
+      # placeholder into every file-borne secret, so a value-shaped boot rule —
+      # the RFC 8725 32-byte HMAC floor, an Argon2id PHC password hash — was
+      # judged against `x` rather than the configured secret, it skipped
+      # `valueFrom.secretKeyRef` environment entirely, and it rendered only
+      # `default-values.yaml` while the chart publishes three overlays. The
+      # script mounts each secret at its REAL rendered value, resolves
+      # secretKeyRef, and enumerates every committed overlay.
+      - name: The selected image must accept every committed values overlay
+        env:
+          FERROEHR_IMAGE: ${{ steps.judge.outputs.image }}
+          WHY: ${{ steps.judge.outputs.why }}
+        run: |
+          set -euo pipefail
+          echo "judging against ${FERROEHR_IMAGE} — ${WHY}"
+          if ! docker pull -q "$FERROEHR_IMAGE" >/dev/null; then
+            echo "::error::${FERROEHR_IMAGE} could not be pulled, so the chart could not be judged against anything. It was selected as ${WHY}."
+            exit 1
+          fi
+          if ! bash deploy/helm/ci/boot-check.sh; then
+            echo "::error::${FERROEHR_IMAGE} (${WHY}) does not accept a committed values overlay — that install would crash-loop."
+            exit 1
+          fi
+
+      # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
+      # there is one changelog rather than two (#2107). Injected at package time
+      # rather than committed: they are facts about a release, and a committed
+      # copy would be stale from the next merge onwards.
+      - name: Inject the release's Artifact Hub annotations
+        env:
+          APP: ${{ steps.chart.outputs.app }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # A tag publishes that release's section; a chart-only dispatch between
+          # releases publishes what is currently unreleased.
+          if [ "$IS_TAG" = "true" ]; then section="$APP"; else section="Unreleased"; fi
+          bash deploy/helm/artifacthub-changes.sh "$section" --inject
+          # An `-rc` tag is a chart pre-release, matching release.yml's own rule.
+          case "$TAG" in
+            *-rc*|*-alpha*|*-beta*)
+              printf '  artifacthub.io/prerelease: "true"\n' >> "$CHART_DIR/Chart.yaml" ;;
+          esac
+          echo "--- annotations as packaged ---"
+          sed -n '/^annotations:/,$p' "$CHART_DIR/Chart.yaml"
+
+      - name: Package
+        id: package
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+        run: |
+          set -euo pipefail
+          helm package "$CHART_DIR" --destination dist
+          ls -l dist
+          echo "path=dist/ferroehr-${VERSION}.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Dry run — everything but the push
+        if: github.event_name == 'workflow_dispatch' && !inputs.publish
+        env:
+          PACKAGE: ${{ steps.package.outputs.path }}
+        run: |
+          echo "DRY RUN: would push $PACKAGE to ${OCI_NAMESPACE}"
+          helm show chart "$PACKAGE"
+
+      - name: Push the chart
+        id: push
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+        env:
+          PACKAGE: ${{ steps.package.outputs.path }}
+        run: |
+          set -euo pipefail
+          helm push "$PACKAGE" "$OCI_NAMESPACE" 2>&1 | tee push.log
+          digest=$(sed -nE 's/^Digest: (sha256:[0-9a-f]+)$/\1/p' push.log)
+          [ -n "$digest" ] || { echo "::error::could not read the pushed digest from helm push output"; exit 1; }
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      # A keyless cosign SIGNATURE over the pushed digest. Distinct from the
+      # attestation below and not redundant with it: the attestation answers
+      # "built from this source, this way", the signature answers "signed by this
+      # workflow" — and the signature is the artifact a Helm consumer's tooling
+      # and Artifact Hub's listing actually look for.
+      #
+      # `--new-bundle-format=false` is a DECISION, not inertia. cosign 3 defaults
+      # to the protobuf bundle attached as an OCI 1.1 referring artifact, and
+      # GHCR implements no referrers API at all — measured against the published
+      # chart, `GET /v2/rubentalstra/charts/ferroehr/referrers/<digest>` answers
+      # `404 MANIFEST_UNKNOWN`, so a referring artifact reaches the registry only
+      # through the OCI fallback TAG (`sha256-<hex>`), which on this repository is
+      # the very index the attestation step below already writes. Two writers to
+      # one index is a way to lose the attestation, for no gain: Artifact Hub
+      # checks the classic `sha256-<hex>.sig` tag FIRST (tag-based discovery in
+      # `HasCosignSignature`, `internal/oci/oci.go`), and a plain tag needs no
+      # registry capability whatever. Revisit when GHCR serves referrers.
+      # A keyless cosign SIGNATURE over the pushed digest. Distinct from the
+      # attestation below and not redundant with it: the attestation answers
+      # "built from this source, this way", the signature answers "signed by this
+      # workflow" — and the signature is what a Helm consumer's tooling and
+      # Artifact Hub's listing actually look for.
+      #
+      # NO format flag, deliberately. cosign 3 signs in the protobuf bundle
+      # format and there is no supported way to opt out here: measured against
+      # cosign v3.1.3, `--new-bundle-format=false` is refused outright —
+      # "must provide --new-bundle-format or --bundle where applicable with
+      # --signing-config or --use-signing-config" — because `--use-signing-config`
+      # defaults to true, and the flag is deprecated besides ("this will be the
+      # only supported format in future versions").
+      #
+      # That the hub can still SEE it was checked rather than assumed, and the
+      # chain is: GHCR serves no referrers API (`GET /v2/…/referrers/<digest>`
+      # answers 404 MANIFEST_UNKNOWN, measured), so the signature is written to
+      # the OCI fallback tag `sha256-<hex>`; the hub reads referrers through
+      # cosign's `remote.Referrers`, which delegates to go-containerregistry,
+      # which falls back to that same tag when the API is absent
+      # (`WithReferrersTagFallback` — "The default is true"). Same layout, both
+      # directions.
+      - name: Sign the chart with keyless cosign
+        id: sign
+        if: steps.push.outputs.digest != ''
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes "${CHART_REF}@${DIGEST}"
+
+      # Keyless provenance for the chart artifact, the same mechanism the images
+      # use — see the header for why neither of these is a PGP `.prov`.
+      #
+      # Ordered AFTER the signature deliberately. GHCR serves no referrers API
+      # (`GET /v2/…/referrers/<digest>` answers 404 MANIFEST_UNKNOWN, measured),
+      # so BOTH artifacts reach the registry through the same OCI fallback tag,
+      # `sha256-<hex>` — two writers to one index. Nothing in either tool
+      # promises the second writer appends rather than replaces, so this lane
+      # does not assume it: the step below reads both back and fails if either
+      # went missing.
+      - name: Attest build provenance
+        id: attest
+        if: steps.push.outputs.digest != ''
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ env.CHART_REF }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      # Read both artifacts back, after both writers have run, because every
+      # failure here is otherwise silent for weeks: a signature that does not
+      # verify against this workflow's identity is worse than none; a signature
+      # Artifact Hub cannot locate presents as a listing that still says "not
+      # signed"; and an attestation the second writer dropped presents as
+      # nothing at all until someone runs `gh attestation verify` and gets a 404.
+      #
+      # `cosign verify` is the consumer's own command, so this is the check a
+      # user would run, not a proxy for it. The fallback-tag assertion is the
+      # hub's view: it lists what the shared index actually holds and requires
+      # the cosign signature and the SLSA provenance to BOTH still be there.
+      - name: Verify the signature and the attestation both survived
+        id: verify
+        if: steps.sign.outcome == 'success' && steps.attest.outcome == 'success'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cosign verify "${CHART_REF}@${DIGEST}" \
+            --certificate-identity-regexp "^https://github\.com/${REPO}/\.github/workflows/publish-chart\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            > /dev/null
+          echo "the signature verifies against ${REPO}/.github/workflows/publish-chart.yml"
+
+          # The OCI fallback tag for a subject digest: `sha256:<hex>` → `sha256-<hex>`.
+          fallback="${CHART_REF}:${DIGEST/:/-}"
+          if ! manifest=$(oras manifest fetch "$fallback" 2>&1); then
+            echo "::error::${fallback} is not fetchable, so neither the signature nor the attestation is discoverable from the registry: ${manifest}"
+            exit 1
+          fi
+          echo "--- ${fallback} ---"
+          printf '%s' "$manifest" | jq '{mediaType, manifests: [.manifests[] | {artifactType, digest, annotations}]}'
+          # The signature half is already proven by `cosign verify` above, so
+          # this only has to establish that the ATTESTATION entry is still in the
+          # shared index. It is matched on the SLSA predicate or the in-toto
+          # media type rather than on cosign's own media type, which differs
+          # between cosign's bundle formats and is not ours to predict.
+          if ! printf '%s' "$manifest" | grep -qE 'slsa\.dev/provenance|application/vnd\.in-toto'; then
+            echo "::error::${fallback} no longer carries the SLSA provenance entry — both the signature and the attestation write this one index (GHCR serves no referrers API), so one writer replaced the other's entry. The index is printed above."
+            exit 1
+          fi
+          echo "sig=${fallback}" >> "$GITHUB_OUTPUT"
+          echo "::notice::signature + provenance both readable at ${fallback}; Artifact Hub reports the signature on its next processing cycle."
+
+      # Artifact Hub ownership (#2106). For an OCI repository there is no
+      # `index.yaml`, so there is nowhere to commit this file as a sibling: it is
+      # pushed as a special `artifacthub.io` TAG on the chart's own repository,
+      # with the media types Artifact Hub looks for
+      # (https://artifacthub.io/docs/topics/repositories/helm-charts/). Following
+      # the HTTP instructions instead produces a committed file nothing reads and
+      # silently no Verified Publisher badge, with no error anywhere — which is
+      # why this runs on EVERY publish rather than once by hand.
+      #
+      # The config media type ends `+yaml`; the layer media type ends `.v1.yaml`
+      # with no `+`. They are not the same shape and a swap is silent.
+      - name: Push the Artifact Hub ownership metadata
+        if: steps.push.outputs.digest != ''
+        run: |
+          set -euo pipefail
+          if grep -q 'REPLACE_WITH_ARTIFACT_HUB_REPOSITORY_ID' deploy/helm/artifacthub-repo.yml; then
+            echo "::error::artifacthub-repo.yml still carries the placeholder repositoryID — the listing would be unowned and the Verified Publisher badge unobtainable. Register the repository and fill the id in (deploy/helm/artifacthub-repo.yml)."
+            exit 1
+          fi
+          cd deploy/helm
+          oras push "${CHART_REF}:artifacthub.io" \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
+
+      # Read the ownership claim back the way Artifact Hub reads it — by LAYER
+      # MEDIA TYPE, not by position — and confirm the id it carries is the one in
+      # the tree. Without this the whole mechanism fails silently: a mistyped media
+      # type (the config one ends `+yaml`, the layer one ends `.v1.yaml`), a
+      # mistyped tag, or a registry that dropped the artifact all present as
+      # "no Verified Publisher badge" weeks later, with no error anywhere.
+      - name: Verify the ownership claim is readable and correct
+        if: steps.push.outputs.digest != ''
+        run: |
+          set -euo pipefail
+          layer="application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml"
+          manifest=$(oras manifest fetch "${CHART_REF}:artifacthub.io")
+          count=$(printf '%s' "$manifest" | jq --arg t "$layer" '[.layers[] | select(.mediaType == $t)] | length')
+          if [ "$count" != "1" ]; then
+            echo "::error::the artifacthub.io tag carries $count layers of $layer (expected exactly 1) — Artifact Hub locates the metadata by this media type and will not find it."
+            printf '%s\n' "$manifest"
+            exit 1
+          fi
+          fetched=$(oras blob fetch --output - \
+            "${CHART_REF}@$(printf '%s' "$manifest" | jq -r --arg t "$layer" '.layers[] | select(.mediaType == $t) | .digest')")
+          want=$(sed -nE 's/^repositoryID: *(.+)$/\1/p' deploy/helm/artifacthub-repo.yml)
+          got=$(printf '%s' "$fetched" | sed -nE 's/^repositoryID: *(.+)$/\1/p')
+          if [ "$got" != "$want" ]; then
+            echo "::error::the published ownership claim carries repositoryID '$got' but the tree says '$want'."
+            exit 1
+          fi
+          echo "ownership claim readable at ${CHART_REF}:artifacthub.io, repositoryID $got"
+          echo "::notice::Verified Publisher applies on Artifact Hub's next processing cycle. The GHCR package must be PUBLIC for the hub to read it at all."
+
+      # Everything after `helm push` operates on an artifact that is already
+      # PUBLIC and, by this lane's own refusal, immutable — so a failure there
+      # consumes the chart version rather than leaving the tree where it was. It
+      # happened on 5.0.0: the signing step failed, the chart stayed published
+      # unsigned and un-attested, and the obvious next move — re-run the lane —
+      # then failed on the immutability guard with a message about bumping
+      # Chart.yaml that read like a mistake in the branch rather than the
+      # consequence of the first failure. This says it at the point of the first
+      # failure instead.
+      - name: What the failure left behind
+        if: failure() && steps.push.outputs.digest != ''
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            printf '## Chart %s is published, and this run failed after that\n\n' "$VERSION"
+            printf 'The chart was pushed (`%s`) before the failing step, so it is public and\n' "$DIGEST"
+            printf 'immutable: re-running this lane will be refused by the overwrite guard, and\n'
+            printf 're-pushing the tag would silently replace a version consumers may already have.\n\n'
+            printf 'It may be missing its signature, its attestation, or the Artifact Hub ownership\n'
+            printf 'tag, depending on where this run stopped — check the steps above.\n\n'
+            printf 'Fix the cause and ship it as the NEXT chart version. Leave %s as it is.\n' "$VERSION"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::chart ${VERSION} is already published; fix the cause and ship the next version — do not re-run this lane for ${VERSION}."
+
+      - name: Summary
+        if: always()
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+          APP: ${{ steps.chart.outputs.app }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+          SIGNATURE: ${{ steps.verify.outputs.sig }}
+          JUDGED: ${{ steps.judge.outputs.image }}
+          WHY: ${{ steps.judge.outputs.why }}
+        run: |
+          {
+            printf '## Chart publish\n\n'
+            printf '| | |\n|---|---|\n'
+            printf '| chart version | `%s` |\n' "$VERSION"
+            printf '| appVersion | `%s` |\n' "$APP"
+            printf '| judged against | `%s` (%s) |\n' "${JUDGED:-not selected}" "${WHY:-—}"
+            printf '| repository | `%s` |\n' "$CHART_REF"
+            printf '| digest | `%s` |\n' "${DIGEST:-not pushed}"
+            printf '| signature | `%s` |\n' "${SIGNATURE:-not signed}"
+            printf '\nInstall:\n\n```shell\nhelm install ferroehr oci://%s/ferroehr --version %s\n```\n' \
+              "${CHART_REF%/ferroehr}" "$VERSION"
+          } >> "$GITHUB_STEP_SUMMARY"

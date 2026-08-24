@@ -33,14 +33,14 @@ queue_capacity = 8192
 | `source_id` | string | `ferroehr` | The audit source id, also used for the destination participant. |
 | `value_if_missing` | string | `UNKNOWN` | Fill value for empty mandatory fields. |
 | `suppress_login_events` | bool | `true` | Skip successful-login records. Rejected accesses (`401`/`403`) are always recorded. |
-| `fail_mode` | enum{open,closed} | `open` | What an undeliverable audit record does. `open` logs, meters and lets the request succeed; `closed` rejects auditable operations with `503` — including when the local store has stopped accepting writes — so no PHI access goes un-audited. |
+| `fail_mode` | enum{open,closed} | `open` | What an undeliverable audit record does. `open` logs, meters and lets the request succeed; `closed` rejects auditable operations with `503` (including when the local store has stopped accepting writes) so no PHI access goes un-audited. |
 | `resolve_subject` | bool | `true` | Enrich the patient participant with a background lookup of the EHR's subject. The lookup runs on the background drain, never on the request path; the IHE BALP patient patterns and the patient-centric audit search need the subject. |
 | `queue_capacity` | int | `8192` | Bounded audit queue capacity. Sized for write-path bursts: the drain persists in multi-row batches, so the queue only needs to ride out sink latency spikes. |
 | `server_host` | string | unset ⇒ the `value_if_missing` fill | This node's advertised network address, reported as the destination `NetworkAccessPointID`. |
 
 > [!NOTE]
 > The local store and the ATX:FHIR Feed both carry a FHIR R4 `AuditEvent`
-> document, so both need the `fhir` build feature — on in the published binary
+> document, so both need the `fhir` build feature, on in the published binary
 > and container images. A binary built with `--no-default-features` refuses at
 > startup if `audit.store.enabled` or `audit.fhir_feed.enabled` is set; the
 > DICOM/syslog feed needs no FHIR and stays available.
@@ -48,7 +48,7 @@ queue_capacity = 8192
 > [!NOTE]
 > There is no `[atna]` section. Configuration is strict, so a file or
 > environment variable still setting an `[atna]` key fails at boot with an
-> unknown-key error — move the setting under `[audit]`.
+> unknown-key error; move the setting under `[audit]`.
 
 ### `[audit.store]`: the local Audit Record Repository
 

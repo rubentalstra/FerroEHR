@@ -6,7 +6,7 @@ server (Keycloak or any standards-compliant IdP), and the CDR advertises that
 server's endpoints, understands SMART resource scopes in the token, and binds
 the launch context (the selected patient/EHR) to what the token may touch.
 FerroEHR never issues tokens, registers clients, or serves the OAuth2
-endpoints itself — those remain your authorization server's job.
+endpoints itself; those remain your authorization server's job.
 
 Support is **off by default**. A stock server serves no discovery document and
 runs no scope gate, so the wire is byte-identical to a non-SMART deployment
@@ -48,7 +48,7 @@ The boot rules, and why each one exists:
 | `smart.endpoints.issuer`, when set, equals `auth.oidc.issuer` | one says where apps *get* tokens, the other which tokens this server *accepts*; a mismatch is silently broken in the most confusing way available |
 | every advertised endpoint (and `public_base_url`) is absolute and `https` | a relative endpoint is unusable and a plaintext one exposes the authorization code and the access token (RFC 6749 §3.1.2.1, RFC 8414 §6.2). `allow_insecure_endpoints = true` opts a development authorization server out |
 | `response_types_supported` is non-empty | RFC 8414 §2 marks it REQUIRED |
-| `token_endpoint_auth_methods_supported` names at least one method | an empty list is not silence — it claims the authorization server supports none, and an app that reads it complies |
+| `token_endpoint_auth_methods_supported` names at least one method | an empty list is not silence: it claims the authorization server supports none, and an app that reads it complies |
 | `code_challenge_methods_supported` includes `S256` | SMART App Launch requires PKCE (RFC 7636), and `plain` alone is not sufficient |
 | `grant_types_supported` names neither `implicit` nor a password grant | both are deprecated in SMART and must never be advertised |
 | the advertised `issuer` carries no query or fragment | the RFC 8414 §2 issuer-identifier rules, the same ones `auth.oidc.issuer` is held to |
@@ -70,7 +70,7 @@ separates nested fields).
 | `FERROEHR__SMART__PLATFORM_BASE_URL` | unset | Base the discovery document hangs off. Unset = the REST root (the configured base path without its `/openehr/v1` tail, i.e. `/ferroehr/rest`). A leading path is honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`). |
 | `FERROEHR__SMART__EHR_ID_CLAIM` | `ehrId` | Token claim carrying the launch context's openEHR EHR id. |
 | `FERROEHR__SMART__PATIENT_CLAIM` | `patient` | Fallback launch-context claim when the EHR-id claim is absent. |
-| `FERROEHR__SMART__REQUIRE_SMART_SCOPES` | `false` | Fail-closed switch — see [Advisory vs required](#advisory-vs-required) below. |
+| `FERROEHR__SMART__REQUIRE_SMART_SCOPES` | `false` | Fail-closed switch; see [Advisory vs required](#advisory-vs-required) below. |
 | `FERROEHR__SMART__LAUNCH_BASE64_JSON` | `false` | Advertise the base64-JSON launch-parameter capability (experimental; consumed by the app, not the CDR). |
 | `FERROEHR__SMART__EPISODE__ENABLED` | `false` | Advertise + accept episode launch context (experimental; advisory only, no episode filtering). |
 | `FERROEHR__SMART__ENDPOINTS__ISSUER` | unset | Advertised token issuer. Unset = falls back to the configured OIDC bearer issuer; set, it must equal it. |
@@ -86,7 +86,7 @@ separates nested fields).
 | `FERROEHR__SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | `[]` (**must be non-empty when enabled**) | Advertised response types (e.g. `code`). |
 | `FERROEHR__SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | `[]` (**must include `S256` when enabled**) | Advertised PKCE methods. |
 | `FERROEHR__SMART__ENDPOINTS__SCOPES_SUPPORTED` | `[]` | Advertised scopes. Empty = a default list reflecting what the CDR enforces; set = emitted verbatim. |
-| `FERROEHR__SMART__ENDPOINTS__CAPABILITIES` | `[]` | Extra HL7-defined base capabilities to advertise (e.g. `launch-ehr`, `sso-openid-connect`) — the ones your external framework owns. Appended to the CDR's own, deduplicated. |
+| `FERROEHR__SMART__ENDPOINTS__CAPABILITIES` | `[]` | Extra HL7-defined base capabilities to advertise (e.g. `launch-ehr`, `sso-openid-connect`), the ones your external framework owns. Appended to the CDR's own, deduplicated. |
 | `FERROEHR__SMART__ENDPOINTS__ALLOW_INSECURE_ENDPOINTS` | `false` | Accept a non-`https` advertised endpoint. Development/testing only. |
 
 > [!WARNING]
@@ -135,7 +135,7 @@ reads it to find your authorization server. It looks like:
   REST service, and adds the FHIR façade
   (`org.fhir.rest`) when the FHIR routes are enabled. Each `baseUrl` is
   **absolute**, built by prefixing the CDR's own base path with
-  `PUBLIC_BASE_URL` — which is why that key is required.
+  `PUBLIC_BASE_URL`, which is why that key is required.
 - **`capabilities`** always contains `context-openehr-ehr` (the CDR binds the
   `ehrId` launch context). `openehr-permission-v1` is advertised **only in
   fail-closed mode** (`REQUIRE_SMART_SCOPES=true`): the capability announces
@@ -156,11 +156,11 @@ With SMART disabled the path is not mounted at all (404).
 SMART resource scopes have the form
 **`<compartment>/<resource>.<permissions>`**:
 
-- **Compartment** — `patient` (the launch context's EHR only), `user` (what
+- **Compartment:** `patient` (the launch context's EHR only), `user` (what
   the user may see), or `system` (a backend service, no user).
-- **Resource** — one of three families: `composition-<template-id>`,
+- **Resource:** one of three families, `composition-<template-id>`,
   `template-<template-id>`, or `aql-<stored-query-name>`.
-- **Permissions** — any combination of `c` create, `r` read, `u` update,
+- **Permissions:** any combination of `c` create, `r` read, `u` update,
   `d` delete, `s` search/execute (order-free, e.g. `.crud`, `.rs`).
 
 Resource ids accept wildcards: `*` matches within one `::`-delimited namespace
@@ -171,14 +171,14 @@ internal dots and versions.
 
 | Scope | Grants |
 |---|---|
-| `patient/composition-*.crud` | Create, read, update, and delete any composition — but only in the launched patient's EHR. |
+| `patient/composition-*.crud` | Create, read, update, and delete any composition, but only in the launched patient's EHR. |
 | `patient/aql-*.rs` | Read and execute any stored query. |
 | `patient/composition-MyHospital::Template.v0.r` | Read compositions of exactly that template, in the launched patient's EHR. |
 | `user/composition-MyHospital::*.r` | Read compositions of any template in the `MyHospital` namespace (not sub-namespaces). |
 | `user/template-*.cruds` | Full access to template definitions. |
 | `system/aql-org.openehr::bloodpressure.v1.rs` | A backend service may read and execute that one stored query. |
 
-Scopes the server does not recognise are retained but inert — never granted,
+Scopes the server does not recognise are retained but inert: never granted,
 never fatal; the identity scopes (`openid`, `profile`, `offline_access`, …) and
 the `launch`/`launch/patient` context scopes pass through untouched.
 
@@ -195,20 +195,20 @@ scopes for that family must permit it:
 | `aql-…` | stored-query execution and AQL definition management | the `{qualified_query_name}` path parameter |
 
 EHR, `EHR_STATUS`, CONTRIBUTION and DIRECTORY operations have **no SMART
-resource type** — the specification defines exactly three — so the SMART gate
+resource type** (the specification defines exactly three) so the SMART gate
 does not deny them; they stay governed by the RBAC/ABAC layers and the
 per-EHR `EHR_ACCESS` gate.
 
 > [!NOTE]
 > **An unresolved resource id matches only a broad wildcard.** A template upload
 > or list, and an ad-hoc (non-stored) query, carry no id, so a scope naming a
-> specific id cannot match one — which is refused rather than assumed. Grant
+> specific id cannot match one, which is refused rather than assumed. Grant
 > `*`/`**` scopes for those operations deliberately.
 
 ## Launch context: binding to one EHR
 
 When an app is launched for a patient, your authorization server puts the
-resolved openEHR EHR id in the token — by default in an `ehrId` claim, with
+resolved openEHR EHR id in the token: by default in an `ehrId` claim, with
 the standard SMART `patient` claim as fallback (both claim names are
 configurable). A **composition** operation permitted *only* by a `patient/…`
 scope is then bound to that one EHR: a request against any other EHR is
@@ -216,8 +216,8 @@ refused, and a token holding only patient-compartment scopes but **no**
 launch-context claim is refused outright. `user/` and `system/` scopes carry no
 such binding.
 
-Template and AQL operations are not per-EHR resources — templates are unscoped
-and queries are cross-EHR — so a `patient/` scope permits them without a
+Template and AQL operations are not per-EHR resources (templates are unscoped
+and queries are cross-EHR) so a `patient/` scope permits them without a
 per-request EHR binding. Per-row patient scoping for queries is the ABAC
 subject-scope layer's job, not the scope gate's.
 
@@ -230,18 +230,18 @@ must allow the request; SMART never overrides a denial from another layer, and
 it can only narrow. A scope denial is a **403 Forbidden**.
 
 Granted scopes are also visible to the ABAC layer as a subject attribute, so a
-Cedar or external policy can reason about them — the built-in gate is the floor,
+Cedar or external policy can reason about them; the built-in gate is the floor,
 not the ceiling.
 
 ### Advisory vs required
 
-- **Advisory (default, `REQUIRE_SMART_SCOPES=false`)** — the gate enforces
+- **Advisory (default, `REQUIRE_SMART_SCOPES=false`):** the gate enforces
   only when the token actually carries SMART resource scopes for the resource
   family in question. A non-SMART token, a Basic-auth caller (which has no
   scopes), and a server with authentication disabled are all unaffected. Once a
   token *does* carry, say, composition scopes, at least one of them must match
   the operation or the request is refused.
-- **Required (`REQUIRE_SMART_SCOPES=true`)** — fail-closed: a caller with no
+- **Required (`REQUIRE_SMART_SCOPES=true`):** fail-closed. A caller with no
   matching SMART resource scope for a scope-governed operation is denied,
   including a caller with no token at all. Use this where every app is a SMART
   app. This is also the mode in which `openehr-permission-v1` is advertised.
@@ -249,4 +249,4 @@ not the ceiling.
 > [!NOTE]
 > Episode context is experimental: enabling it advertises the capability and
 > accepts `launch/episode`, but the server applies no episode-scoped
-> filtering — openEHR has no first-class episode resource yet.
+> filtering: openEHR has no first-class episode resource yet.

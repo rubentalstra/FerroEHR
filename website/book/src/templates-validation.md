@@ -26,11 +26,11 @@ curl -u ferroehr:ferroehr -i \
 The upload takes OPT XML and nothing else: a request declaring another payload
 type (`Content-Type: application/json`, say) is refused with **415 Unsupported
 Media Type** before the template is parsed. `text/xml` works the same as
-`application/xml`, and omitting the header altogether is fine — the endpoint has
+`application/xml`, and omitting the header altogether is fine; the endpoint has
 only one body format.
 
 A successful upload returns **201 Created** with the id in `ETag` and
-`Location`. Add `Prefer: return=identifier` when you only need the id back — the
+`Location`. Add `Prefer: return=identifier` when you only need the id back; the
 response body is then the JSON identifier object:
 
 ```json
@@ -38,17 +38,17 @@ response body is then the JSON identifier object:
 ```
 
 (`return=representation` returns the stored OPT XML; the default is an empty
-body.) Uploading a template whose id already exists returns **409 Conflict** —
+body.) Uploading a template whose id already exists returns **409 Conflict**;
 templates are immutable once loaded. Template ids are compared
 **case-insensitively** (the stored casing is preserved), so uploading a
-case-variant of an existing id — `Vital_Signs` against a stored `vital_signs` —
+case-variant of an existing id (`Vital_Signs` against a stored `vital_signs`)
 is also a **409 Conflict**, not a second template.
 
 ### What "invalid template" means, and which status you get
 
 The upload runs two distinct gates, and they answer differently:
 
-- **A payload that is not well-formed XML is a 400 Bad Request** — the server
+- **A payload that is not well-formed XML is a 400 Bad Request:** the server
   could not read it as XML at all.
 - **A well-formed document that is not a valid operational template is a 422
   Unprocessable Entity.** This covers both the structural check (foreign or
@@ -77,11 +77,11 @@ absence.
 
 ## Uploading ADL 2 artefacts
 
-ADL 2 artefacts — archetypes, templates and operational templates — are accepted
+ADL 2 artefacts (archetypes, templates and operational templates) are accepted
 as `text/plain` source on `…/definition/template/adl2` and validated by the full
 ADL 2 engine: the source is parsed, then checked against the AOM2 validity
-catalogue (phase-1 basic integrity, reference-model conformance, and — for a
-specialised artefact whose parent is already loaded — specialisation
+catalogue (phase-1 basic integrity, reference-model conformance, and, for a
+specialised artefact whose parent is already loaded, specialisation
 conformance).
 
 The two failure modes are again distinguished by status:
@@ -89,7 +89,7 @@ The two failure modes are again distinguished by status:
 - **A source that does not parse is a 400 Bad Request**, carrying the ADL syntax
   (`S`-prefixed) error codes.
 - **A source that parses but fails validation is a 422 Unprocessable Entity**,
-  whose `validationErrors` list the AOM2 validity (`V`-prefixed) rule codes —
+  whose `validationErrors` list the AOM2 validity (`V`-prefixed) rule codes:
   `VARD`, `VCORM`, `VACSD` and friends.
 
 A duplicate artefact id returns **409 Conflict**.
@@ -131,7 +131,7 @@ curl -u ferroehr:ferroehr -H 'Accept: application/xml' \
   http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4/vital_signs
 ```
 
-Both list endpoints — ADL 1.4 and ADL 2 — accept the same three filters
+Both list endpoints (ADL 1.4 and ADL 2) accept the same three filters
 (`template_id`, `concept`, and `version`, each a glob pattern with `*` wildcards)
 plus `offset` (rows to skip, default 0) and `fetch` (maximum rows; absent or 0 =
 all). The filters AND together. An offset past the end of the match set is an
@@ -155,8 +155,8 @@ keeps them off the provisioning routes:
   `DELETE /definition/artefact/adl2/{artefact_id}`.
 
 Both refuse with **409 Conflict** while any committed version still references
-the template, and the message names how many versions still hold the reference —
-a physical delete can never orphan committed clinical data. The count spans
+the template, and the message names how many versions still hold the reference.
+A physical delete can never orphan committed clinical data. The count spans
 archived content too, so an archived composition's template cannot be deleted out
 from under it. Delete the compositions first.
 
@@ -177,17 +177,17 @@ place:
 Properties worth knowing before you build on these:
 
 - **They are our own design.** The openEHR REST API provisions operational
-  templates only — it declares no archetype resource, no count, and no delete.
+  templates only: it declares no archetype resource, no count, and no delete.
   These routes realize the openEHR *service model*'s archetype operations, which
   the released wire never surfaced, so they are excluded from openEHR wire
   conformance and never gate a conformance profile tier.
 - **The archetype id is the client's, never assigned.** An ADL 1.4 upload reads
   it out of the source's own `archetype` header, and a re-upload of the same id
-  **replaces** it (there is no conflict branch — the service operation is
+  **replaces** it (there is no conflict branch: the service operation is
   replace-or-create). Success is **201** with the id in the body and a
   `Location`.
 - **Ids match case-insensitively**, and a malformed id on a read is simply a
-  **404** — nothing is stored under it.
+  **404**; nothing is stored under it.
 - **Writes respect the read-only role.** A principal carrying the configured
   read-only role is refused **403** before the store is touched. Uploads that do
   not parse or fail the phase-1 validity catalogue are **422**.
@@ -195,7 +195,7 @@ Properties worth knowing before you build on these:
 ## The WebTemplate
 
 The **WebTemplate** is a JSON description of a template that is far easier for
-application code to consume than raw OPT XML — it lists every field with its
+application code to consume than raw OPT XML: it lists every field with its
 path, type, cardinality, allowed values, and labels, which is exactly what you
 need to render a form or map data. Request it with the WebTemplate media type:
 
@@ -207,21 +207,21 @@ curl -u ferroehr:ferroehr \
 
 The WebTemplate is part of openEHR's own **Simplified Formats**
 sub-specification of ITS-REST 1.1.0, and FerroEHR emits its metadata format
-version `2.3` as that specification defines it — so tooling written against the
+version `2.3` as that specification defines it, so tooling written against the
 standard model works unchanged.
 
 `Accept: application/json` on the same URL returns that identical WebTemplate
-document — it is the only JSON representation of a template — but labelled
+document (it is the only JSON representation of a template) but labelled
 `Content-Type: application/json`, the type you asked for. Use
 `Accept: application/xml` for the canonical OPT instead.
 
-You can also fetch an **example composition** for a template — a skeleton
-instance you can fill in — from
+You can also fetch an **example composition** for a template (a skeleton
+instance you can fill in) from
 `GET /definition/template/adl1.4/{template_id}/example`. The same endpoint exists
 for ADL 2 templates at `GET /definition/template/adl2/{template_id}/example`: the
 stored operational template is turned into a WebTemplate and walked into an
 example composition. Both serve any of canonical JSON/XML, FLAT, or STRUCTURED
-(via `Accept`) and take the same two query parameters — `type`
+(via `Accept`) and take the same two query parameters: `type`
 (`input`/`output`) and `detail_level` (`required`/`medium`/`complete`).
 
 ## Composition formats
@@ -230,7 +230,7 @@ When committing or retrieving a composition, the canonical openEHR JSON (or XML)
 is always available, but two flatter formats are offered for convenience, keyed
 to a template:
 
-- **FLAT (simSDT)** — `application/openehr.wt.flat+json`. The whole composition
+- **FLAT (simSDT):** `application/openehr.wt.flat+json`. The whole composition
   as a single flat map of `path|attribute → value`, which is compact and easy to
   produce from a form. For example:
 
@@ -245,14 +245,14 @@ to a template:
   }
   ```
 
-- **STRUCTURED (structSDT)** — `application/openehr.wt.structured+json`. The
+- **STRUCTURED (structSDT):** `application/openehr.wt.structured+json`. The
   same data as a nested JSON tree that mirrors the template structure, rather
   than a flat map.
 
 Send the matching `Content-Type` when committing, or the matching `Accept` when
 retrieving, and the server converts between the flat/structured form and the
 canonical composition. Both are defined by openEHR's **Simplified Formats**
-sub-specification of ITS-REST 1.1.0 — that specification text is the only
+sub-specification of ITS-REST 1.1.0. That specification text is the only
 authority the server follows here, and there is no vendor-compatibility mode. The
 canonical JSON and XML remain the full-fidelity wire format. They work against
 both ADL 1.4 and ADL 2 templates: a FLAT or STRUCTURED commit keyed to an
@@ -260,7 +260,7 @@ ADL 2-registered template resolves and is validated against that template's
 archetype constraints exactly as an ADL 1.4 commit is.
 
 > [!NOTE]
-> The FLAT and STRUCTURED formats are always relative to a template — the paths
+> The FLAT and STRUCTURED formats are always relative to a template: the paths
 > are template paths, and the target template comes from the
 > `openehr-template-id` request header, without which a commit is a **422**. Use
 > them for form-driven capture; use canonical JSON/XML for full-fidelity
@@ -299,7 +299,7 @@ Which families apply depends on the node they hang off:
 | The composition's event context | `_health_care_facility`, `_participation:n` |
 
 An ACTION's `_instruction_details` carries exactly three suffixes on the field
-itself — the instruction's path within its composition, that composition's uid,
+itself: the instruction's path within its composition, that composition's uid,
 and the activity id:
 
 ```json
@@ -314,8 +314,8 @@ An interval event additionally carries `|sample_count` (the number of samples th
 interval summarises) alongside its `/width` and `/math_function` fields.
 
 An element that records *why* a value is missing carries `_null_flavour` (and
-optionally `_null_reason`) **instead of** a value — the reference model makes the
-two mutually exclusive — and both directions preserve it:
+optionally `_null_reason`) **instead of** a value (the reference model makes the
+two mutually exclusive), and both directions preserve it:
 
 ```json
 {
@@ -330,8 +330,8 @@ two mutually exclusive — and both directions preserve it:
 
 Every entry (observation, evaluation, instruction, action, admin entry) records a
 subject. It defaults to the owner of the EHR, and while it stays the default it
-does not appear on the wire at all. When an entry is about someone else — a
-relative, a donor, a fetus — spell it out with the party suffixes:
+does not appear on the wire at all. When an entry is about someone else (a
+relative, a donor, a fetus) spell it out with the party suffixes:
 
 ```json
 {
@@ -359,7 +359,7 @@ forms, and an entry's `…/language` and `…/encoding`. A bare
 `…/context/setting|code` is resolved against the openEHR *setting* value set,
 exactly as `ctx/setting` is. Output always uses the `ctx/` form for these, so a
 round trip through FLAT is stable. A path the Simplified Formats specification
-does not define is rejected with an error — never silently dropped.
+does not define is rejected with an error, never silently dropped.
 
 ### Embedding canonical JSON with `|raw`
 
@@ -389,7 +389,7 @@ value set is closed.
 
 When a template contains sibling nodes with the same name, the generated
 WebTemplate/FLAT path ids are disambiguated with underscore suffixes counted from
-1 — `blood_pressure`, `blood_pressure_1`, `blood_pressure_2` — as the
+1 (`blood_pressure`, `blood_pressure_1`, `blood_pressure_2`) as the
 specification prescribes. There is no vendor-compatibility mode: the
 specification's numbering is the only numbering, and vendor-only DV_QUANTITY
 suffixes such as `|unit_system` and `|unit_display_name` are not accepted. If
@@ -398,26 +398,26 @@ client side.
 
 ## Validation on commit
 
-Every composition is validated against its template at commit time — this is
+Every composition is validated against its template at commit time. This is
 where the template earns its keep. The server checks:
 
-- **structure** — required sections and fields are present, and cardinality and
+- **structure:** required sections and fields are present, and cardinality and
   occurrence constraints are respected;
-- **leaf values** — data types, units, value ranges, string patterns, decimal
+- **leaf values:** data types, units, value ranges, string patterns, decimal
   precision, and date/time constraints match the template;
-- **terminology** — coded values are members of the value sets the template
+- **terminology:** coded values are members of the value sets the template
   binds, using the bundled openEHR terminology or a configured external FHIR
   terminology server (see [Terminology servers](beyond-core/terminology.md)).
 
 If a composition is well-formed but breaks its template, the commit fails with
-**422 Unprocessable Entity** and a `validationErrors` list — one entry per
-offending node, as `"<path>: <message>"` — so a client can show the user exactly
+**422 Unprocessable Entity** and a `validationErrors` list (one entry per
+offending node, as `"<path>: <message>"`) so a client can show the user exactly
 what to fix. A syntactically malformed request instead gets **400 Bad Request**.
 The error shapes are described in
 [Content negotiation & errors](using-the-api/content-negotiation.md#error-responses).
 
 A version committed as `553|incomplete|` relaxes what must be *present* while
-still checking everything that is — see the lifecycle notes in
+still checking everything that is; see the lifecycle notes in
 [Resource walkthroughs](using-the-api/resources.md#composition).
 
 ## Next

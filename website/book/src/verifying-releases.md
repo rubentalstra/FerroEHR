@@ -3,22 +3,21 @@
 Before you run a FerroEHR binary, image, or chart in a clinical environment,
 you should be able to answer two questions about the bytes you downloaded:
 **did they arrive intact**, and **were they built by this project's own release
-pipeline**. This page is the operator's procedure for both — one command per
+pipeline**. This page is the operator's procedure for both: one command per
 artifact kind, plus the deliberately-failing runs that prove your verification
 is actually checking something.
 
 Every release publishes signed build provenance, a dependency SBOM, and a plain
 checksum alongside each artifact. Provenance is signed through
-[Sigstore](https://www.sigstore.dev/), so it is verifiable rather than merely
-readable, and the signer identity is one you can pin to a single hardened
-workflow.
+[Sigstore](https://www.sigstore.dev/), so you can verify it yourself, and the
+signer identity is one you can pin to a single hardened workflow.
 
 <!-- toc -->
 
 ## What a release publishes
 
 Substitute the release tag you downloaded for `<tag>` (for example
-`v3.20.0`) and the architecture for `<arch>` (`x86_64` or `aarch64`) throughout
+`v4.0.0`) and the architecture for `<arch>` (`x86_64` or `aarch64`) throughout
 this page. Linux is the only published target.
 
 | Asset | What it is |
@@ -33,13 +32,13 @@ this page. Linux is the only published target.
 | `docker-compose.yml` + the Keycloak and observability overlays | the quickstart stack, so a downloader never has to clone the repository |
 
 Container images and the Helm chart are published to GHCR by their own lanes and
-carry their own attestations — see [images](#a-container-image) and
+carry their own attestations; see [images](#a-container-image) and
 [the chart](#the-helm-chart) below.
 
 > [!NOTE]
 > The release lane refuses to publish a release whose asset set is incomplete.
 > It creates the release as a draft, attaches every asset, checks the full
-> expected set is present, and only then publishes — because a published release
+> expected set is present, and only then publishes, because a published release
 > is immutable on this repository, so a missing asset could never be added
 > afterwards. The remedy for a bad cut is a new patch version, never a retag.
 
@@ -47,7 +46,7 @@ carry their own attestations — see [images](#a-container-image) and
 
 **The floor: the checksum.** Every tarball ships a `.sha256sum` beside it, and
 this is the only verification available with neither `gh` nor `cosign` installed
-— which is a realistic constraint in a locked-down clinical environment:
+, which is a realistic constraint in a locked-down clinical environment:
 
 ```bash
 sha256sum -c ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz.sha256sum
@@ -70,7 +69,7 @@ gh attestation verify ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz \
 ```
 
 **Without reaching GitHub.** Each release also carries its Sigstore bundles as
-assets, so verification needs nothing but the artifact and the bundle — useful
+assets, so verification needs nothing but the artifact and the bundle, useful
 on an air-gapped host, and the only form in which the signature travels with the
 download:
 
@@ -82,7 +81,26 @@ gh attestation verify ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz \
 
 The `*.sbom.sigstore.json` asset beside it is the same thing for the SBOM
 attestation, so "which dependency graph was this binary built from" is
-verifiable offline too.
+verifiable offline too. Verifying an SBOM attestation needs one extra flag:
+`gh attestation verify` enforces the SLSA provenance predicate by default, so
+a non-provenance attestation must name its predicate type explicitly:
+
+```bash
+gh attestation verify ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz \
+  -R rubentalstra/FerroEHR \
+  --predicate-type https://cyclonedx.org/bom
+```
+
+**Fully offline**, with no call to GitHub at all: fetch the trusted key
+material once on a connected machine and carry it across with the bundle:
+
+```bash
+gh attestation trusted-root > trusted_root.jsonl        # on a connected host
+gh attestation verify ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz \
+  --bundle ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz.sigstore.json \
+  --custom-trusted-root trusted_root.jsonl \
+  --repo rubentalstra/FerroEHR
+```
 
 **Require the hardened signer.** Without a signer constraint you are trusting
 that *some* workflow in this repository signed the artifact. Pin the one that
@@ -96,6 +114,18 @@ gh attestation verify ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz \
 
 That workflow is the reusable release-build lane described under
 [SLSA levels](#what-slsa-level-each-artifact-reaches) below.
+
+**The binary also describes itself.** From v4.0.1 on, the shipped binary
+embeds its own compressed dependency list in a `.dep-v0` linker section
+(built with [`cargo auditable`](https://github.com/rust-secure-code/cargo-auditable);
+the section is allocated, so it survives the release lane's `strip`). A
+scanner that reads binaries — syft, trivy, grype, osv-scanner — recovers the
+crate graph from the artifact itself, even when the release page's SBOM never
+travelled with it:
+
+```bash
+syft ferroehr -o cyclonedx-json   # the extracted binary, not the tarball
+```
 
 > [!TIP]
 > `gh attestation verify` reports success by **exiting zero and printing
@@ -145,26 +175,48 @@ carry a Sigstore-signed SLSA provenance attestation, plus the SPDX SBOM and
 provenance the builder writes onto the image index itself.
 
 ```bash
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.20.0 \
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.0 \
   -R rubentalstra/FerroEHR
 ```
 
 > [!IMPORTANT]
-> **Image tags carry no `v` prefix.** A release publishes `3.20.0`, `3.20` and
+> **Image tags carry no `v` prefix.** A release publishes `4.0.0`, `3.20` and
 > `latest` (plus a `sha-…` tag per commit), while the release *assets* are named
-> after the `v3.20.0` git tag. Using `v3.20.0` as an image reference will simply
+> after the `v4.0.0` git tag. Using `v4.0.0` as an image reference will simply
 > not resolve.
 
 The development tags (`ghcr.io/rubentalstra/ferroehr:develop` and its two
 siblings) are signed the same way, so you can rehearse the command against them
 before a release.
 
-Add `--signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml`
-to require the image lane specifically rather than any workflow in this
-repository.
+Add `--signer-workflow rubentalstra/FerroEHR/.github/workflows/build-image.yml`
+to require the hardened image-build lane specifically rather than any
+workflow in this repository.
+
+**Verify by digest where it matters.** A tag is mutable, so anything that
+GATES on verification (admission control, a deploy script) should resolve the
+tag once and verify the digest it resolved — otherwise the bytes verified and
+the bytes pulled can differ:
+
+```bash
+digest=$(docker buildx imagetools inspect ghcr.io/rubentalstra/ferroehr:4.0.0 \
+  | awk '/^Digest:/{print $2}')
+gh attestation verify "oci://ghcr.io/rubentalstra/ferroehr@${digest}" \
+  -R rubentalstra/FerroEHR
+```
+
+The attestation is also pushed to the registry itself, so a host with
+registry access but no GitHub API path can verify from the registry alone
+with `--bundle-from-oci`. And the SBOM the builder wrote onto the image index
+is readable without any verifier at all:
+
+```bash
+docker buildx imagetools inspect "ghcr.io/rubentalstra/ferroehr@${digest}" \
+  --format '{{ json .SBOM }}'
+```
 
 Enforcing this at admission time in a Kubernetes cluster is a separate job with
-its own machinery — see
+its own machinery; see
 [Images: build, provenance, scanning](installation/hardening-supply-chain.md).
 
 ## The Helm chart
@@ -185,7 +237,8 @@ accepts a signature from anyone in the transparency log.
 
 ```bash
 gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
-  -R rubentalstra/FerroEHR
+  -R rubentalstra/FerroEHR \
+  --signer-workflow rubentalstra/FerroEHR/.github/workflows/build-chart.yml
 ```
 
 > [!NOTE]
@@ -206,48 +259,70 @@ rendered defaults.
 
 ## Three SBOMs, three questions
 
-A release involves three SBOM documents. They are not redundant — they describe
+A release involves three SBOM documents. They are not redundant: they describe
 different things for different readers, and both kinds of review genuinely
 happen for a clinical deployment:
 
 | Document | Where | Format | Answers |
 |---|---|---|---|
-| `ferroehr-<tag>-<arch>-unknown-linux-gnu.cdx.json` | a release asset, one per architecture | CycloneDX 1.5 | *what is inside the binary I am about to run?* Every cargo component with a `pkg:cargo/…` purl and licence, most with checksums, and the **dependency edges** — so "is this crate direct or four levels down" is answerable rather than guessed. This is what a vulnerability scanner consumes. |
-| `ferroehr-<tag>.spdx.json` | a release asset, one per release | SPDX | *what am I redistributing, and under what terms?* The attribution and licence-obligation view of the source tree at the release commit — the document a legal or procurement reviewer of a multi-licence redistribution asks for. |
+| `ferroehr-<tag>-<arch>-unknown-linux-gnu.cdx.json` | a release asset, one per architecture | CycloneDX 1.5 | *what is inside the binary I am about to run?* Every cargo component with a `pkg:cargo/…` purl and licence, most with checksums, and the **dependency edges**, so "is this crate direct or four levels down" is answerable rather than guessed. This is what a vulnerability scanner consumes. |
+| `ferroehr-<tag>.spdx.json` | a release asset, one per release | SPDX 2.3 | *what am I redistributing, and under what terms?* The attribution and licence-obligation view of the source tree at the release commit, the document a legal or procurement reviewer of a multi-licence redistribution asks for. |
 | the image SBOM | written onto each container image index by the builder | SPDX | *what is in the image's OS layer?* Which is what matters for `ferroehr-postgres`, built on the upstream `postgres` image. |
 
 CycloneDX 1.5 is the highest version the generator emits (`cargo-cyclonedx`
 accepts 1.3, 1.4 or 1.5 and defaults to 1.3, so the release lane sets it
 explicitly); it carries everything 1.6 consumers read. The repository SPDX
 document is checked at publish time for being real SPDX, naming itself
-`ferroehr`, and listing at least one package — an SBOM that answers no question
+`ferroehr`, and listing at least one package: an SBOM that answers no question
 is worse than none.
 
 ## What SLSA level each artifact reaches
 
-The levels are [SLSA v1.0 Build levels](https://slsa.dev/spec/v1.0/levels), and
-they differ per artifact, so a table is the honest form:
+The levels are the [SLSA v1.2 Build track](https://slsa.dev/spec/v1.2/build-requirements)
+(the current spec; v1.0 is marked Retired, and the Build-track requirements
+are unchanged across those versions — GitHub's own documentation still
+phrases the same construction against "SLSA v1.0"). They differ per artifact,
+so a table is the honest form:
 
 | Artifact | Level | Why |
 |---|---|---|
-| release binaries + their SBOM | **Build L3** | built and attested inside a *reusable* workflow, so the signing material is out of reach of any caller-defined step |
-| container images | Build L2 | attested in the job that builds them |
-| the Helm chart | Build L2 | same |
+| release binaries + their SBOM | **Build L3** | built and attested inside a *reusable* workflow (`release-build.yml`), so the signing material is out of reach of any caller-defined step |
+| container images | **Build L3** | built, pushed and attested inside a reusable workflow (`build-image.yml`); the calling jobs pass names and label text, never steps |
+| the Helm chart | **Build L3** | packaged, pushed, signed and attested inside a reusable workflow (`build-chart.yml`); the caller carries only triggers |
 
-Build L3's distinguishing requirement is that the platform must "prevent secret
-material used to sign the provenance from being accessible to the user-defined
-build steps". Every step of a GitHub Actions job shares one runner VM, so
+Images and the chart reach L3 from the first publish after v4.0.0; earlier
+artifacts were attested at Build L2 (in the job that built them), and their
+attestations verify with the repository-scoped command, not the pinned
+signer.
+
+Build L3's distinguishing requirement is that secret material used for
+authenticating the provenance "MUST NOT be accessible to the environment
+running the user-defined build steps". Every step of a GitHub Actions job shares one runner VM, so
 attesting inside the building job cannot satisfy it. The release lane therefore
 builds and signs inside a reusable workflow: it runs on its own VM, and a caller
-passes declared inputs — it cannot add steps. The calling job has no steps at
+passes declared inputs; it cannot add steps. The calling job has no steps at
 all, which is what makes the property hard to lose by accident, and it is why
 `--signer-workflow` is worth passing.
 
 **What is still not claimed**, in either lane: the isolation is GitHub's rather
-than this project's, and nothing here asserts a reproducible or hermetic build —
+than this project's, and nothing here asserts a reproducible or hermetic build;
 those are separate SLSA tracks this project does not address. Provenance proves
 *where* an artifact was built, not that the source was good. Naming the boundary
 is worth more than rounding a level up.
+
+## The `openehr-*` crates
+
+The eight specification crates publish to crates.io through Trusted
+Publishing: the workflow authenticates with a short-lived OIDC token, and no
+long-lived crates.io token exists anywhere. Be precise about what that does
+and does not give you: it is **authentication, not provenance**. crates.io
+records and displays nothing about how a crate was built, and the Rust RFC
+that introduced Trusted Publishing lists provenance verification as
+explicitly out of scope — there is no registry-side attestation to verify,
+from this project or any other. `cargo` checks the crate's checksum against
+the registry index, and that is the whole registry-side story. The crates'
+source of truth is this repository: the publishing lane, the tags, and the
+public history.
 
 ## Findings a scanner will report
 
@@ -256,7 +331,7 @@ this project has assessed and accepted is published as an
 [OpenVEX](https://openvex.dev) document under
 [`security/vex/`](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex),
 carrying a controlled-vocabulary justification and an impact statement you can
-check — rather than an ignore entry that records only the verdict. Point your
+check, rather than an ignore entry that records only the verdict. Point your
 tooling at them (`trivy --vex`, and most SCA platforms take an OpenVEX feed).
 
 | Document | Covers |
@@ -264,8 +339,8 @@ tooling at them (`trivy --vex`, and most SCA platforms take an OpenVEX feed).
 | `rust-advisories.openvex.json` | the Rust dependency advisories: the ones the advisory gate accepts, plus one that only a `Cargo.lock`-reading scanner reports |
 | `postgres-gosu.openvex.json` | Go standard-library findings in the `gosu` helper the upstream `postgres` image ships |
 
-The Rust document is **generated** from `deny.toml` — the gate that actually
-decides whether a build passes — joined with the published reasoning, and a CI
+The Rust document is **generated** from `deny.toml` (the gate that actually
+decides whether a build passes) joined with the published reasoning, and a CI
 job fails if the two disagree in either direction. So an advisory cannot be
 accepted without a justification reaching you, and a justification cannot claim
 something the gate does not do.
@@ -275,13 +350,13 @@ of nothing. `Cargo.lock` records the union of every dependency any feature
 combination *could* pull, so a scanner reading the lock file alone reports
 crates this project's feature set never compiles. `cargo deny` resolves features
 and does not. Where the two disagree in that direction the feature-resolving
-tool is the more precise instrument — and the VEX document carries that argument
+tool is the more precise instrument, and the VEX document carries that argument
 for the specific crate it applies to, so you do not have to take our word for it
 in prose.
 
 The published images are additionally re-scanned on a weekly schedule at the
 tag an operator actually pulls, and a fixable high-or-critical finding both
-fails that run and files a tracker issue — because a red scheduled run nobody
+fails that run and files a tracker issue, because a red scheduled run nobody
 looks at is not a control.
 
 ## If verification fails
@@ -290,4 +365,4 @@ A failing verification is a security report, not a support question. Do not run
 the artifact, and follow
 [SECURITY.md](https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md):
 report privately, never as a public issue. Note that only the newest release
-receives fixes — there is no maintenance branch to backport to.
+receives fixes; there is no maintenance branch to backport to.

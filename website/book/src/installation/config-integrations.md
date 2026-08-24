@@ -35,7 +35,7 @@ typed `408` rather than a driver error.
 
 **`max_result_rows` bounds only the case where nothing else does.** Without it,
 `SELECT c FROM COMPOSITION c` with no `fetch` generates SQL with no `LIMIT` and
-materialises every matching row — one request, unbounded allocation. An explicit
+materialises every matching row: one request, unbounded allocation. An explicit
 AQL `LIMIT` or a `fetch` parameter is honoured as written. ITS-REST leaves the
 `fetch` default to the implementation, so a default ceiling is spec-permitted; a
 bulk consumer asks for more explicitly, which is the point.
@@ -79,14 +79,14 @@ The FHIR connector: an inbound façade and an independent outbound emitter.
 | `enabled` | bool | `false` | Emit mapped FHIR resources to the broker. |
 | `url` | secret URL | `amqp://guest:guest@localhost:5672/%2f` | AMQP broker URL; credentials redacted. |
 | `url_file` | path | unset | Read the broker URL from a mounted file instead. At most one of the pair. |
-| `exchange` | string | `ferroehr.fhir` | Topic exchange — deliberately distinct from the events exchange, for PHI isolation. |
+| `exchange` | string | `ferroehr.fhir` | Topic exchange, deliberately distinct from the events exchange, for PHI isolation. |
 | `tls` | bool | `false` | Upgrade `amqp://` to `amqps://`. |
 | `batch_size` | int | `128` | Outbox rows scanned per poll. |
 | `poll_interval_ms` | int | `1000` | Idle poll interval. |
 | `publish_max_retries` | int | `3` | Per-message publish retries before backing off. |
 
 > [!WARNING]
-> The outbound stream carries **PHI** — its payload *is* the mapped FHIR
+> The outbound stream carries **PHI**: its payload *is* the mapped FHIR
 > resource. That is why it is a separate switch and a separate exchange from the
 > PHI-free change-event stream: broker-level access control can then restrict
 > the PHI-bearing stream on its own. Enable it only against a TLS,
@@ -108,7 +108,7 @@ API.
 
 Enabling `[terminology.external]` with no provider configured is a boot error.
 
-`[terminology.external.providers.<name>]` — conventionally at least `default`:
+`[terminology.external.providers.<name>]`, conventionally at least `default`:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -118,15 +118,15 @@ Enabling `[terminology.external]` with no provider configured is a boot error.
 | `connect_timeout_ms` | int | `2000` | TCP connect timeout. |
 | `request_timeout_ms` | int | `10000` | Overall request timeout. |
 | `oauth2_client` | string | unset ⇒ unauthenticated | Names an entry under `[terminology.external.oauth2_clients]`. A name with no such entry is a boot error. |
-| `client_cert_path` / `client_key_path` | path | unset | The mutual-TLS client identity — see [below](#mutual-tls-to-a-terminology-server). |
-| `ca_bundle_path` | path | unset | The trust anchors this server's certificate is verified against — see [below](#mutual-tls-to-a-terminology-server). |
+| `client_cert_path` / `client_key_path` | path | unset | The mutual-TLS client identity; see [below](#mutual-tls-to-a-terminology-server). |
+| `ca_bundle_path` | path | unset | The trust anchors this server's certificate is verified against; see [below](#mutual-tls-to-a-terminology-server). |
 | `cache_ttl_secs` | int | `300` | TTL of the per-provider response cache; a repeated validate/expand/subsumes/lookup within the window is served locally instead of one HTTPS round trip per validated code. `0` disables it. |
 | `cache_capacity` | int | `10000` | Maximum cached responses per provider. |
 
 Cached entries are the *decoded* responses, not raw JSON: a server answer that
-is not a valid FHIR R4B `Parameters`/`ValueSet` resource — for example an
+is not a valid FHIR R4B `Parameters`/`ValueSet` resource (for example an
 `$expand` result missing the required `ValueSet.status` or
-`expansion.timestamp` — is treated as an upstream fault rather than partially
+`expansion.timestamp`) is treated as an upstream fault rather than partially
 read, so it takes the same path as an unreachable server and `fail_on_error`
 decides what the commit does.
 
@@ -142,7 +142,7 @@ decides what the commit does.
 **Every** entry under `[terminology.external.providers]` is materialised at
 startup, so one instance can serve SNOMED CT from one server and LOINC or ICD
 from others. `[terminology.external.routes]` maps a terminology to the provider
-that answers for it — the key is a terminology id (`SNOMED-CT`) or a system URI
+that answers for it: the key is a terminology id (`SNOMED-CT`) or a system URI
 (`http://snomed.info/sct`), matched case-insensitively as a whole string, and
 the value names a provider. A terminology with no route goes to the provider
 named `default`, or to the sole configured provider when there is exactly one. A
@@ -221,7 +221,7 @@ client_key_path = "/run/secrets/ts-snomed-client.key.pem"
 ca_bundle_path = "/run/secrets/ts-snomed-ca.pem"
 ```
 
-`client_cert_path` and `client_key_path` are set together — one without the
+`client_cert_path` and `client_key_path` are set together; one without the
 other is a startup error, never a connection that silently presents no
 certificate. Unreadable files, a certificate file with no certificate in it and
 a key file with no key in it are startup errors too, so a broken identity never
@@ -261,7 +261,7 @@ to the server the binding's terminology routes to.
   `false` (the default) accepts the commit and logs a warning; `true` rejects it
   with `422`.
 
-With `[terminology.external]` disabled — the default — no binding is resolved
+With `[terminology.external]` disabled (the default) no binding is resolved
 and no request is made, so commit behaviour is exactly as if this section did
 not exist.
 
@@ -270,7 +270,7 @@ not exist.
 > parameter, and no openEHR specification defines a mapping between
 > `terminology_id` values (`SNOMED-CT`) and FHIR system URIs
 > (`http://snomed.info/sct`). If your archetypes and your terminology server
-> disagree, align them in the terminology-server configuration — the CDR does
+> disagree, align them in the terminology-server configuration; the CDR does
 > not rewrite the value.
 
 ## `[multimedia]`
@@ -285,15 +285,15 @@ contacted.
 | `threshold_bytes` | int | `262144` (256 KiB) | Decoded size strictly above which data is offloaded; at or below it stays inline. |
 | `endpoint` | string | unset ⇒ default AWS endpoint resolution | S3-compatible endpoint. Must be an absolute `http`/`https` URL when set. |
 | `bucket` | string | `openehr-multimedia` | Target bucket for content-addressed blobs. |
-| `region` | string | `us-east-1` | AWS region — S3 requires one even for non-AWS endpoints. |
+| `region` | string | `us-east-1` | AWS region; S3 requires one even for non-AWS endpoints. |
 | `access_key_id` | string | unset | S3 access key id. Unset, with no secret key either, runs the client anonymously. |
 | `secret_access_key` / `secret_access_key_file` | secret / path | unset | S3 secret access key. At most one of the pair. |
-| `allow_http` | bool | `false` | Allow plain-HTTP endpoints — development only; production S3 is HTTPS. |
+| `allow_http` | bool | `false` | Allow plain-HTTP endpoints, development only; production S3 is HTTPS. |
 
 An enabled integration whose `endpoint` is set but blank, not an absolute URL,
 or carries a scheme other than `http`/`https` is a **boot error**. That case is
-easy to reach by accident — an unset Compose variable expanding to nothing, or
-an empty Helm value — and used to boot cleanly and then fail on the first
+easy to reach by accident (an unset Compose variable expanding to nothing, or
+an empty Helm value) and used to boot cleanly and then fail on the first
 multimedia commit, so it is refused where an operator can still act on it.
 
 > [!WARNING]

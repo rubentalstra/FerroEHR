@@ -12,13 +12,13 @@ means in this implementation, why a design is the way it is.
 Read first, because the answer is often already written and is more precise
 than a reply:
 
-- **[The documentation site](https://ferroehr.eu/)** — installation, the
+- **[The documentation site](https://ferroehr.eu/):** installation, the
   configuration reference, the API walkthroughs, AQL, templates, security and
   multi-tenancy, operations. Start at
   [Getting started](https://ferroehr.eu/docs/latest/getting-started.html).
-- **[The API reference](https://ferroehr.eu/api/)** — the OpenAPI document the
+- **[The API reference](https://ferroehr.eu/api/):** the OpenAPI document the
   server itself generates, so it describes the surface that actually exists.
-- **[`docs/architecture.md`](docs/architecture.md)** — the design, in one file.
+- **[`docs/architecture.md`](docs/architecture.md):** the design, in one file.
 
 There is no commercial support offering, no service-level agreement, and no
 paid tier. Answers come when the maintainer is at a keyboard
@@ -32,14 +32,13 @@ paid tier. Answers come when the maintainer is at a keyboard
 The reports that get fixed fastest carry:
 
 - the version (`ferroehr --version`, or the image tag), and how it is deployed;
-- the request and the response, verbatim — method, path, headers,
-  bodies — or the AQL and the result set;
+- the request and the response, verbatim (method, path, headers, bodies),
+  or the AQL and the result set;
 - what the openEHR specification says should have happened, with the
   file and section from `docs/specs/openehr/` if you have it. A citation turns
   a disagreement into a defect.
 
-**A specification-conformance report is not a nuisance report — it is the most
-valuable kind here.** The implementation is never presumed correct because it
+**A specification-conformance report is the most valuable kind here.** The implementation is never presumed correct because it
 was written to the specification; the specification text is the authority and
 the implementation is the usual culprit.
 
@@ -49,10 +48,10 @@ the implementation is the usual culprit.
 privately through
 [GitHub private vulnerability reporting](https://github.com/rubentalstra/FerroEHR/security/advisories/new).
 
-That document also carries what you can expect in return — an acknowledgement
-window, an assessment window, coordinated disclosure, safe harbour for good-faith
-research, and credit by default — plus what to do if the acknowledgement does
-not arrive.
+That document also carries what you can expect in return (an acknowledgement
+window, an assessment window, coordinated disclosure, safe harbour for
+good-faith research, and credit by default), plus what to do if the
+acknowledgement does not arrive.
 
 **A vulnerability in Kubernetes itself, or in a database, broker or terminology
 server you deployed alongside FerroEHR, goes to that project**, not here.
@@ -60,14 +59,14 @@ SECURITY.md § *Reporting a vulnerability in Kubernetes itself* has the routing.
 
 ## I want to change something
 
-[CONTRIBUTING.md](CONTRIBUTING.md) is the practical guide — setup, the gates
+[CONTRIBUTING.md](CONTRIBUTING.md) is the practical guide: setup, the gates
 every pull request must pass, and the hard rules. [GOVERNANCE.md](GOVERNANCE.md)
 is how the decision gets made and how someone becomes a maintainer.
 
 ## What you are entitled to
 
-Nothing, and that is worth saying rather than implying. FerroEHR is MIT-licensed
-software provided as-is, by volunteers, with no warranty — read the
+Nothing, and that is worth saying plainly. FerroEHR is MIT-licensed
+software provided as-is, by volunteers, with no warranty. Read the
 [LICENSE](LICENSE), which says exactly that in the language that binds.
 Everything above describes what the project *intends* to do, and the intent is
 sincere; none of it is a contractual commitment, and only the security-report
