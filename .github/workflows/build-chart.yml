@@ -397,7 +397,18 @@ jobs:
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
           set -euo pipefail
-          cosign sign --yes "${CHART_REF}@${DIGEST}"
+          # Retried: the chart is already pushed and immutable by this point, so
+          # a transient Sigstore outage must not strand a published-but-unsigned
+          # version (chart 6.0.14 was lost to a single Fulcio connection reset).
+          for attempt in 1 2 3; do
+            if cosign sign --yes "${CHART_REF}@${DIGEST}"; then
+              exit 0
+            fi
+            echo "cosign sign attempt ${attempt} failed; retrying in $((attempt * 10))s"
+            sleep $((attempt * 10))
+          done
+          echo "::error::cosign sign failed after 3 attempts"
+          exit 1
 
       # Keyless provenance for the chart artifact, the same mechanism the images
       # use — see the header for why neither of these is a PGP `.prov`.
