@@ -27,6 +27,10 @@ workflow refuses a tag that has no matching section here.
   the node rows remain the AQL source of truth. Storage grows by roughly
   the size of each stored version's canonical JSON.
 
+- The EHR_STATUS reads (current and `version_at_time`) and the current
+  directory read resolve their container and read the version in ONE
+  statement each (previously a container-resolution query followed by the
+  version read).
 - Two per-item read loops became single statements: a resolved CONTRIBUTION
   read (`Prefer: resolve_refs`) loads all its member versions in one batched
   query instead of one read per member, and the persistent-COMPOSITION

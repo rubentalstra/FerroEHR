@@ -79,27 +79,19 @@ pub(crate) async fn revision_history(
         ));
     }
 
-    // Attestations for the object, keyed by version, in commit order.
-    let att_rows =
-        crate::storage::version_repo::attestation::read_attestations_all(pool, vo_id).await?;
-    let mut attestations: std::collections::HashMap<i32, Vec<Value>> =
-        std::collections::HashMap::new();
-    for (sys_version, data) in att_rows {
-        attestations.entry(sys_version).or_default().push(data);
-    }
-
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
         // "there will always be at least one commit audit … there may also be
         // further attestations" — the commit audit first, then the version's
-        // attestations in commit order (master04 §Revision History).
+        // attestations in commit order (master04 §Revision History), folded
+        // into the one meta statement (`VersionMeta::attestations`).
         // The commit audit makes the `1..*` bound of
         // `REVISION_HISTORY_ITEM.audits` hold by construction.
         let mut audits = openehr_base::containers::NonEmptyVec::of(
             AuditInput::from_meta(row)?.typed(&row.time_committed),
         );
-        for stored in attestations.remove(&row.sys_version).unwrap_or_default() {
-            audits.push(stored_attestation(&stored)?);
+        for stored in &row.attestations {
+            audits.push(stored_attestation(stored)?);
         }
         items.push(RevisionHistoryItem {
             version_id: version_id(

@@ -72,6 +72,10 @@ pub struct VersionMeta {
     pub audit_attestation: Option<Value>,
     /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
+    /// The version's `ATTESTATION` fragments in commit order (RM common
+    /// master06 §Attestation), folded into the meta row so a revision history
+    /// never issues a second attestation query; `[]` in the common case.
+    pub attestations: Vec<Value>,
 }
 
 /// All version metadata rows of an object, ordered by storage ordinal.
@@ -85,8 +89,14 @@ pub async fn all_version_meta(
     const SQL: &str = "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, v.lifecycle_state, \
                        a.system_id, a.change_type, a.description, a.committer, a.attestation, \
-                       a.time_committed \
+                       a.time_committed, att.attestations \
                        FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                       LEFT JOIN LATERAL ( \
+                       SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), \
+                       '[]'::jsonb) AS attestations \
+                       FROM vo_attestation_all x \
+                       WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version \
+                       ) att ON true \
                        WHERE v.vo_id = $1 ORDER BY v.sys_version";
     let rows = sqlx::query(SQL).bind(vo_id).fetch_all(pool).await?;
     rows.iter()
@@ -108,6 +118,11 @@ pub async fn all_version_meta(
                 time_committed: row
                     .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
                     .to_jiff(),
+                attestations: row
+                    .try_get::<Value, _>("attestations")?
+                    .as_array()
+                    .cloned()
+                    .unwrap_or_default(),
             })
         })
         .collect()

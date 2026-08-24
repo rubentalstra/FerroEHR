@@ -42,7 +42,7 @@ use crate::versioning::Kind;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::{create, delete, update};
 use crate::versioning::object_version_id::{TreeId, components};
-use crate::versioning::read::{read_current, read_version, version_at};
+use crate::versioning::read::{read_version, version_at};
 use crate::versioning::wire::versioned_object;
 
 use super::validation::{check_folder_item_refs, validate_folder};
@@ -135,10 +135,23 @@ impl FerroEhrService {
         at: Option<jiff::Timestamp>,
         path: Option<&str>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let vo_id = self.directory_vo(ehr_id).await?;
+        // The current read folds the `ehr_folder` slot resolution into the
+        // version statement (same slot choice as `directory_vo`); the as-of
+        // read keeps the two-step so the slot is still chosen by CURRENT
+        // state, exactly as before.
         let read = match at {
-            Some(at) => version_at(&self.pool, self.spec_profile, vo_id, at).await?,
-            None => read_current(&self.pool, self.spec_profile, vo_id).await?,
+            Some(at) => {
+                let vo_id = self.directory_vo(ehr_id).await?;
+                version_at(&self.pool, self.spec_profile, vo_id, at).await?
+            }
+            None => {
+                crate::versioning::read::read_current_directory(
+                    &self.pool,
+                    self.spec_profile,
+                    ehr_id,
+                )
+                .await?
+            }
         }
         .filter(|r| r.ehr_id == Some(ehr_id) && r.kind == Kind::Folder)
         .ok_or_else(|| {
@@ -150,6 +163,7 @@ impl FerroEhrService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
+        let vo_id = read.vo_id;
         let meta = self.version_meta(
             ehr_id,
             vo_id,

@@ -474,3 +474,93 @@ pub async fn version_at(
         .map(|row| stored_version(vo_id, &row))
         .transpose()
 }
+
+/// Decode a scoped-read row through [`stored_version`], keyed by the row's
+/// own `vo_id` (the scoped reads resolve the container and the version in the
+/// same statement, so no caller-supplied id exists).
+fn stored_version_by_row(row: &PgRow) -> Result<StoredVersion, StorageError> {
+    let vo_id: VoId = row.try_get("vo_id")?;
+    stored_version(vo_id, row)
+}
+
+/// Read the current TRUNK version of the EHR's one container of `kind` in ONE
+/// statement — the container resolution and the version read merged.
+///
+/// Valid only for the kinds an EHR holds exactly one container of
+/// (`EHR_STATUS` — RM ehr `ehr.adoc` declares `ehr_status` singular);
+/// `None` when the EHR has no such container.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver/decode failure.
+pub async fn read_current_of_kind(
+    pool: &PgPool,
+    ehr_id: EhrId,
+    kind: &str,
+) -> Result<Option<StoredVersion>, StorageError> {
+    const SQL: &str = version_select!(
+        "WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
+         AND v.branch_number = 0"
+    );
+    sqlx::query(SQL)
+        .bind(ehr_id)
+        .bind(kind)
+        .fetch_optional(pool)
+        .await?
+        .as_ref()
+        .map(stored_version_by_row)
+        .transpose()
+}
+
+/// [`read_current_of_kind`]'s time-travel form: the TRUNK version of the
+/// EHR's one container of `kind` whose `sys_period` contains `at`.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver/decode failure.
+pub async fn version_at_of_kind(
+    pool: &PgPool,
+    ehr_id: EhrId,
+    kind: &str,
+    at: jiff::Timestamp,
+) -> Result<Option<StoredVersion>, StorageError> {
+    const SQL: &str = version_select!(
+        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.sys_period @> $3::timestamptz \
+         AND v.branch_number = 0"
+    );
+    let at = at.to_string();
+    sqlx::query(SQL)
+        .bind(ehr_id)
+        .bind(kind)
+        .bind(&at)
+        .fetch_optional(pool)
+        .await?
+        .as_ref()
+        .map(stored_version_by_row)
+        .transpose()
+}
+
+/// Read the current version of the EHR's DIRECTORY folder in ONE statement.
+///
+/// The `ehr_folder` slot resolution folds into the version read, with the
+/// same slot choice `crate::storage::ehr_repo::directory_vo` makes (prefer a
+/// live slot over a logically deleted one, then the lowest `rank`, so a read
+/// after a logical delete resolves to the deleted version → 204, never 404).
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver/decode failure.
+pub async fn read_current_directory(
+    pool: &PgPool,
+    ehr_id: EhrId,
+) -> Result<Option<StoredVersion>, StorageError> {
+    const SQL: &str = version_select!(
+        "JOIN ehr_folder f ON f.vo_id = v.vo_id \
+         WHERE f.ehr_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+         ORDER BY (v.lifecycle_state = '523'), f.rank LIMIT 1"
+    );
+    sqlx::query(SQL)
+        .bind(ehr_id)
+        .fetch_optional(pool)
+        .await?
+        .as_ref()
+        .map(stored_version_by_row)
+        .transpose()
+}
