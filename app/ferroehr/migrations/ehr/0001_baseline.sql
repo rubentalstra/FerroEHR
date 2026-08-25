@@ -649,7 +649,7 @@ CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
 -- LIMIT early termination at corpus scale.
 CREATE INDEX idx_node_arch_subsume ON node (rm_type, arch_entity, arch_major, arch_concept text_pattern_ops)
     WHERE arch_entity IS NOT NULL;
-CREATE INDEX idx_node_ehr ON node (ehr_id);
+
 -- NOTE: two speculative jsonb indexes were REMOVED here after the measured
 -- repricing: a gin(data
 -- jsonb_ops) index (the AQL engine emits no GIN-servable operator — CONTAINS
