@@ -9,6 +9,11 @@
 
 ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
 
+### 🚀 Try it live, right now: **[sandbox.ferroehr.eu](https://sandbox.ferroehr.eu)**
+
+No install, no account: the link opens the Swagger UI of a running FerroEHR.\
+Sign in with `ferroehr` / `ferroehr` — demo data only, wiped and reseeded nightly.
+
 [![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
 [![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
 [![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
@@ -29,7 +34,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
 [![SLSA Build L3](https://slsa.dev/images/gh-badge-level3.svg)](https://ferroehr.eu/docs/latest/verifying-releases.html#what-slsa-level-each-artifact-reaches)
 
-[**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
+[**Live sandbox**](https://sandbox.ferroehr.eu) · [**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -205,7 +210,10 @@ on the documentation site.
 
 ## Quick start
 
-No local setup at all: [open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
+The fastest path is the [live sandbox](https://sandbox.ferroehr.eu): it opens
+straight into the Swagger UI of a running FerroEHR (credentials
+`ferroehr` / `ferroehr`, demo data, wiped nightly). One step up,
+[open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
 and the published stack (server, PostgreSQL 18, admin console) boots in your
 browser. Details in [Try it in Codespaces](https://ferroehr.eu/docs/latest/installation/codespaces.html).
 
