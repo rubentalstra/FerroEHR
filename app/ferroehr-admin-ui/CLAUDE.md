@@ -206,8 +206,10 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 
 ## Gates
 
-`/ui-gates`: clippy on **native and wasm32** targets, `cargo nextest run -p
-ferroehr-admin-ui`, leptosfmt + cargo fmt, cargo-leptos build; E2E journeys
-(`tests/e2e_*.rs`, skip-with-reason via `UI_E2E_BASE_URL`) merge-gate in CI;
-a UI-visual change re-captures the `website/book` screenshots
-(`ui-screenshot-guard`).
+`/ui-gates`: clippy on **native (`--features ssr`) and wasm32 (hydrate)**
+targets, `cargo nextest run -p ferroehr-admin-ui --features ssr` (the
+featureless crate ships nowhere and skips every ssr-gated test), leptosfmt
+(src + tests) + cargo fmt, cargo-leptos build; E2E journeys (the `e2e_*`
+modules under `tests/it/`, skip-with-reason via `UI_E2E_BASE_URL`)
+merge-gate in CI; a UI-visual change re-captures the `website/book`
+screenshots (`ui-screenshot-guard`).
