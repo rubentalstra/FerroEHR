@@ -624,3 +624,29 @@ jobs:
           FERROEHR_IMAGE: ferroehr:smoke
           FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:smoke
         run: bash docker/smoke-test.sh
+
+  # Re-trigger the sandbox deploy once the release image exists (#2710). At a
+  # release cut the version-bump merge reaches develop before this pipeline
+  # publishes the tag's image, so Vercel's push-triggered deploy is SKIPPED by
+  # the ignoreCommand (scripts/sandbox/vercel-ignore.sh); this ping re-runs it
+  # at exactly the moment the image is pullable. A Deploy Hook is a plain
+  # trigger URL (no account token, no API scope). Skipped quietly when the
+  # secret is absent, so forks and secretless runs stay green.
+  sandbox-deploy-hook:
+    name: ping the sandbox deploy hook
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: app-image
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Trigger the Vercel deploy
+        env:
+          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$HOOK_URL" ]; then
+            echo "SANDBOX_DEPLOY_HOOK_URL is not configured; skipping the ping."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK_URL" -o /dev/null
+          echo "sandbox deploy triggered"
