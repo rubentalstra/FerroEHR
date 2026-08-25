@@ -1204,6 +1204,19 @@ pub(crate) fn error_with_meta(
     out
 }
 
+/// Serve pre-formed canonical JSON verbatim as `application/json` — the
+/// stored-body passthrough (the text is the database's own jsonb rendering of
+/// the canonical body, uid-stamped at commit; no parse → serialize round
+/// trip).
+pub(crate) fn raw_json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_JSON),
+    );
+    resp
+}
+
 /// Serve a pre-formed XML document verbatim as `application/xml`.
 ///
 /// The lineage-agnostic builder: the OPT 1.4 template representation (always

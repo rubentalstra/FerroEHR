@@ -76,6 +76,33 @@ The floors that fall out of this chain are the published defaults the runner
 enforces; the concrete rates per class are carried in the class ladder above and
 the summary table below, never re-typed into this prose.
 
+## The durability floor — what a single write can never beat
+
+Every committed version is durable: the transaction's WAL records are flushed
+to disk before the server answers, so an acknowledged commit survives a crash.
+That flush is a physical lower bound on single-client write latency — one
+`fsync` on the WAL device per commit — and no storage design takes a lone
+sequential client below it. On a laptop-class Docker setup the flush alone
+measures around 1.5–2 ms; on server NVMe it is typically an order of magnitude
+smaller. FerroEHR's optimization target is therefore everything *around* the
+flush: the database's own per-commit work (one folded commit statement, one
+merged placement read) is kept far below the flush itself, which also means
+concurrent throughput scales — PostgreSQL group-commits, amortizing one flush
+across every transaction that reaches it in the same window.
+
+The knob behind this boundary is PostgreSQL's
+[`synchronous_commit`](https://www.postgresql.org/docs/18/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT).
+Setting it `off` makes commits return before the WAL flush: single-client
+write latency drops to the statement work alone, and a server crash can lose
+the most recent acknowledged commits (up to three times `wal_writer_delay`,
+per the PostgreSQL documentation — the database stays consistent; the tail of
+acknowledged writes is what is at risk). **FerroEHR never defaults this off
+and does not recommend it for clinical data.** It is an operator decision,
+made per deployment on the database side, defensible only where the record of
+loss is acceptable (a load-test rig, a reseedable sandbox, an analytics
+replica). All published FerroEHR numbers are measured with full durability
+on.
+
 ## The hospital simulation
 
 The measured workload is not a flat operation mix: it **simulates a hospital, end
