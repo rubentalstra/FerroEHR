@@ -648,13 +648,19 @@ securityContext:
   # https://kubernetes.io/docs/tutorials/security/apparmor/
 
 # -- Resource requests/limits. Sized for a modest API replica; tune for load.
+# ephemeral-storage is bounded too: the container writes only logs/tmp (the
+# root filesystem is read-only), and an unbounded default would let runaway
+# local writes evict the pod's node neighbours
+# (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#setting-requests-and-limits-for-local-ephemeral-storage).
 resources:
   requests:
     cpu: 250m
     memory: 256Mi
+    ephemeral-storage: 128Mi
   limits:
     cpu: "2"
     memory: 1Gi
+    ephemeral-storage: 1Gi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Probes — three roles, and the split is load-bearing
