@@ -178,6 +178,7 @@ const SECURITY_SCHEME: &str = "openehr_auth";
         (name = "definition-archetype", description = "ADL 1.4 / ADL 2 archetype + artefact provisioning — SM I_DEFINITION_ADL14 / I_DEFINITION_ADL2 operations the released Definition API never surfaced (it provisions operational templates only). OUR OWN EXTENSION: no ITS-REST operation governs these routes."),
         (name = "admin-report", description = "The SM I_ADMIN_SERVICE activity-report calls (contribution/version statistics per PLATFORM_SERVICE). OUR OWN EXTENSION: the released Admin API is the two EHR deletes alone, so no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
         (name = "admin-archive", description = "The SM I_ADMIN_ARCHIVE calls (move selected EHRs / parties to archival storage) plus the reverse movement the SM declares no operation for (restore selected EHRs / parties from archival storage). OUR OWN EXTENSION: no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
+        (name = "admin-integrity", description = "The storage-parity sweep: every stored version is re-derived from its decomposed node rows and compared with its materialized body, so tampering or corruption of either copy is reported. OUR OWN EXTENSION: no ITS-REST operation and no SM interface governs this route, and no openEHR spec governs storage mechanics (same admin gate + RBAC Admin class)."),
         (name = "admin-dump-load", description = "The SM I_ADMIN_DUMP_LOAD calls (export every EHR to a file-system archive; populate the repository from one). OUR OWN EXTENSION: no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
         (name = "message", description = "The SM MESSAGE component — I_EHR_EXTRACT_SERVICE (EHR-Extract export/import) and I_TDD_SERVICE (Template Data Document import). OUR OWN EXTENSION: ITS-REST 1.1.0 publishes no message/extract/TDD API at all, so no released operation governs any route here; they carry the ordinary clinical authentication class, not the admin gate."),
         (name = "event-subscription", description = "Event-subscription CRUD extension (config-gated: FERROEHR_REST_EVENT_SUBSCRIPTION__ENABLED)."),
@@ -562,10 +563,16 @@ const FAMILIES: &[(&str, &str, Members)] = &[
             exclude: &[],
             // The ADMIN group's own-design routes (template delete, stored-query
             // version delete, the redacted config read, the activity report, the
-            // archive pair and the dump/load pair) live under sibling `/admin/*`
-            // paths, not under `/admin/ehr`; they are part of this group and
-            // belong in its document.
-            also_tagged: &["ADMIN", "admin-report", "admin-archive", "admin-dump-load"],
+            // archive pair, the dump/load pair and the storage-parity sweep)
+            // live under sibling `/admin/*` paths, not under `/admin/ehr`; they
+            // are part of this group and belong in its document.
+            also_tagged: &[
+                "ADMIN",
+                "admin-report",
+                "admin-archive",
+                "admin-dump-load",
+                "admin-integrity",
+            ],
         },
     ),
     // The server's own extension families, by tag.
