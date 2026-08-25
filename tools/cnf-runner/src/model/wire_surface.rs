@@ -70,7 +70,7 @@ pub enum SurfaceReason {
 
 impl SurfaceReason {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [SurfaceReason] = &[
+    pub const ALL: &[SurfaceReason] = &[
         SurfaceReason::OffWire,
         SurfaceReason::VariantOf,
         SurfaceReason::Accessor,

@@ -171,7 +171,7 @@ fn composition_c14n_matches_cnf_canonical_fixtures() {
     let mut failures = Vec::new();
     for entry in std::fs::read_dir(&dir).expect("read fixtures dir") {
         let path = entry.unwrap().path();
-        if path.extension().and_then(|e| e.to_str()) != Some("xml") {
+        if path.extension().and_then(std::ffi::OsStr::to_str) != Some("xml") {
             continue;
         }
         let stem = path.file_stem().unwrap().to_str().unwrap().to_string();

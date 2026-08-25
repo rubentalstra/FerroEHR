@@ -57,7 +57,7 @@ fn collect_opts(dir: &Path, out: &mut Vec<PathBuf>) {
         let p = e.path();
         if p.is_dir() {
             collect_opts(&p, out);
-        } else if p.extension().and_then(|s| s.to_str()) == Some("opt") {
+        } else if p.extension().and_then(std::ffi::OsStr::to_str) == Some("opt") {
             out.push(p);
         }
     }

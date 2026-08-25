@@ -121,7 +121,7 @@ fn every_official_cnf_robot_template_parses() {
     for path in &files {
         let name = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or_default();
         let xml = std::fs::read_to_string(path).expect("read opt file");
         let outcome = openehr_its::opt14::from_xml(&xml);

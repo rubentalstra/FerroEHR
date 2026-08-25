@@ -229,7 +229,7 @@ pub enum VerificationPackStatus {
 
 impl VerificationPackStatus {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [VerificationPackStatus] = &[
+    pub const ALL: &[VerificationPackStatus] = &[
         VerificationPackStatus::Passed,
         VerificationPackStatus::NotRun,
         VerificationPackStatus::Failed,
@@ -269,7 +269,7 @@ pub enum OutcomeStatus {
 
 impl OutcomeStatus {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [OutcomeStatus] = &[
+    pub const ALL: &[OutcomeStatus] = &[
         OutcomeStatus::Passed,
         OutcomeStatus::Failed,
         OutcomeStatus::Errored,

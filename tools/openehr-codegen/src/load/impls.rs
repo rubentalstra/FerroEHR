@@ -52,7 +52,7 @@ fn collect(dir: &Path, prefix: &str, out: &mut BTreeSet<String>) {
     };
     for entry in entries.flatten() {
         let path = entry.path();
-        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+        let Some(name) = path.file_name().and_then(std::ffi::OsStr::to_str) else {
             continue;
         };
         let relative = if prefix.is_empty() {

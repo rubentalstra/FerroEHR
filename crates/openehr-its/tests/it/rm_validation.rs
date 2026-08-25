@@ -431,7 +431,7 @@ fn corpus_files() -> Vec<std::path::PathBuf> {
             let path = entry.expect("dir entry").path();
             if path.is_dir() {
                 roots.push(path);
-            } else if path.extension().and_then(|e| e.to_str()) == Some("json") {
+            } else if path.extension().and_then(std::ffi::OsStr::to_str) == Some("json") {
                 if crate::common::excluded(&crate::common::corpus_rel(&path)).is_some() {
                     let twin = crate::common::twinned(&path);
                     if twin != path {
@@ -673,7 +673,9 @@ fn corpus_terminology_audit_is_clean() {
             for iv in v {
                 findings.push(format!(
                     "{}: {ty} {} — {}",
-                    path.file_name().and_then(|s| s.to_str()).unwrap_or("?"),
+                    path.file_name()
+                        .and_then(std::ffi::OsStr::to_str)
+                        .unwrap_or("?"),
                     iv.path,
                     iv.message,
                 ));

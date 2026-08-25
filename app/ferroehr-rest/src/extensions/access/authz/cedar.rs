@@ -314,7 +314,7 @@ fn load_and_validate(dir: &Path, schema: &Schema) -> Result<PolicySet, AuthzErro
         let path = entry
             .map_err(|e| AuthzError::PolicyLoad(format!("policy dir entry: {e}")))?
             .path();
-        if path.extension().and_then(|e| e.to_str()) == Some("cedar") {
+        if path.extension().and_then(std::ffi::OsStr::to_str) == Some("cedar") {
             let text = std::fs::read_to_string(&path).map_err(|e| {
                 AuthzError::PolicyLoad(format!("reading policy {}: {e}", path.display()))
             })?;

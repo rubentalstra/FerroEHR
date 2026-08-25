@@ -2002,7 +2002,7 @@ mod tests {
         let mut count = 0usize;
         for entry in std::fs::read_dir(&dir).expect("opt corpus dir") {
             let path = entry.expect("dir entry").path();
-            if path.extension().and_then(|e| e.to_str()) != Some("opt") {
+            if path.extension().and_then(std::ffi::OsStr::to_str) != Some("opt") {
                 continue;
             }
             count += 1;

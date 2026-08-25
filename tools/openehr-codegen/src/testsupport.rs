@@ -1624,9 +1624,9 @@ fn hand_written_files(dir: &std::path::Path) -> Result<BTreeMap<String, String>,
             }
             let name = path
                 .file_name()
-                .and_then(|n| n.to_str())
+                .and_then(std::ffi::OsStr::to_str)
                 .unwrap_or_default();
-            if path.extension().and_then(|e| e.to_str()) != Some("rs")
+            if path.extension().and_then(std::ffi::OsStr::to_str) != Some("rs")
                 || matches!(name, "mod.rs" | "prelude.rs")
             {
                 continue;
@@ -1888,10 +1888,10 @@ fn rust_bodies_by_stem(dir: &std::path::Path) -> Result<BTreeMap<String, String>
                 stack.push(path);
                 continue;
             }
-            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+            if path.extension().and_then(std::ffi::OsStr::to_str) != Some("rs") {
                 continue;
             }
-            let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+            let Some(stem) = path.file_stem().and_then(std::ffi::OsStr::to_str) else {
                 continue;
             };
             let body = std::fs::read_to_string(&path).map_err(|e| Error::from(e.to_string()))?;

@@ -148,12 +148,15 @@ fn invalid_fixture_verdicts_agree_across_canonical_formats() {
     let mut structural = 0usize;
     for entry in std::fs::read_dir(&dir).expect("catalogue fixture dir") {
         let path = entry.expect("dir entry").path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json")
-            || !path.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
-                n.contains("invalid")
-                    || n.contains("location_empty")
-                    || n.contains("cluster_no_items")
-            })
+        if path.extension().and_then(std::ffi::OsStr::to_str) != Some("json")
+            || !path
+                .file_name()
+                .and_then(std::ffi::OsStr::to_str)
+                .is_some_and(|n| {
+                    n.contains("invalid")
+                        || n.contains("location_empty")
+                        || n.contains("cluster_no_items")
+                })
         {
             continue;
         }

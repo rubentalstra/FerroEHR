@@ -39,7 +39,7 @@ impl Composition {
     /// "True if category is `431|persistent|`" — so `431` is normative here,
     /// not a local convention. The rubric is a rendering of it and is resolved
     /// from the terminology bundle, never compared against.
-    const PERSISTENT_CATEGORY: &'static str = "431";
+    const PERSISTENT_CATEGORY: &str = "431";
 
     /// Returns `true` when this composition's category is `431|persistent|`.
     ///

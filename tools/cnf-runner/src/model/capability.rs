@@ -38,7 +38,7 @@ pub enum Realization {
 
 impl Realization {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [Realization] = &[Realization::ReleasedWire, Realization::Extension];
+    pub const ALL: &[Realization] = &[Realization::ReleasedWire, Realization::Extension];
 
     /// The vocabulary token (matrix rows, certificate column).
     #[must_use]

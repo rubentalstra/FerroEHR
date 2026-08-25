@@ -984,7 +984,7 @@ fn collect_bmm(dir: &Path, root: &Path, out: &mut Vec<String>) {
         let path = entry.unwrap_or_else(|e| panic!("dir entry: {e}")).path();
         if path.is_dir() {
             collect_bmm(&path, root, out);
-        } else if path.extension().and_then(|e| e.to_str()) == Some("bmm") {
+        } else if path.extension().and_then(std::ffi::OsStr::to_str) == Some("bmm") {
             let rel = path
                 .strip_prefix(root)
                 .unwrap_or_else(|e| panic!("strip_prefix: {e}"));
