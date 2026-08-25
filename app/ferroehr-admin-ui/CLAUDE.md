@@ -204,6 +204,17 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   every other answer counts as present — capability is not authorization, so a
   `401`/`403` refusal surfaces as actionable copy on the screen that asked.
 
+## Accepted build warning (adjudicated, #2697)
+
+macOS/aarch64 bin links print Apple ld's `__eh_frame section too large (max
+16MB) to encode dwarf unwind offsets in compact unwind table, performance of
+exception handling might be affected`. Accepted with record: the shipped
+console is a Linux ELF image (Apple's compact-unwind machinery never applies
+to production), and on local macOS builds the cost is slower DWARF unwinding
+on the already-exceptional panic path — the `panic = "unwind"` contract needs
+unwinding to WORK, not to be fast. Do not re-file it, and do not silence
+`linker_messages` (it would hide genuinely new linker findings).
+
 ## Gates
 
 `/ui-gates`: clippy on **native (`--features ssr`) and wasm32 (hydrate)**
