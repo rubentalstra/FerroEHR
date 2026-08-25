@@ -205,9 +205,13 @@ on the documentation site.
 
 ## Quick start
 
-Run the full stack (server + PostgreSQL 18) with Docker Compose: one
-downloaded file, no checkout (needs Compose 2.23.1+). Grab
-`docker-compose.yml` from the [latest release](https://github.com/rubentalstra/FerroEHR/releases/latest)
+No local setup at all: [open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
+and the published stack (server, PostgreSQL 18, admin console) boots in your
+browser. Details in [Try it in Codespaces](https://ferroehr.eu/docs/latest/installation/codespaces.html).
+
+Or run it locally with Docker Compose: one downloaded file, no checkout
+(needs Compose 2.23.1+). Grab `docker-compose.yml` from the
+[latest release](https://github.com/rubentalstra/FerroEHR/releases/latest)
 and start it:
 
 ```shell
