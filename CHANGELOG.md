@@ -32,6 +32,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- A versioned-object commit is ONE SQL statement: the decomposed node rows
+  ride the folded commit CTE (ordered after the version row, which also
+  satisfies their foreign key in-statement), removing the separate node
+  insert round trip from every local write — composition, EHR_STATUS,
+  directory, demographic, and the CONTRIBUTION route alike. A logical
+  delete folds through with empty arrays.
+
 - Every versioned-object write sheds one btree: EHR-scoped AQL routes its
   scoping through the version spine (where the engine already mirrored the
   predicate), so the per-node-row `ehr_id` index — maintained for every row
