@@ -200,6 +200,11 @@ pub async fn update_placement(
     tx: &mut PgConnection,
     vo_id: VoId,
 ) -> Result<UpdatePlacement, StorageError> {
+    // `src` stays NARROW (no body): it is referenced more than once, so the
+    // planner materializes it, and a body column would copy every version's
+    // document into the tuplestore. The two body-derived facts are read by
+    // targeted laterals instead — each touches exactly one row's body (the
+    // tip's, and the earliest content version's).
     const SQL: &str = concat!(
         "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), ",
         "cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), ",
@@ -210,35 +215,49 @@ pub async fn update_placement(
         "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
         "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
         "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
-        "               audit_id, body ",
+        "               audit_id ",
         "        FROM vo_version WHERE vo_id = $1 ",
         "        UNION ALL ",
         "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
         "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
-        "               audit_id, body ",
+        "               audit_id ",
         "        FROM cv) ",
         "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
         "tip.trunk_version, tip.branch_number, tip.branch_version, ",
         "tip.creating_system_id, tip.lifecycle_state, tip.open, ",
-        "a.time_committed, e.is_modifiable, tip.stored_template, ",
+        "a.time_committed, e.is_modifiable, tb.stored_template, ",
         "fv.found AS first_found, fv.ani AS first_ani, fv.category AS first_category ",
         "FROM (SELECT (COALESCE(MAX(sys_version), 0) + 1)::int AS next_ordinal ",
         "      FROM src) o ",
         "LEFT JOIN LATERAL ( ",
         "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
         "           t.branch_number, t.branch_version, t.creating_system_id, ",
-        "           t.lifecycle_state, upper_inf(t.sys_period) AS open, t.audit_id, ",
-        "           t.body #>> '{archetype_details,template_id,value}' AS stored_template ",
+        "           t.lifecycle_state, upper_inf(t.sys_period) AS open, t.audit_id ",
         "    FROM src t WHERE upper_inf(t.sys_period) AND t.branch_number = 0 ",
         ") tip ON true ",
         "LEFT JOIN audit a ON a.id = tip.audit_id ",
         "LEFT JOIN ehr e ON e.id = tip.ehr_id ",
         "LEFT JOIN LATERAL ( ",
+        "    SELECT b.body #>> '{archetype_details,template_id,value}' AS stored_template ",
+        "    FROM (SELECT body FROM vo_version ",
+        "          WHERE vo_id = $1 AND sys_version = tip.sys_version ",
+        "          UNION ALL ",
+        "          SELECT body FROM cv WHERE cv.sys_version = tip.sys_version) b ",
+        "    LIMIT 1 ",
+        ") tb ON true ",
+        "LEFT JOIN LATERAL ( ",
+        // The ORDER BY + LIMIT sit INSIDE the subquery and the jsonb
+        // extractions OUTSIDE it: evaluated inline, the planner computes the
+        // extractions for every version row below the sort.
         "    SELECT true AS found, ",
-        "           f.body ->> 'archetype_node_id' AS ani, ",
-        "           f.body #>> '{category,defining_code,code_string}' AS category ",
-        "    FROM src f WHERE f.body IS NOT NULL ",
-        "    ORDER BY f.sys_version LIMIT 1 ",
+        "           b.body ->> 'archetype_node_id' AS ani, ",
+        "           b.body #>> '{category,defining_code,code_string}' AS category ",
+        "    FROM (SELECT f.sys_version, f.body ",
+        "          FROM (SELECT sys_version, body FROM vo_version ",
+        "                WHERE vo_id = $1 AND body IS NOT NULL ",
+        "                UNION ALL ",
+        "                SELECT sys_version, body FROM cv WHERE body IS NOT NULL) f ",
+        "          ORDER BY f.sys_version LIMIT 1) b ",
         ") fv ON true"
     );
     let row = sqlx::query(SQL).bind(vo_id).fetch_one(&mut *tx).await?;
