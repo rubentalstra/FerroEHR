@@ -550,9 +550,12 @@ async fn read_root_bodies(
     Ok(out)
 }
 
-/// The `(archetype_node_id, category code)` of the FIRST stored content
-/// version of an object — the two scalars the cross-version invariants
-/// compare, read as text off the materialized `vo_version.body`.
+/// Reads the first stored content version's `(archetype_node_id, category
+/// code)` pair — the two scalars the cross-version invariants compare.
+///
+/// Read as text off the materialized body over BOTH storage tiers
+/// (`vo_version_all`: the read runs before the commit path's thaw, and an
+/// archived first version still fixes the invariants).
 ///
 /// `None` when no content version exists (e.g. every prior version deleted);
 /// either scalar is `None` when the stored body lacks that field.
@@ -568,7 +571,7 @@ pub async fn first_version_root(
     Ok(sqlx::query_as(
         "SELECT body ->> 'archetype_node_id', \
          body #>> '{category,defining_code,code_string}' \
-         FROM vo_version WHERE vo_id = $1 AND body IS NOT NULL \
+         FROM vo_version_all WHERE vo_id = $1 AND body IS NOT NULL \
          ORDER BY sys_version LIMIT 1",
     )
     .bind(vo_id)

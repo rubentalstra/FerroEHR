@@ -89,14 +89,31 @@ pub async fn attestation_target(
     kind: &str,
 ) -> Result<Option<AttestTargetRow>, StorageError> {
     // Attesting an archived version appends a row that references it, so the
-    // object comes back to the primary tier first — same rule as the version
-    // commit path (`crate::storage::version_repo::tier`).
-    crate::storage::version_repo::tier::thaw_one(&mut *tx, vo_id).await?;
+    // statement's leading CTEs bring the object back to the primary tier —
+    // the same merged thaw the commit path's placement read carries
+    // (`crate::storage::version_repo::placement::next_placement`); the lookup
+    // reads `vo_version` UNION ALL the thaw's own `RETURNING` rows because a
+    // same-statement `INSERT` is invisible to the sibling scans
+    // (<https://www.postgresql.org/docs/18/queries-with.html>).
     let (t, b, v) = tree;
     let row = sqlx::query(
-        "SELECT ehr_id, sys_version, creating_system_id, \
-         (wrapped_original IS NOT NULL) AS imported FROM vo_version \
-         WHERE vo_id = $1 AND trunk_version = $2 AND branch_number = $3 \
+        "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), \
+         cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), \
+         ct AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), \
+         cm AS (DELETE FROM vo_archive WHERE vo_id = $1), \
+         iv AS (INSERT INTO vo_version SELECT * FROM cv), \
+         inn AS (INSERT INTO node SELECT * FROM cn), \
+         it AS (INSERT INTO vo_attestation SELECT * FROM ct), \
+         src AS (SELECT ehr_id, sys_version, creating_system_id, wrapped_original, \
+                        trunk_version, branch_number, branch_version, kind \
+                 FROM vo_version WHERE vo_id = $1 \
+                 UNION ALL \
+                 SELECT ehr_id, sys_version, creating_system_id, wrapped_original, \
+                        trunk_version, branch_number, branch_version, kind \
+                 FROM cv) \
+         SELECT ehr_id, sys_version, creating_system_id, \
+         (wrapped_original IS NOT NULL) AS imported FROM src \
+         WHERE trunk_version = $2 AND branch_number = $3 \
          AND branch_version = $4 AND kind = $5",
     )
     .bind(vo_id)

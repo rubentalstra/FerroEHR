@@ -611,9 +611,20 @@ pub struct CurrentCompositionMeta {
     /// The stored `archetype_details.template_id.value`, or `None` for a
     /// deleted current (NULL `body`) or an undeclared template.
     pub stored_template: Option<String>,
+    /// The FIRST stored content version's root fields —
+    /// `(archetype_node_id, category code)` — for the `VERSIONED_COMPOSITION`
+    /// cross-version invariants; `None` when no content version exists.
+    pub first_root: Option<(Option<String>, Option<String>)>,
 }
 
 /// Read the lean [`CurrentCompositionMeta`] for a COMPOSITION's current version.
+///
+/// One statement carries the whole write pre-check: the current tip row, the
+/// owning EHR's `is_modifiable`, the stored template id, and the first content
+/// version's root fields (immutable after creation, so reading them before the
+/// commit transaction races nothing). Both reads go over the `*_all` union
+/// views, so an archived object answers correctly before the commit path's
+/// thaw runs.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -624,14 +635,28 @@ pub async fn current_composition_meta(
     const SQL: &str = "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, a.time_committed, \
                        e.is_modifiable, \
-                       v.body #>> '{archetype_details,template_id,value}' AS stored_template \
+                       v.body #>> '{archetype_details,template_id,value}' AS stored_template, \
+                       fv.found AS first_found, fv.ani AS first_ani, \
+                       fv.category AS first_category \
                        FROM vo_version_all v \
                        JOIN audit a ON a.id = v.audit_id \
                        JOIN ehr e ON e.id = v.ehr_id \
+                       LEFT JOIN LATERAL ( \
+                           SELECT true AS found, \
+                                  f.body ->> 'archetype_node_id' AS ani, \
+                                  f.body #>> '{category,defining_code,code_string}' AS category \
+                           FROM vo_version_all f \
+                           WHERE f.vo_id = $1 AND f.body IS NOT NULL \
+                           ORDER BY f.sys_version LIMIT 1 \
+                       ) fv ON true \
                        WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0";
     let found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
     let Some(row) = found else {
         return Ok(None);
+    };
+    let first_root = match row.try_get::<Option<bool>, _>("first_found")? {
+        Some(true) => Some((row.try_get("first_ani")?, row.try_get("first_category")?)),
+        _ => None,
     };
     Ok(Some(CurrentCompositionMeta {
         ehr_id: row.try_get("ehr_id")?,
@@ -645,6 +670,7 @@ pub async fn current_composition_meta(
             .to_jiff(),
         is_modifiable: row.try_get("is_modifiable")?,
         stored_template: row.try_get("stored_template")?,
+        first_root,
     }))
 }
 
