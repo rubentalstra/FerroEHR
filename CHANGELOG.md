@@ -17,12 +17,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
-- The server understands the container-platform `PORT` convention: when
-  `PORT` is set (Vercel, Cloud Run, Heroku inject it), the server binds
-  `0.0.0.0:<PORT>`. It sits below `FERROEHR__SERVER__BIND`, which still wins
-  when both are set. A `Dockerfile.vercel` plus `vercel.json` ship for
-  Vercel's Container preset (the hosted sandbox), building the same
-  from-source path as the standard image onto the same distroless runtime.
+- The server understands two more deployment-platform conventions. `PORT`
+  (Vercel, Cloud Run, Heroku inject it) binds `0.0.0.0:<PORT>`, below
+  `FERROEHR__SERVER__BIND`. The libpq environment set (`PGHOST`, `PGUSER`,
+  `PGPASSWORD`, `PGDATABASE`, `PGPORT`, `PGSSLMODE` — what managed-Postgres
+  integrations such as Neon inject) assembles the database DSN when no URL
+  form is set; `DATABASE_URL` beats the assembled form and
+  `FERROEHR__DB__URL` beats both. A `Dockerfile.vercel` plus `vercel.json` ship for
+  Vercel's Container preset (the hosted sandbox); the Dockerfile references
+  the published release image, so Vercel's build step is a pull measured in
+  seconds instead of a half-hour Rust compile, and the sandbox runs the
+  exact bytes CI built, signed and tested. The release-cut guard now holds
+  its `FROM` tag to the workspace version alongside the compose defaults.
 
 - A one-click tester sandbox: opening the repository in a GitHub Codespace
   boots the published quickstart stack (server, PostgreSQL 18, admin console)
