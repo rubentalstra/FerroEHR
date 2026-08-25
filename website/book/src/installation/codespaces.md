@@ -63,6 +63,9 @@ double cold start and can take a few seconds; after that it responds at
 normal speed. The free compute budget means the sandbox may be unavailable
 near the end of a heavy month. It is a demo, never a place for real data.
 
+The sandbox deploys on release tags only, so it always runs the latest
+FerroEHR release rather than a development snapshot.
+
 ## If the stack is not up
 
 The boot log is in the terminal that ran `start-stack.sh`. To restart the
