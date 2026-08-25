@@ -115,7 +115,11 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.reseed }}
     permissions:
       contents: read
-    # SANDBOX_DATABASE_URL is an ENVIRONMENT secret; the called workflow's
-    # job declares `environment: sandbox-reseed`, so it resolves there — no
-    # secret passing is needed.
+    # A called workflow's `secrets` context holds ONLY what the caller passes
+    # (verified first-hand: without this, SANDBOX_DATABASE_URL arrived empty
+    # and the Neon fence refused the wipe — run 32887862798). `inherit` is
+    # the one way to reach an ENVIRONMENT secret from a caller, since a
+    # `uses:` job cannot declare the environment itself; the called job's
+    # `environment: sandbox-reseed` still applies its protection rules.
     uses: ./.github/workflows/sandbox-reseed.yml
+    secrets: inherit
