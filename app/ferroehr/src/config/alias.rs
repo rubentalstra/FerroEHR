@@ -74,6 +74,11 @@ pub(super) const SECTIONS: &[&str] = &[
 /// deployment platform already sets; they sit BELOW their `FERROEHR__` forms
 /// within the env layer.
 /// `(external_name, canonical FERROEHR__ env form)`.
+///
+/// A third conventional name, `PORT` (the container-platform port
+/// convention), is handled in the loader directly: its value is only the
+/// port half, so it expands to a `0.0.0.0:<PORT>` bind instead of mapping
+/// 1:1 onto a canonical form.
 pub(super) const CONVENTIONAL: &[(&str, &str)] = &[
     ("DATABASE_URL", "FERROEHR__DB__URL"),
     ("RUST_LOG", "FERROEHR__LOG__FILTER"),

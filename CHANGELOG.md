@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The server understands the container-platform `PORT` convention: when
+  `PORT` is set (Vercel, Cloud Run, Heroku inject it), the server binds
+  `0.0.0.0:<PORT>`. It sits below `FERROEHR__SERVER__BIND`, which still wins
+  when both are set. A `Dockerfile.vercel` plus `vercel.json` ship for
+  Vercel's Container preset (the hosted sandbox), building the same
+  from-source path as the standard image onto the same distroless runtime.
+
 - A one-click tester sandbox: opening the repository in a GitHub Codespace
   boots the published quickstart stack (server, PostgreSQL 18, admin console)
   automatically and forwards the API and console ports. The committed
