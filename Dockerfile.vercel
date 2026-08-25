@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# The Vercel container build for the hosted demo sandbox (#2710) — the name
+# Dockerfile.vercel is Vercel's convention for its Container preset
+# (https://vercel.com/kb/guide/deploy-rust-on-vercel-with-docker). It mirrors
+# docker/Dockerfile's from-source path in the two ways the guide requires:
+# multi-stage with the toolchain excluded from the runtime image, and both
+# stages on the same OS family (Debian). The server reads Vercel's injected
+# `PORT` through the config loader's port convention and binds 0.0.0.0.
+# Vercel builds without BuildKit cache mounts on its own cache, so this file
+# uses plain RUN steps instead of docker/Dockerfile's mount-cached ones.
+#
+# The image serves a DEMO: no persistent filesystem exists on Vercel and the
+# database is an external PostgreSQL 18 DSN supplied as DATABASE_URL.
+
+FROM rust:1.97.1-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS builder
+WORKDIR /app
+COPY . .
+# Parallelism capped like docker/Dockerfile: a single generated spec crate at
+# opt-level 3 holds gigabytes, and the build VM is small.
+ARG CARGO_BUILD_JOBS=2
+RUN cargo build --release --locked --jobs "${CARGO_BUILD_JOBS}" -p ferroehr-server \
+    && cp target/release/ferroehr /usr/local/bin/ferroehr \
+    && strip /usr/local/bin/ferroehr
+
+# Same digest-pinned distroless runtime as docker/Dockerfile: glibc + libgcc_s
+# (the binary links libgcc_s.so.1 for unwinding), non-root uid 65532.
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
+USER 65532:65532
+COPY --from=builder /usr/local/bin/ferroehr /usr/local/bin/ferroehr
+# Vercel injects PORT and routes traffic to it; 80 is its default container
+# port, so the fallback matches the platform (the config loader turns PORT
+# into a 0.0.0.0:<PORT> bind).
+ENV PORT=80
+ENTRYPOINT ["/usr/local/bin/ferroehr"]
