@@ -6,6 +6,7 @@
             "develop": true
         }
     },
+    "ignoreCommand": "bash scripts/sandbox/vercel-ignore.sh",
     "services": {
         "api": {
             "root": ".",
