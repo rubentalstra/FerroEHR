@@ -21,5 +21,5 @@ pub struct BmmTupleType {
 impl BmmTupleType {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Tuple";
+    pub const BASE_NAME: &str = "Tuple";
 }

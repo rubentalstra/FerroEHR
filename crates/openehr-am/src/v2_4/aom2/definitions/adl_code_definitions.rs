@@ -33,19 +33,19 @@ pub struct AdlCodeDefinitionsData {}
 impl AdlCodeDefinitionsData {
     /// String leader of ‘identifier’ codes, i.e. codes used to identify at-coded archetype nodes.
     /// BMM constant `At_code_leader`.
-    pub const AT_CODE_LEADER: &'static str = "at";
+    pub const AT_CODE_LEADER: &str = "at";
 
     /// String leader of ‘identifier’ codes, i.e. codes used to identify id-coded archetype nodes.
     /// BMM constant `Id_code_leader`.
-    pub const ID_CODE_LEADER: &'static str = "id";
+    pub const ID_CODE_LEADER: &str = "id";
 
     /// String leader of ‘value’ codes, i.e. codes used to identify codes values, including value set members.
     /// BMM constant `Value_code_leader`.
-    pub const VALUE_CODE_LEADER: &'static str = "at";
+    pub const VALUE_CODE_LEADER: &str = "at";
 
     /// String leader of ‘value set’ codes, i.e. codes used to identify value sets.
     /// BMM constant `Value_set_code_leader`.
-    pub const VALUE_SET_CODE_LEADER: &'static str = "ac";
+    pub const VALUE_SET_CODE_LEADER: &str = "ac";
 
     /// Character used to separate numeric parts of codes belonging to different specialisation levels.
     /// BMM constant `Specialisation_separator`.
@@ -53,19 +53,19 @@ impl AdlCodeDefinitionsData {
 
     /// Regex used to define the legal numeric part of any archetype code. Corresponds to the simple pattern of dotted numbers, as used in typical multi-level numbering schemes.
     /// BMM constant `Code_regex_pattern`.
-    pub const CODE_REGEX_PATTERN: &'static str = "(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*";
+    pub const CODE_REGEX_PATTERN: &str = "(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*";
 
     /// Regex pattern of the root code of any archetype.
     ///
     /// Corresponds to at-codes of the form `at0000`, `at0000.1`, `at0000.1.1` etc, and id-codes of the form `id1`, `id1.1`, `id1.1.1` etc. For at-coded ADL2 numbering starts with zero (i.e. `at0000`) while the id-coded ADL2 numbering starts with one (i.e. `id1`).
     /// BMM constant `Root_code_regex_pattern`.
-    pub const ROOT_CODE_REGEX_PATTERN: &'static str = "^(id1|at0000)(\\.1)*$";
+    pub const ROOT_CODE_REGEX_PATTERN: &str = "^(id1|at0000)(\\.1)*$";
 
     /// Code id used for `C_PRIMITIVE_OBJECT` nodes on creation.
     ///
     /// NOTE: For id-coded archetypes this is `"id9999"`.
     /// BMM constant `Primitive_node_id`.
-    pub const PRIMITIVE_NODE_ID: &'static str = "at9999";
+    pub const PRIMITIVE_NODE_ID: &str = "at9999";
 }
 
 /// Polymorphic slot of `ADL_CODE_DEFINITIONS`, dispatched on each payload's `_type`.

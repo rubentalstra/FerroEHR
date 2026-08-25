@@ -15,25 +15,25 @@ pub struct OpenehrCodeSetIdentifiersData {}
 
 impl OpenehrCodeSetIdentifiersData {
     /// BMM constant `Code_set_id_character_sets`.
-    pub const CODE_SET_ID_CHARACTER_SETS: &'static str = "character sets";
+    pub const CODE_SET_ID_CHARACTER_SETS: &str = "character sets";
 
     /// BMM constant `Code_set_id_compression_algorithms`.
-    pub const CODE_SET_ID_COMPRESSION_ALGORITHMS: &'static str = "compression algorithms";
+    pub const CODE_SET_ID_COMPRESSION_ALGORITHMS: &str = "compression algorithms";
 
     /// BMM constant `Code_set_id_countries`.
-    pub const CODE_SET_ID_COUNTRIES: &'static str = "countries";
+    pub const CODE_SET_ID_COUNTRIES: &str = "countries";
 
     /// BMM constant `Code_set_integrity_check_algorithms`.
-    pub const CODE_SET_INTEGRITY_CHECK_ALGORITHMS: &'static str = "integrity check algorithms";
+    pub const CODE_SET_INTEGRITY_CHECK_ALGORITHMS: &str = "integrity check algorithms";
 
     /// BMM constant `Code_set_id_languages`.
-    pub const CODE_SET_ID_LANGUAGES: &'static str = "languages";
+    pub const CODE_SET_ID_LANGUAGES: &str = "languages";
 
     /// BMM constant `Code_set_id_media_types`.
-    pub const CODE_SET_ID_MEDIA_TYPES: &'static str = "media types";
+    pub const CODE_SET_ID_MEDIA_TYPES: &str = "media types";
 
     /// BMM constant `Code_set_id_normal_statuses`.
-    pub const CODE_SET_ID_NORMAL_STATUSES: &'static str = "normal statuses";
+    pub const CODE_SET_ID_NORMAL_STATUSES: &str = "normal statuses";
 }
 
 /// Polymorphic slot of `OPENEHR_CODE_SET_IDENTIFIERS`, dispatched on each payload's `_type`.

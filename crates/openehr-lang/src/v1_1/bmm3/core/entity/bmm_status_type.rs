@@ -14,5 +14,5 @@ pub struct BmmStatusType {}
 impl BmmStatusType {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Status";
+    pub const BASE_NAME: &str = "Status";
 }

@@ -28,7 +28,7 @@ pub struct MultiplicityInterval {
 impl MultiplicityInterval {
     /// Marker to use in string form of interval between limits.
     /// BMM constant `Multiplicity_range_marker`.
-    pub const MULTIPLICITY_RANGE_MARKER: &'static str = "..";
+    pub const MULTIPLICITY_RANGE_MARKER: &str = "..";
 
     /// Symbol to use to indicate upper limit unbounded.
     /// BMM constant `Multiplicity_unbounded_marker`.
