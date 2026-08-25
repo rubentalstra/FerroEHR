@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# Codespace create-time image pull (#2709): fetch the published quickstart
+# images once, so the first `postStartCommand` boot is fast. Explicit `-f`
+# keeps this on the standalone file even if COMPOSE_FILE is ever unset —
+# the repo's docker-compose.override.yml (from-source builds) must never
+# apply in the tester sandbox.
+set -Eeuo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+docker compose -f docker-compose.yml --profile admin-ui pull

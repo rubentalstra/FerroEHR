@@ -6,6 +6,10 @@ provision: the binary links a pure-Rust TLS stack and needs no OpenSSL and no
 JVM, so all you choose is how to run it and where the database lives. This part
 covers the three paths and the full configuration surface.
 
+- **[Try it in Codespaces](codespaces.md):** one click boots the published
+  images in a GitHub Codespace in your browser, with the Swagger UI and admin
+  console forwarded. Nothing to install. Made for evaluating FerroEHR; a real
+  deployment uses one of the paths below.
 - **[Docker Compose](compose.md):** the fastest way to run the server plus a
   preconfigured PostgreSQL 18, for development and evaluation. One downloadable
   file that pulls the published images and needs no configuration. Optional

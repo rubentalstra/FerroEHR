@@ -5,6 +5,7 @@
 - [Why FerroEHR exists](why-ferroehr.md)
 - [Getting started](getting-started.md)
 - [Installation](installation/index.md)
+  - [Try it in Codespaces](installation/codespaces.md)
   - [Docker Compose](installation/compose.md)
   - [Kubernetes & Helm](installation/kubernetes.md)
   - [Cluster hardening](installation/kubernetes-hardening.md)
