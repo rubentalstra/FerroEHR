@@ -385,7 +385,7 @@ pprof = { version = "0.15.0" }
 inferno = { version = "0.12", features = ["nameattr"] }
 
 # ── Caching, rate limiting, resilience ───────────────────────────────────────
-moka = { version = "0.12", features = ["future"] }   # Caffeine equivalent (template/WebTemplate cache)
+moka = { version = "0.12", features = ["future", "sync"] }   # Caffeine equivalent (template/WebTemplate cache + the sync verified-signature cache)
 quick_cache = "0.7.0"
 # Rate limiting for axum (GCRA via `governor`). `tonic` is in its default
 # feature set and we serve no gRPC, so only `axum` is enabled; `tracing` stays

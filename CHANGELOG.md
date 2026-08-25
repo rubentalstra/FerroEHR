@@ -32,6 +32,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- Read-time signature verification gains a fourth policy, `once`, and it is
+  the new effective default while signing is enabled: a version's server
+  signature is verified on its first read each process and the verdict is
+  remembered (a committed version is immutable), so later reads skip
+  recomputing the canonical form (~0.5 ms per VERSION read). A mismatch is
+  still a `500`. `strict` keeps its exact per-read meaning as an explicit
+  opt-in; the new `signing.verify_cache_capacity` key (default 65536, a few
+  megabytes when full, `0` = behave like `strict`) bounds the memory. Each
+  replica keeps its own verdicts, so horizontal scaling needs no
+  coordination.
+
 - A composition CREATE skips the explicit transaction when the commit is the
   one folded statement (no accompanying attestations, event outbox off — the
   common case): a single SQL statement is atomic on its own, so the

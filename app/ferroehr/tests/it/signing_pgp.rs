@@ -72,6 +72,7 @@ fn pgp_signer(armored_key: &str, passphrase: Option<&str>) -> Result<Signer, Sig
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
+        verify_cache_capacity: 65_536,
     };
     Signer::from_config(&config)
 }
@@ -132,6 +133,7 @@ fn boot_fails_when_key_path_missing() {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Off),
+        verify_cache_capacity: 65_536,
     };
     assert!(matches!(
         Signer::from_config(&config),
@@ -171,6 +173,7 @@ fn boot_fails_on_missing_key_file() {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Off),
+        verify_cache_capacity: 65_536,
     };
     assert!(matches!(
         Signer::from_config(&config),
@@ -189,6 +192,7 @@ fn digest_mode_verify_matches_and_mismatches() {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
+        verify_cache_capacity: 65_536,
     };
     let signer = Signer::from_config(&config).expect("digest signer");
     let sig = signer.sign(CANONICAL).expect("sign");
@@ -236,6 +240,7 @@ fn signer_with_retired(active: &str, retired: &[&str]) -> Signer {
         key_passphrase_file: None,
         retired_key_paths: retired.iter().map(|cert| temp_file(cert)).collect(),
         verify_on_read: Some(VerifyOnRead::Strict),
+        verify_cache_capacity: 65_536,
     };
     Signer::from_config(&config).expect("build signer")
 }

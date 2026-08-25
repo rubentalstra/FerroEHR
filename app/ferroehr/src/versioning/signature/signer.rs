@@ -71,6 +71,13 @@ pub struct Signer {
     enabled: bool,
     verify_on_read: VerifyOnRead,
     pub(crate) mode: SignerMode,
+    /// Signatures that already verified once this process — a committed
+    /// version is immutable, so a remembered verdict skips recomputing the
+    /// canonical form on every subsequent read (`verify_on_read = once`).
+    /// Keyed by a 128-bit hash of the signature, so a full cache stays a few
+    /// megabytes at the default capacity. `None` when
+    /// `verify_cache_capacity = 0`.
+    verified: Option<moka::sync::Cache<u128, ()>>,
 }
 
 impl std::fmt::Debug for Signer {
@@ -79,6 +86,10 @@ impl std::fmt::Debug for Signer {
             .field("enabled", &self.enabled)
             .field("verify_on_read", &self.verify_on_read)
             .field("mode", &self.mode)
+            .field(
+                "verified_cache",
+                &self.verified.as_ref().map(moka::sync::Cache::entry_count),
+            )
             .finish()
     }
 }
@@ -121,6 +132,7 @@ impl Signer {
             enabled: config.enabled,
             verify_on_read: config.effective_verify_on_read(),
             mode,
+            verified: verified_cache(config.verify_cache_capacity),
         })
     }
 
@@ -135,6 +147,7 @@ impl Signer {
             enabled: config.enabled,
             verify_on_read: config.effective_verify_on_read(),
             mode: SignerMode::Digest,
+            verified: verified_cache(config.verify_cache_capacity),
         }
     }
 
@@ -169,6 +182,42 @@ impl Signer {
     pub fn verify(&self, canonical: &str, signature: &str) -> Verdict {
         verify::verify(&self.mode, canonical, signature)
     }
+
+    /// Whether `signature` already verified once this process (a cached
+    /// verdict; a committed version is immutable, so the recompute is skipped).
+    /// Always `false` when the cache is disabled.
+    #[must_use]
+    pub(crate) fn already_verified(&self, signature: &str) -> bool {
+        self.verified
+            .as_ref()
+            .is_some_and(|cache| cache.contains_key(&verified_key(signature)))
+    }
+
+    /// Remember a successful verification of `signature` for the process
+    /// lifetime (capacity-bounded LRU); a no-op when the cache is disabled.
+    pub(crate) fn remember_verified(&self, signature: &str) {
+        if let Some(cache) = &self.verified {
+            cache.insert(verified_key(signature), ());
+        }
+    }
+}
+
+/// The verified-signature cache for `capacity` entries, or `None` for `0`
+/// (every read recomputes the canonical form).
+fn verified_cache(capacity: u64) -> Option<moka::sync::Cache<u128, ()>> {
+    (capacity > 0).then(|| moka::sync::Cache::new(capacity))
+}
+
+/// The cache key for a verified signature: the first 16 bytes of its SHA-256,
+/// so the cache stores 16 bytes per entry instead of the signature text (an
+/// armored `OpenPGP` signature runs to hundreds of bytes). A 128-bit collision
+/// is cryptographically negligible.
+fn verified_key(signature: &str) -> u128 {
+    let hash = Sha256::digest(signature.as_bytes());
+    let (head, _) = hash.split_at(16);
+    let mut key = [0_u8; 16];
+    key.copy_from_slice(head);
+    u128::from_le_bytes(key)
 }
 
 /// The digest signature for `canonical`: `sha256:` + radix-64(SHA-256(bytes)).

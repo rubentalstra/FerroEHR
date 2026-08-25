@@ -191,13 +191,16 @@ fn sign_canonical(ctx: &SigningCtx<'_>, value: &Value) -> Result<Option<String>,
 /// author may have signed another agreed serialization we cannot recompute —
 /// master06 §Digital Signature / §Copying). Otherwise a no-op when
 /// `verify_on_read = off` or the version carries no signature. A `warn`
-/// mismatch logs + meters (`version_signature_invalid_total`); a `strict`
-/// mismatch is a 5xx integrity failure.
+/// mismatch logs + meters (`version_signature_invalid_total`); an `once` or
+/// `strict` mismatch is a 5xx integrity failure. Under `once` (the effective
+/// default with signing enabled) a verified signature is remembered for the
+/// process lifetime and the recompute is skipped on subsequent reads;
+/// `strict` recomputes on every read.
 ///
 /// # Errors
-/// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
-/// server signature fails verification, or (in any non-`off` mode) when the
-/// served version's canonical form cannot be recomputed.
+/// [`ServiceError::Signing`] when `verify_on_read` is `once` or `strict` and
+/// the stored server signature fails verification, or (in any non-`off` mode)
+/// when the served version's canonical form cannot be recomputed.
 pub(crate) fn verify_on_read(
     signer: &Signer,
     ov: &Value,
@@ -212,10 +215,19 @@ pub(crate) fn verify_on_read(
     let Some(signature) = signature else {
         return Ok(());
     };
+    // Under `once`, a committed version is immutable (master06 §The 'Virtual
+    // Version Tree'), so a signature that verified once this process needs no
+    // recompute; `warn`/`strict` recompute on every read.
+    if signer.verify_on_read() == VerifyOnRead::Once && signer.already_verified(signature) {
+        return Ok(());
+    }
     let canonical =
         openehr_rm::v1_2::common::change_control::version_impl::canonical_form_of_json(ov)
             .map_err(|e| ServiceError::SigningCanonical(e.to_string(), e))?;
     let verdict = signer.verify(&canonical, signature);
+    if !verdict.is_failure() && signer.verify_on_read() == VerifyOnRead::Once {
+        signer.remember_verified(signature);
+    }
     if verdict.is_failure() {
         crate::telemetry::metrics::metrics()
             .version_signature_invalid
@@ -227,7 +239,10 @@ pub(crate) fn verify_on_read(
             verdict = verdict.label(),
             "version signature failed verification (verify_on_read)"
         );
-        if signer.verify_on_read() == VerifyOnRead::Strict {
+        if matches!(
+            signer.verify_on_read(),
+            VerifyOnRead::Strict | VerifyOnRead::Once
+        ) {
             return Err(ServiceError::Signing(format!(
                 "stored version signature does not verify ({})",
                 verdict.label()

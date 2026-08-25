@@ -338,7 +338,8 @@ the server's own signatures **strict** by default.
 | `key_path` | path | unset | Armored secret key; **required for `pgp`** (a boot error otherwise). |
 | `key_passphrase` / `key_passphrase_file` | secret / path | unset | Key passphrase. At most one of the pair. |
 | `retired_key_paths` | list of path | `[]` | Armored **public** keys retired from signing and kept for verification, so versions signed before a key rotation keep verifying. |
-| `verify_on_read` | enum{off,warn,strict} | unset ⇒ `strict` when signing is enabled | Read-time recompute-and-compare policy for the server's own signatures. |
+| `verify_on_read` | enum{off,warn,once,strict} | unset ⇒ `once` when signing is enabled | Read-time recompute-and-compare policy for the server's own signatures. `once` remembers a verified version for the process (a committed version is immutable); `strict` recomputes on every read. |
+| `verify_cache_capacity` | u64 | `65536` | How many verified signatures the `once` policy remembers (a few megabytes when full). `0` disables the cache, making `once` behave like `strict`. |
 
 `retired_key_paths` exists because a stored `VERSION.signature` records no key
 identifier and is an immutable committed fact that cannot be re-issued;
@@ -348,12 +349,14 @@ takes a comma-separated list
 (`FERROEHR__SIGNING__RETIRED_KEY_PATHS=/keys/a.pub.asc,/keys/b.pub.asc`).
 
 > [!NOTE]
-> **`verify_on_read` resolves to `strict` when signing is enabled.** On every
-> read the server recomputes the signature of a version it signed and, on a
-> mismatch, returns a `500` integrity fault rather than silently serving a
-> provably corrupt record. Set it explicitly to `warn` (log + meter
-> `version_signature_invalid_total`, still serve) or `off` (never check) to opt
-> out. **Client-supplied signatures** (an author's own, or one carried by an
+> **`verify_on_read` resolves to `once` when signing is enabled.** The server
+> recomputes the signature of a version it signed on that version's first read
+> each process and, on a mismatch, returns a `500` integrity fault rather than
+> silently serving a provably corrupt record; because a committed version is
+> immutable, the verified verdict is then remembered and later reads skip the
+> recompute. Set it explicitly to `strict` (recompute on every read), `warn`
+> (log + meter `version_signature_invalid_total`, still serve) or `off` (never
+> check). **Client-supplied signatures** (an author's own, or one carried by an
 > imported version) are always stored verbatim and **never** re-verified,
 > whatever this setting says, because the author may have signed a different
 > agreed serialization.
