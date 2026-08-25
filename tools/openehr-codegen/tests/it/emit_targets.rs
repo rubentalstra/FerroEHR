@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The three text-producing emit targets — `emit-json`, `emit-xml`,
-//! `emit-rest` — as properties over the **real** pipeline on the **real**
-//! vendored inputs.
+//! Every text-producing emit target — `emit`, `emit-json`, `emit-xml`,
+//! `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, `emit-validate` — as
+//! properties over the **real** pipeline on the **real** vendored inputs.
 //!
 //! Each test drives `openehr_codegen::testsupport::emit_*_to_memory`, which
 //! calls the very render function the matching `cmd_*` handler calls: the
@@ -12,6 +12,12 @@
 //! byte-deterministic, it produces exactly its file set (each non-empty,
 //! banner-headed and SPDX-stamped), and its bytes equal the committed
 //! generated tree, which is the in-process half of the `codegen-drift` check.
+//!
+//! `emit` is the one target whose file set is pinned by SHAPE rather than by
+//! enumeration: it renders the whole spec layer (four figures of files), so the
+//! properties asserted are that every composed crate contributes, that the
+//! generation-twin template stamps ride along, and that the RM crate's model and
+//! invariant cores are part of the same set.
 
 use openehr_codegen::testsupport;
 use std::collections::BTreeMap;
@@ -49,6 +55,107 @@ const REST_FILES: &[&str] = &[
     "openehr-its/src/rest/generated/query.rs",
     "openehr-its/src/rest/generated/system.rs",
 ];
+
+/// The complete file set `emit-opt` produces, in emitted-map (sorted) order.
+const OPT_FILES: &[&str] = &[
+    "openehr-its/src/opt14/impls.rs",
+    "openehr-its/src/opt14/mod.rs",
+    "openehr-its/src/opt14/types.rs",
+];
+
+/// The complete file set `emit-aom2` produces, in emitted-map (sorted) order:
+/// the persistent form (`aom2`) and the AOM model form (`aom2_model`), each its
+/// own closure into its own module.
+const AOM2_FILES: &[&str] = &[
+    "openehr-its/src/aom2/impls.rs",
+    "openehr-its/src/aom2/mod.rs",
+    "openehr-its/src/aom2/types.rs",
+    "openehr-its/src/aom2_model/impls.rs",
+    "openehr-its/src/aom2_model/mod.rs",
+    "openehr-its/src/aom2_model/types.rs",
+];
+
+/// The complete file set `emit-rm-model` produces, in emitted-map (sorted)
+/// order: one `model/` subtree per RM generation, because a selectable
+/// generation is a complete peer and not a types-only shell.
+const RM_MODEL_FILES: &[&str] = &[
+    "openehr-rm/src/v1_1/model/data.rs",
+    "openehr-rm/src/v1_1/model/mod.rs",
+    "openehr-rm/src/v1_2/model/data.rs",
+    "openehr-rm/src/v1_2/model/mod.rs",
+];
+
+/// The complete file set `emit-validate` produces, in emitted-map (sorted)
+/// order: one invariant-core file per RM generation.
+const VALIDATE_FILES: &[&str] = &[
+    "openehr-rm/src/v1_1/validate/generated.rs",
+    "openehr-rm/src/v1_2/validate/generated.rs",
+];
+
+/// The generated spec crates `emit` composes, one per `COMPOSITIONS` row.
+const EMIT_CRATES: &[&str] = &[
+    "openehr-am",
+    "openehr-base",
+    "openehr-lang",
+    "openehr-rm",
+    "openehr-term",
+];
+
+/// The first-line marker a generation-twin template stamp carries.
+const TEMPLATE_MARKER: &str = "// @generated-from-template";
+
+// ── emit ────────────────────────────────────────────────────────────────────
+
+/// Rendering the whole spec layer twice yields byte-identical output.
+#[test]
+fn emit_is_byte_deterministic() {
+    let a = testsupport::emit_to_memory().unwrap();
+    let b = testsupport::emit_to_memory().unwrap();
+    assert_deterministic("emit", &a, &b);
+}
+
+/// `emit` produces one file set covering every composed crate, the RM crate's
+/// model and invariant cores, and the generation-twin template stamps — each
+/// file non-empty, banner-headed and SPDX-stamped.
+#[test]
+fn emit_emits_every_composed_crate_including_the_template_stamps() {
+    let files = testsupport::emit_to_memory().unwrap();
+    assert_well_formed("emit", "@generated", &files);
+    for krate in EMIT_CRATES {
+        let prefix = format!("{krate}/src/");
+        assert!(
+            files.keys().any(|p| p.starts_with(&prefix)),
+            "emit: {krate} contributed no files",
+        );
+    }
+    // The RM crate's model + invariant cores are part of `emit`'s own set, not
+    // a separate run: a plain `emit` keeps the crate self-consistent.
+    for path in [
+        "openehr-rm/src/v1_2/model/mod.rs",
+        "openehr-rm/src/v1_2/validate/generated.rs",
+    ] {
+        assert!(
+            files.contains_key(path),
+            "emit: {path} is not in the emitted set",
+        );
+    }
+    let stamped: Vec<&String> = files
+        .iter()
+        .filter(|(_, body)| body.starts_with(TEMPLATE_MARKER))
+        .map(|(path, _)| path)
+        .collect();
+    assert!(
+        !stamped.is_empty(),
+        "emit: no generation-twin template stamp is in the emitted set",
+    );
+}
+
+/// The rendered spec layer equals the committed generated tree.
+#[test]
+fn emit_matches_the_committed_tree() {
+    let files = testsupport::emit_to_memory().unwrap();
+    assert_tree_matches_committed("emit", &files);
+}
 
 // ── emit-json ───────────────────────────────────────────────────────────────
 
@@ -125,6 +232,128 @@ fn emit_rest_matches_the_committed_tree() {
     assert_matches_committed_tree("emit-rest", &files);
 }
 
+// ── emit-opt ────────────────────────────────────────────────────────────────
+
+/// Rendering the OPT 1.4 model twice yields byte-identical output.
+#[test]
+fn emit_opt_is_byte_deterministic() {
+    let a = testsupport::emit_opt_to_memory().unwrap();
+    let b = testsupport::emit_opt_to_memory().unwrap();
+    assert_deterministic("emit-opt", &a, &b);
+}
+
+/// `emit-opt` produces exactly its file set, each file non-empty and carrying
+/// the generated banner plus its crate's SPDX header.
+#[test]
+fn emit_opt_emits_its_whole_file_set() {
+    let files = testsupport::emit_opt_to_memory().unwrap();
+    assert_file_set("emit-opt", &files, OPT_FILES);
+}
+
+/// The rendered OPT 1.4 model equals the committed generated tree.
+#[test]
+fn emit_opt_matches_the_committed_tree() {
+    let files = testsupport::emit_opt_to_memory().unwrap();
+    assert_matches_committed_tree("emit-opt", &files);
+}
+
+// ── emit-aom2 ───────────────────────────────────────────────────────────────
+
+/// Rendering both AOM2 archetype codecs twice yields byte-identical output.
+#[test]
+fn emit_aom2_is_byte_deterministic() {
+    let a = testsupport::emit_aom2_to_memory().unwrap();
+    let b = testsupport::emit_aom2_to_memory().unwrap();
+    assert_deterministic("emit-aom2", &a, &b);
+}
+
+/// `emit-aom2` produces exactly its file set — both closures, each into its own
+/// module — with every file non-empty, banner-headed and SPDX-stamped.
+#[test]
+fn emit_aom2_emits_its_whole_file_set() {
+    let files = testsupport::emit_aom2_to_memory().unwrap();
+    assert_file_set("emit-aom2", &files, AOM2_FILES);
+}
+
+/// The rendered AOM2 codecs equal the committed generated tree.
+#[test]
+fn emit_aom2_matches_the_committed_tree() {
+    let files = testsupport::emit_aom2_to_memory().unwrap();
+    assert_matches_committed_tree("emit-aom2", &files);
+}
+
+// ── emit-rm-model ───────────────────────────────────────────────────────────
+
+/// Rendering the static RM attribute/type model twice yields byte-identical
+/// output.
+#[test]
+fn emit_rm_model_is_byte_deterministic() {
+    let a = testsupport::emit_rm_model_to_memory().unwrap();
+    let b = testsupport::emit_rm_model_to_memory().unwrap();
+    assert_deterministic("emit-rm-model", &a, &b);
+}
+
+/// `emit-rm-model` produces exactly its file set — one `model/` subtree per RM
+/// generation — with every file non-empty, banner-headed and SPDX-stamped.
+#[test]
+fn emit_rm_model_emits_its_whole_file_set() {
+    let files = testsupport::emit_rm_model_to_memory().unwrap();
+    assert_file_set("emit-rm-model", &files, RM_MODEL_FILES);
+}
+
+/// The rendered RM model equals the committed generated tree — which is also
+/// what `emit` writes there, since both drive `cli::render_rm_model_files`.
+#[test]
+fn emit_rm_model_matches_the_committed_tree() {
+    let files = testsupport::emit_rm_model_to_memory().unwrap();
+    assert_matches_committed_tree("emit-rm-model", &files);
+}
+
+/// Every RM generation's `mod.rs` declares the emitted model module.
+///
+/// The declaration is the one thing `emit-rm-model` does NOT render — it is a
+/// read-modify-write of the generation `mod.rs`, which `emit` instead writes
+/// into the rendered body. Both spell it from `cli`'s one `RM_MODEL_DECL`
+/// constant; this asserts the outcome the two paths must agree on.
+#[test]
+fn every_rm_generation_declares_its_model_module() {
+    let root = crates_root();
+    for path in ["openehr-rm/src/v1_1/mod.rs", "openehr-rm/src/v1_2/mod.rs"] {
+        let body = std::fs::read_to_string(root.join(path)).unwrap();
+        assert!(
+            body.contains("pub mod model;"),
+            "{path} does not declare the emitted RM model module",
+        );
+    }
+}
+
+// ── emit-validate ───────────────────────────────────────────────────────────
+
+/// Rendering the RM invariant cores twice yields byte-identical output.
+#[test]
+fn emit_validate_is_byte_deterministic() {
+    let a = testsupport::emit_validate_to_memory().unwrap();
+    let b = testsupport::emit_validate_to_memory().unwrap();
+    assert_deterministic("emit-validate", &a, &b);
+}
+
+/// `emit-validate` produces exactly its file set — one invariant-core file per
+/// RM generation — with every file non-empty, banner-headed and SPDX-stamped.
+#[test]
+fn emit_validate_emits_its_whole_file_set() {
+    let files = testsupport::emit_validate_to_memory().unwrap();
+    assert_file_set("emit-validate", &files, VALIDATE_FILES);
+}
+
+/// The rendered invariant cores equal the committed generated tree — which is
+/// also what `emit` writes there, since both drive
+/// `cli::render_validate_files`.
+#[test]
+fn emit_validate_matches_the_committed_tree() {
+    let files = testsupport::emit_validate_to_memory().unwrap();
+    assert_matches_committed_tree("emit-validate", &files);
+}
+
 // ── shared assertions ───────────────────────────────────────────────────────
 
 /// Assert two renders of the same target agree on every path and every byte.
@@ -145,17 +374,26 @@ fn assert_deterministic(target: &str, a: &BTreeMap<String, String>, b: &BTreeMap
     }
 }
 
-/// Assert a target emitted exactly `expected`, with every file non-empty, its
-/// `@generated` banner naming the target on line one, and its SPDX licence
-/// header present.
+/// Assert a target emitted exactly `expected`, with every file well-formed
+/// ([`assert_well_formed`]) and its banner naming the target.
 fn assert_file_set(target: &str, files: &BTreeMap<String, String>, expected: &[&str]) {
     let actual: Vec<&str> = files.keys().map(String::as_str).collect();
     assert_eq!(actual, expected, "{target}: emitted a different file set");
+    assert_well_formed(target, target, files);
+}
+
+/// Assert every rendered file is non-empty, opens on a line-one banner carrying
+/// `banner_needle`, and carries its crate's SPDX licence header.
+///
+/// `banner_needle` is the target name for every target that stamps it into the
+/// banner; `emit`'s banner names only the generator, so it passes `@generated`.
+fn assert_well_formed(target: &str, banner_needle: &str, files: &BTreeMap<String, String>) {
+    assert!(!files.is_empty(), "{target}: rendered nothing");
     for (path, body) in files {
         assert!(!body.trim().is_empty(), "{target}: {path} rendered empty");
         let banner = body.lines().next().unwrap_or_default();
         assert!(
-            banner.contains("@generated") && banner.contains(target),
+            banner.contains("@generated") && banner.contains(banner_needle),
             "{target}: {path} does not open with its generated banner: {banner:?}",
         );
         // The needle names the SPDX tag WITHOUT an expression, which the
@@ -193,6 +431,116 @@ fn assert_matches_committed_tree(target: &str, files: &BTreeMap<String, String>)
             difference_hint(&rendered, &committed),
         );
     }
+}
+
+/// Assert `emit`'s whole rendered tree equals the committed generated tree.
+///
+/// Two things differ from the single-file comparison above. The set runs to four
+/// figures, so the bodies are formatted in ONE batched `rustfmt` pass over a
+/// scratch tree — the same `rustfmt --edition 2024 --quiet <files>` invocation
+/// the `emit` handler makes over the files it has just written. And `emit`
+/// finishes each crate by WEAVING module declarations into anchors it rendered
+/// (`declare_hand_written_modules`; `emit-json` adds `mod json_serde;` the same
+/// way), so an anchor's committed bytes are the rendered bytes plus that weave.
+/// The assertion therefore pins three things: the rendered prefix byte for byte,
+/// a tail that is nothing but woven declarations, and that only a module ANCHOR
+/// (`lib.rs` / `mod.rs`) carries such a tail at all — the weave's own rule, so
+/// the tolerance cannot widen into a blanket escape. The woven set is
+/// non-empty, which is what keeps that half of the assertion honest.
+#[expect(
+    clippy::panic,
+    reason = "test diagnostics: a missing committed file names itself instead of \
+              failing as a bare unwrap"
+)]
+fn assert_tree_matches_committed(target: &str, files: &BTreeMap<String, String>) {
+    let root = crates_root();
+    let mut woven = 0_usize;
+    for (path, rendered) in rustfmt_tree(target, files) {
+        let full = root.join(&path);
+        let committed = std::fs::read_to_string(&full)
+            .unwrap_or_else(|e| panic!("{target}: cannot read committed {path}: {e}"));
+        if committed == rendered {
+            continue;
+        }
+        let Some(tail) = committed.strip_prefix(&rendered) else {
+            panic!(
+                "{target}: {path} does not match the committed generated tree{}",
+                difference_hint(&rendered, &committed),
+            );
+        };
+        assert!(
+            path.ends_with("/lib.rs") || path.ends_with("/mod.rs"),
+            "{target}: {path} is not a module anchor, so nothing may be woven into it:\n{tail}",
+        );
+        assert!(
+            is_woven_declarations(tail),
+            "{target}: {path} carries content beyond the rendered body that is not a woven \
+             module declaration:\n{tail}",
+        );
+        woven += 1;
+    }
+    assert!(
+        woven > 0,
+        "{target}: no anchor carried a woven declaration — the weave is not being exercised",
+    );
+}
+
+/// Whether a committed file's tail beyond the rendered body is only the module
+/// declarations the CLI weaves in after writing it.
+fn is_woven_declarations(tail: &str) -> bool {
+    tail.lines().all(|line| {
+        let t = line.trim();
+        t.is_empty()
+            || t.starts_with("// ") && t.ends_with("auto-declared:")
+            || (t.starts_with("mod ") || t.starts_with("pub mod ")) && t.ends_with(';')
+    })
+}
+
+/// Format a whole rendered tree in one `rustfmt` pass, via a scratch directory.
+///
+/// Per-file `rustfmt` over four figures of files would dominate the run, and
+/// `rustfmt` is invoked exactly as the emitter invokes it — over files on disk,
+/// batched per crate — so this is also the more faithful reproduction.
+#[expect(
+    clippy::panic,
+    reason = "test diagnostics: each scratch-tree failure mode names itself, so a red \
+              run points at the toolchain rather than at the emitter"
+)]
+fn rustfmt_tree(target: &str, files: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+    let scratch =
+        std::env::temp_dir().join(format!("openehr-codegen-{target}-{}", std::process::id()));
+    drop(std::fs::remove_dir_all(&scratch));
+    let mut by_crate: BTreeMap<&str, Vec<PathBuf>> = BTreeMap::new();
+    for (path, body) in files {
+        let full = scratch.join(path);
+        let parent = full
+            .parent()
+            .unwrap_or_else(|| panic!("{target}: {path} has no parent directory"));
+        std::fs::create_dir_all(parent)
+            .unwrap_or_else(|e| panic!("{target}: cannot create {}: {e}", parent.display()));
+        std::fs::write(&full, body)
+            .unwrap_or_else(|e| panic!("{target}: cannot write scratch {path}: {e}"));
+        let krate = path.split('/').next().unwrap_or_default();
+        by_crate.entry(krate).or_default().push(full);
+    }
+    for (krate, paths) in &by_crate {
+        let status = Command::new("rustfmt")
+            .args(["--edition", "2024", "--quiet"])
+            .args(paths)
+            .status()
+            .unwrap_or_else(|e| panic!("{target}: rustfmt is not runnable: {e}"));
+        assert!(status.success(), "{target}: rustfmt failed on {krate}");
+    }
+    let out = files
+        .keys()
+        .map(|path| {
+            let body = std::fs::read_to_string(scratch.join(path))
+                .unwrap_or_else(|e| panic!("{target}: cannot read scratch {path}: {e}"));
+            (path.clone(), body)
+        })
+        .collect();
+    drop(std::fs::remove_dir_all(&scratch));
+    out
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
