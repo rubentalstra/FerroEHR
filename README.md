@@ -9,10 +9,7 @@
 
 ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
 
-### 🚀 Try it live, right now: **[sandbox.ferroehr.eu](https://sandbox.ferroehr.eu)**
-
-No install, no account: the link opens the Swagger UI of a running FerroEHR.\
-Sign in with `ferroehr` / `ferroehr` — demo data only, wiped and reseeded nightly.
+**Try it live: [sandbox.ferroehr.eu](https://sandbox.ferroehr.eu)** (`ferroehr` / `ferroehr`, demo data, reset nightly)
 
 [![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
 [![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
