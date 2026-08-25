@@ -24,5 +24,5 @@ pub struct BmmSignature {
 impl BmmSignature {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Signature";
+    pub const BASE_NAME: &str = "Signature";
 }

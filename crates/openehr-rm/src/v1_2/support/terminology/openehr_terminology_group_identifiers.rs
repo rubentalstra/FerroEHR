@@ -16,49 +16,49 @@ pub struct OpenehrTerminologyGroupIdentifiersData {}
 impl OpenehrTerminologyGroupIdentifiersData {
     /// Name of openEHR's own terminology.
     /// BMM constant `Terminology_id_openehr`.
-    pub const TERMINOLOGY_ID_OPENEHR: &'static str = "openehr";
+    pub const TERMINOLOGY_ID_OPENEHR: &str = "openehr";
 
     /// BMM constant `Group_id_audit_change_type`.
-    pub const GROUP_ID_AUDIT_CHANGE_TYPE: &'static str = "audit change type";
+    pub const GROUP_ID_AUDIT_CHANGE_TYPE: &str = "audit change type";
 
     /// BMM constant `Group_id_attestation_reason`.
-    pub const GROUP_ID_ATTESTATION_REASON: &'static str = "attestation reason";
+    pub const GROUP_ID_ATTESTATION_REASON: &str = "attestation reason";
 
     /// BMM constant `Group_id_composition_category`.
-    pub const GROUP_ID_COMPOSITION_CATEGORY: &'static str = "composition category";
+    pub const GROUP_ID_COMPOSITION_CATEGORY: &str = "composition category";
 
     /// BMM constant `Group_id_event_math_function`.
-    pub const GROUP_ID_EVENT_MATH_FUNCTION: &'static str = "event math function";
+    pub const GROUP_ID_EVENT_MATH_FUNCTION: &str = "event math function";
 
     /// BMM constant `Group_id_instruction_states`.
-    pub const GROUP_ID_INSTRUCTION_STATES: &'static str = "instruction states";
+    pub const GROUP_ID_INSTRUCTION_STATES: &str = "instruction states";
 
     /// BMM constant `Group_id_instruction_transitions`.
-    pub const GROUP_ID_INSTRUCTION_TRANSITIONS: &'static str = "instruction transitions";
+    pub const GROUP_ID_INSTRUCTION_TRANSITIONS: &str = "instruction transitions";
 
     /// BMM constant `Group_id_null_flavours`.
-    pub const GROUP_ID_NULL_FLAVOURS: &'static str = "null flavours";
+    pub const GROUP_ID_NULL_FLAVOURS: &str = "null flavours";
 
     /// BMM constant `Group_id_property`.
-    pub const GROUP_ID_PROPERTY: &'static str = "property";
+    pub const GROUP_ID_PROPERTY: &str = "property";
 
     /// BMM constant `Group_id_participation_function`.
-    pub const GROUP_ID_PARTICIPATION_FUNCTION: &'static str = "participation function";
+    pub const GROUP_ID_PARTICIPATION_FUNCTION: &str = "participation function";
 
     /// BMM constant `Group_id_participation_mode`.
-    pub const GROUP_ID_PARTICIPATION_MODE: &'static str = "participation mode";
+    pub const GROUP_ID_PARTICIPATION_MODE: &str = "participation mode";
 
     /// BMM constant `Group_id_setting`.
-    pub const GROUP_ID_SETTING: &'static str = "setting";
+    pub const GROUP_ID_SETTING: &str = "setting";
 
     /// BMM constant `Group_id_term_mapping_purpose`.
-    pub const GROUP_ID_TERM_MAPPING_PURPOSE: &'static str = "term mapping purpose";
+    pub const GROUP_ID_TERM_MAPPING_PURPOSE: &str = "term mapping purpose";
 
     /// BMM constant `Group_id_subject_relationship`.
-    pub const GROUP_ID_SUBJECT_RELATIONSHIP: &'static str = "subject relationship";
+    pub const GROUP_ID_SUBJECT_RELATIONSHIP: &str = "subject relationship";
 
     /// BMM constant `Group_id_version_life_cycle_state`.
-    pub const GROUP_ID_VERSION_LIFE_CYCLE_STATE: &'static str = "version lifecycle state";
+    pub const GROUP_ID_VERSION_LIFE_CYCLE_STATE: &str = "version lifecycle state";
 }
 
 /// Polymorphic slot of `OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS`, dispatched on each payload's `_type`.

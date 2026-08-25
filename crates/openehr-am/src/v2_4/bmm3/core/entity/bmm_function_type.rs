@@ -25,5 +25,5 @@ pub struct BmmFunctionType {
 impl BmmFunctionType {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Function";
+    pub const BASE_NAME: &str = "Function";
 }

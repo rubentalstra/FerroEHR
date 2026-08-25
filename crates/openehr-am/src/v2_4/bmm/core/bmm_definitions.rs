@@ -17,19 +17,19 @@ pub struct BmmDefinitionsData {}
 impl BmmDefinitionsData {
     /// Current internal version of BMM meta-model, used to determine if a given schema can be processed by a given implementation of the model.
     /// BMM constant `Bmm_internal_version`.
-    pub const BMM_INTERNAL_VERSION: &'static str = "";
+    pub const BMM_INTERNAL_VERSION: &str = "";
 
     /// Delimiter used to separate schema id from package path in a fully qualified path.
     /// BMM constant `Schema_name_delimiter`.
-    pub const SCHEMA_NAME_DELIMITER: &'static str = "::";
+    pub const SCHEMA_NAME_DELIMITER: &str = "::";
 
     /// Delimiter used to separate package names in a package path.
     /// BMM constant `Package_name_delimiter`.
-    pub const PACKAGE_NAME_DELIMITER: &'static str = ".";
+    pub const PACKAGE_NAME_DELIMITER: &str = ".";
 
     /// Extension used for BMM files.
     /// BMM constant `Bmm_schema_file_extension`.
-    pub const BMM_SCHEMA_FILE_EXTENSION: &'static str = ".bmm";
+    pub const BMM_SCHEMA_FILE_EXTENSION: &str = ".bmm";
 
     /// Appears between a name and a type in a declaration or type signature.
     /// BMM constant `Type_delimiter`.
@@ -76,35 +76,35 @@ impl BmmDefinitionsData {
 
     /// Attribute name of logical attribute 'bmm_version' in .bmm schema file.
     /// BMM constant `Metadata_bmm_version`.
-    pub const METADATA_BMM_VERSION: &'static str = "bmm_version";
+    pub const METADATA_BMM_VERSION: &str = "bmm_version";
 
     /// Attribute name of logical attribute 'schema_name' in .bmm schema file.
     /// BMM constant `Metadata_schema_name`.
-    pub const METADATA_SCHEMA_NAME: &'static str = "schema_name";
+    pub const METADATA_SCHEMA_NAME: &str = "schema_name";
 
     /// Attribute name of logical attribute 'rm_publisher' in .bmm schema file.
     /// BMM constant `Metadata_rm_publisher`.
-    pub const METADATA_RM_PUBLISHER: &'static str = "rm_publisher";
+    pub const METADATA_RM_PUBLISHER: &str = "rm_publisher";
 
     /// Attribute name of logical attribute 'rm_release' in .bmm schema file.
     /// BMM constant `Metadata_rm_release`.
-    pub const METADATA_RM_RELEASE: &'static str = "rm_release";
+    pub const METADATA_RM_RELEASE: &str = "rm_release";
 
     /// Attribute name of logical attribute 'schema_revision' in .bmm schema file.
     /// BMM constant `Metadata_schema_revision`.
-    pub const METADATA_SCHEMA_REVISION: &'static str = "schema_revision";
+    pub const METADATA_SCHEMA_REVISION: &str = "schema_revision";
 
     /// Attribute name of logical attribute 'schema_lifecycle_state' in .bmm schema file.
     /// BMM constant `Metadata_schema_lifecycle_state`.
-    pub const METADATA_SCHEMA_LIFECYCLE_STATE: &'static str = "schema_lifecycle_state";
+    pub const METADATA_SCHEMA_LIFECYCLE_STATE: &str = "schema_lifecycle_state";
 
     /// Attribute name of logical attribute 'schema_description' in .bmm schema file.
     /// BMM constant `Metadata_schema_description`.
-    pub const METADATA_SCHEMA_DESCRIPTION: &'static str = "schema_description";
+    pub const METADATA_SCHEMA_DESCRIPTION: &str = "schema_description";
 
     /// Path of schema file.
     /// BMM constant `Metadata_schema_path`.
-    pub const METADATA_SCHEMA_PATH: &'static str = "schema_path";
+    pub const METADATA_SCHEMA_PATH: &str = "schema_path";
 }
 
 /// Polymorphic slot of `BMM_DEFINITIONS`, dispatched on each payload's `_type`.

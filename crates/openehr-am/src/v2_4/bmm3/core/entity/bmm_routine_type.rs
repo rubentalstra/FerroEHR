@@ -25,7 +25,7 @@ pub struct BmmRoutineTypeData {
 impl BmmRoutineTypeData {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Routine";
+    pub const BASE_NAME: &str = "Routine";
 }
 
 /// Polymorphic slot of `BMM_ROUTINE_TYPE`, dispatched on each payload's `_type`.

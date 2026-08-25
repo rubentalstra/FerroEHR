@@ -26,19 +26,19 @@ pub struct BmmDefinitionsData {}
 impl BmmDefinitionsData {
     /// Current internal version of BMM meta-model, used to determine if a given schema can be processed by a given implementation of the model.
     /// BMM constant `Bmm_internal_version`.
-    pub const BMM_INTERNAL_VERSION: &'static str = "";
+    pub const BMM_INTERNAL_VERSION: &str = "";
 
     /// Delimiter used to separate schema id from package path in a fully qualified path.
     /// BMM constant `Schema_name_delimiter`.
-    pub const SCHEMA_NAME_DELIMITER: &'static str = "::";
+    pub const SCHEMA_NAME_DELIMITER: &str = "::";
 
     /// Delimiter used to separate package names in a package path.
     /// BMM constant `Package_name_delimiter`.
-    pub const PACKAGE_NAME_DELIMITER: &'static str = ".";
+    pub const PACKAGE_NAME_DELIMITER: &str = ".";
 
     /// Extension used for BMM files.
     /// BMM constant `Bmm_schema_file_extension`.
-    pub const BMM_SCHEMA_FILE_EXTENSION: &'static str = ".bmm";
+    pub const BMM_SCHEMA_FILE_EXTENSION: &str = ".bmm";
 }
 
 /// Polymorphic slot of `BMM_DEFINITIONS`, dispatched on each payload's `_type`.

@@ -24,5 +24,5 @@ pub struct BmmProcedureType {
 impl BmmProcedureType {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Procedure";
+    pub const BASE_NAME: &str = "Procedure";
 }
