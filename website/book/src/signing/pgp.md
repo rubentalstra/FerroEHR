@@ -158,9 +158,11 @@ flowchart TD
     B -->|yes| S["serve"]
     B -->|no| C{"verify_on_read"}
     C -->|off| S
-    C -->|"warn / strict"| D{"a stored signature?"}
+    C -->|"warn / once / strict"| D{"a stored signature?"}
     D -->|no| S
-    D -->|yes| E["recompute the canonical form<br/>drop signature, RFC 8785 (JCS)"]
+    D -->|yes| D2{"once: verdict already cached?"}
+    D2 -->|yes| S
+    D2 -->|no| E["recompute the canonical form<br/>drop signature, RFC 8785 (JCS)"]
     E --> F{"stored value's format"}
     F -->|"sha256: prefix"| G["recompute the digest and compare"]
     F -->|"PGP armor"| H{"a PGP key configured?"}
@@ -171,10 +173,11 @@ flowchart TD
     I3 -->|"no: pgp_invalid"| L
     G --> K{"verdict"}
     J --> K
-    K -->|"match"| S
+    K -->|"match"| K2["once: remember the verdict"]
+    K2 --> S
     K -->|"failure"| L{"verify_on_read"}
     L -->|warn| M["log + version_signature_invalid_total,<br/>then serve"]
-    L -->|strict| N["500 integrity failure"]
+    L -->|"once / strict"| N["500 integrity failure"]
     S --> T["append attestations added after committal"]
     M --> T
     I --> T
