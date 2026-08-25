@@ -271,6 +271,91 @@ pub(crate) async fn read_current(
         .transpose()
 }
 
+/// A version read whose body may still be the stored jsonb text — the
+/// JSON-accept passthrough shape.
+///
+/// `raw_json = Some(text)` iff the body never needed parsing: a locally
+/// created version (no `IMPORTED_VERSION` wrapper) whose `spec_profile` gate
+/// decided on the commit-time stamp alone; `read.canonical` is `Value::Null`
+/// then. Otherwise the body was parsed into `read.canonical` and `raw_json`
+/// is `None` — the ordinary [`VersionRead`] contract.
+#[derive(Debug)]
+pub(crate) struct RawVersionRead {
+    /// The loaded version (see [`RawVersionRead::raw_json`] for its body
+    /// representation).
+    pub(crate) read: VersionRead,
+    /// The stored body's own jsonb text, when it never needed parsing.
+    pub(crate) raw_json: Option<String>,
+}
+
+/// Compose a [`RawVersionRead`]: parse the raw text back into a typed value
+/// wherever one is still needed — an imported version (the uid re-stamp path)
+/// or a `stable`-profile read the commit-time stamp cannot decide — else keep
+/// the text verbatim for the passthrough.
+///
+/// # Errors
+/// The [`version_read`] rejections; [`ServiceError::Internal`] when the
+/// stored body text does not parse (our own jsonb rendering — corrupt data,
+/// never a client condition).
+fn raw_version_read(
+    profile: crate::config::profile::SpecProfile,
+    mut stored: crate::storage::version_repo::read::StoredVersion,
+) -> Result<RawVersionRead, ServiceError> {
+    let needs_value = stored.wrapped_original.is_some()
+        || (profile == crate::config::profile::SpecProfile::Stable
+            && stored.stable_compatible != Some(true));
+    let mut raw_json = stored.canonical_text.take();
+    if needs_value && let Some(text) = raw_json.as_deref() {
+        stored.canonical = serde_json::from_str(text).map_err(|e| {
+            ServiceError::exception(format!(
+                "the stored body of versioned object {} is not decodable JSON: {e}",
+                stored.vo_id
+            ))
+        })?;
+        raw_json = None;
+    }
+    Ok(RawVersionRead {
+        read: version_read(profile, stored)?,
+        raw_json,
+    })
+}
+
+/// [`read_current`] with the body kept as the stored jsonb text when nothing
+/// needs it parsed — the JSON-accept passthrough read.
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_current_raw`, or the
+/// [`raw_version_read`] rejections.
+pub(crate) async fn read_current_raw(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    vo_id: VoId,
+) -> Result<Option<RawVersionRead>, ServiceError> {
+    crate::storage::version_repo::read::read_current_raw(pool, vo_id)
+        .await?
+        .map(|stored| raw_version_read(profile, stored))
+        .transpose()
+}
+
+/// [`read_version`] with the body kept as the stored jsonb text when nothing
+/// needs it parsed — the JSON-accept passthrough read.
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_version_raw`, or the
+/// [`raw_version_read`] rejections.
+pub(crate) async fn read_version_raw(
+    pool: &sqlx::PgPool,
+    profile: crate::config::profile::SpecProfile,
+    vo_id: VoId,
+    tree: TreeId,
+) -> Result<Option<RawVersionRead>, ServiceError> {
+    let (t, b, v) = tree.columns();
+    crate::storage::version_repo::read::read_version_raw(pool, vo_id, t, b, v)
+        .await?
+        .map(|stored| raw_version_read(profile, stored))
+        .transpose()
+}
+
 /// Read the current versions of a SET of objects in ONE statement (the
 /// extract export's demographics batch), each passing the same `spec_profile`
 /// gate a point read passes; keyed by `vo_id`, with absent objects simply

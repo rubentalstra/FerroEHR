@@ -101,8 +101,14 @@ pub struct StoredVersion {
     pub stable_compatible: Option<bool>,
     /// The materialized canonical body (`vo_version.body` — written from the
     /// same value the node rows decompose from), or [`Value::Null`] for a
-    /// logically deleted version (master06 §Logical Deletion).
+    /// logically deleted version (master06 §Logical Deletion). [`Value::Null`]
+    /// on a raw read that populated [`Self::canonical_text`] instead.
     pub canonical: Value,
+    /// The body as the database's own jsonb text rendering, populated ONLY by
+    /// the raw read variants ([`read_current_raw`] / [`read_version_raw`]) —
+    /// the JSON-accept passthrough source. `None` on every parsed read and on
+    /// a logically deleted version.
+    pub canonical_text: Option<String>,
     /// The `ORIGINAL_VERSION.attestations` that were on the version AT the act
     /// of committal, in commit order (master06 §Attestation "Signing content at
     /// committal") — the ones inside the version's signed canonical form.
@@ -163,11 +169,65 @@ macro_rules! version_select {
     };
 }
 
+/// [`version_select!`] with the body as the database's own jsonb text
+/// rendering (`v.body::text`) — the raw-read column list for the JSON-accept
+/// passthrough ([`read_current_raw`] / [`read_version_raw`]). Every other
+/// column is identical.
+macro_rules! version_select_raw {
+    ($tail:literal) => {
+        concat!(
+            "SELECT v.vo_id, v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
+            "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
+            "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
+            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
+            "v.body::text AS body, ",
+            "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
+            "a.time_committed, ",
+            "att.attestations_at_committal, att.attestations_after_committal ",
+            "FROM vo_version_all v JOIN audit a ON a.id = v.audit_id ",
+            "LEFT JOIN LATERAL (",
+            "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
+            "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
+            "coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
+            "FILTER (WHERE NOT x.at_committal), '[]'::jsonb) AS attestations_after_committal ",
+            "FROM vo_attestation_all x ",
+            "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
+            ") att ON true ",
+            $tail
+        )
+    };
+}
+
 /// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row; the canonical
 /// body is the row's own materialized `body` column (`NULL` → [`Value::Null`],
 /// a logical delete), so the whole version read is the ONE statement that
 /// produced `row`, on whichever tier's connection ran it.
 fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageError> {
+    let canonical = row
+        .try_get::<Option<Value>, _>("body")?
+        .unwrap_or(Value::Null);
+    stored_version_fields(vo_id, row, canonical, None)
+}
+
+/// [`stored_version`] for a raw-read row (`v.body::text AS body`): the body
+/// arrives as the database's own jsonb text rendering, kept verbatim in
+/// [`StoredVersion::canonical_text`] with `canonical = Value::Null` — the
+/// JSON-accept passthrough source (the caller parses the text wherever a
+/// typed value is still needed).
+fn stored_version_raw(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageError> {
+    let canonical_text: Option<String> = row.try_get("body")?;
+    stored_version_fields(vo_id, row, Value::Null, canonical_text)
+}
+
+/// The shared `vo_version`⋈`audit` field mapping of [`stored_version`] /
+/// [`stored_version_raw`] — everything except the body representation, which
+/// the two builders extract each their own way.
+fn stored_version_fields(
+    vo_id: VoId,
+    row: &PgRow,
+    canonical: Value,
+    canonical_text: Option<String>,
+) -> Result<StoredVersion, StorageError> {
     let sys_version: i32 = row.try_get("sys_version")?;
     // A stored `other_input_version_uids` that does not decode is OUR data
     // gone wrong (the merge inputs of an IMPORTED_VERSION, RM common master06
@@ -185,9 +245,6 @@ fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageErro
             ))
         })?
         .unwrap_or_default();
-    let canonical = row
-        .try_get::<Option<Value>, _>("body")?
-        .unwrap_or(Value::Null);
     // The attestations arrive folded into the version-select row (the LATERAL
     // aggregates in `version_select!`), in commit order and already split on
     // `at_committal` — no separate round trip.
@@ -227,6 +284,7 @@ fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageErro
         wrapped_original: row.try_get("wrapped_original")?,
         stable_compatible: row.try_get("stable_compatible")?,
         canonical,
+        canonical_text,
         attestations_at_committal,
         attestations_after_committal,
     })
@@ -337,6 +395,54 @@ pub async fn read_current(
         .fetch_optional(pool)
         .await?
         .map(|row| stored_version(vo_id, &row))
+        .transpose()
+}
+
+/// [`read_current`] with the body as its stored jsonb text — the
+/// JSON-accept passthrough read ([`StoredVersion::canonical_text`] carries
+/// the text; `canonical` is [`Value::Null`]).
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver failure.
+pub async fn read_current_raw(
+    pool: &PgPool,
+    vo_id: VoId,
+) -> Result<Option<StoredVersion>, StorageError> {
+    const SQL: &str = version_select_raw!(
+        "WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0"
+    );
+    sqlx::query(SQL)
+        .bind(vo_id)
+        .fetch_optional(pool)
+        .await?
+        .map(|row| stored_version_raw(vo_id, &row))
+        .transpose()
+}
+
+/// [`read_version`] with the body as its stored jsonb text — the
+/// JSON-accept passthrough read.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver failure.
+pub async fn read_version_raw(
+    pool: &PgPool,
+    vo_id: VoId,
+    trunk_version: i32,
+    branch_number: i32,
+    branch_version: i32,
+) -> Result<Option<StoredVersion>, StorageError> {
+    const SQL: &str = version_select_raw!(
+        "WHERE v.vo_id = $1 AND v.trunk_version = $2 \
+         AND v.branch_number = $3 AND v.branch_version = $4"
+    );
+    sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(trunk_version)
+        .bind(branch_number)
+        .bind(branch_version)
+        .fetch_optional(pool)
+        .await?
+        .map(|row| stored_version_raw(vo_id, &row))
         .transpose()
 }
 

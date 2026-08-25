@@ -761,20 +761,24 @@ async fn assert_xml_round_trip(compression: Option<CompressionFormat>, container
 /// kind an EHR owns.
 #[tokio::test]
 async fn canonical_xml_export_round_trips_byte_equal_over_a_mixed_kind_ehr() {
-    assert_xml_round_trip(None, "loose").await;
+    Box::pin(assert_xml_round_trip(None, "loose")).await;
 }
 
 /// The logical format and the container are independent axes: the identical
 /// entry set travels in `archive.zip`.
 #[tokio::test]
 async fn canonical_xml_export_round_trips_through_the_zip_container() {
-    assert_xml_round_trip(Some(CompressionFormat::Zip), "zip").await;
+    Box::pin(assert_xml_round_trip(Some(CompressionFormat::Zip), "zip")).await;
 }
 
 /// …and in `archive.7z`.
 #[tokio::test]
 async fn canonical_xml_export_round_trips_through_the_sevenz_container() {
-    assert_xml_round_trip(Some(CompressionFormat::SevenZip), "7z").await;
+    Box::pin(assert_xml_round_trip(
+        Some(CompressionFormat::SevenZip),
+        "7z",
+    ))
+    .await;
 }
 
 /// The archive's SHAPE, not just its round trip: the manifest records the

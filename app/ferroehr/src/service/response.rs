@@ -99,6 +99,46 @@ pub struct ServiceResponse {
     pub meta: Option<ResourceMeta>,
 }
 
+/// A read body: the parsed canonical value, or the stored text verbatim.
+///
+/// The raw form carries the stored canonical text (already uid-stamped at
+/// commit) — the JSON-accept passthrough the protocol adapter writes to the
+/// wire without a parse → serialize round trip.
+#[derive(Debug, Clone)]
+pub enum ReadBody {
+    /// The parsed canonical value.
+    Value(Value),
+    /// The stored body's own jsonb text rendering, served verbatim for a
+    /// JSON accept; a consumer needing the typed value parses it.
+    RawJson(String),
+}
+
+impl ReadBody {
+    /// The typed value: the parsed representation as-is, or the raw text
+    /// parsed on demand.
+    ///
+    /// # Errors
+    /// The `serde_json` rejection of undecodable text (the stored body is our
+    /// own jsonb rendering — a failure is corrupt data, never a client
+    /// condition; callers map it to an internal fault).
+    pub fn into_value(self) -> Result<Value, serde_json::Error> {
+        match self {
+            ReadBody::Value(v) => Ok(v),
+            ReadBody::RawJson(text) => serde_json::from_str(&text),
+        }
+    }
+}
+
+/// A [`ServiceResponse`] whose body may still be the stored canonical text
+/// (see [`ReadBody`]).
+#[derive(Debug, Clone)]
+pub struct RawServiceResponse {
+    /// The read body, parsed or verbatim.
+    pub body: ReadBody,
+    /// Resource metadata for header derivation, if any.
+    pub meta: Option<ResourceMeta>,
+}
+
 impl ServiceResponse {
     /// A response carrying both an RM body and resource metadata.
     #[must_use]

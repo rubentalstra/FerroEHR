@@ -28,11 +28,11 @@ use crate::service::datetime::parse_at_time;
 #[cfg(feature = "multimedia")]
 use crate::service::error::internal_fault;
 use crate::service::error::{ServiceError, Violation};
-use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::response::{RawServiceResponse, ReadBody, ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::versioning::Kind;
 use crate::versioning::audit::change_type;
-use crate::versioning::change::{create, delete, update};
+use crate::versioning::change::{create, delete, update_with_placement};
 use crate::versioning::object_version_id::{TreeId, components, parse_tree_id};
 use crate::versioning::read::{read_current, read_version, version_at};
 use crate::versioning::wire::{revision_history, version_envelope, versioned_object};
@@ -176,6 +176,90 @@ impl FerroEhrService {
         Ok(self.version_response(ehr_id, vo_id, read)?)
     }
 
+    /// [`Self::read_composition`] with the body kept as the stored canonical
+    /// text wherever nothing needs it parsed — the JSON-accept passthrough.
+    ///
+    /// The stored body is uid-stamped at commit
+    /// (`crate::versioning::change` — `stamp_version_uid` runs before
+    /// decomposition), and jsonb renders object keys length-first, so a
+    /// stamped COMPOSITION's text opens with its own `uid`: the prefix
+    /// compare below PROVES the stamp byte-exactly, and any other shape (a
+    /// verbatim-loaded foreign body) falls back to the parsed re-stamp path.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the version does not exist or belongs
+    /// to another EHR; [`ServiceError::Database`] on a storage failure;
+    /// [`ServiceError::Internal`] on undecodable stored text.
+    pub(in crate::service) async fn read_composition_raw(
+        &self,
+        ehr_id: EhrId,
+        vo_id: VoId,
+        version: Option<TreeId>,
+    ) -> Result<RawServiceResponse, ServiceError> {
+        let raw = match version {
+            Some(v) => {
+                crate::versioning::read::read_version_raw(&self.pool, self.spec_profile, vo_id, v)
+                    .await?
+            }
+            None => {
+                crate::versioning::read::read_current_raw(&self.pool, self.spec_profile, vo_id)
+                    .await?
+            }
+        }
+        .filter(|r| r.read.ehr_id == Some(ehr_id) && r.read.kind == Kind::Composition)
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::CompositionDoesNotExist,
+                format!("COMPOSITION {vo_id}"),
+            )
+        })?;
+        if raw.read.deleted() {
+            return Ok(RawServiceResponse {
+                body: ReadBody::Value(Value::Null),
+                meta: None,
+            });
+        }
+        let read = raw.read;
+        let meta = self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.tree,
+            read.time_committed,
+        );
+        let Some(text) = raw.raw_json else {
+            let stamped =
+                self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree)?;
+            return Ok(RawServiceResponse {
+                body: ReadBody::Value(stamped),
+                meta: Some(meta),
+            });
+        };
+        let uid = crate::versioning::object_version_id::object_version_id(
+            vo_id,
+            &read.creating_system_id,
+            read.tree,
+        );
+        let prefix =
+            format!("{{\"uid\": {{\"_type\": \"OBJECT_VERSION_ID\", \"value\": \"{uid}\"}}");
+        if text.starts_with(&prefix) {
+            return Ok(RawServiceResponse {
+                body: ReadBody::RawJson(text),
+                meta: Some(meta),
+            });
+        }
+        let value: Value = serde_json::from_str(&text).map_err(|e| {
+            ServiceError::exception(format!(
+                "the stored body of COMPOSITION {vo_id} is not decodable JSON: {e}"
+            ))
+        })?;
+        let stamped = self.with_uid(value, vo_id, &read.creating_system_id, read.tree)?;
+        Ok(RawServiceResponse {
+            body: ReadBody::Value(stamped),
+            meta: Some(meta),
+        })
+    }
+
     /// A COMPOSITION as it was at an instant (time-travel), with its `uid`
     /// set. A deleted version resolves to an empty body (→ `204`).
     ///
@@ -312,13 +396,18 @@ impl FerroEhrService {
 
     /// `update_composition` (SM `i_ehr_composition.adoc`): commit a new
     /// version of `vo_id` from the caller's full `UPDATE_VERSION` envelope,
-    /// returning the committed version identity. ONE merged pre-read
-    /// (`current_composition_meta`) carries the whole write pre-check: the
-    /// owning EHR (ownership → 404), the full-`OBJECT_VERSION_ID` `If-Match`
-    /// identity (412 — ITS-REST overview §Concurrency control), the
-    /// lifecycle (deleted → 404), the stored template root fragment (422) and
-    /// the EHR's `is_modifiable` flag (409) — the former `If-Match` meta read,
-    /// modify pre-read, and `is_modifiable` side-SELECT are one statement.
+    /// returning the committed version identity. The whole write pre-check —
+    /// the owning EHR (ownership → 404), the full-`OBJECT_VERSION_ID`
+    /// `If-Match` identity (412 — ITS-REST overview §Concurrency control),
+    /// the lifecycle (deleted → 404), the EHR's `is_modifiable` flag (409),
+    /// the stored template root fragment (422), and the version-tree
+    /// placement itself — rides ONE in-transaction statement
+    /// ([`crate::storage::version_repo::placement::update_placement`]) under
+    /// the per-vo advisory lock, so no pool pre-read round trip remains. The
+    /// CPU-side envelope resolution and content validation run BEFORE the
+    /// transaction (never under the lock — validation may consult the
+    /// template store and routed terminology); their failures surface in the
+    /// same order as before, after the in-transaction gates ahead of them.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the COMPOSITION does not exist in this
@@ -340,61 +429,67 @@ impl FerroEhrService {
         // await so the typed RM value does not ride the whole write
         // transaction (`super::canonicalize`).
         let version = super::canonicalize(version);
-        let Some(current) =
-            crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
-                .await?
-                .filter(|m| m.ehr_id == Some(ehr_id))
+        let preceding_version_uid = version.preceding_version_uid.clone();
+        // The CPU-side envelope resolution and the content validation run
+        // BEFORE the write transaction: validation may consult the template
+        // store and the routed terminology servers, so neither the pool
+        // connection nor the per-vo advisory lock is ever held across it.
+        // Both RESULTS are held and surfaced below in the pre-check order the
+        // in-transaction gates define.
+        let resolved = resolve_envelope(
+            version,
+            change_type::MODIFICATION,
+            "COMPOSITION update",
+            &self.effective_system_id(),
+        );
+        let validated = match &resolved {
+            Ok(parts) => Some(
+                self.validate_composition_for_commit(&parts.canonical, parts.incomplete)
+                    .await,
+            ),
+            Err(_) => None,
+        };
+        let mut tx = self.pool.begin().await?;
+        // Serialize concurrent writers of the same object, then read the
+        // placement + every pre-check column in ONE statement (thaw riding).
+        crate::storage::version_repo::commit::advisory_lock(&mut tx, vo_id).await?;
+        let pre = crate::storage::version_repo::placement::update_placement(&mut tx, vo_id).await?;
+        let Some(tip) = pre
+            .placement
+            .tip
+            .as_ref()
+            .filter(|t| t.ehr_id == Some(ehr_id))
         else {
             return Err(ServiceError::sm(
                 CallStatusType::CompositionDoesNotExist,
                 format!("COMPOSITION {vo_id}"),
             ));
         };
-        // The full-`OBJECT_VERSION_ID` `If-Match` compare, built from
-        // the same merged read (ITS-REST overview §Concurrency control).
-        let tree = TreeId::from_columns(
-            current.trunk_version,
-            current.branch_number,
-            current.branch_version,
-        );
-        let latest = self.version_meta(
+        let expected = self.update_if_match_gate(
             ehr_id,
             vo_id,
-            &current.creating_system_id,
-            tree,
-            current.time_committed,
-        );
-        super::ensure_if_match(version.preceding_version_uid.as_ref(), Some(&latest))?;
-        let expected = version
-            .preceding_version_uid
-            .as_ref()
-            .map(|o| components(o).map(|(_, v)| v))
-            .transpose()?;
+            tip,
+            pre.tip_time_committed,
+            preceding_version_uid.as_ref(),
+        )?;
         let super::CommitParts {
             audit,
             envelope,
-            incomplete,
+            incomplete: _,
             canonical: composition,
-        } = resolve_envelope(
-            version,
-            change_type::MODIFICATION,
-            "COMPOSITION update",
-            &self.effective_system_id(),
-        )?;
+        } = resolved?;
         // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
-        // and the content-write guard are checked from the threaded pre-read.
-        if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
+        // and the content-write guard are checked from the same merged read.
+        if tip.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::sm(
                 CallStatusType::CompositionDoesNotExist,
                 format!("COMPOSITION {vo_id} is deleted"),
             ));
         }
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
-        // Active Status) — folded from the standalone `ensure_content_writable`
-        // side-SELECT into the merged pre-read; the 409 outcome and its
-        // ordering (after the deleted 404, before the template 422) are
-        // unchanged.
-        if !current.is_modifiable {
+        // Active Status); the 409 outcome and its ordering (after the deleted
+        // 404, before the template 422) are unchanged.
+        if pre.is_modifiable == Some(false) {
             return Err(Self::not_modifiable_error(ehr_id));
         }
         // Reject an update whose body declares a *different* template than the
@@ -404,7 +499,7 @@ impl FerroEhrService {
         // is_persistent across versions but not
         // archetype_details.template_id) — our own design convention,
         // consistent with those container invariants.
-        let stored_template = current.stored_template.as_deref();
+        let stored_template = pre.stored_template.as_deref();
         if let (Some(stored), Some(incoming)) =
             (stored_template, composition_template_id(&composition))
             && stored != incoming
@@ -417,23 +512,18 @@ impl FerroEhrService {
                 .with_path("COMPOSITION.archetype_details.template_id"),
             ));
         }
-        self.validate_composition_for_commit(&composition, incomplete)
-            .await?;
+        if let Some(validation) = validated {
+            validation?;
+        }
 
         // Same template stamping as the create arm — every version row carries
         // the template it was committed against.
         let template_id = composition_template_id(&composition).map(str::to_owned);
 
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
-        // `versioned_composition.adoc`), checked off the merged pre-read —
-        // the first version's root is immutable, so no transaction is needed
-        // to read it consistently.
-        super::validation::check_versioned_composition_first_root(
-            current.first_root,
-            &composition,
-        )?;
-        let mut tx = self.pool.begin().await?;
-        let committed = update(
+        // `versioned_composition.adoc`), checked off the same merged read.
+        super::validation::check_versioned_composition_first_root(pre.first_root, &composition)?;
+        let committed = update_with_placement(
             &mut tx,
             Some(ehr_id),
             vo_id,
@@ -444,6 +534,7 @@ impl FerroEhrService {
             &audit,
             envelope,
             &self.signing_ctx(),
+            pre.placement,
         )
         .await?;
         tx.commit().await?;
@@ -453,6 +544,43 @@ impl FerroEhrService {
         crate::versioning::change::meter_committed(&committed);
 
         Ok(committed)
+    }
+
+    /// The composition-update `If-Match` gate off the merged in-transaction
+    /// read: the full-`OBJECT_VERSION_ID` compare against the current tip
+    /// (412 on mismatch — ITS-REST overview §Concurrency control), returning
+    /// the expected `VERSION_TREE_ID` the placement decision pins.
+    ///
+    /// # Errors
+    /// [`ServiceError::VersionConflict`] on an `If-Match` mismatch (→ 412);
+    /// the `components` rejection of a malformed `preceding_version_uid`;
+    /// [`ServiceError::Internal`] when the tip carries no commit audit.
+    fn update_if_match_gate(
+        &self,
+        ehr_id: EhrId,
+        vo_id: VoId,
+        tip: &crate::storage::version_repo::placement::TipRow,
+        tip_time_committed: Option<jiff::Timestamp>,
+        preceding_version_uid: Option<&ObjectVersionId>,
+    ) -> Result<Option<TreeId>, ServiceError> {
+        let tree = TreeId::from_columns(tip.trunk_version, tip.branch_number, tip.branch_version);
+        let tip_time_committed = tip_time_committed.ok_or_else(|| {
+            ServiceError::exception(format!(
+                "the current version of COMPOSITION {vo_id} has no commit audit"
+            ))
+        })?;
+        let latest = self.version_meta(
+            ehr_id,
+            vo_id,
+            &tip.creating_system_id,
+            tree,
+            tip_time_committed,
+        );
+        super::ensure_if_match(preceding_version_uid, Some(&latest))?;
+        preceding_version_uid
+            .map(|o| components(o).map(|(_, v)| v))
+            .transpose()
+            .map_err(ServiceError::from)
     }
 
     /// The current COMPOSITION version metadata (the latest `version_uid` a
@@ -748,10 +876,20 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         a_versioned_object_uid: VoId,
     ) -> Result<Value, SmError> {
-        Ok(self
+        let resp = self
             .composition_latest_response(an_ehr_id, a_versioned_object_uid)
-            .await?
-            .body)
+            .await?;
+        Ok(Self::read_body_value(a_versioned_object_uid, resp.body)?)
+    }
+
+    /// The typed value of a [`ReadBody`], mapping an undecodable stored text
+    /// to an internal fault (the stored body is our own jsonb rendering).
+    fn read_body_value(vo_id: VoId, body: ReadBody) -> Result<Value, ServiceError> {
+        body.into_value().map_err(|e| {
+            ServiceError::exception(format!(
+                "the stored body of COMPOSITION {vo_id} is not decodable JSON: {e}"
+            ))
+        })
     }
 
     /// SM `I_EHR_COMPOSITION.get_composition_at_time` — the COMPOSITION
@@ -766,10 +904,10 @@ impl FerroEhrService {
         a_versioned_object_uid: VoId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
-        Ok(self
+        let resp = self
             .composition_at_time_response(an_ehr_id, a_versioned_object_uid, a_time)
-            .await?
-            .body)
+            .await?;
+        Ok(Self::read_body_value(a_versioned_object_uid, resp.body)?)
     }
 
     /// SM `I_EHR_COMPOSITION.get_composition_at_version` — the bare
@@ -783,10 +921,11 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
-        Ok(self
+        let (vo_id, _) = components(&a_version_uid)?;
+        let resp = self
             .composition_at_version_response(an_ehr_id, a_version_uid)
-            .await?
-            .body)
+            .await?;
+        Ok(Self::read_body_value(vo_id, resp.body)?)
     }
 
     /// SM `I_EHR_COMPOSITION.get_versioned_composition` — the
@@ -929,9 +1068,9 @@ impl FerroEhrService {
         &self,
         an_ehr_id: EhrId,
         a_versioned_object_uid: VoId,
-    ) -> Result<ServiceResponse, SmError> {
+    ) -> Result<RawServiceResponse, SmError> {
         Ok(self
-            .read_composition(an_ehr_id, a_versioned_object_uid, None)
+            .read_composition_raw(an_ehr_id, a_versioned_object_uid, None)
             .await?)
     }
 
@@ -946,14 +1085,20 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         a_versioned_object_uid: VoId,
         a_time: Option<String>,
-    ) -> Result<ServiceResponse, SmError> {
+    ) -> Result<RawServiceResponse, SmError> {
         match a_time.as_deref() {
             None => Ok(self
-                .read_composition(an_ehr_id, a_versioned_object_uid, None)
+                .read_composition_raw(an_ehr_id, a_versioned_object_uid, None)
                 .await?),
-            Some(raw) => Ok(self
-                .composition_at_time(an_ehr_id, a_versioned_object_uid, parse_at_time(raw)?)
-                .await?),
+            Some(raw) => {
+                let resp = self
+                    .composition_at_time(an_ehr_id, a_versioned_object_uid, parse_at_time(raw)?)
+                    .await?;
+                Ok(RawServiceResponse {
+                    body: ReadBody::Value(resp.body),
+                    meta: resp.meta,
+                })
+            }
         }
     }
 
@@ -967,10 +1112,10 @@ impl FerroEhrService {
         &self,
         an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
-    ) -> Result<ServiceResponse, SmError> {
+    ) -> Result<RawServiceResponse, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
         let read = self
-            .read_composition(an_ehr_id, vo_id, Some(version))
+            .read_composition_raw(an_ehr_id, vo_id, Some(version))
             .await?;
         if let Some(meta) = read.meta.as_ref() {
             super::ensure_addressed_version(&a_version_uid, &meta.uid)?;
