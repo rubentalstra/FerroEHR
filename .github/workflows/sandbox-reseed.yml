@@ -20,6 +20,10 @@ on:
   schedule:
     - cron: "0 0 * * *" # nightly, around midnight UTC
   workflow_dispatch: {}
+  # The Sandbox deploy workflow calls this after every successful redeploy
+  # (#2724), so a release that edits the baseline migration heals at deploy
+  # time; the nightly run stays as the janitor.
+  workflow_call: {}
 
 permissions: {}
 
