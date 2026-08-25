@@ -92,7 +92,7 @@ fn collect_adls(dir: &Path, out: &mut Vec<PathBuf>) {
 fn is_excluded(path: &Path) -> bool {
     let name = path
         .file_name()
-        .and_then(|n| n.to_str())
+        .and_then(std::ffi::OsStr::to_str)
         .unwrap_or_default();
     EXCLUSIONS.iter().any(|(f, _)| *f == name)
 }
@@ -148,7 +148,7 @@ fn every_excluded_file_is_actually_rejected() {
     for (name, reason) in EXCLUSIONS {
         let path = files
             .iter()
-            .find(|p| p.file_name().and_then(|n| n.to_str()) == Some(name))
+            .find(|p| p.file_name().and_then(std::ffi::OsStr::to_str) == Some(name))
             .unwrap_or_else(|| panic!("excluded fixture {name} missing from the corpus"));
         let src = std::fs::read_to_string(path).expect("read corpus file");
         assert!(

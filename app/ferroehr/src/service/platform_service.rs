@@ -58,7 +58,7 @@ impl PlatformService {
     }
 
     /// All eight vendored members, in `platform_service.adoc` order.
-    pub const ALL: &'static [PlatformService] = &[
+    pub const ALL: &[PlatformService] = &[
         Self::Admin,
         Self::Definitions,
         Self::Ehr,

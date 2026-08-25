@@ -94,7 +94,7 @@ fn run(site: &Path, origin: &str, base: &str) -> std::io::Result<usize> {
 
     let mut written = 0usize;
     for version_dir in versions {
-        let Some(version) = version_dir.file_name().and_then(|n| n.to_str()) else {
+        let Some(version) = version_dir.file_name().and_then(std::ffi::OsStr::to_str) else {
             continue;
         };
         let mut pages = Vec::new();

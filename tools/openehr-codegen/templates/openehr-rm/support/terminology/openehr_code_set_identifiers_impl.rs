@@ -17,7 +17,7 @@ impl OpenehrCodeSetIdentifiersData {
     /// Spec: `org.openehr.rm.support.openehr_code_set_identifiers.adoc`
     /// §Constants — the seven identifiers, read from the emitted constants so
     /// there is no second copy of the list to drift.
-    const ALL: [&'static str; 7] = [
+    const ALL: [&str; 7] = [
         Self::CODE_SET_ID_CHARACTER_SETS,
         Self::CODE_SET_ID_COMPRESSION_ALGORITHMS,
         Self::CODE_SET_ID_COUNTRIES,

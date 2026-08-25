@@ -347,7 +347,7 @@ fn is_repeating(node: &WebTemplateNode) -> bool {
 /// Template child may sit several RM levels below its Web Template parent, so
 /// the parent's class is not the right scope to resolve against.
 fn rm_declares(aql_path: &str) -> bool {
-    static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
+    static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&str>> =
         std::sync::LazyLock::new(|| {
             openehr_rm::v1_2::model::classes()
                 .flat_map(|c| c.attributes.iter().map(|a| a.name))

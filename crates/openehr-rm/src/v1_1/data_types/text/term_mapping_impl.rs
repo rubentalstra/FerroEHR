@@ -25,7 +25,7 @@ impl TermMapping {
     /// RM `TERM_MAPPING.is_valid_match_code(c)`: `c` is one of `> = < ?`.
     #[must_use]
     pub fn is_valid_match_code(c: char) -> bool {
-        matches!(c, '>' | '=' | '<' | '?')
+        matches!(c, '<'..='?')
     }
 
     /// RM `TERM_MAPPING.narrower()`: the mapping is to a narrower term

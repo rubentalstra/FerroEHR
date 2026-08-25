@@ -1894,7 +1894,7 @@ impl<'a> SpecIndex<'a> {
                     .collect::<Vec<_>>()
                     .join("/")
                     .to_lowercase();
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if let Some(name) = path.file_name().and_then(std::ffi::OsStr::to_str) {
                     listing
                         .by_name
                         .entry(name.to_lowercase())
@@ -1977,10 +1977,13 @@ impl<'a> SpecIndex<'a> {
         let mut names = BTreeSet::new();
         if let Ok(text) = self.read(&path) {
             let yaml = matches!(
-                path.extension().and_then(|e| e.to_str()),
+                path.extension().and_then(std::ffi::OsStr::to_str),
                 Some("yaml" | "yml" | "json")
             );
-            let xsd = matches!(path.extension().and_then(|e| e.to_str()), Some("xsd"));
+            let xsd = matches!(
+                path.extension().and_then(std::ffi::OsStr::to_str),
+                Some("xsd")
+            );
             if xsd {
                 names.extend(xsd_declared_names(&text));
             } else if yaml {

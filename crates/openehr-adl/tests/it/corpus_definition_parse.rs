@@ -68,7 +68,7 @@ fn collect_adls(dir: &Path, out: &mut Vec<PathBuf>) {
 fn is_excluded(path: &Path) -> bool {
     let name = path
         .file_name()
-        .and_then(|n| n.to_str())
+        .and_then(std::ffi::OsStr::to_str)
         .unwrap_or_default();
     EXCLUSIONS.iter().any(|(f, _)| *f == name)
 }

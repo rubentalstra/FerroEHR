@@ -40,7 +40,7 @@ use super::{NodeView, RuleViolation};
 /// a spec-pin bump follows automatically. PATHABLE's inherited members
 /// (`parent`, which the flattened model also reports) are excluded, since the
 /// tolerance exists precisely for classes the RM derives from PATHABLE alone.
-static LOCATABLE_META_ATTRS: LazyLock<BTreeSet<&'static str>> = LazyLock::new(|| {
+static LOCATABLE_META_ATTRS: LazyLock<BTreeSet<&str>> = LazyLock::new(|| {
     let pathable: BTreeSet<&'static str> = model::attributes("PATHABLE").map(|a| a.name).collect();
     model::attributes("LOCATABLE")
         .map(|a| a.name)

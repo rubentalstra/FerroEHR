@@ -25,7 +25,7 @@ impl OpenehrTerminologyGroupIdentifiersData {
     /// §Constants. `Terminology_id_openehr` is deliberately absent: it names
     /// openEHR's own TERMINOLOGY, not a group within it, which is why
     /// `TERMINOLOGY_SERVICE.terminology` takes it and this predicate does not.
-    const ALL: [&'static str; 14] = [
+    const ALL: [&str; 14] = [
         Self::GROUP_ID_AUDIT_CHANGE_TYPE,
         Self::GROUP_ID_ATTESTATION_REASON,
         Self::GROUP_ID_COMPOSITION_CATEGORY,

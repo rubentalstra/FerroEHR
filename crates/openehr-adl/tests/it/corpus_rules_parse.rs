@@ -27,7 +27,7 @@ fn adls_files(dir: &Path, out: &mut Vec<PathBuf>) {
         let path = entry.path();
         if path.is_dir() {
             adls_files(&path, out);
-        } else if path.extension().and_then(|e| e.to_str()) == Some("adls") {
+        } else if path.extension().and_then(std::ffi::OsStr::to_str) == Some("adls") {
             out.push(path);
         }
     }

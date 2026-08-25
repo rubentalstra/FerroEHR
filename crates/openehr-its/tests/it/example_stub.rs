@@ -240,7 +240,7 @@ fn committable_example_of_every_fixture_fully_validates() {
         };
         let name = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or_default();
         for level in [DetailLevel::Required, DetailLevel::Medium] {
             let contradictory = CONTRADICTORY_FIXTURES
@@ -326,7 +326,7 @@ fn collect_opts(dir: &Path, out: &mut Vec<PathBuf>) {
         let p = e.path();
         if p.is_dir() {
             collect_opts(&p, out);
-        } else if p.extension().and_then(|s| s.to_str()) == Some("opt") {
+        } else if p.extension().and_then(std::ffi::OsStr::to_str) == Some("opt") {
             out.push(p);
         }
     }

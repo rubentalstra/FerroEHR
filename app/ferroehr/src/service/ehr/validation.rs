@@ -915,7 +915,7 @@ mod tests {
         let mut checked = 0u32;
         for entry in std::fs::read_dir(dir).expect("read ehr/invalid") {
             let path = entry.expect("dir entry").path();
-            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            if path.extension().and_then(std::ffi::OsStr::to_str) != Some("json") {
                 continue;
             }
             let text = std::fs::read_to_string(&path).expect("read fixture");

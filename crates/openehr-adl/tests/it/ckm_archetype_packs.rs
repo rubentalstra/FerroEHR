@@ -120,7 +120,7 @@ fn files_with_extension(dir: &Path, ext: &str) -> Vec<PathBuf> {
 
 fn file_name(path: &Path) -> String {
     path.file_name()
-        .and_then(|n| n.to_str())
+        .and_then(std::ffi::OsStr::to_str)
         .unwrap_or("?")
         .to_owned()
 }

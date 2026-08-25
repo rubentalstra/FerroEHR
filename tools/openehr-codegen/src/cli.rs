@@ -1308,7 +1308,7 @@ fn declare_hand_written_modules(
         let mut hand_written: Vec<String> = Vec::new();
         for entry in std::fs::read_dir(&dir)? {
             let p = entry?.path();
-            let Some(stem) = p.file_stem().and_then(|s| s.to_str()) else {
+            let Some(stem) = p.file_stem().and_then(std::ffi::OsStr::to_str) else {
                 continue;
             };
             if p.is_dir() {
@@ -1319,7 +1319,7 @@ fn declare_hand_written_modules(
                 if child_mod.exists() && !is_generated_file(&child_mod) {
                     hand_written.push(stem.to_owned());
                 }
-            } else if p.extension().and_then(|e| e.to_str()) == Some("rs")
+            } else if p.extension().and_then(std::ffi::OsStr::to_str) == Some("rs")
                 && !matches!(stem, "mod" | "lib" | "prelude")
                 && (!is_generated_file(&p) || emit_templates::is_template_stamped(&p))
             {

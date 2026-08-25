@@ -41,8 +41,7 @@ impl ExportFormat {
     }
 
     /// Both vendored members, in `export_format.adoc` order.
-    pub const ALL: &'static [ExportFormat] =
-        &[Self::OpenehrCanonicalXml, Self::OpenehrCanonicalJson];
+    pub const ALL: &[ExportFormat] = &[Self::OpenehrCanonicalXml, Self::OpenehrCanonicalJson];
 }
 
 impl std::str::FromStr for ExportFormat {
@@ -89,7 +88,7 @@ impl CompressionFormat {
     }
 
     /// Both vendored members, in `compression_format.adoc` order.
-    pub const ALL: &'static [CompressionFormat] = &[Self::Zip, Self::SevenZip];
+    pub const ALL: &[CompressionFormat] = &[Self::Zip, Self::SevenZip];
 }
 
 impl std::str::FromStr for CompressionFormat {
