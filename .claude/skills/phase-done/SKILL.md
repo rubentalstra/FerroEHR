@@ -48,9 +48,8 @@ does not decide the work is done on your behalf.
    No green CNF run → the issue is not closable.
 3b. **User docs + changelog updated?** If this work changed a user-visible
    surface (REST, configuration, CLI, deployment artifacts), confirm BOTH:
-   the matching `website/book/src` page was updated in-branch (and
-   `scripts/site/assemble-oas.sh` re-run if the REST contract changed —
-   `.claude/rules/docs-website.md`), AND a `CHANGELOG.md [Unreleased]` entry
+   the matching `website/book/src` page was updated in-branch
+   (`.claude/rules/docs-website.md`), AND a `CHANGELOG.md [Unreleased]` entry
    exists (`.claude/rules/changelog.md`; CI `changelog-guard` enforces it).
    If not, stop: both are part of the deliverable.
 3c. **Living-reference-doc maintenance:** confirm the living reference docs
