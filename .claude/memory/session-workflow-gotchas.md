@@ -138,3 +138,12 @@ commit-message wording; close/reopen for late labels.
   `gh pr merge --merge` behind the green-gate `if` (gotcha 6). `gh run
   rerun` refuses while the run is `in_progress` — wait for `completed`
   first.
+
+8. **A conformance-artifact commit must run the FULL docs render set** (hit
+   three times on 2026-08-25: the #2726 artifact refresh turned the docs lane
+   red in three successive drift gates). Committing a regenerated
+   `docs/conformance/<sut>/results.json` obligates, in the SAME commit, every
+   derived surface docs.yml regenerates and diffs: `conformance-stats.sh
+   includes`, `comparison.sh` (COMPARISON.md), `perf-assets.sh`,
+   `conformance-assets.sh` (+ `CONF_SUT=ehrbase`), `conformance-docs.sh`
+   (report/certificate/badges). Run all six, commit whatever changed.
