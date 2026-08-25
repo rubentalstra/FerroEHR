@@ -856,6 +856,7 @@ async fn a_signed_import_signs_the_wrapper_and_the_read_verifies_it() {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
+        verify_cache_capacity: 65_536,
     };
     let signer = Signer::from_config(&config).expect("digest signer");
     let target = FerroEhrService::new(target_db.pool()).with_signer(Arc::new(signer));
