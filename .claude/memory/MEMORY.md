@@ -31,3 +31,4 @@
 - [One Closes keyword per issue; current milestone always](pr-closes-one-keyword-per-issue.md) — "Closes #1, #2, #3" closes only #1, verify after merge; every en-route issue goes in the CURRENT milestone, never the next
 - [Greenfield migrations editable](greenfield-migrations-editable.md) — migration files are edited in place while greenfield (deployments recreate); never add checksum/immutability machinery or re-file it as a defect
 - [Rewrite fn docs on update](rewrite-fn-docs-on-update.md) — always fully rewrite a touched function's doc comment; include the /// block in old_string so docs never orphan
+- [UNLOGGED node rejected](unlogged-node-rejected.md) — owner ruling 2026-08-25: node stays LOGGED; never re-propose reduced-durability storage tiers (measured record on #2698)
