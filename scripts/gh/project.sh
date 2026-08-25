@@ -93,8 +93,17 @@ status_option_id() {
 item_id_for_issue() {
   resolve_project
   need_int "$1"
-  gh project item-list "$PROJ_NUMBER" --owner "$OWNER" --limit 1000 --format json \
-    --jq ".items[] | select(.content.repository == \"$REPO\" and .content.number == $1) | .id"
+  # Looked up from the ISSUE side (one cheap node query), never by listing the
+  # whole project: the board keeps every closed item, so `gh project
+  # item-list --limit 1000` costs enough GraphQL points that GitHub's
+  # secondary rate limit rejects it once the board is large (measured
+  # 2026-08-25 at ~2.6k items).
+  gh api graphql \
+    -f owner="${REPO%%/*}" -f name="${REPO##*/}" -F number="$1" \
+    -f query='query($owner:String!,$name:String!,$number:Int!){
+      repository(owner:$owner,name:$name){issue(number:$number){
+        projectItems(first:20){nodes{id project{id}}}}}}' \
+    --jq ".data.repository.issue.projectItems.nodes[] | select(.project.id == \"$PROJ_ID\") | .id"
 }
 
 canonical_status() {
@@ -138,9 +147,16 @@ cmd_show() {
   local n="${1:?issue number}"
   need_int "$n"
   resolve_project
+  # The issue-side lookup, for the same rate-limit reason as item_id_for_issue.
   local status
-  status="$(gh project item-list "$PROJ_NUMBER" --owner "$OWNER" --limit 1000 --format json \
-    --jq ".items[] | select(.content.repository == \"$REPO\" and .content.number == $n) | .status")"
+  status="$(gh api graphql \
+    -f owner="${REPO%%/*}" -f name="${REPO##*/}" -F number="$n" \
+    -f query='query($owner:String!,$name:String!,$number:Int!){
+      repository(owner:$owner,name:$name){issue(number:$number){
+        projectItems(first:20){nodes{project{id}
+          fieldValueByName(name:"Status"){
+            ... on ProjectV2ItemFieldSingleSelectValue{name}}}}}}}' \
+    --jq ".data.repository.issue.projectItems.nodes[] | select(.project.id == \"$PROJ_ID\") | .fieldValueByName.name")"
   echo "#$n: ${status:-(not on the board)}"
 }
 
