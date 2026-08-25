@@ -33,6 +33,15 @@ workflow refuses a tag that has no matching section here.
   commit cannot beat the WAL flush, how group commit scales concurrent
   writers past it, and the `synchronous_commit` trade-off as an explicit
   operator choice (never a FerroEHR default).
+- The hosted sandbox's delivery pipeline is redesigned end to end
+  (`deploy/vercel/README.md`): one trigger owner (the Sandbox deploy
+  workflow, firing after a release image publishes, on sandbox-posture
+  changes, or manually), `Dockerfile.vercel` tracking the `:latest` release
+  pointer instead of a hand-bumped version pin, an automatic wipe-and-reseed
+  after every successful redeploy, and no ignore script — the ordering race
+  it guarded cannot occur when the only trigger fires after the image
+  exists. Sandbox failures now surface only in the sandbox-named workflows.
+  The published `:latest` container tag no longer moves on prerelease tags.
 
 ## [4.0.3] - 2026-08-25
 

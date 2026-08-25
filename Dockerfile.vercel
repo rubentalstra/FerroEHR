@@ -1,21 +1,27 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 #
-# The Vercel container build for the hosted demo sandbox (#2710) — the name
-# Dockerfile.vercel is Vercel's convention for its Container preset
+# The Vercel container build for the hosted demo sandbox (#2710, redesigned
+# #2724) — the name Dockerfile.vercel is Vercel's convention for its
+# Container preset
 # (https://vercel.com/kb/guide/deploy-rust-on-vercel-with-docker). Vercel
 # always builds a Dockerfile and pushes the result to its own registry
 # (https://vercel.com/docs/functions/container-images), so this file
 # references the PUBLISHED image GitHub CI already compiled, signed and
 # tested: Vercel's build step is a pull and retag measured in seconds, and
-# the sandbox runs the exact release bytes. The tag is the current release
-# and bumps at every release cut alongside the docker-compose.yml defaults
-# (the compose-version-guard covers both files).
+# the sandbox runs the exact release bytes.
+#
+# `:latest` is the release pointer the image lane moves on release tags only
+# (never prereleases — .github/workflows/build-image.yml), and the ONLY
+# deploy trigger is .github/workflows/sandbox-deploy.yml, which fires AFTER
+# that lane succeeds — so this reference always resolves, no release-cut
+# bump exists, and no ordering race needs guarding. The delivery pipeline is
+# documented in deploy/vercel/README.md.
 #
 # The image serves a DEMO: no persistent filesystem exists on Vercel and the
 # database is an external PostgreSQL 18 DSN supplied as FERROEHR__DB__URL.
 
-FROM ghcr.io/rubentalstra/ferroehr:4.0.3
+FROM ghcr.io/rubentalstra/ferroehr:latest
 
 # The base image already runs as uid 65532 (distroless nonroot); stated
 # explicitly so the posture is a property of THIS file too (trivy DS-0002).
