@@ -23,7 +23,7 @@ pub struct BmmSignatureData {
 impl BmmSignatureData {
     /// Base name (built-in).
     /// BMM constant `base_name`.
-    pub const BASE_NAME: &'static str = "Signature";
+    pub const BASE_NAME: &str = "Signature";
 }
 
 /// Polymorphic slot of `BMM_SIGNATURE`, dispatched on each payload's `_type`.

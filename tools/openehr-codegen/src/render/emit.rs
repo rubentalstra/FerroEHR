@@ -912,7 +912,7 @@ fn render_constants(class: &BmmClass, ty: &str) -> String {
 
 /// Decode a BMM constant's raw `value` to a Rust `(type, literal)` pair. A JSON
 /// number keys off the BMM `type` (`Real`/`Double` → `f64`, else `i64`); a JSON
-/// string carries a quoted `"…"` (→ `&'static str`) or `'…'` (→ `char`) literal,
+/// string carries a quoted `"…"` (→ `&str`) or `'…'` (→ `char`) literal,
 /// a bareword cross-reference to a sibling constant (→ `Self::OTHER`), or a
 /// boolean keyword. Numeric character references (`&#42;`) and Eiffel octal
 /// escapes (`\015`) inside literals are decoded.
@@ -928,10 +928,7 @@ fn const_literal(c: &BmmConstant, siblings: &BTreeSet<&str>) -> (String, String)
         serde_json::Value::String(s) => {
             let t = s.trim();
             if let Some(inner) = strip_delims(t, '"') {
-                (
-                    "&'static str".to_string(),
-                    format!("{:?}", decode_entities(inner)),
-                )
+                ("&str".to_string(), format!("{:?}", decode_entities(inner)))
             } else if let Some(inner) = strip_delims(t, '\'') {
                 ("char".to_string(), format!("{:?}", decode_char(inner)))
             } else if siblings.contains(t) {
@@ -948,11 +945,11 @@ fn const_literal(c: &BmmConstant, siblings: &BTreeSet<&str>) -> (String, String)
             } else {
                 // A bareword that is neither a sibling nor a boolean: emit as a
                 // string literal (verbatim), the safest total decoding.
-                ("&'static str".to_string(), format!("{t:?}"))
+                ("&str".to_string(), format!("{t:?}"))
             }
         }
         serde_json::Value::Null | serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
-            ("&'static str".to_string(), "\"\"".to_string())
+            ("&str".to_string(), "\"\"".to_string())
         }
     }
 }
