@@ -353,6 +353,12 @@ async fn the_matched_screen_renders_inside_the_shell_s_main_region() {
 /// One request through the REAL service — `ferroehr_admin_ui::server::router`
 /// is the assembly the binary serves (session layer, the pre-render login
 /// guard, the Leptos routes, the security headers) — with no session cookie.
+#[expect(
+    clippy::expect_used,
+    reason = "every step here is fixture construction over constants — a static URI, an empty \
+              body, an in-memory response, the UTF-8 the server just wrote; a fixture that \
+              cannot be built is a broken harness, not a test outcome"
+)]
 async fn routed_response(url: &str) -> ServerPass {
     use tower::util::ServiceExt;
 
