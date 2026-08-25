@@ -1412,7 +1412,7 @@ dependencies = [
 
 [[package]]
 name = "cnf-runner"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "assert_fs",
  "base64 0.23.1",
@@ -2349,7 +2349,7 @@ dependencies = [
 
 [[package]]
 name = "docs-meta"
-version = "4.0.2"
+version = "4.0.3"
 
 [[package]]
 name = "dotenvy"
@@ -2683,7 +2683,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "ferroehr"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "argon2",
  "assert_fs",
@@ -2757,7 +2757,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-admin-ui"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "anyhow",
  "axum",
@@ -2800,7 +2800,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-ext"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "async-trait",
  "base64 0.23.1",
@@ -2824,7 +2824,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-rest"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "arc-swap",
  "argon2",
@@ -2884,7 +2884,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-server"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "anyhow",
  "clap",
@@ -5539,7 +5539,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-codegen"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "roxmltree",
  "serde_json",
@@ -8754,7 +8754,7 @@ dependencies = [
 
 [[package]]
 name = "testkit"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "ferroehr",
  "jiff",
