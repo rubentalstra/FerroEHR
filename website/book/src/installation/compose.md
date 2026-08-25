@@ -10,6 +10,13 @@ authentication posture the quickstart ships with, the optional profiles and
 overlays, and the variables that tune them. For a step-by-step first run, see
 [Getting started](../getting-started.md).
 
+> [!NOTE]
+> This chapter describes the **standalone** `docker-compose.yml` downloaded
+> into an empty directory. If you're running `docker compose up` from a
+> checkout of the repository instead, `docker-compose.override.yml` is
+> merged in automatically and the behavior is different — see
+> [Repository development](#repository-development) below.
+
 <!-- toc -->
 
 > [!NOTE]
