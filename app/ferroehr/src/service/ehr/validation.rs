@@ -342,9 +342,22 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     // NOTE: no openEHR spec governs the `spec_profile` gate — our own
     // design/extension: this write-path read compares two root fields and
     // serves nothing, so it stays ungated.
-    let Some((first_ani, first_category)) =
-        crate::storage::node_repo::first_version_root(tx, vo_id).await?
-    else {
+    let first_root = crate::storage::node_repo::first_version_root(tx, vo_id).await?;
+    check_versioned_composition_first_root(first_root, canonical)
+}
+
+/// The pure half of [`check_versioned_composition_invariants`]: compare the
+/// incoming root against the first stored version's `(archetype_node_id,
+/// category code)` pair, already read — the direct update path threads it off
+/// its merged pre-read instead of paying a second statement.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] naming the violated invariant (→ 422).
+pub(in crate::service) fn check_versioned_composition_first_root(
+    first_root: Option<(Option<String>, Option<String>)>,
+    canonical: &Value,
+) -> Result<(), ServiceError> {
+    let Some((first_ani, first_category)) = first_root else {
         // No stored content version (e.g. every prior version deleted) — no
         // first-version root to compare against.
         return Ok(());

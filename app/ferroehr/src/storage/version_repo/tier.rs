@@ -13,8 +13,10 @@
 //!
 //! Two rules keep the tier invisible on the wire:
 //!
-//! - a **write** always thaws first ([`thaw`]), so a versioned object is never
-//!   split across tiers;
+//! - a **write** always thaws first ([`thaw`] on the admin restore path; the
+//!   commit path's thaw rides the merged placement read,
+//!   `crate::storage::version_repo::placement::next_placement`), so a
+//!   versioned object is never split across tiers;
 //! - a **read** goes through the `*_all` union views (`vo_version_all` /
 //!   `node_all` / `vo_attestation_all`), so ONE statement serves both tiers
 //!   and a miss never pays a retry transaction.
@@ -75,34 +77,6 @@ pub async fn thaw(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageE
     ] {
         sqlx::query(sql).bind(vo_ids).execute(&mut *tx).await?;
     }
-    Ok(())
-}
-
-/// Thaws one versioned object before it is written to, so a new version never
-/// lands in the primary tier while its predecessors sit in the cold one.
-///
-/// A no-op (three primary-key probes finding nothing) for the overwhelmingly
-/// common unarchived case; the whole thaw is folded into ONE statement so the
-/// write path pays a single round trip for the guarantee. The data-modifying
-/// `WITH` clauses all run in the same statement, so the deferred `node` →
-/// `vo_version` foreign key is satisfied at statement end
-/// (<https://www.postgresql.org/docs/18/queries-with.html>).
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver failure.
-pub async fn thaw_one(tx: &mut PgConnection, vo_id: VoId) -> Result<(), StorageError> {
-    sqlx::query(
-        "WITH v AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), \
-              n AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), \
-              t AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), \
-              m AS (DELETE FROM vo_archive WHERE vo_id = $1), \
-              iv AS (INSERT INTO vo_version SELECT * FROM v), \
-              inn AS (INSERT INTO node SELECT * FROM n) \
-         INSERT INTO vo_attestation SELECT * FROM t",
-    )
-    .bind(vo_id)
-    .execute(&mut *tx)
-    .await?;
     Ok(())
 }
 

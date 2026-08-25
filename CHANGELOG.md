@@ -32,6 +32,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- A version UPDATE gets three round trips faster. Closing the superseded
+  lineage tip now rides the one folded commit statement (its leading CTE, at
+  the same bound instant, so the close boundary and the new version's open
+  bound are one value by construction); the archived-object thaw rides the
+  version-tree placement read instead of its own statement; and the
+  first-version invariant read (archetype and category stability across
+  versions) rides the update's merged pre-read instead of a transaction-time
+  statement. Measured on a 14k-version store: composition update p50 drops
+  from 10.6 ms to 5.6 ms, within ~1 ms of create.
+
+- The first-version invariant read now consults both storage tiers, so
+  updating an archived composition enforces the cross-version archetype and
+  category invariants instead of silently skipping them (the read used to run
+  before the thaw and saw only the primary tier).
+
 - The write path sheds most of another btree: the node CONTAINS-anchor
   index narrows from `(rm_type, archetype)` to `(rm_type)` alone — 83% of
   node rows carry at-code archetype text whose key bytes dominated the

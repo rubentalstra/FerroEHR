@@ -195,31 +195,6 @@ pub async fn write_contribution(
     Ok((contribution_id, audit_id, time_committed))
 }
 
-/// Close (supersede) one specific version row — the lineage tip a new version
-/// replaces — at `now()`.
-///
-/// Lineage-precise: a branch commit closes its branch tip, a trunk commit the
-/// trunk tip; a FORK closes nothing (master06 §Version tree, realized by the
-/// temporal `sys_period`).
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver/update failure.
-pub async fn close_ordinal_at_now(
-    tx: &mut PgConnection,
-    vo_id: VoId,
-    ordinal: i32,
-) -> Result<(), StorageError> {
-    sqlx::query(
-        "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
-         WHERE vo_id = $1 AND sys_version = $2 AND upper_inf(sys_period)",
-    )
-    .bind(vo_id)
-    .bind(ordinal)
-    .execute(&mut *tx)
-    .await?;
-    Ok(())
-}
-
 /// The `vo_version` columns for a **folded** commit — every content column of
 /// a stored version EXCEPT `contribution_id`/`audit_id`, which come from the
 /// same statement's `contribution`/`audit` CTEs.
@@ -230,13 +205,12 @@ pub async fn close_ordinal_at_now(
 /// the `sys_period` open bound, and the instant the `VERSION.signature` was
 /// computed over one value BY CONSTRUCTION.
 ///
-/// A superseded lineage tip is closed by the caller in a **separate, prior**
-/// statement ([`close_ordinal_at_now`]) — never folded into this insert: the
+/// A superseded lineage tip is closed INSIDE the same statement: when
+/// `close_ordinal` is set, the leading `cl` CTE closes that tip's `sys_period`
+/// at the identical bound instant, and the insert CTE depends on it, so the
 /// one-open-row-per-lineage partial unique indexes (`uq_vo_version_current` /
-/// `uq_vo_version_branch_current`) require the old open row to be gone before
-/// the new one is inserted, and data-modifying CTEs in one statement share a
-/// snapshot with undefined ordering, so a fold could momentarily hold two open
-/// rows for the lineage. Close-then-insert stays ordered (master06 §The 'Virtual Version Tree').
+/// `uq_vo_version_branch_current`) see the closed tip before the new open row
+/// lands (master06 §The 'Virtual Version Tree').
 #[derive(Debug)]
 pub struct FoldedVersion<'a> {
     /// The versioned object's id.
@@ -285,6 +259,13 @@ pub struct FoldedVersion<'a> {
     /// node CTE ordered after the version row (empty on a logical delete:
     /// the unnest yields no rows and the CTE writes nothing).
     pub rows: &'a [crate::storage::row::NodeRow],
+    /// The storage ordinal of the lineage tip this version supersedes —
+    /// closed by the SAME statement's leading `cl` CTE at the bound commit
+    /// instant, before the version row inserts (the insert CTE depends on
+    /// `cl`, so the one-open-row-per-lineage partial unique indexes see the
+    /// closed tip). `None` (a create or a fork) matches no row and closes
+    /// nothing.
+    pub close_ordinal: Option<i32>,
 }
 
 /// A **standalone** folded commit.
@@ -320,7 +301,12 @@ pub async fn commit_new_version(
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
     static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         format!(
-            "WITH a AS ( \
+            "WITH cl AS ( \
+                 UPDATE vo_version \
+                 SET sys_period = tstzrange(lower(sys_period), $22::timestamptz, '[)') \
+                 WHERE vo_id = $8 AND sys_version = $23 AND upper_inf(sys_period) \
+                 RETURNING 1 \
+             ), a AS ( \
                  INSERT INTO audit (system_id, change_type, description, committer, attestation, \
                                     time_committed) \
                  VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
@@ -337,12 +323,12 @@ pub async fn commit_new_version(
                     signature_client_supplied, stable_compatible, body) \
                  SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
                         $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21 \
-                 FROM a, c \
+                 FROM a, c, (SELECT count(*) FROM cl) AS cl_done \
                  RETURNING 1 \
              ), n AS ( {} ) \
              SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
              FROM a LEFT JOIN c ON true",
-            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 23)
+            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 24)
         )
     });
     let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
@@ -367,7 +353,8 @@ pub async fn commit_new_version(
         .bind(v.signature_client_supplied)
         .bind(v.stable_compatible)
         .bind(v.body)
-        .bind(v.time_committed.to_string());
+        .bind(v.time_committed.to_string())
+        .bind(v.close_ordinal);
     let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
         .fetch_one(&mut *tx)
@@ -405,7 +392,12 @@ pub async fn commit_version_into(
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
     static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         format!(
-            "WITH a AS ( \
+            "WITH cl AS ( \
+                 UPDATE vo_version \
+                 SET sys_period = tstzrange(lower(sys_period), $22::timestamptz, '[)') \
+                 WHERE vo_id = $6 AND sys_version = $23 AND upper_inf(sys_period) \
+                 RETURNING 1 \
+             ), a AS ( \
                  INSERT INTO audit (system_id, change_type, description, committer, attestation, \
                                     time_committed) \
                  VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
@@ -417,11 +409,11 @@ pub async fn commit_version_into(
                     signature_client_supplied, stable_compatible, body) \
                  SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
                         $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21 \
-                 FROM a \
+                 FROM a, (SELECT count(*) FROM cl) AS cl_done \
                  RETURNING 1 \
              ), n AS ( {} ) \
              SELECT a.id AS audit_id, a.time_committed FROM a",
-            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 23)
+            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 24)
         )
     });
     let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
@@ -446,7 +438,8 @@ pub async fn commit_version_into(
         .bind(v.signature_client_supplied)
         .bind(v.stable_compatible)
         .bind(v.body)
-        .bind(v.time_committed.to_string());
+        .bind(v.time_committed.to_string())
+        .bind(v.close_ordinal);
     let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
         .fetch_one(&mut *tx)
