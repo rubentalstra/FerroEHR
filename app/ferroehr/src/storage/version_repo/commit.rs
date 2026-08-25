@@ -281,10 +281,14 @@ pub struct FoldedVersion<'a> {
     /// CONTRIBUTION's committal), stored as the audit `time_committed` and
     /// the `sys_period` open bound.
     pub time_committed: jiff::Timestamp,
+    /// The decomposed node rows — inserted by the SAME statement through a
+    /// node CTE ordered after the version row (empty on a logical delete:
+    /// the unnest yields no rows and the CTE writes nothing).
+    pub rows: &'a [crate::storage::row::NodeRow],
 }
 
-/// A **standalone** folded commit: `audit` + `contribution` + `vo_version` in
-/// ONE data-modifying CTE, returning `(contribution_id, audit_id,
+/// A **standalone** folded commit: `audit` + `contribution` + `vo_version` +
+/// the decomposed `node` rows in ONE data-modifying CTE chain, returning `(contribution_id, audit_id,
 /// time_committed)`.
 ///
 /// The single audit row serves both the CONTRIBUTION and the version's
@@ -312,54 +316,60 @@ pub async fn commit_new_version(
     supplied: Option<Uuid>,
     v: &FoldedVersion<'_>,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
-    let row = sqlx::query(
-        "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer, attestation, \
-                                time_committed) \
-             VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
-         ), c AS ( \
-             INSERT INTO contribution (id, ehr_id, audit_id) \
-             SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
-             ON CONFLICT (id) DO NOTHING \
-             RETURNING id \
-         ), v AS ( \
-             INSERT INTO vo_version \
-               (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-                sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-                contribution_id, audit_id, template_id, signature, \
-                signature_client_supplied, stable_compatible, body) \
-             SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
-                    $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21 \
-             FROM a, c \
-             RETURNING 1 \
-         ) \
-         SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
-         FROM a LEFT JOIN c ON true",
-    )
-    .bind(audit.system_id)
-    .bind(audit.change_type)
-    .bind(&audit.description)
-    .bind(&audit.committer)
-    .bind(&audit.attestation)
-    .bind(supplied)
-    .bind(v.ehr_id)
-    .bind(v.vo_id)
-    .bind(v.kind)
-    .bind(v.sys_version)
-    .bind(v.trunk_version)
-    .bind(v.branch_number)
-    .bind(v.branch_version)
-    .bind(v.lifecycle_state)
-    .bind(v.creating_system_id)
-    .bind(v.preceding_version_uid)
-    .bind(v.template_id)
-    .bind(v.signature)
-    .bind(v.signature_client_supplied)
-    .bind(v.stable_compatible)
-    .bind(v.body)
-    .bind(v.time_committed.to_string())
-    .fetch_one(&mut *tx)
-    .await?;
+    static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+        format!(
+            "WITH a AS ( \
+                 INSERT INTO audit (system_id, change_type, description, committer, attestation, \
+                                    time_committed) \
+                 VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
+             ), c AS ( \
+                 INSERT INTO contribution (id, ehr_id, audit_id) \
+                 SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
+                 ON CONFLICT (id) DO NOTHING \
+                 RETURNING id \
+             ), v AS ( \
+                 INSERT INTO vo_version \
+                   (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+                    sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+                    contribution_id, audit_id, template_id, signature, \
+                    signature_client_supplied, stable_compatible, body) \
+                 SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
+                        $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21 \
+                 FROM a, c \
+                 RETURNING 1 \
+             ), n AS ( {} ) \
+             SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
+             FROM a LEFT JOIN c ON true",
+            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 23)
+        )
+    });
+    let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
+        .bind(audit.system_id)
+        .bind(audit.change_type)
+        .bind(&audit.description)
+        .bind(&audit.committer)
+        .bind(&audit.attestation)
+        .bind(supplied)
+        .bind(v.ehr_id)
+        .bind(v.vo_id)
+        .bind(v.kind)
+        .bind(v.sys_version)
+        .bind(v.trunk_version)
+        .bind(v.branch_number)
+        .bind(v.branch_version)
+        .bind(v.lifecycle_state)
+        .bind(v.creating_system_id)
+        .bind(v.preceding_version_uid)
+        .bind(v.template_id)
+        .bind(v.signature)
+        .bind(v.signature_client_supplied)
+        .bind(v.stable_compatible)
+        .bind(v.body)
+        .bind(v.time_committed.to_string());
+    let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
+    let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
+        .fetch_one(&mut *tx)
+        .await?;
     let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
     let contribution_id = contribution_id.ok_or(StorageError::ContributionUidInUse(supplied))?;
     let audit_id: Uuid = row.try_get("audit_id")?;
@@ -370,8 +380,8 @@ pub async fn commit_new_version(
 }
 
 /// A folded commit WITHIN an already-opened CONTRIBUTION: the version's own
-/// `commit_audit` + `vo_version` in ONE data-modifying CTE, referencing the
-/// pre-existing `contribution_id`.
+/// `commit_audit` + `vo_version` + the decomposed `node` rows in ONE
+/// data-modifying CTE chain, referencing the pre-existing `contribution_id`.
 ///
 /// Returns `(audit_id, time_committed)`. The CONTRIBUTION and its own audit
 /// were written earlier in the same transaction ([`write_contribution`]);
@@ -389,48 +399,54 @@ pub async fn commit_version_into(
     contribution_id: Uuid,
     v: &FoldedVersion<'_>,
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
-    let row = sqlx::query(
-        "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer, attestation, \
-                                time_committed) \
-             VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
-         ), v AS ( \
-             INSERT INTO vo_version \
-               (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-                sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-                contribution_id, audit_id, template_id, signature, \
-                signature_client_supplied, stable_compatible, body) \
-             SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
-                    $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21 \
-             FROM a \
-             RETURNING 1 \
-         ) \
-         SELECT a.id AS audit_id, a.time_committed FROM a",
-    )
-    .bind(audit.system_id)
-    .bind(audit.change_type)
-    .bind(&audit.description)
-    .bind(&audit.committer)
-    .bind(&audit.attestation)
-    .bind(v.vo_id)
-    .bind(v.kind)
-    .bind(v.ehr_id)
-    .bind(v.sys_version)
-    .bind(v.trunk_version)
-    .bind(v.branch_number)
-    .bind(v.branch_version)
-    .bind(v.lifecycle_state)
-    .bind(v.creating_system_id)
-    .bind(v.preceding_version_uid)
-    .bind(contribution_id)
-    .bind(v.template_id)
-    .bind(v.signature)
-    .bind(v.signature_client_supplied)
-    .bind(v.stable_compatible)
-    .bind(v.body)
-    .bind(v.time_committed.to_string())
-    .fetch_one(&mut *tx)
-    .await?;
+    static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+        format!(
+            "WITH a AS ( \
+                 INSERT INTO audit (system_id, change_type, description, committer, attestation, \
+                                    time_committed) \
+                 VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
+             ), v AS ( \
+                 INSERT INTO vo_version \
+                   (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+                    sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+                    contribution_id, audit_id, template_id, signature, \
+                    signature_client_supplied, stable_compatible, body) \
+                 SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
+                        $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21 \
+                 FROM a \
+                 RETURNING 1 \
+             ), n AS ( {} ) \
+             SELECT a.id AS audit_id, a.time_committed FROM a",
+            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 23)
+        )
+    });
+    let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
+        .bind(audit.system_id)
+        .bind(audit.change_type)
+        .bind(&audit.description)
+        .bind(&audit.committer)
+        .bind(&audit.attestation)
+        .bind(v.vo_id)
+        .bind(v.kind)
+        .bind(v.ehr_id)
+        .bind(v.sys_version)
+        .bind(v.trunk_version)
+        .bind(v.branch_number)
+        .bind(v.branch_version)
+        .bind(v.lifecycle_state)
+        .bind(v.creating_system_id)
+        .bind(v.preceding_version_uid)
+        .bind(contribution_id)
+        .bind(v.template_id)
+        .bind(v.signature)
+        .bind(v.signature_client_supplied)
+        .bind(v.stable_compatible)
+        .bind(v.body)
+        .bind(v.time_committed.to_string());
+    let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
+    let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
+        .fetch_one(&mut *tx)
+        .await?;
     let audit_id: Uuid = row.try_get("audit_id")?;
     let time_committed = row
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?

@@ -773,6 +773,7 @@ async fn commit_resolved(
         stable_compatible: r.stable_compatible,
         body: body.as_ref(),
         time_committed: r.time_committed,
+        rows: &r.rows,
     };
     // The folded statements BIND `r.time_committed` (the instant the signature
     // was computed over) as the audit time and the `sys_period` open bound, so
@@ -797,8 +798,8 @@ async fn commit_resolved(
         }
     };
 
-    // The shared commit tail: node rows, folder membership, attestations.
-    crate::storage::node_repo::write_nodes(tx, r.vo_id, r.ordinal, r.ehr_id, &r.rows).await?;
+    // The shared commit tail: folder membership + attestations (the node rows
+    // rode the folded statement itself, through its node CTE).
     // A newly created FOLDER hierarchy joins `EHR.folders` as a new member (RM
     // ehr master04 §Folders). Recorded only on CREATION.
     if r.is_first_folder
