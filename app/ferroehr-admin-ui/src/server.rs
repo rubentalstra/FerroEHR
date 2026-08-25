@@ -88,7 +88,7 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
 /// navigation gate.
 ///
 /// Scope: `GET`/`HEAD` on everything except the public paths
-/// ([`is_public_path`]). Server-function calls (`/api/…`) keep their own
+/// (`is_public_path`). Server-function calls (`/api/…`) keep their own
 /// typed refusals; the export POST enforces its own session.
 ///
 /// Fail-closed: a request that reaches this layer without session machinery
