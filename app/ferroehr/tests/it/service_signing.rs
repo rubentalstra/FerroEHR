@@ -375,7 +375,6 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
-        verify_cache_capacity: 65_536,
     };
     let signer = Signer::from_config(&config).expect("strict signer");
     let svc = FerroEhrService::new(pool.clone()).with_signer(Arc::new(signer));
@@ -475,7 +474,6 @@ fn service_with_verify(pool: PgPool, policy: VerifyOnRead) -> FerroEhrService {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(policy),
-        verify_cache_capacity: 65_536,
     };
     let signer = Signer::from_config(&config).expect("signer");
     FerroEhrService::new(pool).with_signer(Arc::new(signer))
@@ -584,7 +582,6 @@ fn signing_disabled(pool: PgPool) -> FerroEhrService {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Off),
-        verify_cache_capacity: 65_536,
     };
     let signer = Signer::from_config(&config).expect("disabled signer");
     FerroEhrService::new(pool).with_signer(Arc::new(signer))
@@ -830,65 +827,6 @@ async fn at_committal_attestation_is_signed_and_a_tamper_is_caught() {
             })
         ),
         "an altered at-committal attestation must fail strict verify_on_read, got {tampered:?}"
-    );
-}
-
-/// The `once` policy's contract (the #2698 verified-signature cache; our own
-/// design — no openEHR spec governs read-time verification timing, RM common
-/// master06 §Digital Signature): a version verifies on its FIRST read this
-/// process and the verdict is remembered, so a row tampered AFTER that first
-/// read is served from the cached verdict — and a fresh process (a fresh
-/// `Signer`) detects the tamper on its own first, uncached verification.
-#[tokio::test]
-async fn once_verifies_first_read_and_a_fresh_process_catches_a_later_tamper() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = service_with_verify(pool.clone(), VerifyOnRead::Once);
-    let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
-
-    let mut version = uv(&composition("attested"), "249", None);
-    version.attestations = Some(vec![update_attestation("witnessed")]);
-    let ovid = svc
-        .create_composition(ehr_uuid, version)
-        .await
-        .expect("create_composition with an accompanying attestation")
-        .version_uid();
-
-    // First read verifies and caches the verdict.
-    svc.composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
-        .await
-        .expect("clean first read verifies");
-
-    // Tamper the stored attestation after the verdict was cached.
-    sqlx::query(
-        "UPDATE vo_attestation SET data = jsonb_set(data, '{reason,value}', '\"forged\"') \
-         WHERE at_committal",
-    )
-    .execute(&pool)
-    .await
-    .expect("tamper the at-committal attestation");
-
-    // The SAME process serves from the cached verdict — the documented `once`
-    // detection boundary.
-    svc.composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
-        .await
-        .expect("a cached verdict serves within the same process");
-
-    // A fresh Signer (a fresh process) has no cached verdict and catches it.
-    let fresh = service_with_verify(pool.clone(), VerifyOnRead::Once);
-    let caught = fresh
-        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
-        .await;
-    assert!(
-        matches!(
-            caught,
-            Err(SmError {
-                status: CallStatusType::Exception,
-                ..
-            })
-        ),
-        "a fresh process's first uncached read must catch the tamper, got {caught:?}"
     );
 }
 
