@@ -76,7 +76,7 @@ fn aom2_example_documents_read() {
     for path in &files {
         let name = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("?")
             .to_owned();
         let expected = ADJUDICATED.iter().find(|(file, _)| *file == name);
@@ -128,7 +128,7 @@ fn aom2_examples_round_trip() {
     for path in &files {
         let name = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("?")
             .to_owned();
         if ADJUDICATED.iter().any(|(file, _)| *file == name) {
@@ -179,7 +179,7 @@ fn aom2_examples_carry_the_group_body() {
     for path in &files {
         let name = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("?")
             .to_owned();
         if ADJUDICATED.iter().any(|(file, _)| *file == name) {

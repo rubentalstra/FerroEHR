@@ -84,7 +84,7 @@ fn adl_sources(dir: &Path) -> Vec<PathBuf> {
 
 fn file_name(path: &Path) -> String {
     path.file_name()
-        .and_then(|n| n.to_str())
+        .and_then(std::ffi::OsStr::to_str)
         .unwrap_or("?")
         .to_owned()
 }

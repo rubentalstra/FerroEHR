@@ -604,7 +604,7 @@ struct Validator {
 /// answers — a constraint on an attribute NO RM class declares — is fully
 /// decided by the name.
 fn rm_declares_attribute(attr: &str) -> bool {
-    static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
+    static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&str>> =
         std::sync::LazyLock::new(|| {
             openehr_rm::v1_2::model::classes()
                 .flat_map(|c| c.attributes.iter().map(|a| a.name))

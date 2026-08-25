@@ -32,7 +32,7 @@ fn composition_xml_round_trips() {
     let mut failures = Vec::new();
     for entry in std::fs::read_dir(corpus_dir()).expect("corpus dir") {
         let path = entry.unwrap().path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+        if path.extension().and_then(std::ffi::OsStr::to_str) != Some("json") {
             continue;
         }
         let stem = path.file_stem().unwrap().to_str().unwrap().to_string();

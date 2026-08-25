@@ -154,7 +154,7 @@ impl TransformRule {
     }
 
     /// All members, in grammar order (schema emission derives from this).
-    pub const ALL: &'static [TransformRule] = &[
+    pub const ALL: &[TransformRule] = &[
         TransformRule::RootUid,
         TransformRule::CreatingSystemId,
         TransformRule::Uppercase,

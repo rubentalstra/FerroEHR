@@ -84,7 +84,7 @@ pub(crate) enum Format {
 
 impl Format {
     /// The accepted `--format` values, for the usage/error text.
-    pub(crate) const VALID: &'static str = "table, tsv, json";
+    pub(crate) const VALID: &str = "table, tsv, json";
 
     /// Parse a `--format` value.
     ///

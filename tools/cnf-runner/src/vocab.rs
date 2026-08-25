@@ -32,7 +32,7 @@ macro_rules! outcome_kinds {
 
         impl OutcomeKind {
             /// All kinds, in schedule order (the `vocab/outcomes.yaml` order).
-            pub const ALL: &'static [OutcomeKind] = &[ $(OutcomeKind::$variant,)+ ];
+            pub const ALL: &[OutcomeKind] = &[ $(OutcomeKind::$variant,)+ ];
 
             /// The kind's wire-independent token (`created`, `not_found`, …).
             #[must_use]
@@ -476,9 +476,9 @@ impl XmlNamespace {
     }
 
     /// The Release-1.0.2 bundle's target namespace.
-    pub const V1_URI: &'static str = "http://schemas.openehr.org/v1";
+    pub const V1_URI: &str = "http://schemas.openehr.org/v1";
     /// The Release-2.0.0 bundle's target namespace.
-    pub const V2_URI: &'static str = "http://schemas.openehr.org/v2";
+    pub const V2_URI: &str = "http://schemas.openehr.org/v2";
 }
 
 /// A named ignore-set the `equivalent` assertion may resolve
@@ -587,7 +587,7 @@ pub enum MemberVersionType {
 
 impl MemberVersionType {
     /// Every member `_type` a case may author, in RM order.
-    pub const ALL: &'static [MemberVersionType] = &[
+    pub const ALL: &[MemberVersionType] = &[
         MemberVersionType::Update,
         MemberVersionType::Original,
         MemberVersionType::Imported,
@@ -654,7 +654,7 @@ pub enum MemberChangeType {
 
 impl MemberChangeType {
     /// The whole `audit_change_type` group, in the terminology's own order.
-    pub const ALL: &'static [MemberChangeType] = &[
+    pub const ALL: &[MemberChangeType] = &[
         MemberChangeType::Creation,
         MemberChangeType::Amendment,
         MemberChangeType::Modification,
@@ -736,7 +736,7 @@ pub enum VersionLifecycleState {
 
 impl VersionLifecycleState {
     /// Every state of the `version_lifecycle_state` group, in master06 order.
-    pub const ALL: &'static [VersionLifecycleState] = &[
+    pub const ALL: &[VersionLifecycleState] = &[
         VersionLifecycleState::Complete,
         VersionLifecycleState::Incomplete,
         VersionLifecycleState::Deleted,
@@ -806,7 +806,7 @@ pub enum XVersionedClass {
 
 impl XVersionedClass {
     /// Every wrapper class, in the order the RM tables them.
-    pub const ALL: &'static [XVersionedClass] = &[
+    pub const ALL: &[XVersionedClass] = &[
         XVersionedClass::Composition,
         XVersionedClass::EhrStatus,
         XVersionedClass::EhrAccess,
@@ -881,18 +881,17 @@ mod tests {
 
 impl CaseKind {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [CaseKind] = &[CaseKind::Functional, CaseKind::Content];
+    pub const ALL: &[CaseKind] = &[CaseKind::Functional, CaseKind::Content];
 }
 
 impl CaseStatus {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [CaseStatus] =
-        &[CaseStatus::Active, CaseStatus::Retired, CaseStatus::Draft];
+    pub const ALL: &[CaseStatus] = &[CaseStatus::Active, CaseStatus::Retired, CaseStatus::Draft];
 }
 
 impl Component {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [Component] = &[
+    pub const ALL: &[Component] = &[
         Component::Ehr,
         Component::EhrComposition,
         Component::EhrContribution,
@@ -913,12 +912,12 @@ impl Component {
 
 impl Family {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [Family] = &[Family::Platform, Family::Enterprise, Family::Security];
+    pub const ALL: &[Family] = &[Family::Platform, Family::Enterprise, Family::Security];
 }
 
 impl Tier {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [Tier] = &[
+    pub const ALL: &[Tier] = &[
         Tier::Core,
         Tier::Standard,
         Tier::Options,
@@ -931,7 +930,7 @@ impl Tier {
 
 impl Disposition {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [Disposition] = &[
+    pub const ALL: &[Disposition] = &[
         Disposition::LooseAssert,
         Disposition::FixedHandling,
         Disposition::OptionSelect,
@@ -943,7 +942,7 @@ impl Disposition {
 
 impl FormatName {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [FormatName] = &[
+    pub const ALL: &[FormatName] = &[
         FormatName::CanonicalJson,
         FormatName::CanonicalXml,
         FormatName::WtFlat,
@@ -954,7 +953,7 @@ impl FormatName {
 
 impl CorpusFormat {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [CorpusFormat] = &[
+    pub const ALL: &[CorpusFormat] = &[
         CorpusFormat::CanonicalJson,
         CorpusFormat::CanonicalXml,
         CorpusFormat::WtFlat,
@@ -969,7 +968,7 @@ impl CorpusFormat {
 
 impl HttpMethod {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [HttpMethod] = &[
+    pub const ALL: &[HttpMethod] = &[
         HttpMethod::Get,
         HttpMethod::Post,
         HttpMethod::Put,
@@ -981,28 +980,27 @@ impl HttpMethod {
 
 impl Iteration {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [Iteration] = &[Iteration::ResetPerRow, Iteration::SinglePass];
+    pub const ALL: &[Iteration] = &[Iteration::ResetPerRow, Iteration::SinglePass];
 }
 
 impl ServerState {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [ServerState] =
-        &[ServerState::Empty, ServerState::Exclusive, ServerState::Any];
+    pub const ALL: &[ServerState] = &[ServerState::Empty, ServerState::Exclusive, ServerState::Any];
 }
 
 impl FixtureVerdict {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [FixtureVerdict] = &[FixtureVerdict::Valid, FixtureVerdict::Invalid];
+    pub const ALL: &[FixtureVerdict] = &[FixtureVerdict::Valid, FixtureVerdict::Invalid];
 }
 
 impl PlaceholderPolicy {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [PlaceholderPolicy] = &[PlaceholderPolicy::RuntimeRandom];
+    pub const ALL: &[PlaceholderPolicy] = &[PlaceholderPolicy::RuntimeRandom];
 }
 
 impl SpecComponent {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [SpecComponent] = &[
+    pub const ALL: &[SpecComponent] = &[
         SpecComponent::Rm,
         SpecComponent::Base,
         SpecComponent::Am,
@@ -1028,13 +1026,12 @@ impl SpecComponent {
 
 impl ChangeType {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [ChangeType] =
-        &[ChangeType::Create, ChangeType::Modify, ChangeType::Deleted];
+    pub const ALL: &[ChangeType] = &[ChangeType::Create, ChangeType::Modify, ChangeType::Deleted];
 }
 
 impl ResultSetMatch {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [ResultSetMatch] = &[
+    pub const ALL: &[ResultSetMatch] = &[
         ResultSetMatch::Ordered,
         ResultSetMatch::Set,
         ResultSetMatch::Count,
@@ -1044,7 +1041,7 @@ impl ResultSetMatch {
 
 impl ItsName {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [ItsName] = &[ItsName::ItsRest];
+    pub const ALL: &[ItsName] = &[ItsName::ItsRest];
 }
 
 #[cfg(test)]

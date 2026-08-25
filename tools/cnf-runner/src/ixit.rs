@@ -152,7 +152,7 @@ pub enum TerminologyPosture {
 
 impl TerminologyPosture {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [TerminologyPosture] =
+    pub const ALL: &[TerminologyPosture] =
         &[TerminologyPosture::FailOpen, TerminologyPosture::FailClosed];
 
     /// The declaration token.
@@ -189,7 +189,7 @@ pub enum SpecProfile {
 
 impl SpecProfile {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [SpecProfile] = &[SpecProfile::Stable, SpecProfile::Development];
+    pub const ALL: &[SpecProfile] = &[SpecProfile::Stable, SpecProfile::Development];
 
     /// The declaration token.
     #[must_use]

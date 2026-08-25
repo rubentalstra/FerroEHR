@@ -110,7 +110,7 @@ fn ckm_archetype_xml_pack_reads() {
     for path in &files {
         let name = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("?")
             .to_owned();
         let expected = ADJUDICATED.iter().find(|(file, _)| *file == name);

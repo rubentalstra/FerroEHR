@@ -227,7 +227,7 @@ fn scan(directories: &[String]) -> Result<BTreeMap<String, SchemaDescriptor>, Rm
             let path = entry.path();
             let is_schema_file = path
                 .file_name()
-                .and_then(|name| name.to_str())
+                .and_then(std::ffi::OsStr::to_str)
                 .is_some_and(|name| name.ends_with(BmmDefinitionsData::BMM_SCHEMA_FILE_EXTENSION));
             if is_schema_file && path.is_file() {
                 files.push(path);

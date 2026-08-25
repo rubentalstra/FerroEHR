@@ -670,7 +670,7 @@ fn is_multiple(attr: &str) -> bool {
 /// attribute through the RM abstract→concrete descendant sets. Correctness
 /// reference: the attribute cardinalities in openEHR RM `common`, `composition`,
 /// `ehr`, and `data_structures`.
-static MULTIVALUED_ATTRS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+static MULTIVALUED_ATTRS: LazyLock<HashSet<&str>> = LazyLock::new(|| {
     let mut set: HashSet<&'static str> = HashSet::new();
     let mut seen: HashSet<&'static str> = HashSet::new();
     let mut queue: Vec<&'static str> = vec!["COMPOSITION", "EHR_STATUS", "FOLDER"];

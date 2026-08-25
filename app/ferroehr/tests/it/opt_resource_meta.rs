@@ -46,7 +46,7 @@ fn vendored_opt_corpora_pass_the_resource_meta_checks() {
     for dir in corpora {
         for entry in std::fs::read_dir(dir).expect("corpus directory is readable") {
             let path = entry.expect("corpus directory entry is readable").path();
-            if path.extension().and_then(|e| e.to_str()) != Some("opt") {
+            if path.extension().and_then(std::ffi::OsStr::to_str) != Some("opt") {
                 continue;
             }
             let xml = std::fs::read_to_string(&path).expect("corpus OPT is readable");

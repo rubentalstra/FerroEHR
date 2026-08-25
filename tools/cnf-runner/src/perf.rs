@@ -54,8 +54,7 @@ pub enum PerfClass {
 
 impl PerfClass {
     /// All classes, ladder order (schema emission derives from this).
-    pub const ALL: &'static [PerfClass] =
-        &[PerfClass::Poc, PerfClass::S, PerfClass::L, PerfClass::R];
+    pub const ALL: &[PerfClass] = &[PerfClass::Poc, PerfClass::S, PerfClass::L, PerfClass::R];
 
     /// The class's offered-load floor (peak API arrivals/s, sustained) —
     /// the published \[legislated\] defaults.
@@ -394,7 +393,7 @@ pub enum Principal {
 impl PerfOp {
     /// All operations, vocabulary order (schema emission + the coverage
     /// report derive from this).
-    pub const ALL: &'static [PerfOp] = &[
+    pub const ALL: &[PerfOp] = &[
         PerfOp::EhrCreate,
         PerfOp::EhrRead,
         PerfOp::EhrStatusRead,
@@ -1258,7 +1257,7 @@ pub enum ContainerRole {
 
 impl ContainerRole {
     /// All roles, fixed order (schema emission derives from this).
-    pub const ALL: &'static [ContainerRole] = &[ContainerRole::Sut, ContainerRole::Db];
+    pub const ALL: &[ContainerRole] = &[ContainerRole::Sut, ContainerRole::Db];
 
     /// The display label (progress lines, summary tables) — the same token
     /// the wire serialization carries.
@@ -1287,7 +1286,7 @@ pub enum ResourcePhase {
 
 impl ResourcePhase {
     /// All phases, run order (schema emission derives from this).
-    pub const ALL: &'static [ResourcePhase] = &[
+    pub const ALL: &[ResourcePhase] = &[
         ResourcePhase::Warmup,
         ResourcePhase::Measured,
         ResourcePhase::Drain,

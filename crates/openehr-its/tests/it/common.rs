@@ -66,7 +66,7 @@ pub(crate) fn corpus_rel(path: &Path) -> String {
 /// or it re-reads a document the corpus gates already refused. Routing through
 /// here keeps one substitution rule for every gate.
 pub(crate) fn twinned(path: &Path) -> PathBuf {
-    let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+    let Some(stem) = path.file_stem().and_then(std::ffi::OsStr::to_str) else {
         return path.to_path_buf();
     };
     let twin = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -109,7 +109,7 @@ pub(crate) fn declared_root_type(path: &Path) -> Option<&'static str> {
         .into_iter()
         .find(|p| {
             corpus_rel(p).starts_with("openehr_sdk/")
-                && p.file_stem().and_then(|s| s.to_str()) == Some(stem)
+                && p.file_stem().and_then(std::ffi::OsStr::to_str) == Some(stem)
         })
         .and_then(|p| declared_root_type(&p))
 }

@@ -159,7 +159,7 @@ fn collect_templates(
         }
         if path.is_dir() {
             collect_templates(&path, overrides, out)?;
-        } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+        } else if path.extension().and_then(std::ffi::OsStr::to_str) == Some("rs") {
             out.push(path);
         }
     }
