@@ -94,7 +94,7 @@ terminology_import() {
     -H 'Content-Type: application/json' \
     -d '{"branchPath":"MAIN","createCodeSystemVersion":true,"type":"SNAPSHOT"}' \
     | grep -i '^location' | tr -d '\r' | awk '{print $2}')"
-  [ -n "$location" ] || return 1
+  [[ -n "$location" ]] || return 1
   job="${location##*/}"
   curl -s -o /dev/null -X POST "$TERM_URL/imports/$job/archive" -F "file=@${zip}" || return 1
   # The import is long. Poll its own status rather than guessing a duration.
@@ -104,6 +104,7 @@ terminology_import() {
     case "$status" in
       COMPLETED) return 0 ;;
       FAILED)    return 1 ;;
+      *)         ;;
     esac
     sleep 15
   done
@@ -129,16 +130,16 @@ terminology_release() {
   # beside the checkout is the whole setup. The NEWEST match wins, and the one
   # actually used is echoed by the caller — with two editions present, silently
   # picking one would make a run unattributable.
-  if [ -z "$zip" ]; then
+  if [[ -z "$zip" ]]; then
     zip="$(find . -maxdepth 1 -name 'SnomedCT_*.zip' -print 2>/dev/null \
            | grep -v ManagedService | sort | tail -1)"
     # Prefer a national edition over the International one when both are there:
     # the national package is the deployment reality being probed.
     local national
     national="$(find . -maxdepth 1 -name 'SnomedCT_ManagedService*.zip' -print 2>/dev/null | sort | tail -1)"
-    [ -n "$national" ] && zip="$national"
+    [[ -n "$national" ]] && zip="$national"
   fi
-  if [ -n "$zip" ] && [ -f "$zip" ]; then
+  if [[ -n "$zip" ]] && [[ -f "$zip" ]]; then
     terminology_verify "$zip" || return 1
     printf '%s' "$zip"
     return 0
@@ -150,19 +151,19 @@ terminology_release() {
 # resolve against it. Discovered the same way and never the national package.
 terminology_international() {
   local intl="${FERROEHR_SNOMED_RF2_INTL:-}"
-  if [ -z "$intl" ]; then
+  if [[ -z "$intl" ]]; then
     intl="$(find . -maxdepth 1 -name 'SnomedCT_InternationalRF2_*.zip' -print 2>/dev/null | sort | tail -1)"
   fi
-  [ -n "$intl" ] && [ -f "$intl" ] && printf '%s' "$intl"
+  [[ -n "$intl" ]] && [[ -f "$intl" ]] && printf '%s' "$intl"
 }
 
 terminology_verify() {
   local want="${FERROEHR_SNOMED_RF2_MD5:-}"
-  [ -n "$want" ] || return 0
+  [[ -n "$want" ]] || return 0
   local got
   got="$(md5sum "$1" 2>/dev/null | awk '{print $1}')"
-  [ -n "$got" ] || got="$(md5 -q "$1" 2>/dev/null)"
-  if [ "$got" != "$want" ]; then
+  [[ -n "$got" ]] || got="$(md5 -q "$1" 2>/dev/null)"
+  if [[ "$got" != "$want" ]]; then
     red "  SNOMED RF2 checksum mismatch: expected $want, got ${got:-none}"
     return 1
   fi
@@ -181,7 +182,7 @@ probes_terminology() {
   #   PROBE_ONLY=terminology bash scripts/deploy-probe.sh
   #
   # or when FERROEHR_SNOMED_RF2 is set explicitly, which is itself an ask.
-  if [ "${PROBE_ONLY:-}" != "terminology" ] && [ -z "${FERROEHR_SNOMED_RF2:-}" ]; then
+  if [[ "${PROBE_ONLY:-}" != "terminology" ]] && [[ -z "${FERROEHR_SNOMED_RF2:-}" ]]; then
     uncovered "terminology against a real server (#2178)" \
       "opt-in: run PROBE_ONLY=terminology, because a real SNOMED import takes longer than every other family combined"
     return 0
@@ -217,7 +218,7 @@ probes_terminology() {
   # assumed, and the run reports what was actually served either way.
   local intl
   intl="$(terminology_international)"
-  if [ -n "$intl" ]; then
+  if [[ -n "$intl" ]]; then
     probe "P-TERM-IMPORT-INTL" "working" "compose" "#2178" \
       "the International Edition imports to MAIN, so a national extension can resolve against it"
     terminology_import "$intl" || probe_fail "a COMPLETED International import" \

@@ -55,7 +55,7 @@ resolved="$(printf '%s\n' "$json" | jq -r '
   | select(.message == "no crate matched advisory criteria")
   | .span')"
 
-if [ -n "$resolved" ]; then
+if [[ -n "$resolved" ]]; then
   echo "error: deny.toml keeps an exception for an advisory the gate no longer raises:" >&2
   sed 's/^/  /' <<<"$resolved" >&2
   echo >&2

@@ -48,7 +48,7 @@ wait_healthy() {
   local cid
   for _ in $(seq 1 60); do
     cid=$("${COMPOSE[@]}" ps -q ferroehr)
-    if [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$cid")" = "healthy" ]; then
+    if [[ -n "$cid" ]] && [[ "$(docker inspect -f '{{.State.Health.Status}}' "$cid")" = "healthy" ]]; then
       return 0
     fi
     sleep 5
@@ -75,25 +75,25 @@ wait_healthy
 
 echo "==> GET /rest/status must be 200"
 code=$(curl -fsS -o /dev/null -w '%{http_code}' "$BASE/status")
-[ "$code" = "200" ] || { echo "::error::/rest/status returned $code"; exit 1; }
+[[ "$code" = "200" ]] || { echo "::error::/rest/status returned $code"; exit 1; }
 
 echo "==> POST /ehr with dev Basic creds must be 201"
 code=$(curl -sS -o /dev/null -w '%{http_code}' -u ferroehr:ferroehr \
   -X POST "$BASE/openehr/v1/ehr" \
   -H 'Prefer: return=minimal')
-[ "$code" = "201" ] || { echo "::error::POST /ehr returned $code (expected 201)"; exit 1; }
+[[ "$code" = "201" ]] || { echo "::error::POST /ehr returned $code (expected 201)"; exit 1; }
 
 echo "==> Recording migration ledger before restart"
 before=$(migration_count)
 echo "    ehr._sqlx_migrations count = $before"
-[ "$before" -ge 1 ] || { echo "::error::migrations did not apply on first boot"; exit 1; }
+[[ "$before" -ge 1 ]] || { echo "::error::migrations did not apply on first boot"; exit 1; }
 
 echo "==> Restarting app (second boot must be a migration no-op)"
 "${COMPOSE[@]}" restart ferroehr
 wait_healthy
 after=$(migration_count)
 echo "    ehr._sqlx_migrations count = $after"
-[ "$before" = "$after" ] || {
+[[ "$before" = "$after" ]] || {
   echo "::error::migration count changed across restart ($before -> $after); not idempotent"
   exit 1
 }

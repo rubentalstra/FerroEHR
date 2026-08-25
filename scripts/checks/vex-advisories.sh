@@ -28,7 +28,7 @@ cd "$(dirname "$0")/../.."
 
 readonly OUT='security/vex/rust-advisories.openvex.json'
 
-[ -f "$OUT" ] || {
+[[ -f "$OUT" ]] || {
   echo "error: $OUT does not exist — run scripts/security/vex-generate.sh" >&2
   exit 1
 }

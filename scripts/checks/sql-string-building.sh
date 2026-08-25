@@ -57,10 +57,10 @@ KEYWORDS='SELECT|FROM|WHERE|ORDER[[:space:]]+BY|GROUP[[:space:]]+BY|HAVING|JOIN|
 EXEMPT='app/ferroehr/src/storage/node_repo.rs:push_str(leaf.column)'
 
 collect() {
-  if [ "${1:-}" = "--all" ]; then
+  if [[ "${1:-}" = "--all" ]]; then
     # shellcheck disable=SC2086 # SCOPE is a deliberate list of pathspecs
     git ls-files -- $SCOPE
-  elif [ "$#" -gt 0 ]; then
+  elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
     # shellcheck disable=SC2086
@@ -79,10 +79,11 @@ report() {
 exempted() {
   local file=$1 body=$2 entry needle
   for entry in $EXEMPT; do
-    [ "${entry%%:*}" = "$file" ] || continue
+    [[ "${entry%%:*}" = "$file" ]] || continue
     needle=${entry#*:}
     case $body in
     *"$needle"*) return 0 ;;
+    *) ;;
     esac
   done
   return 1
@@ -94,26 +95,26 @@ exempted() {
 quoted() { printf '%s\n' "$1" | grep -o '"[^"]*"' || true; }
 
 files=$(collect "$@")
-[ -n "$files" ] || {
+[[ -n "$files" ]] || {
   echo "sql-string-building: no files in scope to check."
   exit 0
 }
 
 for f in $files; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   case $f in
   *.rs) ;;
   *) continue ;;
   esac
 
   while IFS=: read -r line body; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     exempted "$f" "$body" && continue
 
     # (1) an interpolated literal that carries a clause keyword
     if printf '%s' "$body" | grep -qE '(format!|write!|writeln!)[[:space:]]*\('; then
       while IFS= read -r lit; do
-        [ -n "$lit" ] || continue
+        [[ -n "$lit" ]] || continue
         printf '%s' "$lit" | grep -qE "$KEYWORDS" || continue
         printf '%s' "$lit" | grep -q '{' || continue
         report "$f:$line: interpolated SQL literal $lit — build the clause with \
@@ -124,7 +125,7 @@ for f in $files; do
     # (2) a clause keyword pushed onto a String
     if printf '%s' "$body" | grep -qE 'push_str[[:space:]]*\([[:space:]]*"'; then
       while IFS= read -r lit; do
-        [ -n "$lit" ] || continue
+        [[ -n "$lit" ]] || continue
         printf '%s' "$lit" | grep -qE "$KEYWORDS" || continue
         report "$f:$line: SQL fragment $lit pushed onto a String — assemble the \
 statement with \`sea-query\` instead (scripts/checks/sql-string-building.sh)"
@@ -135,7 +136,7 @@ statement with \`sea-query\` instead (scripts/checks/sql-string-building.sh)"
     # `push_str(` on the line is judged separately, so a line that also pushes a
     # literal cannot shield a value push.
     while IFS= read -r push; do
-      [ -n "$push" ] || continue
+      [[ -n "$push" ]] || continue
       printf '%s' "$push" | grep -qE 'push_str[[:space:]]*\([[:space:]]*r?#*"' && continue
       report "$f:$line: a runtime value is appended to a string ($push) — if that \
 string is SQL, bind the value; if it is not, add a named exemption with its \
@@ -150,7 +151,7 @@ false for an interpolated statement (scripts/checks/sql-string-building.sh)"
   done < <(grep -nE 'format!|write!|writeln!|push_str|AssertSqlSafe' "$f" || true)
 done
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "sql-string-building: $failures violation(s) — see above." >&2
   exit 1
 fi

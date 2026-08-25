@@ -46,7 +46,7 @@ cff_scalar() {
   local v
   v="$(sed -nE "s/^$1:[[:space:]]*(.*)$/\1/p" "$CFF" | head -1)"
   v="${v%\"}"; v="${v#\"}"
-  [ -n "$v" ] || { echo "$CFF has no \`$1\`" >&2; exit 1; }
+  [[ -n "$v" ]] || { echo "$CFF has no \`$1\`" >&2; exit 1; }
   printf '%s' "$v"
 }
 
@@ -163,8 +163,8 @@ rendered="$(
 }'
 )"
 
-if [ "$MODE" = "--check" ]; then
-  [ -f "$OUT" ] || { echo "::error::$OUT is missing — run scripts/render/zenodo-json.sh" >&2; exit 1; }
+if [[ "$MODE" = "--check" ]]; then
+  [[ -f "$OUT" ]] || { echo "::error::$OUT is missing — run scripts/render/zenodo-json.sh" >&2; exit 1; }
   if ! printf '%s\n' "$rendered" | diff -u "$OUT" - >/dev/null; then
     echo "::error::$OUT is stale versus $CFF — run scripts/render/zenodo-json.sh" >&2
     printf '%s\n' "$rendered" | diff -u "$OUT" - || true

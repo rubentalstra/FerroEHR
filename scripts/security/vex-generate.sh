@@ -50,7 +50,7 @@ for tool in yq jq; do
   command -v "$tool" >/dev/null || { echo "vex-generate: $tool is required" >&2; exit 1; }
 done
 for required in "$PROSE" "$GATE"; do
-  [ -f "$required" ] || { echo "vex-generate: missing $required" >&2; exit 1; }
+  [[ -f "$required" ]] || { echo "vex-generate: missing $required" >&2; exit 1; }
 done
 
 # The controlled vocabularies, so a typo in the prose file fails here instead of
@@ -70,7 +70,7 @@ prose_json="$(yq -p toml -o json '.' "$PROSE")"
 # cannot. Bare non-advisory entries (`yanked@0.1.1`) stay legal.
 ignore_json="$(yq -p toml -o json '[.advisories.ignore[]]' "$GATE")"
 if bare="$(jq -r '.[] | select(type == "string" and startswith("RUSTSEC-"))' <<<"$ignore_json")" \
-   && [ -n "$bare" ]; then
+   && [[ -n "$bare" ]]; then
   echo "vex-generate: deny.toml ignores an advisory in the bare-string form:" >&2
   sed 's/^/  /' <<<"$bare" >&2
   echo "Use { id = \"…\", reason = \"…\" } so the exception carries its reason" >&2
@@ -86,7 +86,7 @@ if unreasoned="$(jq -r '
       .[]
       | select(type == "object" and has("id"))
       | select((.reason // "" | gsub("^\\s+|\\s+$"; "")) == "")
-      | .id' <<<"$ignore_json")" && [ -n "$unreasoned" ]; then
+      | .id' <<<"$ignore_json")" && [[ -n "$unreasoned" ]]; then
   echo "vex-generate: deny.toml accepts an advisory with no reason:" >&2
   sed 's/^/  /' <<<"$unreasoned" >&2
   echo "Every accepted advisory states why it does not apply and when to" >&2
@@ -104,12 +104,12 @@ note() { echo "vex-generate: $*" >&2; fail=1; }
 
 # ── the two-way agreement that makes one list impossible to forget ──────────
 while read -r id; do
-  [ -n "$id" ] || continue
+  [[ -n "$id" ]] || continue
   note "deny.toml accepts $id but $PROSE has no [[accepted]] entry for it — every accepted advisory needs a published justification"
 done < <(comm -23 <(echo "$gate_ids") <(echo "$accepted_ids"))
 
 while read -r id; do
-  [ -n "$id" ] || continue
+  [[ -n "$id" ]] || continue
   note "$PROSE claims $id is accepted but deny.toml does not ignore it — a VEX statement for an advisory the gate still fails on is a false claim"
 done < <(comm -13 <(echo "$gate_ids") <(echo "$accepted_ids"))
 
@@ -117,17 +117,17 @@ done < <(comm -13 <(echo "$gate_ids") <(echo "$accepted_ids"))
 # acceptance (move it to [[accepted]]) or the ignore that deny.toml's header
 # explicitly refuses to carry.
 while read -r id; do
-  [ -n "$id" ] || continue
+  [[ -n "$id" ]] || continue
   note "$id is listed as [[lockfile_only]] but deny.toml now ignores it — move it to [[accepted]], or drop the ignore"
 done < <(comm -12 <(echo "$gate_ids") <(echo "$lockfile_ids"))
 
 # ── vocabulary + completeness of every statement ────────────────────────────
 while read -r entry; do
-  [ -n "$entry" ] || continue
+  [[ -n "$entry" ]] || continue
   id="$(jq -r '.id // ""' <<<"$entry")"
   for field in crate status justification impact; do
     value="$(jq -r --arg f "$field" '.[$f] // ""' <<<"$entry")"
-    [ -n "$value" ] || note "${id:-<no id>}: missing '$field'"
+    [[ -n "$value" ]] || note "${id:-<no id>}: missing '$field'"
   done
   # The dependency-path claim is required, and its EMPTY form has meaning ("the
   # crate is absent from the resolved graph"), so presence is checked with
@@ -142,13 +142,13 @@ while read -r entry; do
   justification="$(jq -r '.justification // ""' <<<"$entry")"
   grep -qw -- "$status" <<<"$VALID_STATUS" \
     || note "$id: status '$status' is not an OpenVEX status ($VALID_STATUS)"
-  if [ "$status" = "not_affected" ]; then
+  if [[ "$status" = "not_affected" ]]; then
     grep -qw -- "$justification" <<<"$VALID_JUSTIFICATION" \
       || note "$id: justification '$justification' is not in the OpenVEX vocabulary ($VALID_JUSTIFICATION)"
   fi
 done < <(jq -c '((.accepted // []) + (.lockfile_only // []))[]' <<<"$prose_json")
 
-[ "$fail" -eq 0 ] || exit 1
+[[ "$fail" -eq 0 ]] || exit 1
 
 document="$(jq -S '
   .document as $d
@@ -183,7 +183,7 @@ document="$(jq -S '
 
 # jq -S sorts object keys alphabetically, which is what makes the output
 # byte-stable across jq versions; the statement ORDER is fixed above by id.
-if [ "$mode" = "--stdout" ]; then
+if [[ "$mode" = "--stdout" ]]; then
   printf '%s\n' "$document"
 else
   printf '%s\n' "$document" > "$OUT"

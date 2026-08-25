@@ -57,7 +57,7 @@ obs_wait_series() {
   local uid="$1" query="$2" tries="${3:-30}" n
   for _ in $(seq 1 "$tries"); do
     n="$(obs_promql_series "$uid" "$query")"
-    if [ "${n:-0}" -ge 1 ] 2>/dev/null; then printf '%s' "$n"; return 0; fi
+    if [[ "${n:-0}" -ge 1 ]] 2>/dev/null; then printf '%s' "$n"; return 0; fi
     sleep 4
   done
   printf '%s' "${n:-0}"
@@ -72,7 +72,7 @@ obs_wait_traces() {
       --data-urlencode 'q={ resource.service.name="ferroehr" }' \
       "$GRAFANA/api/datasources/proxy/uid/$uid/api/search" \
       | jq -r '.traces | length' 2>/dev/null)"
-    if [ "${n:-0}" -ge 1 ] 2>/dev/null; then printf '%s' "$n"; return 0; fi
+    if [[ "${n:-0}" -ge 1 ]] 2>/dev/null; then printf '%s' "$n"; return 0; fi
     sleep 4
   done
   printf '%s' "${n:-0}"
@@ -107,7 +107,7 @@ probes_observability() {
   # own scrape endpoint proved nothing — that was true throughout the defect.
   probe "P-OBS-METRICS" "working" "server" "#2173" \
     "FerroEHR metrics arrive in the collector's Prometheus"
-  if [ -z "$prom_uid" ]; then
+  if [[ -z "$prom_uid" ]]; then
     probe_fail "a Prometheus datasource in Grafana" "none found" \
       "the bundled stack provisions it; without it nothing here can be observed"
   else
@@ -124,7 +124,7 @@ probes_observability() {
   # so this one names the family.
   probe "P-OBS-BUILDINFO" "working" "server" "#2175" \
     "ferroehr_build_info reaches the collector, not just the local scrape"
-  if [ -z "$prom_uid" ]; then
+  if [[ -z "$prom_uid" ]]; then
     probe_fail "a Prometheus datasource" "none found"
   else
     local bi
@@ -141,7 +141,7 @@ probes_observability() {
     "a span for this service arrives in the collector's trace store"
   local tempo_uid found
   tempo_uid="$(obs_datasource_uid tempo)"
-  if [ -z "$tempo_uid" ]; then
+  if [[ -z "$tempo_uid" ]]; then
     # Not a failure of the SUT: without a queryable trace store this run cannot
     # observe the far end, and saying so is the honest outcome. It is declared
     # as a gap rather than passed silently.

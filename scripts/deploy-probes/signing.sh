@@ -35,7 +35,7 @@ probes_signing() {
   local ehr version
   ehr="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
     | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     probe_fail "a committed EHR" "no id returned"
     probe_done
     return 0
@@ -63,7 +63,7 @@ probes_signing() {
           && probe_psql "SELECT count(*) FROM ehr.vo_version
                           WHERE ehr_id = '$ehr'::uuid
                             AND body #>> '{name,value}' = 'tampered';")"
-  if [ "${rows:-0}" = "0" ]; then
+  if [[ "${rows:-0}" = "0" ]]; then
     probe_fail "a tampered stored row" "the UPDATE matched nothing" \
       "the probe could not reach the stored content, so detection was never tested"
   else
@@ -89,7 +89,7 @@ probes_signing() {
   node_vo="$(probe_psql "SELECT vo_id FROM ehr.vo_version
                           WHERE ehr_id = '$node_ehr'::uuid AND kind = 'EHR_STATUS';" \
              | tr -d '[:space:]')"
-  if [ -z "$node_ehr" ] || [ -z "$node_vo" ]; then
+  if [[ -z "$node_ehr" ]] || [[ -z "$node_vo" ]]; then
     probe_fail "a committed EHR_STATUS version" "ehr='$node_ehr' vo='$node_vo'" \
       "the probe could not locate the stored version, so detection was never tested"
     probe_done
@@ -101,7 +101,7 @@ probes_signing() {
                && probe_psql "SELECT count(*) FROM ehr.node
                                WHERE vo_id = '$node_vo'::uuid
                                  AND data #>> '{archetype_node_id}' = 'tampered';")"
-  if [ "${node_rows:-0}" = "0" ]; then
+  if [[ "${node_rows:-0}" = "0" ]]; then
     probe_fail "a tampered node row" "the UPDATE matched nothing" \
       "the probe could not reach the AQL index copy, so detection was never tested"
   else

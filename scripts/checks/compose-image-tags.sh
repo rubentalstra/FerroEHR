@@ -19,7 +19,7 @@ VERCEL_FILE="$ROOT_DIR/Dockerfile.vercel"
 MANIFEST="$ROOT_DIR/Cargo.toml"
 
 version="$(sed -nE 's/^version = "(.*)"$/\1/p' "$MANIFEST" | head -1)"
-if [ -z "$version" ]; then
+if [[ -z "$version" ]]; then
   echo "::error::could not read the workspace version from $MANIFEST" >&2
   exit 1
 fi
@@ -29,13 +29,13 @@ for var in FERROEHR_IMAGE FERROEHR_POSTGRES_IMAGE FERROEHR_ADMIN_UI_IMAGE; do
   # The default is the `:-` fallback inside `${VAR:-ghcr.io/owner/name:tag}`.
   ref="$(grep -oE "\\\$\{$var:-[^}]+\}" "$COMPOSE_FILE" | head -1 \
     | sed -E "s/^\\\$\{$var:-//; s/\}$//")"
-  if [ -z "$ref" ]; then
+  if [[ -z "$ref" ]]; then
     echo "::error::$COMPOSE_FILE declares no \${$var:-…} default image reference" >&2
     rc=1
     continue
   fi
   tag="${ref##*:}"
-  if [ "$tag" != "$version" ]; then
+  if [[ "$tag" != "$version" ]]; then
     echo "::error::$var default is '$ref' (tag $tag) but the workspace version is $version — the release cut bumps the docker-compose.yml image tags (.claude/rules/changelog.md)." >&2
     rc=1
   else
@@ -48,7 +48,7 @@ done
 # so this guard only pins it to that pointer — a versioned FROM reappearing
 # would resurrect the release-cut bump this guard used to police.
 vercel_ref="$(grep -oE '^FROM ghcr\.io/[^ ]+' "$VERCEL_FILE" | head -1 | sed 's/^FROM //')"
-if [ "$vercel_ref" != "ghcr.io/rubentalstra/ferroehr:latest" ]; then
+if [[ "$vercel_ref" != "ghcr.io/rubentalstra/ferroehr:latest" ]]; then
   echo "::error::Dockerfile.vercel must be FROM ghcr.io/rubentalstra/ferroehr:latest (the release pointer, #2724); found '$vercel_ref'." >&2
   rc=1
 else

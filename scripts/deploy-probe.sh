@@ -39,7 +39,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 KEEP_UP=0
-[ "${1:-}" = "--keep-up" ] && KEEP_UP=1
+[[ "${1:-}" = "--keep-up" ]] && KEEP_UP=1
 
 PROBE_TMP="$(mktemp -d)"
 export PROBE_TMP
@@ -67,7 +67,7 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/signing_pgp.sh
 
 cleanup() {
-  if [ "$KEEP_UP" -eq 0 ]; then
+  if [[ "$KEEP_UP" -eq 0 ]]; then
     compose_down
   else
     dim "── stack left running (--keep-up): $CDR"
@@ -99,7 +99,7 @@ compose_up ferroehr seaweedfs seaweedfs-init
 # and ~8 GB, so its CI lane runs it alone rather than paying for every other
 # family to prove something already proven on every pull request.
 run_family() {
-  [ -z "${PROBE_ONLY:-}" ] || [ "${PROBE_ONLY}" = "$1" ]
+  [[ -z "${PROBE_ONLY:-}" ]] || [[ "${PROBE_ONLY}" = "$1" ]]
 }
 
 run_family shipped_config && probes_shipped_config_boots

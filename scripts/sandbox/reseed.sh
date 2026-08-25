@@ -69,11 +69,11 @@ for e in $(seq 1 "$EHRS"); do
   for attempt in $(seq 1 "$ATTEMPTS"); do
     ehr=$(curl -sS -m 60 -u "$AUTH" -X POST "$BASE/ehr" -H 'Prefer: return=minimal' \
       -D- -o /dev/null 2>/dev/null | tr -d '\r' | awk -F'/ehr/' 'tolower($0) ~ /^location/{print $2}' | tr -d ' ') || true
-    [ -n "$ehr" ] && break
+    [[ -n "$ehr" ]] && break
     echo "  EHR creation returned no Location (attempt $attempt/$ATTEMPTS); retrying" >&2
     sleep "$RETRY_DELAY"
   done
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     echo "::error::EHR creation kept failing after $ATTEMPTS attempts — the sandbox is not serving writes." >&2
     exit 1
   fi
@@ -84,7 +84,7 @@ seeded=0
 for slug in "${TEMPLATES[@]}"; do
   opt="$TPL_DIR/$slug.opt"
   example="$TPL_DIR/$slug.example.json"
-  [ -f "$opt" ] && [ -f "$example" ] || {
+  [[ -f "$opt" ]] && [[ -f "$example" ]] || {
     echo "::error::missing template pair for $slug in $TPL_DIR" >&2
     exit 1
   }
@@ -103,7 +103,7 @@ for slug in "${TEMPLATES[@]}"; do
       code=$(post_retry "composition $slug" "$BASE/ehr/$ehr/composition" \
         -H 'Content-Type: application/json' -H 'Prefer: return=minimal' \
         --data-binary @"$example")
-      if [ "$code" != "201" ]; then
+      if [[ "$code" != "201" ]]; then
         echo "::error::composition commit answered $code ($slug into $ehr)" >&2
         exit 1
       fi

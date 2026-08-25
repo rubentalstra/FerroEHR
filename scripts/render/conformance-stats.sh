@@ -20,7 +20,7 @@ command -v jq >/dev/null 2>&1 || {
   exit 1
 }
 for f in "$ART/results.json" "$ART/verdicts.json"; do
-  [ -f "$f" ] || {
+  [[ -f "$f" ]] || {
     echo "render-conformance-stats: $f missing — run the conformance suite first" >&2
     exit 1
   }
@@ -40,7 +40,7 @@ driven=$((passed + failed + errored))
 # The results artifact is deliberately clock-free (deterministic re-runs);
 # the run date is the artifact's last commit date (fallback: file mtime).
 run_date=$(git log -1 --format=%cs -- "$ART/results.json" 2>/dev/null || true)
-[ -n "$run_date" ] || run_date=$(date -r "$ART/results.json" +%Y-%m-%d)
+[[ -n "$run_date" ]] || run_date=$(date -r "$ART/results.json" +%Y-%m-%d)
 
 # ── profile verdicts, straight from the computed verdict report ──────────────
 pverdict() {
@@ -61,7 +61,7 @@ for v in "$total" "$passed" "$failed" "$errored" "$na" "$driven" "$caps_ok" "$ca
   [[ "$v" =~ ^[0-9]+$ ]] || { echo "render-conformance-stats: non-numeric stat '$v'" >&2; exit 1; }
 done
 for v in "$core" "$standard" "$options" "$sec"; do
-  [ -n "$v" ] && [ "$v" != "—" ] || { echo "render-conformance-stats: empty profile verdict in verdicts.json" >&2; exit 1; }
+  [[ -n "$v" ]] && [[ "$v" != "—" ]] || { echo "render-conformance-stats: empty profile verdict in verdicts.json" >&2; exit 1; }
 done
 
 upper() { printf '%s' "$1" | tr '[:lower:]' '[:upper:]'; }

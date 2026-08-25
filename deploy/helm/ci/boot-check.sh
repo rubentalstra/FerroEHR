@@ -222,6 +222,10 @@ boot_one() {
           docker_env+=(-e "${name}=ci-boot-check-external-secret-value")
         fi
         ;;
+      *)
+        red "  ${name}: unknown env source '${kind}'; teach boot-check.sh about it"
+        return 1
+        ;;
     esac
   done < "$envlist"
 

@@ -91,7 +91,7 @@ expected_header() {
   local krate
   krate=$(licensing_crate "$1")
   for dual in "${DUAL_CRATES[@]}"; do
-    if [ "$krate" = "$dual" ]; then
+    if [[ "$krate" = "$dual" ]]; then
       printf '%s' "$DUAL_HEADER"
       return
     fi
@@ -107,16 +107,16 @@ fail=0
 fixed=0
 checked=0
 while IFS= read -r f; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   checked=$((checked + 1))
   expected=$(expected_header "$f")
   found=$(head -n "$HEAD_LINES" "$f" | grep -E '^// SPDX-(FileCopyrightText|License-Identifier): ' || true)
 
-  if [ "$found" = "$expected" ]; then
+  if [[ "$found" = "$expected" ]]; then
     continue
   fi
 
-  if [ -z "$found" ] && [ "$mode" = --fix ] && ! is_generated "$f"; then
+  if [[ -z "$found" ]] && [[ "$mode" = --fix ]] && ! is_generated "$f"; then
     printf '%s\n\n' "$expected" | cat - "$f" >"$f.spdx.tmp"
     mv "$f.spdx.tmp" "$f"
     fixed=$((fixed + 1))
@@ -124,7 +124,7 @@ while IFS= read -r f; do
   fi
 
   fail=1
-  if [ -z "$found" ]; then
+  if [[ -z "$found" ]]; then
     echo "$f: no SPDX header in the first $HEAD_LINES lines" >&2
   else
     echo "$f: SPDX header does not match the licensing REUSE.toml declares" >&2
@@ -136,10 +136,10 @@ while IFS= read -r f; do
   fi
 done < <(git ls-files '*.rs')
 
-if [ "$fixed" -ne 0 ]; then
+if [[ "$fixed" -ne 0 ]]; then
   echo "spdx-headers: inserted $fixed header(s)."
 fi
-if [ "$fail" -ne 0 ]; then
+if [[ "$fail" -ne 0 ]]; then
   echo >&2
   echo "Licensing must travel with a file that is copied out of this tree" >&2
   echo "(REUSE 3.3). Hand-written files take the header directly; generated" >&2

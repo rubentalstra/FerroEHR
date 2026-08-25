@@ -36,13 +36,13 @@ OWNER=${OWNER:-rubentalstra}
 
 # Each entry is "ref|platform"; an empty platform scans the ref as built.
 targets=()
-if [ "${1:-}" = "--candidate" ]; then
+if [[ "${1:-}" = "--candidate" ]]; then
   shift
-  [ $# -ge 1 ] || { echo "--candidate needs at least one image ref" >&2; exit 2; }
+  [[ $# -ge 1 ]] || { echo "--candidate needs at least one image ref" >&2; exit 2; }
   for ref in "$@"; do
     targets+=("${ref}|")
   done
-elif [ $# -gt 0 ]; then
+elif [[ $# -gt 0 ]]; then
   echo "unknown argument: $1 (only --candidate IMAGE... is accepted)" >&2
   exit 2
 else
@@ -56,7 +56,7 @@ fi
 # Every VEX document, exactly as the scheduled lane passes them.
 vex_args=()
 for doc in security/vex/*.json; do
-  [ -e "$doc" ] || continue
+  [[ -e "$doc" ]] || continue
   vex_args+=(--vex "$doc")
 done
 
@@ -68,14 +68,14 @@ for target in "${targets[@]}"; do
   ref=${target%|*}
   platform=${target##*|}
   platform_args=()
-  [ -n "$platform" ] && platform_args=(--platform "$platform")
+  [[ -n "$platform" ]] && platform_args=(--platform "$platform")
   safe=$(printf '%s' "${ref}_${platform}" | tr '/:@' '___')
   report="$out_dir/${safe}.json"
   echo "── scanning ${ref} ${platform:-'(as built)'}"
   trivy image --skip-version-check --config trivy.yaml --scanners vuln \
     "${platform_args[@]}" "${vex_args[@]}" -f json -o "$report" "$ref"
   count=$(jq '[.Results[]?.Vulnerabilities // [] | .[]] | length' "$report")
-  if [ "$count" -gt 0 ]; then
+  if [[ "$count" -gt 0 ]]; then
     jq -r '.Results[]? | .Target as $t | (.Vulnerabilities // [])[]
            | "  \($t) | \(.PkgName) \(.InstalledVersion) \(.VulnerabilityID) \(.Severity) -> \(.FixedVersion)"' \
       "$report"
@@ -85,4 +85,4 @@ for target in "${targets[@]}"; do
 done
 
 echo "total fixable HIGH/CRITICAL findings: ${total}"
-[ "$total" -eq 0 ]
+[[ "$total" -eq 0 ]]

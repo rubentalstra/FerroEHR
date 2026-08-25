@@ -70,7 +70,7 @@ export COMPOSE_PROFILES=keycloak,admin-ui
 # server Dockerfile). Degrades to `unknown` off-checkout.
 export REVISION="${REVISION:-$(git -C "$ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 
-if [ -n "${UI_E2E_IMAGE:-}" ]; then
+if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
   # Image mode: the composed console publishes the quickstart port.
   CONSOLE_ADDR="127.0.0.1:3000"
 else
@@ -97,7 +97,7 @@ TREE_STATE_BEFORE="$(git_tree_state)"
 assert_no_tree_residue() {
   local after
   after="$(git_tree_state)"
-  if [ "$after" != "$TREE_STATE_BEFORE" ]; then
+  if [[ "$after" != "$TREE_STATE_BEFORE" ]]; then
     echo "FATAL: the e2e run left residue in the working tree:" >&2
     diff <(printf '%s\n' "$TREE_STATE_BEFORE") <(printf '%s\n' "$after") >&2 || true
     return 1
@@ -108,12 +108,12 @@ assert_no_tree_residue() {
 CONSOLE_PID=""
 DRIVER_PID=""
 cleanup() {
-  [ -n "$CONSOLE_PID" ] && kill "$CONSOLE_PID" 2>/dev/null || true
-  if [ -n "${UI_E2E_IMAGE:-}" ] && [ -z "${UI_E2E_KEEP_UP:-}" ]; then
+  [[ -n "$CONSOLE_PID" ]] && kill "$CONSOLE_PID" 2>/dev/null || true
+  if [[ -n "${UI_E2E_IMAGE:-}" ]] && [[ -z "${UI_E2E_KEEP_UP:-}" ]]; then
     docker compose stop ferroehr-admin-ui >/dev/null 2>&1 || true
   fi
-  [ -n "$DRIVER_PID" ] && kill "$DRIVER_PID" 2>/dev/null || true
-  if [ -z "${UI_E2E_NO_COMPOSE:-}" ] && [ -z "${UI_E2E_KEEP_UP:-}" ]; then
+  [[ -n "$DRIVER_PID" ]] && kill "$DRIVER_PID" 2>/dev/null || true
+  if [[ -z "${UI_E2E_NO_COMPOSE:-}" ]] && [[ -z "${UI_E2E_KEEP_UP:-}" ]]; then
     # --remove-orphans: belt-and-braces against a future profiled/renamed
     # service surviving the teardown the way keycloak used to.
     docker compose down -v --remove-orphans >/dev/null 2>&1 || true
@@ -133,13 +133,13 @@ wait_http() { # url, tries
 }
 
 # ── 1. The composed stack: postgres + CDR + Keycloak ────────────────────────
-if [ -z "${UI_E2E_NO_COMPOSE:-}" ]; then
+if [[ -z "${UI_E2E_NO_COMPOSE:-}" ]]; then
   echo "── compose up (postgres + ferroehr + keycloak)"
   # keycloak is behind the `keycloak` profile, enabled for every call in this
   # lane by the COMPOSE_PROFILES export above, so the OIDC journeys have an
   # issuer AND the teardown can see the container.
   BUILD_ARGS=(--build)
-  [ -n "${UI_E2E_NO_BUILD:-}" ] && BUILD_ARGS=(--no-build)
+  [[ -n "${UI_E2E_NO_BUILD:-}" ]] && BUILD_ARGS=(--no-build)
   # The e2e overlay rides BOTH lanes: without it here, its `ferroehr:` env
   # block (tenancy on, terminology on) never reached the host-mode CDR — the
   # lane CI actually runs.
@@ -240,7 +240,7 @@ done
 echo "   seeded 3 extra FLAT compositions with quantity magnitudes"
 
 # ── 3. The console under test ────────────────────────────────────────────────
-if [ -n "${UI_E2E_IMAGE:-}" ]; then
+if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
   # Image mode — the TRUE shipped artifact: compose-build the console image
   # (docker/admin-ui/Dockerfile) with the e2e-env override supplying the OIDC
   # test wiring; the issuer (http://keycloak:8081) resolves in-network via
@@ -250,7 +250,7 @@ if [ -n "${UI_E2E_IMAGE:-}" ]; then
   # if this call's model gave `ferroehr` a different config than the running
   # container, `up ferroehr-admin-ui` would RECREATE the server mid-run —
   # breaking the lane. The bare calls (stop/down/logs) recreate nothing.
-  if [ -n "${UI_E2E_IMAGE_REF:-}" ]; then
+  if [[ -n "${UI_E2E_IMAGE_REF:-}" ]]; then
     echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
     FERROEHR_ADMIN_UI_IMAGE="$UI_E2E_IMAGE_REF" \
       docker compose -f docker-compose.yml -f docker-compose.override.yml \
@@ -263,10 +263,10 @@ if [ -n "${UI_E2E_IMAGE:-}" ]; then
       up -d --build ferroehr-admin-ui
   fi
 else
-  if [ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]; then
+  if [[ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]]; then
     echo "── using the prebuilt console (UI_E2E_PREBUILT_CONSOLE)"
     for p in "$ROOT/target/debug/ferroehr-admin-ui" "$ROOT/target/site/pkg"; do
-      [ -e "$p" ] || { echo "FATAL: UI_E2E_PREBUILT_CONSOLE set but $p is missing" >&2; exit 1; }
+      [[ -e "$p" ]] || { echo "FATAL: UI_E2E_PREBUILT_CONSOLE set but $p is missing" >&2; exit 1; }
     done
   else
     echo "── building the console (cargo-leptos)"
@@ -318,10 +318,10 @@ wait_http "http://127.0.0.1:$DRIVER_PORT/status"
 # unaffected — CI builds the archive on the same runner image + workspace
 # path, which the workflow documents).
 NEXTEST_TARGET=(-p ferroehr-admin-ui --features ssr)
-if [ -n "${UI_E2E_NEXTEST_ARCHIVE:-}" ]; then
+if [[ -n "${UI_E2E_NEXTEST_ARCHIVE:-}" ]]; then
   NEXTEST_TARGET=(--archive-file "$UI_E2E_NEXTEST_ARCHIVE" --workspace-remap "$ROOT")
 fi
-if [ -n "${UI_E2E_SHOTS_ONLY:-}" ]; then
+if [[ -n "${UI_E2E_SHOTS_ONLY:-}" ]]; then
   echo "── journeys skipped (UI_E2E_SHOTS_ONLY)"
 else
 echo "── running e2e journeys"
@@ -333,7 +333,7 @@ echo "── running e2e journeys"
 # of its own (table paging) seeds and removes its fixtures over ITS-REST rather
 # than through the UI, whose own paths have their own journeys.
 NEXTEST_FILTER=(-E 'binary(it) - test(/^e2e_docs_shots::/)')
-[ -n "$FILTER" ] && NEXTEST_FILTER=(-E "test($FILTER)")
+[[ -n "$FILTER" ]] && NEXTEST_FILTER=(-E "test($FILTER)")
 UI_E2E_BASE_URL="$CONSOLE_URL" \
 UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
 UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
@@ -353,7 +353,7 @@ fi
 # When UI_E2E_DOCS_SHOTS is set, capture the canonical per-screen screenshots
 # for website/book (writes into website/book/src/admin-ui/img). Runs after the
 # journeys so the browse journeys have seeded the fixture template.
-if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
+if [[ -n "${UI_E2E_DOCS_SHOTS:-}" ]]; then
   echo "── capturing documentation screenshots"
   UI_E2E_BASE_URL="$CONSOLE_URL" \
   UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \

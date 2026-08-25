@@ -56,7 +56,7 @@ readonly DOC='security/vex/rust-advisories.openvex.json'
 for tool in cargo jq comm; do
   command -v "$tool" >/dev/null || { echo "vex-reachability: $tool is required" >&2; exit 1; }
 done
-[ -f "$DOC" ] || {
+[[ -f "$DOC" ]] || {
   echo "error: $DOC does not exist — run scripts/security/vex-generate.sh" >&2
   exit 1
 }
@@ -87,7 +87,7 @@ note() { echo "vex-reachability: $*" >&2; fail=1; }
 # inside the process substitution feeding the loop, would run zero iterations
 # and report every statement verified.
 expected="$(jq -r '.statements | length' "$DOC")"
-[ "$expected" -gt 0 ] 2>/dev/null || {
+[[ "$expected" -gt 0 ]] 2>/dev/null || {
   echo "error: $DOC declares no statements, so nothing would be verified" >&2
   exit 1
 }
@@ -98,7 +98,7 @@ setfile() { sort -u | sed '/^$/d' > "$1"; }
 
 statements=0
 while read -r statement; do
-  [ -n "$statement" ] || continue
+  [[ -n "$statement" ]] || continue
   id="$(jq -r '.vulnerability.name // "<no id>"' <<<"$statement")"
 
   if ! jq -e 'has("ferroehr:reachability")' <<<"$statement" > /dev/null; then
@@ -131,22 +131,23 @@ while read -r statement; do
     case "$level" in
       direct) what='direct dependent' ;;
       roots) what='workspace root' ;;
+      *) echo "error: unknown dependency level '$level' — no label to report it under" >&2; exit 1 ;;
     esac
     while read -r crate; do
-      [ -n "$crate" ] || continue
+      [[ -n "$crate" ]] || continue
       note "$id: claims $spec has the $what '$crate', which is in no edge of the resolved graph"
     done < <(comm -23 "$work/said-$level" "$work/has-$level")
     while read -r crate; do
-      [ -n "$crate" ] || continue
+      [[ -n "$crate" ]] || continue
       note "$id: '$crate' is a $what of $spec in the resolved graph and the statement does not name it — the impact statement argues about a path set that is not the real one"
     done < <(comm -13 "$work/said-$level" "$work/has-$level")
   done
 done < <(jq -c '.statements[]' "$DOC")
 
-[ "$statements" -eq "$expected" ] \
+[[ "$statements" -eq "$expected" ]] \
   || note "only $statements of the document's $expected statements carried a dependency-path claim"
 
-if [ "$fail" -ne 0 ]; then
+if [[ "$fail" -ne 0 ]]; then
   echo >&2
   echo "A VEX statement's argument rests on where the affected crate enters the" >&2
   echo "build, so a wrong path makes the published justification a false claim." >&2

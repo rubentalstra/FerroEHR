@@ -34,11 +34,11 @@ for row in "${ROWS[@]}"; do
   IFS='|' read -r crate provenance attribution <<<"$row"
   manifest="$crate/Cargo.toml"
   for required in "$crate/$provenance" "$crate/$attribution" "$manifest"; do
-    [ -f "$required" ] || { note "missing $required"; continue 2; }
+    [[ -f "$required" ]] || { note "missing $required"; continue 2; }
   done
 
   revision=$(grep -oE '[0-9a-f]{40}' "$crate/$provenance" | head -1 || true)
-  if [ -z "$revision" ]; then
+  if [[ -z "$revision" ]]; then
     note "$crate/$provenance records no 40-hex upstream commit — the packaged attribution has nothing to pin to"
     continue
   fi
@@ -54,7 +54,7 @@ for row in "${ROWS[@]}"; do
   fi
 done
 
-[ "$fail" -eq 0 ] || {
+[[ "$fail" -eq 0 ]] || {
   echo >&2
   echo "Attribution for redistributed third-party material must be inside the" >&2
   echo "published artifact, not only in the repository it was built from." >&2

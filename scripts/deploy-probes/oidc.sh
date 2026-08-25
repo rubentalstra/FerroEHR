@@ -30,6 +30,7 @@ jwt_claims() {
   case $(( ${#payload} % 4 )) in
     2) payload="${payload}==" ;;
     3) payload="${payload}=" ;;
+    *) ;;
   esac
   printf '%s' "$payload" | base64 -d 2>/dev/null
 }
@@ -59,7 +60,7 @@ probes_oidc() {
   # quickstart impossible rather than merely misconfigured.
   probe "P-OIDC-AUD" "working" "compose" "#2176" \
     "the demo realm mints a token carrying aud=ferroehr"
-  if [ -z "$token" ]; then
+  if [[ -z "$token" ]]; then
     probe_fail "an access token from the password grant" "the token endpoint returned none" \
       "the realm's client must have the password grant enabled"
   else
@@ -79,7 +80,7 @@ probes_oidc() {
   # And the whole point: the documented flow SUCCEEDS.
   probe "P-OIDC-ACCEPT" "working" "server" "#2176" \
     "the API accepts that token — the documented quickstart works end to end"
-  if [ -z "$token" ]; then
+  if [[ -z "$token" ]]; then
     probe_fail "201 from POST /ehr" "no token to present"
   else
     local code
@@ -143,11 +144,11 @@ probes_oidc_roles() {
   probe "P-OIDC-IDENTITIES" "working" "compose" "#2160" \
     "the demo realm mints a token for each of the four identities"
   local missing=""
-  [ -n "$admin" ]     || missing="$missing ferroehr"
-  [ -n "$clinician" ] || missing="$missing clinician"
-  [ -n "$auditor" ]   || missing="$missing auditor"
-  [ -n "$nobody" ]    || missing="$missing nobody"
-  if [ -n "$missing" ]; then
+  [[ -n "$admin" ]]     || missing="$missing ferroehr"
+  [[ -n "$clinician" ]] || missing="$missing clinician"
+  [[ -n "$auditor" ]]   || missing="$missing auditor"
+  [[ -n "$nobody" ]]    || missing="$missing nobody"
+  if [[ -n "$missing" ]]; then
     probe_fail "a token for every demo user" "no token for:$missing" \
       "the realm import must create all four, or the separation below is untestable"
     probe_done

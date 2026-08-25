@@ -17,7 +17,7 @@ cd "$(dirname "$0")/../.."
 SUT="${CONF_SUT:-ferroehr}"
 ART="docs/conformance/$SUT"
 for f in "$ART/results.json" "$ART/verdicts.json"; do
-  [ -f "$f" ] || {
+  [[ -f "$f" ]] || {
     echo "render-conformance-assets: $f missing — run the conformance suite first" >&2
     exit 1
   }

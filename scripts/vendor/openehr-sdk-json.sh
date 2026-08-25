@@ -41,7 +41,7 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 echo "==> fetching $REPO @ ${PIN:0:12}"
-curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$PIN" -o "$WORK/repo.tar.gz"
+curl -fsSL --proto '=https' --proto-redir '=https' "https://codeload.github.com/$REPO/tar.gz/$PIN" -o "$WORK/repo.tar.gz"
 mkdir -p "$WORK/src"
 tar -xzf "$WORK/repo.tar.gz" -C "$WORK/src" --strip-components=1
 
