@@ -17,6 +17,10 @@
 
 FROM ghcr.io/rubentalstra/ferroehr:4.0.3
 
+# The base image already runs as uid 65532 (distroless nonroot); stated
+# explicitly so the posture is a property of THIS file too (trivy DS-0002).
+USER 65532:65532
+
 # The sandbox posture (demo user, no admin/management surface, port 80 —
 # Vercel's default container port). The DSN arrives as FERROEHR__DB__URL
 # from the Vercel project settings.
