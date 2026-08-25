@@ -16,8 +16,10 @@ than a reply:
   configuration reference, the API walkthroughs, AQL, templates, security and
   multi-tenancy, operations. Start at
   [Getting started](https://ferroehr.eu/docs/latest/getting-started.html).
-- **[The API reference](https://ferroehr.eu/api/):** the OpenAPI document the
-  server itself generates, so it describes the surface that actually exists.
+- **[The API reference](https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui):**
+  the live sandbox's Swagger UI. The server generates the document from its own
+  handlers, so it describes the surface that actually exists. Sign in with the
+  public demo credentials `ferroehr` / `ferroehr`.
 - **[`docs/architecture.md`](docs/architecture.md):** the design, in one file.
 
 There is no commercial support offering, no service-level agreement, and no

@@ -45,7 +45,6 @@ scan:
     - crates/openehr-adl/tests/corpus
     - tools/cnf-runner/artifacts/corpus
     - target
-    - website/api/spec
 
 # The adjudicated-exception file. Each entry there carries its reason; see its
 # header for the policy.

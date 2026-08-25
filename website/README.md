@@ -12,8 +12,12 @@ versioning machinery, design tokens, content map — are documented in
 |---|---|
 | `landing/` | Hand-written static landing page (`index.html` + `style.css`, `404.html`, `robots.txt`, `assets/`). Relative URLs only. |
 | `book/` | The mdBook (`book.toml`, `src/`, additive `theme/`). Built per deployment path with the matching `site-url`. |
-| `api/` | Static OpenAPI endpoint reference: vendored Swagger UI 5.32.8 + the 7 served OAS bundles (`spec/`). |
 | `versions.json` | Version manifest the picker and deploy job read. |
+
+There is no OpenAPI reference in this tree. The API reference is the hosted
+sandbox's own Swagger UI,
+<https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui>, which the running
+server generates from its handlers.
 
 ## Building locally
 
@@ -21,8 +25,7 @@ The build needs a Rust-only toolchain: `mdbook`, `mdbook-mermaid`, `mdbook-toc`
 (pins in `docs.yml` / the phase file §1). Then:
 
 ```shell
-bash scripts/site/assemble-oas.sh          # copy the 7 vendored OAS bundles into api/spec/
-bash scripts/site/build.sh --dev-only # assemble ./_site (landing + /docs/dev/ + /api/)
+bash scripts/site/build.sh --dev-only # assemble ./_site (landing + /docs/dev/)
 # serve _site/ with any static server, e.g.:  npx --yes serve _site
 ```
 
@@ -31,8 +34,6 @@ branch plus `/docs/latest/`, exactly as CI does before deploy.
 
 ## Rules
 
-- Never hand-edit `api/spec/**` or the vendored `api/vendor/swagger-ui/**` —
-  run `scripts/site/assemble-oas.sh` (the served OAS is a byte copy of the vendored
-  ITS-REST bundles, drift-gated in CI).
+- Never hand-edit the vendored `book/theme/mermaid*` assets.
 - Authoring voice is end-user and task-first; never publish internal trees
   (plans, rules, the vendored spec oracle).

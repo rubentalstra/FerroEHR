@@ -55,9 +55,10 @@ curl http://localhost:8080/ferroehr/rest/status
 It answers a small JSON document: `status`, `server_version`,
 `openehr_rest_api_version` and a `timestamp`. All clinical API routes live under
 the base path `/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is
-served at <http://localhost:8080/ferroehr/rest/swagger-ui>, and the full
-endpoint reference is published on the documentation site under `/ferroehr/api/`
-(the **API** tab).
+served at <http://localhost:8080/ferroehr/rest/swagger-ui>. If you have no
+server yet, the hosted sandbox serves the same UI at
+<https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> with the public demo
+credentials `ferroehr` / `ferroehr`.
 
 There are also three always-on, unauthenticated health endpoints: `/health`,
 `/health/liveness` and `/health/readiness`; the last one reports each
@@ -179,9 +180,9 @@ is the whole server in one document. Every entry is filtered from that same
 document, which the server generates from its own handlers, so nothing here can
 drift from the routes it actually serves. When authentication is enabled the
 "Authorize" dialog shows the one scheme the server is configured for (HTTP
-Bearer/JWT when OIDC is set up, otherwise HTTP Basic). You can also read the
-static API reference on the documentation site (the **API** tab, under
-`/ferroehr/api/`).
+Bearer/JWT when OIDC is set up, otherwise HTTP Basic). The hosted sandbox runs
+the same UI at <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> if you
+want to try it before running anything locally.
 
 ## Next steps
 

@@ -233,7 +233,9 @@ curl -u ferroehr:ferroehr -H 'Content-Type: application/json' \
 ```
 
 Interactive OpenAPI documentation is served at
-`http://localhost:8080/ferroehr/rest/swagger-ui`. The admin console is
+`http://localhost:8080/ferroehr/rest/swagger-ui`, and the hosted sandbox runs
+the same UI at <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> if you
+want to look before installing anything. The admin console is
 opt-in: `docker compose --profile admin-ui up`, then `http://localhost:3000`
 with the same credentials.
 
@@ -554,7 +556,8 @@ spec-codegen drift, comment style, and a container smoke test. See [CONTRIBUTING
 
 |                                                                       |                                                                     |
 |-----------------------------------------------------------------------|---------------------------------------------------------------------|
-| [Documentation website](https://ferroehr.eu/)                         | The user guide + OpenAPI endpoint reference (versioned per release) |
+| [Documentation website](https://ferroehr.eu/)                         | The user guide, versioned per release                               |
+| [API reference](https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui) | The live sandbox's Swagger UI (demo login `ferroehr`/`ferroehr`)    |
 | [Architecture](docs/architecture.md)                                  | How the system is built, and why                                    |
 | [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case                          |
 | [Version matrix](docs/VERSIONS.md)                                    | Every pin: openEHR spec generations, Rust toolchain, PostgreSQL     |
