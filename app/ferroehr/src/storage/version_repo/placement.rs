@@ -56,7 +56,8 @@ pub struct Placement {
     pub now: jiff::Timestamp,
 }
 
-/// The version-tree placement read, merged into ONE statement.
+/// The version-tree placement read, merged into ONE statement — the thaw
+/// included.
 ///
 /// Returns the preceding lineage tip (the version `expected` names, or the open
 /// TRUNK tip), the next storage commit ordinal, and the transaction timestamp.
@@ -66,6 +67,14 @@ pub struct Placement {
 /// master06 §Digital Signature) and commit through the folded CTE
 /// unconditionally.
 ///
+/// A new version must never land in the primary tier while its predecessors sit
+/// in the cold one, so the statement's leading data-modifying CTEs move any
+/// archived rows back first — primary-key probes finding nothing for the
+/// overwhelmingly common unarchived case. A same-statement `INSERT` is
+/// invisible to the sibling scans
+/// (<https://www.postgresql.org/docs/18/queries-with.html>), so the placement
+/// reads run over `vo_version` UNION ALL the thaw's own `RETURNING` rows.
+///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn next_placement(
@@ -73,24 +82,33 @@ pub async fn next_placement(
     vo_id: VoId,
     expected: Option<(i32, i32, i32)>,
 ) -> Result<Placement, StorageError> {
-    // A new version must never land in the primary tier while its predecessors
-    // sit in the cold one, so an archived object is brought back first — one
-    // statement, a no-op for every unarchived object
-    // (`crate::storage::version_repo::tier`).
-    crate::storage::version_repo::tier::thaw_one(&mut *tx, vo_id).await?;
     macro_rules! placement_select {
         ($tip_where:literal) => {
             concat!(
+                "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), ",
+                "cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), ",
+                "ct AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), ",
+                "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
+                "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
+                "inn AS (INSERT INTO node SELECT * FROM cn), ",
+                "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
+                "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
+                "               branch_version, creating_system_id, lifecycle_state, sys_period ",
+                "        FROM vo_version WHERE vo_id = $1 ",
+                "        UNION ALL ",
+                "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
+                "               branch_version, creating_system_id, lifecycle_state, sys_period ",
+                "        FROM cv) ",
                 "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
                 "tip.trunk_version, tip.branch_number, tip.branch_version, ",
                 "tip.creating_system_id, tip.lifecycle_state, tip.open ",
                 "FROM (SELECT (COALESCE(MAX(sys_version), 0) + 1)::int AS next_ordinal ",
-                "      FROM vo_version WHERE vo_id = $1) o ",
+                "      FROM src) o ",
                 "LEFT JOIN LATERAL ( ",
                 "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
                 "           t.branch_number, t.branch_version, t.creating_system_id, ",
                 "           t.lifecycle_state, upper_inf(t.sys_period) AS open ",
-                "    FROM vo_version t WHERE ",
+                "    FROM src t WHERE ",
                 $tip_where,
                 ") tip ON true"
             )

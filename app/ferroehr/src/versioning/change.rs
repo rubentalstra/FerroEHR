@@ -719,17 +719,6 @@ async fn commit_resolved(
     let audit_row = audit.row();
     let (trunk_version, branch_number, branch_version) = r.tree.columns();
 
-    // Close the superseded lineage tip FIRST, as its own statement, before the
-    // folded insert: the one-open-row-per-lineage partial unique indexes
-    // (`uq_vo_version_current` / `uq_vo_version_branch_current`) require the
-    // old open row to be gone before the new open row is inserted. `now()` is
-    // the transaction timestamp, so the close boundary and the new version's
-    // `sys_period` open at the identical instant (master06 §The 'Virtual Version Tree').
-    if let Some(close_ordinal) = r.close_ordinal {
-        crate::storage::version_repo::commit::close_ordinal_at_now(tx, r.vo_id, close_ordinal)
-            .await?;
-    }
-
     // The enclosing CONTRIBUTION id: pre-existing for a multi-change commit,
     // generated here for a standalone write — known before the signature.
     let contribution_id = match contribution {
@@ -774,6 +763,13 @@ async fn commit_resolved(
         body: body.as_ref(),
         time_committed: r.time_committed,
         rows: &r.rows,
+        // The superseded lineage tip closes inside the SAME statement (its
+        // leading `cl` CTE, at the same bound instant) — the close boundary
+        // and the new `sys_period` open at the identical instant (master06
+        // §The 'Virtual Version Tree'), and the insert CTE depends on `cl`
+        // so the one-open-row-per-lineage partial unique indexes see the
+        // closed tip first.
+        close_ordinal: r.close_ordinal,
     };
     // The folded statements BIND `r.time_committed` (the instant the signature
     // was computed over) as the audit time and the `sys_period` open bound, so

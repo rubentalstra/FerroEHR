@@ -403,12 +403,15 @@ impl FerroEhrService {
         // the template it was committed against.
         let template_id = composition_template_id(&composition).map(str::to_owned);
 
-        let mut tx = self.pool.begin().await?;
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
-        // `versioned_composition.adoc`), lifted out of the versioning write
-        // path — checked in the same transaction as the commit.
-        super::validation::check_versioned_composition_invariants(&mut tx, vo_id, &composition)
-            .await?;
+        // `versioned_composition.adoc`), checked off the merged pre-read —
+        // the first version's root is immutable, so no transaction is needed
+        // to read it consistently.
+        super::validation::check_versioned_composition_first_root(
+            current.first_root,
+            &composition,
+        )?;
+        let mut tx = self.pool.begin().await?;
         let committed = update(
             &mut tx,
             Some(ehr_id),
