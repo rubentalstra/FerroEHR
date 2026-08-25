@@ -79,6 +79,56 @@ fn write_nodes_sql(per_row_context: bool) -> String {
 static WRITE_NODES_SQL: std::sync::LazyLock<String> =
     std::sync::LazyLock::new(|| write_nodes_sql(false));
 
+/// The node-insert body as a CTE fragment for the FOLDED commit statements:
+/// the same fixed-text `unnest` shape as [`write_nodes_sql`], with the
+/// storage context spelled as the CALLER's parameter placeholders
+/// (`vo`/`sys`/`ehr`, e.g. `"$8"`) and the array binds starting at
+/// `first_array_param`. `CROSS JOIN v` orders this CTE after the caller's
+/// version-row CTE `v`, which is also what makes the node rows' FK to the
+/// version row satisfiable inside the one statement. Empty arrays insert
+/// nothing — a logical delete folds through unchanged.
+pub(crate) fn node_insert_cte(vo: &str, sys: &str, ehr: &str, first_array_param: usize) -> String {
+    use std::fmt::Write;
+    let mut columns = String::new();
+    let mut selects = String::new();
+    let mut arrays = String::new();
+    let mut names = String::new();
+    for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
+        columns.push_str(", ");
+        columns.push_str(leaf.column);
+        match leaf.kind {
+            crate::storage::promoted::PromotedKind::Timestamp => {
+                let _ = write!(selects, ", ext.openehr_timestamp(t.p{i})");
+            }
+        }
+        let _ = write!(arrays, ", ${}::text[]", first_array_param + 12 + i);
+        let _ = write!(names, ", p{i}");
+    }
+    let p = |offset: usize| first_array_param + offset;
+    format!(
+        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, citem_num, \
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data{columns}) \
+         SELECT {vo}, {sys}, {ehr}, t.num, t.num_cap, t.parent_num, t.citem_num, t.rm_type, \
+         t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.path, t.data{selects} \
+         FROM unnest(${}::int[], ${}::int[], ${}::int[], ${}::int[], ${}::text[], ${}::text[], \
+         ${}::text[], ${}::text[], ${}::int[], ${}::text[], ${}::text[], ${}::jsonb[]{arrays}) \
+         AS t(num, num_cap, parent_num, citem_num, rm_type, archetype, arch_entity, \
+         arch_concept, arch_major, name, path, data{names}) CROSS JOIN v",
+        p(0),
+        p(1),
+        p(2),
+        p(3),
+        p(4),
+        p(5),
+        p(6),
+        p(7),
+        p(8),
+        p(9),
+        p(10),
+        p(11),
+    )
+}
+
 /// The cross-version batch node insert (per-row storage context).
 static WRITE_NODES_BATCH_SQL: std::sync::LazyLock<String> =
     std::sync::LazyLock::new(|| write_nodes_sql(true));
@@ -162,7 +212,7 @@ pub async fn write_nodes_batch(
 /// Bind the twelve per-node column arrays plus the promoted-leaf arrays onto a
 /// node-insert statement whose storage-context parameters (`$1..$3`) are
 /// already bound.
-fn bind_node_arrays<'q>(
+pub(crate) fn bind_node_arrays<'q>(
     mut query: sqlx::query::Query<'q, sqlx::Postgres, sqlx::postgres::PgArguments>,
     rows: &[&'q NodeRow],
 ) -> sqlx::query::Query<'q, sqlx::Postgres, sqlx::postgres::PgArguments> {
