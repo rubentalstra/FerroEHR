@@ -19,7 +19,7 @@
 
 | | ferroehr | EHRbase |
 |---|---|---|
-| Product | ferroehr 4.0.2 | ehrbase 2.34.0 |
+| Product | ferroehr 4.0.3 | ehrbase 2.34.0 |
 | Run date | 2026-08-25 | 2026-08-14 |
 | Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
 | Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
