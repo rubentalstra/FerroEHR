@@ -77,13 +77,14 @@ pub(crate) struct EmittedFile {
     pub(crate) body: String,
 }
 
-/// What `emit-xml` produces: the rendered files, plus the XSD-declared elements
-/// that matched no BMM field and are therefore reported rather than emitted.
+/// What an XSD-driven emit target produces: the rendered files, plus the
+/// XSD-declared elements that matched no field in the model behind them and are
+/// therefore reported rather than emitted.
 #[derive(Debug)]
-pub(crate) struct XmlEmission {
+pub(crate) struct XsdEmission {
     /// The rendered files.
     pub(crate) files: Vec<EmittedFile>,
-    /// The XSD-only `(type, element)` pairs skipped for want of a BMM field.
+    /// The XSD-only `(type, element)` pairs skipped for want of a model field.
     pub(crate) unmatched: Vec<(String, String)>,
 }
 
@@ -377,7 +378,7 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 /// # Errors
 /// Returns an error if the RM/BASE compositions or the vendored XSD bundles
 /// cannot be loaded, or if the XML emission itself fails.
-pub(crate) fn render_xml_files() -> Result<XmlEmission, Box<dyn std::error::Error>> {
+pub(crate) fn render_xml_files() -> Result<XsdEmission, Box<dyn std::error::Error>> {
     // The XML codec covers the CURRENT RM/BASE generations (the wire the
     // server serves).
     let base = compose("base")?;
@@ -424,7 +425,7 @@ pub(crate) fn render_xml_files() -> Result<XmlEmission, Box<dyn std::error::Erro
         //! Canonical-XML `ToXml`/`FromXml` impls for the RM/BASE spec types.\n\n\
         mod impls;\n";
 
-    Ok(XmlEmission {
+    Ok(XsdEmission {
         files: vec![
             EmittedFile {
                 path: format!("{XML_GEN_DIR}/impls.rs"),

@@ -285,17 +285,27 @@ pub(crate) struct RbacGate {
 /// outside the generated ITS-REST tables.
 ///
 /// Matched by method + path SUFFIX so the deployment's configured base path is
-/// irrelevant. Each entry is a read whose selector is a whole structure and so
-/// travels as a request body, exactly as the released ad-hoc AQL read does:
+/// irrelevant. Each entry is a POST whose handler provably performs no write —
+/// either a read whose selector is a whole structure and so travels as a
+/// request body (the released ad-hoc AQL read's shape), or a bodyless
+/// computation over held data:
 ///
 /// - `POST /message/export` — SM `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`
 ///   (`SM/docs/UML/classes/i_ehr_extract_service.adoc`), a query over held
 ///   versions whose selector is an `EXTRACT_SPEC` (RM `ehr_extract`
 ///   `extract_spec.adoc`). It commits nothing: the import operations are the
 ///   mutating half of that interface.
+/// - `POST /admin/integrity/verify` — the storage-parity sweep (#2680): a
+///   whole-store comparison of the two stored content copies that writes
+///   nothing and answers identifiers + defect classes only, strictly less
+///   than the admin read routes already expose. A read-only integrity
+///   auditor is exactly who runs it (adjudicated on #2692).
 ///
 /// No openEHR spec governs role semantics — our own design/extension.
-const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[("POST", "/message/export")];
+const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[
+    ("POST", "/message/export"),
+    ("POST", "/admin/integrity/verify"),
+];
 
 /// Extension routes that are [`OperationClass::Admin`] despite not sitting under
 /// `/admin/` — the destructive half of the shared-definition surface.

@@ -145,13 +145,9 @@ async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
 /// Seed an EHR with enough content to exercise every FK the physical delete
 /// must cascade through: `EHR_STATUS` (two versions) + `EHR_ACCESS` from
 /// creation, a directory FOLDER, and an item tag on the `EHR_STATUS`.
-///
-/// NOTE: this deliberately avoids COMPOSITION. On this base commit,
-/// COMPOSITION validation is stricter than the shared test fixtures supply, so
-/// the pre-existing `service_ehr::ehr_composition_lifecycle_end_to_end` fails
-/// identically (a base issue, not the admin change). `EHR_STATUS`/FOLDER writes
-/// populate the same `vo_version`/`node`/`contribution`/`audit`/`item_tag`
-/// tables, so the cascade contract is fully covered without COMPOSITION.
+/// COMPOSITION is deliberately absent: `EHR_STATUS`/FOLDER writes populate
+/// the same `vo_version`/`node`/`contribution`/`audit`/`item_tag` tables, so
+/// the cascade contract is fully covered without one.
 async fn seed_full_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
