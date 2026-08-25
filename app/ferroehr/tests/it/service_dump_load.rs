@@ -1283,7 +1283,6 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         key_passphrase_file: None,
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
-        verify_cache_capacity: 65_536,
     };
     let src_db = testkit::db().await.expect("testkit database");
     let source = FerroEhrService::new(src_db.pool())

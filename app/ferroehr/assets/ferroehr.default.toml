@@ -347,11 +347,7 @@ retired_key_paths = []       # e.g. ["/etc/ferroehr/signing-2025.pub.asc"]
 # longer recomputes is a 5xx integrity fault. Set explicitly to opt out:
 # `warn` (log + meter, still serve) or `off` (never check). Client-supplied
 # signatures are always stored verbatim and never re-verified.
-#? verify_on_read = "once" # off | warn | once | strict (unset ⇒ once when enabled)
-# How many verified signatures the `once` policy remembers (a committed version
-# is immutable, so a verdict is recomputed once per process, not on every
-# read). 0 disables the cache, making `once` behave like `strict`.
-verify_cache_capacity = 65536
+#? verify_on_read = "strict" # off | warn | strict (unset ⇒ strict when enabled)
 
 # ── [query] — AQL execution knobs ─────────────────────────────────────────────
 [query]
