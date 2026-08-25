@@ -51,15 +51,6 @@ pub enum VerifyOnRead {
     Off,
     /// Log + meter a mismatch (`version_signature_invalid_total`); still serve.
     Warn,
-    /// Verify each version ONCE per process and remember the verdict — a
-    /// committed version is immutable, so the recompute is skipped on
-    /// subsequent reads (capacity: [`SigningConfig::verify_cache_capacity`]).
-    /// A mismatch, when a verification does run, is the same 5xx integrity
-    /// failure as [`Self::Strict`]; a row tampered after its version already
-    /// verified is caught on the next uncached verification (process restart
-    /// or cache eviction), with the storage-parity sweep as the continuous
-    /// deep channel.
-    Once,
     /// Recompute-and-compare on EVERY read; a mismatch is a 5xx integrity
     /// failure (the record is provably corrupt).
     Strict,
@@ -101,15 +92,6 @@ pub struct SigningConfig {
     /// when signing is enabled — the explicit "sign but never check" state is
     /// reachable only by deliberately setting `off`.
     pub verify_on_read: Option<VerifyOnRead>,
-    /// How many verified signatures the read path remembers, so an unchanged
-    /// stored version is re-verified once per process instead of on every
-    /// read. `0` disables the cache and every read recomputes the canonical
-    /// form. A version body is immutable once committed (RM common master06
-    /// §The 'Virtual Version Tree'), so a remembered verdict only ever skips
-    /// recomputing bytes that cannot have legitimately changed; the
-    /// storage-parity sweep remains the deep integrity channel for detecting
-    /// out-of-band tampering.
-    pub verify_cache_capacity: u64,
 }
 
 impl Default for SigningConfig {
@@ -122,7 +104,6 @@ impl Default for SigningConfig {
             key_passphrase_file: None,
             retired_key_paths: Vec::new(),
             verify_on_read: None,
-            verify_cache_capacity: 65_536,
         }
     }
 }
@@ -131,14 +112,13 @@ impl SigningConfig {
     /// The effective read-time verification policy, resolving the enabled-
     /// dependent default of an unset [`Self::verify_on_read`].
     ///
-    /// - unset + signing enabled → [`VerifyOnRead::Once`] (our-own-design
+    /// - unset + signing enabled → [`VerifyOnRead::Strict`] (our-own-design
     ///   integrity hardening: a served version whose stored server signature no
-    ///   longer recomputes fails loud, verified once per process because a
-    ///   committed version is immutable; `strict` opts into per-read
-    ///   recomputation);
+    ///   longer recomputes is provably corrupt, so it fails loud rather than
+    ///   being silently served);
     /// - unset + signing disabled → [`VerifyOnRead::Off`] (there are no server
     ///   signatures to verify);
-    /// - explicit `off` / `warn` / `once` / `strict` → honoured as configured.
+    /// - explicit `off` / `warn` / `strict` → honoured as configured.
     ///
     /// No openEHR spec governs read-time verification timing (RM common master06
     /// §Digital Signature) — our own design.
@@ -146,7 +126,7 @@ impl SigningConfig {
     pub fn effective_verify_on_read(&self) -> VerifyOnRead {
         match self.verify_on_read {
             Some(policy) => policy,
-            None if self.enabled => VerifyOnRead::Once,
+            None if self.enabled => VerifyOnRead::Strict,
             None => VerifyOnRead::Off,
         }
     }
@@ -157,15 +137,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn defaults_sign_on_digest_verify_once_when_enabled() {
+    fn defaults_sign_on_digest_verify_strict_when_enabled() {
         let c = SigningConfig::default();
         assert!(c.enabled);
         assert_eq!(c.mode, Mode::Digest);
         // The raw field is unset (None), but the effective policy resolves to
-        // once for a signing-enabled server (#273 hardening; the once mode is
-        // the #2698 verified-signature cache).
+        // strict for a signing-enabled server (#273 — our-own-design hardening).
         assert_eq!(c.verify_on_read, None);
-        assert_eq!(c.effective_verify_on_read(), VerifyOnRead::Once);
+        assert_eq!(c.effective_verify_on_read(), VerifyOnRead::Strict);
         assert!(c.key_path.is_none());
     }
 
@@ -178,12 +157,7 @@ mod tests {
         };
         assert_eq!(disabled.effective_verify_on_read(), VerifyOnRead::Off);
         // every explicit policy is honoured even with signing enabled.
-        for policy in [
-            VerifyOnRead::Off,
-            VerifyOnRead::Warn,
-            VerifyOnRead::Once,
-            VerifyOnRead::Strict,
-        ] {
+        for policy in [VerifyOnRead::Off, VerifyOnRead::Warn, VerifyOnRead::Strict] {
             let c = SigningConfig {
                 verify_on_read: Some(policy),
                 ..SigningConfig::default()

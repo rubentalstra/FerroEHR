@@ -125,22 +125,16 @@ documents the report and its four defect values.
 
 ## Verification at read
 
-`signing.verify_on_read` resolves to `once` whenever signing is enabled,
+`signing.verify_on_read` resolves to `strict` whenever signing is enabled,
 so the default deployment checks its own digests. On a VERSION read the
 server rebuilds the envelope from the stored row, recomputes the canonical
 form, recomputes the digest, and compares.
 
-| `verify_on_read`                              | On a mismatch                                                                                                |
-|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| `once` (the default while signing is enabled) | `500` when a verification runs; a committed version is immutable, so a verified verdict is remembered for the process and the recompute is skipped on later reads (`verify_cache_capacity` entries, `0` = behave like `strict`) |
-| `strict`                                      | `500`; recomputed on every read; the record is provably corrupt and is not served                            |
-| `warn`                                        | logs at `error` level, increments `version_signature_invalid_total{verdict="digest_mismatch"}`, still serves |
-| `off`                                         | no check at all                                                                                              |
-
-Under `once`, a row tampered after its version already verified is caught by
-the next uncached verification (a process restart or cache eviction) and by
-the storage-parity sweep; each replica keeps its own in-process verdicts, so
-running several servers needs no coordination.
+| `verify_on_read`                                | On a mismatch                                                                                                |
+|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `strict` (the default while signing is enabled) | `500`; the record is provably corrupt and is not served                                                      |
+| `warn`                                          | logs at `error` level, increments `version_signature_invalid_total{verdict="digest_mismatch"}`, still serves |
+| `off`                                           | no check at all                                                                                              |
 
 Verification runs where the server serves a VERSION object: the
 `versioned_composition` and `versioned_ehr_status` version routes, their
