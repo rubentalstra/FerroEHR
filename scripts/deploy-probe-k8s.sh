@@ -38,7 +38,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 KEEP_UP=0
-[ "${1:-}" = "--keep-up" ] && KEEP_UP=1
+[[ "${1:-}" = "--keep-up" ]] && KEEP_UP=1
 
 PROBE_TMP="$(mktemp -d)"
 export PROBE_TMP
@@ -52,7 +52,7 @@ COMPOSE_PROJECT="ferroehr-probe-k8s"
 . scripts/deploy-probes/kubernetes.sh
 
 cleanup() {
-  if [ "$KEEP_UP" -eq 0 ]; then
+  if [[ "$KEEP_UP" -eq 0 ]]; then
     k8s_teardown
   else
     k8s_pf_stop
@@ -73,7 +73,7 @@ kubectl cluster-info >/dev/null 2>&1 || {
 # Which image to probe. A locally built one is a legitimate SUT for behaviour
 # and hardening; it is NOT legitimate for a provenance claim, since it carries
 # no attestation — nothing here makes one.
-if [ -n "${PROBE_K8S_IMAGE:-}" ]; then
+if [[ -n "${PROBE_K8S_IMAGE:-}" ]]; then
   PROBE_K8S_IMAGE_REPO="${PROBE_K8S_IMAGE%:*}"
   PROBE_K8S_IMAGE_TAG="${PROBE_K8S_IMAGE##*:}"
 else
@@ -82,8 +82,8 @@ else
   # Desktop hides its node from the container list while `docker exec` into it
   # works, so a ps-based check reports "no node" on the commonest dev cluster.
   node="$(k8s_node_container || true)"
-  if [ -n "$node" ] && [ "$(docker exec "$node" crictl images 2>/dev/null \
-       | grep -cE 'rubentalstra/ferroehr +dev-local')" != "0" ]; then
+  if [[ -n "$node" ]] && [[ "$(docker exec "$node" crictl images 2>/dev/null \
+       | grep -cE 'rubentalstra/ferroehr +dev-local')" != "0" ]]; then
     PROBE_K8S_IMAGE_TAG="dev-local"
   else
     PROBE_K8S_IMAGE_TAG="$(grep '^appVersion:' deploy/helm/ferroehr/Chart.yaml | awk '{print $2}' | tr -d '"')"
@@ -100,7 +100,7 @@ echo
 bold "bringing up the host database the chart will be pointed at"
 k8s_db_up || { red "FATAL: the compose PostgreSQL never became ready"; exit 1; }
 K8S_DB_HOST="$(k8s_resolve_db_host)"
-if [ -z "$K8S_DB_HOST" ]; then
+if [[ -z "$K8S_DB_HOST" ]]; then
   red "FATAL: no address reached the host database from inside a pod"
   echo "  tried host.docker.internal, gateway.docker.internal and the node's default gateway"
   exit 1

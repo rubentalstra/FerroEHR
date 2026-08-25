@@ -101,7 +101,7 @@ k8s_resolve_db_host() {
   local _try host
   for _try in 1 2 3 4 5; do
     host="$(k8s_try_db_hosts)"
-    [ -n "$host" ] && { printf '%s' "$host"; return 0; }
+    [[ -n "$host" ]] && { printf '%s' "$host"; return 0; }
     sleep 4
   done
   return 1
@@ -119,7 +119,7 @@ k8s_try_db_hosts() {
       done' >/dev/null 2>&1
   for _i in $(seq 1 15); do
     phase="$(kubectl get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)"
-    case "$phase" in Succeeded | Failed) break ;; esac
+    case "$phase" in Succeeded | Failed) break ;; *) ;; esac
     sleep 2
   done
   out="$(kubectl logs "$name" 2>/dev/null)"
@@ -172,7 +172,7 @@ k8s_rollout() { kc rollout status "deploy/$K8S_RELEASE" --timeout="${1:-180s}" >
 # operator.
 k8s_ui_install() {
   local args=(--set adminUi.enabled=true)
-  if [ -n "$K8S_UI_IMAGE" ]; then
+  if [[ -n "$K8S_UI_IMAGE" ]]; then
     args+=(--set adminUi.image.repository="${K8S_UI_IMAGE%:*}"
            --set adminUi.image.tag="${K8S_UI_IMAGE##*:}")
   fi
@@ -203,7 +203,7 @@ k8s_ui_get() {
     --command -- wget -q -O - "http://$K8S_UI:3000${1:-/login}" >/dev/null 2>&1
   for _i in $(seq 1 30); do
     phase="$(kc get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)"
-    case "$phase" in Succeeded | Failed) break ;; esac
+    case "$phase" in Succeeded | Failed) break ;; *) ;; esac
     sleep 2
   done
   out="$(kc logs "$name" 2>/dev/null)"
@@ -223,7 +223,7 @@ k8s_pod() {
   ready="$(kc get pod -l app.kubernetes.io/name=ferroehr \
     -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{"\n"}{end}' \
     2>/dev/null | head -1)"
-  [ -n "$ready" ] && { printf '%s' "$ready"; return 0; }
+  [[ -n "$ready" ]] && { printf '%s' "$ready"; return 0; }
   kc get pod -l app.kubernetes.io/name=ferroehr -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
 }
 
@@ -252,7 +252,7 @@ k8s_pf_stop() {
   # `disown` first: killing a backgrounded job otherwise makes the shell print
   # a "Terminated" notice into the report, which reads like a failure in an
   # instrument whose whole value is that its output means something.
-  if [ -n "$K8S_PF_PID" ]; then
+  if [[ -n "$K8S_PF_PID" ]]; then
     disown "$K8S_PF_PID" 2>/dev/null || true
     kill "$K8S_PF_PID" >/dev/null 2>&1 || true
     wait "$K8S_PF_PID" 2>/dev/null || true
@@ -324,7 +324,7 @@ probes_k8s_boot() {
   local headers ehr
   headers="$(curl -s -u "$K8S_BASIC" -X POST -D - -o /dev/null "$K8S_API/ehr")"
   ehr="$(printf '%s' "$headers" | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     probe_fail "a Location header naming the new EHR" "$(printf '%s' "$headers" | head -3)"
   else
     assert_contains "$(curl -s -u "$K8S_BASIC" "$K8S_API/ehr/$ehr")" "\"$ehr\"" \
@@ -363,7 +363,7 @@ probes_k8s_runtime_posture() {
 
   local node
   node="$(k8s_node_container)"
-  if [ -z "$node" ]; then
+  if [[ -z "$node" ]]; then
     uncovered "the applied runtime posture (uid, capabilities, seccomp, read-only root)" \
       "this cluster's node is not a local container, so its runtime spec is not readable from here"
     return 0
@@ -373,7 +373,7 @@ probes_k8s_runtime_posture() {
     "the runtime applied non-root, no-new-privileges, no capabilities, read-only root, seccomp"
   local cid spec
   cid="$(docker exec "$node" crictl ps --name ferroehr -q 2>/dev/null | head -1)"
-  if [ -z "$cid" ]; then
+  if [[ -z "$cid" ]]; then
     probe_fail "a running ferroehr container on the node" "crictl listed none"
     probe_done
     return 0
@@ -393,7 +393,7 @@ probes_k8s_runtime_posture() {
   writable="$(printf '%s' "$spec" | jq -r '
     .mounts[] | select(.destination | test("^/etc/ferroehr"))
     | select((.options // []) | index("ro") | not) | .destination' | tr '\n' ' ')"
-  if [ -n "${writable// /}" ]; then
+  if [[ -n "${writable// /}" ]]; then
     probe_fail "every /etc/ferroehr* mount carrying 'ro'" "writable: $writable" \
       "configuration and key material must not be rewritable from inside the container"
   fi
@@ -543,7 +543,7 @@ probes_k8s_readiness() {
   local _i ready="unknown" kubelet="unknown"
   for _i in $(seq 1 20); do
     kubelet="$(kc get pod "$pod" -o jsonpath='{.status.containerStatuses[0].ready}' 2>/dev/null)"
-    [ "$kubelet" = "false" ] && break
+    [[ "$kubelet" = "false" ]] && break
     sleep 3
   done
   assert_eq "false" "$kubelet" \
@@ -551,7 +551,7 @@ probes_k8s_readiness() {
   for _i in $(seq 1 20); do
     ready="$(kc get endpointslice -l "kubernetes.io/service-name=$K8S_RELEASE" \
              -o jsonpath='{.items[0].endpoints[0].conditions.ready}' 2>/dev/null)"
-    [ "$ready" = "false" ] && break
+    [[ "$ready" = "false" ]] && break
     sleep 3
   done
   assert_eq "false" "$ready" \
@@ -641,7 +641,7 @@ probes_k8s_admin_ui() {
 probes_k8s_ui_runtime() {
   local node cid spec
   node="$(k8s_node_container)"
-  if [ -z "$node" ]; then
+  if [[ -z "$node" ]]; then
     uncovered "the console's applied runtime posture (uid, capabilities, seccomp, read-only root)" \
       "this cluster node is not a local container, so its runtime spec is not readable from here"
     return 0
@@ -649,7 +649,7 @@ probes_k8s_ui_runtime() {
   probe "P-K8S-UI-RUNTIME" "working" "chart" "-" \
     "the console container runs under the same hardened posture as the server"
   cid="$(docker exec "$node" crictl ps --name admin-ui -q 2>/dev/null | head -1)"
-  if [ -z "$cid" ]; then
+  if [[ -z "$cid" ]]; then
     probe_fail "a running admin-ui container on the node" "crictl listed none"
   else
     spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"

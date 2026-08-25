@@ -66,7 +66,7 @@ fixed=0
 checked=0
 
 while IFS= read -r f; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   checked=$((checked + 1))
   prefix=$(comment_prefix "$f")
 
@@ -75,7 +75,7 @@ while IFS= read -r f; do
     continue
   fi
 
-  if [ "$mode" != --fix ]; then
+  if [[ "$mode" != --fix ]]; then
     echo "$f: no $LICENSE in the first 8 lines" >&2
     fail=1
     continue
@@ -102,12 +102,12 @@ while IFS= read -r f; do
   fixed=$((fixed + 1))
 done < <(git ls-files '*.sh' '*.sql' '*.yml' | grep -vE "$EXCLUDED")
 
-if [ "$mode" = --fix ]; then
+if [[ "$mode" = --fix ]]; then
   echo "spdx-headers-text: $fixed header(s) inserted across $checked file(s)."
   exit 0
 fi
 
-if [ "$fail" -ne 0 ]; then
+if [[ "$fail" -ne 0 ]]; then
   echo "spdx-headers-text: files without a licence header (run --fix)." >&2
   exit 1
 fi

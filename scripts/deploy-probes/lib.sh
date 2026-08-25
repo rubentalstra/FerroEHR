@@ -52,7 +52,7 @@ probe() {
 # Record the outcome of the probe that just ran.
 probe_done() {
   local outcome="pass"
-  if [ "$PROBE_FAILED" -eq 1 ]; then
+  if [[ "$PROBE_FAILED" -eq 1 ]]; then
     outcome="fail"
     PROBE_FAIL=$((PROBE_FAIL + 1))
   else
@@ -60,7 +60,7 @@ probe_done() {
   fi
   PROBE_ROWS+=("$(printf '{"id":"%s","state":"%s","outcome":"%s","layer":"%s","issue":"%s","title":"%s"}' \
     "$PROBE_ID" "$PROBE_STATE" "$outcome" \
-    "$([ "$outcome" = fail ] && printf '%s' "$PROBE_LAYER" || printf '')" \
+    "$([[ "$outcome" = fail ]] && printf '%s' "$PROBE_LAYER" || printf '')" \
     "$PROBE_ISSUE" "$PROBE_TITLE")")
 }
 
@@ -74,13 +74,13 @@ probe_fail() {
   red   "    FAIL  layer=$PROBE_LAYER${PROBE_ISSUE:+  regression-of=$PROBE_ISSUE}"
   echo  "      expected: $expected"
   echo  "      actual:   $actual"
-  [ -n "$note" ] && echo "      note:     $note"
+  [[ -n "$note" ]] && echo "      note:     $note"
   return 0
 }
 
 # assert_eq <expected> <actual> [note]
 assert_eq() {
-  [ "$1" = "$2" ] && return 0
+  [[ "$1" = "$2" ]] && return 0
   probe_fail "$1" "$2" "${3:-}"
 }
 
@@ -88,6 +88,7 @@ assert_eq() {
 assert_contains() {
   case "$1" in
     *"$2"*) return 0 ;;
+    *) ;;
   esac
   probe_fail "output containing '$2'" "${1:0:300}" "${3:-}"
 }
@@ -123,7 +124,7 @@ wait_http() {
 wait_status() {
   local url="$1" want="$2" tries="${3:-30}"
   for _ in $(seq 1 "$tries"); do
-    [ "$(curl -s -o /dev/null -w '%{http_code}' "$url")" = "$want" ] && return 0
+    [[ "$(curl -s -o /dev/null -w '%{http_code}' "$url")" = "$want" ]] && return 0
     sleep 2
   done
   return 1
@@ -136,7 +137,7 @@ probe_report() {
   local out="$1" platform="$2"
   echo
   bold "── not exercised by this run ───────────────────────────────"
-  if [ "${#PROBE_UNCOVERED[@]}" -eq 0 ]; then
+  if [[ "${#PROBE_UNCOVERED[@]}" -eq 0 ]]; then
     echo "  (nothing declared — which is itself suspicious; see lib.sh 'uncovered')"
   else
     local row
@@ -151,12 +152,12 @@ probe_report() {
       "$platform" "$PROBE_PASS" "$PROBE_FAIL" "$PROBE_SKIP"
     local i
     for i in "${!PROBE_ROWS[@]}"; do
-      [ "$i" -gt 0 ] && printf ','
+      [[ "$i" -gt 0 ]] && printf ','
       printf '%s' "${PROBE_ROWS[$i]}"
     done
     printf '],"not_exercised":['
     for i in "${!PROBE_UNCOVERED[@]}"; do
-      [ "$i" -gt 0 ] && printf ','
+      [[ "$i" -gt 0 ]] && printf ','
       printf '%s' "${PROBE_UNCOVERED[$i]}"
     done
     printf ']}\n'
@@ -166,6 +167,6 @@ probe_report() {
   bold "── result ──────────────────────────────────────────────────"
   echo "  passed $PROBE_PASS   failed $PROBE_FAIL   not exercised $PROBE_SKIP"
   echo "  record: $out"
-  [ "$PROBE_FAIL" -eq 0 ] || { red "DEPLOYMENT PROBES FAILED"; return 1; }
+  [[ "$PROBE_FAIL" -eq 0 ]] || { red "DEPLOYMENT PROBES FAILED"; return 1; }
   green "ALL DEPLOYMENT PROBES PASSED (read the 'not exercised' list above)"
 }

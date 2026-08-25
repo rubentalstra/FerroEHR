@@ -33,7 +33,7 @@ ANTLR4_COMMIT="3494da942f3ed35963279837447b3039dd098e20" # master 2025-12-15
 
 fetch() {
   local repo="$1" commit="$2" path="$3" out="$4"
-  curl -fsSL "https://raw.githubusercontent.com/${repo}/${commit}/${path}" -o "${out}"
+  curl -fsSL --proto '=https' --proto-redir '=https' "https://raw.githubusercontent.com/${repo}/${commit}/${path}" -o "${out}"
   echo "vendored ${out} @ ${commit}"
 }
 

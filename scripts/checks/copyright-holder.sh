@@ -23,7 +23,7 @@ readonly HOLDER='FerroEHR contributors'
 fail=0
 check() {
   local what="$1" found="$2"
-  if [ "$found" != "$HOLDER" ]; then
+  if [[ "$found" != "$HOLDER" ]]; then
     echo "error: $what states the copyright holder as:" >&2
     echo "         ${found:-<not found>}" >&2
     echo "       every source must state: $HOLDER" >&2
@@ -45,7 +45,7 @@ check "tools/openehr-codegen/src/render/spdx.rs" \
   "$(sed -n 's/^pub(crate) const PROJECT_COPYRIGHT: &str = "\(.*\)";$/\1/p' \
        tools/openehr-codegen/src/render/spdx.rs | head -1)"
 
-if [ "$fail" -ne 0 ]; then
+if [[ "$fail" -ne 0 ]]; then
   echo >&2
   echo "Changing the holder means changing ALL of them together, plus the file" >&2
   echo "headers (re-run the codegen emit set for the generated half)." >&2

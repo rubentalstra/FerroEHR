@@ -37,7 +37,7 @@ embeds=0
 for manifest in crates/*/Cargo.toml; do
   crate_dir="$(dirname "$manifest")"
   crate_name="$(sed -nE 's/^name *= *"([^"]+)".*/\1/p' "$manifest" | head -1)"
-  [ -n "$crate_name" ] || { note "$manifest declares no package name"; continue; }
+  [[ -n "$crate_name" ]] || { note "$manifest declares no package name"; continue; }
   crates=$((crates + 1))
 
   packaged="$(cargo package --list -p "$crate_name" --allow-dirty 2>/dev/null)" || {
@@ -48,16 +48,16 @@ for manifest in crates/*/Cargo.toml; do
   while IFS= read -r packaged_file; do
     case "$packaged_file" in *.rs) ;; *) continue ;; esac
     source_file="$crate_dir/$packaged_file"
-    [ -f "$source_file" ] || continue
+    [[ -f "$source_file" ]] || continue
 
     # Newlines become spaces so a macro call split across lines is still one
     # match; a path literal never contains a newline.
     while IFS= read -r match; do
-      [ -n "$match" ] || continue
+      [[ -n "$match" ]] || continue
       literal="$(printf '%s' "$match" | sed -E 's/.*"([^"]*)".*/\1/')"
       embeds=$((embeds + 1))
       target="$(resolve "$(dirname "$source_file")" "$literal")"
-      if [ -z "$target" ]; then
+      if [[ -z "$target" ]]; then
         note "$source_file embeds \"$literal\", which resolves to no existing directory"
         continue
       fi
@@ -89,7 +89,7 @@ for manifest in crates/*/Cargo.toml; do
   done <<<"$packaged"
 done
 
-[ "$fail" -eq 0 ] || {
+[[ "$fail" -eq 0 ]] || {
   echo >&2
   echo "A published crate is a self-contained artifact: everything its packaged" >&2
   echo "sources embed must travel with it." >&2

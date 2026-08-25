@@ -85,22 +85,22 @@ workflow_label() {
 for entry in $IMAGES; do
   image=${entry%%:*}
   dockerfile=${entry#*:}
-  [ -f "$dockerfile" ] || { report "image-labels: missing $dockerfile"; continue; }
+  [[ -f "$dockerfile" ]] || { report "image-labels: missing $dockerfile"; continue; }
 
   for key in $SHARED; do
     d=$(dockerfile_label "$dockerfile" "$key" || true)
     w=$(workflow_label "$image" "$key" || true)
-    if [ -z "$d" ]; then
+    if [[ -z "$d" ]]; then
       report "image-labels: $dockerfile declares no org.opencontainers.image.$key"
       continue
     fi
-    if [ -z "$w" ]; then
+    if [[ -z "$w" ]]; then
       report "image-labels: $WORKFLOW declares no org.opencontainers.image.$key for $image"
       continue
     fi
     # The Dockerfile substitutes ${VERSION}/${REVISION} from build args; the
     # shared keys are all literals, so a plain comparison is right.
-    if [ "$d" != "$w" ]; then
+    if [[ "$d" != "$w" ]]; then
       report "image-labels: $image .$key disagrees —
     $dockerfile: $d
     $WORKFLOW: $w"
@@ -110,7 +110,7 @@ for entry in $IMAGES; do
   # base.name/base.digest must match the runtime stage's actual FROM pin, or the
   # image claims a parent it was not built on — worse than claiming none.
   from=$(grep -E '^FROM [^ ]+@sha256:' "$dockerfile" | tail -1 || true)
-  if [ -z "$from" ]; then
+  if [[ -z "$from" ]]; then
     report "image-labels: $dockerfile has no digest-pinned FROM to check base.* against"
   else
     ref=$(printf '%s' "$from" | awk '{print $2}')
@@ -118,9 +118,9 @@ for entry in $IMAGES; do
     want_digest=${ref#*@}
     got_name=$(dockerfile_label "$dockerfile" base.name || true)
     got_digest=$(dockerfile_label "$dockerfile" base.digest || true)
-    [ "$got_name" = "$want_name" ] \
+    [[ "$got_name" = "$want_name" ]] \
       || report "image-labels: $dockerfile base.name is '$got_name', but its FROM is '$want_name'"
-    [ "$got_digest" = "$want_digest" ] \
+    [[ "$got_digest" = "$want_digest" ]] \
       || report "image-labels: $dockerfile base.digest is '$got_digest', but its FROM pins '$want_digest'"
   fi
 done
@@ -130,15 +130,15 @@ done
 # image ships (found as a checklist item in #2408/#2410, enforced here since).
 CI_WORKFLOW=.github/workflows/ci.yml
 pg_from=$(grep -E '^FROM postgres:' docker/postgres/Dockerfile | awk '{print $2}' || true)
-if [ -z "$pg_from" ]; then
+if [[ -z "$pg_from" ]]; then
   report "image-labels: docker/postgres/Dockerfile has no 'FROM postgres:' pin"
 else
   ci_pins=$(grep -Eo 'image: postgres:[^[:space:]]+' "$CI_WORKFLOW" | sed 's/^image: //' | sort -u || true)
-  if [ -z "$ci_pins" ]; then
+  if [[ -z "$ci_pins" ]]; then
     report "image-labels: $CI_WORKFLOW declares no postgres service pins to check"
   else
     for pin in $ci_pins; do
-      [ "$pin" = "$pg_from" ] \
+      [[ "$pin" = "$pg_from" ]] \
         || report "image-labels: $CI_WORKFLOW pins service '$pin', but docker/postgres/Dockerfile FROM is '$pg_from'"
     done
   fi
@@ -148,13 +148,13 @@ fi
 # description from. The publishing mechanics live ONCE in the reusable
 # build-image.yml lane; containers.yml calls it once per image.
 levels=$(grep -c 'DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest' "$BUILD_WORKFLOW" || true)
-[ "$levels" -eq 1 ] \
+[[ "$levels" -eq 1 ]] \
   || report "image-labels: expected the one reusable metadata step with DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest in $BUILD_WORKFLOW, found $levels"
 annots=$(grep -c 'annotations: ${{ steps.meta.outputs.annotations }}' "$BUILD_WORKFLOW" || true)
-[ "$annots" -eq 1 ] \
+[[ "$annots" -eq 1 ]] \
   || report "image-labels: expected the one reusable build step passing the annotations output in $BUILD_WORKFLOW, found $annots"
 lanes=$(grep -c 'uses: ./.github/workflows/build-image.yml' "$WORKFLOW" || true)
-[ "$lanes" -eq 3 ] \
+[[ "$lanes" -eq 3 ]] \
   || report "image-labels: expected 3 publishing lanes calling build-image.yml in $WORKFLOW, found $lanes"
 
 # The one predefined key we deliberately leave unset, recorded rather than
@@ -163,7 +163,7 @@ lanes=$(grep -c 'uses: ./.github/workflows/build-image.yml' "$WORKFLOW" || true)
 # carries several tags, so a single ref.name would have to pick one arbitrarily.
 # `created` is set by the action from the build time and needs no declaration.
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "image-labels: $failures problem(s) — see above." >&2
   exit 1
 fi

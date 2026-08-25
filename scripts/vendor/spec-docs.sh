@@ -117,7 +117,7 @@ for entry in "${COMPONENTS[@]}"; do
   # The upstream LICENSE rides along verbatim (redistribution keeps the
   # source's own terms): the spec-docs repos carry CC-BY-SA 3.0, the ITS
   # artifact repos Apache-2.0. Anything else is unadjudicated — fail loud.
-  if [ ! -f "$src/LICENSE" ]; then
+  if [[ ! -f "$src/LICENSE" ]]; then
     echo "ERROR: $name has no LICENSE at $sha — adjudicate before vendoring" >&2
     exit 1
   fi
@@ -136,11 +136,11 @@ for entry in "${COMPONENTS[@]}"; do
   # exactly those out of the same pinned checkout.
   refs="$(grep -rhoE '\{uml_diagrams_uri\}/[A-Za-z0-9._-]+' "$out" | sed 's|.*/||' | sort -u || true)"
   diagrams=0
-  if [ -n "$refs" ]; then
+  if [[ -n "$refs" ]]; then
     mkdir -p "$out/docs/UML/diagrams"
     while IFS= read -r svg; do
-      [ -n "$svg" ] || continue
-      if [ ! -f "$src/docs/UML/diagrams/$svg" ]; then
+      [[ -n "$svg" ]] || continue
+      if [[ ! -f "$src/docs/UML/diagrams/$svg" ]]; then
         echo "ERROR: $name references UML/diagrams/$svg, which does not exist at $sha" >&2
         exit 1
       fi
@@ -155,15 +155,15 @@ for entry in "${COMPONENTS[@]}"; do
   # chapter text, then taken out of the same pinned checkout.
   figures=0
   for docdir in "$out"/docs/*/; do
-    [ -d "$docdir" ] || continue
+    [[ -d "$docdir" ]] || continue
     doc="$(basename "$docdir")"
     for kind in diagrams images; do
       frefs="$(grep -rhoE --include='*.adoc' "\{${kind}_uri\}/[A-Za-z0-9._-]+" "$docdir" | sed 's|.*/||' | sort -u || true)"
-      [ -n "$frefs" ] || continue
+      [[ -n "$frefs" ]] || continue
       mkdir -p "$out/docs/$doc/$kind"
       while IFS= read -r fig; do
-        [ -n "$fig" ] || continue
-        if [ ! -f "$src/docs/$doc/$kind/$fig" ]; then
+        [[ -n "$fig" ]] || continue
+        if [[ ! -f "$src/docs/$doc/$kind/$fig" ]]; then
           echo "ERROR: $name references $doc/$kind/$fig, which does not exist at $sha" >&2
           exit 1
         fi
@@ -173,7 +173,7 @@ for entry in "${COMPONENTS[@]}"; do
     done
   done
 
-  if [ "$diagrams" -gt 0 ]; then
+  if [[ "$diagrams" -gt 0 ]]; then
     diagram_note="- Plus the $diagrams UML class-diagram SVG(s) under \`docs/UML/diagrams/\` that
   the vendored chapters reference as \`image::{uml_diagrams_uri}/<name>.svg\`,
   taken from the same pinned commit. Referenced files only — the upstream
@@ -183,7 +183,7 @@ for entry in "${COMPONENTS[@]}"; do
   reference none."
   fi
 
-  if [ "$figures" -gt 0 ]; then
+  if [[ "$figures" -gt 0 ]]; then
     figure_note="- Plus the $figures per-document figure(s) under
   \`docs/<doc_name>/diagrams/\` and \`docs/<doc_name>/images/\` that the vendored
   chapters reference as \`image::{diagrams_uri}/<name>\` /
@@ -220,7 +220,7 @@ done
 REQ_OUT="$DEST/REQUIREMENTS"
 mkdir -p "$REQ_OUT"
 echo "==> REQUIREMENTS (release artifacts)"
-curl -fsSL -o "$REQ_OUT/iso18308_conformance.pdf" \
+curl -fsSL --proto '=https' --proto-redir '=https' -o "$REQ_OUT/iso18308_conformance.pdf" \
   "https://specifications.openehr.org/releases/1.0.2/requirements/iso18308_conformance.pdf"
 cat >"$REQ_OUT/PROVENANCE.md" <<'EOF'
 # Vendored openEHR requirements-conformance documents

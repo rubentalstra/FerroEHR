@@ -52,9 +52,9 @@ cd "$(dirname "$0")/../.."
 # wire JSON. `--all-really` is kept as an alias so callers written against
 # the parked-era flag keep working.
 collect() {
-  if [ "${1:-}" = "--all-really" ] || [ "${1:-}" = "--all" ]; then
+  if [[ "${1:-}" = "--all-really" ]] || [[ "${1:-}" = "--all" ]]; then
     git ls-files '*.rs'
-  elif [ "$#" -gt 0 ]; then
+  elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
     git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
@@ -63,13 +63,13 @@ collect() {
 
 failures=0
 files=$(collect "$@")
-[ -n "$files" ] || { echo "typed-status: no Rust files to check."; exit 0; }
+[[ -n "$files" ]] || { echo "typed-status: no Rust files to check."; exit 0; }
 
 for f in $files; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   # `.as_u16()` immediately compared, or a `.status()` compared to a literal.
   while IFS=: read -r line body; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     printf '%s:%s: numeric status comparison (%s) — compare the typed \n' \
       "$f" "$line" "$(printf '%s' "$body" | sed 's/^[[:space:]]*//' | cut -c1-60)" >&2
     printf '    `http::StatusCode` constant instead (scripts/checks/typed-status.sh)\n' >&2
@@ -89,7 +89,7 @@ for f in $files; do
   # scrutinee-anchored so openEHR's own 3-digit codes (249/523/…) matched under
   # non-status scrutinees stay out of scope.
   while IFS=: read -r line body; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     printf '%s:%s: numeric status comparison (%s) — compare the typed \n' \
       "$f" "$line" "$(printf '%s' "$body" | sed 's/^[[:space:]]*//' | cut -c1-60)" >&2
     printf '    `http::StatusCode` constant instead (scripts/checks/typed-status.sh)\n' >&2
@@ -104,7 +104,7 @@ for f in $files; do
   ' "$f" || true)
 done
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "typed-status: $failures violation(s) — see above." >&2
   exit 1
 fi

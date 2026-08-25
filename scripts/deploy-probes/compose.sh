@@ -146,7 +146,7 @@ probes_multimedia() {
   local uri
   PROBE_MEDIA_EHR="$(probe_commit_media_status)"
   local ehr="$PROBE_MEDIA_EHR" key=""
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     probe_fail "an EHR carrying a 400 KiB DV_MULTIMEDIA" "the commit did not return an id"
   else
     uri="$(curl -s -u "$BASIC" "$API/ehr/$ehr/ehr_status" \
@@ -154,7 +154,7 @@ probes_multimedia() {
     assert_contains "$uri" "s3://openehr-multimedia/" "the stored record must reference the blob"
     key="${uri##*/}"
     PROBE_MEDIA_KEY="$key"
-    if [ -n "$key" ]; then
+    if [[ -n "$key" ]]; then
       assert_eq "200" "$(http_code "$S3/openehr-multimedia/$key")" \
         "the blob must be retrievable from the bucket by its content hash"
     fi
@@ -165,12 +165,12 @@ probes_multimedia() {
   # COMPOSITION read alone, so EHR_STATUS content had no way back.
   probe "P-MM-EXPAND" "working" "server" "#2197" \
     "?expand_multimedia=true returns the bytes on an EHR_STATUS read"
-  if [ -n "${ehr:-}" ]; then
+  if [[ -n "${ehr:-}" ]]; then
     local expanded data digest
     expanded="$(curl -s -u "$BASIC" "$API/ehr/$ehr/ehr_status?expand_multimedia=true")"
     data="$(printf '%s' "$expanded" \
       | jq -r '.other_details.items[0].value.data // empty' 2>/dev/null)"
-    if [ -z "$data" ]; then
+    if [[ -z "$data" ]]; then
       probe_fail "a re-inlined DV_MULTIMEDIA.data" "no data member in the served value" \
         "the read must re-inline the blob, not answer with the compact reference"
     else
@@ -206,7 +206,7 @@ probes_multimedia_restart() {
   # works, which is a different and weaker claim.
   probe "P-MM-RESTART" "working" "server" "-" \
     "externalized content survives a server restart, byte-for-byte"
-  if [ -z "${PROBE_MEDIA_EHR:-}" ] || [ -z "${PROBE_MEDIA_KEY:-}" ]; then
+  if [[ -z "${PROBE_MEDIA_EHR:-}" ]] || [[ -z "${PROBE_MEDIA_KEY:-}" ]]; then
     probe_fail "a record committed earlier in this run" "none was recorded" \
       "P-MM-OFFLOAD must run first — this probe deliberately re-reads its record"
     probe_done
@@ -228,7 +228,7 @@ probes_multimedia_restart() {
   local data digest
   data="$(curl -s -u "$BASIC" "$API/ehr/$PROBE_MEDIA_EHR/ehr_status?expand_multimedia=true" \
     | jq -r '.other_details.items[0].value.data // empty' 2>/dev/null)"
-  if [ -z "$data" ]; then
+  if [[ -z "$data" ]]; then
     probe_fail "the re-inlined bytes after a restart" "no data member in the served value" \
       "content committed before the restart must still be retrievable"
   else
@@ -263,7 +263,7 @@ probes_multimedia_off() {
   assert_contains "$off_env" '"enabled":false' "the switch must actually be off for this probe to mean anything"
 
   local ehr; ehr="$(probe_commit_media_status)"
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     probe_fail "a committed EHR" "the commit returned no id" \
       "an inline commit needs no object store and must succeed"
   else

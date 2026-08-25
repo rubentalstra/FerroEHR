@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 SUT="${CONF_SUT:-ferroehr}"
-if [ "$SUT" = "ferroehr" ]; then
+if [[ "$SUT" = "ferroehr" ]]; then
   OUT="${1:-website/book/src/perf-assets}"
   SUMMARY="${2:-website/book/generated/perf-summary.md}"
 else
@@ -36,6 +36,6 @@ args=(perf-assets
   --summary "$SUMMARY")
 # The latency-throughput stress curve renders only once a committed stress
 # report exists (cnf-runner stress — exploration, never a conformance record).
-[ -f "$STRESS" ] && args+=(--stress "$STRESS")
+[[ -f "$STRESS" ]] && args+=(--stress "$STRESS")
 
 cargo run -q -p cnf-runner -- "${args[@]}"

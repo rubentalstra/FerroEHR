@@ -156,7 +156,7 @@ yaml_ok() {
 gate_jq() {
   local file="$1" program="$2" out
   out="$(yq -o=json -I0 '.' "$file" | jq -s -r -f "$(dirname "$0")/gates/$program")" || return 1
-  [ -z "$out" ] || { printf '%s\n' "$out" | sed 's/^/  /'; return 1; }
+  [[ -z "$out" ]] || { printf '%s\n' "$out" | sed 's/^/  /'; return 1; }
   return 0
 }
 
@@ -458,7 +458,7 @@ refusal_registry_gate() {
     for record in "${registry[@]}"; do
       [[ "$(cut -d'|' -f1 <<<"$record")" == "$file" ]] || continue
       anchor="$(cut -d'|' -f2 <<<"$record")"
-      case "$content" in *"$anchor"*) covered=1 ;; esac
+      case "$content" in *"$anchor"*) covered=1 ;; *) ;; esac
     done
     if [[ "$covered" -eq 0 ]]; then
       red "  UNPROBED \`fail\`: ${site%%:*}:$(cut -d: -f2 <<<"$site")"
@@ -477,7 +477,7 @@ refusal_registry_gate() {
       [[ "${site%%:*}" == *"/${file}" ]] || continue
       content="${site#*:}"
       content="${content#*:}"
-      case "$content" in *"$anchor"*) covered=1 ;; esac
+      case "$content" in *"$anchor"*) covered=1 ;; *) ;; esac
     done <<<"$sites"
     if [[ "$covered" -eq 0 ]]; then
       red "  STALE probe: no \`fail\` in ${file} says '${anchor}' any more — drop or re-anchor the record"
@@ -697,14 +697,14 @@ artifacthub.io/links
 artifacthub.io/maintainers
 artifacthub.io/screenshots"
 actual_annotations="$(yq -r '.annotations | keys | .[]' "$CHART_DIR/Chart.yaml" | sort)"
-if [ "$actual_annotations" != "$expected_annotations" ]; then
+if [[ "$actual_annotations" != "$expected_annotations" ]]; then
   red "  Artifact Hub annotation set changed — decide it on the record (#2206), then update this list"
   diff <(printf '%s\n' "$expected_annotations") <(printf '%s\n' "$actual_annotations") || true
   exit 1
 fi
 # The listing logo is a Chart.yaml field, not an annotation, and its absence is
 # invisible except on the published page.
-[ -n "$(yq -r '.icon // ""' "$CHART_DIR/Chart.yaml")" ] || {
+[[ -n "$(yq -r '.icon // ""' "$CHART_DIR/Chart.yaml")" ]] || {
   red "  Chart.yaml has no icon — Artifact Hub renders a placeholder without one"
   exit 1
 }

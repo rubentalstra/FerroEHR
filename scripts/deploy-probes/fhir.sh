@@ -89,6 +89,7 @@ probes_fhir() {
            "still 404 with the API enabled means the flag does not mount anything" ;;
     5*)  probe_fail "a mounted FHIR route" "$on_code" \
            "a 5xx is the route existing and failing, which is a different defect than not existing" ;;
+    *)   ;;
   esac
   probe_done
 
@@ -106,7 +107,7 @@ probes_fhir() {
       -d '{"routing_key":"#"}' \
       "$EVT_MGMT/api/bindings/%2f/e/$FHIR_EXCHANGE/q/$FHIR_QUEUE" && bound=1
   fi
-  if [ "$bound" -eq 0 ]; then
+  if [[ "$bound" -eq 0 ]]; then
     # An honest boundary rather than a false pass: the exchange is declared on
     # first publish, and a deployment whose mapping set is empty publishes
     # nothing, so there may legitimately be nothing to bind to.
@@ -118,7 +119,7 @@ probes_fhir() {
     msg="$(curl -s -u "$EVT_AUTH" -X POST -H 'Content-Type: application/json' \
            -d '{"count":5,"ackmode":"ack_requeue_false","encoding":"auto"}' \
            "$EVT_MGMT/api/queues/%2f/$FHIR_QUEUE/get" 2>/dev/null)"
-    if [ -z "$msg" ] || [ "$msg" = "[]" ]; then
+    if [[ -z "$msg" ]] || [[ "$msg" = "[]" ]]; then
       uncovered "the FHIR outbound stream's payload" \
         "the exchange exists but nothing was published — a deployment with no mapping set emits nothing"
     else

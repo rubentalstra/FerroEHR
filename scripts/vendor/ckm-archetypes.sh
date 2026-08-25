@@ -82,7 +82,7 @@ curl -fsS "$CKM/archetypes?page=0&size=10000" -H "Accept: application/json" \
 # silently vendor only the last. `group_by` + the within-group index reproduces
 # the previous counter exactly, on the same `resourceMainId` sort order.
 published=$(jq 'length' "$WORK/archetypes.json")
-if [ "$published" -le 20 ]; then
+if [[ "$published" -le 20 ]]; then
   echo "::error::the list endpoint returned only $published rows — CKM ignored the" \
        "pagination parameters (use ?page=N&size=M)" >&2
   exit 1

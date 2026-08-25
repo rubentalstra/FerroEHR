@@ -37,21 +37,22 @@ case "$mode" in
   # `git ls-files` reads the index, so a file deleted from the worktree but
   # not yet staged would still be listed — skip it rather than letting awk
   # fail on a missing path.
-  while IFS= read -r f; do [ -f "$f" ] && files+=("$f"); done \
+  while IFS= read -r f; do [[ -f "$f" ]] && files+=("$f"); done \
     < <(git ls-files 'crates/*.rs' 'app/*.rs' 'tools/*.rs')
   ;;
 --diff)
   base="${2:?usage: --diff <base> [head]}"
   head="${3:-HEAD}"
   while IFS= read -r f; do
-    [ -f "$f" ] && files+=("$f")
+    [[ -f "$f" ]] && files+=("$f")
   done < <(git diff --name-only "$base" "$head" -- 'crates/*.rs' 'app/*.rs' 'tools/*.rs')
   ;;
 --files)
   shift
   for f in "$@"; do
     case "$f" in
-    *.rs) [ -f "$f" ] && files+=("$f") ;;
+    *.rs) [[ -f "$f" ]] && files+=("$f") ;;
+    *) ;;
     esac
   done
   ;;
@@ -61,7 +62,7 @@ case "$mode" in
   ;;
 esac
 
-[ "${#files[@]}" -eq 0 ] && {
+[[ "${#files[@]}" -eq 0 ]] && {
   echo "comment-style: no files to check — OK."
   exit 0
 }
@@ -157,13 +158,13 @@ for f in "${files[@]}"; do
     }
     END { flush_note(); flush_run(); flush_doc_note() }
   ' "$f")"
-  if [ -n "$out" ]; then
+  if [[ -n "$out" ]]; then
     printf '%s\n' "$out" | sed "s|^|$f|"
     fail=1
   fi
 done
 
-if [ "$fail" -ne 0 ]; then
+if [[ "$fail" -ne 0 ]]; then
   echo "comment-style: violations found (rules: .claude/rules/comments.md)." >&2
   exit 1
 fi

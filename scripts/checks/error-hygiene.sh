@@ -74,12 +74,12 @@ failures=0
 hits=$(grep -rn -A 2 -E "${CONSTRUCTORS}" app/ferroehr-rest/src app/ferroehr/src crates/openehr-its/src 2>/dev/null \
   | grep -vE '^[^:]+[:-][0-9]*[:-]?[[:space:]]*//' \
   | grep -E "$ERROR_VALUE" || true)
-if [ -n "$hits" ]; then
+if [[ -n "$hits" ]]; then
   printf 'error-hygiene: %s\n' "$hits" >&2
   failures=$(printf '%s\n' "$hits" | wc -l | tr -d ' ')
 fi
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   cat >&2 <<'MSG'
 error-hygiene: a 5xx error body or a health `detail` interpolates an error value —
 that can carry SQL, a DSN, a filesystem path, an internal URL or a whole

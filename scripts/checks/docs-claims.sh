@@ -64,13 +64,13 @@ CHART_PAGES=$(printf '%s ' "$BOOK"/installation/kubernetes*.md "$BOOK"/installat
   "$BOOK"/operations.md "$BOOK"/operations-admin-apis.md)
 
 for required in "$TOML" "$VALUES"; do
-  [ -f "$required" ] || { echo "docs-claims: missing authority file $required" >&2; exit 1; }
+  [[ -f "$required" ]] || { echo "docs-claims: missing authority file $required" >&2; exit 1; }
 done
 
 collect() {
-  if [ "${1:-}" = "--all" ]; then
+  if [[ "${1:-}" = "--all" ]]; then
     git ls-files "$BOOK/**/*.md" "$BOOK/*.md"
-  elif [ "$#" -gt 0 ]; then
+  elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
     git diff --name-only origin/develop...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
@@ -142,12 +142,12 @@ files=$(collect "$@")
 
 # ── 1. configuration keys ────────────────────────────────────────────────────
 for f in $files; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   # A form ending in `__` is prose naming a prefix ("FERROEHR__AUDIT__…"), not a
   # key. Anything else must resolve.
   while read -r form; do
-    [ -n "$form" ] || continue
-    case "$form" in *__) continue ;; esac
+    [[ -n "$form" ]] || continue
+    case "$form" in *__) continue ;; *) ;; esac
     grep -qxF "$form" "$work/env" \
       || report "$f" "documents \`$form\`, which is not a key in $TOML"
   done < <(grep -ohE 'FERROEHR__[A-Z0-9_]+' "$f" | sort -u)
@@ -176,7 +176,7 @@ for f in $files; do
     "$BOOK"/installation/configuration.md|"$BOOK"/installation/config-*.md) ;;
     *) continue ;;
   esac
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   awk '
     /^#/ { intab=0
            if (match($0, /\[[a-z0-9_.]+\]/)) sect = substr($0, RSTART+1, RLENGTH-2)
@@ -193,15 +193,15 @@ for f in $files; do
     !/^\|/ { intab=0 }
   ' "$f" > "$work/page_defaults"
   while IFS=$(printf '\t') read -r path documented; do
-    [ -n "$path" ] || continue
+    [[ -n "$path" ]] || continue
     actual=$(awk -F'\t' -v p="$path" '$1==p{print $2; exit}' "$work/toml_defaults")
-    [ -n "$actual" ] || continue
+    [[ -n "$actual" ]] || continue
     doc_n=$documented; act_n=$actual
     # A page may spell a string default with its TOML quotes (`"1.3"`); the
     # TOML side is stored unquoted, so strip a quote wrapper before comparing.
     doc_n=${doc_n#\"}; doc_n=${doc_n%\"}
-    case "$doc_n" in \[*) doc_n=$(printf '%s' "$doc_n" | tr -d ' '); act_n=$(printf '%s' "$act_n" | tr -d ' ') ;; esac
-    [ "$doc_n" = "$act_n" ] \
+    case "$doc_n" in \[*) doc_n=$(printf '%s' "$doc_n" | tr -d ' '); act_n=$(printf '%s' "$act_n" | tr -d ' ') ;; *) ;; esac
+    [[ "$doc_n" = "$act_n" ]] \
       || report "$f" "documents \`$path\` default as \`$documented\`; $TOML says \`$actual\`"
   done < "$work/page_defaults"
 done
@@ -209,9 +209,9 @@ done
 # ── 2. Helm values paths (chart pages only) ──────────────────────────────────
 for f in $files; do
   case " $CHART_PAGES " in *" $f "*) ;; *) continue ;; esac
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   while read -r path; do
-    [ -n "$path" ] || continue
+    [[ -n "$path" ]] || continue
     first=${path%%.*}
     # Only a token rooted at a real top-level values key is read as a values
     # path; anything else is ordinary prose that happens to contain a dot.
@@ -221,6 +221,7 @@ for f in $files; do
     # its authority.
     case "$path" in
       config.*) grep -qxF "${path#config.}" "$work/toml" && continue ;;
+      *) ;;
     esac
     # The other verbatim-passthrough subtrees. `config.*` is not the only one:
     # values.schema.json declares these "rendered verbatim", so the whole
@@ -231,16 +232,18 @@ for f in $files; do
     case "$path" in
       securityContext.*|podSecurityContext.*|autoscaling.behavior.*|\
       adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
+      *) ;;
     esac
     report "$f" "documents Helm value \`$path\`, which the chart does not define"
   done < <(grep -ohE '`[a-z][A-Za-z0-9]*(\.[A-Za-z0-9_]+)+(=[^`]*)?`' "$f" | tr -d '`' | sed -E 's/=.*$//' | sort -u)
   # `--set` is unambiguous wherever it appears, so it is checked without the
   # top-level-key filter above.
   while read -r path; do
-    [ -n "$path" ] || continue
+    [[ -n "$path" ]] || continue
     grep -qxF "$path" "$work/values" && continue
     case "$path" in
       config.*) grep -qxF "${path#config.}" "$work/toml" && continue ;;
+      *) ;;
     esac
     # The other verbatim-passthrough subtrees. `config.*` is not the only one:
     # values.schema.json declares these "rendered verbatim", so the whole
@@ -251,6 +254,7 @@ for f in $files; do
     case "$path" in
       securityContext.*|podSecurityContext.*|autoscaling.behavior.*|\
       adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
+      *) ;;
     esac
     report "$f" "\`--set $path=\` names a value the chart does not define"
   done < <(grep -ohE '\-\-set +[a-z][A-Za-z0-9_.]*=' "$f" | sed -E 's/--set +//; s/=$//' | sort -u)
@@ -265,15 +269,15 @@ chart_version=$(awk '$1=="version:"{print $2; exit}' "$CHART_YAML")
 app_version=$(awk '$1=="appVersion:"{gsub(/"/,""); print $2; exit}' "$CHART_YAML")
 for f in $files; do
   case " $CHART_PAGES " in *" $f "*) ;; *) continue ;; esac
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   while read -r v; do
-    [ -n "$v" ] || continue
-    [ "$v" = "$chart_version" ] \
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$chart_version" ]] \
       || report "$f" "pins chart \`--version $v\`; Chart.yaml says $chart_version"
   done < <(grep -ohE '\-\-version +[0-9]+\.[0-9]+\.[0-9]+' "$f" | awk '{print $2}' | sort -u)
   while read -r v; do
-    [ -n "$v" ] || continue
-    [ "$v" = "$app_version" ] \
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$app_version" ]] \
       || report "$f" "pins image tag \`$v\`; Chart.yaml appVersion is $app_version"
   done < <(grep -ohE 'ferroehr(-admin-ui)?:[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
 done
@@ -281,14 +285,14 @@ done
 # the current appVersion, and never a `v` prefix — the publish lane tags
 # `{{version}}` without one, so `ghcr.io/…:v3.17.5` does not resolve at all.
 for f in $files website/landing/index.html; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   if grep -qE 'ghcr\.io/rubentalstra/[A-Za-z0-9._-]+:v[0-9]' "$f"; then
     report "$f" "references a v-prefixed ghcr image tag; published tags carry no v prefix"
   fi
-  case " $CHART_PAGES " in *" $f "*) continue ;; esac
+  case " $CHART_PAGES " in *" $f "*) continue ;; *) ;; esac
   while read -r v; do
-    [ -n "$v" ] || continue
-    [ "$v" = "$app_version" ] \
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$app_version" ]] \
       || report "$f" "pins ghcr image tag \`$v\`; Chart.yaml appVersion is $app_version"
   done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-admin-ui|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
 done
@@ -299,10 +303,10 @@ case " $files " in *" $RUST_PAGE "*)
   channel=$(awk -F'"' '/^channel/{print $2; exit}' rust-toolchain.toml)
   msrv=$(awk -F'"' '/^rust-version/{print $2; exit}' Cargo.toml)
   while read -r v; do
-    case "$v" in "$channel"|"${channel%.*}"|"$msrv"|"$msrv".*) continue ;; esac
+    case "$v" in "$channel"|"${channel%.*}"|"$msrv"|"$msrv".*) continue ;; *) ;; esac
     report "$RUST_PAGE" "names Rust \`$v\`, which is neither the toolchain channel ($channel) nor the MSRV ($msrv)"
   done < <(grep -ohE '1\.[0-9]{2}(\.[0-9]+)?' "$RUST_PAGE" | sort -u)
-;; esac
+;; *) ;; esac
 
 # ── 3b. quoted wire evidence on the comparison page ─────────────────────────
 # Five fabricated response-body quotes shipped on the published comparison page
@@ -312,12 +316,12 @@ case " $files " in *" $RUST_PAGE "*)
 COMPARISON_PAGE="$BOOK/comparison.md"
 case " $files " in *" $COMPARISON_PAGE "*)
   while read -r quote; do
-    [ -n "$quote" ] || continue
+    [[ -n "$quote" ]] || continue
     inner=${quote#\`\"}; inner=${inner%\"\`}
     grep -qF "$inner" docs/conformance/ehrbase/results.json docs/conformance/ferroehr/results.json 2>/dev/null \
       || report "$COMPARISON_PAGE" "quotes \`\"$inner\"\` as wire evidence, but no committed results record contains it"
   done < <(grep -ohE '`"[^"`]{4,}"`' "$COMPARISON_PAGE" | sort -u)
-;; esac
+;; *) ;; esac
 
 # ── 3c. banned phrases with a recorded refutation ────────────────────────────
 # "static binary" shipped on four pages, the landing and the README while the
@@ -327,7 +331,7 @@ case " $files " in *" $COMPARISON_PAGE "*)
 # stays legal; the match runs over line-joined text so a negation split across
 # a line wrap is still recognised.
 while read -r f; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   tr '\n' ' ' < "$f" \
     | sed -E 's/(not|never) a static(ally linked)? binary//Ig' \
     | grep -qiE 'static(ally linked)? binary' \
@@ -352,14 +356,14 @@ done < <(grep -rilE 'static(ally linked)? binary' --include='*.md' "$BOOK" websi
 # generated markdown is therefore the GENERATOR, so the render scripts are the
 # third haystack.
 while read -r svg; do
-  [ -n "$svg" ] || continue
+  [[ -n "$svg" ]] || continue
   base=${svg##*/}
   grep -rqF "$base" --include='*.md' "$BOOK" website/book/generated \
     || grep -rqF "$base" scripts/render \
     || report "$svg" "is committed but neither a page, a generated include, nor a render script embeds it"
 done < <(git ls-files "$BOOK/*-assets/*.svg")
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "docs-claims: $failures unresolvable claim(s) — see above." >&2
   echo "  A documented key must exist in its source. Fix the page, or fix the" >&2
   echo "  source if the page is describing what the software should do." >&2

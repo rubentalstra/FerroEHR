@@ -92,18 +92,18 @@ label_for_component() { # vendored component dir -> label
 pin_for_component() {
   local comp="$1" line ref sha ver
   line=$(grep -E "^  \"${comp}\|" scripts/vendor/spec-docs.sh | head -1 | tr -d '"') || true
-  [ -n "$line" ] || { echo "unpinned"; return 0; }
+  [[ -n "$line" ]] || { echo "unpinned"; return 0; }
   ref=$(echo "$line" | awk -F'|' '{print $3}')
   sha=$(echo "$line" | awk -F'|' '{printf "%.9s", $4}')
   # "master (BASE 1.3.0)" -> 1.3.0 · "Release-1.1.0" -> 1.1.0 · else the ref word
   ver=$(echo "$ref" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  [ -n "$ver" ] || ver=$(echo "$ref" | awk '{print $1}')
+  [[ -n "$ver" ]] || ver=$(echo "$ref" | awk '{print $1}')
   echo "$ver @ $sha"
 }
 repo_for_component() {
   local comp="$1" line
   line=$(grep -E "^  \"${comp}\|" scripts/vendor/spec-docs.sh | head -1 | tr -d '"') || true
-  [ -n "$line" ] || return 1
+  [[ -n "$line" ]] || return 1
   echo "$line" | awk -F'|' '{print $2}'
 }
 # The numeric version of our pin for a component, empty when the pin has no
@@ -132,19 +132,19 @@ component_for_fixversion() {
 # (an equal-version target may postdate our vendored commit; triage decides).
 all_fixversions_inside_pin() {
   local fixv_names="$1" fallback_comp="$2" name comp fv_ver pin_ver any=1
-  [ -n "$fixv_names" ] || return 1
+  [[ -n "$fixv_names" ]] || return 1
   while IFS= read -r name; do
-    [ -n "$name" ] || continue
+    [[ -n "$name" ]] || continue
     any=0
     comp=$(component_for_fixversion "$name" "$fallback_comp")
-    [ -n "$comp" ] || return 1
+    [[ -n "$comp" ]] || return 1
     fv_ver=$(echo "$name" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    [ -n "$fv_ver" ] || return 1
+    [[ -n "$fv_ver" ]] || return 1
     pin_ver=$(pin_version_for_component "$comp")
-    [ -n "$pin_ver" ] || return 1
-    [ "$fv_ver" = "$pin_ver" ] && return 1
+    [[ -n "$pin_ver" ]] || return 1
+    [[ "$fv_ver" = "$pin_ver" ]] && return 1
     # fv_ver < pin_ver ⟺ the version-sorted max is the pin
-    [ "$(printf '%s\n%s\n' "$fv_ver" "$pin_ver" | sort -V | tail -1)" = "$pin_ver" ] || return 1
+    [[ "$(printf '%s\n%s\n' "$fv_ver" "$pin_ver" | sort -V | tail -1)" = "$pin_ver" ]] || return 1
   done <<< "$fixv_names"
   return $any
 }
@@ -161,7 +161,8 @@ jira_fetch() { # $1 = full URL; body on stdout; one bounded retry on 429
       { echo "spec-update-watcher: curl transport failure for $url" >&2; return 1; }
     case "$code" in
       200) cat "$tmp/resp.json"; return 0 ;;
-      429) [ "$attempt" = 1 ] && { echo "Jira 429 — one bounded retry in 30s" >&2; sleep 30; continue; } ;;
+      429) [[ "$attempt" = 1 ]] && { echo "Jira 429 — one bounded retry in 30s" >&2; sleep 30; continue; } ;;
+      *) ;;
     esac
     echo "spec-update-watcher: Jira returned HTTP $code for $url" >&2
     head -c 500 "$tmp/resp.json" >&2 || true
@@ -178,14 +179,14 @@ echo "spec-update-watcher: Jira poll — window ${WINDOW_DAYS}d, projects ${PROJ
 token=""
 while :; do
   url="$JIRA/rest/api/3/search/jql?maxResults=50&fields=$fields&jql=$jql_enc"
-  [ -n "$token" ] && url="$url&nextPageToken=$(jq -rn --arg s "$token" '$s|@uri')"
+  [[ -n "$token" ]] && url="$url&nextPageToken=$(jq -rn --arg s "$token" '$s|@uri')"
   body=$(jira_fetch "$url")
   echo "$body" | jq -e 'has("issues") and has("isLast")' >/dev/null ||
     { echo "spec-update-watcher: unexpected Jira payload shape (no issues/isLast) — API changed?" >&2; exit 1; }
   echo "$body" | jq -c '.issues[]' >> "$tmp/jira.jsonl"
-  [ "$(echo "$body" | jq -r '.isLast')" = "true" ] && break
+  [[ "$(echo "$body" | jq -r '.isLast')" = "true" ]] && break
   token=$(echo "$body" | jq -r '.nextPageToken // empty')
-  [ -n "$token" ] || { echo "spec-update-watcher: isLast=false but no nextPageToken" >&2; exit 1; }
+  [[ -n "$token" ]] || { echo "spec-update-watcher: isLast=false but no nextPageToken" >&2; exit 1; }
 done
 
 jira_count=$(wc -l < "$tmp/jira.jsonl" | tr -d ' ')
@@ -217,6 +218,7 @@ while IFS= read -r issue; do
     "Rejected"|"Superseded"|"Won't Do"|"Won't Fix"|"Duplicate"|"Cannot Reproduce"|"Declined"|"Abandoned"|"Not a Bug")
       echo "  $key: resolution '$resolution' — no spec change, skipped"
       continue ;;
+    *) ;;
   esac
   component=$(component_for_project "$project")
   # A change whose fix versions are ALL strictly older than our pins is
@@ -251,7 +253,7 @@ amendment_files="$amendment_files
 docs/specs/openehr/ITS-REST/specifications/docs/overview/Amendment_record.md"
 
 while IFS= read -r local_path; do
-  [ -f "$local_path" ] || { echo "spec-update-watcher: vendored amendment file missing: $local_path" >&2; exit 1; }
+  [[ -f "$local_path" ]] || { echo "spec-update-watcher: vendored amendment file missing: $local_path" >&2; exit 1; }
   comp=${local_path#docs/specs/openehr/}; comp=${comp%%/*}
   rel=${local_path#docs/specs/openehr/"$comp"/}
   repo=$(repo_for_component "$comp") ||
@@ -266,7 +268,7 @@ while IFS= read -r local_path; do
   new_keys=$(comm -23 \
     <(grep -oE 'SPEC[A-Z]*-[0-9]+' "$tmp/upstream" | sort -u) \
     <(grep -oE 'SPEC[A-Z]*-[0-9]+' "$local_path" | sort -u) || true)
-  if [ -n "$new_keys" ]; then
+  if [[ -n "$new_keys" ]]; then
     while IFS= read -r key; do
       printf "%s${US}%s${US}%s${US}amendment${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s\n" \
         "$key" "$comp" "new amendment-record row in openEHR/$repo/$rel" \
@@ -284,7 +286,7 @@ done <<< "$amendment_files"
 echo "spec-update-watcher: commits-ahead cross-check against the vendored pins"
 ahead_created=0 ahead_updated=0 ahead_closed=0
 while IFS='|' read -r comp repo ref sha; do
-  [ -n "$comp" ] || continue
+  [[ -n "$comp" ]] || continue
   case "$ref" in master*) ;; *) continue ;; esac
   default=$(gh api "repos/openEHR/$repo" --jq '.default_branch') ||
     { echo "spec-update-watcher: failed to read openEHR/$repo default branch" >&2; exit 1; }
@@ -295,7 +297,7 @@ while IFS='|' read -r comp repo ref sha; do
   title="[spec-update] $comp spec repo is ahead of the vendored pin"
   num=$(gh issue list --state open --search "\"$title\" in:title" --json number,title \
         --jq "[.[] | select(.title == \"$title\")][0].number // empty")
-  if [ "$ahead" -gt 0 ]; then
+  if [[ "$ahead" -gt 0 ]]; then
     count_line="**Commits ahead of the pin:** $ahead (pin \`${sha:0:9}\`, upstream $default @ \`${head_sha:0:9}\`)"
     cat > "$tmp/ahead-body.md" <<EOF
 Upstream \`openEHR/$repo\` ($comp) has moved past our vendored pin — commit-delta triage needed (the per-commit triage pattern that closed #341).
@@ -314,11 +316,11 @@ $count_line
 
 _Maintained automatically by the spec-update watcher: the count above updates in place as the delta grows, and the issue closes when a re-vendor catches the pin up._
 EOF
-    if [ -n "$num" ]; then
+    if [[ -n "$num" ]]; then
       if gh issue view "$num" --json body --jq '.body' | grep -qF "$count_line"; then
         continue # unchanged since the last run
       fi
-      if [ "$DRY_RUN" = "1" ]; then
+      if [[ "$DRY_RUN" = "1" ]]; then
         echo "DRY-RUN would update #$num: $title ($ahead ahead)"
       else
         gh issue edit "$num" --body-file "$tmp/ahead-body.md" >/dev/null
@@ -328,8 +330,8 @@ EOF
     else
       label_args=(--label spec-update)
       lbl=$(label_for_component "$comp" || true)
-      [ -n "${lbl:-}" ] && label_args+=(--label "$lbl")
-      if [ "$DRY_RUN" = "1" ]; then
+      [[ -n "${lbl:-}" ]] && label_args+=(--label "$lbl")
+      if [[ "$DRY_RUN" = "1" ]]; then
         echo "DRY-RUN would create: $title ($ahead ahead)  [${label_args[*]}]"
         sed 's/^/    │ /' "$tmp/ahead-body.md"
       else
@@ -338,8 +340,8 @@ EOF
       fi
       ahead_created=$((ahead_created + 1))
     fi
-  elif [ -n "$num" ]; then
-    if [ "$DRY_RUN" = "1" ]; then
+  elif [[ -n "$num" ]]; then
+    if [[ "$DRY_RUN" = "1" ]]; then
       echo "DRY-RUN would close #$num: $title (pin caught up)"
     else
       gh issue comment "$num" --body "Auto-close (spec-update watcher): the vendored pin has caught up with upstream \`openEHR/$repo\` $default — 0 commits ahead." >/dev/null
@@ -362,19 +364,19 @@ amendment_keys=$(awk -F"$US" '$4 == "amendment" { print $1 }' "$CANDIDATES" | so
 
 created=0 skipped=0 unblocked=0
 while IFS="$US" read -r key component summary source resolved fixv comps status resolution itype jcreated fixv_plain descr; do
-  [ -n "$key" ] || continue
+  [[ -n "$key" ]] || continue
   match=$(gh issue list --state all --search "\"$key\" in:title" --json number,state,labels --jq '.[0] // empty')
-  if [ -n "$match" ]; then
+  if [[ -n "$match" ]]; then
     # AUTO-UNBLOCK: an amendment-diff hit means the key's normative text has
     # now LANDED upstream. If the board carries this key as an OPEN issue
     # labelled blocked-upstream (resolved in Jira before the text was
     # published), announce the landing and drop the label; every other
     # existing-issue hit keeps the silent dedup skip.
     if echo "$amendment_keys" | grep -qxF "$key" &&
-      [ "$(echo "$match" | jq -r '.state')" = "OPEN" ] &&
-      [ "$(echo "$match" | jq -r '[.labels[].name] | any(. == "blocked-upstream")')" = "true" ]; then
+      [[ "$(echo "$match" | jq -r '.state')" = "OPEN" ]] &&
+      [[ "$(echo "$match" | jq -r '[.labels[].name] | any(. == "blocked-upstream")')" = "true" ]]; then
       num=$(echo "$match" | jq -r '.number')
-      if [ "$DRY_RUN" = "1" ]; then
+      if [[ "$DRY_RUN" = "1" ]]; then
         echo "DRY-RUN would unblock #$num ($key): $summary"
       else
         gh issue comment "$num" --body "Auto-unblock (spec-update watcher): the normative text for $key has landed upstream — $summary. Re-vendor the component at pickup; this issue is implementable now — assign it to the current milestone when picked up (blocked issues carry no milestone)." >/dev/null
@@ -394,19 +396,19 @@ while IFS="$US" read -r key component summary source resolved fixv comps status 
     ""|"—") target="version unassigned" ;;
     *) target="$fixv_plain" ;;
   esac
-  if [ -n "$component" ]; then
+  if [[ -n "$component" ]]; then
     pin=$(pin_for_component "$component")
   else
     pin="n/a"
   fi
   short_summary="$summary"
-  if [ "${#short_summary}" -gt 90 ]; then
+  if [[ "${#short_summary}" -gt 90 ]]; then
     short_summary="${short_summary:0:87}..."
   fi
   title="[spec-update] $key — $short_summary"
   label_args=(--label spec-update)
-  lbl=$([ -n "$component" ] && label_for_component "$component" || true)
-  [ -n "${lbl:-}" ] && label_args+=(--label "$lbl")
+  lbl=$([[ -n "$component" ]] && label_for_component "$component" || true)
+  [[ -n "${lbl:-}" ]] && label_args+=(--label "$lbl")
 
   cat > "$tmp/body.md" <<EOF
 Upstream openEHR spec change completed — conformance-impact triage needed.
@@ -423,7 +425,7 @@ Upstream openEHR spec change completed — conformance-impact triage needed.
 
 $summary
 
-$([ -n "$descr" ] && printf '<details><summary>Upstream description (excerpt)</summary>\n\n%s\n\n</details>' "$descr")
+$([[ -n "$descr" ]] && printf '<details><summary>Upstream description (excerpt)</summary>\n\n%s\n\n</details>' "$descr")
 
 ### Triage checklist
 
@@ -435,7 +437,7 @@ $([ -n "$descr" ] && printf '<details><summary>Upstream description (excerpt)</s
 _Opened automatically by \`.github/workflows/spec-update-watcher.yml\`._
 EOF
 
-  if [ "$DRY_RUN" = "1" ]; then
+  if [[ "$DRY_RUN" = "1" ]]; then
     echo "DRY-RUN would create: $title  [${label_args[*]}]"
     sed 's/^/    │ /' "$tmp/body.md"
   else

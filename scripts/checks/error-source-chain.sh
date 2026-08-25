@@ -75,11 +75,11 @@ for entry in "${BUDGETS[@]}"; do
            | grep -v '/tests/' | grep -vc 'with_source' || true)"
   count="${count:-0}"
   printf '%-26s %3s flattened (budget %s)\n' "$tree" "$count" "$budget"
-  if [ "$count" -gt "$budget" ]; then
+  if [[ "$count" -gt "$budget" ]]; then
     echo "::error::$tree grew from $budget to $count flattened error sites — an error carries its cause (RFC 0201, #2034)"
     fail=1
   fi
 done
 
-[ "$fail" -eq 0 ] || exit 1
+[[ "$fail" -eq 0 ]] || exit 1
 echo "error-source-chain: no tree grew"

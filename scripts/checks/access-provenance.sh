@@ -36,14 +36,14 @@ PATHS=(
 failures=0
 for pattern in 'EHRbase' 'v1 parity' 'v1-compatible' 'Stage-1' 'Stage-2' 'CLAUDE\.md'; do
   hits=$(grep -rnE "$pattern" "${PATHS[@]}" 2>/dev/null || true)
-  if [ -n "$hits" ]; then
+  if [[ -n "$hits" ]]; then
     printf 'access-provenance: %s must not appear under the access layer:\n' "$pattern" >&2
     printf '%s\n' "$hits" | sed 's/^/    /' >&2
     failures=$((failures + 1))
   fi
 done
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   printf 'access-provenance: %d stale-attribution class(es) — cite an RFC, a \n' "$failures" >&2
   printf '    standards publication, or docs/specs/openehr/ instead.\n' >&2
   exit 1
