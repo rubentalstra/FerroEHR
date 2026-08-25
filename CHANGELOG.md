@@ -57,6 +57,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The documentation site no longer carries its own OpenAPI reference at
+  `/api/`. Every "API reference" link now opens the live sandbox's Swagger UI
+  at <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui>, served by the
+  running server from its own handlers with the public demo credentials
+  `ferroehr` / `ferroehr`. The reader gets the current release rather than a
+  copy assembled at site-build time, and "Try it out" issues real requests
+  against real data. Every deployment still serves the same UI at
+  `/ferroehr/rest/swagger-ui` when `swagger_ui` is on.
+
 - Read-time signature verification gains a fourth policy, `once`, and it is
   the new effective default while signing is enabled: a version's server
   signature is verified on its first read each process and the verdict is
