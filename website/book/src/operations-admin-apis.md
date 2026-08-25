@@ -174,6 +174,69 @@ Two consequences to plan for:
   visibility is the effect to plan around, and the restore routes are how you
   get it back.
 
+## Storage integrity
+
+One route that checks the stored data against itself, behind the same switch
+and role. FerroEHR stores every version's content twice: once as the
+materialized document a point read serves, and once as the decomposed rows the
+AQL engine queries. A commit writes both in the same transaction, so they
+always agree; anything that changes one of them behind the server's back
+breaks that agreement.
+
+| Route | **200** body |
+|---|---|
+| `POST {base}/admin/integrity/verify` | the sweep report |
+
+The sweep re-derives every stored version from its decomposed rows and compares
+the result with the stored document. It reads the archived tier as well, takes
+no lock, and runs outside the request path of any clinical call, so it is safe
+to run on a live server. It is also a full scan of the repository: expect it to
+take minutes on a large one, and schedule it rather than calling it per
+request.
+
+```json
+{
+  "versions_checked": 128,
+  "versions_with_body": 126,
+  "versions_without_body": 2,
+  "mismatch_count": 1,
+  "mismatches": [
+    {
+      "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
+      "sys_version": 2,
+      "kind": "COMPOSITION",
+      "defect": "content_differs"
+    }
+  ],
+  "truncated": false,
+  "elapsed_ms": 431
+}
+```
+
+`defect` is one of four values:
+
+- `content_differs`: both copies exist and hold different content.
+- `nodes_missing`: the version has a stored document but no decomposed rows.
+- `nodes_unreadable`: the decomposed rows exist but no longer form one tree.
+- `unexpected_nodes`: the version is a logical delete, which stores no
+  document, yet decomposed rows exist for it.
+
+`mismatch_count` is the full count. `mismatches` is capped at 1000 entries and
+`truncated` says whether the cap was reached; every mismatch is logged at
+`warn` level with its identifiers whatever the cap does, so a truncated report
+never loses a finding. The log line and the response carry identifiers only,
+never content.
+
+A finding is **not** a request failure: the sweep ran and is telling you what
+it saw, so the status stays **200** and the report is the body. Check
+`mismatch_count`, not the status code.
+
+> [!NOTE]
+> This is the companion check to [digest signing](signing/digest.md). A stored
+> digest covers the document a point read serves; it says nothing about the
+> decomposed rows, which no read-path check recomputes. Together the two cover
+> both copies.
+
 ## Dump and load
 
 Two routes that move the whole repository to and from an archive on the

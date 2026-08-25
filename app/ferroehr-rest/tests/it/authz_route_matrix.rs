@@ -358,6 +358,11 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     ("POST", "/admin/archive/parties/restore"),
     ("POST", "/admin/dump"),
     ("POST", "/admin/load"),
+    // The storage-parity sweep mutates nothing, but it is an extension route
+    // outside the generated tables, where `extension_is_write` reads the HTTP
+    // verb and every mutating verb is a write (fail-safe). So a read-only admin
+    // is refused it, and this row states what the gate actually does.
+    ("POST", "/admin/integrity/verify"),
     ("POST", "/admin/tenant"),
     ("PUT", "/admin/tenant/{tenant_id}"),
     ("DELETE", "/admin/tenant/{tenant_id}"),

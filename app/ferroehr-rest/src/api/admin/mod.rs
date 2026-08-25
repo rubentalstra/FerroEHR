@@ -8,15 +8,18 @@
 //! [`dispatch`] implements the generated operation contract over the
 //! `ferroehr-sm` native API.
 //!
-//! Three further groups sit beside it under the same `/admin/` prefix and the
-//! same gates, realizing SM admin interfaces the release never surfaced —
-//! **our own extensions, governed by no ITS-REST operation**: [`archive`]
+//! Four further groups sit beside it under the same `/admin/` prefix and the
+//! same gates — **our own extensions, governed by no ITS-REST operation**.
+//! Three realize SM admin interfaces the release never surfaced: [`archive`]
 //! (`I_ADMIN_ARCHIVE`), [`report`] (the four `I_ADMIN_SERVICE` statistics
-//! calls) and [`dump_load`] (`I_ADMIN_DUMP_LOAD`). Each carries its own
-//! spec-silence flag and register citation.
+//! calls) and [`dump_load`] (`I_ADMIN_DUMP_LOAD`). The fourth, [`integrity`],
+//! realizes no SM interface at all: it sweeps the storage's two content copies
+//! for disagreement, and no openEHR spec governs storage mechanics. Each
+//! carries its own spec-silence flag and register citation.
 
 pub mod archive;
 pub mod dispatch;
 pub mod dump_load;
+pub mod integrity;
 pub(crate) mod openapi_routes;
 pub mod report;
