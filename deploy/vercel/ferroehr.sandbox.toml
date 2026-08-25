@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# The hosted-sandbox posture (#2710, sandbox.ferroehr.eu), baked into the
+# Vercel image by Dockerfile.vercel. It differs from the compose quickstart
+# where a PUBLIC endpoint demands it: the admin API and the management
+# introspection stay OFF (defaults), so the public demo credentials can read
+# and write clinical data and nothing else. The database DSN comes from the
+# environment (FERROEHR__DB__URL), never from this file.
+
+[server]
+# Vercel's default container port; the PORT environment convention lands on
+# the same value at runtime.
+bind = "0.0.0.0:80"
+# Browser tinkering against the demo is the point.
+cors_permissive = true
+
+[auth]
+enabled = true
+
+# The demo user: ferroehr / ferroehr (the hash is Argon2id of "ferroehr").
+# Public by design; the sandbox holds demo data only and is wiped on a
+# schedule.
+[[auth.basic.users]]
+username = "ferroehr"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
+roles = ["USER"]
+
+# Authentication only, no role gate — one demo user, no admin surface exists
+# to separate (admin + management stay disabled above by default).
+[authz.rbac]
+enabled = false

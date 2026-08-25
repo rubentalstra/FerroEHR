@@ -166,6 +166,39 @@ pub fn assemble<S: std::hash::BuildHasher>(
             .entry("FERROEHR__SERVER__BIND".to_owned())
             .or_insert_with(|| format!("0.0.0.0:{port}"));
     }
+    // The libpq environment convention (PostgreSQL's own variable set,
+    // https://www.postgresql.org/docs/current/libpq-envars.html): managed
+    // Postgres integrations (Neon on Vercel among them) inject PGHOST/PGUSER/
+    // PGPASSWORD/PGDATABASE instead of a URL. Assembled into a DSN BELOW both
+    // URL forms — `DATABASE_URL` overwrites this entry, `FERROEHR__DB__URL`
+    // overrides the whole layer — so an explicit URL always wins.
+    if let Some(host) = env.get("PGHOST") {
+        let mut dsn = String::from("postgres://");
+        if let Some(user) = env.get("PGUSER") {
+            dsn.push_str(&urlencoding::encode(user));
+            if let Some(password) = env.get("PGPASSWORD") {
+                dsn.push(':');
+                dsn.push_str(&urlencoding::encode(password));
+            }
+            dsn.push('@');
+        }
+        dsn.push_str(host);
+        if let Some(port) = env.get("PGPORT") {
+            dsn.push(':');
+            dsn.push_str(port);
+        }
+        dsn.push('/');
+        dsn.push_str(env.get("PGDATABASE").map_or("postgres", String::as_str));
+        if let Some(sslmode) = env.get("PGSSLMODE") {
+            dsn.push_str("?sslmode=");
+            dsn.push_str(sslmode);
+        }
+        // `or_insert_with`: a `DATABASE_URL` already claimed this entry in the
+        // CONVENTIONAL loop above, and it outranks the assembled form.
+        alias_map
+            .entry("FERROEHR__DB__URL".to_owned())
+            .or_insert(dsn);
+    }
 
     // The canonical (uniform-grammar) `FERROEHR__…` variables. Allowlisted
     // infra names never carry the double prefix, so the prefix check alone

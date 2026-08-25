@@ -587,6 +587,50 @@ mod tests {
     }
 
     #[test]
+    fn libpq_convention_assembles_a_dsn_below_the_url_forms() {
+        // PGHOST + friends alone assemble the DSN (the libpq environment
+        // convention managed-Postgres integrations inject), password
+        // percent-encoded.
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("PGHOST", "db.example.neon.tech"),
+                ("PGUSER", "demo"),
+                ("PGPASSWORD", "p@ss/w"),
+                ("PGDATABASE", "ferroehr"),
+                ("PGSSLMODE", "require"),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.db.url.expose(),
+            "postgres://demo:p%40ss%2Fw@db.example.neon.tech/ferroehr?sslmode=require"
+        );
+        // DATABASE_URL wins over the assembled form.
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("PGHOST", "db.example.neon.tech"),
+                ("PGUSER", "demo"),
+                ("DATABASE_URL", "postgres://a@h/x"),
+            ]),
+            &[],
+        );
+        assert_eq!(c.db.url.expose(), "postgres://a@h/x");
+        // FERROEHR__DB__URL wins over everything.
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("PGHOST", "db.example.neon.tech"),
+                ("DATABASE_URL", "postgres://a@h/x"),
+                ("FERROEHR__DB__URL", "postgres://b@h/y"),
+            ]),
+            &[],
+        );
+        assert_eq!(c.db.url.expose(), "postgres://b@h/y");
+    }
+
+    #[test]
     fn port_convention_expands_to_an_all_interfaces_bind() {
         // PORT alone binds server.bind on all interfaces (the container-
         // platform convention: Vercel/Cloud Run/Heroku inject only the port).

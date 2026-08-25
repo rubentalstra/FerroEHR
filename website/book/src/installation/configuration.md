@@ -40,11 +40,20 @@ highest:
 3. **`FERROEHR_*` environment variables:** override individual keys.
 4. **`--set key=value` CLI flags** (repeatable), which win over everything.
 
-Three conventional names sit *below* their `FERROEHR_` forms within layer 3:
-`DATABASE_URL` → `db.url`, `RUST_LOG` → `log.filter`, and `PORT` → a
-`0.0.0.0:<PORT>` value for `server.bind` (the port container platforms such
-as Vercel, Cloud Run and Heroku inject and route traffic to). Nothing else
-has a non-`FERROEHR_` name.
+Some conventional names sit *below* their `FERROEHR_` forms within layer 3:
+
+- `DATABASE_URL` → `db.url`, and `RUST_LOG` → `log.filter`.
+- `PORT` → a `0.0.0.0:<PORT>` value for `server.bind` (the port container
+  platforms such as Vercel, Cloud Run and Heroku inject and route traffic
+  to).
+- The [libpq environment set](https://www.postgresql.org/docs/current/libpq-envars.html)
+  (`PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGPORT`, `PGSSLMODE`),
+  which managed-Postgres integrations such as Neon inject: when `PGHOST` is
+  set and no URL form is, the server assembles the DSN from them. An
+  explicit `DATABASE_URL` beats the assembled form, and `FERROEHR__DB__URL`
+  beats both.
+
+Nothing else has a non-`FERROEHR_` name.
 
 ### The environment-variable mapping
 
