@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.3] - 2026-08-25
+
 ### Added
 
 - The hosted sandbox resets every night around midnight UTC: a scheduled job
@@ -7460,7 +7462,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...HEAD
+[4.0.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...v4.0.3
 [4.0.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.20.0...v4.0.0
