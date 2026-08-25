@@ -15,6 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- An unauthenticated request to a guarded admin-console URL now answers its
+  `302 → /login` with an empty body. Previously the redirect carried a fully
+  rendered console document — chrome, screen markup, and the serialized
+  failure diagnostics of every server function the screen runs — visible to
+  any client that does not follow redirects, and each anonymous hit paid a
+  full server render. A pre-render session guard now refuses the request
+  before any rendering happens; the sign-in screen, OIDC handshake, assets,
+  and server-function endpoints are unaffected, and the in-view guard stays
+  as the client-side navigation gate.
+
 ### Changed
 
 - Composition updates got faster: the whole write pre-check (ownership,
