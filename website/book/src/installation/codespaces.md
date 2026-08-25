@@ -47,16 +47,18 @@ a stopped Codespace restarts the stack automatically on resume.
 
 ## The hosted sandbox
 
-A public demo at `sandbox.ferroehr.eu` is being set up as the second
-zero-install path: no GitHub account needed, point any REST client at it.
-So everyone knows what it runs on and what to expect from it:
+A public demo runs at <https://sandbox.ferroehr.eu> as the second
+zero-install path: no GitHub account needed, point any REST client at it
+with the demo credentials `ferroehr` / `ferroehr`. The Swagger UI is at
+`https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui`. So everyone knows
+what it runs on and what to expect from it:
 
 | | |
 |---|---|
 | Compute | Vercel Fluid (a container function that scales to zero when idle) |
 | Database | Neon serverless PostgreSQL 18, region Frankfurt (`fra1`) |
 | Database plan | Neon free tier: 0.5 GB storage, up to 2 CU / 8 GB RAM, 100 CU-hours of compute per month |
-| Data durability | none by design; demo data only, wiped and reseeded on a schedule |
+| Data durability | none by design: **every night around midnight UTC the whole store is wiped and fresh demo data is seeded** |
 
 Both layers scale to zero, so the first request after an idle period pays a
 double cold start and can take a few seconds; after that it responds at
@@ -65,6 +67,11 @@ near the end of a heavy month. It is a demo, never a place for real data.
 
 The sandbox image is pinned to the latest release tag, so it always runs a
 released FerroEHR rather than a development snapshot.
+
+Create, change and delete whatever you like: the nightly reset returns the
+sandbox to a small seeded corpus (a handful of demo EHRs with example
+compositions from published CKM templates), so nothing you do needs cleaning
+up and nothing you store survives the night.
 
 ## If the stack is not up
 

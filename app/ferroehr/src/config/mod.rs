@@ -631,6 +631,36 @@ mod tests {
     }
 
     #[test]
+    fn unpooled_endpoints_win_over_pooled_ones() {
+        // A transaction-pooled endpoint drops the session search_path (#2716),
+        // so the direct form outranks the pooled one within the alias layer.
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("DATABASE_URL", "postgres://pooled@h/x"),
+                ("DATABASE_URL_UNPOOLED", "postgres://direct@h/x"),
+            ]),
+            &[],
+        );
+        assert_eq!(c.db.url.expose(), "postgres://direct@h/x");
+        // The libpq assembly prefers the direct host too.
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("PGHOST", "pooled.neon.tech"),
+                ("PGHOST_UNPOOLED", "direct.neon.tech"),
+                ("PGUSER", "demo"),
+                ("PGDATABASE", "ferroehr"),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.db.url.expose(),
+            "postgres://demo@direct.neon.tech/ferroehr"
+        );
+    }
+
+    #[test]
     fn port_convention_expands_to_an_all_interfaces_bind() {
         // PORT alone binds server.bind on all interfaces (the container-
         // platform convention: Vercel/Cloud Run/Heroku inject only the port).

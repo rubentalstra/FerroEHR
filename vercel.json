@@ -13,6 +13,10 @@
             "runtime": "container"
         }
     },
+    "redirects": [
+        { "source": "/", "destination": "/ferroehr/rest/swagger-ui/", "permanent": false },
+        { "source": "/favicon.ico", "destination": "/ferroehr/rest/swagger-ui/favicon-32x32.png", "permanent": false }
+    ],
     "rewrites": [
         { "source": "/(.*)", "destination": { "service": "api" } }
     ]

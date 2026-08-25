@@ -150,6 +150,14 @@ pub fn assemble<S: std::hash::BuildHasher>(
     // The two permanent conventional aliases (DATABASE_URL, RUST_LOG) —
     // layered BELOW the canonical source so an `FERROEHR__` form always wins.
     let mut alias_map: HashMap<String, String> = HashMap::new();
+    // A transaction-pooled endpoint (pgbouncer) hands statements to backend
+    // connections without the session `search_path`, which surfaces as
+    // intermittent 42P01 "relation does not exist" (#2716) — so when a
+    // managed-Postgres integration offers the DIRECT endpoint beside the
+    // pooled one (Neon injects both), the direct one wins within this layer.
+    if let Some(value) = env.get("DATABASE_URL_UNPOOLED") {
+        alias_map.insert("FERROEHR__DB__URL".to_owned(), value.clone());
+    }
     for (external, canonical) in CONVENTIONAL {
         if let Some(value) = env.get(*external) {
             alias_map
@@ -170,9 +178,10 @@ pub fn assemble<S: std::hash::BuildHasher>(
     // https://www.postgresql.org/docs/current/libpq-envars.html): managed
     // Postgres integrations (Neon on Vercel among them) inject PGHOST/PGUSER/
     // PGPASSWORD/PGDATABASE instead of a URL. Assembled into a DSN BELOW both
-    // URL forms — `DATABASE_URL` overwrites this entry, `FERROEHR__DB__URL`
-    // overrides the whole layer — so an explicit URL always wins.
-    if let Some(host) = env.get("PGHOST") {
+    // URL forms — a URL entry already claimed above wins — and preferring the
+    // direct `PGHOST_UNPOOLED` host over the pooled `PGHOST` (#2716, the
+    // same transaction-pooling reason as `DATABASE_URL_UNPOOLED` above).
+    if let Some(host) = env.get("PGHOST_UNPOOLED").or_else(|| env.get("PGHOST")) {
         let mut dsn = String::from("postgres://");
         if let Some(user) = env.get("PGUSER") {
             dsn.push_str(&urlencoding::encode(user));
