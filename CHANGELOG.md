@@ -32,6 +32,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The write path sheds most of another btree: the node CONTAINS-anchor
+  index narrows from `(rm_type, archetype)` to `(rm_type)` alone — 83% of
+  node rows carry at-code archetype text whose key bytes dominated the
+  index's maintenance, while every measured anchor plan either used the
+  subsumption index (full-HRID anchors) or filtered archetype after the
+  rm_type probe at identical latency. Measured: the one-statement commit
+  drops a further ~0.3 ms; the read probes (EHR-scoped, archetype-anchored,
+  rm_type-only, and the no-match worst case) are unchanged.
+
 - A versioned-object commit is ONE SQL statement: the decomposed node rows
   ride the folded commit CTE (ordered after the version row, which also
   satisfies their foreign key in-statement), removing the separate node
