@@ -15,6 +15,25 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- Composition updates got faster: the whole write pre-check (ownership,
+  `If-Match`, lifecycle, `is_modifiable`, template stability, the
+  cross-version invariants) now rides the write transaction's own placement
+  statement under the per-object lock, instead of a separate pre-read round
+  trip. The refusal outcomes and their order are unchanged.
+- `GET …/composition/{uid}` with a JSON `Accept` now serves the stored
+  canonical body verbatim instead of parsing and re-serializing it. The JSON
+  is semantically identical; insignificant whitespace now follows
+  PostgreSQL's jsonb rendering (a space after `:` and `,`), so byte-exact
+  comparisons against previous responses will differ while every JSON parser
+  sees the same document. XML, FLAT and STRUCTURED representations, and
+  `expand_multimedia=true` reads, are parsed exactly as before.
+- The performance page documents the durability floor: why a single durable
+  commit cannot beat the WAL flush, how group commit scales concurrent
+  writers past it, and the `synchronous_commit` trade-off as an explicit
+  operator choice (never a FerroEHR default).
+
 ## [4.0.3] - 2026-08-25
 
 ### Added

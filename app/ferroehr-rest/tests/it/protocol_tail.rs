@@ -847,6 +847,80 @@ async fn composition_version_serves_xml_with_signature() {
     assert!(body.contains("sha256:"), "digest signature value: {body}");
 }
 
+/// The JSON-accept composition GET serves the stored body text VERBATIM (the
+/// raw passthrough): the response opens with the commit-time `uid` stamp —
+/// jsonb renders object keys length-first, so the stamped body's text starts
+/// with its own `uid` — still parses as the same canonical value, and the
+/// version-addressed variant passes through identically. An XML accept on the
+/// same resource still parses and re-serializes (the passthrough is
+/// representation-local).
+#[tokio::test]
+async fn composition_get_serves_stored_json_verbatim() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1);
+
+    let get = |uri: String, accept: &'static str| {
+        Request::builder()
+            .method("GET")
+            .uri(uri)
+            .header(header::ACCEPT, accept)
+            .body(Body::empty())
+            .unwrap()
+    };
+    let prefix = format!("{{\"uid\": {{\"_type\": \"OBJECT_VERSION_ID\", \"value\": \"{v1}\"}}");
+
+    // The latest read.
+    let (status, h, body) = send(
+        &app,
+        get(
+            format!("{BASE}/ehr/{ehr_id}/composition/{vo}"),
+            "application/json",
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "body: {body}");
+    assert_eq!(
+        h.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()),
+        Some("application/json")
+    );
+    assert!(
+        body.starts_with(&prefix),
+        "the stored text passes through, opening with the commit-time uid stamp: {body}"
+    );
+    let parsed: Value = serde_json::from_str(&body).expect("the passthrough text is JSON");
+    assert_eq!(parsed["uid"]["value"], Value::String(v1.clone()));
+    assert_eq!(parsed["_type"], Value::String("COMPOSITION".to_owned()));
+
+    // The version-addressed read takes the same passthrough.
+    let (status, _h, at_version) = send(
+        &app,
+        get(
+            format!("{BASE}/ehr/{ehr_id}/composition/{v1}"),
+            "application/json",
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "body: {at_version}");
+    assert!(at_version.starts_with(&prefix), "body: {at_version}");
+
+    // XML negotiation still parses and re-serializes the same resource.
+    let (status, h, xml) = send(
+        &app,
+        get(
+            format!("{BASE}/ehr/{ehr_id}/composition/{vo}"),
+            "application/xml",
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "body: {xml}");
+    assert_eq!(
+        h.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()),
+        Some("application/xml")
+    );
+    assert!(xml.contains(&v1), "the XML body carries the uid: {xml}");
+}
+
 /// The versioned-composition by-id read is container-scoped: a well-formed,
 /// EXISTING `version_uid` whose `object_id` names a DIFFERENT container than
 /// the path's `{versioned_object_uid}` names no version of that resource -> `404` (ITS-REST overview `Resources.md` §Identifier types: "the `object_id`

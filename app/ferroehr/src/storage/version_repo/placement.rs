@@ -158,6 +158,143 @@ pub async fn next_placement(
     })
 }
 
+/// The composition-update mega-read: [`next_placement`]'s current-trunk-tip
+/// form plus every column the update pre-checks need
+/// ([`UpdatePlacement`]).
+#[derive(Debug)]
+pub struct UpdatePlacement {
+    /// The version-tree placement (tip + next ordinal + the transaction
+    /// timestamp). `tip = None` when the object has no current open trunk
+    /// version.
+    pub placement: Placement,
+    /// The tip's commit instant (`audit.time_committed`) — the `ETag` /
+    /// `If-Match` metadata instant. `None` iff there is no tip.
+    pub tip_time_committed: Option<jiff::Timestamp>,
+    /// The owning EHR's promoted `is_modifiable` flag. `None` iff there is no
+    /// tip or the tip has no owning EHR.
+    pub is_modifiable: Option<bool>,
+    /// The tip body's `archetype_details.template_id.value`, or `None` for a
+    /// deleted tip (NULL body) or an undeclared template.
+    pub stored_template: Option<String>,
+    /// The FIRST stored content version's root fields —
+    /// `(archetype_node_id, category code)` — for the `VERSIONED_COMPOSITION`
+    /// cross-version invariants; `None` when no content version exists.
+    pub first_root: Option<(Option<String>, Option<String>)>,
+}
+
+/// The composition-update placement + pre-check read, merged into ONE
+/// in-transaction statement — the thaw included.
+///
+/// [`next_placement`]'s current-trunk-tip form (the update route's `If-Match`
+/// gate has already pinned the addressed version to the current trunk tip, so
+/// no expectation-addressed variant exists here) extended with the columns the
+/// former pool pre-read (`super::meta::current_composition_meta`) carried: the
+/// tip audit's commit instant, the owning EHR's `is_modifiable`, the stored
+/// template id, and the first content version's root fields. Run under the
+/// per-vo advisory lock inside the write transaction, it replaces that pool
+/// round trip entirely. No openEHR spec governs the SQL — our own design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn update_placement(
+    tx: &mut PgConnection,
+    vo_id: VoId,
+) -> Result<UpdatePlacement, StorageError> {
+    // `src` stays NARROW (no body): it is referenced more than once, so the
+    // planner materializes it, and a body column would copy every version's
+    // document into the tuplestore. The two body-derived facts are read by
+    // targeted laterals instead — each touches exactly one row's body (the
+    // tip's, and the earliest content version's).
+    const SQL: &str = concat!(
+        "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), ",
+        "cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), ",
+        "ct AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), ",
+        "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
+        "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
+        "inn AS (INSERT INTO node SELECT * FROM cn), ",
+        "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
+        "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
+        "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
+        "               audit_id ",
+        "        FROM vo_version WHERE vo_id = $1 ",
+        "        UNION ALL ",
+        "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
+        "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
+        "               audit_id ",
+        "        FROM cv) ",
+        "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
+        "tip.trunk_version, tip.branch_number, tip.branch_version, ",
+        "tip.creating_system_id, tip.lifecycle_state, tip.open, ",
+        "a.time_committed, e.is_modifiable, tb.stored_template, ",
+        "fv.found AS first_found, fv.ani AS first_ani, fv.category AS first_category ",
+        "FROM (SELECT (COALESCE(MAX(sys_version), 0) + 1)::int AS next_ordinal ",
+        "      FROM src) o ",
+        "LEFT JOIN LATERAL ( ",
+        "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
+        "           t.branch_number, t.branch_version, t.creating_system_id, ",
+        "           t.lifecycle_state, upper_inf(t.sys_period) AS open, t.audit_id ",
+        "    FROM src t WHERE upper_inf(t.sys_period) AND t.branch_number = 0 ",
+        ") tip ON true ",
+        "LEFT JOIN audit a ON a.id = tip.audit_id ",
+        "LEFT JOIN ehr e ON e.id = tip.ehr_id ",
+        "LEFT JOIN LATERAL ( ",
+        "    SELECT b.body #>> '{archetype_details,template_id,value}' AS stored_template ",
+        "    FROM (SELECT body FROM vo_version ",
+        "          WHERE vo_id = $1 AND sys_version = tip.sys_version ",
+        "          UNION ALL ",
+        "          SELECT body FROM cv WHERE cv.sys_version = tip.sys_version) b ",
+        "    LIMIT 1 ",
+        ") tb ON true ",
+        "LEFT JOIN LATERAL ( ",
+        // The ORDER BY + LIMIT sit INSIDE the subquery and the jsonb
+        // extractions OUTSIDE it: evaluated inline, the planner computes the
+        // extractions for every version row below the sort.
+        "    SELECT true AS found, ",
+        "           b.body ->> 'archetype_node_id' AS ani, ",
+        "           b.body #>> '{category,defining_code,code_string}' AS category ",
+        "    FROM (SELECT f.sys_version, f.body ",
+        "          FROM (SELECT sys_version, body FROM vo_version ",
+        "                WHERE vo_id = $1 AND body IS NOT NULL ",
+        "                UNION ALL ",
+        "                SELECT sys_version, body FROM cv WHERE body IS NOT NULL) f ",
+        "          ORDER BY f.sys_version LIMIT 1) b ",
+        ") fv ON true"
+    );
+    let row = sqlx::query(SQL).bind(vo_id).fetch_one(&mut *tx).await?;
+    let kind: Option<String> = row.try_get("kind")?;
+    let tip = match kind {
+        None => None,
+        Some(kind) => Some(TipRow {
+            ehr_id: row.try_get("ehr_id")?,
+            kind,
+            sys_version: row.try_get("sys_version")?,
+            trunk_version: row.try_get("trunk_version")?,
+            branch_number: row.try_get("branch_number")?,
+            branch_version: row.try_get("branch_version")?,
+            creating_system_id: row.try_get("creating_system_id")?,
+            lifecycle_state: row.try_get("lifecycle_state")?,
+            open: row.try_get("open")?,
+        }),
+    };
+    let first_root = match row.try_get::<Option<bool>, _>("first_found")? {
+        Some(true) => Some((row.try_get("first_ani")?, row.try_get("first_category")?)),
+        _ => None,
+    };
+    Ok(UpdatePlacement {
+        placement: Placement {
+            tip,
+            next_ordinal: row.try_get("next_ordinal")?,
+            now: row.try_get::<jiff_sqlx::Timestamp, _>("ts")?.to_jiff(),
+        },
+        tip_time_committed: row
+            .try_get::<Option<jiff_sqlx::Timestamp>, _>("time_committed")?
+            .map(jiff_sqlx::Timestamp::to_jiff),
+        is_modifiable: row.try_get("is_modifiable")?,
+        stored_template: row.try_get("stored_template")?,
+        first_root,
+    })
+}
+
 /// The transaction timestamp (`now()`), stable for the whole transaction —
 /// the commit instant for a create (no placement read exists to carry it).
 ///

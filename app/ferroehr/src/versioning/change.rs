@@ -300,18 +300,26 @@ async fn next_version(
     kind: Kind,
     expected: Option<TreeId>,
     local_system_id: &str,
+    preplaced: Option<crate::storage::version_repo::placement::Placement>,
 ) -> Result<NextVersion, ServiceError> {
-    // Serialize concurrent writers of the same object.
-    crate::storage::version_repo::commit::advisory_lock(tx, vo_id).await?;
+    // The caller may already hold the advisory lock and the placement read
+    // (the composition-update mega-read); otherwise both run here.
+    let preplaced_read = preplaced.is_some();
+    let placement = if let Some(placement) = preplaced {
+        placement
+    } else {
+        // Serialize concurrent writers of the same object.
+        crate::storage::version_repo::commit::advisory_lock(tx, vo_id).await?;
 
-    // ONE statement: preceding tip + next ordinal + the transaction timestamp
-    // (the commit instant every row of this transaction stamps).
-    let placement = crate::storage::version_repo::placement::next_placement(
-        tx,
-        vo_id,
-        expected.map(TreeId::columns),
-    )
-    .await?;
+        // ONE statement: preceding tip + next ordinal + the transaction
+        // timestamp (the commit instant every row of this transaction stamps).
+        crate::storage::version_repo::placement::next_placement(
+            tx,
+            vo_id,
+            expected.map(TreeId::columns),
+        )
+        .await?
+    };
     let ordinal = placement.next_ordinal;
     let now = placement.now;
     let tip = placement.tip.map(preceding_tip).transpose()?;
@@ -346,6 +354,18 @@ async fn next_version(
     if !tip.open {
         return Err(ServiceError::version_conflict(format!(
             "expected version {} has been superseded",
+            tip.tree
+        )));
+    }
+    // A preplaced read is the CURRENT-trunk-tip form; the caller's `If-Match`
+    // gate pinned `expected` to it, and this guard keeps that coupling honest
+    // instead of silently continuing from a different tip.
+    if preplaced_read
+        && let Some(expected) = expected
+        && tip.tree != expected
+    {
+        return Err(ServiceError::version_conflict(format!(
+            "expected version {expected}, current is {}",
             tip.tree
         )));
     }
@@ -520,6 +540,10 @@ struct CommitScope<'a> {
     /// path reads `now()` once for the whole set); `None` makes this change
     /// read its own.
     known_now: Option<jiff::Timestamp>,
+    /// A placement the caller already read under the advisory lock it already
+    /// holds (the composition-update mega-read); `None` makes the Modify /
+    /// Delete arm take the lock and read its own.
+    preplaced: Option<crate::storage::version_repo::placement::Placement>,
 }
 
 #[expect(
@@ -539,6 +563,7 @@ async fn apply_change(
         ctx,
         committer_fallback,
         known_now,
+        preplaced,
     } = scope;
     let resolved = match change {
         Change::Create {
@@ -620,7 +645,8 @@ async fn apply_change(
             // Deletion). Refused before the placement read, so a data-carrying
             // `523` never reaches storage.
             reject_deleted_with_data(&lifecycle)?;
-            let next = next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
+            let next =
+                next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id, preplaced).await?;
             // the transition from the preceding version's state must be
             // legal (master06 §Version Lifecycle state machine).
             validate_transition(Some(&next.preceding_lifecycle), &lifecycle)?;
@@ -654,7 +680,8 @@ async fn apply_change(
             expected,
             signature,
         } => {
-            let next = next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
+            let next =
+                next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id, preplaced).await?;
             // A deleted version carries no data — its `ORIGINAL_VERSION.data` is
             // Void (master06 §Logical Deletion); the signature is over the
             // data-less version wrapper. Logical deletion is permitted from any
@@ -962,6 +989,7 @@ pub(crate) async fn create(
             ctx,
             committer_fallback: &audit.committer,
             known_now,
+            preplaced: None,
         },
         Change::Create {
             kind,
@@ -1010,6 +1038,64 @@ pub(crate) async fn update(
             ctx,
             committer_fallback: &audit.committer,
             known_now: None,
+            preplaced: None,
+        },
+        Change::Modify {
+            vo_id,
+            kind,
+            canonical,
+            expected,
+            template_id: template_id.map(str::to_owned),
+            signature: envelope.signature,
+            lifecycle_state: envelope.lifecycle_state,
+            attestations: envelope.attestations,
+        },
+    )
+    .await?;
+    write_single_outbox(tx, ctx, contribution_id, ehr_id, &committed).await?;
+    Ok(committed)
+}
+
+/// [`update`] with the advisory lock and placement read already taken by the
+/// caller — the composition-update mega-read path.
+///
+/// The caller has opened the write transaction, taken the per-vo advisory
+/// lock, and run the merged placement + pre-check statement
+/// ([`crate::storage::version_repo::placement::update_placement`]); this
+/// commits the new version off that placement without re-reading. `expected`
+/// must equal the placement tip's tree id (the caller's `If-Match` gate pins
+/// it; [`next_version`] re-checks).
+///
+/// # Errors
+/// The [`update`] errors, minus the placement read's own.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the write parameters, named individually; a parameter struct \
+              would not read clearer at the service call sites"
+)]
+pub(crate) async fn update_with_placement(
+    tx: &mut PgConnection,
+    ehr_id: Option<EhrId>,
+    vo_id: VoId,
+    kind: Kind,
+    canonical: Value,
+    expected: Option<TreeId>,
+    template_id: Option<&str>,
+    audit: &AuditInput,
+    envelope: WriteEnvelope,
+    ctx: &SigningCtx<'_>,
+    placement: crate::storage::version_repo::placement::Placement,
+) -> Result<Committed, ServiceError> {
+    let (committed, contribution_id) = apply_change(
+        tx,
+        CommitScope {
+            ehr_id,
+            contribution: ContributionCtx::New,
+            audit,
+            ctx,
+            committer_fallback: &audit.committer,
+            known_now: None,
+            preplaced: Some(placement),
         },
         Change::Modify {
             vo_id,
@@ -1062,6 +1148,7 @@ pub(crate) async fn delete(
             ctx,
             committer_fallback: &audit.committer,
             known_now: None,
+            preplaced: None,
         },
         Change::Delete {
             vo_id,
@@ -1126,6 +1213,7 @@ pub(crate) async fn commit_contribution(
                 ctx,
                 committer_fallback,
                 known_now: Some(contribution_time),
+                preplaced: None,
             },
             change,
         )

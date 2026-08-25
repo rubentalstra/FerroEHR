@@ -33,7 +33,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
 use ferroehr::ids::{EhrId, VoId};
-use ferroehr::service::response::{ResourceMeta, ServiceResponse};
+use ferroehr::service::response::{RawServiceResponse, ReadBody, ResourceMeta, ServiceResponse};
 use ferroehr::versioning::change::Committed;
 
 use ferroehr::versioning::object_version_id::parse_uid_based_id;
@@ -195,7 +195,29 @@ pub(super) async fn run(
                     .composition_latest_response(ehr_id, uid.vo_id)
                     .await?
             };
-            let ServiceResponse { mut body, meta } = read;
+            let RawServiceResponse { body, meta } = read;
+            // The negotiated representation decides whether the stored
+            // canonical text can pass through verbatim: a plain JSON accept
+            // with no multimedia expansion serves the stored bytes (the body
+            // is uid-stamped at commit); every other representation parses.
+            let expand = params::query_param(q, "expand_multimedia").as_deref() == Some("true");
+            let accept =
+                negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson);
+            let mut body = match body {
+                ReadBody::RawJson(text) if !expand && accept == Some(WireFormat::CanonicalJson) => {
+                    let mut out = negotiate::raw_json_body(ok, text);
+                    if let Some(meta) = &meta {
+                        negotiate::set_versioning_headers(&mut out, meta);
+                    }
+                    return Ok(out);
+                }
+                other => other.into_value().map_err(|e| {
+                    RestError::from(crate::overview::error::internal_fault(
+                        "re-parse the stored composition body",
+                        &e,
+                    ))
+                })?,
+            };
             // A deleted version resolves to a null body → 204 No Content
             // (composition_get.yaml `204_because_deleted*`).
             if body.is_null() {
@@ -209,7 +231,7 @@ pub(super) async fn run(
             // "the `ETag` value is independent of its resource serialization
             // format (JSON/XML)" (§"ETag and Last-Modified") — so the
             // simplified representations carry them too.
-            match negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson) {
+            match accept {
                 Some(WireFormat::Flat) => {
                     let mut out =
                         crate::formats::dispatch::composition_flat_response(&state, ok, &body)
