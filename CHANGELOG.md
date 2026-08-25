@@ -17,13 +17,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The hosted sandbox resets every night around midnight UTC: a scheduled job
+  wipes the database (fenced so it can only ever run against a Neon
+  endpoint), the next boot re-runs the migrations, and
+  `scripts/sandbox/reseed.sh` seeds demo EHRs with example compositions from
+  published CKM templates through the public API. Visiting the sandbox root
+  or its favicon now lands on the Swagger UI instead of a 404.
+
 - The server understands two more deployment-platform conventions. `PORT`
   (Vercel, Cloud Run, Heroku inject it) binds `0.0.0.0:<PORT>`, below
   `FERROEHR__SERVER__BIND`. The libpq environment set (`PGHOST`, `PGUSER`,
   `PGPASSWORD`, `PGDATABASE`, `PGPORT`, `PGSSLMODE` — what managed-Postgres
   integrations such as Neon inject) assembles the database DSN when no URL
   form is set; `DATABASE_URL` beats the assembled form and
-  `FERROEHR__DB__URL` beats both. A `Dockerfile.vercel` plus `vercel.json` ship for
+  `FERROEHR__DB__URL` beats both. Direct endpoints beat pooled ones inside
+  that layer (`DATABASE_URL_UNPOOLED` over `DATABASE_URL`,
+  `PGHOST_UNPOOLED` over `PGHOST`): a transaction-pooled endpoint hands
+  statements to backend connections without the session `search_path`,
+  which surfaced as intermittent "relation does not exist" errors on the
+  hosted sandbox. A `Dockerfile.vercel` plus `vercel.json` ship for
   Vercel's Container preset (the hosted sandbox); the Dockerfile references
   the published release image, so Vercel's build step is a pull measured in
   seconds instead of a half-hour Rust compile, and the sandbox runs the

@@ -14,9 +14,7 @@
 #      crates/openehr-its/schemas/**    — vendored XSD / ITS-JSON schemas
 #      (re-vendor on a pin bump; never edit).
 #   3. crates/openehr-its/src/**/generated/** — generator-owned output trees.
-#   4. website/api/spec/** + website/api/vendor/** — assembled/vendored site
-#      assets (scripts/site/assemble-oas.sh owns spec/; CI drift-gates it).
-#   5. ANY existing file whose head carries an `@generated` marker — the
+#   4. ANY existing file whose head carries an `@generated` marker — the
 #      generated spec crates (openehr-base/rm/am, generated impls). Change
 #      the emitter (tools/openehr-codegen) and regenerate (/regen-codegen);
 #      never the output. (`openehr-codegen` itself writes via its own
@@ -62,10 +60,6 @@ case "$path" in
   */crates/openehr-its/src/xml/generated/*  | crates/openehr-its/src/xml/generated/*  | \
   */crates/openehr-its/src/rest/generated/* | crates/openehr-its/src/rest/generated/*)
     block "openehr-its generated/ trees are generator-owned (emit-xml / emit-rest). Edit the emitter in tools/openehr-codegen and run /regen-codegen; never the output."
-    ;;
-  */website/api/spec/*   | website/api/spec/*   | \
-  */website/api/vendor/* | website/api/vendor/*)
-    block "website/api/{spec,vendor}/** is generated/vendored (scripts/site/assemble-oas.sh; CI drift gate). Never hand-edit; regenerate instead."
     ;;
 esac
 
