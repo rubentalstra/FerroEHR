@@ -69,6 +69,8 @@ pub mod export;
 #[cfg(feature = "ssr")]
 pub mod oidc;
 #[cfg(feature = "ssr")]
+pub mod server;
+#[cfg(feature = "ssr")]
 pub mod session;
 #[cfg(feature = "ssr")]
 pub mod state;
