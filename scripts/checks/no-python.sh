@@ -29,16 +29,17 @@ ROOTS=(scripts .github/workflows .claude/hooks deploy docker)
 
 hits=0
 while IFS= read -r file; do
-  [ -f "$file" ] || continue
+  [[ -f "$file" ]] || continue
   case "$file" in
     */node_modules/*|*/vendor/*|*/target/*) continue ;;
+    *) ;;
   esac
   printf '%s' "$file" | grep -qE "$EXEMPT" && continue
   # An invocation, not the word: prose about not using Python is fine and this
   # repository contains several such comments.
   if matches="$(grep -nE '(^|[^[:alnum:]_./-])python3?([[:space:]]|$)' "$file" \
                 | grep -vE '#.*python' || true)"; then
-    if [ -n "$matches" ]; then
+    if [[ -n "$matches" ]]; then
       printf '%s:\n%s\n' "$file" "$matches"
       hits=$((hits + 1))
     fi
@@ -51,7 +52,7 @@ while IFS= read -r py; do
   hits=$((hits + 1))
 done < <(find "${ROOTS[@]}" -type f -name '*.py' 2>/dev/null | sort)
 
-if [ "$hits" -gt 0 ]; then
+if [[ "$hits" -gt 0 ]]; then
   echo
   echo "::error::Python is banned in this repository (see .claude/rules/rust-style.md)."
   echo "  Use bash + jq/awk/sed, or Rust. The two Helm gates are the only"

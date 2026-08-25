@@ -112,7 +112,7 @@ FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf \
 # server's knee on purpose and a 429 would measure the limiter instead of the
 # server. Declared as a file rather than an exported variable so the posture of
 # a recorded run is readable after the fact.
-if [ -n "${CONF_PERF_CLASS:-}" ] || [ -n "${CONF_STRESS:-}" ]; then
+if [[ -n "${CONF_PERF_CLASS:-}" ]] || [[ -n "${CONF_STRESS:-}" ]]; then
   FERROEHR_RS_COMPOSE+=(-f "$REPO_ROOT/docker/sut-measurement.yml")
   echo "==> Measurement lane: composing docker/sut-measurement.yml (rate limiting off)"
 fi
@@ -154,11 +154,11 @@ export SUT_ADMIN_PASS="${SUT_ADMIN_PASS:-ferroehr}"
 export SUT_RO_USER="${SUT_RO_USER:-ferroehr-readonly}"
 export SUT_RO_PASS="${SUT_RO_PASS:-ferroehr}"
 
-[ -f "$IXIT" ] || { echo "conformance: ixit not found: $IXIT" >&2; exit 2; }
-[ -f "$STATEMENT" ] || { echo "conformance: statement not found: $STATEMENT" >&2; exit 2; }
+[[ -f "$IXIT" ]] || { echo "conformance: ixit not found: $IXIT" >&2; exit 2; }
+[[ -f "$STATEMENT" ]] || { echo "conformance: statement not found: $STATEMENT" >&2; exit 2; }
 
 # byo: rewrite the ixit's base URLs into a temp copy.
-if [ "$SUT" = "byo" ] && [ -n "${CONF_BASE_URL:-}" ]; then
+if [[ "$SUT" = "byo" ]] && [[ -n "${CONF_BASE_URL:-}" ]]; then
   TMP_IXIT="$(mktemp -t cnf-ixit.XXXXXX)"
   # jq, not python: this is a two-key JSON edit, and jq is the tool for it.
   jq --arg url "${CONF_BASE_URL%/}" \
@@ -167,7 +167,7 @@ if [ "$SUT" = "byo" ] && [ -n "${CONF_BASE_URL:-}" ]; then
   IXIT="$TMP_IXIT"
 fi
 
-if [ "$SUT" = "ehrbase" ]; then
+if [[ "$SUT" = "ehrbase" ]]; then
   # The upstream image tag is the SUT version (default pinned in the compose).
   EHRBASE_IMAGE="${FERROEHR_EHRBASE_IMAGE:-ehrbase/ehrbase:2.34.0}"
   SUT_VERSION="${EHRBASE_IMAGE#*:}"
@@ -180,7 +180,7 @@ fi
 EHRBASE_COMPOSE=(docker compose -p cnf-ehrbase -f "$REPO_ROOT/docker/sut-ehrbase.yml")
 
 compose_down() {
-  if [ "$SUT" = "ehrbase" ]; then
+  if [[ "$SUT" = "ehrbase" ]]; then
     "${EHRBASE_COMPOSE[@]}" down -v || true
   else
     (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" down -v) || true
@@ -188,10 +188,10 @@ compose_down() {
   fi
 }
 
-if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
+if [[ -z "${CONF_NO_COMPOSE:-}" ]] && [[ "$SUT" != "byo" ]]; then
   trap compose_down EXIT
   echo "==> Composing $SUT on fresh volumes (the exclusive-server ground)"
-  if [ "$SUT" = "ehrbase" ]; then
+  if [[ "$SUT" = "ehrbase" ]]; then
     "${EHRBASE_COMPOSE[@]}" down -v || true
     "${EHRBASE_COMPOSE[@]}" up -d
     # The official EHRbase image has no in-container health tooling (no
@@ -204,14 +204,15 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
         "http://localhost:${FERROEHR_EHRBASE_PORT:-8091}/ehrbase/rest/status" || true)
       case "$code" in
         200|401|403) ready=1; break ;;
+        *) ;;
       esac
       sleep 5
     done
-    [ -n "$ready" ] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
+    [[ -n "$ready" ]] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
   else
     (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" down -v) || true
     (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
-    if [ -n "${SKIP_BUILD:-}" ]; then
+    if [[ -n "${SKIP_BUILD:-}" ]]; then
       (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" up -d --wait ferroehr)
     else
       # A conformance verdict on OUR server is only meaningful against the
@@ -243,12 +244,12 @@ echo "==> Executing the catalogue (sut=$SUT_NAME filter='${FILTER}')"
 run_args=(run --root "$ROOT" --ixit "$IXIT" --out "$OUT"
           --sut-name "$SUT_NAME" --sut-version "$SUT_VERSION"
           --statement "$STATEMENT")
-[ -n "$FILTER" ] && run_args+=(--filter "$FILTER")
+[[ -n "$FILTER" ]] && run_args+=(--filter "$FILTER")
 # Exit 1 = failing cases (data for the verdict pipeline, not a pipeline
 # abort); only 2 (runner defect) stops the run.
 run_rc=0
 "$REPO_ROOT/target/debug/cnf-runner" "${run_args[@]}" || run_rc=$?
-if [ "$run_rc" -ge 2 ]; then
+if [[ "$run_rc" -ge 2 ]]; then
   echo "conformance: runner defect (exit $run_rc)" >&2
   exit "$run_rc"
 fi
@@ -262,13 +263,13 @@ fi
 # and needs the exclusive composed SUT — never on by default.
 # CONF_PERF_HOURS=1|2|4|6|8|12 extends the sustained window (default 1 —
 # the case's normative hour; longer holds are stricter demonstrations).
-if [ -n "${CONF_PERF_CLASS:-}" ]; then
+if [[ -n "${CONF_PERF_CLASS:-}" ]]; then
   # A measured record is environment-bound, and the parallel pgp deployment is
   # part of the environment while it is resident (a second server + database
   # holding their own CPU/memory limits). The functional catalogue is done with
   # it by now, and perf drives the primary alone, so tear it down BEFORE the
   # window opens — the measured envelope must be the one the ixit declares.
-  if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" = "ferroehr" ]; then
+  if [[ -z "${CONF_NO_COMPOSE:-}" ]] && [[ "$SUT" = "ferroehr" ]]; then
     echo "==> Tearing down the parallel pgp deployment before the measured window"
     (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
     # The stable-profile server shares the primary's project AND database; a
@@ -282,7 +283,7 @@ if [ -n "${CONF_PERF_CLASS:-}" ]; then
              --class "$CONF_PERF_CLASS" --hours "${CONF_PERF_HOURS:-1}")
   perf_rc=0
   "$REPO_ROOT/target/debug/cnf-runner" "${perf_args[@]}" || perf_rc=$?
-  if [ "$perf_rc" -ge 2 ]; then
+  if [[ "$perf_rc" -ge 2 ]]; then
     echo "conformance: perf run defect (exit $perf_rc)" >&2
     exit "$perf_rc"
   fi
@@ -296,7 +297,7 @@ verdict_rc=0
 "$REPO_ROOT/target/debug/cnf-runner" verdicts \
   --statement "$STATEMENT" --results "$OUT/results.json" \
   --root "$ROOT" --out "$OUT" || verdict_rc=$?
-if [ "$verdict_rc" -ge 2 ]; then
+if [[ "$verdict_rc" -ge 2 ]]; then
   echo "conformance: verdict pipeline defect (exit $verdict_rc)" >&2
   exit "$verdict_rc"
 fi

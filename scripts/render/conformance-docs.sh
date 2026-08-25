@@ -21,13 +21,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-if [ -n "${CONF_SUT:-}" ]; then
+if [[ -n "${CONF_SUT:-}" ]]; then
   parties=("$CONF_SUT")
 else
   parties=()
   for statement in tools/cnf-runner/party/*/statement.json; do
     party="$(basename "$(dirname "$statement")")"
-    [ -f "docs/conformance/$party/results.json" ] && parties+=("$party")
+    [[ -f "docs/conformance/$party/results.json" ]] && parties+=("$party")
   done
 fi
 
@@ -35,7 +35,7 @@ for party in "${parties[@]}"; do
   statement="tools/cnf-runner/party/$party/statement.json"
   results="docs/conformance/$party/results.json"
   for f in "$statement" "$results"; do
-    [ -f "$f" ] || {
+    [[ -f "$f" ]] || {
       echo "render-conformance-docs: $f missing — run the conformance suite first" >&2
       exit 1
     }

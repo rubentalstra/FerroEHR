@@ -79,7 +79,7 @@ probes_tenancy() {
   tenancy_register beta
   a="$(tenancy_new_ehr alpha)"
   b="$(tenancy_new_ehr beta)"
-  if [ -z "$a" ] || [ -z "$b" ]; then
+  if [[ -z "$a" ]] || [[ -z "$b" ]]; then
     probe_fail "an EHR id for each tenant" "alpha='$a' beta='$b'" \
       "without both ids the isolation probes below would pass vacuously"
     probe_done

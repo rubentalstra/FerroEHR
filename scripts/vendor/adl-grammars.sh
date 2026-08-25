@@ -31,7 +31,7 @@ ADL_ANTLR_COMMIT="8db091ec3d810371cc41cd072fee81ce893fea47" # 2024-04-06
 
 fetch() {
   local path="$1" out="$2"
-  curl -fsSL "https://raw.githubusercontent.com/${ADL_ANTLR_REPO}/${ADL_ANTLR_COMMIT}/${path}" -o "${out}"
+  curl -fsSL --proto '=https' --proto-redir '=https' "https://raw.githubusercontent.com/${ADL_ANTLR_REPO}/${ADL_ANTLR_COMMIT}/${path}" -o "${out}"
   echo "vendored ${out} @ ${ADL_ANTLR_COMMIT}"
 }
 

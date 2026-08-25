@@ -47,7 +47,7 @@ report() {
 }
 
 for f in $(mapfile_compat); do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   grep -q '^services:' "$f" || continue
 
   # Comments are excluded from every content rule below: this guard's own rules
@@ -69,7 +69,7 @@ for f in $(mapfile_compat); do
   fi
   # (6) a published port names its host interface
   while IFS=: read -r line _; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     report "$f:$line publishes a port without a host address — it binds every \
 interface and bypasses the host firewall"
   done < <(grep -nE '^\s+- "?[0-9$][^:]*:[0-9]+"?\s*$' "$f" | grep -v 'BIND_HOST' || true)
@@ -90,7 +90,7 @@ interface and bypasses the host firewall"
   # redundant — it makes `docker compose config` fail with "items at 0 and 1 are
   # equal", because list-valued keys concatenate.
   base_services=""
-  if [ "$f" != "./docker-compose.yml" ] && [ -f docker-compose.yml ]; then
+  if [[ "$f" != "./docker-compose.yml" ]] && [[ -f docker-compose.yml ]]; then
     base_services=$(awk '
       /^services:/ { in_services = 1; next }
       /^[a-z]/     { in_services = 0 }
@@ -119,13 +119,13 @@ interface and bypasses the host firewall"
       svc = ""
     }
   ' "$f")
-  if [ -n "$missing" ]; then
+  if [[ -n "$missing" ]]; then
     report "$f defines service(s) without the isolation floor (cap_drop + \
 no-new-privileges): $missing"
   fi
 done
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "compose-hardening: $failures violation(s) — see above." >&2
   exit 1
 fi

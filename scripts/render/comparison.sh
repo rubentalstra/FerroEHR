@@ -23,7 +23,7 @@ OUT="website/book/generated"
 
 command -v jq >/dev/null 2>&1 || { echo "render-comparison: jq is required" >&2; exit 1; }
 for f in "$RS/results.json" "$EB/results.json"; do
-  [ -f "$f" ] || { echo "render-comparison: missing artifact $f" >&2; exit 1; }
+  [[ -f "$f" ]] || { echo "render-comparison: missing artifact $f" >&2; exit 1; }
 done
 mkdir -p "$OUT" website/book/src/comparison-assets
 
@@ -45,13 +45,13 @@ run_date() {
   local d
   d=$(TZ=UTC git log --follow --diff-filter=AM -1 --date=format-local:%Y-%m-%d \
     --format=%cd -- "$1/results.json" 2>/dev/null || true)
-  if [ -z "$d" ]; then
+  if [[ -z "$d" ]]; then
     # The mtime fallback exists ONLY for a local, not-yet-committed
     # regeneration. Under CI an empty git log means a SHALLOW checkout, and
     # the fallback would stamp the checkout day — which the drift gate then
     # reads as a one-line date change (#2402, red on both tag runs). Fail
     # naming the cause instead.
-    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
       echo "::error::run_date: git log found no commit for $1/results.json — a shallow checkout; give the job fetch-depth: 0" >&2
       exit 1
     fi
@@ -194,7 +194,7 @@ $(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$EB/results.json" '
   (INDEX($b[0].outcomes[]; "\(.case)|\(.format // "-")")) as $eb
   | [$a[0].outcomes[] | select(.status=="failed")]
   | sort_by(.case)[]
-  | "| \(.case) | \(.format // "—") | \((.reason // "") | .[0:90] | gsub("\\|"; "\\\\|")) | \($eb["\(.case)|\(.format // "-")"].status // "—") |"' ; [ "$(count "$RS" failed)" = "0" ] && echo '| — | — | *none — zero failing cases* | — |' )
+  | "| \(.case) | \(.format // "—") | \((.reason // "") | .[0:90] | gsub("\\|"; "\\\\|")) | \($eb["\(.case)|\(.format // "-")"].status // "—") |"' ; [[ "$(count "$RS" failed)" = "0" ]] && echo '| — | — | *none — zero failing cases* | — |' )
 
 ### EHRbase failures by schedule chapter
 
@@ -301,7 +301,7 @@ knee_res() { # $1 file, $2 role, $3 field-expression over samples
 corpus_of() { jq -r '.corpus' "$1"; }
 
 {
-  if [ -f "$RS_STRESS" ] && [ -f "$EB_STRESS" ]; then
+  if [[ -f "$RS_STRESS" ]] && [[ -f "$EB_STRESS" ]]; then
     cargo run -q -p cnf-runner -- stress-compare \
       --left "$RS_STRESS" --left-label "ferroehr" \
       --right "$EB_STRESS" --right-label "EHRbase" \
@@ -326,7 +326,7 @@ A stress report is exploration evidence: it earns no conformance class
 (classes are earned exclusively by the hour-long measured class runs) and
 carries no class vocabulary — the chart shows where each system breaks.
 EOF
-  elif [ -f "$RS_STRESS" ]; then
+  elif [[ -f "$RS_STRESS" ]]; then
     cat <<EOF
 The step-load stress instrument (\`cnf-runner stress\`) has a committed
 report for **ferroehr** — the maximum sustainable throughput of

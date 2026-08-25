@@ -44,11 +44,11 @@ cd "$(dirname "$0")/../.."
 STD_PATHS='Option::default|Vec::default|String::default|bool::default'
 
 collect() {
-  if [ "${1:-}" = "--all" ]; then
+  if [[ "${1:-}" = "--all" ]]; then
     # -co --exclude-standard: tracked AND untracked (unignored) files — a new
     # file is checkable before it is ever staged.
     git ls-files -co --exclude-standard '*.rs'
-  elif [ "$#" -gt 0 ]; then
+  elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
     git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
@@ -62,14 +62,14 @@ report() {
 }
 
 files=$(collect "$@")
-[ -n "$files" ] || { echo "default-style: no Rust files to check."; exit 0; }
+[[ -n "$files" ]] || { echo "default-style: no Rust files to check."; exit 0; }
 
 for f in $files; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
 
   # (1) the per-field serde path form
   while IFS=: read -r line body; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     printf '%s' "$body" | grep -qE "$STD_PATHS" && continue
     report "$f:$line: \`#[serde(default = \"…\")]\` — put the value in the struct's \
 \`impl Default\` and use container-level \`#[serde(default)]\` instead \
@@ -84,7 +84,7 @@ for f in $files; do
   # are ordinary functions that happen to start with the word, and
   # `#[test] fn default_is_development()`, which returns nothing.
   while IFS=: read -r line _; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     report "$f:$line: a zero-argument \`default_*\` constructor — inline the value \
 in the struct's \`impl Default\` (scripts/checks/default-style.sh)"
   done < <(grep -nE '^[[:space:]]*(pub(\([^)]*\))?[[:space:]]+)?(const[[:space:]]+)?fn[[:space:]]+default_[a-z0-9_]*[[:space:]]*\(\)[[:space:]]*->' "$f" || true)
@@ -105,11 +105,11 @@ done
 # `--untracked` for the same reason (`git grep` alone sees only tracked
 # content).
 for f in $files; do
-  [ -f "$f" ] || continue
+  [[ -f "$f" ]] || continue
   while IFS=: read -r line decl; do
-    [ -n "${line:-}" ] || continue
+    [[ -n "${line:-}" ]] || continue
     name=$(printf '%s' "$decl" | sed -nE 's/.*const[[:space:]]+(DEFAULT_[A-Z0-9_]+).*/\1/p')
-    [ -n "$name" ] || continue
+    [[ -n "$name" ]] || continue
     if printf '%s' "$decl" | grep -q 'pub[[:space:]]\|pub(' ; then
       # Visible beyond the file: count tree-wide, discounting every declaration.
       hits=$(git grep --untracked -how "$name" -- '*.rs' | wc -l | tr -d ' ')
@@ -118,7 +118,7 @@ for f in $files; do
     else
       readers=$(($(grep -cow "$name" "$f" | tr -d ' ') - 1))
     fi
-    if [ "$readers" -le 1 ]; then
+    if [[ "$readers" -le 1 ]]; then
       report "$f:$line: \`const $name\` has $readers reader(s) — a constant \
 earns its name by being shared; inline the value in the \`impl Default\` that \
 reads it (scripts/checks/default-style.sh)"
@@ -126,7 +126,7 @@ reads it (scripts/checks/default-style.sh)"
   done < <(grep -nE 'const[[:space:]]+DEFAULT_[A-Z0-9_]+' "$f" || true)
 done
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "default-style: $failures violation(s) — see above." >&2
   exit 1
 fi

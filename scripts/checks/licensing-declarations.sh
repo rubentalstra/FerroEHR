@@ -29,9 +29,9 @@ readonly LICENSES_DIR='LICENSES'
 readonly CHAPTER='website/book/src/licensing.md'
 
 for required in "$REUSE_TOML" "$CHAPTER"; do
-  [ -f "$required" ] || { echo "error: missing $required" >&2; exit 1; }
+  [[ -f "$required" ]] || { echo "error: missing $required" >&2; exit 1; }
 done
-[ -d "$LICENSES_DIR" ] || { echo "error: missing $LICENSES_DIR/" >&2; exit 1; }
+[[ -d "$LICENSES_DIR" ]] || { echo "error: missing $LICENSES_DIR/" >&2; exit 1; }
 command -v yq >/dev/null || { echo "error: yq is required" >&2; exit 1; }
 
 # Every identifier named in an SPDX expression. Expressions here are `AND`/`OR`
@@ -51,19 +51,19 @@ fail=0
 note() { echo "licensing-declarations: $*" >&2; fail=1; }
 
 while read -r id; do
-  [ -n "$id" ] || continue
+  [[ -n "$id" ]] || continue
   note "REUSE.toml declares '$id' but $LICENSES_DIR/$id.txt does not exist — REUSE requires the full text of every licence the tree is offered under"
 done < <(comm -23 <(echo "$declared") <(echo "$texts"))
 
 while read -r id; do
-  [ -n "$id" ] || continue
+  [[ -n "$id" ]] || continue
   note "$LICENSES_DIR/$id.txt is present but nothing in REUSE.toml is offered under '$id' — delete the text, or declare the files that need it"
 done < <(comm -13 <(echo "$declared") <(echo "$texts"))
 
 # The chapter names licences the way a reader does ("CC-BY-SA 3.0"), so both the
 # SPDX spelling and the spaced human spelling count as a mention.
 while read -r id; do
-  [ -n "$id" ] || continue
+  [[ -n "$id" ]] || continue
   human=${id%-only}
   human=$(printf '%s' "$human" | sed -E 's/^(CC-BY-SA)-([0-9])/\1 \2/; s/^(MPL|AGPL|Apache|GPL|LGPL)-([0-9])/\1 \2/')
   if ! grep -qF -- "$id" "$CHAPTER" && ! grep -qF -- "$human" "$CHAPTER"; then
@@ -71,7 +71,7 @@ while read -r id; do
   fi
 done < <(echo "$declared")
 
-[ "$fail" -eq 0 ] || {
+[[ "$fail" -eq 0 ]] || {
   echo >&2
   echo "The machine-readable declarations (REUSE.toml + LICENSES/) and the" >&2
   echo "licensing chapter are the same statement in two registers; they may" >&2

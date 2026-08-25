@@ -26,14 +26,14 @@ PSQLF() { docker exec ferroehr-ferroehr-postgres-1 psql -U postgres -d ferroehr 
 
 echo "==> composing stack"
 docker compose down -v >/dev/null 2>&1 || true
-if [ "${SKIP_BUILD:-0}" != "1" ]; then
+if [[ "${SKIP_BUILD:-0}" != "1" ]]; then
   docker compose up -d --build ferroehr-postgres ferroehr
 else
   docker compose up -d ferroehr-postgres ferroehr
 fi
 for _ in $(seq 1 60); do
   code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ferroehr/rest/status || true)
-  [ "$code" = "200" ] && break; sleep 3
+  [[ "$code" = "200" ]] && break; sleep 3
 done
 
 echo "==> seeding ${SCALE}"

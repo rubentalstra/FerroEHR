@@ -69,13 +69,13 @@ YAML
 # rather than measure nothing and call it a finding.
 events_bind_queue() {
   local tries=40
-  while [ "$tries" -gt 0 ]; do
+  while [[ "$tries" -gt 0 ]]; do
     curl -s -u "$EVT_AUTH" "$EVT_MGMT/api/exchanges/%2f/$EVT_EXCHANGE" \
       | grep -q '"name"' && break
     tries=$((tries - 1))
     sleep 3
   done
-  [ "$tries" -gt 0 ] || return 1
+  [[ "$tries" -gt 0 ]] || return 1
   curl -s -o /dev/null -u "$EVT_AUTH" -X PUT -H 'Content-Type: application/json' \
     -d '{"durable":true}' "$EVT_MGMT/api/queues/%2f/$EVT_QUEUE"
   local code
@@ -92,7 +92,7 @@ events_bind_queue() {
 events_wait_mgmt() {
   local tries="${1:-40}"
   for _ in $(seq 1 "$tries"); do
-    [ "$(curl -s -o /dev/null -w '%{http_code}' -u "$EVT_AUTH" "$EVT_MGMT/api/overview")" = "200" ] && return 0
+    [[ "$(curl -s -o /dev/null -w '%{http_code}' -u "$EVT_AUTH" "$EVT_MGMT/api/overview")" = "200" ]] && return 0
     sleep 3
   done
   return 1
@@ -113,7 +113,7 @@ events_wait_message() {
   local tries="${1:-30}" body
   for _ in $(seq 1 "$tries"); do
     body="$(events_get 10)"
-    if [ -n "$body" ] && [ "$body" != "[]" ]; then printf '%s' "$body"; return 0; fi
+    if [[ -n "$body" ]] && [[ "$body" != "[]" ]]; then printf '%s' "$body"; return 0; fi
     sleep 3
   done
   printf '%s' "${body:-[]}"
@@ -159,7 +159,7 @@ probes_events() {
   local ehr body
   ehr="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
          | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     probe_fail "a committed EHR" "no id returned"
     probe_done
   else
@@ -175,7 +175,7 @@ probes_events() {
     # The privacy claim, checked against the bytes actually on the wire.
     probe "P-EVT-NO-PHI" "working" "server" "#2178" \
       "the published envelope carries identity and provenance only — no clinical content"
-    if [ -z "${body:-}" ] || [ "${body:-[]}" = "[]" ]; then
+    if [[ -z "${body:-}" ]] || [[ "${body:-[]}" = "[]" ]]; then
       probe_fail "a message to inspect" "none captured" \
         "without the payload the PHI-free claim cannot be checked at all"
     else
@@ -201,7 +201,7 @@ probes_events() {
   local queued
   queued="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
             | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
-  if [ -z "$queued" ]; then
+  if [[ -z "$queued" ]]; then
     probe_fail "a commit that succeeds with the broker down" "no EHR id returned" \
       "commits must never block on the broker; that is what the outbox is for"
   fi
@@ -214,7 +214,7 @@ probes_events() {
   dc start ferroehr-rabbitmq >/dev/null 2>&1
   events_wait_mgmt || true
   events_bind_queue || true
-  if [ -n "$queued" ]; then
+  if [[ -n "$queued" ]]; then
     local after
     if ! after="$(events_wait_message 40)"; then
       probe_fail "the queued event delivered after recovery" "queue still empty after 120s" \

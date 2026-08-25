@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: MIT
 # Seed the composed FHIR R4 terminology server with the CNF test terminologies.
 #
+# POSIX sh ON PURPOSE (the one non-bash script in the tree): the terminology
+# container runs this via /bin/sh and ships no bash, so bash-only constructs
+# ([[ ]] included) must stay out of this file.
+#
 # Runs as a one-shot init container of the `terminology` compose profile, after
 # the server answers its own capability statement. Everything it writes is
 # SYNTHETIC test content under the reserved example.test domain (IETF RFC 6761

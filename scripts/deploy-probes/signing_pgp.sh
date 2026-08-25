@@ -35,11 +35,11 @@ pgp_material() {
     "FerroEHR Probe $name <probe-$name@example.test>" default default never >/dev/null 2>&1 || return 1
   fpr="$(GNUPGHOME="$dir/gnupg" gpg --batch --list-secret-keys --with-colons 2>/dev/null \
     | awk -F: '/^fpr:/ {print $10; exit}')"
-  [ -n "$fpr" ] || return 1
+  [[ -n "$fpr" ]] || return 1
   GNUPGHOME="$dir/gnupg" gpg --batch --pinentry-mode loopback \
     --passphrase "$PGP_PASS" --armor --export-secret-keys "$fpr" > "$dir/signing.asc" 2>/dev/null || return 1
   GNUPGHOME="$dir/gnupg" gpg --batch --armor --export "$fpr" > "$dir/public.asc" 2>/dev/null || return 1
-  [ -s "$dir/signing.asc" ] && [ -s "$dir/public.asc" ] || return 1
+  [[ -s "$dir/signing.asc" ]] && [[ -s "$dir/public.asc" ]] || return 1
   printf '%s' "$PGP_PASS" > "$dir/passphrase"
   # The container runs as the distroless nonroot uid; these are throwaway probe
   # credentials, so world-readable is the simplest way to guarantee the mount is
@@ -76,7 +76,7 @@ probes_signing_pgp() {
     return 0
   fi
   local dir overlay
-  if ! dir="$(pgp_material)" || [ -z "$dir" ]; then
+  if ! dir="$(pgp_material)" || [[ -z "$dir" ]]; then
     uncovered "signing in PGP mode (#2163)" "this host's gpg would not generate a probe key"
     return 0
   fi
@@ -102,7 +102,7 @@ probes_signing_pgp() {
   local ehr version
   ehr="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
     | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
-  if [ -z "$ehr" ]; then
+  if [[ -z "$ehr" ]]; then
     probe_fail "a committed EHR" "no id returned"
     probe_done
     return 0
@@ -127,7 +127,7 @@ probes_signing_pgp() {
   matched="$(probe_psql "SELECT count(*) FROM ehr.vo_version
                           WHERE ehr_id = '$ehr'::uuid
                             AND body #>> '{name,value}' = 'tampered';")"
-  if [ "${matched:-0}" = "0" ]; then
+  if [[ "${matched:-0}" = "0" ]]; then
     probe_fail "a tampered stored row" "the UPDATE matched nothing" \
       "detection was never tested — the probe could not reach the stored content"
   else
@@ -182,8 +182,8 @@ probes_signing_rotation() {
     return 0
   fi
   local key_a key_b overlay ehr_a
-  if ! key_a="$(pgp_material rotate-a)" || [ -z "$key_a" ] \
-     || ! key_b="$(pgp_material rotate-b)" || [ -z "$key_b" ]; then
+  if ! key_a="$(pgp_material rotate-a)" || [[ -z "$key_a" ]] \
+     || ! key_b="$(pgp_material rotate-b)" || [[ -z "$key_b" ]]; then
     uncovered "PGP key rotation (#2122)" "this host's gpg would not generate the two probe keys"
     return 0
   fi
@@ -217,7 +217,7 @@ probes_signing_rotation() {
   # key-A version back under strict verification without an integrity failure.
   probe "P-ROT-HISTORY" "working" "server" "#2122" \
     "a version signed by the RETIRED key still verifies after rotation"
-  if [ -z "$ehr_a" ]; then
+  if [[ -z "$ehr_a" ]]; then
     probe_fail "a version signed under key A" "no EHR was committed before the rotation"
   else
     assert_eq "200" "$(http_code -u "$BASIC" "$API/ehr/$ehr_a/versioned_ehr_status/version")" \
@@ -237,7 +237,7 @@ probes_signing_rotation() {
   matched="$(probe_psql "SELECT count(*) FROM ehr.vo_version
                           WHERE ehr_id = '$ehr_a'::uuid
                             AND body #>> '{name,value}' = 'tampered';")"
-  if [ "${matched:-0}" = "0" ]; then
+  if [[ "${matched:-0}" = "0" ]]; then
     probe_fail "a tampered stored row" "the UPDATE matched nothing" \
       "permissiveness was never tested — the probe could not reach the stored content"
   else

@@ -17,11 +17,11 @@ cd "$(dirname "$0")/../.."
 workspace=$(grep -m1 '^version = "' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
 statement=$(jq -r '.product.version' tools/cnf-runner/party/ferroehr/statement.json)
 
-if [ -z "$workspace" ]; then
+if [[ -z "$workspace" ]]; then
   echo "statement-version: cannot read the workspace version from Cargo.toml" >&2
   exit 1
 fi
-if [ "$workspace" != "$statement" ]; then
+if [[ "$workspace" != "$statement" ]]; then
   echo "statement-version: the ferroehr party statement declares product \
 version $statement but the workspace is $workspace — bump \
 tools/cnf-runner/party/ferroehr/statement.json (and regenerate the derived \

@@ -83,8 +83,8 @@ to disk before the server answers, so an acknowledged commit survives a crash.
 That flush (one `fsync` on the WAL device per commit) is a physical lower
 bound on single-client write latency, and no storage design takes a lone
 sequential client below it. On a laptop-class Docker setup the flush alone
-measures around 1.5–2 ms; on server NVMe it is typically an order of magnitude
-smaller. FerroEHR's optimization target is therefore everything *around* the
+dominates a single write's budget; on server NVMe it is typically an order of
+magnitude smaller. FerroEHR's optimization target is therefore everything *around* the
 flush: the database's own per-commit work (one folded commit statement, one
 merged placement read) stays far below the flush itself. That is also what
 makes concurrent throughput scale: PostgreSQL group-commits, amortizing one

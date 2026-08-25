@@ -48,7 +48,7 @@ label_for_component() {
 filed=0 skipped=0
 # component|repo|ref|sha rows from the vendor script (the single pin source).
 while IFS='|' read -r comp repo ref sha; do
-  [ -n "$comp" ] || continue
+  [[ -n "$comp" ]] || continue
   # Highest Release-X.Y.Z tag (vN re-cut suffixes collapse to their base).
   if ! gh api "repos/openEHR/$repo/tags?per_page=100" --jq '[.[].name]' > "$tmp/tags.json" 2>"$tmp/gh-err"; then
     echo "spec-release-watcher: tags fetch FAILED for openEHR/$repo:" >&2
@@ -58,16 +58,16 @@ while IFS='|' read -r comp repo ref sha; do
   latest=$(jq -r '.[] | select(test("^Release-[0-9]+\\.[0-9]+\\.[0-9]+(v[0-9]+)?$"))
                   | sub("^Release-"; "") | sub("v[0-9]+$"; "")' "$tmp/tags.json" |
            sort -uV | tail -1)
-  if [ -z "$latest" ]; then
+  if [[ -z "$latest" ]]; then
     echo "  $comp (openEHR/$repo): no Release-* tags — skipped"
     continue
   fi
   pin_ver=$(echo "$ref" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
 
-  if [ -n "$pin_ver" ]; then
+  if [[ -n "$pin_ver" ]]; then
     # Comparable pin: only a strictly NEWER release is a missed event.
-    if [ "$latest" = "$pin_ver" ] ||
-      [ "$(printf '%s\n%s\n' "$latest" "$pin_ver" | sort -V | tail -1)" = "$pin_ver" ]; then
+    if [[ "$latest" = "$pin_ver" ]] ||
+      [[ "$(printf '%s\n%s\n' "$latest" "$pin_ver" | sort -V | tail -1)" = "$pin_ver" ]]; then
       skipped=$((skipped + 1))
       continue
     fi
@@ -75,7 +75,7 @@ while IFS='|' read -r comp repo ref sha; do
   # Board dedup — matches [spec-release] issues AND hand-made adoption
   # umbrellas that already carry the component + version in the title.
   covered=$(gh issue list --state all --search "\"$comp\" \"$latest\" in:title" --json number --jq 'length')
-  if [ "$covered" -gt 0 ]; then
+  if [[ "$covered" -gt 0 ]]; then
     echo "  $comp Release-$latest: already on the board — skipped"
     skipped=$((skipped + 1))
     continue
@@ -84,9 +84,9 @@ while IFS='|' read -r comp repo ref sha; do
   # Routing per the version policy.
   pin_major="${pin_ver%%.*}"
   rel_major="${latest%%.*}"
-  if [ "$comp" = "ITS-REST" ]; then
+  if [[ "$comp" = "ITS-REST" ]]; then
     routing="ITS-REST is single-version (always the latest RELEASED API): open an adoption umbrella like #178 — re-vendor the released tag, regenerate, implement the delta, sweep the served identity."
-  elif [ -n "$pin_ver" ] && [ "$rel_major" != "$pin_major" ]; then
+  elif [[ -n "$pin_ver" ]] && [[ "$rel_major" != "$pin_major" ]]; then
     routing="**MAJOR release** — incompatible by openEHR's release strategy: a per-component generation decision is required (dual generation via the am14/am24 codegen pattern only if the ecosystem runs both; otherwise cutover). See docs/VERSIONS.md §Spec version policy."
   else
     routing="Minor/patch of the pinned line (compatible superset): re-vendor at the release tag, regenerate, implement any behaviour delta, update docs/VERSIONS.md."
@@ -111,9 +111,9 @@ _Opened automatically by \`.github/workflows/spec-release-watcher.yml\`._
 EOF
   lbl=$(label_for_component "$comp")
   label_args=(--label spec-update --label P1)
-  [ -n "$lbl" ] && label_args+=(--label "$lbl")
+  [[ -n "$lbl" ]] && label_args+=(--label "$lbl")
   up_label="upstream:${comp}-${latest}"
-  if [ "$DRY_RUN" = "1" ]; then
+  if [[ "$DRY_RUN" = "1" ]]; then
     echo "DRY-RUN would create: $title  [${label_args[*]} --label $up_label]"
     sed 's/^/    │ /' "$tmp/body.md"
   else
