@@ -121,5 +121,7 @@ jobs:
     # the one way to reach an ENVIRONMENT secret from a caller, since a
     # `uses:` job cannot declare the environment itself; the called job's
     # `environment: sandbox-reseed` still applies its protection rules.
+    # zizmor's preferred explicit passing is impossible here: the caller's
+    # job cannot read an environment-scoped secret to pass it on.
     uses: ./.github/workflows/sandbox-reseed.yml
-    secrets: inherit
+    secrets: inherit # zizmor: ignore[secrets-inherit]
