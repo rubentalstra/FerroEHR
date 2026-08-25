@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- A one-click tester sandbox: opening the repository in a GitHub Codespace
+  boots the published quickstart stack (server, PostgreSQL 18, admin console)
+  automatically and forwards the API and console ports. The committed
+  `.devcontainer/` pins every compose command to the standalone
+  `docker-compose.yml`, so the sandbox runs release images rather than
+  building the checkout. Documented at *Installation → Try it in Codespaces*
+  and linked from the README quick start.
+
 - `POST {base}/admin/integrity/verify` sweeps the stored data for
   content-copy disagreement. Every version's content is stored twice — as
   the materialized document a point read serves and as the decomposed rows

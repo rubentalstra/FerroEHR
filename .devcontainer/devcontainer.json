@@ -1,0 +1,49 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+//
+// The tester sandbox (#2709): "Open in GitHub Codespaces" boots the published
+// FerroEHR images and forwards the API + admin console, so trying FerroEHR
+// needs nothing installed locally. This is deliberately NOT a Rust
+// development environment — repo development uses a local checkout and the
+// compose override (see website/book/src/installation/compose.md).
+//
+// COMPOSE_FILE pins every compose invocation in this container to the
+// standalone docker-compose.yml: a bare `docker compose up` inside a checkout
+// would otherwise merge docker-compose.override.yml and try a from-source
+// build (the trap documented at the top of the compose book page).
+//
+// Schema: https://containers.dev/implementors/json_reference
+{
+    "name": "FerroEHR tester sandbox",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:4": {}
+    },
+    "containerEnv": {
+        "COMPOSE_FILE": "docker-compose.yml"
+    },
+    "hostRequirements": {
+        "cpus": 2,
+        "memory": "8gb",
+        "storage": "32gb"
+    },
+    // Pull the published images at create time (and during a prebuild, where
+    // configured), so the first start only has to boot them.
+    "onCreateCommand": "bash .devcontainer/pull-stack.sh",
+    // Start the stack on every container start, resume included.
+    "postStartCommand": "bash .devcontainer/start-stack.sh",
+    "forwardPorts": [8080, 3000],
+    "portsAttributes": {
+        "8080": {
+            "label": "FerroEHR API + Swagger UI",
+            "onAutoForward": "notify"
+        },
+        "3000": {
+            "label": "FerroEHR admin console",
+            "onAutoForward": "notify"
+        }
+    },
+    "otherPortsAttributes": {
+        "onAutoForward": "silent"
+    }
+}
