@@ -1,0 +1,121 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# The ONE owner of hosted-sandbox delivery (#2724, sandbox.ferroehr.eu).
+# Vercel's git-triggered deployments are fully OFF (vercel.json
+# `git.deploymentEnabled: false`) and no ignore script exists: the sandbox
+# deploys exactly when this workflow pings the project's Deploy Hook, which
+# is a plain trigger URL (no account token, no API scope). Ordering is
+# explicit by construction — the ping happens only AFTER the release image
+# exists, so no skip-until-exists guard and no image race can occur.
+#
+# Triggers:
+#   - workflow_run on the Containers pipeline: a successful RELEASE (v*, no
+#     prerelease suffix) image publish redeploys the sandbox. The sandbox
+#     image is `FROM ghcr.io/rubentalstra/ferroehr:latest`, which the image
+#     lane moves on exactly those tags, so nothing is hand-bumped at a cut.
+#   - push to develop touching the sandbox posture (Dockerfile.vercel,
+#     vercel.json, deploy/vercel/**): a config change redeploys the same
+#     release image with the new posture.
+#   - workflow_dispatch: a manual redeploy (reseed skippable).
+#
+# After a successful deploy the reseed runs (the reusable half of
+# sandbox-reseed.yml): the nightly wipe stays the janitor, and a release
+# that edits the baseline migration heals immediately instead of at the
+# next midnight. A failure here is a sandbox failure in a sandbox-named
+# workflow — it can never redden CI, Containers, or a release lane.
+
+name: Sandbox deploy
+
+on:
+  # The dangerous-triggers concern is fork/PR content running privileged;
+  # Containers triggers only on develop pushes and v* tags of THIS repo
+  # (never on pull requests), and this workflow checks nothing out, runs no
+  # repository code, and holds no permissions (permissions: {}).
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows: [Containers]
+    types: [completed]
+  push:
+    branches: [develop]
+    paths:
+      - Dockerfile.vercel
+      - vercel.json
+      - deploy/vercel/**
+  workflow_dispatch:
+    inputs:
+      reseed:
+        description: Wipe and reseed after the deploy
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: sandbox-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: ping the deploy hook and verify
+    # Upstream only (forks have neither the hook nor the Neon environment);
+    # for workflow_run, only a SUCCESSFUL Containers run for a release tag
+    # (head_branch carries the tag name on tag-triggered runs; a prerelease
+    # suffix is skipped — `latest` does not move for those either).
+    if: >-
+      github.repository == 'rubentalstra/FerroEHR' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        startsWith(github.event.workflow_run.head_branch, 'v') &&
+        !contains(github.event.workflow_run.head_branch, '-')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions: {}
+    steps:
+      - name: Trigger the Vercel deploy
+        env:
+          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$HOOK_URL" ]; then
+            echo "SANDBOX_DEPLOY_HOOK_URL is not configured; nothing to deploy." >&2
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK_URL" -o /dev/null
+          echo "sandbox deploy triggered"
+
+      - name: Wait for the sandbox to serve again
+        env:
+          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$HOOK_URL" ]; then
+            echo "no hook configured; skipping the wait." >&2
+            exit 0
+          fi
+          # Vercel builds the container (a pull + retag of the published
+          # image, minutes at most) and swaps the deployment; poll until the
+          # API answers. Serverless cold boots re-run the migrations, so the
+          # first 200 proves the new deployment is live AND migrated.
+          deadline=$(( $(date +%s) + 1200 ))
+          sleep 60
+          until code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' \
+              https://sandbox.ferroehr.eu/ferroehr/rest/status); [ "$code" = "200" ]; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::the sandbox did not serve within 20 minutes of the deploy ping." >&2
+              exit 1
+            fi
+            echo "status answered ${code:-nothing}; waiting"
+            sleep 20
+          done
+          echo "sandbox is serving"
+
+  reseed:
+    name: reseed after deploy
+    needs: deploy
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.reseed }}
+    permissions:
+      contents: read
+    # SANDBOX_DATABASE_URL is an ENVIRONMENT secret; the called workflow's
+    # job declares `environment: sandbox-reseed`, so it resolves there — no
+    # secret passing is needed.
+    uses: ./.github/workflows/sandbox-reseed.yml

@@ -43,18 +43,16 @@ for var in FERROEHR_IMAGE FERROEHR_POSTGRES_IMAGE FERROEHR_ADMIN_UI_IMAGE; do
   fi
 done
 
+# Dockerfile.vercel deliberately carries NO version to check: the hosted
+# sandbox tracks the `:latest` release pointer the image lane moves (#2724),
+# so this guard only pins it to that pointer — a versioned FROM reappearing
+# would resurrect the release-cut bump this guard used to police.
 vercel_ref="$(grep -oE '^FROM ghcr\.io/[^ ]+' "$VERCEL_FILE" | head -1 | sed 's/^FROM //')"
-if [ -z "$vercel_ref" ]; then
-  echo "::error::$VERCEL_FILE declares no ghcr.io FROM reference" >&2
+if [ "$vercel_ref" != "ghcr.io/rubentalstra/ferroehr:latest" ]; then
+  echo "::error::Dockerfile.vercel must be FROM ghcr.io/rubentalstra/ferroehr:latest (the release pointer, #2724); found '$vercel_ref'." >&2
   rc=1
 else
-  vercel_tag="${vercel_ref##*:}"
-  if [ "$vercel_tag" != "$version" ]; then
-    echo "::error::Dockerfile.vercel pins '$vercel_ref' (tag $vercel_tag) but the workspace version is $version — the release cut bumps it with the compose tags (.claude/rules/changelog.md)." >&2
-    rc=1
-  else
-    echo "Dockerfile.vercel FROM $vercel_ref matches the workspace version."
-  fi
+  echo "Dockerfile.vercel tracks the :latest release pointer."
 fi
 
 exit "$rc"

@@ -32,10 +32,12 @@ optional:
   `CITATION.cff` completely whenever a `.zenodo.json` exists
   (<https://help.zenodo.org/docs/github/describe-software/zenodo-json/>),
   + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
-  fallbacks the standalone quickstart pulls — and the `FROM ghcr.io/…:X.Y.Z`
-  pin in `Dockerfile.vercel` (the hosted sandbox), both guarded by
+  fallbacks the standalone quickstart pulls — guarded by
   `scripts/checks/compose-image-tags.sh` / the `compose-version-guard` CI
-  job, + the book's pinned versions — `website/book/src/installation/
+  job (the hosted sandbox carries NO release-cut step since #2724: its
+  `Dockerfile.vercel` tracks the `:latest` release pointer and
+  `sandbox-deploy.yml` redeploys + reseeds it automatically after the tag's
+  Containers run — `deploy/vercel/README.md`), + the book's pinned versions — `website/book/src/installation/
   kubernetes.md` pins the chart `--version` and `image.tag`, and
   `website/book/src/verifying-releases.md` pins the release tag in its
   examples; `docs-claims` catches the chart/image pins, learned at the
