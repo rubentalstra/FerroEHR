@@ -45,6 +45,14 @@ workflow refuses a tag that has no matching section here.
   commit cannot beat the WAL flush, how group commit scales concurrent
   writers past it, and the `synchronous_commit` trade-off as an explicit
   operator choice (never a FerroEHR default).
+- The Helm chart's default container resources now bound ephemeral storage
+  (requests 128Mi, limits 1Gi) alongside CPU and memory: the root filesystem
+  is read-only and the container writes only logs and tmp, so an unbounded
+  local-write default could evict a node's neighbouring pods. Chart 6.0.18.
+- The landing page's Content-Security-Policy drops `'unsafe-inline'` from
+  `script-src`: the page's only script element is a JSON-LD data block,
+  which browsers never execute, so the allowance permitted inline script
+  injection for nothing in return.
 - The hosted sandbox's delivery pipeline is redesigned end to end
   (`deploy/vercel/README.md`): one trigger owner (the Sandbox deploy
   workflow, firing after a release image publishes, on sandbox-posture
