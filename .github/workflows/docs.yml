@@ -8,7 +8,7 @@ name: Docs
 
 on:
   push:
-    branches: [develop]     # redeploy dev docs + landing/api
+    branches: [develop]     # redeploy dev docs + landing
     tags: ["v*"]            # cut a frozen version, then redeploy
   pull_request:             # PR: build + lint + link-check ONLY (no deploy)
   workflow_dispatch:
@@ -21,7 +21,6 @@ env:
   MDBOOK_KATEX_VERSION: "0.10.0"
   MDBOOK_LINT_VERSION: "0.14.4"
   LYCHEE_VERSION: "0.24.2"
-  SWAGGER_UI_VERSION: "5.32.8"
   # Custom domain (ferroehr.eu): the site is served at the apex root, so the
   # base path is empty. Set explicitly so CI and scripts/site/build.sh agree.
   SITE_ORIGIN: "https://ferroehr.eu"
@@ -58,8 +57,6 @@ jobs:
       - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
         with:
           tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
-      - name: OAS drift gate (docs copy == vendored ITS-REST)
-        run: bash scripts/site/assemble-oas.sh --check       # regenerate + git diff --exit-code
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
         run: bash scripts/checks/conformance-numbers.sh
       - name: Render conformance stats + comparison + perf assets (the generated includes must exist before lint)
@@ -89,7 +86,7 @@ jobs:
         run: git diff --exit-code website/book/src/conformance-assets website/book/src/comparison-assets/conformance-heat-grid-ehrbase.svg website/book/src/comparison-assets/conformance-chapter-bars-ehrbase.svg
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
-      - name: Assemble _site (landing + api + /docs/dev/)
+      - name: Assemble _site (landing + /docs/dev/)
         run: bash scripts/site/build.sh --dev-only       # writes ./_site
       - name: Link-check gate (internal links only — blocking)
         # `--offline` blocks network requests, so this checks exactly the
@@ -175,7 +172,7 @@ jobs:
         with:
           tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - name: Assemble full _site (landing + api + dev + frozen versions + latest + sitemap)
+      - name: Assemble full _site (landing + dev + frozen versions + latest + sitemap)
         run: bash scripts/site/build.sh --full
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

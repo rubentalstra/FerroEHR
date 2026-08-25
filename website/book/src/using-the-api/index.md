@@ -6,9 +6,13 @@ interface for creating EHRs, committing and retrieving versioned clinical
 documents, managing folders and contributions, and running queries. This part is
 the practical reference for client developers: the resources and their
 operations, the headers that drive versioning and content negotiation, and the
-error contract. The complete, machine-generated endpoint reference (every path,
-parameter, and schema) is published separately as the **API reference** on the
-documentation site (under `/ferroehr/api/`); this book explains how to *use* it.
+error contract. For the complete endpoint reference (every path, parameter, and
+schema), open the Swagger UI of the live sandbox at
+<https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> and sign in with the
+public demo credentials `ferroehr` / `ferroehr`. That server generates the
+document from its own handlers, so it describes the running release and its
+"Try it out" buttons issue real requests. This book explains how to *use* the
+API.
 
 ## Base path
 
@@ -26,7 +30,9 @@ with `FERROEHR__SERVER__BASE_PATH` (see
 The status, health and documentation routes hang off the base path's **parent**
 (`/ferroehr/rest` by default), not off the base path itself: the public,
 unauthenticated status probe is at `/ferroehr/rest/status`, and interactive docs
-at `/ferroehr/rest/swagger-ui` when `swagger_ui` is on.
+at `/ferroehr/rest/swagger-ui` when `swagger_ui` is on. Every deployment serves
+that UI from its own routes, so your own server always documents its own
+surface.
 
 ## Capability discovery
 

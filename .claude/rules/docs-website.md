@@ -1,5 +1,5 @@
 ---
-paths: ["website/**", "scripts/site/assemble-oas.sh", "scripts/site/build.sh", "scripts/site/cut-version.sh", ".github/workflows/docs.yml"]
+paths: ["website/**", "scripts/site/build.sh", "scripts/site/cut-version.sh", ".github/workflows/docs.yml"]
 ---
 
 # The documentation website (`website/**`)
@@ -20,8 +20,6 @@ authority for layout, look & feel, and content.
   requests.
 - `website/book/` — the mdBook (served at `/docs/dev/`, frozen per release at
   `/docs/vX.Y.Z/`, newest release copied to `/docs/latest/`).
-- `website/api/` — the OpenAPI endpoint reference (vendored Swagger UI + the
-  served OAS copies).
 - Frozen versions live on the `docs-dist` orphan branch (generate once,
   never rebuilt); `scripts/site/cut-version.sh vX.Y.Z` cuts one (CI does this on
   every `v*` tag).
@@ -88,16 +86,25 @@ something, check whether the *guard* is wrong before editing the page: its
 first run reported a published chart as orphaned because it searched only
 `website/book/src` and the reference lived in `website/book/generated`.
 
+## The API reference is the live sandbox
+
+The site hosts no OpenAPI reference of its own. Every "API reference" link
+points at the hosted sandbox's Swagger UI,
+<https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui>, which the server
+generates from its own handlers and serves at the running release. The demo
+credentials are `ferroehr` / `ferroehr`
+(`website/book/src/installation/codespaces.md`). Every deployment serves the
+same UI at `/ferroehr/rest/swagger-ui` when `swagger_ui` is on, so a reader
+running their own server reads their own surface.
+
 ## Never hand-edit
 
-- `website/api/spec/**` — produced by `scripts/site/assemble-oas.sh` from the
-  vendored ITS-REST bundles (CI drift gate `--check` fails otherwise).
-- `website/api/vendor/**`, `website/book/theme/mermaid*` — vendored assets.
+- `website/book/theme/mermaid*` — vendored assets.
 
 ## Toolchain
 
 Pinned in `docs.yml` `env` (mdBook, mdbook-mermaid, mdbook-toc, mdbook-lint,
-lychee, Swagger UI). Bump only after live-verifying the new version.
+lychee). Bump only after live-verifying the new version.
 
 ## Local preview
 

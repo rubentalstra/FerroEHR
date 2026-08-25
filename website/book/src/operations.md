@@ -562,5 +562,6 @@ control) which appears only while the CDR serves `/management/info`. See
 - [Configuration reference](installation/configuration.md) — every setting,
   with the server, database and telemetry keys on
   [their own page](installation/config-server.md).
-- The API reference at `/ferroehr/api/` (the **API** tab in the toolbar) — the
-  document the server itself generates.
+- The API reference at `/ferroehr/rest/swagger-ui` on your own deployment, or
+  <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> on the hosted
+  sandbox — the document the server itself generates.

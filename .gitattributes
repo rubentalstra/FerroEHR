@@ -36,12 +36,10 @@ crates/openehr-am/src/**/*_impl.rs   linguist-generated=false
 crates/openehr-codegen/vendor/** linguist-vendored
 crates/openehr-its/schemas/**    linguist-vendored
 crates/openehr-its/vendor/**     linguist-vendored
-website/api/vendor/**            linguist-vendored
 website/book/theme/mermaid.min.js linguist-vendored
 website/book/theme/mermaid-init.js linguist-vendored
 
 # Byte-copied / machine-produced artifacts
-website/api/spec/**    linguist-generated=true
 deploy/helm/golden/**  linguist-generated=true
 docs/conformance/**    linguist-generated=true
 
