@@ -559,15 +559,13 @@ impl Builder<'_> {
             self.group_vos.push(voa.clone());
             self.vo_alias.insert(sid, voa.clone());
             if let Some(e) = ehr {
-                self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
-                // Mirror the EHR link onto the version spine: `vo_version.
-                // ehr_id` carries the same value by construction (a versioned
-                // object belongs to exactly one EHR — RM ehr master04 §EHR),
-                // and the explicit predicate lets the planner drive
-                // `idx_vo_version_ehr` instead of scanning every current
-                // version in the store (buffers then scale with the EHR's own
-                // content, not the corpus). No openEHR spec governs plan
-                // shaping — our own storage design.
+                // The EHR link binds on the version SPINE only: vo_version.
+                // ehr_id equals the node rows' by construction (one owning
+                // EHR per versioned object — RM ehr master04 §EHR), the node
+                // group already joins the spine on (vo_id, sys_version), and
+                // the spine predicate drives idx_vo_version_ehr. A node-side
+                // twin predicate bought no plan this route does not serve and
+                // cost a per-node-row index at every write (#2698).
                 self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 self.roots_linked_to_ehr.insert(node.clone());
             }

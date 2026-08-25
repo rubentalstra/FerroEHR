@@ -32,6 +32,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- Every versioned-object write sheds one btree: EHR-scoped AQL routes its
+  scoping through the version spine (where the engine already mirrored the
+  predicate), so the per-node-row `ehr_id` index — maintained for every row
+  of every commit and, measured over the generated plans, serving no read
+  the spine route does not — is gone from the baseline. Measured at a
+  100k-composition seed: the node insert drops ~0.5 ms per commit (~13%);
+  EHR-scoped reads are unchanged. Deployments recreate to pick the baseline
+  up (greenfield policy).
+
 - Commit latency's tail shrinks: the large stored JSON columns
   (`vo_version.body`, `vo_version.wrapped_original`; the node fragments and
   audit columns already had it) compress with lz4 instead of PostgreSQL's
