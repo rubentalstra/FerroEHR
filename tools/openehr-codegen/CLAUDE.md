@@ -64,8 +64,11 @@ output, never the raw files:
 - `src/render/` — the only stage that produces text: `emit`, `emit_json`,
   `emit_xml`, `emit_rest`, `emit_rm_model`, `emit_opt`, `emit_validate`, and the
   shared `naming` helper.
-- `src/cli.rs` + a thin `src/main.rs` — argument dispatch and the
-  stage-orchestrating `cmd_*` handlers that write each emit target's files.
+- `src/cli.rs` + a thin `src/main.rs` — argument dispatch. EVERY emit target's
+  text production is a `render_*_files()` seam consumed by both its `cmd_*`
+  write-shell and `testsupport::emit_*_to_memory()` (#2686/#2687), so the CLI
+  and the invariant tests can never diverge by code path; the `cmd_*` handlers
+  only write files.
 
 ## Discipline
 
