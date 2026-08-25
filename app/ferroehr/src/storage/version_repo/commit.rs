@@ -287,8 +287,10 @@ pub struct FoldedVersion<'a> {
     pub rows: &'a [crate::storage::row::NodeRow],
 }
 
-/// A **standalone** folded commit: `audit` + `contribution` + `vo_version` +
-/// the decomposed `node` rows in ONE data-modifying CTE chain, returning `(contribution_id, audit_id,
+/// A **standalone** folded commit.
+///
+/// `audit` + `contribution` + `vo_version` + the decomposed `node` rows in
+/// ONE data-modifying CTE chain, returning `(contribution_id, audit_id,
 /// time_committed)`.
 ///
 /// The single audit row serves both the CONTRIBUTION and the version's
@@ -379,9 +381,11 @@ pub async fn commit_new_version(
     Ok((contribution_id, audit_id, time_committed))
 }
 
-/// A folded commit WITHIN an already-opened CONTRIBUTION: the version's own
-/// `commit_audit` + `vo_version` + the decomposed `node` rows in ONE
-/// data-modifying CTE chain, referencing the pre-existing `contribution_id`.
+/// A folded commit WITHIN an already-opened CONTRIBUTION.
+///
+/// The version's own `commit_audit` + `vo_version` + the decomposed `node`
+/// rows in ONE data-modifying CTE chain, referencing the pre-existing
+/// `contribution_id`.
 ///
 /// Returns `(audit_id, time_committed)`. The CONTRIBUTION and its own audit
 /// were written earlier in the same transaction ([`write_contribution`]);
