@@ -40,8 +40,10 @@ highest:
 3. **`FERROEHR_*` environment variables:** override individual keys.
 4. **`--set key=value` CLI flags** (repeatable), which win over everything.
 
-Two permanent conventional aliases sit *below* their `FERROEHR_` forms within
-layer 3: `DATABASE_URL` → `db.url` and `RUST_LOG` → `log.filter`. Nothing else
+Three conventional names sit *below* their `FERROEHR_` forms within layer 3:
+`DATABASE_URL` → `db.url`, `RUST_LOG` → `log.filter`, and `PORT` → a
+`0.0.0.0:<PORT>` value for `server.bind` (the port container platforms such
+as Vercel, Cloud Run and Heroku inject and route traffic to). Nothing else
 has a non-`FERROEHR_` name.
 
 ### The environment-variable mapping

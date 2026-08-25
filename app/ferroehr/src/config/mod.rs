@@ -586,6 +586,24 @@ mod tests {
         assert_eq!(c.db.url.expose(), "postgres://b@h/y");
     }
 
+    #[test]
+    fn port_convention_expands_to_an_all_interfaces_bind() {
+        // PORT alone binds server.bind on all interfaces (the container-
+        // platform convention: Vercel/Cloud Run/Heroku inject only the port).
+        let c = assemble_ok(None, &env(&[("PORT", "3123")]), &[]);
+        assert_eq!(c.server.bind, "0.0.0.0:3123");
+        // FERROEHR__SERVER__BIND wins over PORT.
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("PORT", "3123"),
+                ("FERROEHR__SERVER__BIND", "127.0.0.1:9000"),
+            ]),
+            &[],
+        );
+        assert_eq!(c.server.bind, "127.0.0.1:9000");
+    }
+
     // ── 2. Mapping (the test class whose absence let the dead env form ship) ──
 
     #[test]

@@ -45,6 +45,24 @@ The Codespace runs on your own GitHub account. The smallest machine type
 covers a long evaluation. Stop or delete the Codespace when you are done;
 a stopped Codespace restarts the stack automatically on resume.
 
+## The hosted sandbox
+
+A public demo at `sandbox.ferroehr.eu` is being set up as the second
+zero-install path: no GitHub account needed, point any REST client at it.
+So everyone knows what it runs on and what to expect from it:
+
+| | |
+|---|---|
+| Compute | Vercel Fluid (a container function that scales to zero when idle) |
+| Database | Neon serverless PostgreSQL 18, region Frankfurt (`fra1`) |
+| Database plan | Neon free tier: 0.5 GB storage, up to 2 CU / 8 GB RAM, 100 CU-hours of compute per month |
+| Data durability | none by design; demo data only, wiped and reseeded on a schedule |
+
+Both layers scale to zero, so the first request after an idle period pays a
+double cold start and can take a few seconds; after that it responds at
+normal speed. The free compute budget means the sandbox may be unavailable
+near the end of a heavy month. It is a demo, never a place for real data.
+
 ## If the stack is not up
 
 The boot log is in the terminal that ran `start-stack.sh`. To restart the

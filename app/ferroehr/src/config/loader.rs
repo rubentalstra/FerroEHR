@@ -157,6 +157,15 @@ pub fn assemble<S: std::hash::BuildHasher>(
                 .or_insert_with(|| value.clone());
         }
     }
+    // The PaaS port convention: container platforms (Vercel, Cloud Run,
+    // Heroku) inject `PORT` and route traffic to it. It carries only the port
+    // half, so it maps to an all-interfaces bind rather than joining the 1:1
+    // CONVENTIONAL table — still layered BELOW `FERROEHR__SERVER__BIND`.
+    if let Some(port) = env.get("PORT") {
+        alias_map
+            .entry("FERROEHR__SERVER__BIND".to_owned())
+            .or_insert_with(|| format!("0.0.0.0:{port}"));
+    }
 
     // The canonical (uniform-grammar) `FERROEHR__…` variables. Allowlisted
     // infra names never carry the double prefix, so the prefix check alone
