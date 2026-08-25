@@ -628,13 +628,16 @@ CREATE TABLE node (
         REFERENCES vo_version (vo_id, sys_version) ON DELETE CASCADE
         DEFERRABLE INITIALLY IMMEDIATE
 );
--- The archetype column is case-folded AT WRITE (storage::codec): composite
--- identifiers compare case-insensitively (BASE base_types master05
--- §"Composite Identifiers and Case"), so AQL archetype equality is plain
--- indexed equality on this composite index — no functional lower() index,
--- honest planner statistics (the canonical `data` fragment keeps original
--- casing).
-CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
+-- The rm_type-only CONTAINS anchor path (a class filter with no archetype).
+-- Deliberately WITHOUT the archetype column (measured 2026-08-25, #2698):
+-- 83% of node rows carry at-code archetype text, so the composite's key
+-- bytes dominated the write path's index maintenance while every measured
+-- anchor plan either used the subsumption index below (full-HRID anchors)
+-- or filtered archetype after this rm_type probe at identical latency. The
+-- archetype column stays case-folded at write (storage::codec; BASE
+-- base_types master05 §"Composite Identifiers and Case") so the residual
+-- filter is plain equality with honest statistics.
+CREATE INDEX idx_node_rm_type ON node (rm_type);
 -- Archetype-subsumption scan (BASE architecture_overview master10 §Design-time
 -- Relationships; AM master07 §Querying): a parent-archetype predicate resolves
 -- to arch_entity = $entity AND arch_major = $major AND (arch_concept = $concept
