@@ -29,9 +29,10 @@ workflow refuses a tag that has no matching section here.
   seconds instead of a half-hour Rust compile, and the sandbox runs the
   exact bytes CI built, signed and tested. The release-cut guard now holds
   its `FROM` tag to the workspace version alongside the compose defaults.
-  Automatic Vercel deployments are off entirely (no per-PR previews); the
-  sandbox deploys through a release-tag workflow that waits for the image
-  publish, so it always runs the latest release.
+  Vercel deploys only from the develop branch (no per-PR previews), and
+  because the Dockerfile pins the release tag, a develop push is a
+  seconds-long re-pull of the same release image: the sandbox always runs
+  the latest release, and its content changes only at a release cut.
 
 - A one-click tester sandbox: opening the repository in a GitHub Codespace
   boots the published quickstart stack (server, PostgreSQL 18, admin console)
