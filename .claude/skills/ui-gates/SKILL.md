@@ -30,17 +30,19 @@ failure; run the cheap gates first.
 ## The battery (in order)
 
 ```bash
-# 1. Format (fast, catches drift)
+# 1. Format (fast, catches drift) — tests/ carries view! macros too
 cargo fmt -p ferroehr-admin-ui --check
-leptosfmt --check app/ferroehr-admin-ui/src
+leptosfmt --check app/ferroehr-admin-ui/src app/ferroehr-admin-ui/tests
 
-# 2. Clippy — BOTH compilation targets (the wasm pass catches
-#    server-only deps leaking past the ssr feature gate)
-cargo clippy -p ferroehr-admin-ui --all-targets
+# 2. Clippy — BOTH compilation targets, in the EXACT CI feature shapes
+#    (the featureless crate ships nowhere: neither ssr nor hydrate; the
+#    wasm pass catches server-only deps leaking past the ssr feature gate)
+cargo clippy -p ferroehr-admin-ui --all-targets --features ssr
 cargo clippy -p ferroehr-admin-ui --lib --target wasm32-unknown-unknown --no-default-features --features hydrate
 
-# 3. Tests
-cargo nextest run -p ferroehr-admin-ui
+# 3. Tests — the ssr shape the crate ships and CI instruments; a
+#    featureless run silently skips every #[cfg(feature = "ssr")] module
+cargo nextest run -p ferroehr-admin-ui --features ssr
 
 # 4. Full build (server bin + WASM + assets) — only when the change
 #    touches the build surface (Cargo.toml, styles, assets, features);

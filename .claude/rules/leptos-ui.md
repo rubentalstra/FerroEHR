@@ -280,7 +280,8 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 - **E2E is a merge gate**: Rust-native only —
   `thirtyfour` (WebDriver, built on `fantoccini`) driving headless Chromium
   against the composed stack (`scripts/ui-e2e.sh`); journeys are plain
-  `#[tokio::test]`s in `app/ferroehr-admin-ui/tests/e2e_*.rs`, skip-with-
+  `#[tokio::test]`s in the `e2e_*` modules of the one integration binary
+  (`app/ferroehr-admin-ui/tests/it/`), skip-with-
   reason when `UI_E2E_BASE_URL` is unset (CI always sets it). Every journey
   fails on any browser-console hydration error or panic. Explicit waits on
   elements/conditions, never `sleep`; a flaky journey is fixed, never
