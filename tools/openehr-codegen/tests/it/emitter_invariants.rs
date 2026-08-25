@@ -203,8 +203,8 @@ fn determinism_plan_is_stable_across_runs() {
 /// output (the emitter is a deterministic function of the vendored inputs).
 #[test]
 fn determinism_render_is_byte_identical_across_runs() {
-    let a = testsupport::render_all_to_memory().unwrap();
-    let b = testsupport::render_all_to_memory().unwrap();
+    let a = testsupport::emit_to_memory().unwrap();
+    let b = testsupport::emit_to_memory().unwrap();
     assert!(!a.is_empty(), "rendered nothing");
     assert_eq!(
         a.len(),
@@ -300,7 +300,7 @@ fn downstream_closure_leaves_upstream_output_untouched() {
     }
     // …and they ARE emitted into the AM crate, while the shared member is
     // re-emitted downstream too.
-    let rendered = testsupport::render_all_to_memory().unwrap();
+    let rendered = testsupport::emit_to_memory().unwrap();
     let am_paths: Vec<&String> = rendered
         .keys()
         .filter(|k| k.starts_with("openehr-am/"))
@@ -379,7 +379,7 @@ fn decision_map_integrity_entries_are_cited_and_reference_real_classes() {
 /// which is exactly the "silence over an untyped slot" this map exists to end.
 #[test]
 fn untyped_field_adjudications_land_on_a_real_free_form_field() {
-    let files = testsupport::render_all_to_memory().unwrap();
+    let files = testsupport::emit_to_memory().unwrap();
     for (class, field, citation) in testsupport::untyped_fields() {
         let ident = if field == "type" {
             "r#type".to_string()
@@ -620,9 +620,9 @@ fn invariant_classification_spot_checks() {
 /// into the register.
 #[test]
 fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
-    let files = testsupport::render_all_to_memory().unwrap();
+    let files = testsupport::emit_to_memory().unwrap();
     let gen_file = files
-        .get("openehr-rm/v1_2/validate/generated.rs")
+        .get("openehr-rm/src/v1_2/validate/generated.rs")
         .expect("emit-validate did not produce v1_2/validate/generated.rs");
 
     // Every emittable invariant is accounted for, and named in the register the
@@ -680,9 +680,9 @@ fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
 /// silently is not.
 #[test]
 fn realization_register_venues_are_real() {
-    let files = testsupport::render_all_to_memory().unwrap();
+    let files = testsupport::emit_to_memory().unwrap();
     let gen_file = files
-        .get("openehr-rm/v1_2/validate/generated.rs")
+        .get("openehr-rm/src/v1_2/validate/generated.rs")
         .expect("emit-validate did not produce v1_2/validate/generated.rs");
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
 
@@ -838,12 +838,12 @@ fn dialect_predicates_match_the_classifier() {
 /// whose hand-written `*_impl.rs` was deleted in favour of emission.
 #[test]
 fn emitted_classes_render_their_bmm_constants() {
-    let files = testsupport::render_all_to_memory().unwrap();
+    let files = testsupport::emit_to_memory().unwrap();
     let group = files
-        .get("openehr-rm/v1_2/support/terminology/openehr_terminology_group_identifiers.rs")
+        .get("openehr-rm/src/v1_2/support/terminology/openehr_terminology_group_identifiers.rs")
         .unwrap();
     let code_set = files
-        .get("openehr-rm/v1_2/support/terminology/openehr_code_set_identifiers.rs")
+        .get("openehr-rm/src/v1_2/support/terminology/openehr_code_set_identifiers.rs")
         .unwrap();
 
     // The 15 terminology-group identifier constants + the openEHR terminology id.
@@ -882,14 +882,14 @@ fn emitted_classes_render_their_bmm_constants() {
 /// enforced count drifting) fails the suite.
 #[test]
 fn register_records_terminology_invariants_as_enforced() {
-    let files = testsupport::render_all_to_memory().unwrap();
+    let files = testsupport::emit_to_memory().unwrap();
     let rows = testsupport::classify_invariants("rm").unwrap();
     // Every RM generation carries its own cores file with the same adjudicated
     // register split: 30 terminology/code-set invariants wired to the binding
     // table, the 4 `VERSIONED_OBJECT` aggregate invariants pending — per
     // generation (#1942: a selectable generation is a complete peer).
     for generation in ["v1_1", "v1_2"] {
-        let gen_path = format!("openehr-rm/{generation}/validate/generated.rs");
+        let gen_path = format!("openehr-rm/src/{generation}/validate/generated.rs");
         let gen_file = files
             .get(&gen_path)
             .unwrap_or_else(|| panic!("emit-validate did not produce {gen_path}"));

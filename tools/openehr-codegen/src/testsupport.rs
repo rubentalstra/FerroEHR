@@ -25,8 +25,8 @@ use crate::load::oas;
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
-use crate::render::emit::{CrateGeneration, GenFile, RenderUnit, emit_composed};
-use crate::render::{emit_rest, emit_rm_model, emit_validate, model_query, naming};
+use crate::render::emit::{CrateGeneration, RenderUnit, emit_composed};
+use crate::render::{emit_rest, model_query, naming};
 use std::collections::{BTreeMap, BTreeSet};
 
 type Error = Box<dyn std::error::Error>;
@@ -457,80 +457,20 @@ fn shape_name(e: &Emission) -> &'static str {
     }
 }
 
-/// Render every emit-crate's spec files to an in-memory map keyed
-/// `"<crate>/<path>"` (pre-rustfmt bodies).
+/// Render every generated spec crate's `src/` tree (`emit`) to an in-memory
+/// map, keyed by each file's path relative to the workspace `crates/`
+/// directory.
 ///
-/// Reproduces `cli::cmd_emit`'s emission half without WRITING to the
-/// filesystem (it reads the same inputs `cmd_emit` does, the vendored BMM
-/// plus each crate's hand-written `*_impl.rs` siblings), so a double call
-/// proves the emitter is byte-deterministic.
+/// Drives `cli::render_emit_files` — the same text production the `emit`
+/// subcommand drives, generation-twin template stamps included — and applies the
+/// value-carrier guard and SPDX header the subcommand writes, so a value equals
+/// the on-disk file before `rustfmt`.
 ///
 /// # Errors
-/// Returns an error if any crate's BMM files cannot be loaded.
-pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
-    let mut out = BTreeMap::new();
-    for comp in composition::COMPOSITIONS {
-        let c = compose(comp.key)?;
-        let impls = sibling_impls(comp.crate_name);
-        let augmented: Vec<Vec<BmmSchema>> = c
-            .generations
-            .iter()
-            .map(|g| {
-                g.units
-                    .iter()
-                    .map(|u| {
-                        let reemit = cross_schema_reemit(&u.model, &u.schema);
-                        let deps: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
-                        augment_with_reemit(&u.schema, &u.model, &reemit, &deps)
-                    })
-                    .collect()
-            })
-            .collect();
-        let gens: Vec<CrateGeneration<'_>> = c
-            .generations
-            .iter()
-            .zip(&augmented)
-            .map(|(g, augs)| CrateGeneration {
-                spec: g.spec,
-                units: g
-                    .units
-                    .iter()
-                    .zip(augs)
-                    .map(|(u, aug)| RenderUnit {
-                        spec: u.spec,
-                        model: &u.model,
-                        schema: aug,
-                    })
-                    .collect(),
-                external: &g.external,
-            })
-            .collect();
-        let mut files = emit_composed(comp, &gens, &impls);
-        if comp.key == "rm" {
-            // Mirror of `cli::cmd_emit`: every RM generation carries its own
-            // attribute model + invariant cores.
-            for (g, augs) in c.generations.iter().zip(&augmented) {
-                let module = g.spec.module;
-                let unit = g.unit()?;
-                let aug = augs
-                    .first()
-                    .ok_or("an RM generation carries no specification unit")?;
-                inject_rm_model(
-                    &mut files,
-                    prefix_gen_files(emit_rm_model::emit_files(&unit.model), module),
-                    module,
-                );
-                files.extend(prefix_gen_files(
-                    emit_validate::emit_files(&unit.model, aug),
-                    module,
-                ));
-            }
-        }
-        for f in files {
-            out.insert(format!("{}/{}", comp.crate_name, f.path), f.body);
-        }
-    }
-    Ok(out)
+/// Returns an error if a composition's BMM files cannot be loaded, or if a
+/// template stamp collides with a generated file.
+pub fn emit_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_emit_files()?))
 }
 
 /// Render the canonical-JSON `serde` impls and `_type` dispatch (`emit-json`)
@@ -576,6 +516,64 @@ pub fn emit_rest_to_memory() -> Result<BTreeMap<String, String>, Error> {
     Ok(to_memory(cli::render_rest_files()?))
 }
 
+/// Render the OPT 1.4 model + canonical-XML codec (`emit-opt`) to an in-memory
+/// map, keyed by each file's path relative to the workspace `crates/`
+/// directory.
+///
+/// Drives `cli::render_opt_files` — the same text production the `emit-opt`
+/// subcommand drives — and applies the value-carrier guard and SPDX header the
+/// subcommand writes, so a value equals the on-disk file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if the RM/BASE compositions or the AM/OPT XSD closure cannot
+/// be loaded.
+pub fn emit_opt_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_opt_files()?.files))
+}
+
+/// Render both AOM2 archetype codecs (`emit-aom2`) to an in-memory map, keyed by
+/// each file's path relative to the workspace `crates/` directory.
+///
+/// Drives `cli::render_aom2_files` — the same text production the `emit-aom2`
+/// subcommand drives — and applies the value-carrier guard and SPDX header the
+/// subcommand writes, so a value equals the on-disk file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if the RM/BASE compositions or either AOM2 XSD closure
+/// cannot be loaded.
+pub fn emit_aom2_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_aom2_files()?.files))
+}
+
+/// Render the static RM attribute/type model (`emit-rm-model`) to an in-memory
+/// map, keyed by each file's path relative to the workspace `crates/`
+/// directory.
+///
+/// Drives `cli::render_rm_model_files` — the same text production the
+/// `emit-rm-model` subcommand and `emit` both drive — and applies the
+/// value-carrier guard and SPDX header they write, so a value equals the on-disk
+/// file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if the RM composition's BMM files cannot be loaded.
+pub fn emit_rm_model_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_rm_model_files()?))
+}
+
+/// Render the RM class-invariant cores (`emit-validate`) to an in-memory map,
+/// keyed by each file's path relative to the workspace `crates/` directory.
+///
+/// Drives `cli::render_validate_files` — the same text production the
+/// `emit-validate` subcommand and `emit` both drive — and applies the
+/// value-carrier guard and SPDX header they write, so a value equals the on-disk
+/// file before `rustfmt`.
+///
+/// # Errors
+/// Returns an error if the RM composition's BMM files cannot be loaded.
+pub fn emit_validate_to_memory() -> Result<BTreeMap<String, String>, Error> {
+    Ok(to_memory(cli::render_validate_files()?))
+}
+
 /// Turn an emit target's rendered files into the path → bytes map the tests
 /// compare, applying the same [`cli::generated_bytes`] the CLI writes through.
 fn to_memory(files: Vec<cli::EmittedFile>) -> BTreeMap<String, String> {
@@ -586,43 +584,6 @@ fn to_memory(files: Vec<cli::EmittedFile>) -> BTreeMap<String, String> {
             (f.path, bytes)
         })
         .collect()
-}
-
-/// The hand-written `*_impl.rs` siblings of a generated crate — the same
-/// emitter input `cli::sibling_impls` reads, so the in-memory render matches
-/// the written tree byte for byte.
-fn sibling_impls(crate_name: &str) -> SiblingImpls {
-    SiblingImpls::scan(
-        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../crates")
-            .join(crate_name)
-            .join("src"),
-    )
-}
-
-/// Mirror of `cli::prefix_gen_files` (kept private there): prefix generated
-/// file paths with the generation module directory.
-fn prefix_gen_files(files: Vec<GenFile>, module: &str) -> Vec<GenFile> {
-    files
-        .into_iter()
-        .map(|f| GenFile {
-            path: format!("{module}/{}", f.path),
-            body: f.body,
-        })
-        .collect()
-}
-
-/// Mirror of `cli::inject_rm_model` (kept private there): append the RM-model
-/// files (already generation-prefixed) and declare `pub mod model;` in the
-/// generation `mod.rs`.
-fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>, module: &str) {
-    let gen_mod = format!("{module}/mod.rs");
-    for f in files.iter_mut() {
-        if f.path == gen_mod && !f.body.contains("pub mod model;") {
-            f.body.push_str("pub mod model;\n");
-        }
-    }
-    files.append(&mut model_files);
 }
 
 // ── cross-schema re-emission (source-package mirroring + downstream closure) ──
