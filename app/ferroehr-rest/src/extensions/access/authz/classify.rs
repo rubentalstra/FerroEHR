@@ -226,8 +226,11 @@ fn write_verb(op: &str) -> Option<bool> {
     if op.starts_with("query_execute_") {
         return Some(false);
     }
-    // Write markers: the mutating verbs across every family, plus the whole
-    // admin API (all admin ops physically delete).
+    // Write markers: the mutating verbs across every family, plus the
+    // GENERATED-table admin ops, which all physically delete. The read-only
+    // admin surfaces (config, reports, the parity sweep) are extension routes
+    // outside the generated tables, so this prefix never sees them —
+    // `extension_is_write` + EXTENSION_READ_ROUTES classify those.
     if op.starts_with("admin_")
         || op.contains("_create")
         || op.contains("_update")

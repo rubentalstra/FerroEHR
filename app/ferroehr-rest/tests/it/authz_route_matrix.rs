@@ -337,6 +337,10 @@ const ADMIN_READ: &[(&str, &str)] = &[
     ("GET", "/admin/event_subscription/{subscription_id}"),
     ("GET", "/admin/fhir_mapping"),
     ("GET", "/admin/fhir_mapping/{mapping_id}"),
+    // The storage-parity sweep mutates nothing and answers identifiers +
+    // defect classes only — a pinned EXTENSION_READ_ROUTES read despite the
+    // POST verb, so a read-only integrity auditor can run it (#2692).
+    ("POST", "/admin/integrity/verify"),
 ];
 
 /// Admin-class writes (base-relative).
@@ -358,11 +362,6 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     ("POST", "/admin/archive/parties/restore"),
     ("POST", "/admin/dump"),
     ("POST", "/admin/load"),
-    // The storage-parity sweep mutates nothing, but it is an extension route
-    // outside the generated tables, where `extension_is_write` reads the HTTP
-    // verb and every mutating verb is a write (fail-safe). So a read-only admin
-    // is refused it, and this row states what the gate actually does.
-    ("POST", "/admin/integrity/verify"),
     ("POST", "/admin/tenant"),
     ("PUT", "/admin/tenant/{tenant_id}"),
     ("DELETE", "/admin/tenant/{tenant_id}"),
