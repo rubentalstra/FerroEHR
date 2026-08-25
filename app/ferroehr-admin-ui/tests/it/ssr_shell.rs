@@ -350,12 +350,78 @@ async fn the_matched_screen_renders_inside_the_shell_s_main_region() {
 
 // ------------------------------------------------------------ session guard
 
-/// The shell's guard is a SERVER-side redirect: `<Redirect/>` renders no HTML at
-/// all — it calls the `ServerRedirectFunction` `leptos_axum` puts in context,
-/// which sets `Location` and (for a document request) the `302`. So the
-/// behaviour is pinned on the response, never in the body.
+/// One request through the REAL service — `ferroehr_admin_ui::server::router`
+/// is the assembly the binary serves (session layer, the pre-render login
+/// guard, the Leptos routes, the security headers) — with no session cookie.
+async fn routed_response(url: &str) -> ServerPass {
+    use tower::util::ServiceExt;
+
+    // Initializes the reactive executor exactly as `render_route` does.
+    drop(leptos_axum::generate_route_list(|| ()));
+    let options = LeptosOptions::builder()
+        .output_name(env!("CARGO_PKG_NAME"))
+        .build();
+    let service = ferroehr_admin_ui::server::router(app_state(), options);
+    let request = http::Request::builder()
+        .uri(url)
+        .header(http::header::ACCEPT, "text/html")
+        .body(axum::body::Body::empty())
+        .expect("the request fixture should build from a static URI and an empty body");
+    let (parts, body) = service
+        .oneshot(request)
+        .await
+        .expect("the service is infallible")
+        .into_parts();
+    let bytes = axum::body::to_bytes(body, usize::MAX)
+        .await
+        .expect("the response body should read back in full from an in-memory body");
+    ServerPass {
+        status: parts.status,
+        location: parts
+            .headers
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned),
+        html: String::from_utf8(bytes.to_vec())
+            .expect("the response body is UTF-8, so the document should decode"),
+    }
+}
+
+/// The signed-out `302` carries an EMPTY body (#2702): the pre-render login
+/// guard (`server::login_guard`) answers before Leptos renders anything, so
+/// no chrome, screen markup, or serialized server-fn diagnostics leave the
+/// server — and no render work is spent on an unauthenticated hit. Driven
+/// through the real service, because the guard is a router layer the bare
+/// render handler (`render_route`) never passes.
 #[tokio::test]
 async fn a_guarded_url_without_a_session_answers_302_to_the_login_screen() {
+    for url in ["/", "/templates", "/queries/builder", "/nonsense"] {
+        let pass = routed_response(url).await;
+        assert_eq!(pass.status, http::StatusCode::FOUND, "{url}");
+        assert_eq!(pass.location.as_deref(), Some("/login"), "{url}");
+        assert_eq!(pass.html, "", "{url}: the redirect body must be empty");
+    }
+}
+
+/// The sign-in screen stays public through the same real service: the guard
+/// exempts it, the render pass runs, and the full document is served.
+#[tokio::test]
+async fn the_login_screen_is_served_without_a_session() {
+    let pass = routed_response("/login").await;
+    assert_eq!(pass.status, http::StatusCode::OK);
+    assert!(
+        pass.html.contains("<title>"),
+        "the login document renders: {}",
+        pass.html
+    );
+}
+
+/// The in-view guard (`AppShell`'s `<Redirect/>`) still stands behind the
+/// router layer: rendered bare (no axum service, so no login guard), a
+/// guarded URL keeps answering `302 → /login` on the response line — the
+/// client-side navigation gate the hydrated app relies on.
+#[tokio::test]
+async fn the_in_view_guard_still_redirects_without_the_router_layer() {
     for url in ["/", "/templates"] {
         let pass = render_route(url).await;
         assert_eq!(pass.status, http::StatusCode::FOUND, "{url}");
