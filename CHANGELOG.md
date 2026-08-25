@@ -32,6 +32,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- A composition CREATE skips the explicit transaction when the commit is the
+  one folded statement (no accompanying attestations, event outbox off — the
+  common case): a single SQL statement is atomic on its own, so the
+  `BEGIN`/`COMMIT` round trips are gone and a create is two database
+  statements end to end (the merged pre-check read and the folded commit).
+
 - A version UPDATE gets three round trips faster. Closing the superseded
   lineage tip now rides the one folded commit statement (its leading CTE, at
   the same bound instant, so the close boundary and the new version's open

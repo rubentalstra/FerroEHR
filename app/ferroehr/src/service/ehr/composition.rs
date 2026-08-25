@@ -97,23 +97,44 @@ impl FerroEhrService {
         // stamps it exactly like the CONTRIBUTION route.
         let template_id = composition_template_id(&composition).map(str::to_owned);
 
-        let mut tx = self.pool.begin().await?;
+        // With no accompanying attestations and no event outbox, the whole
+        // commit is the ONE folded statement — atomic on its own, so the
+        // explicit transaction's BEGIN/COMMIT round trips are skipped.
         // Boxed: the versioned-write future is by far the widest state this
         // call holds, and inlining it puts the whole node-decomposition
         // machinery on every caller's stack (clippy `large_futures`).
-        let committed = Box::pin(create(
-            &mut tx,
-            Some(ehr_id),
-            Kind::Composition,
-            composition,
-            template_id.as_deref(),
-            &audit,
-            envelope,
-            &self.signing_ctx(),
-            Some(commit_now),
-        ))
-        .await?;
-        tx.commit().await?;
+        let signing_ctx = self.signing_ctx();
+        let committed = if envelope.attestations.is_empty() && !signing_ctx.outbox_enabled {
+            let mut conn = self.pool.acquire().await?;
+            Box::pin(create(
+                &mut conn,
+                Some(ehr_id),
+                Kind::Composition,
+                composition,
+                template_id.as_deref(),
+                &audit,
+                envelope,
+                &signing_ctx,
+                Some(commit_now),
+            ))
+            .await?
+        } else {
+            let mut tx = self.pool.begin().await?;
+            let committed = Box::pin(create(
+                &mut tx,
+                Some(ehr_id),
+                Kind::Composition,
+                composition,
+                template_id.as_deref(),
+                &audit,
+                envelope,
+                &signing_ctx,
+                Some(commit_now),
+            ))
+            .await?;
+            tx.commit().await?;
+            committed
+        };
         crate::telemetry::metrics::metrics()
             .db_transactions
             .add(1, &[opentelemetry::KeyValue::new("outcome", "commit")]);
