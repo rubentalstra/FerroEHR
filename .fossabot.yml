@@ -29,7 +29,8 @@ defaults:
   minimumReleaseAge: 7
 
   # CVSS 7.0 (HIGH) and above is treated as security-critical and prioritised.
-  # This is deliberately the same floor the container image scan enforces
-  # (`image-scan.yml` gates on fixable HIGH/CRITICAL), so a vulnerability does
-  # not count as urgent in one lane and routine in another.
+  # This is deliberately the same floor the container image scan acts on
+  # (`image-scan.yml` files an issue on fixable HIGH/CRITICAL and stays green,
+  # #2778), so a vulnerability does not count as urgent in one lane and
+  # routine in another.
   securityCvssThreshold: 7.0
