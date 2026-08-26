@@ -15,10 +15,10 @@
 //! in step. The refusal is then made total by a **round trip**: the lifted state
 //! is lowered again, re-parsed, and compared with the original parse. Anything
 //! that would come back different is refused, so an accepted lift is provably
-//! equivalent to the stored definition. Comparing re-PARSED trees (rather than
-//! text) is what makes string escaping symmetric: the parser decodes a literal's
-//! escapes, [`crate::builder::lower`] re-encodes them, and both sides of the
-//! comparison have been through the parser.
+//! equivalent to the stored definition. String escaping is symmetric by the
+//! query crate's own contract: the parser decodes a literal's escapes into the
+//! AST, and `openehr_query::printer` re-encodes them at emission — the AST
+//! (and therefore the builder state) always holds the decoded value.
 
 use openehr_query::ast::{
     AggregateCall, ClassExprOperand, ColumnExpr, CompareOperand, ContainsExpr, IdentifiedExpr,
