@@ -68,6 +68,8 @@ jobs:
     # for workflow_run, only a SUCCESSFUL Containers run for a release tag
     # (head_branch carries the tag name on tag-triggered runs; a prerelease
     # suffix is skipped — `latest` does not move for those either).
+    # The prerelease rule — one definition: .github/actions/release-kind. It is
+    # spelled inline here because a job-level `if:` cannot read a step output.
     if: >-
       github.repository == 'rubentalstra/FerroEHR' &&
       (github.event_name != 'workflow_run' ||

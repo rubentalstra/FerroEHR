@@ -13,14 +13,9 @@ on:
   pull_request:             # PR: build + lint + link-check ONLY (no deploy)
   workflow_dispatch:
 
-# Pinned toolchain — the single source of truth for the docs build.
+# The pinned toolchain lives in .github/actions/docs-toolchain (#2775) — it was
+# declared verbatim here and in link-check-external.yml.
 env:
-  MDBOOK_VERSION: "0.5.4"
-  MDBOOK_MERMAID_VERSION: "0.17.0"
-  MDBOOK_TOC_VERSION: "0.15.4"
-  MDBOOK_KATEX_VERSION: "0.10.0"
-  MDBOOK_LINT_VERSION: "0.14.4"
-  LYCHEE_VERSION: "0.24.2"
   # Custom domain (ferroehr.eu): the site is served at the apex root, so the
   # base path is empty. Set explicitly so CI and scripts/site/build.sh agree.
   SITE_ORIGIN: "https://ferroehr.eu"
@@ -54,9 +49,7 @@ jobs:
       # The deployed site is rebuilt in the deploy job, which restores no build
       # cache; this job publishes only a pull-request diagnostic artifact.
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0 # zizmor: ignore[cache-poisoning]
-      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
-        with:
-          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
+      - uses: ./.github/actions/docs-toolchain
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
         run: bash scripts/checks/conformance-numbers.sh
       - name: Render conformance stats + comparison + perf assets (the generated includes must exist before lint)
@@ -131,9 +124,12 @@ jobs:
         with:
           persist-credentials: true # zizmor: ignore[artipacked]
           fetch-depth: 0
-      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+      # This job renders the book and pushes it; it lints and link-checks
+      # nothing, so neither link-check tool is installed.
+      - uses: ./.github/actions/docs-toolchain
         with:
-          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
+          lint: "false"
+          link-check: "false"
       - name: Build frozen vX.Y.Z + push to docs-dist
         run: bash scripts/site/cut-version.sh "${GITHUB_REF_NAME}"   # site-url, rsync into docs-dist, update versions.json, commit+push
 
@@ -168,9 +164,11 @@ jobs:
           persist-credentials: true # zizmor: ignore[artipacked]
       - name: Fetch docs-dist (frozen versions)
         run: git fetch origin docs-dist && git worktree add docs-dist origin/docs-dist || true
-      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+      # Assembly only: the lint and link-check gates ran in `build`.
+      - uses: ./.github/actions/docs-toolchain
         with:
-          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
+          lint: "false"
+          link-check: "false"
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Assemble full _site (landing + dev + frozen versions + latest + sitemap)
         run: bash scripts/site/build.sh --full

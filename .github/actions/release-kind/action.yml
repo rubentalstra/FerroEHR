@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/actions/release-kind — is this a release, and is it a pre-release?
+#
+# THE definition of the pre-release rule for step-level consumers (#2775): it was
+# spelled four ways in four files, one of them missing the pre-release half
+# entirely. Releases publish as OFFICIAL releases (owner sign-off 2026-07-31,
+# superseding the 2026-07-11 always-prerelease rule); only an explicitly suffixed
+# tag (v3.16.0-rc1, ...) is a pre-release.
+#
+#   is-release     a v* tag with no `-` suffix — the cut that moves the RELEASE
+#                  pointers (`:latest`, /docs/latest/, the hosted sandbox)
+#   is-prerelease  a v* tag WITH a `-` suffix
+#
+# Neither is true when the ref is not a `v*` tag at all (a develop push, a
+# pull request), so a caller can branch on one output alone.
+#
+# A workflow that must decide in an EXPRESSION position a step output cannot
+# reach (a `jobs.<id>.if`, a `with:` on a job call) still spells the rule inline
+# and carries a comment pointing here.
+#
+# Requires the repository to be checked out (a local action resolves against the
+# runner's workspace, not against the repository of the running workflow —
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
+# so a lane that checks out a TAG reads this action from that tag's tree.
+name: Classify the release kind
+description: Decide whether this ref is a release tag and whether it is a pre-release.
+
+inputs:
+  tag:
+    description: >-
+      The tag to classify. Defaults to the pushed tag (empty when the ref is not
+      a tag), which is what every trigger-driven caller wants; a lane that
+      resolves its tag from a dispatch input passes that resolved tag instead.
+    required: false
+    default: ""
+
+outputs:
+  is-release:
+    description: '"true" for a `v*` tag with no pre-release suffix, else "false".'
+    value: ${{ steps.kind.outputs.is-release }}
+  is-prerelease:
+    description: '"true" for a `v*` tag WITH a pre-release suffix, else "false".'
+    value: ${{ steps.kind.outputs.is-prerelease }}
+  tag:
+    description: The tag that was classified, empty when the ref is not a tag.
+    value: ${{ steps.kind.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - id: kind
+      shell: bash
+      env:
+        INPUT_TAG: ${{ inputs.tag }}
+        REF: ${{ github.ref }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        tag="$INPUT_TAG"
+        if [ -z "$tag" ] && [ "${REF#refs/tags/}" != "$REF" ]; then
+          tag="$REF_NAME"
+        fi
+        is_release=false
+        is_prerelease=false
+        case "$tag" in
+          v*-*) is_prerelease=true ;;
+          v*)   is_release=true ;;
+        esac
+        {
+          echo "tag=$tag"
+          echo "is-release=$is_release"
+          echo "is-prerelease=$is_prerelease"
+        } >> "$GITHUB_OUTPUT"
+        echo "tag '${tag}': release=${is_release} prerelease=${is_prerelease}"

@@ -78,7 +78,9 @@ patch milestone — the remedy is only real once a tag republishes the image.
 
 Machine-enforced agreement (`scripts/checks/image-labels.sh`, per-PR in CI):
 the Dockerfile `FROM` digest ↔ its `base.name`/`base.digest` LABELs ↔ the
-`containers.yml` labels ↔ the `ci.yml` postgres service pins. Everything else
+`containers.yml` labels ↔ every workflow's postgres service pins (the guard
+scans `.github/workflows/*.yml`, so a new lane's pin is covered the day it
+lands; it read `ci.yml` alone until #2775 and missed `sonar.yml`). Everything else
 is a sweep — run `grep -rn '18\.<old-patch>'` over the tree and expect to
 touch:
 
@@ -86,7 +88,8 @@ touch:
   `base.*` LABELs (the digest is the MANIFEST-LIST digest:
   `docker buildx imagetools inspect postgres:<tag>` → `Digest:`)
 - `.github/workflows/containers.yml` — postgres lane comment + both label lines
-- `.github/workflows/ci.yml` — the two service-container pins + the job heading
+- `.github/workflows/ci.yml` — its service-container pin + the job heading
+- `.github/workflows/sonar.yml` — its own service-container pin
 - `docs/VERSIONS.md` §Database, `docs/postgres-features.md` §Versioning note
   (latest-patch version + date, from postgresql.org — never copied forward),
   root `CLAUDE.md` §Tech stack, `docs/architecture.md` §PostgreSQL 18,

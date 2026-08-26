@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/actions/docs-toolchain — install the pinned documentation toolchain.
+#
+# THE pinned toolchain for the docs site: the versions below are the single
+# source of truth, replacing the two verbatim `env:` blocks that declared them
+# in docs.yml and link-check-external.yml (#2775). Those two files kept
+# SITE_ORIGIN/SITE_BASE — that is site configuration, not a tool pin.
+#
+# The two link-check tools are optional because the jobs that only RENDER the
+# book (the frozen version cut, the full-site assembly) install neither: they
+# lint and link-check nothing, so pulling mdbook-lint and lychee there would be
+# download time for nothing. The tool list is assembled in the pinned order the
+# workflows used.
+#
+# Requires the repository to be checked out (a local action resolves against the
+# runner's workspace).
+name: Install the docs toolchain
+description: Install the pinned mdBook toolchain (plus the lint and link-check tools when asked for).
+
+inputs:
+  mdbook-version:
+    description: mdBook version.
+    required: false
+    default: "0.5.4"
+  mdbook-mermaid-version:
+    description: mdbook-mermaid version.
+    required: false
+    default: "0.17.0"
+  mdbook-toc-version:
+    description: mdbook-toc version.
+    required: false
+    default: "0.15.4"
+  mdbook-katex-version:
+    description: mdbook-katex version.
+    required: false
+    default: "0.10.0"
+  mdbook-lint-version:
+    description: mdbook-lint version.
+    required: false
+    default: "0.14.4"
+  lychee-version:
+    description: lychee version.
+    required: false
+    default: "0.24.2"
+  lint:
+    description: Also install mdbook-lint (the markdown lint gate).
+    required: false
+    default: "true"
+  link-check:
+    description: Also install lychee (the link-check gate).
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+      with:
+        tool: mdbook@${{ inputs.mdbook-version }},mdbook-mermaid@${{ inputs.mdbook-mermaid-version }},mdbook-toc@${{ inputs.mdbook-toc-version }},mdbook-katex@${{ inputs.mdbook-katex-version }}${{ inputs.lint == 'true' && format(',mdbook-lint@{0}', inputs.mdbook-lint-version) || '' }}${{ inputs.link-check == 'true' && format(',lychee@{0}', inputs.lychee-version) || '' }}

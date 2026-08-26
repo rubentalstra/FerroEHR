@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/actions/helm-pinned — install the helm the golden renders are pinned to.
+#
+# ONE home for the read-the-pin-then-install pair that was copied verbatim into
+# three jobs (build-chart.yml, ci.yml `helm-golden`, ci.yml `chart-boot`) — #2775.
+#
+# `azure/setup-helm` has NO `version-file` input — its inputs are `version`,
+# `token` and `downloadBaseURL`. An unknown input is a WARNING, not an error, so
+# passing one silently installs the latest helm and the pin stops meaning
+# anything: that is how a run reported "running helm 4.2.3, goldens are pinned
+# to 4.1.3". Read the pin here and pass it as the input that exists.
+#
+# The pin is load-bearing, not hygiene: `helm template` output is not byte-stable
+# across helm releases, so an unpinned runner turns the golden compare into a
+# whitespace diff nobody can act on. deploy/helm/.tool-versions carries the
+# version and the full rationale.
+#
+# Requires the repository to be checked out (a local action resolves against the
+# runner's workspace, and the version file is read from it).
+name: Install the pinned helm
+description: Read the helm pin from a .tool-versions file and install exactly that helm.
+
+inputs:
+  version-file:
+    description: The asdf/mise .tool-versions file carrying the `helm <version>` line.
+    required: false
+    default: deploy/helm/.tool-versions
+
+outputs:
+  version:
+    description: The installed helm version, `v`-prefixed (e.g. `v4.2.3`).
+    value: ${{ steps.helm-pin.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Read the pinned helm version
+      id: helm-pin
+      shell: bash
+      env:
+        VERSION_FILE: ${{ inputs.version-file }}
+      run: |
+        set -euo pipefail
+        version="$(awk '$1 == "helm" { print $2 }' "$VERSION_FILE")"
+        [ -n "$version" ] || { echo "::error::no helm line in $VERSION_FILE"; exit 1; }
+        echo "version=v${version}" >> "$GITHUB_OUTPUT"
+        echo "pinned helm: v${version}"
+    - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      with:
+        version: ${{ steps.helm-pin.outputs.version }}

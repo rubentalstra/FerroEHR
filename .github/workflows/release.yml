@@ -169,6 +169,13 @@ jobs:
           [ "$count" -gt 0 ] || { echo "::error::the SPDX SBOM lists no packages"; exit 1; }
           echo "SPDX ${version}, ${count} packages"
 
+      # The tag comes from the step above (a dispatch names it, a push carries
+      # it), never from the ref alone.
+      - id: kind
+        uses: ./.github/actions/release-kind
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+
       # Created as a DRAFT, and finalized only after every asset is attached.
       #
       # Release immutability is enabled on this repository: once a release is
@@ -197,8 +204,8 @@ jobs:
           # Releases publish as OFFICIAL releases (owner sign-off
           # 2026-07-31, superseding the 2026-07-11 always-prerelease rule);
           # only an explicitly suffixed tag (v3.16.0-rc1, ...) is a
-          # pre-release.
-          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          # pre-release. The rule itself lives in the composite above.
+          prerelease: ${{ steps.kind.outputs.is-prerelease }}
 
   # Native runner per arch (no cross toolchain, no QEMU) — same strategy as
   # .github/workflows/containers.yml, which handles the GHCR images on tags.
