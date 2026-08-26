@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2007-04-19</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">ECF1EF7286AAA2ABED2A7078759B8C15</other_details>
+    <other_details id="build_uid">603f92b6-3109-4f3f-afa8-4c495bcd6f93</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the specific findings observed during the vaginal palpation of a single fetus in utero.</purpose>
+      <use>Use to record the specific findings observed during the vaginal palpation of a single fetus in utero.&#xD;
+&#xD;
+This archetype has been specifically designed to be used in the 'Examination findings' SLOT within the CLUSTER.palpation_fetus archetype, but can also be used within the OBSERVATION.exam and other OBSERVATION or CLUSTER archetypes, where clinically appropriate.</use>
+      <misuse>Not to be used to record the specific findings observed during the abdominal palpation of a fetus.</misuse>
+      <copyright>© Northern Territory Department of Health (Australia), openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>af150288-9db5-4f20-a220-fc6fcf9dfb4b</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.fetus_vaginal.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0002</code_list>
+                <code_list>at0003</code_list>
+                <code_list>at0004</code_list>
+                <code_list>at0005</code_list>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0010</code_list>
+                <code_list>at0011</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0013</code_list>
+                <code_list>at0014</code_list>
+                <code_list>at0015</code_list>
+                <code_list>at0016</code_list>
+                <code_list>at0017</code_list>
+                <code_list>at0018</code_list>
+                <code_list>at0019</code_list>
+                <code_list>at0020</code_list>
+                <code_list>at0021</code_list>
+                <code_list>at0022</code_list>
+                <code_list>at0023</code_list>
+                <code_list>at0024</code_list>
+                <code_list>at0025</code_list>
+                <code_list>at0026</code_list>
+                <code_list>at0027</code_list>
+                <code_list>at0028</code_list>
+                <code_list>at0029</code_list>
+                <code_list>at0030</code_list>
+                <code_list>at0031</code_list>
+                <code_list>at0032</code_list>
+                <code_list>at0033</code_list>
+                <code_list>at0034</code_list>
+                <code_list>at0035</code_list>
+                <code_list>at0036</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0037</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>122</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>-5.0</lower>
+                <upper>5.0</upper>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>cm</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0038</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0039</code_list>
+                <code_list>at0040</code_list>
+                <code_list>at0041</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0042</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0043</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0044</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Palpation of a fetus (per vagina)</items>
+        <items id="description">Specific findings observed during the vaginal palpation of a single fetus in utero.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Presentation</items>
+        <items id="description">Identification of the presenting part of the fetus, determined by vaginal palpation.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Vertex</items>
+        <items id="description">The head is the presenting part.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Breech</items>
+        <items id="description">The buttock is the presenting part.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Shoulder</items>
+        <items id="description">A shoulder is the presenting part.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Face</items>
+        <items id="description">The face is the presenting part.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Brow</items>
+        <items id="description">The forehead is the presenting part.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Foot</items>
+        <items id="description">A foot is the presenting part.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Arm</items>
+        <items id="description">An arm is the presenting part.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Cord presence</items>
+        <items id="description">Finding about the presence of the umbilical cord in the cervix or vagina.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Present</items>
+        <items id="description">The umbilical cord is present on palpation.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Absent</items>
+        <items id="description">The umbilical cord is not present on palpation.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Position</items>
+        <items id="description">Relationship between the fetal denominator and the maternal pelvis, determined by vaginal palpation.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Right Occipito-Transverse (ROT)</items>
+        <items id="description">The fetal occiput is pointing towards the right. Also known as Right Occipito-Lateral (ROL).</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Right Occipito-Anterior (ROA)</items>
+        <items id="description">The fetal occiput is pointing anteriorly and towards the right.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Right Occipito-Posterior (ROP)</items>
+        <items id="description">The fetal occiput is pointing posteriorly and towards the right.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Occipito-Anterior (OA)</items>
+        <items id="description">The fetal occiput is pointing anteriorly, towards the pubic symphysis.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Occipito-Posterior (OP)</items>
+        <items id="description">The fetal occiput is pointing posteriorly, towards the sacrum.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Left Occipito-Transverse (LOT)</items>
+        <items id="description">The fetal occiput is pointing towards the left. Also known as Left Occcipito-Lateral (LOL).</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Left Occipito-Anterior (LOA)</items>
+        <items id="description">The fetal occiput is pointing anteriorly and towards the left.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Left Occipito-Posterior (LOP)</items>
+        <items id="description">The fetal occiput is pointing posteriorly and towards the left.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Right Sacro-Transverse (RST)</items>
+        <items id="description">The fetal sacrum is pointing towards the right.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Right Sacro-Anterior (RSA)</items>
+        <items id="description">The fetal sacrum is pointing anteriorly and towards the right.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Right Sacro-Posterior (RSP)</items>
+        <items id="description">The fetal sacrum is pointing posteriorly and towards the right.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Sacro-Anterior (SA)</items>
+        <items id="description">The fetal sacrum is pointing anteriorly, towards the pubic symphysis.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Sacro-Posterior (SP)</items>
+        <items id="description">The fetal sacrum is pointing posteriorly, towards the sacrum.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Left Sacro-transverse (LST)</items>
+        <items id="description">The fetal sacrum is pointing towards the left.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Left Sacro-Anterior (LSA)</items>
+        <items id="description">The fetal sacrum is pointing anteriorly and towards the left.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Left Sacro-Posterior (LSP)</items>
+        <items id="description">The fetal sacrum is pointing posteriorly and towards the left.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Right Mento-Transverse (RMT)</items>
+        <items id="description">The fetal chin is pointing towards the right.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Right Mento-Anterior (RMA)</items>
+        <items id="description">The fetal chin is pointing anteriorly and towards the right.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Right Mento-Posterior (RMP)</items>
+        <items id="description">The fetal chin is pointing posteriorly and towards the right.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Mento-Anterior (MA)</items>
+        <items id="description">The fetal chin is pointing anteriorly, towards the pubic symphysis.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Mento-Posterior (MP)</items>
+        <items id="description">The fetal chin is pointing posteriorly, towards the sacrum.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Left Mento-Transverse (LMT)</items>
+        <items id="description">The fetal chin is pointing towards the left.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Left Mento-Anterior (LMA)</items>
+        <items id="description">The fetal chin is pointing anteriorly and towards the left.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Left Mento-Posterior (LMP)</items>
+        <items id="description">The fetal chin is pointing posteriorly and towards the left.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Station</items>
+        <items id="description">Position of the presenting part relative to the ischial spines.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Attitude</items>
+        <items id="description">Description of the relationship of the fetal head and limbs to the body of the fetus, determined by vaginal palpation.</items>
+        <items id="comment">Record -5 to -1cm for when the presenting part is above the ischial spines; record 0 at the ischial spines; and record 1 to 5 when the presenting part is below the ischial spines.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Flexed</items>
+        <items id="description">The fetus is fully flexed.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Deflexed</items>
+        <items id="description">The fetus is not flexed.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Extended</items>
+        <items id="description">The fetus is extended.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Caput</items>
+        <items id="description">Narrative description about the caput on the fetal head.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Moulding</items>
+        <items id="description">Narrative description about the moulding of the fetal head.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Asynclitism</items>
+        <items id="description">Narrative description about the asynclitism on the fetal head.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

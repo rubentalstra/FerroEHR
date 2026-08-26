@@ -1,0 +1,113 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.sade_classification.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2012-09-07">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the grading of tympanic membrane pars tensa retraction based on the classification by Sade.">
+			use = <"Use to record the grading of tympanic membrane retraction, particularly by specialist physicians. 
+
+This archetype extends the Sade Classification to allow recording of 'No visible retraction' where applicable.
+Sade Stage 5 (spontaneous perforation) is described in some documentation but is not described in the original paper and appears not to be in common usage.">
+			keywords = <"retraction", "atelectasis", "tympanic", "membrane", "drum", "pars tensa">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	references = <
+		["1"] = <"Personal communication with clinical domain experts.">
+		["2"] = <"Sadé J, Berco E. Atelectasis and secretory otitis media. Ann. Otol. Rhinol. Laryngol. 1976 Apr;85(2 Suppl 25 Pt 2):6">
+		["3"] = <"Lancaster J, Srinivasan V. Management of tympanic membrane retraction pockets. Australian Journal of Otolaryngology 2002;5(1):17–20.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"BA9F7DC69DE0D302326CEC28345CF62D">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Sade Classification
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Sade Classification
+				value matches {
+					DV_ORDINAL[id4] matches {
+						[value, symbol] matches {
+							[{0}, {[at4]}],
+							[{1}, {[at5]}],
+							[{2}, {[at6]}],
+							[{3}, {[at7]}],
+							[{4}, {[at8]}],
+							[{5}, {[at9]}]
+						}
+					}
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Comment
+				value matches {
+					DV_TEXT[id5] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Sade Classification">
+				description = <"Grading of the degree of tympanic membrane pars tensa retraction / atelectasis.">
+			>
+			["id2"] = <
+				text = <"Sade Classification">
+				description = <"Grading of the degree of tympanic membrane pars tensa retraction / atelectasis based on the Sade Classification.">
+			>
+			["id3"] = <
+				text = <"Comment">
+				description = <"Additional comment about the classification.">
+			>
+			["at4"] = <
+				text = <"No visible retraction">
+				description = <"The tympanic membrane pars tensa is not visibly retracted.">
+			>
+			["at5"] = <
+				text = <"Stage 1 :  Mild retraction">
+				description = <"The tympanic membrane pars tensa is mildly retracted.">
+			>
+			["at6"] = <
+				text = <"Stage 2 : Retraction onto incudostapedial joint">
+				description = <"The tympanic membrane pars tensa is retracted onto the incudostapedial joint.">
+			>
+			["at7"] = <
+				text = <"Stage 3 :  Retraction onto promontary">
+				description = <"The tympanic membrane pars tensa is retracted onto the promontary.">
+			>
+			["at8"] = <
+				text = <"Stage 4 : Adhesion of pars tensa to medial wall">
+				description = <"The tympanic membrane pars tensa is adherent to the medial wall.">
+			>
+			["at9"] = <
+				text = <"Stage 5 : Spontaneous perforation with otorrhea and polyp formation">
+				description = <"The tympanic membrane is spontaneously perforated with evidence of otorrhea and polyp formation.">
+			>
+			["ac1"] = <
+				text = <"Sade Classification (synthesised)">
+				description = <"Grading of the degree of tympanic membrane pars tensa retraction / atelectasis based on the Sade Classification. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at4", "at5", "at6", "at7", "at8", "at9">
+		>
+	>

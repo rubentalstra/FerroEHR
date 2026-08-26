@@ -1,0 +1,246 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.physical_properties.v1
+
+concept
+	[at0000]	-- Physical properties of an object
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"openEHR Archetype Editorial Group / Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/01/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the physical properties of an object such as a body part, specimen or lesion.">
+			use = <"To record physical details of a body part, device, device, lesion or specimen.">
+			keywords = <"specimen", "laboratory", "sample", "pathology", "object", "device", "implant">
+			misuse = <"Do not use to record whole body weight / height whether actual or adjusted or other overall estimates of bidy size such as waist/ girth measurement.">
+			copyright = <"© openEHR Foundation">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل الخصائص الفيزيائية لشيئ ما, مثل جزء من الجسم, عينة أو آفة.">
+			use = <"لتسجيل التفاصيل الفيزيائية لجزء من الجسم, جهيزة, آفة أو عينة.">
+			keywords = <"العينة/النموذج", "المعمل/المختبر", "العينة", "الباثولوجيا/المرضية", "شيئ", "جهيزة", "الغِرْسة">
+			misuse = <"لا يستخدم لتسجيل الوزن أو الطول الكلي للجسم سواء أكان حقيقيا أو مُصحَّحا أو تقديرات أخرى كلية لحجم الجسم, مثل قياسات الخصر/موضع الحزام ">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Sam Heard Ocean Informatics", "Heather Leslie Ocean Informatics">
+	other_details = <
+		["references"] = <"">
+		["MD5-CAM-1.0.1"] = <"1A5EE93B47AD014E912E965591773181">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Physical properties of an object
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0036] occurrences matches {0..1} matches {	-- Physical object name
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0020] occurrences matches {0..1} matches {	-- Weight
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::124]>
+					>
+				}
+			}
+			CLUSTER[at0037] occurrences matches {0..1} matches {	-- Dimensions
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0034] occurrences matches {0..1} matches {	-- Diameter
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+							>
+						}
+					}
+					ELEMENT[at0032] occurrences matches {0..1} matches {	-- Circumference
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+							>
+						}
+					}
+					ELEMENT[at0029] occurrences matches {0..1} matches {	-- Length
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+							>
+						}
+					}
+					ELEMENT[at0031] occurrences matches {0..1} matches {	-- Breadth
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+							>
+						}
+					}
+					ELEMENT[at0030] occurrences matches {0..1} matches {	-- Depth
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+							>
+						}
+					}
+					ELEMENT[at0035] occurrences matches {0..1} matches {	-- Area
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::335]>
+							>
+						}
+					}
+					ELEMENT[at0033] occurrences matches {0..1} matches {	-- Volume
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::129]>
+							>
+						}
+					}
+				}
+			}
+			ELEMENT[at0023] occurrences matches {0..1} matches {	-- Description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0038] occurrences matches {0..1} matches {	-- Image
+				value matches {
+					DV_MULTIMEDIA matches {
+						media_type matches {[openEHR::]}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Physical properties of an object">
+					description = <"To record the phycial properties of an object such as a body part, specimen or lesion.">
+				>
+				["at0020"] = <
+					text = <"Weight">
+					description = <"Weight of the object.">
+				>
+				["at0023"] = <
+					text = <"Description">
+					description = <"A text description of other physical characteristics of the object.  Do not use to record characteristics that might affect the quality of a test interpretation - use 'Specimen received issues' in the Specimen archetype for this purpose.">
+				>
+				["at0029"] = <
+					text = <"Length">
+					description = <"Length of the object.">
+				>
+				["at0030"] = <
+					text = <"Depth">
+					description = <"Depth of the object.">
+				>
+				["at0031"] = <
+					text = <"Breadth">
+					description = <"Breadth of the object.">
+				>
+				["at0032"] = <
+					text = <"Circumference">
+					description = <"Circumference of the object.">
+				>
+				["at0033"] = <
+					text = <"Volume">
+					description = <"Volume of the object.">
+				>
+				["at0034"] = <
+					text = <"Diameter">
+					description = <"Diameter of the object.">
+				>
+				["at0035"] = <
+					text = <"Area">
+					description = <"Area of the object.">
+				>
+				["at0036"] = <
+					text = <"Physical object name">
+					description = <"The object concerned. May be a body part, device or specimen.">
+				>
+				["at0037"] = <
+					text = <"Dimensions">
+					description = <"The dimensions of the object.">
+				>
+				["at0038"] = <
+					text = <"Image">
+					description = <"An image of the object.">
+				>
+			>
+		>
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"الخصائص الفيزيائية للشيء">
+					description = <"لتسجيل الخصائص الفيزيائية للشيئ مثل جزء من الجسم, العينة أو الآفة.">
+				>
+				["at0020"] = <
+					text = <"الوزن">
+					description = <"وزن الشيئ">
+				>
+				["at0023"] = <
+					text = <"الوصف">
+					description = <"وصف نصي للخصائص الفيزيائية الأخرى للشيئ. لا يستخدم لتسجيل الخصائص التي قد تؤثر على جودة تفسير نتيجة الاختبار - استخدم بدلا من ذلك (قضايا العينة عند استقبالها/استلامها) في نموذج العينة لهذا الغرض.">
+				>
+				["at0029"] = <
+					text = <"الطول">
+					description = <"طول الشيئ">
+				>
+				["at0030"] = <
+					text = <"العمق">
+					description = <"عمق الشيئ">
+				>
+				["at0031"] = <
+					text = <"العرض">
+					description = <"عرض الشيئ">
+				>
+				["at0032"] = <
+					text = <"المحيط">
+					description = <"محيط الشيئ">
+				>
+				["at0033"] = <
+					text = <"الحجم">
+					description = <"حجم الشيئ ">
+				>
+				["at0034"] = <
+					text = <"القطر">
+					description = <"قطر الشيئ">
+				>
+				["at0035"] = <
+					text = <"المساحة">
+					description = <"مساحة الشيئ">
+				>
+				["at0036"] = <
+					text = <"اسم الشيئ ">
+					description = <"الشيئ محل الاهتمام. قد يكون جزءا من الجسم, جهيزة أو عينة.">
+				>
+				["at0037"] = <
+					text = <"الأبعاد">
+					description = <"أبعاد الشيئ">
+				>
+				["at0038"] = <
+					text = <"الصورة">
+					description = <"صورة الشخص">
+				>
+			>
+		>
+	>

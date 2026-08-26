@@ -1,0 +1,275 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.exam-ears.v1
+specialise
+	openEHR-EHR-CLUSTER.exam.v1
+
+concept
+	[at0000.1]	-- Examination of the ears
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"02/11/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording findings on physical examination of the ears.">
+			use = <"">
+			keywords = <"examination", "physical", "ears", "ENT", "tympanic", "mastoid", "Rinne", "Weber">
+			misuse = <"Do not use for recording audiology findings Should normally be contained within an OBSERVATION">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"">
+		["MD5-CAM-1.0.1"] = <"4C3FA1F70C90356DC3CA61F87EDAD866">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {	-- Examination of the ears
+		items cardinality matches {1..*; unordered} matches {
+			CLUSTER[at0004] occurrences matches {0..1} matches {	-- Normal statements
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0005] occurrences matches {0..1} matches {	-- Normal statement
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0.48, 	-- Both ears normal
+									at0.49, 	-- Left ear normal
+									at0.50]	-- Right ear normal
+								}
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0.66] occurrences matches {0..2} matches {	-- Lateral Findings
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0.16] occurrences matches {0..1} matches {	-- Side
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0.17, 	-- Left
+									at0.18]	-- Right
+								}
+							}
+						}
+					}
+					CLUSTER[at0.57] occurrences matches {0..1} matches {	-- Physical
+						items cardinality matches {1..*; unordered} matches {
+							allow_archetype CLUSTER[at0.76] occurrences matches {0..1} matches {	-- External ear detail
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation-external_ear(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection-external_ear(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[at0.77] occurrences matches {0..*} matches {	-- Auditory canal detail
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.inspection-ear_canal(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[at0.75] occurrences matches {0..1} matches {	-- Tympanic membrane detail
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.inspection-tympanic_perforation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection-tympanic_membrane(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+						}
+					}
+					CLUSTER[at0.56] occurrences matches {0..1} matches {	-- Functional
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0.24] occurrences matches {0..1} matches {	-- Whisper test
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0.68] occurrences matches {0..1} matches {	-- Rinne Test
+								value matches {
+									0|[local::at0.69], 	-- Negative
+									1|[local::at0.70]; 	-- Positive
+									0  	-- assumed value
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[at0009] occurrences matches {0..*} matches {	-- Detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[at0006] occurrences matches {0..*} matches {	-- Image
+						value matches {
+							DV_MULTIMEDIA matches {
+								media_type matches {
+									[openEHR::
+									426, 
+									427, 
+									429]
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[at0008.1] occurrences matches {0..1} matches {	-- Central findings
+				items cardinality matches {1..*; unordered} matches {
+					CLUSTER[at0.67] occurrences matches {0..1} matches {	-- Functional
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0.71] occurrences matches {0..1} matches {	-- Weber Test
+								value matches {
+									0|[local::at0.72], 	-- Normal
+									1|[local::at0.73], 	-- Lateralising Left
+									2|[local::at0.74]; 	-- Lateralising Right
+									0  	-- assumed value
+								}
+							}
+							allow_archetype CLUSTER[at0.78] occurrences matches {0..*} matches {	-- Detail
+								include
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0.16"] = <
+					text = <"Side">
+					description = <"Left or Right ear examined?">
+				>
+				["at0.17"] = <
+					text = <"Left">
+					description = <"Left ear.">
+				>
+				["at0.18"] = <
+					text = <"Right">
+					description = <"Right ear.">
+				>
+				["at0.24"] = <
+					text = <"Whisper test">
+					description = <"A simple hearing test.">
+				>
+				["at0.48"] = <
+					text = <"Both ears normal">
+					description = <"Both ears are normal.">
+				>
+				["at0.49"] = <
+					text = <"Left ear normal">
+					description = <"The left ear is normal.">
+				>
+				["at0.50"] = <
+					text = <"Right ear normal">
+					description = <"The right ear is normal.">
+				>
+				["at0.56"] = <
+					text = <"Functional">
+					description = <"Lateral tests of ear function.">
+				>
+				["at0.57"] = <
+					text = <"Physical">
+					description = <"Physical examination of the ear.">
+				>
+				["at0.66"] = <
+					text = <"Lateral Findings">
+					description = <"Clinical findings related to a single ear.">
+				>
+				["at0.67"] = <
+					text = <"Functional">
+					description = <"Central functional auditory tests.">
+				>
+				["at0.68"] = <
+					text = <"Rinne Test">
+					description = <"A test to compare bone and air conduction of sound.">
+				>
+				["at0.69"] = <
+					text = <"Negative">
+					description = <"The Rinne test is positive.">
+				>
+				["at0.70"] = <
+					text = <"Positive">
+					description = <"The Rinne test is negative.">
+				>
+				["at0.71"] = <
+					text = <"Weber Test">
+					description = <"A test to distinguish conductive and sensoineural hearing loss.">
+				>
+				["at0.72"] = <
+					text = <"Normal">
+					description = <"The Weber test is not lateralised - normal.">
+				>
+				["at0.73"] = <
+					text = <"Lateralising Left">
+					description = <"The result of the Weber test is lateralising to the left.">
+				>
+				["at0.74"] = <
+					text = <"Lateralising Right">
+					description = <"The result of the Weber test is lateralising to the right.">
+				>
+				["at0.75"] = <
+					text = <"Tympanic membrane detail">
+					description = <"Detailed findings related to the tmpanic membrane or perforation.">
+				>
+				["at0.76"] = <
+					text = <"External ear detail">
+					description = <"Detailed findings related to the external ear.">
+				>
+				["at0.77"] = <
+					text = <"Auditory canal detail">
+					description = <"Detailed findings related to the audiory canal.">
+				>
+				["at0.78"] = <
+					text = <"Detail">
+					description = <"Further detailed functional findings.">
+				>
+				["at0000"] = <
+					text = <"Examination">
+					description = <"Basic examination cluster for describing findings on physical examination when there is no named focus of examination.">
+				>
+				["at0000.1"] = <
+					text = <"Examination of the ears">
+					description = <"Examination cluster for describing findings on physical examination of the eyes.">
+				>
+				["at0002"] = <
+					text = <"Clinical description">
+					description = <"Textural description of the part examined.">
+				>
+				["at0004"] = <
+					text = <"Normal statements">
+					description = <"A group of statements about the normality of the examination.">
+				>
+				["at0005"] = <
+					text = <"Normal statement">
+					description = <"A specific statement of normality.">
+				>
+				["at0006"] = <
+					text = <"Image">
+					description = <"Drawing or image of the area examined.">
+				>
+				["at0008"] = <
+					text = <"Lateral Findings">
+					description = <"Clinical findings related to a single ear.">
+				>
+				["at0008.1"] = <
+					text = <"Central findings">
+					description = <"Clinical findings related to both ears.">
+				>
+				["at0009"] = <
+					text = <"Detail">
+					description = <"More focused examination findings.">
+				>
+			>
+		>
+	>

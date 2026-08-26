@@ -1,0 +1,577 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.pathology_test-lipids.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.pathology_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-11-07">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل نتيجة اختبار المعمل, و التي قد يتم استخدامها لتسجيل اختبار ذي قيمة واحدة, و عادة ما يتم بعد ذلك المزيد من التخصيص أو الوضع في قالب لتمثيل اختبار متعدد القيم أو رتل من الاختبارات. 
+و يمثل هذا النموذج كوالد (أب) للتخصيصات الأخرى لاختبارات معملية أكثر تحديدا مثل الميكروبيولوجيا و الهيستوباثولوجيا.">
+			use = <"قد يستخدم لتسجيل نتيجة اختبار المعمل, و التي قد يتم استخدامها لتسجيل اختبار ذي قيمة واحدة, و عادة ما يتم بعد ذلك المزيد من التخصيص أو الوضع في قالب لتمثيل اختبار متعدد القيم أو رتل من الاختبارات. 
+
+يتم بعد ذلك تقديم التقرير للطبيب السريري الذي قام بطلب الاختبار في سياق تقرير معملي متكامل.">
+			keywords = <"المعمل - المختبر", "الباثولوجيا - المرضية", "الكيمياء الحيوية", "الدمويات", "الميكروبيولوجيا", "المناعيات - علم المناعة">
+			misuse = <"قد تكون التخصيصات أكثر مناسبة للتقارير المركبة مثل حالات الميكروبيولوجيا أو الهيستوباثولوجيا.">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the findings and interpretation of biochemical lipid study test results. This is typically done in a laboratory but may be done in other environments such as at the point of care.">
+			use = <"Use to record a lipid studies test result panel.
+
+This archetype has been designed to enable the health record to:
+- distinguish between fasting and non-fasting lipid measurements, 
+- distinguish measurements from laboratory, point of care and home-based devices, and;
+
+Will normally be reported back to the requesting clinician as one component within the context of an overall COMPOSITION-based report.">
+			keywords = <"lab", "pathology", "biochemistry", "laboratory", "chemical", "clinical", "test", "specimen">
+			misuse = <"Not to be used to represent an entire cumulative report. This Pathology test result archetype represents only one of the result sets that is usually viewed as a vertical in a cumulative test report. A cumulative report is a view that is constructed from the results represented by multiple OBSERVATION archetypes.">
+		>
+	>
+	other_contributors = <"Koray Atalag, University of Auckland, New Zealand", "Sharmila Biswas, Dr Sharmila Biswas GP, Australia", "Doug Chesher, PaLMS, Australia", "Stephen Chu, NEHTA, Australia (Editor)", "Matthew Cordell, NEHTA, Australia", "Andre de Wolf, NeHTA, Australia", "Gail Easterbrook, Flinders Medical Centre, Australia", "David Evans, Queensland Health, Australia", "Shahla Foozonkhah, Ocean Informatics, Australia", "Heath Frankel, Ocean Informatics, Australia", "Grahame Grieve, Health Intersections Pyty Ltd, Australia (Editor)", "Sam Heard, Ocean Informatics, Australia", "Mary Kelaher, NEHTA, Australia", "Michael Legg, Michael Legg & associates, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Mike Martyn, The Hobart Anaesthetic Group, Australia", "Andrew McIntyre, Medical-Objects, Australia", "David McKillop, NEHTA, Australia", "Ian McNicoll, Ocean Informatics UK, United Kingdom", "Chris Mitchell, RACGP, Australia", "Stewart Morrison, NEHTA, Australia", "Michael Osborne, Mater Health Services, Australia", "Kyle Shore, Charm Health, Australia", "Michael Thompson, Queensland Health, Australia", "Gordon Tomes, Australian Institute of Health and Welfare, Australia", "Richard Townley-O'Neill, NEHTA, Australia", "David Rowed, VAMC Clinic, Australia (Editor)", "Mona Saleh (Translator)">
+	references = <
+		["1"] = <"Pathology (Data Specifications) Version 1.0 [Internet]. Sydney, Australia: National E-Health Transition Authority; 2007 May 29 [cited 2011 Jul 11]; Available at http://www.nehta.gov.au/component/docman/doc_download/962-pathology-v10.">
+		["2"] = <"Laboratory Technical Framework, Volume 3: Content, Revision 3.0 [Internet]. USA: IHE International; 2011 May 19; [cited 2011 Jul 11]. Available from: http://www.ihe.net/Technical_Framework/index.cfm#laboratory.">
+		["3"] = <"Based on NEHTA 'Pathology Test' archetype. Available from: http://dcm.nehta.org.au/ckm/OKM.html#showarchetype_1013.1.839_8">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"EA0226685900390F0FB3F0F3594CF579">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Lipid Studies Test Result
+		/data[id2]/events[id3]/data[id4]/items[id96]/items matches {
+			CLUSTER[id97.6] matches {	-- Total Cholesterol
+				items matches {
+					ELEMENT[id79.1] matches {	-- Result Value
+						value matches {
+							DV_QUANTITY[id0.115] matches {
+								property matches {[at0.1]}
+								units matches {"mg/dl", "mmol/l"}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id97.7] matches {	-- Triglyceride
+				items matches {
+					ELEMENT[id79.2] matches {	-- Result Value
+						value matches {
+							DV_QUANTITY[id0.116] matches {
+								property matches {[at0.1]}
+								[magnitude, units] matches {
+									[{|>=0.0|}, {"mg/dl"}],
+									[{|>=0.0|}, {"mmol/l"}]
+								}
+							}
+						}
+					}
+					use_node ELEMENT[id79.9] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.10] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.11] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+			CLUSTER[id97.5] matches {	-- HDL Cholesterol
+				items matches {
+					ELEMENT[id79.3] matches {	-- Result Value
+						value matches {
+							DV_QUANTITY[id0.117] matches {
+								property matches {[at0.1]}
+								[magnitude, units] matches {
+									[{|>=0.0|}, {"mg/dl"}],
+									[{|>=0.0|}, {"mmol/l"}]
+								}
+							}
+						}
+					}
+					use_node ELEMENT[id79.12] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.13] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.14] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+			CLUSTER[id97.4] matches {	-- LDL Cholesterol Direct Assay
+				items matches {
+					ELEMENT[id79.4] matches {	-- Result Value
+						value matches {
+							DV_QUANTITY[id0.118] matches {
+								property matches {[at0.1]}
+								[magnitude, units] matches {
+									[{|>=0.0|}, {"mg/dl"}],
+									[{|>=0.0|}, {"mmol/l"}]
+								}
+							}
+						}
+					}
+					use_node ELEMENT[id79.15] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.16] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.17] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+			CLUSTER[id97.8] matches {	-- LDL Cholesterol Calculated
+				items matches {
+					ELEMENT[id79.7] matches {	-- Result Value
+						value matches {
+							DV_QUANTITY[id0.119] matches {
+								property matches {[at0.1]}
+								[magnitude, units] matches {
+									[{|>=0.0|}, {"mg/dl"}],
+									[{|>=0.0|}, {"mmol/l"}]
+								}
+							}
+						}
+					}
+					use_node ELEMENT[id79.18] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.19] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.20] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+			CLUSTER[id97.3] matches {	-- VLDL Cholesterol
+				items matches {
+					ELEMENT[id79.8] matches {	-- Result Value
+						value matches {
+							DV_QUANTITY[id0.120] matches {
+								property matches {[at0.1]}
+								[magnitude, units] matches {
+									[{|>=0.0|}, {"mg/dl"}],
+									[{|>=0.0|}, {"mmol/l"}]
+								}
+							}
+						}
+					}
+					use_node ELEMENT[id79.21] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.22] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.23] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+			CLUSTER[id97.2] matches {	-- LDL/HDL Cholesterol Ratio
+				items matches {
+					ELEMENT[id79.5] matches {	-- Result Value
+						value matches {
+							DV_PROPORTION[id0.121] matches {
+								is_integral matches {False}
+								type matches {0}
+							}
+						}
+					}
+					use_node ELEMENT[id79.24] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.25] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.26] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+			CLUSTER[id97.1] matches {	-- Total/HDL Cholesterol Ratio
+				items matches {
+					ELEMENT[id79.6] matches {	-- Result Value
+						value matches {
+							DV_PROPORTION[id0.122] matches {
+								is_integral matches {False}
+								type matches {0}
+							}
+						}
+					}
+					use_node ELEMENT[id79.27] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id103]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id103]
+					use_node ELEMENT[id79.28] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id104]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id104]
+					use_node ELEMENT[id79.29] /data[id2]/events[id3]/data[id4]/items[id96]/items[id97.6]/items[id109]	-- /data[id2]/events[id3]/data[id4]/items[id96]/items[Total Cholesterol]/items[id109]
+				}
+			}
+		}
+		/data[id2]/events[id3]/state matches {
+			ITEM_TREE[id0.112] matches {
+				items matches {
+					ELEMENT[id0.113] occurrences matches {0..1} matches {	-- Fasting State
+						value matches {
+							DV_BOOLEAN[id0.123] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id0.114] occurrences matches {0..1} matches {	-- Duration of Fasting
+						value matches {
+							DV_DURATION[id0.124] matches {
+								value matches {PTHS/|>=PT0S|}
+							}
+						}
+					}
+				}
+			}
+		}
+		/protocol[id5]/items matches {
+			before [id18]
+			ELEMENT[id0.111] occurrences matches {0..1} matches {	-- Point of Care Device used
+				value matches {
+					DV_BOOLEAN[id0.125] matches {
+						value matches {True, False}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["ar-sy"] = <
+			["id0.111"] = <
+				text = <"*Point of Care Device used(en)">
+				description = <"*The test was performed using a point of care device or a home-based device.(en)">
+			>
+			["id0.113"] = <
+				text = <"*Fasting State(en)">
+				description = <"*A fasting specimen was used for the measurement.(en)">
+			>
+			["id0.114"] = <
+				text = <"*Duration of Fasting(en)">
+				description = <"*The duration of fasting completed by the test subject prior to the sample being taken.(en)">
+			>
+			["id1.1"] = <
+				text = <"*Lipid Studies Test Result(en)">
+				description = <"*The findings and interpretation of bochemical lipid study test results.(en)">
+			>
+			["id79.1"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.2"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.3"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.4"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.5"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.6"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.7"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id79.8"] = <
+				text = <"*Result Value(en)">
+				description = <"*Actual value of the result.(en)">
+			>
+			["id97.1"] = <
+				text = <"*Total/HDL Cholesterol Ratio(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.2"] = <
+				text = <"*LDL/HDL Cholesterol Ratio(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.3"] = <
+				text = <"*VLDL Cholesterol(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.4"] = <
+				text = <"*LDL Cholesterol Direct Assay(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.5"] = <
+				text = <"*HDL Cholesterol(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.6"] = <
+				text = <"*Total Cholesterol(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.7"] = <
+				text = <"*Triglyceride(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["id97.8"] = <
+				text = <"*LDL Cholesterol Calculated(en)">
+				description = <"*Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.(en)">
+			>
+			["at0.1"] = <
+				text = <"*Concentration (en)">
+				description = <"*Concentration (en)">
+			>
+			["id79.9"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.10"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.11"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.12"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.13"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.14"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.15"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.16"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.17"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.18"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.19"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.20"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.21"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.22"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.23"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.24"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.25"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.26"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.27"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.28"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id79.29"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+		>
+		["en"] = <
+			["id0.111"] = <
+				text = <"Point of Care Device used">
+				description = <"The test was performed using a point of care device or a home-based device.">
+			>
+			["id0.113"] = <
+				text = <"Fasting State">
+				description = <"A fasting specimen was used for the measurement.">
+			>
+			["id0.114"] = <
+				text = <"Duration of Fasting">
+				description = <"The duration of fasting completed by the test subject prior to the sample being taken.">
+			>
+			["id1.1"] = <
+				text = <"Lipid Studies Test Result">
+				description = <"The findings and interpretation of bochemical lipid study test results.">
+			>
+			["id79.1"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.2"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.3"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.4"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.5"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.6"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.7"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id79.8"] = <
+				text = <"Result Value">
+				description = <"Actual value of the result.">
+			>
+			["id97.1"] = <
+				text = <"Total/HDL Cholesterol Ratio">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.2"] = <
+				text = <"LDL/HDL Cholesterol Ratio">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.3"] = <
+				text = <"VLDL Cholesterol">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.4"] = <
+				text = <"LDL Cholesterol Direct Assay">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.5"] = <
+				text = <"HDL Cholesterol">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.6"] = <
+				text = <"Total Cholesterol">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.7"] = <
+				text = <"Triglyceride">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id97.8"] = <
+				text = <"LDL Cholesterol Calculated">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["at0.1"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+			["id79.9"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.10"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.11"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.12"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.13"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.14"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.15"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.16"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.17"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.18"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.19"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.20"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.21"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.22"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.23"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.24"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.25"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.26"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.27"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.28"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id79.29"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/119>
+		>
+	>

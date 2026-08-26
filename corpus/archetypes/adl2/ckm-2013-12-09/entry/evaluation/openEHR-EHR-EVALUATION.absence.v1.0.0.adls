@@ -1,0 +1,79 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.absence.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2013-03-12">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To positively record statement/s about information that is not available within the health record at a specific point in time.">
+			use = <"Use to positively record statements about  information that is not available within the health record at a specific point in time - that neither the positive presence, nor the positive exclusion, of information about a clinicial finding or an evaluation or a previous activity is available.
+
+This archetype has been designed to be used within SLOTS in persistent COMPOSITIONS such as Medication List, Problem List, or Adverse Reaction List.
+
+Absence statements can only be considered to be current and accurate at the time of recording.
+
+This archetype has been designed specifically to avoid the need to use of flags to express negation about any item within the health record.">
+			keywords = <"absence", "information", "adverse", "reaction", "problem", "diagnosis", "medication", "procedure", "vaccination">
+			misuse = <"Not to be used to record the exclusion of adverse reactions, medication use, procedures, problems or diagnoses - use specific specialisations of the EVALUATION.exclusion archetype for this purpose.">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"5E7736AF504436AC63CA11F0BC42CE91">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Absence of Information
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Absence Statement
+						value matches {
+							DV_TEXT[id6] 
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id4] matches {
+				items matches {
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Date Verified
+						value matches {
+							DV_DATE_TIME[id7] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Absence of Information">
+				description = <"Positive statement/s about information that is not available within the health record at a specific point in time.">
+			>
+			["id3"] = <
+				text = <"Absence Statement">
+				description = <"Positive statement that no information is available.">
+			>
+			["id5"] = <
+				text = <"Date Verified">
+				description = <"The date at which the information was deemed to be absent.">
+			>
+		>
+	>

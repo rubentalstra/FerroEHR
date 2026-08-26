@@ -1,0 +1,99 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.exclusion.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2010-02-03">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record generic, positive statement/s about the absence or exclusion of any clinical findings or evaluations within the health record at a specific point in time.">
+			use = <"Use to record the positive exclusion or absence of clinical findings or evaluations within the health record at a specific point in time. This archetype has specifically been designed to avoid the need to use flags or terminology to express negation about any item within the health record. 
+
+This archetype has been deliberately kept simple and open in order to capture simple statements about anything that may be usefully recorded as absent or excluded within the health record. Specialisations of this archetype will capture specific and more detailed information about common exclusions, such as problems or diagnoses. 
+
+Exclusion statements can only be considered to be current and accurate at the time of recording.">
+			keywords = <"exclusion", ...>
+			misuse = <"Not to be used to record the exclusion or absence of adverse reactions, medication use, procedures, problems or diagnoses - use specific specialisations of this archetype for this purpose.">
+		>
+	>
+	other_contributors = <"Stephen Chu, NEHTA, Australia", "Sam Heard, Ocean Informatics, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Stephen Royce, NEHTA, Australia">
+	references = <
+		["1"] = <"Exclusion Statement, draft archetype, NEHTA Clinical Knowledge Manager [Internet]. NEHTA. Authored: 02 Mar 2010. Available at:">
+		["2"] = <"http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.1301_2 (accessed 3 Sept 2013)">
+	>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"8E2040F19D49D3C6E050BA080C7CC766">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Exclusion Statement
+		data matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] occurrences matches {1..*} matches {	-- Exclusion Statement
+						value matches {
+							DV_TEXT[id9] 
+						}
+					}
+					ELEMENT[id4] matches {	-- Specific Object
+						value matches {
+							DV_TEXT[id10] 
+						}
+					}
+					ELEMENT[id8] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT[id11] 
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id7] matches {
+				items matches {
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Date Last Updated
+						value matches {
+							DV_DATE_TIME[id12] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Exclusion Statement">
+				description = <"Generic, positive statement/s that need to be recorded as clinically excluded from the health record at a specific point in time.">
+			>
+			["id3"] = <
+				text = <"Exclusion Statement">
+				description = <"The statement about an exclusion in the health record.">
+			>
+			["id4"] = <
+				text = <"Specific Object">
+				description = <"Identification of the specific object/s to which the Exclusion Statement applies.">
+			>
+			["id5"] = <
+				text = <"Date Last Updated">
+				description = <"The date at which the exclusion was last clinically asserted, affirmed or confirmed.">
+			>
+			["id8"] = <
+				text = <"Comment">
+				description = <"Additional narrative about the Exclusion not captured in other fields.">
+			>
+		>
+	>

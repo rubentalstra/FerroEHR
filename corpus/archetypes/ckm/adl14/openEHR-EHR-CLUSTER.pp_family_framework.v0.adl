@@ -1,0 +1,101 @@
+﻿archetype (adl_version=1.4; uid=43bf4887-8052-4257-9fe4-77af1021c087)
+	openEHR-EHR-CLUSTER.pp_family_framework.v0
+
+concept
+	[at0000]	-- Phenopacket family framework
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2019-09-25">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"5A82C164DFAFC11D6CA62EDC1185621D">
+		["build_uid"] = <"edf50529-1351-4343-8a6c-a4d20990d7d2">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Phenopacket family framework
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- id
+				value matches {
+					DV_IDENTIFIER matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {    -- proband
+			}
+			allow_archetype CLUSTER[at0004] occurrences matches {0..*} matches {    -- relatives
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- pedigree
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.pp_pedigree\.v0/}
+			}
+			allow_archetype CLUSTER[at0006] occurrences matches {0..*} matches {    -- hts_files
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.pp_htsfile\.v0/}
+			}
+			allow_archetype CLUSTER[at0007] occurrences matches {0..*} matches {    -- meta_data
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.pp_metadata\.v0/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Phenopacket family framework">
+					description = <"Phenopacket family framework">
+				>
+				["at0002"] = <
+					text = <"id">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"proband">
+					description = <"*">
+				>
+				["at0004"] = <
+					text = <"relatives">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"pedigree">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"hts_files">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"meta_data">
+					description = <"*">
+				>
+			>
+		>
+	>

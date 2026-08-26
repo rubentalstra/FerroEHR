@@ -1,0 +1,467 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.fundoscopic_examination.v1
+
+concept
+	[at0000]	-- Fundoscopic examination of eyes
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Marco Borges">
+				["organisation"] = <"P2D">
+				["email"] = <"marco.borges@p2d.com.br">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"27/07/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about clinical findings on fundoscopy of eyes.">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Para registrar detalhes sobre o resultados clínicos do exame fundoscopia dos olhos.">
+			use = <"*">
+			misuse = <"*">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"">
+		["MD5-CAM-1.0.1"] = <"2A64A8FDB455A13CD40A3237E21FAE06">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Exame de fundoscopia
+		data matches {
+			HISTORY[at0001] matches {	-- Série de Eventos
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0008] occurrences matches {0..1} matches {	-- Descrição clínica
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Lado
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0005, 	-- Esquerdo
+													at0006]	-- Direito
+												}
+											}
+										}
+									}
+									CLUSTER[at0007] occurrences matches {0..1} matches {	-- Detalhes
+										items cardinality matches {0..*; unordered} matches {
+											ELEMENT[at0010] occurrences matches {0..1} matches {	-- Reflexo vermelho
+												value matches {
+													DV_BOOLEAN matches {
+														value matches {True, False}
+													}
+												}
+											}
+											ELEMENT[at0011] occurrences matches {0..1} matches {	-- Cristalino
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0012] occurrences matches {0..1} matches {	-- Nervo óptico
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0016] occurrences matches {0..1} matches {	-- Papiledema
+												value matches {
+													DV_BOOLEAN matches {
+														value matches {True, False}
+													}
+												}
+											}
+											ELEMENT[at0017] occurrences matches {0..1} matches {	-- Mácula
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0018] occurrences matches {0..1} matches {	-- Artérias da retina
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0019] occurrences matches {0..1} matches {	-- Veias da retina
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0020] occurrences matches {0..1} matches {	-- Flocos de algodão
+												value matches {
+													DV_BOOLEAN matches {
+														value matches {True, False}
+													}
+												}
+											}
+											ELEMENT[at0021] occurrences matches {0..1} matches {	-- Hemorragias retinianas
+												value matches {
+													DV_BOOLEAN matches {
+														value matches {True, False}
+													}
+												}
+											}
+											ELEMENT[at0022] occurrences matches {0..1} matches {	-- Fundo da retina
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0023] occurrences matches {0..1} matches {	-- Vítreo
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											CLUSTER[at0009] occurrences matches {0..1} matches {	-- Visualização
+												items cardinality matches {0..*; unordered} matches {
+													ELEMENT[at0015] occurrences matches {0..1} matches {	-- Visibilidade
+														value matches {
+															DV_CODED_TEXT matches {
+																defining_code matches {
+																	[local::
+																	at0024, 	-- Totalmente visível
+																	at0025, 	-- Parcialmente visível
+																	at0026]	-- Não visível
+																}
+															}
+														}
+													}
+													ELEMENT[at0027] occurrences matches {0..1} matches {	-- Comentário
+														value matches {
+															DV_TEXT matches {*}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0013] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0014] occurrences matches {0..1} matches {	-- *Mydriatic used(en)
+										value matches {
+											DV_BOOLEAN matches {
+												value matches {True, False; False}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0028] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0029] occurrences matches {0..1} matches {	-- Método
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0030, 	-- Direto
+									at0031]	-- Indireto
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Fundoscopic examination of eyes">
+					description = <"Record of clinical findings on fundoscopy of eyes">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Side">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Left">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Right">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Details">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"Clinical Description">
+					description = <"Descriptive overview of examination findings">
+				>
+				["at0009"] = <
+					text = <"Visualisation">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Red reflex">
+					description = <"True if Red Reflex is present">
+				>
+				["at0011"] = <
+					text = <"Lens">
+					description = <"Description of lens">
+				>
+				["at0012"] = <
+					text = <"Optic Disc">
+					description = <"Description of optic disc">
+				>
+				["at0013"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Mydriatic used">
+					description = <"True if mydriatic is used">
+				>
+				["at0015"] = <
+					text = <"Ease of Visualisation">
+					description = <"Description of ease to visualise all the sturctures during fundoscopy">
+				>
+				["at0016"] = <
+					text = <"Papilloedema">
+					description = <"True if papilloedema present">
+				>
+				["at0017"] = <
+					text = <"Macula">
+					description = <"Description of macula">
+				>
+				["at0018"] = <
+					text = <"Retinal arteries">
+					description = <"Description of retinal arteries">
+				>
+				["at0019"] = <
+					text = <"Retinal veins">
+					description = <"Description of retinal veins">
+				>
+				["at0020"] = <
+					text = <"'Cotton Wool' artefacts">
+					description = <"True if 'cotton wool' artefacts are present">
+				>
+				["at0021"] = <
+					text = <"Retinal haemorrhages">
+					description = <"True if retinal haemorrhages are present">
+				>
+				["at0022"] = <
+					text = <"Retinal background">
+					description = <"Description of retinal background">
+				>
+				["at0023"] = <
+					text = <"Vitreous">
+					description = <"Description of vitreous humour">
+				>
+				["at0024"] = <
+					text = <"Fully visualised">
+					description = <"*">
+				>
+				["at0025"] = <
+					text = <"Partially visualised">
+					description = <"*">
+				>
+				["at0026"] = <
+					text = <"Not visualised">
+					description = <"*">
+				>
+				["at0027"] = <
+					text = <"Comment">
+					description = <"Comment, especially if not fully visualised">
+				>
+				["at0028"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0029"] = <
+					text = <"Method">
+					description = <"*">
+				>
+				["at0030"] = <
+					text = <"Direct">
+					description = <"*">
+				>
+				["at0031"] = <
+					text = <"Indirect">
+					description = <"*">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0000"] = <
+					text = <"Exame de fundoscopia">
+					description = <"Registrar resultados clínicos sobre fundoscopia dos olhos.">
+				>
+				["at0001"] = <
+					text = <"Série de Eventos">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Lado">
+					description = <"Lado examinado.">
+				>
+				["at0005"] = <
+					text = <"Esquerdo">
+					description = <"Olho esquerdo.">
+				>
+				["at0006"] = <
+					text = <"Direito">
+					description = <"Olho direito.">
+				>
+				["at0007"] = <
+					text = <"Detalhes">
+					description = <"Detalhes da fundoscopia.">
+				>
+				["at0008"] = <
+					text = <"Descrição clínica">
+					description = <"Descição dos achados em fundoscopia.">
+				>
+				["at0009"] = <
+					text = <"Visualização">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Reflexo vermelho">
+					description = <"Reflexo vermelho é presente?">
+				>
+				["at0011"] = <
+					text = <"Cristalino">
+					description = <"Descrição dos achados no cristalino.">
+				>
+				["at0012"] = <
+					text = <"Nervo óptico">
+					description = <"Descrição dos achados no nervo óptico.">
+				>
+				["at0013"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"*Mydriatic used(en)">
+					description = <"*True if mydriatic is used(en)">
+				>
+				["at0015"] = <
+					text = <"Visibilidade">
+					description = <"Facilidade de visualizar as estruturas durante fundoscopia.">
+				>
+				["at0016"] = <
+					text = <"Papiledema">
+					description = <"Papiledema (inchaço) do nervo óptico é presente?">
+				>
+				["at0017"] = <
+					text = <"Mácula">
+					description = <"Descrição dos achados na mácula.">
+				>
+				["at0018"] = <
+					text = <"Artérias da retina">
+					description = <"Descrição dos achados nas artérias da retina.">
+				>
+				["at0019"] = <
+					text = <"Veias da retina">
+					description = <"Descrição dos achados nas veias da retina.">
+				>
+				["at0020"] = <
+					text = <"Flocos de algodão">
+					description = <"Existem manchas em flocos de algodão?">
+				>
+				["at0021"] = <
+					text = <"Hemorragias retinianas">
+					description = <"Existem hemorragias na retina?">
+				>
+				["at0022"] = <
+					text = <"Fundo da retina">
+					description = <"Descrição dos achados no fundo da retina.">
+				>
+				["at0023"] = <
+					text = <"Vítreo">
+					description = <"Descrição dos achados no vítreo.">
+				>
+				["at0024"] = <
+					text = <"Totalmente visível">
+					description = <"Facilidade total para visualizar todas as estruturas durante fundoscopia.">
+				>
+				["at0025"] = <
+					text = <"Parcialmente visível">
+					description = <"Algumas estruturas são visíveis e outras não.">
+				>
+				["at0026"] = <
+					text = <"Não visível">
+					description = <"Estruturas não são visível durante a fundoscopia.">
+				>
+				["at0027"] = <
+					text = <"Comentário">
+					description = <"Comentário sobre a fundoscopia.">
+				>
+				["at0028"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0029"] = <
+					text = <"Método">
+					description = <"Método usado no exame de fundoscopia.">
+				>
+				["at0030"] = <
+					text = <"Direto">
+					description = <"*">
+				>
+				["at0031"] = <
+					text = <"Indireto">
+					description = <"*">
+				>
+			>
+		>
+	>

@@ -1,0 +1,235 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.refraction.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2012-07-18">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the results of a refraction assessment, either performed on the patient's usual correction or by refraction of the patient.">
+			use = <"Use to record the results of measurement of refraction.
+
+The 'Description' data element can be used to record simple narrative summary or as a means to integrate legacy data.">
+			keywords = <"eye", "sight", "vision", "ophthalmic", "visual", "refraction", "refraction", "correction">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Gustavo M Bacelar-Silva, Brazil", ...>
+	references = <
+		["1"] = <"Visual Acuity [Internet]. Wikipedia. Available from: http://en.wikipedia.org/wiki/Visual_acuity">
+		["2"] = <"Aylward W [Internet].Coding Visual Acuity, openEyes Project;2012.Available from http://www.openeyes.org.uk/documents/OpenEyes%20Coding%20Visual%20Acuity.pdf">
+		["3"] = <"IHE Eye Care Domain. General Eye Evaluation (GEE) [Internet]. IHE; 2012. Available from: http://www.ihe.net/Technical_Framework/upload/IHE_EyeCare_Supp_GEE_Rev1-1_TI_2012-06-29.pdf">
+		["4"] = <"Royal College of Opthalmologists. Cataract National Dataset for Adults [Internet]. 2011. Available from: http://www.rcophth.ac.uk/page.asp?section=583&sectionTitle=Cataract+National+Data+Set+for+Adults">
+		["5"] = <"CfH, UK. Do Once & Share - Glaucoma [Internet]. [cited 2012 Sep 26]. Available from: http://www.doasglaucoma.org/">
+		["6"] = <"DICOM Supplement 30 [Internet]. [cited 2012 Sep 26]. Available from: http://medical.nema.org/">
+		["7"] = <"Practical Ophthalmology: A Manual for Beginning Residents, 6th Edition [Paperback]">
+		["8"] = <"American Academy Of Ophthalmology (Author), Fred M. Wilson II (Editor), MD (Editor)">
+	>
+	other_details = <
+		["current_contact"] = <"Ian McNicoll, Ocean Informatics, UK, ian.mcnicoll@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"1FC072ECEFE11FA70A8F99BAEC6B2282">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Refraction assessment
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					POINT_EVENT[id135] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id40] occurrences matches {0..1} matches {	-- Description
+										value matches {
+											DV_TEXT[id141] 
+										}
+									}
+									CLUSTER[id54] occurrences matches {0..2} matches {	-- Per Eye
+										items matches {
+											ELEMENT[id56] occurrences matches {0..1} matches {	-- Absent Result
+												value matches {
+													DV_CODED_TEXT[id142] matches {
+														defining_code matches {[ac1]}		-- Absent Result (synthesised)
+													}
+													DV_TEXT[id143] 
+												}
+											}
+											allow_archetype CLUSTER[id140] occurrences matches {0..1} matches {	-- Refraction details
+												include
+													archetype_id/value matches {/openEHR-EHR-CLUSTER\.refraction_details(-[a-zA-Z0-9_]+)*\.v1/}
+											}
+											ELEMENT[id67] matches {	-- Interpretation
+												value matches {
+													DV_TEXT[id144] 
+												}
+											}
+										}
+									}
+									ELEMENT[id55] matches {	-- Overall Interpretation
+										value matches {
+											DV_TEXT[id145] 
+										}
+									}
+									ELEMENT[id41] occurrences matches {0..1} matches {	-- Additional Comment
+										value matches {
+											DV_TEXT[id146] 
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[id42] matches {
+								items matches {
+									ELEMENT[id113] matches {	-- Confounding Factors
+										value matches {
+											DV_TEXT[id147] 
+										}
+									}
+									ELEMENT[id43] matches {	-- Refractive Correction
+										value matches {
+											DV_CODED_TEXT[id148] matches {
+												defining_code matches {[ac2]}		-- Refractive Correction (synthesised)
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id21] matches {
+				items matches {
+					allow_archetype CLUSTER[id26] occurrences matches {0..1} matches {	-- Device Details
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Refraction assessment">
+				description = <"Assessment of the refraction required to achieve optimal visual acuity.">
+			>
+			["id26"] = <
+				text = <"Device Details">
+				description = <"Details of the device used to measure refraction.">
+			>
+			["id40"] = <
+				text = <"Description">
+				description = <"An overall narrative description of the visual acuity test result.">
+			>
+			["id41"] = <
+				text = <"Additional Comment">
+				description = <"Any additional narrative comment about the visual acuity test.">
+			>
+			["id43"] = <
+				text = <"Refractive Correction">
+				description = <"The specific type(s) of refractive correction applied.">
+			>
+			["id54"] = <
+				text = <"Per Eye">
+				description = <"Details of the refraction result for each eye.">
+			>
+			["id55"] = <
+				text = <"Overall Interpretation">
+				description = <"A term, commonly coded, expressing an overall interpretation of the visual acuity test.">
+			>
+			["id56"] = <
+				text = <"Absent Result">
+				description = <"Details of a test result which could not be recorded.">
+			>
+			["at65"] = <
+				text = <"Not performed">
+				description = <"The visual acuity test was never performed.">
+			>
+			["at66"] = <
+				text = <"Not completed">
+				description = <"The visual acuity test was started but could not be completed.">
+			>
+			["id67"] = <
+				text = <"Interpretation">
+				description = <"The test result expressed as a qualitative term, normally coded.">
+			>
+			["at72"] = <
+				text = <"Spectacles">
+				description = <"The subject's vision was corrected by spectacles.">
+			>
+			["at73"] = <
+				text = <"Contact lenses">
+				description = <"The subject's vision was corrected by contact lenses.">
+			>
+			["at74"] = <
+				text = <"Pinhole">
+				description = <"The subject's vision was corrected by use of a pinhole.">
+			>
+			["at75"] = <
+				text = <"Autorefraction">
+				description = <"The subject's vision was corrected by autorefraction.">
+			>
+			["at76"] = <
+				text = <"Retinoscopy">
+				description = <"The subject's vision was corrected by retinoscopy.">
+			>
+			["id113"] = <
+				text = <"Confounding Factors">
+				description = <"Patient circumstances which affect interpretation of the result. Often termed 'reliability' in opthalmological documentation.">
+			>
+			["id135"] = <
+				text = <"Any event">
+				description = <"Any refraction assessment event.">
+			>
+			["id140"] = <
+				text = <"Refraction details">
+				description = <"Details of refraction for a single eye.">
+			>
+			["ac1"] = <
+				text = <"Absent Result (synthesised)">
+				description = <"Details of a test result which could not be recorded. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Refractive Correction (synthesised)">
+				description = <"The specific type(s) of refractive correction applied. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			["id1"] = <http://snomed.info/id/252886007>
+			["id40"] = <http://snomed.info/id/117364006>
+			["id41"] = <http://snomed.info/id/117364006>
+			["id55"] = <http://snomed.info/id/366060000>
+			["id67"] = <http://snomed.info/id/366060000>
+			["at72"] = <http://snomed.info/id/50121007>
+			["at73"] = <http://snomed.info/id/57368009>
+			["at76"] = <http://snomed.info/id/397524001>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at65", "at66">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at72", "at73", "at74", "at75", "at76">
+		>
+	>

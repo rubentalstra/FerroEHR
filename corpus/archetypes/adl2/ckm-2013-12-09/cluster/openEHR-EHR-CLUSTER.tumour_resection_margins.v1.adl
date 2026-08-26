@@ -1,0 +1,170 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.tumour_resection_margins.v1
+
+concept
+	[at0000]	-- Tumour - Surgical resection margins
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"17/05/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Details of surgical resection margin involvement of malignant tumours. May be used to describe scenarios where tumour is present at the resection margin,detailing the length of tumour involvement, or where tumour is absent from the margin, to indicate the distance of tumour from that margin.">
+			use = <"Normally used within a histopathology archetype.">
+			keywords = <"malignancy", "margins", "tumour", "cancer", "resection", "histopathology", "biopsy">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"">
+		["MD5-CAM-1.0.1"] = <"D1C5FF9647E00C3B138D02C481F779C1">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Tumour - Surgical resection margins
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0018] occurrences matches {0..1} matches {	-- Margin name
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0019] occurrences matches {0..*} matches {	-- Margin location
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location-precise\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Marginal involvement
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0014, 	-- Present
+							at0015, 	-- Absent
+							at0017, 	-- Equivocal
+							at0016]	-- Indeterminate
+						}
+					}
+				}
+			}
+			CLUSTER[at0006] occurrences matches {0..1} matches {	-- Tumour present
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0007] occurrences matches {0..1} matches {	-- Maximum linear involvement
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+								list = <
+									["1"] = <
+										units = <"mm">
+										magnitude = <|>=0.0|>
+									>
+								>
+							>
+						}
+					}
+					ELEMENT[at0020] occurrences matches {0..1} matches {	-- Nature of involvement
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0008] occurrences matches {0..1} matches {	-- Tumour absent
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0009] occurrences matches {0..1} matches {	-- Distance from closest resection margin
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+								list = <
+									["1"] = <
+										units = <"mm">
+										magnitude = <|>=0.0|>
+									>
+								>
+							>
+						}
+					}
+				}
+			}
+			ELEMENT[at0010] occurrences matches {0..1} matches {	-- Description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Tumour - Surgical resection margins">
+					description = <"Details of tumour involvement at margins of surgical resections/biopsies.
+">
+				>
+				["at0001"] = <
+					text = <"Marginal involvement">
+					description = <"Evidence of tumour at a surgical resection margin.">
+				>
+				["at0006"] = <
+					text = <"Tumour present">
+					description = <"Details where tumour is present at the surgical resection margin.">
+				>
+				["at0007"] = <
+					text = <"Maximum linear involvement">
+					description = <"When tumour is present at surgical resection margin, the maximal length of involvement.">
+				>
+				["at0008"] = <
+					text = <"Tumour absent">
+					description = <"Details where tumour is absent from surgical resection margins.">
+				>
+				["at0009"] = <
+					text = <"Distance from closest resection margin">
+					description = <"When tumour is absent, the distance from tumour to the closest surgical resection margin.">
+				>
+				["at0010"] = <
+					text = <"Description">
+					description = <"A text description of  tumour involvement at the surgical resection margin.">
+				>
+				["at0014"] = <
+					text = <"Present">
+					description = <"Ttumour is present at the surgical resection margin.">
+				>
+				["at0015"] = <
+					text = <"Absent">
+					description = <"Tumour is absent from the surgical resection margin.">
+				>
+				["at0016"] = <
+					text = <"Indeterminate">
+					description = <"Presence of tumour at surgical resection margins has not been determined.">
+				>
+				["at0017"] = <
+					text = <"Equivocal">
+					description = <"Presence of tumour at the surgical resection margin is equivocal.">
+				>
+				["at0018"] = <
+					text = <"Margin name">
+					description = <"The name of the margin being described e.g. Deep margin, Vascular margin, Bronchial margin.">
+				>
+				["at0019"] = <
+					text = <"Margin location">
+					description = <"The location of the margin being described.">
+				>
+				["at0020"] = <
+					text = <"Nature of involvement">
+					description = <"The nature of involvement of the tumour with the surgical margin.">
+				>
+			>
+		>
+	>

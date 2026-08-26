@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2021-05-04</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Schadow, G. and McDonald, C. J. Unified Code for Units of Measure (UCUM). Regenstrief Institute; 2024. Available from: http://unitsofmeasure.org/ucum.html.&#xD;
+&#xD;
+International Organization for Standardization. ISO 13485:2016 Quality management systems for medical devices – Requirements for regulatory compliance. Geneva: ISO; 2016.&#xD;
+&#xD;
+International Organization for Standardization. ISO 80601-1:2017 Medical electrical equipment – Part 1: General requirements and tests. Geneva: ISO; 2017.&#xD;
+&#xD;
+International Health Terminology Standards Development Organisation. SNOMED CT – Systematized Nomenclature of Medicine Clinical Terms. Available from: https://www.snomed.org/.&#xD;
+&#xD;
+U.S. Food and Drug Administration. Medical Devices. Available from: https://www.fda.gov/medical-devices.&#xD;
+&#xD;
+Health Level Seven International. FHIR R4 device resource. Available from: https://www.hl7.org/fhir/device.html.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">57DE05F2DCF0720EE5048F45C0CBEE27</other_details>
+    <other_details id="build_uid">d7e868f9-9ff8-4eee-a79f-6c2abab88020</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere fysiske og funksjonelle egenskaper ved fleksibelt tubulært medisinsk utstyr som settes inn gjennom kroppsåpninger eller i kroppshulrom, inkludert katetere, tuber, dren og kanyler.</purpose>
+      <use>Brukes for å registrere generelle egenskaper ved fleksibelt tubulært medisinsk utstyr, enten det brukes intermitterende eller er liggende på plass, som endotrakealtuber, trakeostomituber, urinkatetere, arteriekatetere, sentralvenøse katetere, thoraxdren, sårdren og ernæringstuber.&#xD;
+&#xD;
+Lumenspesifikke detaljer, inkludert intern diameter, registreres i CLUSTER.catheter_lumen.&#xD;
+&#xD;
+Denne arketypen er designet for å brukes i SLOTet 'Egenskaper' i CLUSTER.device-arketypen.</use>
+      <misuse>Skal ikke brukes til å registrere tidspunktet for innsetting eller fjerning av enheten; bruk ACTION.procedure i stedet.&#xD;
+			&#xD;
+Skal ikke brukes til å dokumentere innsettingsteknikker, prosedyretrinn, innsettingsutstyr (for eksempel punkteringsnåler, obturatorer) eller andre innsettingsrelaterte detaljer; bruk ACTION.procedure for disse i stedet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the physical and functional properties of flexible tubular medical devices inserted into body orifices or cavities, including catheters, tubes, drains and cannulas.</purpose>
+      <use>Use to record general properties of a flexible tubular medical device, whether used intermittently or left in place, such as endotracheal tubes, tracheostomy tubes, urinary catheters, arterial lines, central venous catheters, chest tubes, wound drains and feeding tubes.&#xD;
+&#xD;
+Lumen-specific details, including internal diameter, are recorded in CLUSTER.catheter_lumen.&#xD;
+&#xD;
+This archetype is designed to be nested within the 'Properties' SLOT of the CLUSTER.device archetype.</use>
+      <misuse>Not to be used to record the timing of insertion or removal of the device; use ACTION.procedure instead.&#xD;
+			&#xD;
+Not to be used to document insertion techniques, procedural steps, insertion equipment (e.g. puncture needles, obturators), or other insertion-related details; use ACTION.procedure for these instead.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name"></author>
+  </translations>
+  <uid>
+    <value>7263a9fc-7841-41c1-936a-7758b8e54ae6</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.catheter_tube.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0038</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0002</code_list>
+                <code_list>at0003</code_list>
+                <code_list>at0004</code_list>
+                <code_list>at0006</code_list>
+                <code_list>at0039</code_list>
+                <code_list>at0040</code_list>
+                <code_list>at0041</code_list>
+                <code_list>at0042</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>122</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <units>cm</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>122</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <units>mm</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>[Ch]</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0044</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_BOOLEAN</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.[a-zA-Z0-9_]+(-[a-zA-Z0-9_]+)*\.v[0-9]+/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.[a-zA-Z0-9_]+(-[a-zA-Z0-9_]+)*\.v[0-9]+</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Catheter tube</items>
+        <items id="description">Details about the physical and functional properties of flexible tubular medical devices inserted into body orifices or cavities.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Material</items>
+        <items id="description">The material from which the device is constructed.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Silicone</items>
+        <items id="description">The device is made of silicone material.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Latex</items>
+        <items id="description">The device is made of latex material.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Polyurethane</items>
+        <items id="description">The device is made of polyurethane material.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">PVC</items>
+        <items id="description">The device is made of polyvinyl chloride (PVC) material.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Polyethylene (PE)</items>
+        <items id="description">The device is made of polyethylene material.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Polypropylene (PP)</items>
+        <items id="description">The device is made of polypropylene material.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Polytetrafluoroethylene (PTFE)</items>
+        <items id="description">The device is made of polytetrafluoroethylene material.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Nylon/Polyamide</items>
+        <items id="description">The device is made of nylon or polyamide material.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Overall length</items>
+        <items id="description">The total length of the device.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">External diameter</items>
+        <items id="description">The external diameter of the device.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Radiopaque</items>
+        <items id="description">Indicator of whether the device is visible on X-ray imaging.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Tip</items>
+        <items id="description">The design characteristics of the tip of the device that may affect insertion, positioning, or function.</items>
+        <items id="comment">For example: rounded, beveled, Tiemann, Murphy eye, weighted, pigtail, coudé, fenestrated, step-tip, split-tip. Coding with a terminology system is preferred where possible.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Additional details</items>
+        <items id="description">Structured additional details about the device, captured using nested cluster archetypes.</items>
+        <items id="comment">Use this slot for relevant nested CLUSTER archetypes, for example CLUSTER.catheter_lumen and CLUSTER.catheter_cuff.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Number of lumens</items>
+        <items id="description">The number of lumens in the catheter tube.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Kateterslange</items>
+        <items id="description">Detaljer om fysiske og funksjonelle egenskaper ved fleksibelt tubulært medisinsk utstyr som settes inn gjennom kroppsåpninger eller i kroppshulrom.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Materiale</items>
+        <items id="description">Materialet som enheten er laget av.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Silikon</items>
+        <items id="description">Enheten er laget av silikonmateriale.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Latex</items>
+        <items id="description">Enheten er laget av lateksmateriale.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Polyurethan</items>
+        <items id="description">Enheten er laget av polyurethanmateriale.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">PVC</items>
+        <items id="description">Enheten er laget av polyvinylklorid (PVC) materiale.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Polyetylen (PE)</items>
+        <items id="description">Enheten er laget av polyetylenmateriale.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Polypropylen (PP)</items>
+        <items id="description">Enheten er laget av polypropylenmateriale.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Polytetrafluoretylen (PTFE)</items>
+        <items id="description">Enheten er laget av polytetrafluoretylenmateriale.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Nylon/polyamid</items>
+        <items id="description">Enheten er laget av nylon- eller polyamidmateriale.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Samlet lengde</items>
+        <items id="description">Den totale lengden på enheten.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Ytre diameter</items>
+        <items id="description">Enhetens ytre diameter.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Røntgenopak</items>
+        <items id="description">Indikator på om enheten er synlig ved røntgenbildebehandling.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Spiss</items>
+        <items id="description">Designkarakteristika ved spissen av enheten som kan påvirke innsetting, posisjonsering eller funksjon.</items>
+        <items id="comment">For eksempel: rundspiss, skrå, Tiemann, Murphy, vektet, pigtail, coudé, fenestrert, step-tip, split-tip. Koding med et terminologisystem foretrekkes der det er mulig.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Tilleggsdetaljer</items>
+        <items id="description">Strukturerte tilleggsdetaljer om enheten, registrert med nestede cluster-arketyper.</items>
+        <items id="comment">Bruk dette slotet for relevante nestede CLUSTER-arketyper, for eksempel CLUSTER.catheter_lumen og CLUSTER.catheter_cuff.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Antall lumen</items>
+        <items id="description">Antall lumen i kateterslangen.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

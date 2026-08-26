@@ -1,0 +1,1592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2007-11-10</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">heather.leslie@oceaninformatics.com</original_author>
+    <other_contributors>Sheryl Alexander, NT Department of Health, Australia</other_contributors>
+    <other_contributors>Tomas Alme, DIPS, Norway</other_contributors>
+    <other_contributors>Nadim Anani, Karolinska Institutet, Sweden</other_contributors>
+    <other_contributors>Rita Apelt, Department of Health,NT, Australia</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University Hospital, Bergen, Norway</other_contributors>
+    <other_contributors>Margaret Campbell, Queensland Health, Australia</other_contributors>
+    <other_contributors>Rong Chen, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>B Christensen, HUS, Norway</other_contributors>
+    <other_contributors>Stephen Chu, Queensland Health, Australia</other_contributors>
+    <other_contributors>Margaret Cotter, AMSANT, Australia</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Michelle Dowden, Miwatj Health Ngalkanbuy Health, Australia</other_contributors>
+    <other_contributors>Samo Drnovsek, Marand ltd, Slovenia</other_contributors>
+    <other_contributors>Einar Fosse, UNN HF, Norwegian Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Tim Garden, NTG Department of Health, Australia</other_contributors>
+    <other_contributors>Tanya Gardner, CAAC, Australia</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia (Editor)</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Andreas Hering, Helse Bergen HF, Haukeland universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Russell Leftwich, Russell B Leftwich MD, United States</other_contributors>
+    <other_contributors>Sabine Leh, Haukeland University Hospital, Department of Pathology, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Oslo Universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Jeremy Oats, NT Health, Australia</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Steven Schatz, Department of Health (Northern Territory), Australia</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Line Sæle, Nasjonal IKT, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Cherie Whitbread, Royal Darwin Hospital, Australia</other_contributors>
+    <other_contributors>Jo Wright, NT Dept of Health, Australia (Editor)</other_contributors>
+    <other_contributors>Lin Zhang, BIPH, China</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="current_contact">Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">61D18256DA550BBFD431F41EF7307BE0</other_details>
+    <other_details id="build_uid">b51fe23f-5f6f-404a-8255-d5fbe8c3e9a5</other_details>
+    <other_details id="revision">1.1.5</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur detaillierten Aufzeichnung von Befunden der körperlichen Untersuchung eines Pflegebedürftigen.</purpose>
+      <keywords>Behandlung</keywords>
+      <keywords>Untersuchung</keywords>
+      <keywords>Ergebnis</keywords>
+      <keywords>Befund</keywords>
+      <keywords>Untersuchungsergebnis</keywords>
+      <keywords>körperlich</keywords>
+      <keywords>klinisch</keywords>
+      <keywords>medizinisch</keywords>
+      <use>Dient zur detaillierten Aufzeichnung von Befunden der körperlichen Untersuchung eines Pflegebedürftigen. Dies kann eine Befundbeschreibung, ein Framework, in dem detaillierte CLUSTER-Untersuchungsarchetypen verschachtelt werden können und eine klinische Interpretation der Befunde umfassen.&#xD;
+&#xD;
+Beispiele für detaillierte CLUSTER-Untersuchungsarchetypen sind solche, die Inspektion, Palpation, Auskultation, Perkussion und Bewegung von Körpersystemen oder anatomischen Strukturen beschreiben, wie z.B. CLUSTER.exam_pupils.&#xD;
+&#xD;
+Beschreibungen von klinischen Befunden aus bestehenden klinischen Systemen können mit dem Datenelement 'Beschreibung' erfasst werden.&#xD;
+&#xD;
+Kliniker möchten manchmal einen zusammenfassenden Ausdruck wie 'chronische Mittelohrentzündung' als Interpretation der körperlichen Untersuchung aufzeichnen. Im Zusammenhang mit dem Archetyp der körperlichen Untersuchung sollte dies nur so verstanden werden, dass "die körperlichen Anzeichen mit einer chronischen Mittelohrentzündung vereinbar sind". Obwohl der zusammenfassende Ausdruck eine Diagnose zu repräsentieren scheint, erfordert eine sichere und konsistente Abfrage die Aufzeichnung einer Diagnose unter Verwendung des Archetyps EVALUATION.problem_diagnosis, selbst wenn die Ausdrücke identisch sind.</use>
+      <misuse>Nicht zur Aufzeichnung von historischen Beobachtungen verwenden - Für diesen Zweck sollen spezifische OBSERVATION- und CLUSTER-Archetypen verwendet werden, z.B OBSERVATION.story und CLUSTER.symptom.&#xD;
+Nicht zur Aufzeichnung von eigenständigen klinischen Beobachtungen verwenden - Für diesen Zweck sollen spezifische OBSERVATION-Archetypen verwendet werden, z.B. OBSERVATION.blood_pressure, OBSERVATION.body_weight oder OBSERVATION.height.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>För registrering av detaljer om fynd vid fysisk undersökning.</purpose>
+      <keywords>undersökning</keywords>
+      <keywords>fysisk</keywords>
+      <keywords>fynd</keywords>
+      <keywords>klinisk</keywords>
+      <use>Används för att registrera detaljer om fynd vid fysisk undersökning. Detta kan inkludera en detaljerad beskrivning av fynden, ett ramverk för detaljerade CLUSTER-undersökningsarketyper och en klinisk tolkning av resultaten.&#xD;
+&#xD;
+Exempel på detaljerade CLUSTER-undersökningsarketyper inkluderar de som beskriver inspektion, palpation, auskultation, slagverk och rörelse av kroppssystem eller anatomiska strukturer, såsom CLUSTER.exam_pupils.&#xD;
+&#xD;
+Detaljerade beskrivningar av kliniska resultat från befintliga kliniska system kan fångas med hjälp av dataelemntet 'Beskrivning'.&#xD;
+&#xD;
+Kliniker kanske ibland vill dokumentera en sammanfattande fras som 'kronisk otitis media' som en tolkning av den fysiska undersökningen. I sammanhanget med den fysiska undersöknings arketypen bör detta endast tolkas som "fysiska tecken överensstämmer med kronisk otitis media". Medan den sammanfattande frasen kan tyckas representera en diagnos, kräver en säker och konsekvent fråga att en diagnos ska registreras med EVALUATION.problem_diagnosis-arketypen, även om fraserna är identiska.</use>
+      <misuse>Ska inte användas för att registrera historiska observationer - används då specifika OBSERVATION och CLUSTER arketyper. Exempelvis OBSERVATION.story och CLUSTER.symptom.&#xD;
+&#xD;
+Ska inte användas för att registrera enskilda kliniska observationer - använd specifik OBSERVATION arketyp för det. Exempelvis OBSERVATION.blood_pressure, OBSERVATION.body_weight, eller OBSERVATION.height.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>Para registrar una descripcion narrativa e interpretacion clinica de los hallazgos observados durante el examen fisico completo de una persona, y proveer un marco de referencia para anidar CLUSTER de arquetipos detallados, cada uno de los cuales posibilita registrar en detalle aspectos especificos del examen fisico</purpose>
+      <keywords>examen</keywords>
+      <keywords>fisico</keywords>
+      <keywords>examen</keywords>
+      <keywords>hallazgos</keywords>
+      <keywords>clinicos</keywords>
+      <use>Utilizar para registrar una descripcion narrativa de los hallazgos observados durante el examen fisico general de una persona.&#xD;
+&#xD;
+Utilizar para incorporar la descripcion narrativa de hallazgos clinicos dentro de sistemas clinicos actuales o legados a un formato de arquetipos, utilizando el elemento de data "Descripcion Clinica". &#xD;
+&#xD;
+Utilizar como un arquetipo contenedor - para proveer un arquetipo ENTRY consultable en el cual, puedan ser anidados arquetipos CLUSTER especificos de examenes, incluidos aquellos que detallan la inspeccion, palpacion, asucultacion, percusion y movimiento de los sistemas o estructuras anatomicas del cuerpo</use>
+      <misuse>No debe ser utilizado para registrar observaciones de la toma de historia -utilizar arquetipos especificos de OBSERVACION y CLUSTER. Por ejemplo OBSERVACION.historia y CLUSTER.sintoma.&#xD;
+&#xD;
+No debe ser utilizado para registrar observaciones clinicas autonomas - utilizar arquetipos especificos OBSERVATION. Por ejemplo OBSERVATION.presion_arterial, OBSERVATION.peso_corporal, u OBSERVATION.altura. </misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere funn ved fysisk undersøkelse av en helsetjenestemottaker.</purpose>
+      <keywords>klinisk undersøkelse</keywords>
+      <keywords>fysisk undersøkelse</keywords>
+      <keywords>undersøkelse</keywords>
+      <keywords>funn</keywords>
+      <keywords>klinisk</keywords>
+      <keywords>legeundersøkelse</keywords>
+      <keywords>observasjon</keywords>
+      <keywords>kroppsundersøkelse</keywords>
+      <use>Benyttes ved registrering av detaljer om fysiske funn observert ved klinisk undersøkelse av et individ. Dette kan inkludere en tekstlig beskrivelse av funn og kliniske fortolkninger av funn. Tekstlige beskrivelser av kliniske funn innhentet fra eksisterende kliniske systemer kan fanges opp ved å benytte dataelementet "Beskrivelse". &#xD;
+&#xD;
+Arketypen kan også benyttes som et rammeverk for innsetting av detaljer ved hjelp av CLUSTER.exam-arketyper. Eksempler på detaljer som kan beskrives ved hjelp av innsatte CLUSTER-arketyper er inspeksjon, palpasjon, auskultasjon, perkusjon og bevegelser i kroppsystemer eller anatomiske strukturer (feks CLUSTER.exam_pupils).&#xD;
+&#xD;
+Noen ganger vil klinikere ønske å registrere et sammendrag, f.eks. "kronisk otitis media", som en fortolkning av funn ved klinisk undersøkelse. I denne konteksten - arketypen 'Funn ved klinisk undersøkelse' - bør dette forståes som 'funn forenlig med kronisk otitis media', og ikke en fastsatt diagnose. Skulle sammendraget synes å representere en diagnose, vil sikker og konsistent dataspørring kreve en diagnose som registreres i EVALUATION.problem_diagnosis-arketypen, selv om sammendraget/frasen og diagnosen er identiske.</use>
+      <misuse>Skal ikke anvendes for å registrere observasjoner gjort under anamneseopptak - bruk spesifikke OBSERVATION og CLUSTER-arketyper, for eksempel OBSERVATION.story eller CLUSTER.symptom.&#xD;
+&#xD;
+Skal ikke anvendes for å registrere frittstående observasjoner - bruk spesifikke OBSERVATION-arketyper, for eksempel OBSERVATION.body_weight (Kroppsvekt) eller OBSERVATION.height (Høyde/Lengde).</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para registro de detalhes sobre os resultados no exame físico do sujeito do cuidado.</purpose>
+      <keywords>exame</keywords>
+      <keywords>físico</keywords>
+      <keywords>achados</keywords>
+      <keywords>clínico</keywords>
+      <use>Use para registrar detalhes sobre achados no exame físico do sujeito do cuidado. Pode incluir uma descrição narrativa dos achados, uma estrutura em que aninhar detalhados arquétipos do exame do CLUSTER, e uma interpretação clínica dos achados.&#xD;
+&#xD;
+Exemplos de arquétipos detalhados de exame CLUSTER incluem aqueles que descrevem inspeção, palpação, ausculta, percussão e movimento de sistemas corporais ou estruturas anatômicas, como CLUSTER.exam_pupils.&#xD;
+&#xD;
+As descrições narrativas dos achados dos sistemas clínicos existentes podem ser capturadas utilizando o elemento de dados "Descrição".&#xD;
+&#xD;
+Os clínicos às vezes podem querer gravar uma frase resumida, como "otite média crônica", como Interpretação do exame físico. No contexto do arquétipo do exame físico, isso só deve ser entendido como "os sinais físicos são consistentes com a otite média crônica". Embora a expressão resumida possa parecer representar um diagnóstico, a consulta segura e consistente requer que um diagnóstico seja registrado usando o arquétipo EVALUATION.problem_diagnosis, mesmo que as frases sejam idênticas.</use>
+      <misuse>Não deve ser utilizado para gravação de anamnese observações - usar arquétipos específicos OBSERVATION e CLUSTER. Por exemplo, OBSERVATION.story e CLUSTER .symptom.&#xD;
+&#xD;
+Não deve ser utilizado pra gravar observações clínicas isoladas - use arquétipos específicos OBSERVATION. Por exemplo: OBSERVATION.blood_pressure, OBSERVATION.body_weight, ou OBSERVATION.height.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sl</code_string>
+      </language>
+      <purpose>Beleženje podrobnosti o ugotovitvah fizičnega pregleda obravnavane osebe.</purpose>
+      <keywords>pregled</keywords>
+      <keywords>fizični</keywords>
+      <keywords>preiskava</keywords>
+      <keywords>ugotovitve</keywords>
+      <keywords>klinični</keywords>
+      <use>Uporabiti za beleženje podrobnosti o ugotovitvah fizičnega pregleda obravnavane osebe. Lahko vključuje pripovedni opis ugotovitev, okvir, v katerega je možno ugnezditi podrobne CLUSTER arhetipe pregledov, in klinično interpretacijo ugotovitev. &#xD;
+&#xD;
+Primeri podrobnih CLUSTER arhetipov pregledov vključujejo tiste, ki opisujejo inspekcijo, palpacijo, avskultacijo, perkusijo in gibanje telesnih sistemov ali anatomskih struktur, kot je CLUSTER.exam_pupils. &#xD;
+&#xD;
+Pripovedne opise kliničnih ugotovitev iz obstoječih kliničnih sistemov je mogoče zajeti s podatkovnim elementom 'Opis'. &#xD;
+&#xD;
+Zdravniki bodo morda včasih želeli zabeležiti povzemajočo besedno zvezo, kot je 'kronično vnetje srednjega ušesa', kot Interpretacijo fizičnega pregleda. V kontekstu arhetipa fizičnega pregleda naj bo to razumljeno samo kot 'fizični znaki so skladni s kroničnim vnetjem srednjega ušesa'. Čeprav se lahko zdi, da povzemajoča besedna zveza predstavlja diagnozo, varno in dosledno poizvedovanje zahteva, da se diagnoza zabeleži z uporabo arhetipa EVALUATION.problem_diagnosis, tudi če sta besedni zvezi enaki.</use>
+      <misuse>Se ne uporablja za beleženje opažanj pri pridobivanju anamneze - uporabiti specifične OBSERVATION in CLUSTER arhetipe. Na primer OBSERVATION.story in CLUSTER.symptom. &#xD;
+&#xD;
+Se ne uporablja za beleženje samostojnih kliničnih opažanj – uporabiti specifične OBSERVATION arhetipe. Na primer OBSERVATION.blood_pressure (krvni tlak), OBSERVATION.body_weight (telesna teža), or OBSERVATION.height (telesna višina).</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>For recording details about findings on physical examination of the subject of care.</purpose>
+      <keywords>examination</keywords>
+      <keywords>physical</keywords>
+      <keywords>exam</keywords>
+      <keywords>findings</keywords>
+      <keywords>clinical</keywords>
+      <use>Use to record details about findings on physical examination of the subject of care. This may include a narrative description of the findings, a framework in which to nest detailed CLUSTER examination archetypes, and a clinical interpretation of the findings.&#xD;
+&#xD;
+Examples of detailed CLUSTER examination archetypes include those that describe inspection, palpation, auscultation, percussion and movement of body systems or anatomical structures, such as CLUSTER.exam_pupils.&#xD;
+&#xD;
+Narrative descriptions of clinical findings from existing clinical systems may be captured using the 'Description' data element.&#xD;
+&#xD;
+Clinicians may sometimes want to record a summative phrase such as 'chronic otitis media' as an Interpretation of the physical examination. In the context of the physical examination archetype this should only be understood as 'physical signs are consistent with chronic otitis media'. While the summative phrase may appear to represent a diagnosis, safe and consistent querying requires a diagnosis to be recorded using the EVALUATION.problem_diagnosis archetype, even if the phrases are identical.</use>
+      <misuse>Not to be used for recording history-taking observations - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom.&#xD;
+&#xD;
+Not to be used to record stand-alone clinical observations - use specific OBSERVATION archetypes. For example OBSERVATION.blood_pressure, OBSERVATION.body_weight, or OBSERVATION.height.</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>لتسجيل الموجودات التي تم العثور عليها عند الفحص البدني</purpose>
+      <keywords>الفحص</keywords>
+      <keywords>البدني</keywords>
+      <use>تم تصميم النموذج ليحتوي على عناقيد مفصلة متعلقة بالفحص بما في ذلك الاكتشاف, الجس, التسمع و القرع بما في هذه العناقيد من تخصيصات.</use>
+      <misuse />
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>zh-cn</code_string>
+      </language>
+      <purpose>用于记录关于对于特定主体对象体格检查发现的详情。</purpose>
+      <keywords>临床</keywords>
+      <keywords>体格检查</keywords>
+      <keywords>检查</keywords>
+      <keywords>发现</keywords>
+      <keywords>所见</keywords>
+      <keywords>查体</keywords>
+      <use>用于记录关于对于特定主体对象体格检查发现的详情。其中，可包括关于这些发现的叙述型描述、一种用于嵌套若干详细的群簇（CLUSTER）型原始型的框架以及关于这些发现的临床解释。&#xD;
+&#xD;
+关于群簇（CLUSTER）型检查原始型的例子包括那些用于详细描述望诊、触诊、听诊、叩诊以及身体系统运动或者解剖结构的原始型，如瞳孔检查原始型CLUSTER.exam_pupils。&#xD;
+&#xD;
+对于现有临床系统之中临床发现的叙述型描述，可以采用名为“Description”（描述）的数据元进行采集。&#xD;
+&#xD;
+临床医生有时可能希望采用“慢性中耳炎”之类的概括性短语来记录对于体格检查的解释。在当前体格检查原始型的语境下，仅仅应当将其理解为“体征与慢性中耳炎相符或者说相一致”。尽管这种概括性短语可能看似用来表示某种诊断，但就安全一致的查询来说，依然需要采用问题诊断原始型EVALUATION.problem_diagnosis来记录诊断，即使是二者所采用的短语完全相同。</use>
+      <misuse>并非旨在用于记录病史采集类观察项目——此时请采用具体的观察（OBSERVATION）型和群簇（CLUSTER）型原始型。例如，纪事原始型OBSERVATION.story和症状原始型CLUSTER.symptom。&#xD;
+&#xD;
+并非旨在用于记录单独的临床观察项目——此时请采用具体的观察（OBSERVATION）型原始型。例如，血压原始型OBSERVATION.blood_pressure、体重原始型OBSERVATION.body_weight，或者身高原始型OBSERVATION.height。</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Este arquetipo será utilizado para registrar detalles sobre los hallazgos en el examen físico del paciente</purpose>
+      <keywords>examinación</keywords>
+      <keywords>palpación</keywords>
+      <keywords>auscultación</keywords>
+      <keywords>percusión</keywords>
+      <keywords>hallazgos clínicos</keywords>
+      <keywords>examen físico</keywords>
+      <use>Este arquetipo será utilizado para registrar detalles sobre los hallazgos en el examen físico del paciente.&#xD;
+&#xD;
+Puede utilizarse junto a otros arquetipos para incluir detalles de los hallazgos clínicos, para describir examinación por inspección, palpación, auscultación, percusión y movimiento de los sistemas o estructuras anatómicas. Por ejemplo se podrá utilizar el arquetipo CLUSTER.exam_pupils.&#xD;
+&#xD;
+La información registrada mediante este arquetipo debe estar relacionada con la examinación física y sus hallazgos. Algunas interpretaciones de los hallazgos pueden registrarse usando este arquetipo aunque parezcan diagnósticos, pero solo si están directamente relacionadas con el hallazgo. Para registrar un diagnóstico utilizar el arquetipo EVALUATION.problem_diagnosis, aunque el texto de la interpretación del hallazgo sea igual al diagnóstico.</use>
+      <misuse>No se debe utilizar para registrar información histórica del paciente, para eso utilizar el arquetipo OBSERVATION.story&#xD;
+&#xD;
+No se debe utilizar para registrar observaciones independientes y signos, para eso utilizar arquetipos específicos como OBSERVATION.blood_pressure, OBSERVATION.body_weight, OBSERVATION.height, etc.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Registrar detalls sobre les troballes de l'examen físic del pacient.</purpose>
+      <keywords>examen</keywords>
+      <keywords>físic</keywords>
+      <keywords>palpació</keywords>
+      <keywords>auscultació</keywords>
+      <keywords>percussió</keywords>
+      <keywords>troballes clíniques</keywords>
+      <keywords>examen físic</keywords>
+      <keywords>clínic</keywords>
+      <use>Aquest arquetip serà utilitzat per registrar detalls sobre les troballes a l'examen físic del pacient.&#xD;
+&#xD;
+Es pot utilitzar juntament amb altres arquetips per incloure detalls de les troballes clíniques, per descriure examinació per inspecció, palpació, auscultació, percussió i moviment dels sistemes o estructures anatòmiques. Per exemple, es pot utilitzar l'arquetip CLUSTER.exam_pupils.&#xD;
+&#xD;
+La informació registrada mitjançant aquest arquetip ha d'estar relacionada amb l'examinació física i les troballes. Algunes interpretacions de les troballes poden registrar-se usant aquest arquetip encara que semblin diagnòstics, però només si estan directament relacionades amb la troballa. Per registrar un diagnòstic utilitzeu l'arquetip EVALUATION.problem_diagnosis, encara que el text de la interpretació de la troballa sigui igual al diagnòstic.</use>
+      <misuse>No s'ha de fer servir per registrar informació històrica del pacient; utilitzar arquetips de tipus OBSERVATION i CLUSTER específics per fer-ho. Per exemple, OBSERVATION.story i CLUSTER.symptom.&#xD;
+&#xD;
+No s'ha de fer servir per registrar observacions independents i signes; per a això, utilitzeu arquetips específics com OBSERVATION.blood_pressure, OBSERVATION.body_weight, OBSERVATION.height, etc.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Nina Schewe</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">schewe.nina@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Sofia Janstad</author>
+    <author id="organisation">SLL</author>
+    <author id="email">sofia.lang-janstad@sll.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Lars Bitsch-Larsen and Einar Fosse, John Tore Valand, Vebjørn Arntzen</author>
+    <author id="organisation">Haukeland University Hospital Bergen, Norway; UNN HF Centre for Integrated Care and Telemedicine, Helse Bergen, Oslo University Hospital</author>
+    <author id="email">lbla@helse-bergen.no; Einar.Fosse@unn.no, john.tore.valand@helse-vest-ikt.no, varntzen@ous-hf.no</author>
+    <accreditation>MD, DEAA, MBA, specialist in tropical medic</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Edgardo Vazquez</author>
+    <author id="organisation">VinculoMedico</author>
+    <accreditation>Medical Doctor</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Adriana Kitajima</author>
+    <author id="organisation">Core Consulting</author>
+    <author id="email">adriana.kitajima@coreconsulting.com.br</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sl</code_string>
+    </language>
+    <author id="name">Uroš Rajkovič, Biljana Prinčič, Anđela Pavlović</author>
+    <author id="organisation">Slovenia, Better</author>
+    <author id="email">andjela.pavlovic@better.care</author>
+    <other_details id="other_contributors">Anđela Pavlović, andjela.pavlovic@better.care, Better, Slovenia</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>zh-cn</code_string>
+    </language>
+    <author id="name">Lin Zhang</author>
+    <author id="organisation">BIPH</author>
+    <author id="email">linforest@163.com</author>
+    <accreditation>?</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Pablo Pazos</author>
+    <author id="organisation">CaboLabs</author>
+    <accreditation>Computer Engineer</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Julio de Sosa</author>
+    <author id="organisation">Servei Català de la Salut</author>
+    <author id="email">juliodesosa@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>8ec2d367-1d40-4e57-bf8b-4dde81132a64</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.exam.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>.*</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0006</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0011</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0009</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0008</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0013</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Physical Examination Findings(en)</items>
+        <items id="description">*Findings observed during the physical examination of a subject.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Event Series(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Unspecified point in time which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Description(en)</items>
+        <items id="description">*Narrative description of the overall findings observed during a physical examination of a patient.(en)</items>
+        <items id="comment">*May be used to record a narrative summary of the complete clinical examination or key aspects of clinical examination findings, which will be supported by structured data. Details of specific structured findings can be included using CLUSTER archetypes in the 'Examination Detail' slot. This data element may be used to capture legacy data that is not available in a structured format.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Examination Detail(en)</items>
+        <items id="description">*Structured details of the physical examination.(en)</items>
+        <items id="comment">*Detailed clinical findings will be recorded as CLUSTER archetypes which can then be nested within this SLOT to represent the fractal nature of clinical examination and allow for variation in clinician's requirements for examination documentation. For example: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix and CLUSTER.palpation_of_fetus can be nested in this slot or within each other to represent the specific  requirements of clinicians working in the obstetric domains - content, priorities and level of detail will differ depending on clinical context, professional background and specialty.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Interpretation(en)</items>
+        <items id="description">*Single word, phrase or brief description represents the clinical meaning and significance of the physical examination findings.(en)</items>
+        <items id="comment">*Coding with a terminology is preferred, if possible. For example, normal examination or chronic otitis media.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Confounding Factors(en)</items>
+        <items id="description">*Description of any incidental factors that may have contributed to the physical examination findings.(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Device Details(en)</items>
+        <items id="description">*Details about any device used during the physical examination.(en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Any additional narrative comment not covered by other elements.(en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The position of the subject at the time of examination.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sl">
+      <items code="at0000">
+        <items id="text">Ugotovitve fizičnega pregleda</items>
+        <items id="description">Za dokumentiranje ugotovitev/znakov fizikalnega pregleda subjekta</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Event Series(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Dogodek</items>
+        <items id="description">Privzeta, nespecificirana točka v času ali intervalni dogodek, ki je lahko eksplicitno definiran v predlogi ali ob izvajanju.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Opis</items>
+        <items id="description">Opis splošnih ugotovitev opaženih med fizičnim pregledom pacienta.</items>
+        <items id="comment">Uporablja se lahko za zapis pripovednega povzetka celotnega kliničnega pregleda ali ključnih vidikov ugotovitev kliničnega pregleda, ki bodo podprti s strukturiranimi podatki. Podrobnosti specifičnih strukturiranih ugotovitev je mogoče vključiti z uporabo CLUSTER arhetipov v SLOT-u 'Podrobnosti pregleda'. Ta podatkovni element se lahko uporablja za zajemanje podedovanih podatkov, ki niso na voljo v strukturirani obliki.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Podrobnosti pregleda</items>
+        <items id="description">Strukturirane podrobnosti fizičnega pregleda.</items>
+        <items id="comment">Podrobne klinične ugotovitve bodo zabeležene kot CLUSTER arhetipi, ki jih je mogoče ugnezditi v tem SLOT-u, da predstavljajo fraktalno naravo kliničnega pregleda in omogočajo variacije zdravnikovih zahtev glede dokumentacije o pregledu. Na primer: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix in CLUSTER.palpation_of_fetus se lahko ugnezdijo v tem slot-u ali drug v drugem, da predstavljajo posebne zahteve zdravnikov, ki delajo na področju porodništva – vsebina, prioritete in raven podrobnosti se razlikujejo glede na klinični kontekst , strokovno ozadje in specializacijo.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretacija</items>
+        <items id="description">Posamezna beseda, besedna zveza ali kratek opis, ki predstavlja klinični pomen in pomembnost ugotovitev fizičnega pregleda.</items>
+        <items id="comment">Kjer je to mogoče, ima prednost kodiranje s terminologijo. Na primer 'pregled normalen' ali 'predrtje bobniča'.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Moteči dejavniki</items>
+        <items id="description">Opis morebitnih naključnih dejavnikov, ki so lahko prispevali k ugotovitvam fizičnega pregleda.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Podrobnosti naprave</items>
+        <items id="description">Podrobnosti o katerikoli napravi, uporabljeni med fizičnim pregledom.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Komentar</items>
+        <items id="description">Dodatni zapisi splošnih ugotovitev fizičnega pregleda, ki niso zajete v drugih poljih.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Razširitev</items>
+        <items id="description">Dodatne informacije, potrebne za zajemanje lokalne vsebine ali za uskladitev z drugimi referenčnimi modeli/formalizmi.</items>
+        <items id="comment">Npr. lokalne informacijske zahteve ali dodatni meta podatki za uskladitev z ekvivalenti FHIR ali CIMI.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Položaj</items>
+        <items id="description">Položaj telesa preiskovanca med pregledom.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">Hallazgos del Examen Fisico</items>
+        <items id="description">Hallazgos observados durante el examen fisico de una persona</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Event Series(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Unspecified point in time which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Descripcion</items>
+        <items id="description">Descripcion narrativa de los hallazgos generales observados durante un examen fisico de un paciente</items>
+        <items id="comment">Puede ser utilizado para registrar un resumen narrativo del examen clinico completo o aspectos claves de los hallazgos del examen clinico, que sera apoyado con data estructurada. Los detalles de hallazgos especificos estructurados pueden ser incluidos utilizando arquetipos CLUSTER en el espacio "Detalles del Examen". Este elemento de data puede ser utilizado para capturar data legada que no esta disponble en un formato estructurado.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Examination Detail(en)</items>
+        <items id="description">*Structured details of the physical examination.(en)</items>
+        <items id="comment">*Detailed clinical findings will be recorded as CLUSTER archetypes which can then be nested within this SLOT to represent the fractal nature of clinical examination and allow for variation in clinician's requirements for examination documentation. For example: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix and CLUSTER.palpation_of_fetus can be nested in this slot or within each other to represent the specific  requirements of clinicians working in the obstetric domains - content, priorities and level of detail will differ depending on clinical context, professional background and specialty.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretacion</items>
+        <items id="description">Palabra, frase o descripcion breve que represente el significado clinico e importancia de los hallazgos del examen fisico</items>
+        <items id="comment">Se prefiere la dodificacion con una terminologia. Por ejemplo, examen normal u otitis media cronica</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Factores de Confusion</items>
+        <items id="description">Descripcion de cualquier factor incidental que pueda haber contribuido a los hallazgos del examen físico</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Detalle del dispositivo</items>
+        <items id="description">Detalles acerca de cualquier dispositivo utilizado durante el examen fisico.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Comentario</items>
+        <items id="description">Cualquier comentario narrativo adicional no incluido por otros elementos</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The position of the subject at the time of examination.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Physical examination findings</items>
+        <items id="description">Findings observed during the physical examination of a subject of care.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Description</items>
+        <items id="description">Narrative description of the overall findings observed during a physical examination of a patient.</items>
+        <items id="comment">May be used to record a narrative summary of the complete clinical examination or key aspects of clinical examination findings, which will be supported by structured data. Details of specific structured findings can be included using CLUSTER archetypes in the 'Examination Detail' slot. This data element may be used to capture legacy data that is not available in a structured format.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Examination detail</items>
+        <items id="description">Structured details of the physical examination.</items>
+        <items id="comment">Detailed clinical findings will be recorded as CLUSTER archetypes which can be nested within this SLOT to represent the fractal nature of clinical examination and allow for variation in clinician's requirements for examination documentation. For example: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix and CLUSTER.palpation_of_fetus can be nested in this slot or within each other to represent the specific requirements of clinicians working in the obstetric domains - content, priorities and level of detail will differ depending on clinical context, professional background and specialty.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretation</items>
+        <items id="description">Single word, phrase or brief description which represents the clinical meaning and significance of the physical examination findings.</items>
+        <items id="comment">Coding with a terminology is preferred, if possible. For example, 'normal examination' or 'tympanic membrane perforation'.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Confounding factors</items>
+        <items id="description">Description of any incidental factors that may have contributed to the physical examination findings.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Device Details</items>
+        <items id="description">Details about any device used during the physical examination.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the overall physical examination findings not captured in other fields.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">e.g. Local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Position</items>
+        <items id="description">The body position of the subject during the examination.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Funn ved fysisk undersøkelse</items>
+        <items id="description">Funn ved fysisk undersøkelse av en helsetjenestemottaker.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse av funn ved en klinisk undersøkelse av et individ.</items>
+        <items id="comment">Kan anvendes til å registrere en tekstlig sammenfatning av en komplett klinisk undersøkelse eller nøkkelfunn ved den kliniske undersøkelsen, som vil bli understøttet av strukturerte data. Dette dataelementet kan brukes for å fange opp "legacy data" som ikke er tilgjengelig i et strukturert format. Detaljer om spesifikt strukturert funn inkluderes ved å bruke CLUSTER-arketyper i "Examination Detail" SLOT.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Undersøkelsesdetaljer</items>
+        <items id="description">Strukturerte detaljer fra den kliniske undersøkelsen.</items>
+        <items id="comment">Detaljerte kliniske funn vil bli registrert som CLUSTER-arketyper som kan nøstes i dette SLOT'et for å representere den fraktale tilnærmingen som brukes i kliniske undersøkelser og dermed tillater variasjoner i klinikerens behov for dokumentasjon. For eksempel kan CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix, CLUSTER.palpation_of_fetus, settes inn i dette elementet eller i hverandre, for å representere de spesifikke kravene en kliniker som arbeider innenfor obstetrikken har. Innhold, prioritet og detaljeringsnivå til CLUSTER-arketypene vil variere med klinisk kontekst, og klinikerens bakgrunn og spesialitet.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Fortolkning</items>
+        <items id="description">Enkelt ord, setning, frase eller kort beskrivelse som representerer den kliniske betydning og viktigheten av funnene ved den kliniske undersøkelsen.</items>
+        <items id="comment">Koding med terminologi foretrekkes når mulig. For eksempel "normal undersøkelse" eller "tympanisk membran perforasjon".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Kommentar til og registrering av faktorer som kan ha betydning for funn ved den kliniske undersøkelsen.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Detaljer om medisinsk utstyr</items>
+        <items id="description">Detaljer vedrørende medisinsk utstyr benyttet ved den kliniske undersøkelsen.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Kommentar</items>
+        <items id="description">Tekstlig beskrivelse av de fysiske funn som ikke dekkes av andre felt.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som er nødvendig for å registrere lokalt innhold/kontekst, eller for å sammenstille med andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Stilling</items>
+        <items id="description">Individets kroppsstilling under undersøkelsen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Hallazgos de la examinación física</items>
+        <items id="description">Hallazgos observados durante la examinación física del paciente</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Descripción</items>
+        <items id="description">Descripción narrativa del total de los hallazgos durante la examinación física del paciente</items>
+        <items id="comment">*May be used to record a narrative summary of the complete clinical examination or key aspects of clinical examination findings, which will be supported by structured data. Details of specific structured findings can be included using CLUSTER archetypes in the 'Examination Detail' slot. This data element may be used to capture legacy data that is not available in a structured format.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Detalles de la examinación</items>
+        <items id="description">Detalles estructurados de la examinación física</items>
+        <items id="comment">*Detailed clinical findings will be recorded as CLUSTER archetypes which can be nested within this SLOT to represent the fractal nature of clinical examination and allow for variation in clinician's requirements for examination documentation. For example: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix and CLUSTER.palpation_of_fetus can be nested in this slot or within each other to represent the specific requirements of clinicians working in the obstetric domains - content, priorities and level of detail will differ depending on clinical context, professional background and specialty.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretación</items>
+        <items id="description">Descripción corta que representa el significado clínico de los hallazgos</items>
+        <items id="comment">*Coding with a terminology is preferred, if possible. For example, 'normal examination' or 'tympanic membrane perforation'.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Factores de confusión</items>
+        <items id="description">Descripción de los factores que pueden haber obstruido o dificultado la examinación física y los hallazgos</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Detalles del dispositivo</items>
+        <items id="description">Detalles sobre cualquier dispositivo utilizado durante la examinación física</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Comentario</items>
+        <items id="description">Información narrativa adicional sobre los hallazgos durante la examinación física</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional requerida para registrar contenido local o alinear con otros modelos o formalismos</items>
+        <items id="comment">*e.g. Local information requirements or additional metadata to align with FHIR or CIMI equivalents.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The body position of the subject during the examination.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Achados de exame físico</items>
+        <items id="description">Resultados observados durante o exame físico de um sujeito de atenção.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Qualquer evento</items>
+        <items id="description">Padrão, ponto indeterminado no tempo ou intervalo de evento que pode ser definido explicitamente em um modelo ou em tempo de execução.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Descrição</items>
+        <items id="description">Descrição narrativa dos achados gerais observados durante o exame físico de um paciente.</items>
+        <items id="comment">Pode ser usado para gravar um resumo narrativo do exame clínico completo ou aspectos-chave dos achados do exame clínico, que serão apoiados por dados estruturados. Detalhes de conclusões específicas estruturadas podem ser incluídos usando arquétipos CLUSTER no slot 'Detalhes do exame'. Este elemento de dados pode ser usado para capturar dados do legado que não estão disponíveis em um formato estruturado.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Detalhes do exame</items>
+        <items id="description">Detalhes estruturados do exame físico</items>
+        <items id="comment">Achados clínicos detalhados serão registrados como arquétipos CLUSTER que podem ser aninhados dentro este SLOT para representar a natureza fracionada do exame clínico e permitir a variação em requisitos clínicos para a documentação do exame. Por exemplo: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix e CLUSTER.palpation_of_fetus podem ser aninhados neste SLOTou uns dentro dos outros para representar as exigências específicas dos médicos trabalhando nos domínios obstétricos - conteúdo, prioridades e nível de detalhe serão diferentes dependendo do contexto clínico, experiência profissional e especialidade.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretação</items>
+        <items id="description">Palavra única, frase ou breve descrição que representa o significado clínico e dos achados do exame físico.</items>
+        <items id="comment">A codificação com uma terminologia é preferida, se possível. Por exemplo, "exame normal" ou "perfuração da membrana timpânica".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Fatores de confundimento</items>
+        <items id="description">Descrição de fatores incidentais que podem ter contribuído para os achados do exame físico.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Detalhes do dispositivo</items>
+        <items id="description">Detalhes sobre qualquer dispositivo utilizado durante o exame físico.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Comentário</items>
+        <items id="description">Narrativa adicional sobre os achados gerais do exame físico não capturados em outros campos.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais necessárias para capturar conteúdo local ou alinhar com outros modelos/formalismos de referência.</items>
+        <items id="comment">Por exemplo: Requisitos de informação local e metadados adicionais para alinhamento com equivalentes FHIR ou CIMI.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Posição</items>
+        <items id="description">A posição do corpo do sujeito durante o exame.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="zh-cn">
+      <items code="at0000">
+        <items id="text">体格检查发现</items>
+        <items id="description">对于特定主体对象进行体格检查过程中所获得的发现。</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">任何事件</items>
+        <items id="description">默认值，未加具体说明的，而可以在特定模板中或在运行时加以明确定义的时刻（时间点）型或时段（时间段、时间区间）型事件。</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">描述</items>
+        <items id="description">关于特定患者的体格检查过程中所观察到的全部发现的叙述型描述。</items>
+        <items id="comment">可用于记录关于整个临床检查或者临床检查发现关键方面（将采用结构化数据加以支持）的叙述型摘要。在检查细节槽位“Examination Detail”之中，可以利用群簇（CLUSTER）型原始型来包括关于具体结构化发现的细节。该数据元可用于采集和记录并未采用某种结构化格式的历史遗留数据。</items>
+      </items>
+      <items code="at0005">
+        <items id="text">检查细节</items>
+        <items id="description">体格检查的结构化细节。</items>
+        <items id="comment">详细的临床发现将被记录为可以嵌套在该槽位（SLOT ）之中的群簇（CLUSTER）型原始型，用于表达临床检查的分形特性，并顾及到不同临床医生对于检查文档记录需求的差异。例如，可以将子宫扪诊群簇型原始型CLUSTER.palpation_of_uterus、宫颈扪诊群簇型原始型CLUSTER.palpation_of_cervix和胎儿扪诊群簇型原始型CLUSTER.palpation_of_fetus嵌套在该槽位之中，或者它们相互嵌套，以便表达在产科学领域工作的临床医师的特殊需求——根据临床语境、专业背景以及专业的不同，内容、优先级别和详细程度将会有所不同。</items>
+      </items>
+      <items code="at0006">
+        <items id="text">解释</items>
+        <items id="description">用于表示体格检查发现的临床含义和意义的单个词语、短语或简要描述。</items>
+        <items id="comment">在可能的情况下，首选采用特定的术语集进行编码。例如，“检查正常”或“鼓膜穿孔”。</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">干扰因素</items>
+        <items id="description">关于可能对体格检查发现做出了贡献的任何偶然因素的描述。</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">装置细节</items>
+        <items id="description">关于体格检查过程中所使用的任何装置的细节。</items>
+      </items>
+      <items code="at0011">
+        <items id="text">注释</items>
+        <items id="description">其他字段之中并未采集的关于全部体格检查发现的叙述型注释。</items>
+      </items>
+      <items code="at0012">
+        <items id="text">扩展</items>
+        <items id="description">采集本地内容或者与其他参考模型/形式化体系进行映射时所需的额外信息。</items>
+        <items id="comment">例如，本地信息需求，或者是与FHIR或CIMI等价模型映射时所需的额外元数据。</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The body position of the subject during the examination.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Ergebnisse der körperlichen Untersuchung</items>
+        <items id="description">Während der körperlichen Untersuchung eines Patienten beobachtete Befunde.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Jedes Ereignis</items>
+        <items id="description">Ein Standardwert, ein spezifizierter Zeitpunkt oder ein Intervallereignis, welches explizit in einem Template oder während der Laufzeit definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung der Gesamtbefunde, die bei der körperlichen Untersuchung eines Patienten beobachtet wurden.</items>
+        <items id="comment">Kann verwendet werden, um eine Zusammenfassung der gesamten klinischen Untersuchung oder Schlüsselaspekte der klinischen Untersuchungsergebnisse aufzuzeichnen, die durch strukturierte Daten unterstützt wird. Details spezifischer strukturierter Befunde können unter Verwendung von CLUSTER-Archetypen in den Slot 'Untersuchungsdetails' aufgenommen werden. Dieses Datenelement kann verwendet werden, um Altdaten zu erfassen, die nicht in einem strukturierten Format verfügbar sind.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Untersuchungsdetails</items>
+        <items id="description">Strukturierte Details der körperlichen Untersuchung.</items>
+        <items id="comment">Detaillierte klinische Befunde werden als CLUSTER-Archetypen aufgezeichnet, die innerhalb dieses SLOT verschachtelt werden können, um den fraktalen Charakter der klinischen Untersuchung darzustellen und eine Variation der Anforderungen des Klinikers an die Untersuchungsdokumentation zu ermöglichen.&#xD;
+Zum Beispiel: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix und CLUSTER.palpation_of_fetus können in diesem SLOT oder ineinander verschachtelt werden, um die spezifischen Anforderungen der in der Geburtshilfe tätigen Ärzte darzustellen - Inhalt, Prioritäten und Detaillierungsgrad sind je nach klinischem Kontext, beruflichem Hintergrund und Spezialgebiet unterschiedlich.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretation</items>
+        <items id="description">Einzelnes Wort, Ausdruck oder Kurzbeschreibung der klinischen Bedeutung und Aussagekraft der körperlichen Untersuchungsbefunde.</items>
+        <items id="comment">Eine Kodierung mit einer Terminologie wird, wenn möglich, bevorzugt. Zum Beispiel 'normale Untersuchung' oder 'Trommelfellperforation'.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Störfaktoren</items>
+        <items id="description">Beschreibung aller zufälligen Faktoren, die zu den Ergebnissen der körperlichen Untersuchung beigetragen haben könnten.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Gerätedetails</items>
+        <items id="description">Details über jedes Gerät, welches bei der körperlichen Untersuchung verwendet wurde.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzlicher Freitext über die allgemeinen körperlichen Untersuchungsergebnisse, die in anderen Bereichen nicht erfasst werden konnten.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Information, die für die Erfassung des lokalen Kontexts oder für die Anpassung an andere Referenzmodelle/Formalismen benötigt wird.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten, um ein Mapping auf FHIR oder CIMI Modelle zu ermöglichen.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Position</items>
+        <items id="description">Die Position der untersuchten Person während der Untersuchung.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Fysiska undersökningsfynd</items>
+        <items id="description">Observerade fynd under en fysisk undersökning av mottagaren av hälso- och sjukvård.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ospecificerad händelse</items>
+        <items id="description">Standard, ospecificerad händelse eller intervallhändelse som kan definieras uttryckligen i en mall eller vid körning.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Beskrivning</items>
+        <items id="description">Detaljerad beskrivning av de övergripande fynden som observerats under en fysisk undersökning av en patient.</items>
+        <items id="comment">Kan användas för att dokumentera en sammanfattning av den fullständiga kliniska undersökningen eller viktiga aspekter av kliniska undersökningsfynd, som kommer att stödjas av strukturerade data. Detaljer om specifika strukturerade fynd kan inkluderas i CLUSTER i öppningen 'Undersökningsdetaljer'. Detta dataelement kan användas för att fånga data som inte är tillgängliga i ett strukturerat format.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Undersökningsdetaljer</items>
+        <items id="description">Strukturerade detaljer från den fysiska undersökningen.</items>
+        <items id="comment">Detaljerade kliniska fynd kommer att registreras med CLUSTER som kan nästlas in i denna öppning för att representera den fraktala karaktären av den klinisk undersökning och möjliggöra variation i klinikers krav på undersökningsdokumentation. Till exempel: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix och CLUSTER.palpation_of_fetus kan nästlas i denna öppning eller inom varandra för att representera de specifika behoven hos läkare som arbetar inom de obstetriska domänerna - innehåll, prioriteringar och detaljnivå varierar beroende på kliniskt sammanhang, yrkesbakgrund och specialitet.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tolkning</items>
+        <items id="description">Enkelt ord, fras eller kort beskrivning som representerar den kliniska innebörden och betydelsen av de fysiska undersökningsfynden.</items>
+        <items id="comment">Kodning med en terminologi är att föredra, om möjligt. Till exempel "normal undersökning" eller "trumhinnans perforering".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Möjliga felkällor</items>
+        <items id="description">Beskrivning av eventuella tillfälliga faktorer som kan ha bidragit till de fysiska undersökningsfynden.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Detaljer om utrustning</items>
+        <items id="description">Detaljer om utrustning som använts under den fysiska undersökningen.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare beskrivning om de övergripande fysiska undersökningsfynden som inte fångats i andra fält.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Tilläggsinformation</items>
+        <items id="description">Tilläggsinformation som krävs för att fånga lokalt innehåll eller för anpassning till andra referensmodeller/formalismer.</items>
+        <items id="comment">t.ex. Lokala informationskrav eller ytterligare metadata för anpassning till FHIR eller CIMI.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Kroppsställning</items>
+        <items id="description">Kroppsställning vid undersökning.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Troballes de l'exploració física</items>
+        <items id="description">Troballes observades durant l'examen físic del pacient.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Qualsevol esdeveniment</items>
+        <items id="description">Esdeveniment predeterminat, en un interval de temps o moment no específic, que es pot definir de forma expressa en una plantilla o en temps d'execució.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Descripció</items>
+        <items id="description">Descripció narrativa del total de les troballes durant l'examen físic del pacient.</items>
+        <items id="comment">Es pot fer servir per registrar un resum de l'examen clínic complet o aspectes clau de les troballes de l'examen clínic, que estarà recolzat per dades estructurades. Es poden incloure detalls de troballes estructurades específiques utilitzant arquetips CLUSTER a l'slot 'Detalls de l'examen'. Aquest element de dades es pot utilitzar per registrar dades heretades que no estan disponibles en un format estructurat.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Detalls de l'examen</items>
+        <items id="description">Detalls estructurats de l'examen físic.</items>
+        <items id="comment">Les troballes clíniques detallades es registraran com a arquetips de tipus CLUSTER que poden ser niats dins aquest SLOT per representar la naturalesa fractal de l'examen clínic, i permetre la variació en els requisits del metge per a la documentació de l'examen. Per exemple: CLUSTER.palpation_of_uterus, CLUSTER.palpation_of_cervix i CLUSTER.palpation_of_fetus es poden niar en aquest slot o entre ells per representar els requisits específics dels metges que treballen l'especilitat obstètrica; el contingut, les prioritats i el nivell de detall diferiran segons el context clínic, trajectòria professional i especialitat.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretació</items>
+        <items id="description">Una sola paraula, frase o descripció breu que englobi el significat clínic i la importància de les troballes de l'examen físic.</items>
+        <items id="comment">Si és possible, es prefereix codificar amb una terminologia. Per exemple, "examen normal" o "perforació de la membrana timpànica".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Factors de confusió</items>
+        <items id="description">Descripció dels factors que puguin haver obstruït o dificultat les troballes de l'examen físic.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Detalls del dispositiu</items>
+        <items id="description">Detalls sobre qualsevol dispositiu utilitzat durant l'examen físic.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Comentaris</items>
+        <items id="description">Informació narrativa addicional sobre les troballes durant l'examen físic no registrats a altres camps.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Ampliació</items>
+        <items id="description">Informació addicional requerida per registrar contingut local o alinear amb altres models o formalismes.</items>
+        <items id="comment">p.ex. Requisits d'informació local o metadades addicionals per alinear-se amb equivalents FHIR o CIMI.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Posició</items>
+        <items id="description">Posició del pacient durant l'examen.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

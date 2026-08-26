@@ -1,0 +1,370 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.anatomical_location.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2008-11-10">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about anatomical location.">
+			use = <"">
+			keywords = <"location", "site", "anatomical">
+			misuse = <"Not for specifiying unilateral/bilateral occurence - this is related to an evaluation which perhaps includes multiple locations.">
+		>
+	>
+	references = <
+		["1"] = <"Use cases:">
+		["2"] = <"- 5LICS, midclavicular line">
+		["3"] = <"- L forearm, 2cm anterior to the cubital fossa">
+		["4"] = <"- Right iliac fossa">
+		["5"] = <"- 5 cm below L tibial tuberosity">
+		["6"] = <"- 2 cm medial to R nipple">
+		["7"] = <"- 4 cm below R costal margin in midclavicular line">
+		["8"] = <"- R femur">
+		["9"] = <"- midline nose">
+		["10"] = <"- medial aspect of R great toe nail.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"A2DAED2760D934F3D07C4EC4C891C4B2">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Anatomical Location
+		items matches {
+			CLUSTER[id6] occurrences matches {0..1} matches {	-- Specific location
+				items matches {
+					ELEMENT[id2] occurrences matches {0..1} matches {	-- Name of location
+						value matches {
+							DV_TEXT[id55] 
+						}
+					}
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Side
+						value matches {
+							DV_CODED_TEXT[id56] matches {
+								defining_code matches {[ac1]}		-- Side (synthesised)
+							}
+						}
+					}
+					ELEMENT[id29] occurrences matches {0..1} matches {	-- Numerical identifier
+						value matches {
+							DV_CODED_TEXT[id57] matches {
+								defining_code matches {[ac2]}		-- Numerical identifier (synthesised)
+							}
+						}
+					}
+					ELEMENT[id25] occurrences matches {0..1} matches {	-- Anatomical plane
+						value matches {
+							DV_CODED_TEXT[id58] matches {
+								defining_code matches {[ac3]}		-- Anatomical plane (synthesised)
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id21] matches {	-- Relative location
+				items matches {
+					ELEMENT[id22] occurrences matches {0..1} matches {	-- Identified landmark
+						value matches {
+							DV_TEXT[id59] 
+						}
+					}
+					ELEMENT[id7] occurrences matches {0..1} matches {	-- Aspect
+						value matches {
+							DV_CODED_TEXT[id60] matches {
+								defining_code matches {[ac4]}		-- Aspect (synthesised)
+							}
+						}
+					}
+					ELEMENT[id23] occurrences matches {0..1} matches {	-- Distance from landmark
+						value matches {
+							DV_QUANTITY[id61] matches {
+								property matches {[at53]}
+								units matches {"cm", "in", "ft", "mm"}
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id24] matches {	-- Description
+				value matches {
+					DV_TEXT[id62] 
+				}
+			}
+			ELEMENT[id54] matches {	-- Visual markings/orientation
+				value matches {
+					DV_TEXT[id63] 
+				}
+			}
+			ELEMENT[id53] matches {	-- Image
+				value matches {
+					DV_MULTIMEDIA[id64] matches {
+						media_type 
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Anatomical Location">
+				description = <"Record details about an anatomical location.">
+			>
+			["id2"] = <
+				text = <"Name of location">
+				description = <"Named anatomical location - ideally would be coded where possible.">
+			>
+			["id3"] = <
+				text = <"Side">
+				description = <"Specify lateraility of the anatomical location.">
+			>
+			["at4"] = <
+				text = <"Left">
+				description = <"Left laterality.">
+			>
+			["at5"] = <
+				text = <"Right">
+				description = <"Right laterality.">
+			>
+			["id6"] = <
+				text = <"Specific location">
+				description = <"Specific and identified anatomical location.">
+			>
+			["id7"] = <
+				text = <"Aspect">
+				description = <"Qualifier to identify which direction the anatomical location is in relation to the identified landmark.">
+			>
+			["at8"] = <
+				text = <"Medial to">
+				description = <"Relative location medial to the landmark.">
+			>
+			["at9"] = <
+				text = <"Lateral to">
+				description = <"Relative location lateral to the landmark.">
+			>
+			["at10"] = <
+				text = <"Superior to">
+				description = <"Relative location superior to the landmark.">
+			>
+			["at11"] = <
+				text = <"Inferior to">
+				description = <"Relative location inferior to the landmark.">
+			>
+			["at12"] = <
+				text = <"Midline">
+				description = <"In the sagittal plane passing through the midline of the body.">
+			>
+			["at13"] = <
+				text = <"Anterior to">
+				description = <"Relative location anterior to the landmark.">
+			>
+			["at14"] = <
+				text = <"Posterior to">
+				description = <"Relative location posterior to the landmark.">
+			>
+			["at15"] = <
+				text = <"Below">
+				description = <"Relative location below the landmark.">
+			>
+			["at16"] = <
+				text = <"Above">
+				description = <"Relative location above the landmark.">
+			>
+			["at17"] = <
+				text = <"Inferolateral to">
+				description = <"Relative location inferior and medial to the landmark.">
+			>
+			["at18"] = <
+				text = <"Superolateral to">
+				description = <"Relative location superior and lateral to the landmark.">
+			>
+			["at19"] = <
+				text = <"Inferomedial to">
+				description = <"Relative location inferior and medial to the landmark.">
+			>
+			["at20"] = <
+				text = <"Superomedial to">
+				description = <"Relative location superior and medial to the landmark.">
+			>
+			["id21"] = <
+				text = <"Relative location">
+				description = <"Qualifiers to identify non-specific location eg 5cm (distance) inferior (aspect) to the tibial tuberosity (landmark).  There may be more than one relative location required to provide a cross reference.">
+			>
+			["id22"] = <
+				text = <"Identified landmark">
+				description = <"Identified anatomical landmark from which to specify relative anatomical location.">
+			>
+			["id23"] = <
+				text = <"Distance from landmark">
+				description = <"Distance of location from the identified landmark.">
+			>
+			["id24"] = <
+				text = <"Description">
+				description = <"Description of anatomical location.">
+			>
+			["id25"] = <
+				text = <"Anatomical plane">
+				description = <"Line describing the position of a vertical anatomical plane in the body.">
+			>
+			["at26"] = <
+				text = <"Midclavicular line">
+				description = <"In the sagittal plane passing through mid-clavical.">
+			>
+			["at27"] = <
+				text = <"Midaxillary line">
+				description = <"In the coronal plane passing through mid-axilla.">
+			>
+			["at28"] = <
+				text = <"Midscapular line">
+				description = <"In the sagittal plane passing through mid-scapula.">
+			>
+			["id29"] = <
+				text = <"Numerical identifier">
+				description = <"Identify the specific anatomical site out of multiple eg tenth rib; fourth vertebra; second toe.">
+			>
+			["at30"] = <
+				text = <"First">
+				description = <"Ordinal position 1 of an anatomical location.">
+			>
+			["at31"] = <
+				text = <"Second">
+				description = <"Ordinal position 2 of an anatomical location.">
+			>
+			["at32"] = <
+				text = <"Third">
+				description = <"Ordinal position 3 of an anatomical location.">
+			>
+			["at33"] = <
+				text = <"Fourth">
+				description = <"Ordinal position 4 of an anatomical location.">
+			>
+			["at34"] = <
+				text = <"Fifth">
+				description = <"Ordinal position 5 of an anatomical location.">
+			>
+			["at35"] = <
+				text = <"Sixth">
+				description = <"Ordinal position 6 of an anatomical location.">
+			>
+			["at36"] = <
+				text = <"Seventh">
+				description = <"Ordinal position 7 of an anatomical location.">
+			>
+			["at37"] = <
+				text = <"Eighth">
+				description = <"Ordinal position 8 of an anatomical location.">
+			>
+			["at38"] = <
+				text = <"Ninth">
+				description = <"Ordinal position 9 of an anatomical location.">
+			>
+			["at39"] = <
+				text = <"Tenth">
+				description = <"Ordinal position 10 of an anatomical location.">
+			>
+			["at40"] = <
+				text = <"Eleventh">
+				description = <"Ordinal position 11 of an anatomical location.">
+			>
+			["at41"] = <
+				text = <"Twelfth">
+				description = <"Ordinal position 12 of an anatomical location.">
+			>
+			["at42"] = <
+				text = <"Thirteenth">
+				description = <"Ordinal position 13 of an anatomical location.">
+			>
+			["at43"] = <
+				text = <"Fourteenth">
+				description = <"Ordinal position 14 of an anatomical location.">
+			>
+			["at44"] = <
+				text = <"Fifteenth">
+				description = <"Ordinal position 15 of an anatomical location.">
+			>
+			["at45"] = <
+				text = <"Sixteenth">
+				description = <"Ordinal position 16 of an anatomical location.">
+			>
+			["at46"] = <
+				text = <"Seventeenth">
+				description = <"Ordinal position 17 of an anatomical location.">
+			>
+			["at47"] = <
+				text = <"Eighteenth">
+				description = <"Ordinal position 18 of an anatomical location.">
+			>
+			["at52"] = <
+				text = <"Bilateral">
+				description = <"Both left and right.">
+			>
+			["id53"] = <
+				text = <"Image">
+				description = <"Image or images used to identify a location.">
+			>
+			["id54"] = <
+				text = <"Visual markings/orientation">
+				description = <"Description of any visual markings used to orientate the viewer e.g external reference points, special sutures, ink markings.">
+			>
+			["at53"] = <
+				text = <"Length">
+				description = <"Length">
+			>
+			["ac1"] = <
+				text = <"Side (synthesised)">
+				description = <"Specify lateraility of the anatomical location. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Numerical identifier (synthesised)">
+				description = <"Identify the specific anatomical site out of multiple eg tenth rib; fourth vertebra; second toe. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Anatomical plane (synthesised)">
+				description = <"Line describing the position of a vertical anatomical plane in the body. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Aspect (synthesised)">
+				description = <"Qualifier to identify which direction the anatomical location is in relation to the identified landmark. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			["id3"] = <http://snomed.info/id/272741003>
+			["at4"] = <http://snomed.info/id/419161000>
+			["at5"] = <http://snomed.info/id/419465000>
+		>
+		["openehr"] = <
+			["at53"] = <http://openehr.org/id/122>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at4", "at5", "at52">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at30", "at31", "at32", "at33", "at34", "at35", "at36", "at37", "at38", "at39", "at40", "at41", "at42", "at43", "at44", "at45", "at46", "at47">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at12", "at26", "at27", "at28">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at8", "at9", "at10", "at11", "at13", "at14", "at15", "at16", "at17", "at18", "at19", "at20">
+		>
+	>

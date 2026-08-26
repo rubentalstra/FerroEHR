@@ -1,0 +1,584 @@
+﻿archetype (adl_version=1.4; uid=9ff81b50-4e8f-4ba9-b8cc-50f820d31988)
+	openEHR-DEMOGRAPHIC-PARTY_IDENTITY.person_name-individual_provider.v0
+specialise
+	openEHR-DEMOGRAPHIC-PARTY_IDENTITY.person_name.v0
+
+concept
+	[at0000.1]	-- Individual healthcare provider name
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Rigoleta Dutra & Sergio Miranda Freire">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"2009-05-20">
+	>
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação do nome de um profissional de saúde">
+			use = <"Utilizado em serviços demográficos para representar os nomes que um profissional de saúde pode ter">
+			keywords = <"serviço demográfico", "nome de um profissional de saúde">
+			misuse = <"">
+			copyright = <"© copyright (c) 2010 openEHR Foundation, openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a individual healthcare provider name">
+			use = <"Used in demographic services to represent the names that an individual healthcare provider is known by">
+			keywords = <"demographic service", "individual healthcar provider's name">
+			misuse = <"">
+			copyright = <"© copyright (c) 2010 openEHR Foundation, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Rigoleta Dutra, Ministry of Defense, Brazil (openEHR Editor)", "Sergio Freire, State University of Rio de Janeiro, Brazil (openEHR Editor)", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"ISO/DTS 27527:2007(E) - Provider Identification - Draft Technnical Specification - International Organization for Standardization">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"E4BC5DA45B4289EE54509FD8D1FB81B1">
+		["build_uid"] = <"4453ba3d-e73b-4d25-8fc0-ef37824ba839">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	PARTY_IDENTITY[at0000.1] matches {	-- Individual healtcare provider name
+		details matches {
+			ITEM_TREE[at0001] occurrences matches {0..1} matches {	-- Name
+				items cardinality matches {1..*; ordered} matches {
+					CLUSTER[at0002] occurrences matches {0..*} matches {	-- Given names
+						items cardinality matches {2; ordered} matches {
+							ELEMENT[at0010] matches {	-- Given name
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0011] matches {	-- Given name sequence number
+								value matches {
+									DV_COUNT matches {*}
+								}
+							}
+						}
+					}
+					CLUSTER[at0003] occurrences matches {1..*} matches {	-- Family names
+						items cardinality matches {2; ordered} matches {
+							ELEMENT[at0012] matches {	-- Family name
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0013] matches {	-- Family name sequence number
+								value matches {
+									DV_COUNT matches {*}
+								}
+							}
+						}
+					}
+					CLUSTER[at0004] occurrences matches {0..*} matches {	-- Titles
+						items cardinality matches {2; ordered} matches {
+							ELEMENT[at0014] matches {	-- Title
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {[ac0000]}		-- Titles
+									}
+								}
+							}
+							ELEMENT[at0015] matches {	-- Title sequence number
+								value matches {
+									DV_COUNT matches {*}
+								}
+							}
+						}
+					}
+					CLUSTER[at0005] occurrences matches {0..*} matches {	-- Suffixes
+						items cardinality matches {2; ordered} matches {
+							ELEMENT[at0016] matches {	-- Suffix
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {[ac0001]}		-- Suffixes
+									}
+								}
+							}
+							ELEMENT[at0017] matches {	-- Suffix sequence number
+								value matches {
+									DV_COUNT matches {*}
+								}
+							}
+						}
+					}
+					CLUSTER[at0006] occurrences matches {1..*} matches {	-- Name usages
+						items cardinality matches {2..3; ordered} matches {
+							ELEMENT[at0018] matches {	-- Name usage
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0023, 	-- Reporting name
+											at0024, 	-- Newborn name
+											at0025, 	-- Professional or business name
+											at0026, 	-- Maiden name
+											at0027, 	-- Legal name
+											at0028]	-- Other name
+										}
+									}
+								}
+							}
+							ELEMENT[at0019] matches {	-- Usage interval
+								value matches {
+									DV_INTERVAL<DV_DATE> matches {*}
+								}
+							}
+							ELEMENT[at0020] occurrences matches {0..1} matches {	-- Usage identifier
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+						}
+					}
+					CLUSTER[at0007] occurrences matches {0..1} matches {	-- Alternative name repesentations
+						items cardinality matches {1..*; ordered} matches {
+							ELEMENT[at0021] matches {	-- Representation usage
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {[ac0002]}		-- Language code
+									}
+								}
+							}
+							ELEMENT[at0022] matches {	-- Alternative representation
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+						}
+					}
+					ELEMENT[at0008] matches {	-- Preferred name
+						value matches {
+							DV_BOOLEAN matches {*}
+						}
+					}
+					ELEMENT[at0009.1] occurrences matches {0} matches {	-- Conditional Use
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0031, 	-- Unreliable information
+									at0032, 	-- Known misspelling
+									at0033, 	-- Name not to be used
+									at0034, 	-- Name linkage forbidden by law
+									at0035, 	-- Special privacy/security requirements
+									at0036]	-- Temporary name
+								}
+							}
+						}
+					}
+					CLUSTER[at0.2] occurrences matches {0..*} matches {	-- Restricted name usage
+						items cardinality matches {1..*; unordered; unique} matches {
+							ELEMENT[at0.3] matches {*}
+							ELEMENT[at0.4] matches {	-- Restriction interval
+								value matches {
+									DV_INTERVAL matches {*}
+								}
+							}
+							ELEMENT[at0.5] occurrences matches {0..*} matches {	-- Available provider
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0.2"] = <
+					text = <"Restricted name usage">
+					description = <"This set of data elements apply to a specific name set and are used within computer systems to restrict the way a name is used or displayed in that system">
+				>
+				["at0.3"] = <
+					text = <"Type of restriction">
+					description = <"An indicator of special conditions or rules that shall be applied to an individual provider name">
+				>
+				["at0.4"] = <
+					text = <"Restriction interval">
+					description = <"Indicates the period of time where this restriction applies">
+				>
+				["at0.5"] = <
+					text = <"Available provider">
+					description = <"This field indicates those providers who should be able to see this name and the details assoociated with it">
+				>
+				["at0000"] = <
+					text = <"Person name">
+					description = <"Person name details.">
+				>
+				["at0000.1"] = <
+					text = <"Individual healthcare provider name">
+					description = <"Person name when performing the role of a healthcare provider">
+				>
+				["at0001"] = <
+					text = <"Name">
+					description = <"Components of a person name.">
+				>
+				["at0002"] = <
+					text = <"Given names">
+					description = <"Details of given names.">
+				>
+				["at0003"] = <
+					text = <"Family names">
+					description = <"Details of family names.">
+				>
+				["at0004"] = <
+					text = <"Titles">
+					description = <"Details of person titles.">
+				>
+				["at0005"] = <
+					text = <"Suffixes">
+					description = <"Details of person suffixes.">
+				>
+				["at0006"] = <
+					text = <"Name usages">
+					description = <"Details of person name usages.">
+				>
+				["at0007"] = <
+					text = <"Alternative name repesentations">
+					description = <"Details of alternative representations such as local codesets or language variations.">
+				>
+				["at0008"] = <
+					text = <"Preferred name">
+					description = <"Indicates that this is the name by which a person chooses to be identified.">
+				>
+				["at0009"] = <
+					text = <"Specific issues">
+					description = <"Specific issues that apply to use of the person name.">
+				>
+				["at0009.1"] = <
+					text = <"Conditional Use">
+					description = <"An indicator of specific conditions or rules that should be applied to a person's name">
+				>
+				["at0010"] = <
+					text = <"Given name">
+					description = <"The person's identifying name(s) within the family group or by which he/she is uniquely socially identified.">
+				>
+				["at0011"] = <
+					text = <"Given name sequence number">
+					description = <"The order of use for a Given name">
+				>
+				["at0012"] = <
+					text = <"Family name">
+					description = <"The part of a name a person usually has in common with some other members of his/her family, as distinguished from his/her given names.">
+				>
+				["at0013"] = <
+					text = <"Family name sequence number">
+					description = <"An indicator of the order of use for a Family name.">
+				>
+				["at0014"] = <
+					text = <"Title">
+					description = <"An honorific form of address commencing a name, used when addressing a person by name, whether by mail, by phone, or depending upon cultural situation in person.">
+				>
+				["at0015"] = <
+					text = <"Title sequence number">
+					description = <"An indicator of the order of use for the name Title.">
+				>
+				["at0016"] = <
+					text = <"Suffix">
+					description = <"Additional term used following a person name.">
+				>
+				["at0017"] = <
+					text = <"Suffix sequence number">
+					description = <"An indicator of the order of use for the name Suffix">
+				>
+				["at0018"] = <
+					text = <"Name usage">
+					description = <"A classification that enables differentiation between the usage of names for a person. An individual name may have many name uses">
+				>
+				["at0019"] = <
+					text = <"Usage interval">
+					description = <"The period of time for which this name usage applies.">
+				>
+				["at0020"] = <
+					text = <"Usage identifier">
+					description = <"The combination of identifier type, identifier issuer and identifier name that specify the link between this name and reporting or other unique identifier usage.">
+				>
+				["at0021"] = <
+					text = <"Representation usage">
+					description = <"Name of the representational form used.">
+				>
+				["at0022"] = <
+					text = <"Alternative representation">
+					description = <"Alternative Representation of this subject of care name using alternative styles of representation such as characters or language character set variations for local display.">
+				>
+				["at0023"] = <
+					text = <"Reporting name">
+					description = <"The subject’s name as it is to be used for reporting, when used with a specific identifier.">
+				>
+				["at0024"] = <
+					text = <"Newborn name">
+					description = <"A type reserved for the identification of unnamed newborn babies.">
+				>
+				["at0025"] = <
+					text = <"Professional or business name">
+					description = <"The name used by the subject for business or professional purposes.">
+				>
+				["at0026"] = <
+					text = <"Maiden name">
+					description = <"The name used by the subject of care prior to marriage.">
+				>
+				["at0027"] = <
+					text = <"Legal name">
+					description = <"Registered name (Legal name).">
+				>
+				["at0028"] = <
+					text = <"Other name">
+					description = <"Any other name by which the subject is known, or has been known by in the past.">
+				>
+				["at0031"] = <
+					text = <"Unreliable information">
+					description = <"The name recorded is a fictitious or partial name.">
+				>
+				["at0032"] = <
+					text = <"Known misspelling">
+					description = <"This is a misspelling, but should be retained for potential future matching.">
+				>
+				["at0033"] = <
+					text = <"Name not to be used">
+					description = <"This name should not be used when referring to this subject.">
+				>
+				["at0034"] = <
+					text = <"Name linkage forbidden by law">
+					description = <"By Law, this name and all names prior to it in the name sequence are not to be displayed or indicated in any way when searching for or dealing with information and events associated with a name that is subsequent to this one in the name sequence.">
+				>
+				["at0035"] = <
+					text = <"Special privacy/security requirements">
+					description = <"A name for which episodes are attached that should only be accessible to specified authorised persons.">
+				>
+				["at0036"] = <
+					text = <"Temporary name">
+					description = <"A temporary name issued where the subject's name has not been determined.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0.2"] = <
+					text = <"Grupo de utilização restrita do nome">
+					description = <"Este conjunto de dados se aplica a um nome específico e é usado em sistemas computacionais para restringir o modo como um nome é usado ou exibido naquele sistema">
+				>
+				["at0.3"] = <
+					text = <"Tipo de restrição">
+					description = <"Um indicador de condições especiais que devem ser aplicadas ao nome do profissional">
+				>
+				["at0.4"] = <
+					text = <"Intervalo da restrição">
+					description = <"Indica o período de tempo em que esta restrição se aplica">
+				>
+				["at0.5"] = <
+					text = <"Identificador do prestador">
+					description = <"Este campo indica os prestadores que podem visualizar este nome e os detalhes associados a ele">
+				>
+				["at0000"] = <
+					text = <"Nome da pessoa">
+					description = <"Estrutura do nome de uma pessoa">
+				>
+				["at0000.1"] = <
+					text = <"Nome do profissional de saúde">
+					description = <"Nome de uma pessoa ao atuar como profissional de saúde">
+				>
+				["at0001"] = <
+					text = <"Componentes do nome">
+					description = <"Componentes do nome da pessoa">
+				>
+				["at0002"] = <
+					text = <"Grupo do nome atribuído">
+					description = <"Grupo que consiste de um nome atribuído e a ordem dele no nome">
+				>
+				["at0003"] = <
+					text = <"Grupo do sobrenome">
+					description = <"Grupo que consiste de um sobrenome e a ordem dele no nome">
+				>
+				["at0004"] = <
+					text = <"Grupo de título do nome">
+					description = <"Grupo que consiste de um título do nome de uma pessoa e a ordem dele no nome">
+				>
+				["at0005"] = <
+					text = <"Grupo de sufixo do nome">
+					description = <"Grupo que consiste de um sufixo do nome de uma pessoa e a ordem dele no nome">
+				>
+				["at0006"] = <
+					text = <"Grupo de utilização do nome">
+					description = <"Grupo que descreve como este nome deve ser usado">
+				>
+				["at0007"] = <
+					text = <"Representação alternativa do nome">
+					description = <"Grupo que descreve uma forma alternativa de representar o nome de uma pessoa">
+				>
+				["at0008"] = <
+					text = <"Nome preferencial">
+					description = <"Indica o nome pelo qual a pessoa prefere ser identificada">
+				>
+				["at0009"] = <
+					text = <"Indicador de uso condicional">
+					description = <"Um indicador das condições específicas ou regras que devem ser aplicadas ao nome de uma pessoa">
+				>
+				["at0009.1"] = <
+					text = <"Indicador de uso condicional">
+					description = <"Um indicador das condições específicas ou regras que devem ser aplicadas ao nome de uma pessoa">
+				>
+				["at0010"] = <
+					text = <"Nome atribuído">
+					description = <"O nome que identifica a pessoa no grupo familiar ou pelo qual ela é univocamente identificada socialmente">
+				>
+				["at0011"] = <
+					text = <"Número de seqüência do nome atribuído">
+					description = <"Um indicator da ordem de uso para os nomes atribuídos">
+				>
+				["at0012"] = <
+					text = <"Nome de família">
+					description = <"A parte do nome que uma pessoa possui em comum com outros membros de sua família, distinta do(s) seu(s) nome(s) atribuído(s)">
+				>
+				["at0013"] = <
+					text = <"Número de seqüência do sobrenome">
+					description = <"Um indicator da ordem de uso para os sobrenomes">
+				>
+				["at0014"] = <
+					text = <"Título do nome">
+					description = <"Uma forma honorífica que inicia o nome, usada ao se referir a uma pessoa pelo nome, seja por correspondência ou por telefone, ou, dependendo da situação cultural, pessoalmente">
+				>
+				["at0015"] = <
+					text = <"Número de seqüência do título do nome">
+					description = <"Um indicator da ordem de uso para os títulos do nome">
+				>
+				["at0016"] = <
+					text = <"Sufixo do nome">
+					description = <"Termo adicional usado após o nome da pessoa">
+				>
+				["at0017"] = <
+					text = <"Número de seqüência do sufixo do nome">
+					description = <"Um indicator da ordem de uso para os sufixos do nome">
+				>
+				["at0018"] = <
+					text = <"Uso do nome">
+					description = <"Uma classificação que permite a diferenciação entre os usos do nome de uma pessoa. Um nome de um indivíduo pode ter muitos usos">
+				>
+				["at0019"] = <
+					text = <"Intervalo de utilização">
+					description = <"O período de tempo para o qual este uso do nome se aplica para o nome ao qual ele está associado">
+				>
+				["at0020"] = <
+					text = <"Identificador usado">
+					description = <"A combinação do tipo de identificador, emissor do identificador e nome do identificador que especifica o vínculo entre este nome e o uso do identificador para relatório, ou outros usos">
+				>
+				["at0021"] = <
+					text = <"Uso da representação">
+					description = <"Nome da forma de representação usada">
+				>
+				["at0022"] = <
+					text = <"Representação alternativa do nome">
+					description = <"Representação alternativa do nome desta pessoa usando estilos alternativos de representação, tais como caracteres ou variações do conjunto de caracteres do idioma para exibição local">
+				>
+				["at0023"] = <
+					text = <"Nome para relatório">
+					description = <"o nome do sujeito usado para relatório, quando acompanhado por um identificador específico">
+				>
+				["at0024"] = <
+					text = <"Nome de recém-nascido">
+					description = <"tipo reservado para identificação de recém-nascidos sem nome">
+				>
+				["at0025"] = <
+					text = <"Nome profissional ou comercial">
+					description = <"o nome usado pela pessoa para propósitos profissionais ou de negócios">
+				>
+				["at0026"] = <
+					text = <"Nome de solteiro(a)">
+					description = <"o nome usado pela pessoa antes de se casar">
+				>
+				["at0027"] = <
+					text = <"Nome legal">
+					description = <"Nome registrado (legal) para a pessoa">
+				>
+				["at0028"] = <
+					text = <"Outro nome">
+					description = <"qualquer outro nome pelo qual o sujeito é conhecido, ou foi conhecido no passado">
+				>
+				["at0031"] = <
+					text = <"Nome não confiável">
+					description = <"indica que o nome registrado é um nome fictício ou parcial">
+				>
+				["at0032"] = <
+					text = <"Escrito de forma errada">
+					description = <"Este indicador permite ao usuário indicar que há um erro de digitação, mas que deve ser retido para um uso potencial na vinculação de registros">
+				>
+				["at0033"] = <
+					text = <"Nome para não ser usado">
+					description = <"Indica que este nome não deve ser usado ao se referir à pessoa">
+				>
+				["at0034"] = <
+					text = <"Vínculo do nome proibido por lei">
+					description = <"indica que este nome e todos os nomes antes dele na seqüência de nomes não devem ser exibidos ou indicados de nenhum modo ao procurar por ou lidar com informações e eventos associados com um nome que segue a este na seqüência de nomes">
+				>
+				["at0035"] = <
+					text = <"Requisito especial seguranca/privacidade">
+					description = <"indica um nome para o qual episódios são vinculados e devem somente ser acessados por pessoas autorizadas">
+				>
+				["at0036"] = <
+					text = <"Nome temporário">
+					description = <"Indica que o nome da pessoa não foi determinado">
+				>
+			>
+		>
+	>
+	constraint_definitions = <
+		["en"] = <
+			items = <
+				["ac0000"] = <
+					text = <"Titles">
+					description = <"Terms like Dr, Prof, Rev etc used as an honorific form of addressing a person.">
+				>
+				["ac0001"] = <
+					text = <"Suffixes">
+					description = <"Terms like Jr, PhD used after the name.">
+				>
+				["ac0002"] = <
+					text = <"Language code">
+					description = <"Set of languages used for an alternative name representation.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["ac0000"] = <
+					text = <"Títulos">
+					description = <"Termos como Doutor, Mestre, ....">
+				>
+				["ac0001"] = <
+					text = <"Sufixos">
+					description = <"Sufixos do nome – neto, neta, junior, ...">
+				>
+				["ac0002"] = <
+					text = <"Códigos para o idioma de representação">
+					description = <"idiomas para a representação alternativa do nome">
+				>
+			>
+		>
+	>

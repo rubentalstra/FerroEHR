@@ -1,0 +1,27 @@
+{
+  "_type": "EHR_STATUS",
+  "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+  "name": {
+    "value": "EHR Status"
+  },
+  "subject": {
+    "external_ref": {
+      "id": {
+        "_type": "GENERIC_ID",
+        "value": "__AUTO-GENRATED-BY-TEST__",
+        "scheme": "id_scheme"
+      },
+      "namespace": "examples",
+      "type": "PERSON"
+    }
+  },
+  "is_queryable": true,
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+    },
+    "rm_version": "1.2.0"
+  }
+}

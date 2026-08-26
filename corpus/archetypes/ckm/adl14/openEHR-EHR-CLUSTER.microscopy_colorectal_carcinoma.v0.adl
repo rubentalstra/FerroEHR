@@ -1,0 +1,1298 @@
+﻿archetype (adl_version=1.4; uid=d5de7428-4df0-4cb1-a609-53210acbbabd)
+	openEHR-EHR-CLUSTER.microscopy_colorectal_carcinoma.v0
+
+concept
+	[at0000]	-- Microscopic findings - Colorectal cancer
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"17/06/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record detailed findings about colorectal cancer found on microscopic histopathological examination.">
+			use = <"To record detailed findings about microscopic examination of tissue related to colorecal cancer.
+Use as a component archetype in the context of a suite of archetypes that make up a histopathology report 
+i.e. OBSERVATION.lab_test.histopathology and CLUSTER.macroscopy.colorectal_carcinoma.">
+			keywords = <"histopathology", "cancer", "laboratory", "lab", "malignancy", "pathology", "colonic", "rectal", "anal", "GI", "gastrointestinal", "bowel">
+			misuse = <"Not designed to be used within any other archetype other than OBSERVATION.lab_test.histopathology.">
+			copyright = <"© openEHR Foundation">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل الموجودات التفصيلية حول سرطان القولون و المستقيم التي تم اكتشافها عند الفحص الهيستوباثولوجي المجهري">
+			use = <"لتسجيل الموجودات التفصيلية حول الفحص المجهري للنسيج المتعلق بسرطان القولون و المستقيم.
+يستخدم هذا النموذج في سياق مجموعة من النماذج التي يتكون منها تقرير الهيستوباثولوجيا, يعني نموذج (ملاحظة.تقرير معملي.الهيستوباثولوجيا) و (عنقود.الفحص العِياني. سرطانة القولون و المستقيم).">
+			keywords = <"الهيستوباثولوجيا", "السرطان", "المعمل/المختبر", "المعمل/المختبر", "الخباثة", "الباثولوجيا", "خاص بالقولون", "خاص بالمستقيم", "خاص بالشرج", "مَعِديّ مِعَويّ", "مَعِديّ مِعَويّ", "الأمعاء">
+			misuse = <"لم يتم تصميم هذا النموذج ليستخدم في داخل أي نموذج غير (ملاحظة.اختبار معملي.الهيستوباثولوجيا).">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Koray Atalag, University of Auckland, New Zealand", "Matt Cordell, NEHTA, Australia", "David McKillop, NEHTA, Australia", "Cathy Richardson, NEHTA, Australia", "David Rowed, Ocean Informatics, Australia">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"College of American Pathologists. Protocol for the Examination of Specimens from Patients with Primary Carcinomas of the Colon and Rectum [Internet]. 2009 Mar ;[cited 2009 Jul 28 ]
+Available from: http://www.cap.org/apps/docs/committees/cancer/cancer_protocols/2008/colonrectum08_pw.pdf
+
+Royal College of Pathologists. Dataset for colorectal cancer (2nd edition) [Internet]. 2007 Dec 4;[cited 2009 Jul 29 ]
+Available from: http://www.rcpath.org/index.asp?PageID=1153
+
+Royal College of Pathologists of Australasia. Colorectal Cancer Structured Reporting Protocol (1st Edition 2010). [Internet]. 2010;[cited 2010 Mar 21 ]
+Available from: http://www.rcpa.edu.au//static/File/Asset%20library/public%20documents/Publications/StructuredReporting/COLORECTAL%20CANCER%20STRUCTURED%20REPORTING%20PROTOCOL%20for%20web.pdf
+
+
+">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"562FF5B73E28BB984DD5618541281CE0">
+		["build_uid"] = <"d137e74a-641c-4979-ae77-2bb2d80b296e">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Microscopic findings - Colorectal cancer
+		items cardinality matches {1..*; unordered} matches {
+			CLUSTER[at0269] occurrences matches {0..1} matches {	-- Histological grading
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0270] occurrences matches {0..1} matches {	-- Grade
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0272, 	-- Well differentiated
+									at0273, 	-- Moderately differentiated
+									at0341, 	-- Poorly differentiated
+									at0342, 	-- Undifferentiated
+									at0360, 	-- Low-grade
+									at0361]	-- High grade
+								}
+							}
+						}
+					}
+					ELEMENT[at0271] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0236] occurrences matches {0..1} matches {	-- Local invasion
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0310] occurrences matches {0..1} matches {	-- Local invasion classification
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0311, 	-- pT0
+									at0312, 	-- pT1
+									at0313, 	-- pT2
+									at0314, 	-- pT3
+									at0315, 	-- pT4a
+									at0316, 	-- pT4b
+									at0317, 	-- pTX
+									at0343]	-- pTis
+								}
+							}
+						}
+					}
+					ELEMENT[at0318] occurrences matches {0..1} matches {	-- Depth of invasion
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0319, 	-- pT3a
+									at0320, 	-- pT3b
+									at0321, 	-- pT3c
+									at0322]	-- pT3d
+								}
+							}
+						}
+					}
+					ELEMENT[at0323] occurrences matches {0..1} matches {	-- Distance of invasion
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+								list = <
+									["1"] = <
+										units = <"mm">
+										magnitude = <|>=0.0|>
+									>
+								>
+							>
+						}
+					}
+				}
+			}
+			CLUSTER[at0244] occurrences matches {0..1} matches {	-- Surgical resection margins
+				items cardinality matches {1..*; unordered} matches {
+					allow_archetype CLUSTER[at0246] occurrences matches {0..*} matches {	-- Surgical resection margin
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_resection_margins\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			CLUSTER[at0252] occurrences matches {0..1} matches {	-- In-situ carcinoma findings
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0251] occurrences matches {0..1} matches {	-- In-situ carcinoma
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0253, 	-- Present
+									at0254, 	-- Absent
+									at0255]	-- Indeterminate
+								}
+							}
+						}
+					}
+					ELEMENT[at0256] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0030] occurrences matches {0..1} matches {	-- Lymph node findings
+				items cardinality matches {1..*; unordered} matches {
+					allow_archetype CLUSTER[at0087] occurrences matches {0..1} matches {	-- Lymph node detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.lymph_node_metastases\.v1/}
+					}
+					ELEMENT[at0324] occurrences matches {0..1} matches {	-- Nodal involvement classification
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0325, 	-- pN0
+									at0326, 	-- pN1
+									at0327, 	-- pN2
+									at0344]	-- pNx
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0276] occurrences matches {0..1} matches {	-- Distance from margin
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+								list = <
+									["1"] = <
+										units = <"mm">
+										magnitude = <|>=0.0|>
+									>
+								>
+							>
+						}
+					}
+					ELEMENT[at0348] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0365] occurrences matches {0..1} matches {	-- Status of apical lymph node
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0278] occurrences matches {0..1} matches {	-- Local tissue invasion
+				items cardinality matches {1..*; unordered} matches {
+					allow_archetype CLUSTER[at0277] occurrences matches {0..*} matches {	-- Venous (large vessel) invasion
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[at0279] occurrences matches {0..*} matches {	-- Lymphatic (small vessel) invasion
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[at0286] occurrences matches {0..*} matches {	-- Perineural invasion
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion\.v1/}
+					}
+					CLUSTER[at0280] occurrences matches {0..1} matches {	-- Discontinuous extramural deposit findings
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0281] occurrences matches {0..1} matches {	-- Discontinuous extramural tumour deposits
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0282, 	-- Present
+											at0283, 	-- Absent
+											at0284]	-- Indeterminate
+										}
+									}
+								}
+							}
+							allow_archetype CLUSTER[at0346] occurrences matches {0..1} matches {	-- Discontinuous extramural deposits
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion\.v1/}
+								exclude
+									archetype_id/value matches {/.*/}
+							}
+							ELEMENT[at0285] occurrences matches {0..1} matches {	-- Distance from margin
+								value matches {
+									C_DV_QUANTITY <
+										property = <[openehr::122]>
+										list = <
+											["1"] = <
+												units = <"mm">
+												magnitude = <|>=0.0|>
+											>
+										>
+									>
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[at0263] occurrences matches {0..1} matches {	-- Distant metastasis findings
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0264] occurrences matches {0..1} matches {	-- Distant metastasis
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0362, 	-- Present
+									at0363, 	-- Absent
+									at0364]	-- Indeterminate
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[at0287] occurrences matches {0..*} matches {	-- Sites 
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location-precise\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[at0265] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0366] occurrences matches {0..1} matches {	-- Adenomatous polyps
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0359] occurrences matches {0..1} matches {	-- Type of polyp
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0338] occurrences matches {0..1} matches {	-- Number of polyps
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[at0367] occurrences matches {0..1} matches {	-- Polyposis syndrome
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0368, 	-- Present
+									at0369, 	-- Absent
+									at0370]	-- Indeterminate
+								}
+							}
+						}
+					}
+					ELEMENT[at0371] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0179] occurrences matches {0..1} matches {	-- Additional findings
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0250] occurrences matches {0..*} matches {	-- Additional finding
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0293, 	-- Synchronous carcinoma
+									at0294, 	-- Ulcerative colitis
+									at0295, 	-- Ulcerative colitis with dysplasia
+									at0296, 	-- Crohn's disease
+									at0297, 	-- Crohn's disease with dysplasia
+									at0340]	-- Diverticulosis
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0220] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0262] occurrences matches {0..1} matches {	-- Residual tumour status
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0298, 	-- R0
+							at0299, 	-- R1
+							at0300, 	-- R2
+							at0301]	-- RX
+						}
+					}
+				}
+			}
+			CLUSTER[at0308] occurrences matches {0..1} matches {	-- Response to neoadjuvant therapy
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0330] occurrences matches {0..1} matches {	-- Neoadjuvant therapy given
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0331, 	-- Yes
+									at0332, 	-- No
+									at0333]	-- Not known
+								}
+							}
+						}
+					}
+					CLUSTER[at0347] occurrences matches {0..1} matches {	-- Grade of response
+						items cardinality matches {1; unordered} matches {
+							ELEMENT[at0302] occurrences matches {0..1} matches {	-- Grade (AJCC)
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0349, 	-- Grade 0 - complete response
+											at0350, 	-- Grade 1 - moderate response
+											at0351, 	-- Grade 2 - minimal response
+											at0352]	-- Grade 3 - poor response
+										}
+									}
+								}
+							}
+							ELEMENT[at0329] occurrences matches {0..1} matches {	-- Grade (CAP)
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0354, 	-- No residual tumour
+											at0355, 	-- Marked response
+											at0356, 	-- Moderate response
+											at0357, 	-- No definite response
+											at0358]	-- Response not known
+										}
+									}
+								}
+							}
+							ELEMENT[at0334] occurrences matches {0..1} matches {	-- Grade (RCP)
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0335, 	-- No residual tumour cells or mucous lakes only
+											at0336, 	-- Minimal residual tumour
+											at0337]	-- No marked regression
+										}
+									}
+								}
+							}
+						}
+					}
+					ELEMENT[at0309] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Microscopic findings - Colorectal cancer">
+					description = <"Microscopic anatomical pathology findings related to colorectal cancer.">
+				>
+				["at0030"] = <
+					text = <"Lymph node findings">
+					description = <"Findings related to the involvement of tumour in lymph nodes.">
+				>
+				["at0087"] = <
+					text = <"Lymph node detail">
+					description = <"Findings related to the involvement of tumour in lymph nodes.">
+				>
+				["at0179"] = <
+					text = <"Additional findings">
+					description = <"Additional histopathological findings.">
+				>
+				["at0220"] = <
+					text = <"Description">
+					description = <"A text description of additional findings.">
+				>
+				["at0236"] = <
+					text = <"Local invasion">
+					description = <"Direct invasion of local tissue by tumour.">
+				>
+				["at0244"] = <
+					text = <"Surgical resection margins">
+					description = <"Findings related to surgical resection margins.">
+				>
+				["at0246"] = <
+					text = <"Surgical resection margin">
+					description = <"Details of a single surgical resection margin.">
+				>
+				["at0250"] = <
+					text = <"Additional finding">
+					description = <"A single additional histopathological finding.">
+				>
+				["at0251"] = <
+					text = <"In-situ carcinoma">
+					description = <"Findings of in-situ carcinoma.">
+				>
+				["at0252"] = <
+					text = <"In-situ carcinoma findings">
+					description = <"Findings related to in-situ carcinoma.">
+				>
+				["at0253"] = <
+					text = <"Present">
+					description = <"In-situ carcinoma is present.">
+				>
+				["at0254"] = <
+					text = <"Absent">
+					description = <"In-situ carcinoma is absent.">
+				>
+				["at0255"] = <
+					text = <"Indeterminate">
+					description = <"Presence of in-situ carcinoma has not been determined.">
+				>
+				["at0256"] = <
+					text = <"Description">
+					description = <"A text description of in-situ carcinoma.">
+				>
+				["at0262"] = <
+					text = <"Residual tumour status">
+					description = <"Estimate of the completeness of surgical resection.">
+				>
+				["at0263"] = <
+					text = <"Distant metastasis findings">
+					description = <"Findings related to distant metastasis.">
+				>
+				["at0264"] = <
+					text = <"Distant metastasis">
+					description = <"Findings of distant metastasis.">
+				>
+				["at0265"] = <
+					text = <"Description">
+					description = <"A text description of distant metastases.">
+				>
+				["at0269"] = <
+					text = <"Histological grading">
+					description = <"Histological grading.">
+				>
+				["at0270"] = <
+					text = <"Grade">
+					description = <"Histological grade of the tumour.">
+				>
+				["at0271"] = <
+					text = <"Comment">
+					description = <"A text comment on histological grading.">
+				>
+				["at0272"] = <
+					text = <"Well differentiated">
+					description = <"Tumour is well differentiated.">
+				>
+				["at0273"] = <
+					text = <"Moderately differentiated">
+					description = <"Tumour is moderately differentiated.">
+				>
+				["at0276"] = <
+					text = <"Distance from margin">
+					description = <"Distance of nearest involved node to the circumferential margin.">
+				>
+				["at0277"] = <
+					text = <"Venous (large vessel) invasion">
+					description = <"Details of venous (large vessel) invasion by tumour.">
+				>
+				["at0278"] = <
+					text = <"Local tissue invasion">
+					description = <"Findings related to local tissue invasion by tumour.">
+				>
+				["at0279"] = <
+					text = <"Lymphatic (small vessel) invasion">
+					description = <"Details of lymphatic (small vessel)  invasion by tumour.">
+				>
+				["at0280"] = <
+					text = <"Discontinuous extramural deposit findings">
+					description = <"Findings related to discontinuous extramural tumour deposits.">
+				>
+				["at0281"] = <
+					text = <"Discontinuous extramural tumour deposits">
+					description = <"Findings of discontinuous extramural tumour deposits.">
+				>
+				["at0282"] = <
+					text = <"Present">
+					description = <"Discontinuous extramural tumour deposits are present.">
+				>
+				["at0283"] = <
+					text = <"Absent">
+					description = <"Discontinuous extramural tumour deposits are absent.">
+				>
+				["at0284"] = <
+					text = <"Indeterminate">
+					description = <"Presence of discontinuous extramural tumour deposits has not been determined.">
+				>
+				["at0285"] = <
+					text = <"Distance from margin">
+					description = <"Distance from circumferential margin to extramural deposits.">
+				>
+				["at0286"] = <
+					text = <"Perineural invasion">
+					description = <"Details of perineural invasion by tumour.">
+				>
+				["at0287"] = <
+					text = <"Sites ">
+					description = <"Details of sites of proven distant metastases.">
+				>
+				["at0293"] = <
+					text = <"Synchronous carcinoma">
+					description = <"Synchronous carcinoma is present.">
+				>
+				["at0294"] = <
+					text = <"Ulcerative colitis">
+					description = <"Ulcerative colitis is present.">
+				>
+				["at0295"] = <
+					text = <"Ulcerative colitis with dysplasia">
+					description = <"Ulcerative colitis with dysplasia is present.">
+				>
+				["at0296"] = <
+					text = <"Crohn's disease">
+					description = <"Crohn's disease is present.">
+				>
+				["at0297"] = <
+					text = <"Crohn's disease with dysplasia">
+					description = <"Crohn's disease with dysplasia is present.">
+				>
+				["at0298"] = <
+					text = <"R0">
+					description = <"No residual tumour - as per AJCC TNM classification 7th Edition.">
+				>
+				["at0299"] = <
+					text = <"R1">
+					description = <"R1 - as per AJCC TNM classification 7th Edition.">
+				>
+				["at0300"] = <
+					text = <"R2">
+					description = <"R2 - as per AJCC TNM classification 7th Edition.">
+				>
+				["at0301"] = <
+					text = <"RX">
+					description = <"Residual tumour cannot be assessed  - as per AJCC TNM classification 7th Edition.">
+				>
+				["at0302"] = <
+					text = <"Grade (AJCC)">
+					description = <"An estimate of the response to neoadjuvant therapy. (AJCC score).">
+				>
+				["at0308"] = <
+					text = <"Response to neoadjuvant therapy">
+					description = <"Details of the response to neoadjuvant therapy.">
+				>
+				["at0309"] = <
+					text = <"Comment">
+					description = <"A text comment on the response to neoadjuvant therapy.">
+				>
+				["at0310"] = <
+					text = <"Local invasion classification">
+					description = <"Local invasion of tumour. Scored using the pT element of the TNM classification.">
+				>
+				["at0311"] = <
+					text = <"pT0">
+					description = <"No evidence of primary tumour.">
+				>
+				["at0312"] = <
+					text = <"pT1">
+					description = <"Tumour invades submucosa.">
+				>
+				["at0313"] = <
+					text = <"pT2">
+					description = <"Tumour invades muscularis propria.">
+				>
+				["at0314"] = <
+					text = <"pT3">
+					description = <"Tumour invades through muscularis propria into subserosa, or into non-peritonealised pericolic or perirectal tissues.">
+				>
+				["at0315"] = <
+					text = <"pT4a">
+					description = <"Tumour directly invades other organs or structures.">
+				>
+				["at0316"] = <
+					text = <"pT4b">
+					description = <"Tumour perforates visceral peritoneum.">
+				>
+				["at0317"] = <
+					text = <"pTX">
+					description = <"Primary tumour cannot be assessed.">
+				>
+				["at0318"] = <
+					text = <"Depth of invasion">
+					description = <"The subdivision of pT3 that applies to the tumour.">
+				>
+				["at0319"] = <
+					text = <"pT3a">
+					description = <"Minimal invasion: <1 mm beyond the border of the muscularis propria.">
+				>
+				["at0320"] = <
+					text = <"pT3b">
+					description = <"Slight invasion: 1-5 mm beyond the border of the muscularis propria.">
+				>
+				["at0321"] = <
+					text = <"pT3c">
+					description = <"Moderate invasion: >5 mm and <= 15mm beyond the border of the muscularis propria.">
+				>
+				["at0322"] = <
+					text = <"pT3d">
+					description = <"Extensive invasion: > 15 mm beyond the border of the muscularis propria.">
+				>
+				["at0323"] = <
+					text = <"Distance of invasion">
+					description = <"Distance of tumour invasion beyond the muscularis propria.">
+				>
+				["at0324"] = <
+					text = <"Nodal involvement classification">
+					description = <"An estimate of nodal involvement using the pN element of TNM classification.">
+				>
+				["at0325"] = <
+					text = <"pN0">
+					description = <"No regional lymph node metastasis.">
+				>
+				["at0326"] = <
+					text = <"pN1">
+					description = <"Metastasis in 1-3 regional lymph nodes.">
+				>
+				["at0327"] = <
+					text = <"pN2">
+					description = <"Metastasis in 4 or more regional lymph nodes.">
+				>
+				["at0329"] = <
+					text = <"Grade (CAP)">
+					description = <"An estimate of the response to neoadjuvant therapy. (CAP)  College of American Pathologists.">
+				>
+				["at0330"] = <
+					text = <"Neoadjuvant therapy given">
+					description = <"Has neoadjuvant therapy been given?">
+				>
+				["at0331"] = <
+					text = <"Yes">
+					description = <"Neoadjuvant therapy has been given.">
+				>
+				["at0332"] = <
+					text = <"No">
+					description = <"Neoadjuvant therapy has not been given.">
+				>
+				["at0333"] = <
+					text = <"Not known">
+					description = <"It is not known if neoadjuvant therapy has been given.">
+				>
+				["at0334"] = <
+					text = <"Grade (RCP)">
+					description = <"An estimate of the response to neoadjuvant therapy. (RCP) Royal College of Pathologists (UK).">
+				>
+				["at0335"] = <
+					text = <"No residual tumour cells or mucous lakes only">
+					description = <"No residual tumour cells or mucous lakes only.">
+				>
+				["at0336"] = <
+					text = <"Minimal residual tumour">
+					description = <"Minimal residual tumour is present.">
+				>
+				["at0337"] = <
+					text = <"No marked regression">
+					description = <"Marked regression is absent.">
+				>
+				["at0338"] = <
+					text = <"Number of polyps">
+					description = <"Number of adenomatous polyps.">
+				>
+				["at0340"] = <
+					text = <"Diverticulosis">
+					description = <"Diverticulosis is present.">
+				>
+				["at0341"] = <
+					text = <"Poorly differentiated">
+					description = <"Tumour is poorly differentiated.">
+				>
+				["at0342"] = <
+					text = <"Undifferentiated">
+					description = <"Tumour is undifferentiated.">
+				>
+				["at0343"] = <
+					text = <"pTis">
+					description = <"Carcinoma in-situ: intraepithelial or invasion of lamina propria.">
+				>
+				["at0344"] = <
+					text = <"pNx">
+					description = <"Regional lymph nodes cannot be assessed.">
+				>
+				["at0346"] = <
+					text = <"Discontinuous extramural deposits">
+					description = <"Details of discontinuous extramural tumour deposits.">
+				>
+				["at0347"] = <
+					text = <"Grade of response">
+					description = <"Alternative assessment grades of response to neoadjuvant therapy.">
+				>
+				["at0348"] = <
+					text = <"Comment">
+					description = <"An additional text comment on lymph node findings.">
+				>
+				["at0349"] = <
+					text = <"Grade 0 - complete response">
+					description = <"Complete response to neoadjuvant therapy.">
+				>
+				["at0350"] = <
+					text = <"Grade 1 - moderate response">
+					description = <"Moderate response to neoadjuvant therapy.">
+				>
+				["at0351"] = <
+					text = <"Grade 2 - minimal response">
+					description = <"Minimal response to neoadjuvant therapy.">
+				>
+				["at0352"] = <
+					text = <"Grade 3 - poor response">
+					description = <"Poor response to neoadjuvant therapy.">
+				>
+				["at0354"] = <
+					text = <"No residual tumour">
+					description = <"Complete response to treatment; Grade 0.">
+				>
+				["at0355"] = <
+					text = <"Marked response">
+					description = <"Minimal residual cancer persists; Grade 1.">
+				>
+				["at0356"] = <
+					text = <"Moderate response">
+					description = <"Grade 2.">
+				>
+				["at0357"] = <
+					text = <"No definite response">
+					description = <"Poor or no response; Grade 3.">
+				>
+				["at0358"] = <
+					text = <"Response not known">
+					description = <"Response to treatment is unknown.">
+				>
+				["at0359"] = <
+					text = <"Type of polyp">
+					description = <"Type of adenomatous polyp">
+				>
+				["at0360"] = <
+					text = <"Low-grade">
+					description = <"Well or moderately differentiated">
+				>
+				["at0361"] = <
+					text = <"High grade">
+					description = <"Poorly differentiated or undifferentiated">
+				>
+				["at0362"] = <
+					text = <"Present">
+					description = <"Evidence of distant metastasis.">
+				>
+				["at0363"] = <
+					text = <"Absent">
+					description = <"No evidence of distant metastasis.">
+				>
+				["at0364"] = <
+					text = <"Indeterminate">
+					description = <"Evidence of metastasis has not been determined.">
+				>
+				["at0365"] = <
+					text = <"Status of apical lymph node">
+					description = <"Status of the apical lymph node.">
+				>
+				["at0366"] = <
+					text = <"Adenomatous polyps">
+					description = <"Findings of adenoatous polyps.">
+				>
+				["at0367"] = <
+					text = <"Polyposis syndrome">
+					description = <"Evidence of polyposis syndrome.">
+				>
+				["at0368"] = <
+					text = <"Present">
+					description = <"There is evidence of polyposis syndrome.">
+				>
+				["at0369"] = <
+					text = <"Absent">
+					description = <"There is no evidence of polyposis syndrome.">
+				>
+				["at0370"] = <
+					text = <"Indeterminate">
+					description = <"Evidence of polyposis syndrome has not been determined.">
+				>
+				["at0371"] = <
+					text = <"Comment">
+					description = <"Comment concerning adenomatous polyps.">
+				>
+			>
+		>
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"الموجودات المجهرية - سرطان القولون و المستقيم">
+					description = <"الموجودات الباثولوجية التشريحية المجهرية المتعلقة بسرطان القولون و المستقيم">
+				>
+				["at0030"] = <
+					text = <"الموجودات المتعلقة بالعقد الليمفاوية">
+					description = <"الموجودات المتعلقة باكتناف الورم في العقد الليمفاوية">
+				>
+				["at0087"] = <
+					text = <"تفاصيل العقد الليمفاوية">
+					description = <"الموجودات المتعلقة باكتناف الورم في العقد الليمفاوية">
+				>
+				["at0179"] = <
+					text = <"موجودات إضافية">
+					description = <"الموجودات الهيستويابولوجية الإضافية">
+				>
+				["at0220"] = <
+					text = <"الوصف">
+					description = <"وصف نصي للموجودات الإضافية">
+				>
+				["at0236"] = <
+					text = <"غزو موضعي">
+					description = <"غزو مباشر للنسيج الموضعي بواسطة الورم">
+				>
+				["at0244"] = <
+					text = <"حواف/هوامش القطع الجراحي">
+					description = <"الموجودات المتعلقة بحواف/هوامش القطع الجراحي">
+				>
+				["at0246"] = <
+					text = <"حافة/هامش القطع الجراحي">
+					description = <"تفاصيل حافة/هامش واحد للقطع الجراحي">
+				>
+				["at0250"] = <
+					text = <"الموجودة الإضافية">
+					description = <"موجودة هيستوباثولجية إضافية واحدة">
+				>
+				["at0251"] = <
+					text = <"السرطانة اللابدة">
+					description = <"الموجودات المتعلقة بالسرطانة اللابدة">
+				>
+				["at0252"] = <
+					text = <"الموجودات المتعلقة بالسرطانة اللابدة">
+					description = <"الموجودات المتعلقة بالسرطانة اللابدة">
+				>
+				["at0253"] = <
+					text = <"موجود">
+					description = <"يوجد سرطانة لابدة">
+				>
+				["at0254"] = <
+					text = <"غائب">
+					description = <"لا يوجد سرطانة لابدة">
+				>
+				["at0255"] = <
+					text = <"غير محدد">
+					description = <"لم يتم تحديد وجود السرطانة اللابدة">
+				>
+				["at0256"] = <
+					text = <"الوصف">
+					description = <"وصف نصي للسرطانة اللابدة">
+				>
+				["at0262"] = <
+					text = <"حالة الورم المتبقي">
+					description = <"تقدير لاكتمال القطع الجراحي">
+				>
+				["at0263"] = <
+					text = <"الموجودات المتعلقة بالنقيلة البعيدة">
+					description = <"الموجودات المتعلقة بالنقيلة البعيدة">
+				>
+				["at0264"] = <
+					text = <"النقيلة البعيدة">
+					description = <"الموجودات المتعلقة بالنقيلة البعيدة">
+				>
+				["at0265"] = <
+					text = <"الوصف">
+					description = <"وصف نصي للنقائل البعيدة">
+				>
+				["at0269"] = <
+					text = <"الدرجة الهيستولوجية">
+					description = <"الدرجة الهيستولوجية">
+				>
+				["at0270"] = <
+					text = <"الدرجة">
+					description = <"الدرجة الهيستولوجية للورم">
+				>
+				["at0271"] = <
+					text = <"تعليق">
+					description = <"تعليق نصي حول الدرجة الهيستولوجية">
+				>
+				["at0272"] = <
+					text = <"متمايز بشكل جيد">
+					description = <"الورم متمايز بشكل جيد">
+				>
+				["at0273"] = <
+					text = <"متمايز بشكل متوسط">
+					description = <"الورم متمايز بشكل متوسط">
+				>
+				["at0276"] = <
+					text = <"المسافة من الحافة/الهامش">
+					description = <"المسافة بين أقرب عقد لميفاوية مكتنفة و الحافة/الهامش الكفافي">
+				>
+				["at0277"] = <
+					text = <"غزو الأوردة الكبيرة">
+					description = <"تفاصيل غزو الأوردة الكبيرة بواسطة الورم">
+				>
+				["at0278"] = <
+					text = <"غزو النسيج الموضعي">
+					description = <"الموجودات المتعلقة بغزو النسيج العضلي بواسطة الورم">
+				>
+				["at0279"] = <
+					text = <"غزو الأوعية الليمفاوية الصغيرة">
+					description = <"تفاصيل غزو الأوعية الليمفاوية الصغيرة بواسطة الورم">
+				>
+				["at0280"] = <
+					text = <"الموجودات المتعلقة بالراسب غير المستمر خارج الجدار">
+					description = <"الموجودات المتعلقة بالراسب غير المستمر خارج الجدار">
+				>
+				["at0281"] = <
+					text = <"الموجودات المتعلقة بالورم غير المستمر خارج الجدار">
+					description = <"الموجودات المتعلقة بالورم غير المستمر خارج الجدار">
+				>
+				["at0282"] = <
+					text = <"موجود">
+					description = <"يوجد رواسب الورم غير المستمرة خارج الجدار">
+				>
+				["at0283"] = <
+					text = <"غائب">
+					description = <"لا يوجد رواسب الورم غير المستمرة خارج الجدار">
+				>
+				["at0284"] = <
+					text = <"غير محدد">
+					description = <"لم يتم تحديد وجود رواسب الورم غير المستمرة خارج الجدار">
+				>
+				["at0285"] = <
+					text = <"المسافة من الحافة/الهامش">
+					description = <"المسافة بين الحافة/الهامش الكفافي و الرواسب خارج الجدار">
+				>
+				["at0286"] = <
+					text = <"الغزو المحيط بالأعصاب">
+					description = <"تفاصيل الغزو المحيط بالأعصاب بواسطة الورم">
+				>
+				["at0287"] = <
+					text = <"الأماكن">
+					description = <"تفاصيل الأماكن التي يوجد دليل لوجود نقيلة بعيدة بها">
+				>
+				["at0293"] = <
+					text = <"السرطانة الملازمة">
+					description = <"يوجد سرطانة ملازمة">
+				>
+				["at0294"] = <
+					text = <"التهاب القولون التقرحي">
+					description = <"يوجد التها قولون تقرحي">
+				>
+				["at0295"] = <
+					text = <"التهاب القولون التقرحي مع خلل التنسج">
+					description = <"يوجد التهاب تقرحي بالقولون مع خلل التنسج">
+				>
+				["at0296"] = <
+					text = <"داء كرون">
+					description = <"يوجد داء كرون">
+				>
+				["at0297"] = <
+					text = <"داء كرون مع خلل التنسج">
+					description = <"يوجد داء كرون مع خلل التنسج">
+				>
+				["at0298"] = <
+					text = <"وم 0">
+					description = <"لا يوجد ورم متبقي - وفقا لتصنيف (و ل ن) المتعلق باللجنة الأمريكية للسرطان - النسخة السابعة">
+				>
+				["at0299"] = <
+					text = <"وم 1">
+					description = <"وم 1 - وفقا لتصنيف (و ل ن) المتعلق باللجنة الأمريكية للسرطان - النسخة السابعة
+">
+				>
+				["at0300"] = <
+					text = <"وم 2">
+					description = <"وم 2 - وفقا لتصنيف (و ل ن) المتعلق باللجنة الأمريكية للسرطان - النسخة السابعة">
+				>
+				["at0301"] = <
+					text = <"و (س)">
+					description = <"لا يمكن تقييم الورم المتبقي - وفقا لتصنيف (و ل ن) المتعلق باللجنة الأمريكية للسرطان - النسخة السابعة">
+				>
+				["at0302"] = <
+					text = <"الدرجة - اللجنة الأمريكية للسرطان">
+					description = <"تقدير حرز الاستجابة للعلاج المساند المستحدث - الجنة الأمريكية للسرطان">
+				>
+				["at0308"] = <
+					text = <"الاستجابة للعلاج المساند المستحدث">
+					description = <"تفاصيل الاستجابة للعلاج المساند المستحدث">
+				>
+				["at0309"] = <
+					text = <"تعليق">
+					description = <"تعليق نصي للاستجابة للعلاج المساند المستحدث">
+				>
+				["at0310"] = <
+					text = <"تصنيف الغزو المباشر">
+					description = <"الغزو الموضعي للورم. يتم حساب الحرز باستخدام العنصر (الورم - باثولوجي) من تصنيف (الورم, العقد الليمفاوية, النقيلة)">
+				>
+				["at0311"] = <
+					text = <"و 0 - الباثولوجي">
+					description = <"لا يوجد دليل على الورم الأولي">
+				>
+				["at0312"] = <
+					text = <"و 1 - الباثولوجي">
+					description = <"الورم يغزو ما تحت الغشاء المخاطي">
+				>
+				["at0313"] = <
+					text = <"و 2 - الباثولوجي">
+					description = <"الورم يغزو النسيج العضلي المخصوص">
+				>
+				["at0314"] = <
+					text = <"و 3 - الباثولوجي">
+					description = <"الورم يغزو النسيج العضلي المخصوص و يصل إلى ما تحت النسيج المصلي, أو إلى الأنسجة غير الصفاقية المحيطة بالقولون أو المستقيم.">
+				>
+				["at0315"] = <
+					text = <"و 4 أ - الباثولوجي">
+					description = <"الورم يغزو أعضاء و تراكيب أخرى بشكل مباشر">
+				>
+				["at0316"] = <
+					text = <"و 4 ب - الباثولوجي">
+					description = <"الورم يقب الصفاق الحَشَويّ">
+				>
+				["at0317"] = <
+					text = <"و (س) - الباثولوجي">
+					description = <"لا يمكن تقييم الورم الأولي">
+				>
+				["at0318"] = <
+					text = <"عمق الغزو">
+					description = <"القسم من (و 3 - الباثولوجي) التي تنطبق على الورم">
+				>
+				["at0319"] = <
+					text = <"و 3 أ - الباثولوجي">
+					description = <"حد أدنى من الغزو, يتجاوز حافة النسيج العضلي المخصوص بأقل من 1 ميلليمتر ">
+				>
+				["at0320"] = <
+					text = <"و 3 ب - الباثولوجي">
+					description = <"غزو طفيف, يتجاوز حافة النسيج العضلي المخصوص بـ 1 - 5 ميلليمتر">
+				>
+				["at0321"] = <
+					text = <"و 3 ج - الباثولوجي">
+					description = <"غزو متوسط, يتجاوز حافة النسيج العضلي المخصوص بأكثر من 5 ميلليمتر و أقل من أو يساوي 15 ميلليمتر.">
+				>
+				["at0322"] = <
+					text = <"و 3 د - الباثولوجي">
+					description = <"غزو شديد, يتجاوز حافة النسيج العضلي المخصوص بأكثر من 15 ميلليمتر">
+				>
+				["at0323"] = <
+					text = <"مسافة الغزو">
+					description = <"مسافو غزو الورم فيما يتجاوز النسيج العضلي المخصوص">
+				>
+				["at0324"] = <
+					text = <"تصنيف اكتناف العقد الليمفاوية">
+					description = <"تقدير اكتناف العقد اللميفاوية باستخدام العنصر (عقدة ليمفاوية - الباثولوجي) كجزء من تصنيف (الورم, العقد الليمفاوية, النقيلة)">
+				>
+				["at0325"] = <
+					text = <"ل 0 - الباثولوجي">
+					description = <"لا يوجد نقيلة في العقد الليمفاوية">
+				>
+				["at0326"] = <
+					text = <"ل 1 - الباثولوجي">
+					description = <"نقيلة في 1 - 3 من العقد الليمفاوية الناحية">
+				>
+				["at0327"] = <
+					text = <"ل 2 - الباثولوجي">
+					description = <"يوجد نقيلة في 4 عقد ليمفاوية ناحية أو أكثر">
+				>
+				["at0329"] = <
+					text = <"الدرجة - الكلية الأمريكية لمتخصصي الباثولوجيا">
+					description = <"تقدير الاستجابة للعلاج المساند المستحدث - الكلية الأمريكية لمتخصصي الباثولوجيا">
+				>
+				["at0330"] = <
+					text = <"العلاج المساند المستحدث الذي تم إعطاؤه">
+					description = <"هل تم إعطاء علاج مساند مستحدث">
+				>
+				["at0331"] = <
+					text = <"نعم">
+					description = <"تم بالفعل إعطاء علاج مساند مستحدث">
+				>
+				["at0332"] = <
+					text = <"لا">
+					description = <"لم يتم إعطاء العلاج المساند المستحدث">
+				>
+				["at0333"] = <
+					text = <"غير معروف">
+					description = <"ليس من المعروف ما إذا كان قد تم إعطاء علاج مساند مستحدث ">
+				>
+				["at0334"] = <
+					text = <"الدرجة - الكلية المَلَكية لمتخصصي الباثولوجيا - تقدير الاستجابة للعلاج المساند المستحدث">
+					description = <"تقدير الاستجابة للعلاج المساند المستحدث - الكلية المَلَكية لمتخصصي الباثولوجيا ">
+				>
+				["at0335"] = <
+					text = <"لا يوجد خلايا ورم متبقي أو يوجد بحيرة مخاطية فقط">
+					description = <"لا يوجد خلايا ورم متبقي أو يوجد بحيرة مخاطية فقط">
+				>
+				["at0336"] = <
+					text = <"حد أدنى من الورم المتبقي">
+					description = <"يوجد حد أدنى من الورم المتبقي">
+				>
+				["at0337"] = <
+					text = <"لا يوجد تقهقر ملحوظ">
+					description = <"لا يوجد تقهقر ملحوظ">
+				>
+				["at0338"] = <
+					text = <"عدد السلائل">
+					description = <"عدد السلائل الورمية الغدية">
+				>
+				["at0340"] = <
+					text = <"داء الرتوج">
+					description = <"يوجد داء الرتوج">
+				>
+				["at0341"] = <
+					text = <"متمايز بشكل ضعيف">
+					description = <"الورم متمايز بشكل ضعيف">
+				>
+				["at0342"] = <
+					text = <"غير متمايز">
+					description = <"الورم غير متمايز">
+				>
+				["at0343"] = <
+					text = <"و لابِد - الباثولوجي">
+					description = <"سرطانة لابدة في موضعها, داخل الظهارة أو يغزو الطبقات المخصوصة">
+				>
+				["at0344"] = <
+					text = <"ل (س) - الباثولوجي">
+					description = <"لا يمكن تقييم العقد الليمفاوية الناحية">
+				>
+				["at0346"] = <
+					text = <"الرواسب غير المستمرة خارج الجدار">
+					description = <"تفاصيل رواسب الورم غير المستمرة خارج الجدار">
+				>
+				["at0347"] = <
+					text = <"درجة الاستجابة">
+					description = <"درجات بديلة لتقييم الاستجابة للعلاج المساند المستحدث">
+				>
+				["at0348"] = <
+					text = <"تعليق">
+					description = <"تعليق نصي إضافي حول موجودات العقد الليمفاوية">
+				>
+				["at0349"] = <
+					text = <"الدرجة 0 - استجابة كاملة">
+					description = <"استجابة كاملة للعلاج المساند المستحدث">
+				>
+				["at0350"] = <
+					text = <"الدرجة 1 - استجابة متوسطة">
+					description = <"استجابة متوسطة للعلاج المساند المستحدث">
+				>
+				["at0351"] = <
+					text = <"الدرجة 2 - حد أدنى من الاستجابة">
+					description = <"يوجد حد أدنى من الاستجابة للعلاج المساند المستحدث">
+				>
+				["at0352"] = <
+					text = <"الدرجة 3 - استجابة ضعيفة">
+					description = <"استجابة ضعيفة للعلاج المساند المستحدث">
+				>
+				["at0354"] = <
+					text = <"لا يوجد ورم متبقي">
+					description = <"استجابة كاملة للعلاج - الدرجة 0">
+				>
+				["at0355"] = <
+					text = <"استجابة ملحوظة">
+					description = <"لا يزال يوجد حد أدنى من السرطان المتبقي - الدرجة 1">
+				>
+				["at0356"] = <
+					text = <"استجابة متوسطة">
+					description = <"الدرجة 2">
+				>
+				["at0357"] = <
+					text = <"لا يوجد استجابة واضحة">
+					description = <"استجابة ضعيفة أو لا يوجد استجابة - الدرجة 3">
+				>
+				["at0358"] = <
+					text = <"الاستجابة غير معروفة">
+					description = <"الاستجابة للعلاج غير معروفة">
+				>
+				["at0359"] = <
+					text = <"نوع السليلة">
+					description = <"نوع السليلة الورمية الغدية">
+				>
+				["at0360"] = <
+					text = <"درجة قليلة">
+					description = <"متمايز بشكل جيد أو متوسط">
+				>
+				["at0361"] = <
+					text = <"درجة عالية">
+					description = <"متمايز بشكل ضعيف أو غير متمايز">
+				>
+				["at0362"] = <
+					text = <"موجود">
+					description = <"الدليل على وجود نقيلة بعيدة">
+				>
+				["at0363"] = <
+					text = <"غائب">
+					description = <"لا يوجد دليل على النقيلة البعيدة">
+				>
+				["at0364"] = <
+					text = <"غير محدد">
+					description = <"لم يتم تحديد وجود نقيلة">
+				>
+				["at0365"] = <
+					text = <"حالة العقدة اليمفاوية القِمِّــيَّــة">
+					description = <"حالة العقدة اليمفاوية القِمِّــيَّــة">
+				>
+				["at0366"] = <
+					text = <"سليلة ورمية غدية">
+					description = <"الموجودات المتعلقة بالسليلة الورمية الغدية">
+				>
+				["at0367"] = <
+					text = <"متلازمة أعراض داء السلائل المتعدد">
+					description = <"الدليل على وجود متلازمة أعراض داء السلائل المتعدد">
+				>
+				["at0368"] = <
+					text = <"موجود">
+					description = <"يوجد دليل على وجود متلازمة أعراض داء السلائل المتعدد">
+				>
+				["at0369"] = <
+					text = <"غائب">
+					description = <"لا يوجد دليل على متلازمة أعراض داء السلائل المتعدد">
+				>
+				["at0370"] = <
+					text = <"غير محدد">
+					description = <"لو يتم تحديد الدليل على وجود متلازمة أعراض داء السلائل المتعدد">
+				>
+				["at0371"] = <
+					text = <"تعليق">
+					description = <"تعليق حول السلائل الورمية الغدية">
+				>
+			>
+		>
+	>

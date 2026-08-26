@@ -1,0 +1,20 @@
+{
+  "ctx": {
+    "language": "en",
+    "territory": "NL",
+    "composer_self": true
+  },
+  "vitals": {
+    "body_temperature": [
+      {
+        "any_event": [
+          {
+            "temperature": [
+              { "|magnitude": 37.2, "|unit": "Cel" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.ecog.v1
+
+concept
+	[at0000]	-- ECOG Performance Status
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Christian Ghan">
+		["organisation"] = <"The Chris O'Brien Lifehouse at RPA">
+		["email"] = <"christian.ghan@lifehouserpa.org.au">
+		["date"] = <"2012-12-07">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the measurement of the functional performance status of a patient with cancer.">
+			use = <"Used to record the measurement of the functional performance status of a patient with cancer, to:
+- assess how a patient's disease is progressing;
+- assess how the disease affects the daily living abilities of the patient; and 
+- determine appropriate treatment and prognosis. 
+
+The ECOG Performance Status is in the public domain therefore available for public use. For more information, contact the Eastern Cooperative Oncology Group, Robert Comis M.D., Group Chair - http://www.ecog.org/general/perf_stat.html.">
+			keywords = <"performance", "status", "oncology">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Cailin Lowry, Lifehouse, Australia", ...>
+	other_details = <
+		["references"] = <"Oken, M.M., Creech, R.H., Tormey, D.C., Horton, J., Davis, T.E., McFadden, E.T., Carbone, P.P.: Toxicity And Response Criteria Of The Eastern Cooperative Oncology Group. Am J Clin Oncol 5:649-655, 1982.
+
+http://www.ecog.org/general/perf_stat.html.
+
+http://en.wikipedia.org/wiki/Performance_status.">
+		["MD5-CAM-1.0.1"] = <"34BA504BCFCDD91A83BA0B3D4BD2F9B5">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- ECOG Performance Status
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {1..*; unordered} matches {
+									ELEMENT[at0004] matches {	-- Performance Status
+										value matches {
+											0|[local::at0005], 	-- Asymptomatic
+											1|[local::at0006], 	-- Symptomatic but completely ambulatory
+											2|[local::at0007], 	-- Symptomatic, <50% in bed during the day
+											3|[local::at0008], 	-- Symptomatic, >50% in bed, but not bedbound
+											4|[local::at0009], 	-- Bedbound
+											5|[local::at0010]  	-- Dead
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ECOG Performance Status">
+					description = <"A scale used by clinicians to assess the functional performance status of a patient with cancer.">
+					comment = <"As published in Am. J. Clin. Oncol.:
+Oken, M.M., Creech, R.H., Tormey, D.C., Horton, J., Davis, T.E., McFadden, E.T., Carbone, P.P.: Toxicity And Response Criteria Of The Eastern Cooperative Oncology ">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Performance Status">
+					description = <"The functional performance status of a patient with cancer.">
+				>
+				["at0005"] = <
+					text = <"Asymptomatic">
+					description = <"Fully active, able to carry on all prediease activities without restriction.">
+				>
+				["at0006"] = <
+					text = <"Symptomatic but completely ambulatory">
+					description = <"Restricted in physically strenuous activity but ambulatory and able to carry out work of a light or sedentary nature.">
+				>
+				["at0007"] = <
+					text = <"Symptomatic, <50% in bed during the day">
+					description = <"Ambulatory and capable of all self care but unable to carry out any work activities. Up and about more than 50% of waking hours.">
+				>
+				["at0008"] = <
+					text = <"Symptomatic, >50% in bed, but not bedbound">
+					description = <"Capable of only limited self-care, confined to bed or chair 50% or more of waking hours.">
+				>
+				["at0009"] = <
+					text = <"Bedbound">
+					description = <"Completely disabled. Cannot carry on any self-care. Totally confined to bed or chair.">
+				>
+				["at0010"] = <
+					text = <"Dead">
+					description = <"Patient has died.">
+				>
+			>
+		>
+	>

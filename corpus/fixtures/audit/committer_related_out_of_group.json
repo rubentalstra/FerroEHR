@@ -1,0 +1,16 @@
+{
+  "_type": "UPDATE_AUDIT",
+  "committer": {
+    "_type": "PARTY_RELATED",
+    "name": "Alexandra Alamo",
+    "relationship": {
+      "_type": "DV_CODED_TEXT",
+      "value": "signed",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+        "code_string": "240"
+      }
+    }
+  }
+}

@@ -1,0 +1,119 @@
+﻿archetype (adl_version=1.4; uid=d5ed6f2c-1415-4f1d-8589-4a58553b048b)
+	openEHR-EHR-CLUSTER.alcohol_consumption.v0
+
+concept
+	[at0000]	-- Alcohol consumption
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2021-07-16">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the volume, ABV and frequency of alcohol consumed.">
+			use = <"Use to record details about the amount of alcohol consumed.
+
+This archetype has been designed to capture the actual amount of alcohol consumed per drink when nested within the context of an Alcohol Intake diary (OBSERVATION.alcohol_intake), or the typical amount consumed when nested within the context of the Alcohol consumption summary (EVALUATION.alcohol_consumption_summary). These parameters can be used to calculate the mass of alcohol consumed.">
+			keywords = <"alcohol", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"8254FF4B7F985557537F5811B608AE02">
+		["build_uid"] = <"7a04a0fa-925d-4c0d-9206-16c16be155ea">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Alcohol consumption
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {    -- Volume
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::129]>
+						list = <
+							["1"] = <
+								units = <"ml">
+								magnitude = <|>=0.0|>
+								precision = <|0|>
+							>
+							["2"] = <
+								units = <"L">
+								magnitude = <|>=0.0|>
+								precision = <|2|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- Alcohol by volume (ABV)
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::507]>
+						list = <
+							["1"] = <
+								units = <"%">
+								magnitude = <|0.0..100.0|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {    -- Frequency
+				value matches {
+					C_DV_QUANTITY <
+						
+						list = <
+							["1"] = <
+								units = <"1/d">
+							>
+							["2"] = <
+								units = <"1/wk">
+							>
+							["3"] = <
+								units = <"1/mo">
+							>
+						>
+					>
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Alcohol consumption">
+					description = <"Details about the amount of alcohol consumed.">
+				>
+				["at0001"] = <
+					text = <"Volume">
+					description = <"The amount of volume consumed.">
+				>
+				["at0002"] = <
+					text = <"Alcohol by volume (ABV)">
+					description = <"Measure of the amount of alcohol (by volume) within a given volume of a beverage, expressed as volume percent.">
+				>
+				["at0003"] = <
+					text = <"Frequency">
+					description = <"Frequency of alcohol consumed.">
+				>
+			>
+		>
+	>

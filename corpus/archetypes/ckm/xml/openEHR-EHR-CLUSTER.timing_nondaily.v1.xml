@@ -1,0 +1,1944 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-09-11</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics Ltd.</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Syed Ajaz, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Laila Bruun, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Kristian Heldal, Telemark Hospital Trust, Norway</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Health Systems, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Isaiah Nyabuto, GIZ, Kenya</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Vladimir Pizzo, Hospital Sírio Libanês, Brazil</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Rowan Thomas, St. Vincent's Hospital Melbourne, Australia</other_contributors>
+    <other_contributors>Anders Thurin, SU, Sweden</other_contributors>
+    <other_contributors>Stian Torleif Varpe, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Karl Trygve Kalleberg, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Nasjonal IKT HF, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">95309E1587F2F9A3D1845B07B1011799</other_details>
+    <other_details id="build_uid">2ef82baf-6b4f-4485-9308-810aaae13914</other_details>
+    <other_details id="revision">1.1.2</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Repräsentation strukturierter Informationen über das geplante Zeitablaufmuster einer therapeutischen oder diagnostischen Aktivität, die über Tage, Wochen, Monate oder Jahre erfolgt.</purpose>
+      <keywords>Zeitablauf,</keywords>
+      <keywords>Zeitpunkt,</keywords>
+      <keywords>Verabreichung,</keywords>
+      <keywords>Applikation,</keywords>
+      <keywords>Dosierung,</keywords>
+      <keywords>Häufigkeit,</keywords>
+      <keywords>Frequenz,</keywords>
+      <keywords>Intervall,</keywords>
+      <keywords>Verordnung,</keywords>
+      <keywords>Rezept,</keywords>
+      <keywords>Empfehlung,</keywords>
+      <keywords>Zeitplan,</keywords>
+      <keywords>Plan,</keywords>
+      <keywords>Wiederholung</keywords>
+      <use>Zur Repräsentation strukturierter Informationen über das geplante Zeitablaufmuster einer therapeutischen oder diagnostischen Aktivität, die sich über Tage, Wochen, Monate oder Jahre erstreckt. &#xD;
+&#xD;
+Dieser Archetyp ist für die Verwendung innerhalb des SLOTs "Wiederholungszeitpunkte" innerhalb des Archetyps CLUSTER.therapeutic_direction vorgesehen, kann aber auch in anderen CLUSTER- und ENTRY-Archetypen verwendet werden, wenn dies klinisch sinnvoll ist.&#xD;
+&#xD;
+In Anwendungsfällen, in denen es sinnvoll ist, ausdrücklich festzulegen, dass eine Aktivität jeden Tag stattfinden soll, kann das Element "Wiederholungsintervall" auf "1 Tag" gesetzt werden.&#xD;
+</use>
+      <misuse>Nicht zur Darstellung von Angaben zum Zeitablauf innerhalb eines Zeitraums von 24 Stunden verwenden. Verwenden Sie dazu den Archetyp CLUSTER.timing_daily. &#xD;
+&#xD;
+In Anwendungsfällen, in denen davon ausgegangen werden kann, dass eine Aktivität jeden Tag ausgeführt werden sollte, ist dieser Archetyp überflüssig.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere strukturert informasjon om planlagt timing av en terapeutisk eller diagnostisk aktivitet som forekommer over dager, uker, måneder eller år.</purpose>
+      <keywords>timing, administrering, administrasjon, dosering, frekvens, intervall, ordinering, forskriving, foreskriving, anbefaling, plan, behandlingsintervall</keywords>
+      <use>Brukes for å registrere strukturert informasjon om planlagt timing av en terapeutisk eller diagnostisk aktivitet som forekommer over dager, uker, måneder eller år.&#xD;
+&#xD;
+Arketypen er laget for å brukes i SLOTet "Anvisningsrepetisjon" i arketypen CLUSTER.therapeutic_direction (Terapeutisk anvisning), men kan også brukes i andre CLUSTER- og ENTRY-arketyper der det er klinisk passende.&#xD;
+&#xD;
+I brukstilfeller der det er nødvendig å eksplisitt spesifisere at en aktivitet skal forekomme hver dag, kan elementet "Repetisjonsintervall" settes til "1 dag".</use>
+      <misuse>Skal ikke brukes til å registrere detaljer om timing innenfor et døgn. Bruk arketypen CLUSTER.timing_daily for dette formålet.&#xD;
+&#xD;
+I tilfeller der det trygt kan antas at en aktivitet skal utføres hver eneste dag, er denne arketypen overflødig.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>*To record structured information about the intended timing of a therapeutic activity over a time period longer than 24 hours.(en)</purpose>
+      <use>*Use to record structured information about the intended timing of a therapeutic activity over a time period longer than 24 hours.&#xD;
+&#xD;
+This archetype is designed to be used within the 'Direction repetition' SLOT within the CLUSTER.therapeutic_direction archetype, but can also be used in other CLUSTER and ENTRY class archetypes where clinically appropriate.(en)</use>
+      <misuse>*Not to be used for recording timing details within a single 24 hour time period. Use the CLUSTER.timing_daily archetype for this purpose.(en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record structured information about the intended timing pattern for a therapeutic or diagnostic activity occurring over days, weeks, months or years.</purpose>
+      <keywords>timing, administration, dosing, frequency, interval, order, recommendation, schedule, plan, repetition</keywords>
+      <use>Use to record structured information about the intended timing pattern for a therapeutic or diagnostic activity occurring over days, weeks, months or years.&#xD;
+&#xD;
+This archetype is designed to be used within the 'Direction repetition' SLOT within the CLUSTER.therapeutic_direction archetype, but can also be used in other CLUSTER and ENTRY class archetypes where clinically appropriate.&#xD;
+&#xD;
+In use cases where it's necessary to specify explicitly that an activity is to take place every day, the "Repetition interval" element can be set to "1 day".</use>
+      <misuse>Not to be used to record timing details within a single 24 hour time period. Use the CLUSTER.timing_daily archetype for this purpose.&#xD;
+&#xD;
+In use cases where it can be safely assumed that an activity should be carried out every single day, this archetype is redundant.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Caroline Bönisch, Natalia Strauch</author>
+    <author id="organisation">UMG, Medizinische Hochschule Hannover</author>
+    <author id="email">Caroline.Thoms@med.uni-goettingen.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF, Helse Vest IKT AS</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <uid>
+    <value>30f325b6-e6cc-42c8-bcaf-df19bc486355</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.timing_nondaily.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DURATION</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_DURATION">
+                  <pattern>PYMWD</pattern>
+                  <range>
+                    <lower_included>false</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>P0D</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1.0</lower>
+                <upper>7.0</upper>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>1/wk</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1.0</lower>
+                <upper>31.0</upper>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>1/mo</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1.0</lower>
+                <upper>366.0</upper>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>1/a</units>
+            </list>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_QUANTITY&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>lower</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1.0</lower>
+                    <upper>7.0</upper>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/wk</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1.0</lower>
+                    <upper>31.0</upper>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/mo</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1.0</lower>
+                    <upper>366.0</upper>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/a</units>
+                </list>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>upper</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1.0</lower>
+                    <upper>7.0</upper>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/wk</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1.0</lower>
+                    <upper>31.0</upper>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/mo</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1.0</lower>
+                    <upper>366.0</upper>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/a</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>1.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>1/wk</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>1.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>1/mo</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>1.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>1/a</units>
+            </list>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_QUANTITY&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>lower</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1.0</lower>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/wk</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1.0</lower>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/mo</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1.0</lower>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/a</units>
+                </list>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>upper</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1.0</lower>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/wk</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1.0</lower>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/mo</units>
+                </list>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1.0</lower>
+                  </magnitude>
+                  <precision>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                  </precision>
+                  <units>1/a</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_DATE&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>upper</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>lower</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>7</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+                <code_list>at0016</code_list>
+                <code_list>at0017</code_list>
+                <code_list>at0018</code_list>
+                <code_list>at0019</code_list>
+                <code_list>at0020</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>31</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>31</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_COUNT&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>upper</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>magnitude</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>INTEGER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_INTEGER">
+                      <range>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>31</upper>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>lower</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>magnitude</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>INTEGER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_INTEGER">
+                      <range>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>31</upper>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_DURATION">
+                      <pattern>PYMWD</pattern>
+                      <range>
+                        <lower_unbounded>true</lower_unbounded>
+                        <upper_unbounded>true</upper_unbounded>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0011</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_DURATION">
+                      <pattern>PYMWD</pattern>
+                      <range>
+                        <lower_included>false</lower_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>true</upper_unbounded>
+                        <lower>P0D</lower>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_DURATION">
+                      <pattern>PYMWD</pattern>
+                      <range>
+                        <lower_included>false</lower_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>true</upper_unbounded>
+                        <lower>P0D</lower>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>magnitude</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>INTEGER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_INTEGER">
+                      <range>
+                        <lower_included>true</lower_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>true</upper_unbounded>
+                        <lower>0</lower>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Timing - non-daily</items>
+        <items id="description">Structured information about the intended timing pattern for a therapeutic or diagnostic activity occurring over days, weeks, months or years.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Specific date</items>
+        <items id="description">The activity should take place on a specific date or a specific range of dates.</items>
+        <items id="comment">For example: 'on 12 Jan 2017' or 'on 30 Oct 2017 to 6 Nov 2017'.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Repetition interval</items>
+        <items id="description">The interval between repetitions of the activity.</items>
+        <items id="comment">For example: 'Every 3 weeks'. If necessary, this element can be used to explicity specify that an activity is to take place every single day, by setting it to "1 day".</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Specific day of week</items>
+        <items id="description">The activity should take place on a specific day of the week.</items>
+        <items id="comment">For example: 'On Monday, Wednesday and Friday'.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Specific day of month</items>
+        <items id="description">The activity should take place on a specific day or interval of days of the month.</items>
+        <items id="comment">For example: 'on the 3rd, 13th and 23rd of each month' or 'on the 1st to the 10th of each month'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Event name</items>
+        <items id="description">The name of the event that triggers the activity to take place.</items>
+        <items id="comment">This element is intended for events that can occur at variable dates, such as onset of menstruation, and not for doses or activities that are conditional on a different varable. If required, the event name can be coded using a terminology, which could potentially be used to trigger an application to set a concrete date for the activity.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Specific event</items>
+        <items id="description">The activity should take place in relation to a specific named event.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Monday</items>
+        <items id="description">The activity should take place on Monday.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tuesday</items>
+        <items id="description">The activity should take place on Tuesday.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Time offset</items>
+        <items id="description">The period of time before or after the named event when the activity should take place. Negative durations can be used to signify that the activity should be taken before a known event.</items>
+        <items id="comment">For example: '3 days after onset of menstruation = menstrual onset + 3 days', '2 weeks prior to admission= admission -2 weeks'.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">On / off cycle</items>
+        <items id="description">A cycle of activity where an on-off pattern is required.</items>
+        <items id="comment">For example: 'take for 1 week, omit 2 weeks, repeat 4 times'</items>
+      </items>
+      <items code="at0011">
+        <items id="text">On</items>
+        <items id="description">The period of time for which the activity should take place.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Off</items>
+        <items id="description">The period of time for which the activity should NOT take place.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Repetitions</items>
+        <items id="description">The number of repetitions of the on/off cycle.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Days per time period</items>
+        <items id="description">The number of days per time period on which the activity takes place.</items>
+        <items id="comment">For example: '3 days per week', '2-4 days per month'. Specific details about the timing within each 24 hour period is specified within the CLUSTER.timing_daily archetype.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Wednesday</items>
+        <items id="description">The activity should take place on Wednesday.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Thursday</items>
+        <items id="description">The activity should take place on Thursday.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Friday</items>
+        <items id="description">The activity should take place on Friday.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Saturday</items>
+        <items id="description">The activity should take place on Saturday.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Sunday</items>
+        <items id="description">The activity should take place on Sunday.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Timing description</items>
+        <items id="description">Text description of the timing.</items>
+        <items id="comment">For example: 'Use for one week, then stop for two weeks, then repeat'. This element is intended to allow implementers to use the structures for daily timings without necessarily specifying the non-daily timings in a structured way.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Activities per time period</items>
+        <items id="description">The number of activities per time period.</items>
+        <items id="comment">For example: '3 activities per week', '2-4 times per month'.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">*Timing - non-daily(en)</items>
+        <items id="description">*Structured information about the intended timing pattern for a therapeutic activity occurring over days, weeks, months or years.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Data específica</items>
+        <items id="description">A atividade deve ocorrer em uma data específica.</items>
+        <items id="comment">por exemplo: "em 12 de janeiro de 2017".</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Intervalo de repetição</items>
+        <items id="description">O intervalo de tempo entre repetições de atividades.</items>
+        <items id="comment">por exemplo: "Cada 3 semanas"</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Specific day of week(en)</items>
+        <items id="description">*The activity should take place on a specific day of the week.(en)</items>
+        <items id="comment">*For example: 'On Monday, Wednesday and Friday'.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Dia do mês específico</items>
+        <items id="description">A atividade deverá ser realizada em um dia específico do mês.</items>
+        <items id="comment">Por exemplo: "no 3º dia, 13º dia e 23º de cada mês".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Nome do evento</items>
+        <items id="description">O nome do evento que desencadeia a atividade para tomar o lugar.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Evento específico</items>
+        <items id="description">A atividade deve ocorrer em relação a um determinado evento de chamada.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Monday(en)</items>
+        <items id="description">*The activity should take place on Monday.(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Tuesday(en)</items>
+        <items id="description">*The activity should take place on Tuesday.(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Início do intervalo</items>
+        <items id="description">O período de tempo antes ou depois o evento nomeado, quando a atividade deve ocorrer. Durações negativas podem ser utilizadas para indicar que a atividade deve ser realizada antes do evento conhecido.</items>
+        <items id="comment">por exemplo: "3 dias depois do início da menstruação = início da menstruação + 3 dias", "2 semanas antes da admissão = admissão - 2 semanas".</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ciclo dentro/fora</items>
+        <items id="description">Um ciclo de atividades em que é exigido um padrão on-off.</items>
+        <items id="comment">Por exemplo: "tomar 3 comprimidos diariamente por 1 semana, pular uma semana, então tomar 3 comprimidos diariamente por 1 semana, repetir por 4 ciclos".</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Dentro</items>
+        <items id="description">O período de tempo em que a atividade deve ser realizada.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Fora</items>
+        <items id="description">O período de tempo em que a atividade não deve ocorrer.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Repetições</items>
+        <items id="description">O número de repetições do ciclo on/off.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">*Days per time period (en)</items>
+        <items id="description">*The number of days per time period on which the activity takes place. (en)</items>
+        <items id="comment">*For example: '3 days per week', '2-4 days per month'. Specific details about the timing within each 24 hour period is specified within the CLUSTER.timing_daily archetype. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Wednesday(en)</items>
+        <items id="description">*The activity should take place on Wednesday.(en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Thursday(en)</items>
+        <items id="description">*The activity should take place on Thursday.(en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Friday(en)</items>
+        <items id="description">*The activity should take place on Friday.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Saturday(en)</items>
+        <items id="description">*The activity should take place on Saturday.(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Sunday(en)</items>
+        <items id="description">*The activity should take place on Sunday.(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Timing description(en)</items>
+        <items id="description">*Text description of the timing repetition. This element is intended to allow implementers to use the structures for different timings without necessarily specifying the timings in a structured way.(en)</items>
+        <items id="comment">*For example: "Use for one week, then stop for two weeks, then repeat".(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Activities per time period (en)</items>
+        <items id="description">*The number of activities per time period. (en)</items>
+        <items id="comment">*For example: '3 activities per week', '2-4 times per month'. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Timing - utover et døgn</items>
+        <items id="description">Strukturert informasjon om planlagt timing av en terapeutisk eller diagnostisk aktivitet som forekommer over dager, uker, måneder eller år.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Spesifikk dato</items>
+        <items id="description">Aktiviteten skal utføres på en spesifikk dato eller i henhold til et spesifikt datointervall.</items>
+        <items id="comment">For eksempel "12. jan 2017" eller "30 okt 2017 til 6 nov 2017".</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Repetisjonsintervall</items>
+        <items id="description">Intervallene mellom repetisjoner av aktiviteten.</items>
+        <items id="comment">For eksempel "hver 3. uke". Om nødvendig kan dette elementet brukes for å eksplisitt spesifisere at aktiviteten skal forekomme hver eneste dag, ved å sette elementet til "1 dag".</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Spesifikk ukedag</items>
+        <items id="description">Aktiviteten skal utføres på en spesifikk ukedag.</items>
+        <items id="comment">For eksempel "på mandag, onsdag og fredag".</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Spesifikk dag av måneden</items>
+        <items id="description">Aktiviteten skal utføres på en spesifikk dag eller i henhold til et intervall av dager i løpet av måneden.</items>
+        <items id="comment">For eksempel "på 3., 13. og 23. hver måned" eller "på 1.-10. av hver måned".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Hendelsesnavn</items>
+        <items id="description">Navnet på hendelsen aktiviteten skal uføres i sammenheng med.</items>
+        <items id="comment">Dette elementet er ment for hendelser som kan forekomme på varierende datoer, som for eksempel starten på menstruasjon, og ikke for doser og aktiviteter som er betinget av en annen variabel. Der det er påkrevd kan hendelsesnavnet kodes med en terminologi, som kan benyttes for å få en applikasjon til å sette en konkret dato for aktiviteten.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Spesifikk hendelse</items>
+        <items id="description">Aktiviteten skal utføres i sammenheng med en spesifikk navngitt hendelse.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Mandag</items>
+        <items id="description">Aktiviteten skal utføres på mandag.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tirsdag</items>
+        <items id="description">Aktiviteten skal utføres på tirsdag.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tidsforskyvelse</items>
+        <items id="description">Tidsintervallet før eller etter hendelsen når aktiviteten skal utføres. Negative intervaller kan benyttes for å spesifisere at aktiviteten skal utføres før den navngitte hendelsen.</items>
+        <items id="comment">For eksempel "3 dager etter første menstruasjonsdag = første menstruasjonsdag + 3 dager", "2 uker før innleggelse = innleggelse - 2 uker".</items>
+      </items>
+      <items code="at0010">
+        <items id="text">På / av-syklus</items>
+        <items id="description">En aktivitetssyklus som krever et på/av-mønster.</items>
+        <items id="comment">For eksempel "ta i 1 uke, hopp over 2 uker, gjenta 4 ganger".</items>
+      </items>
+      <items code="at0011">
+        <items id="text">På</items>
+        <items id="description">Tidsperioden da aktiviteten skal utføres.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Av</items>
+        <items id="description">Tidsperioden da aktiviteten IKKE skal utføres.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Repetisjoner</items>
+        <items id="description">Antall ganger på/av-syklusen skal repeteres.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Døgn per tidsintervall</items>
+        <items id="description">Antall døgn per tidsintervall aktiviteten skal utføres.</items>
+        <items id="comment">For eksempel "3 døgn per uke" eller "2-4 døgn per måned". Spesifikke detaljer om timingen innenfor hvert døgn spesifiseres ved hjelp av arketypen CLUSTER.timing_daily.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Onsdag</items>
+        <items id="description">Aktiviteten skal utføres på onsdag.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Torsdag</items>
+        <items id="description">Aktiviteten skal utføres på torsdag.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Fredag</items>
+        <items id="description">Aktiviteten skal utføres på fredag.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Lørdag</items>
+        <items id="description">Aktiviteten skal utføres på lørdag.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Søndag</items>
+        <items id="description">Aktiviteten skal utføres på søndag.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Timingbeskrivelse</items>
+        <items id="description">Tekstbeskrivelse av timingen.</items>
+        <items id="comment">For eksempel "bruk i en uke, stopp i to uker, gjenta". Dette elementet er ment for å tillate programvareleverandører å bruke strukturene for timing innenfor 24 timer, uten nødvendigvis å spesifisere timingen utover et døgn på en strukturert måte.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Aktiviteter per tidsintervall</items>
+        <items id="description">Antall ganger per tidsintervall aktiviteten skal utføres.</items>
+        <items id="comment">For eksempel "3 aktiviteter per uke" eller "2-4 ganger per måned".</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Zeitablauf - nicht täglich</items>
+        <items id="description">Strukturierte Informationen über das geplante Zeitablaufmuster für eine therapeutische oder diagnostische Aktivität, die sich über Tage, Wochen, Monate oder Jahre erstreckt.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Bestimmtes Datum</items>
+        <items id="description">Die Aktivität sollte an einem bestimmten Datum oder in einem bestimmten Datumsbereich stattfinden.</items>
+        <items id="comment">Zum Beispiel: "am 12. Januar 2017" oder "vom 30. Oktober 2017 bis 6. November 2017"</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Wiederholungsintervall</items>
+        <items id="description">Das Intervall zwischen den Wiederholungen der Aktivität.</items>
+        <items id="comment">Zum Beispiel: "Alle 3 Wochen". Falls erforderlich, kann mit diesem Element explizit angegeben werden, dass eine Aktivität jeden einzelnen Tag stattfinden soll, indem es auf "1 Tag" gesetzt wird.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Bestimmter Wochentag</items>
+        <items id="description">Die Aktivität sollte an einem bestimmten Wochentag stattfinden.</items>
+        <items id="comment">Zum Beispiel: "Am Montag, Mittwoch und Freitag".</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Bestimmter Tag des Monats</items>
+        <items id="description">Die Aktivität sollte an einem bestimmten Tag im Monat oder in einem Intervall von mehreren Tagen in dem Monat stattfinden.</items>
+        <items id="comment">Zum Beispiel: "am 3., 13. und 23. jedes Monats" oder "vom 1. bis zum 10. jedes Monats"</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Name des Ereignisses</items>
+        <items id="description">Der Name des Ereignisses, das die Aktivität auslöst.</items>
+        <items id="comment">Dieses Element ist für Ereignisse gedacht, die zu verschiedenen Zeitpunkten auftreten können, wie z.B. Beginn der Menstruation, und nicht für Dosis oder Aktivitäten, die von einer anderen Variable abhängen. Bei Bedarf kann der Name des Ereignisses mit einer Terminologie kodiert werden, mit der die Anwendung ein bestimmtes Datum für die Aktivität festlegen kann.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Bestimmtes Ereignis</items>
+        <items id="description">Ein bestimmtes, benanntes Zeitereignis, auf das sich die Aktivität bezieht und stattfinden soll.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Montag</items>
+        <items id="description">Die Aktivität sollte am Montag stattfinden.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Dienstag</items>
+        <items id="description">Die Aktivität sollte am Dienstag stattfinden.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Zeitspanne</items>
+        <items id="description">Das Zeitintervall vor oder nach dem Ereignis, in dem die Aktivität stattfinden sollte. Negative Intervalle können verwendet werden, damit signalisiert werden kann, dass die Aktivität vor dem genannten Ereignis stattfinden soll.</items>
+        <items id="comment">Zum Beispiel: "3 Tage nach Beginn der Menstruation = Beginn der Menstruation + 3 Tage", "2 Wochen vor der Aufnahme = Aufnahme - 2 Wochen".</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ein/Aus-Zyklus</items>
+        <items id="description">Ein Aktivitätszyklus, bei dem ein Ein/Aus-Zyklus erforderlich ist.</items>
+        <items id="comment">Zum Beispiel: "1 Woche nehmen, 2 Wochen auslassen, 4 Mal wiederholen".</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Ein</items>
+        <items id="description">Der Zeitraum, in dem die Aktivität ausgeführt werden soll.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Aus</items>
+        <items id="description">Der Zeitraum, in dem die Aktivität NICHT stattfinden soll.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Wiederholungen</items>
+        <items id="description">Die Häufigkeit, mit der der Ein/Aus-Zyklus wiederholt werden soll.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Tage pro Zeitintervall</items>
+        <items id="description">Die Anzahl der Tage pro Zeitintervall, an denen die Aktivität stattfindet.</items>
+        <items id="comment">Zum Beispiel: „3 Tage pro Woche“, „2–4 Tage pro Monat“. Spezifische Angaben zum zeitlichen Ablauf innerhalb jedes 24-Stunden-Zeitraums werden im Archetyp CLUSTER.timing_daily angegeben.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Mittwoch</items>
+        <items id="description">Die Aktitvität sollte am Mittwoch stattfinden.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Donnerstag</items>
+        <items id="description">Die Aktivität sollte am Donnerstag stattfinden.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Freitag</items>
+        <items id="description">Die Aktivität sollte am Freitag stattfinden.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Samstag</items>
+        <items id="description">Die Aktivität sollte am Samstag stattfinden.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Sonntag</items>
+        <items id="description">Die Aktivität sollte am Sonntag stattfinden.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Beschreibung des Zeitablaufs</items>
+        <items id="description">Freitextbeschreibung des Zeitablaufs.</items>
+        <items id="comment">Zum Beispiel: "Eine Woche verwenden, dann zwei Wochen pausieren und dann wiederholen". Dieses Element soll es ermöglichen, die Strukturen für tägliche Zeitabläufe zu verwenden, ohne notwendigerweise die Struktur der nicht-täglichen Zeitabläufe angeben zu müssen.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Aktivitäten pro Zeitintervall</items>
+        <items id="description">Die Anzahl der Aktivitäten pro Zeitintervall.</items>
+        <items id="comment">Zum Beispiel: „3 Aktivitäten pro Woche“, „2-4 Mal pro Monat“.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

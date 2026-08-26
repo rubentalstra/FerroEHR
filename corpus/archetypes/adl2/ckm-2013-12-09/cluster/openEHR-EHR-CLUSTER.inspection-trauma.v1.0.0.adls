@@ -1,0 +1,65 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.inspection-trauma.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.inspection.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"23/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A generic archetype for recording the findings on inspection of blunt traumatic injury.">
+			use = <"For use with the exam clusters for recording findings on inspection">
+			keywords = <"inspect", "visual", "trauma", "injury">
+			misuse = <"Should only be used in the exam observation">
+		>
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Inspection of blunt traumatic injury
+		/items[id7]/items matches {
+			after [id37]
+			ELEMENT[id0.52] occurrences matches {0..1} matches {	-- Bruising
+				value matches {
+					DV_TEXT[id0.54] 
+				}
+			}
+			before [id19]
+			ELEMENT[id0.53] occurrences matches {0..1} matches {	-- Deformity
+				value matches {
+					DV_CODED_TEXT[id0.55] matches {
+						defining_code 
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.52"] = <
+				text = <"Bruising">
+				description = <"Details of bruising">
+			>
+			["id0.53"] = <
+				text = <"Deformity">
+				description = <"Details of deformity">
+			>
+			["id1.1"] = <
+				text = <"Inspection of blunt traumatic injury">
+				description = <"The findings on physical examination by inspection of blunt traumatic injury">
+			>
+		>
+	>

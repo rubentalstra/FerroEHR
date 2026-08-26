@@ -1,0 +1,191 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.move-spine.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.move.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For describing the findings on movement of the spine or part thereof.">
+			use = <"">
+			keywords = <"movement", "spine", "neck", "lumbar", "thoracic", "atlas">
+			misuse = <"">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لوصف الموجودات عند حركة السيساء (العمود الفقري) أو جزء منه.">
+			use = <"">
+			keywords = <"الحركة", "العمود الفقري/السيساء", "العنق/الرقبة", "القَطَني", "صدري", "الفهقة/الفقرة الحاملة">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"1F294D2C1385A0A77B85C4D577A5FF51">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Movement of the spine or parts thereof
+		/items[id37]/items[id38]/items matches {
+			use_node ELEMENT[id41.1] /items[id37]/items[id5]/items[id8]	-- /items[id37]/items[id5]/items[id8]
+			use_node ELEMENT[id41.2] /items[id37]/items[id5]/items[id7]	-- /items[id37]/items[id5]/items[id7]
+			use_node ELEMENT[id41.3] /items[id37]/items[id5]/items[id20]	-- /items[id37]/items[id5]/items[id20]
+		}
+		/items[id37]/items[id5]/items[id6]/value matches {
+			DV_CODED_TEXT[id45.1] matches {
+				defining_code matches {[ac0.1]}		-- Movement (synthesised)
+			}
+		}
+		/items[id37]/items[id5]/items[id36]/value[id47]/magnitude matches {|0.0..360.0|}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.1"] = <
+				text = <"Flexion">
+				description = <"Movement through contraction of the flexor muscles.">
+			>
+			["at0.10"] = <
+				text = <"Rotation to the right flexed">
+				description = <"Rotation of the upper part to the right in flexion.">
+			>
+			["at0.2"] = <
+				text = <"Extension">
+				description = <"Movement through the extensor muscles.">
+			>
+			["at0.3"] = <
+				text = <"Lateral flexion to the left">
+				description = <"Movement of the upper part to the left.">
+			>
+			["at0.4"] = <
+				text = <"Lateral flexion to the right">
+				description = <"Movement of the upper part to the right.">
+			>
+			["at0.5"] = <
+				text = <"Rotation to the left">
+				description = <"Rotation of the upper part to the left in a neutral position.">
+			>
+			["at0.6"] = <
+				text = <"Rotation to the right">
+				description = <"Rotation of the upper part to the right in a neutral position.">
+			>
+			["at0.7"] = <
+				text = <"Rotation to the left extended">
+				description = <"Rotation of the upper part to the left in extension.">
+			>
+			["at0.8"] = <
+				text = <"Rotation to the right extended">
+				description = <"Rotation of the upper part to the right in extension.">
+			>
+			["at0.9"] = <
+				text = <"Rotation to the left flexed">
+				description = <"Rotation of the upper part to the left in flexion.">
+			>
+			["id1.1"] = <
+				text = <"Movement of the spine or parts thereof">
+				description = <"Movement of a spine or parts thereof as part of physical examination.">
+			>
+			["id41.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id41.2"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id41.3"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac0.1"] = <
+				text = <"Movement (synthesised)">
+				description = <"A specific movement. (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["at0.1"] = <
+				text = <"ثني">
+				description = <"الحركة من خلال انقباض العضلات المثنية">
+			>
+			["at0.10"] = <
+				text = <"الدوران جهة اليمين مع الثني">
+				description = <"دوران الجزء العلوي ناحية اليمين في حالة الثني">
+			>
+			["at0.2"] = <
+				text = <"البسط/التمديد">
+				description = <"الحركة من خلال العضلات الباسطة">
+			>
+			["at0.3"] = <
+				text = <"ثني جانبي جهة البسار">
+				description = <"حركة الجزء العلوي جهة اليسار">
+			>
+			["at0.4"] = <
+				text = <"ثني جانبي جهة اليمين">
+				description = <"حركة الجزء العلوي نحو اليمين">
+			>
+			["at0.5"] = <
+				text = <"الدوران جهة اليسار">
+				description = <"دوران الجزء العلوي ناحية اليسار في وضع متعادل/حيادي">
+			>
+			["at0.6"] = <
+				text = <"الدوران جهة اليمين">
+				description = <"دوران الجزء العلوي ناحية اليمين في وضع متعادل/حيادي">
+			>
+			["at0.7"] = <
+				text = <"الدوران جهة اليسار مع البسط">
+				description = <"دوران الجزء العلوي ناحية اليسار في حالة البسط">
+			>
+			["at0.8"] = <
+				text = <"الدوران جهة اليمين مع البسط">
+				description = <"دوران الجزء العلوي ناحية اليمين في حالة البسط">
+			>
+			["at0.9"] = <
+				text = <"الدوران جهة اليسار مع الثني">
+				description = <"دوران الجزء العلوي ناحية اليسار في حالة الثني">
+			>
+			["id1.1"] = <
+				text = <"حركة العمود الفقري أو أجزاء منه">
+				description = <"حركة العمود الفقري أو أجزاء منه كجزء من الفحص البدني">
+			>
+			["id41.1"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id41.2"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id41.3"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["ac0.1"] = <
+				text = <"الحركة (synthesised)">
+				description = <"حركة مخصوصة (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.1", "at0.2", "at0.3", "at0.4", "at0.5", "at0.6", "at0.7", "at0.8", "at0.9", "at0.10">
+		>
+	>

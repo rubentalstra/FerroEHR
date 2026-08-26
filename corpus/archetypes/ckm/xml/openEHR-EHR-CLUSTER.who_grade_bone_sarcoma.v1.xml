@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2024-03-19</original_author>
+    <original_author id="name">Kanika Kuwelker</original_author>
+    <original_author id="organisation">Helse Vest IKT</original_author>
+    <original_author id="email">kanika.kuwelker@helse-vest-ikt.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Hans Kristian Haugland, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Anjali Kulkarni, Karkinos, India</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Siri Laronningen, Kreftregisteret, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Nina Louise Jebsen, Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>June Marie Knappskog, Helse Nord IKT AS, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Olha Nikolaieva, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Terje Nordberg, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Marlene Pérez Colman, Digital Health and Care Wales, United Kingdom</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Olga Zaikova, OUS, Radiumhospitalet, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">WHO Classification of Tumours Editorial Board. Soft tissue and bone tumours. Lyon (France): International Agency for Research on Cancer; 2020. (WHO classification of tumours series, 5th ed. Vol. 3). https://publications.Iarc.fr/588&#xD;
+&#xD;
+Norwegian translation: Sarkomer – handlingsprogram [Sarcomas - action program] [Internet]. Oslo (Norway): Helsedirektoratet. Nasjonalt handlingsprogram med retningslinjer for diagnostikk, behandling og oppfølging av sarkom [National action program with guidelines for diagnostics, treatment and follow-up of sarcoma] 10 Apr 2018 [revised 2022 Feb 28; cited 2024 May 06]. Available from: https://www.helsedirektoratet.no/retningslinjer/sarkomer-handlingsprogram Norwegian.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">312833C2C4B4D726E884D1B546105777</other_details>
+    <other_details id="build_uid">2e5b6297-6cd1-4c13-ab92-213f2e2d15c0</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere den histologiske graden av bensarkom i henhold til WHO Classification of Tumours, 5. utgave.</purpose>
+      <keywords>sarkom, ben, bensarkom, kreft, neoplasi, malignitet, onkologi, malignitetsgrad, gradering, grad, klassifisering, WHO, World Health Organization, Verdens helseorganisasjon, histologi, patologi, kondrogen, osteogen, fibrohistocytisk, Ewing sarkom, klarcellet</keywords>
+      <use>Brukes for å registrere den histologiske graden av bensarkom i henhold til WHO Classification of Tumours, 5. utgave.&#xD;
+&#xD;
+Arketypen er laget for å benyttes i en ENTRY arketype som vil gi den kliniske eller patologiske konteksten. For eksempel: I SLOTet "Spesifikke detaljer" i arketypen EVALUATION.problem_diagnosis (Problem/diagnose), i en relevant patologirelatert CLUSTER-arketype som igjen nøstes i arketypen OBSERVATION.laboratory_test_result (Laboratoriesvar) eller innen andre ENTRY- eller CLUSTER-arketyper der det er klinisk passende.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the histological grade of bone sarcoma according to the WHO Classification of Tumours, 5th Edition.</purpose>
+      <keywords>sarcoma, bone, tumour, cancer, neoplasia, malignancy, oncology, grading, grade, classification, WHO, World Health Organization, histology, pathology, chondrogenic, osteogenic, fibrohistiocytic, Ewing sarcoma, clear cell</keywords>
+      <use>Use to record the histological grade of bone sarcoma according to the WHO Classification of Tumours, 5th Edition.&#xD;
+&#xD;
+This archetype has been designed to be nested inside an ENTRY or appropriate CLUSTER archetype which will provide a clinical or pathological context - for example: the 'Specific details' SLOT within the EVALUATION.problem_diagnosis archetype; an appropriate histopathology-related CLUSTER archetype within the OBSERVATION.laboratory_test_result archetype context; or within other ENTRY or CLUSTER archetypes, where clinically appropriate.</use>
+      <misuse />
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Kanika Kuwelker, John Tore Valand</author>
+    <author id="organisation">Helse Vest IKT</author>
+    <author id="email">kanika.kuwelker@helse-vest-ikt.no, john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>a3d4b1ce-7f28-4fe9-b533-f3994275b066</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.who_grade_bone_sarcoma.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0004</code_list>
+                <code_list>at0005</code_list>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">WHO histological grade of bone sarcoma</items>
+        <items id="description">A classification of the histological grade of bone sarcoma according to the World Health Organization Classification of Tumours, 5th Edition.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Grade</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0004">
+        <items id="text">Grade 1 (low-grade)</items>
+        <items id="description">Low-grade central osteosarcoma, parosteal osteosarcoma, clear cell chondrosarcoma.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Grade 2 (intermediate-grade)</items>
+        <items id="description">Periosteal osteosarcoma.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Grade 3 (high-grade)</items>
+        <items id="description">Osteosarcoma (conventional, telangiectatic, small cell, secondary, high-grade surface), undifferentiated high-grade pleomorphic sarcome, Ewing sarcoma, dedifferentiated chondrosarcoma, mesenchymal chondrosarcoma, dedifferentiated chordoma, poorly differentiated chondroma, angiosarcoma.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Variable grading</items>
+        <items id="description">Conventional chondrosarcoma (grade 1-3 according to Evans), leiomyosarcoma of bone (grade 1-3), low- and high-grade malignancy may occur in giant cell tumour of bone.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">WHO histologisk grad av bensarkom</items>
+        <items id="description">En klassifisering av den histologiske graden av beinsarkom i henhold til World Health Organization Classification of Tumours, 5. utgave.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Grad</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0004">
+        <items id="text">Grad 1 (lavgradig malign)</items>
+        <items id="description">Lavgradig sentralt osteosarkom, parostealt osteosarkom, klarcellet kondrosarkom.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Grad 2 (intermediær)</items>
+        <items id="description">Periostalt osteosarkom.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Grad 3 (høygradig malign)</items>
+        <items id="description">Osteosarkom (konvensjonelt, telangiektatisk, småcellet, sekundært, høygradig overflate), udifferensiert høygradig malignt pleomorft sarkom (UPS), Ewing sarkom, dedifferensiert kondrosarkom,  mesenchymalt kondrosarkom, dedifferensiert kordom, lite differensiert kordom, angiosarkom.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Variabel gradering</items>
+        <items id="description">Konvensjonelt kondrosarkom (grad 1-3), leiomyosarkom i ben (grad 1-3), lav og høygradig malign kjempecelletumor i ben.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,212 @@
+﻿archetype (adl_version=1.4; uid=7a0e134e-55e0-461e-bf5b-75da59659c16)
+	openEHR-EHR-OBSERVATION.empower_meal.v0
+
+concept
+	[at0000]	-- Meal (EMPOWER)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Hans Demski">
+		["organisation"] = <"Helmholtz Zentrum München GmbH">
+		["email"] = <"demski@helmholtz-muenchen.de">
+		["date"] = <"2015-04-21">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Recording of observations of daily lifing related to meals.
+
+Based on the data model developed within the EMPOWER project, www.empower-fp7,eu.">
+			use = <"Record the self-observations of the subject regarding the intake of food.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"based on the data model developed within the EMPOWER project, www.empower-fp7,eu", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["revision"] = <"0.0.1-alpha">
+		["build_uid"] = <"8de9da70-67cd-429a-b975-cff998801e33">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"A893F4BC3F4CA164E77D808FBC147821">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Meal (EMPOWER)
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any Event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {1..*; unordered} matches {
+									ELEMENT[at0004] matches {	-- Time of meal
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0005, 	-- breakfast
+													at0006, 	-- lunch
+													at0007, 	-- dinner
+													at0008]	-- snack
+												}
+											}
+										}
+									}
+									CLUSTER[at0009] occurrences matches {0..*} matches {	-- Food items
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0012] occurrences matches {0..1} matches {	-- Amount
+												value matches {
+													DV_COUNT matches {*}
+												}
+											}
+											ELEMENT[at0013] occurrences matches {0..1} matches {	-- Unit
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0014, 	-- g
+															at0015, 	-- L
+															at0016, 	-- cup(s)
+															at0017, 	-- slice(s)
+															at0018, 	-- piece(s)
+															at0019]	-- glass(es)
+														}
+													}
+												}
+											}
+											ELEMENT[at0020] matches {	-- Description
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- Bread units
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::380]>
+												list = <
+													["1"] = <
+														units = <"BE">
+														precision = <|0|>
+													>
+												>
+											>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"MTH", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Meal (EMPOWER)">
+					description = <"Recording a single meal taken.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any Event">
+					description = <"Any Event.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Time of meal">
+					description = <"time of meal.">
+				>
+				["at0005"] = <
+					text = <"breakfast">
+					description = <"Breakfast.">
+				>
+				["at0006"] = <
+					text = <"lunch">
+					description = <"Lunch.">
+				>
+				["at0007"] = <
+					text = <"dinner">
+					description = <"Dinner.">
+				>
+				["at0008"] = <
+					text = <"snack">
+					description = <"Snack.">
+				>
+				["at0009"] = <
+					text = <"Food items">
+					description = <"Single components of a meal.">
+				>
+				["at0010"] = <
+					text = <"Bread units">
+					description = <"Amount of bread units contained in the whole meal.">
+				>
+				["at0012"] = <
+					text = <"Amount">
+					description = <"Amount of food compenent.">
+				>
+				["at0013"] = <
+					text = <"Unit">
+					description = <"Defines the unit for the specifies amount.">
+				>
+				["at0014"] = <
+					text = <"g">
+					description = <"Gram(s).">
+				>
+				["at0015"] = <
+					text = <"L">
+					description = <"Liter(s).">
+				>
+				["at0016"] = <
+					text = <"cup(s)">
+					description = <"Cup(s).">
+				>
+				["at0017"] = <
+					text = <"slice(s)">
+					description = <"Slice(s).">
+				>
+				["at0018"] = <
+					text = <"piece(s)">
+					description = <"Piece(s).">
+				>
+				["at0019"] = <
+					text = <"glass(es)">
+					description = <"Glass(es).">
+				>
+				["at0020"] = <
+					text = <"Description">
+					description = <"The food item taken e.g. fried egg, white bread.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["MTH"] = <
+			items = <
+				["at0004"] = <[MTH::C0587119]>
+				["at0005"] = <[MTH::C2698559]>
+				["at0006"] = <[MTH::C0585039]>
+				["at0007"] = <[MTH::C0585040]>
+				["at0008"] = <[MTH::C0585041]>
+				["at0010"] = <[MTH::C0556591]>
+			>
+		>
+	>

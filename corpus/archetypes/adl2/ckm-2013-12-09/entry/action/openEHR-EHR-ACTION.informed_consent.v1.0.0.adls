@@ -1,0 +1,937 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-ACTION.informed_consent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"09-10-2012">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the status of a request for, or record of, informed consent prior to performing a procedure, clinical trial or healthcare-related activity.">
+			use = <"Use to record the status of an order to obtain informed consent, including what is planned, scheduled, requested, provided, or withdrawn.
+
+This archetype has been designed to be a framework that will be adequate for requesting and recording a simple consent, but allow for additional details to be optionally added within the 'Details' SLOT to meet the specific requirements of a more complex clinical scenario.  For example, additional consent details can be included using the CLUSTER.consent_details archetype. Other archetypes can be developed and optionally included in the same SLOT for the purpose of recording specific details about the procedure, trial or activity. 
+
+The status of the informed consent is reflected by the pathway steps - requested, refused, provided, withdrawn etc.">
+			keywords = <"consent", "informed", "caveat">
+			misuse = <"">
+		>
+	>
+	references = <
+		["1"] = <"ASTM Standard E2369 - 05, \"Standard Specification for Continuity of Care Record (CCR)\", ASTM International, West Conshohocken, PA, 2003, DOI: 10.1520/E2369-05E02, www.astm.org.">
+	>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"946987A1D182E9C9FEE624EF6065E29D">
+	>
+
+definition
+	ACTION[id1] matches {	-- Informed Consent
+		ism_transition matches {
+			ISM_TRANSITION[id14] matches {	-- Planned
+				current_state matches {
+					DV_CODED_TEXT[id37] matches {
+						defining_code matches {[at29]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id38] matches {
+						defining_code matches {[at14]}
+					}
+				}
+			}
+			ISM_TRANSITION[id20] matches {	-- Postponed
+				current_state matches {
+					DV_CODED_TEXT[id39] matches {
+						defining_code matches {[at30]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id40] matches {
+						defining_code matches {[at20]}
+					}
+				}
+			}
+			ISM_TRANSITION[id19] matches {	-- Cancelled
+				current_state matches {
+					DV_CODED_TEXT[id41] matches {
+						defining_code matches {[at31]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id42] matches {
+						defining_code matches {[at19]}
+					}
+				}
+			}
+			ISM_TRANSITION[id28] matches {	-- Appointment Scheduled
+				current_state matches {
+					DV_CODED_TEXT[id43] matches {
+						defining_code matches {[at32]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id44] matches {
+						defining_code matches {[at28]}
+					}
+				}
+			}
+			ISM_TRANSITION[id15] matches {	-- Informed Consent Requested
+				current_state matches {
+					DV_CODED_TEXT[id45] matches {
+						defining_code matches {[ac1]}		-- Informed Consent Requested (synthesised)
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id46] matches {
+						defining_code matches {[at15]}
+					}
+				}
+			}
+			ISM_TRANSITION[id16] matches {	-- Informed Consent Provided
+				current_state matches {
+					DV_CODED_TEXT[id47] matches {
+						defining_code matches {[at33]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id48] matches {
+						defining_code matches {[at16]}
+					}
+				}
+			}
+			ISM_TRANSITION[id22] matches {	-- Informed Consent Not Obtained
+				current_state matches {
+					DV_CODED_TEXT[id49] matches {
+						defining_code matches {[at33]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id50] matches {
+						defining_code matches {[at22]}
+					}
+				}
+			}
+			ISM_TRANSITION[id17] matches {	-- Informed Consent Refused
+				current_state matches {
+					DV_CODED_TEXT[id51] matches {
+						defining_code matches {[at34]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id52] matches {
+						defining_code matches {[at17]}
+					}
+				}
+			}
+			ISM_TRANSITION[id18] matches {	-- Informed Consent Withdrawn
+				current_state matches {
+					DV_CODED_TEXT[id53] matches {
+						defining_code matches {[at34]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id54] matches {
+						defining_code matches {[at18]}
+					}
+				}
+			}
+			ISM_TRANSITION[id23] matches {	-- Completed
+				current_state matches {
+					DV_CODED_TEXT[id55] matches {
+						defining_code matches {[at35]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id56] matches {
+						defining_code matches {[at23]}
+					}
+				}
+			}
+		}
+		description matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] occurrences matches {1..*} matches {	-- Procedure/Trial/Activity
+						value matches {
+							DV_TEXT[id57] 
+						}
+					}
+					ELEMENT[id31] occurrences matches {0..1} matches {	-- Procedure/Trial/Activity Description
+						value matches {
+							DV_TEXT[id58] 
+						}
+					}
+					ELEMENT[id32] occurrences matches {0..1} matches {	-- Intent
+						value matches {
+							DV_TEXT[id59] 
+						}
+					}
+					ELEMENT[id12] occurrences matches {0..1} matches {	-- Consent Description
+						value matches {
+							DV_TEXT[id60] 
+						}
+					}
+					allow_archetype CLUSTER[id4] matches {	-- Details
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.consent_details(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.procedure_details(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Form of Consent
+						value matches {
+							DV_CODED_TEXT[id61] matches {
+								defining_code matches {[ac2]}		-- Form of Consent (synthesised)
+							}
+						}
+					}
+					ELEMENT[id8] occurrences matches {0..1} matches {	-- Reason
+						value matches {
+							DV_TEXT[id62] 
+						}
+					}
+					ELEMENT[id9] occurrences matches {0..1} matches {	-- Start Date
+						value matches {
+							DV_DATE_TIME[id63] 
+						}
+					}
+					ELEMENT[id10] occurrences matches {0..1} matches {	-- End Date
+						value matches {
+							DV_DATE_TIME[id64] 
+						}
+					}
+					ELEMENT[id11] matches {	-- Caveat
+						value matches {
+							DV_TEXT[id65] 
+						}
+					}
+					ELEMENT[id13] occurrences matches {0..1} matches {	-- Evidence of Consent
+						value matches {
+							DV_MULTIMEDIA[id66] matches {
+								media_type matches {[ac3]}		-- Evidence of Consent (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id25] matches {
+				items matches {
+					ELEMENT[id26] occurrences matches {0..1} matches {	-- Consent Document Used
+						value matches {
+							DV_TEXT[id67] 
+						}
+					}
+					ELEMENT[id27] occurrences matches {0..1} matches {	-- Review Date
+						value matches {
+							DV_DATE_TIME[id68] 
+						}
+					}
+					allow_archetype CLUSTER[id29] matches {	-- Consent Requester
+						include
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[id30] matches {	-- Consent Provider
+						include
+							archetype_id/value matches {/.*/}
+					}
+					CLUSTER[id34] matches {	-- Patient Information
+						items matches {
+							ELEMENT[id33] occurrences matches {0..1} matches {	-- Name
+								value matches {
+									DV_TEXT[id69] 
+								}
+							}
+							ELEMENT[id36] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT[id70] 
+								}
+							}
+							ELEMENT[id35] matches {	-- Multimedia Representation
+								value matches {
+									DV_MULTIMEDIA[id71] matches {
+										media_type matches {[ac4]}		-- Multimedia Representation (synthesised)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Informed Consent">
+				description = <"Record of status and details of informed consent from a patient (or patient's agent) for a proposed procedure, trial or other healthcare-related activity (including treatments and investigations), based upon a clear appreciation and understanding of the facts, implications, and possible future consequences by the patient or patient's agent.">
+			>
+			["id3"] = <
+				text = <"Procedure/Trial/Activity">
+				description = <"Identification of the procedure, clinical trial or healthcare-related activity (including correct side/correct site, where appropriate) against which the consent status and details are recorded.">
+			>
+			["id4"] = <
+				text = <"Details">
+				description = <"Additional structured details about the procedure/trial/activity itself or additional structured consent details.">
+			>
+			["id5"] = <
+				text = <"Form of Consent">
+				description = <"Form of the consent sought or provided.">
+			>
+			["at6"] = <
+				text = <"Written">
+				description = <"Format of the consent is written.">
+			>
+			["at7"] = <
+				text = <"Verbal">
+				description = <"Format of the consent is verbal.">
+			>
+			["id8"] = <
+				text = <"Reason">
+				description = <"Reason that the care pathway step for the identified procedure, clinical trial or healthcare-related activity was carried out.">
+			>
+			["id9"] = <
+				text = <"Start Date">
+				description = <"Date, and optional time, when validity of the informed consent becomes active.">
+			>
+			["id10"] = <
+				text = <"End Date">
+				description = <"Date, and optional time, when validity of the informed consent ceased.">
+			>
+			["id11"] = <
+				text = <"Caveat">
+				description = <"Details of any qualifications or exemptions to the informed consent.">
+			>
+			["id12"] = <
+				text = <"Consent Description">
+				description = <"Narrative description of the informed consent required or recorded prior to performing the proposed procedure, clinical trial or healthcare-related activity.">
+			>
+			["id13"] = <
+				text = <"Evidence of Consent">
+				description = <"Evidence of consent status.">
+			>
+			["id14"] = <
+				text = <"Planned">
+				description = <"Need for informed consent is identified.">
+			>
+			["id15"] = <
+				text = <"Informed Consent Requested">
+				description = <"Informed consent has been requested from the patient or patient's agent, but no response has been received.">
+			>
+			["id16"] = <
+				text = <"Informed Consent Provided">
+				description = <"Informed consent has been provided by the patient or patient's agent.">
+			>
+			["id17"] = <
+				text = <"Informed Consent Refused">
+				description = <"In response to a request for informed consent, it has been refused by patient or patient's agent.">
+			>
+			["id18"] = <
+				text = <"Informed Consent Withdrawn">
+				description = <"Following initial provision of informed consent, it has been withrawn by the patient or patient's agent.">
+			>
+			["id19"] = <
+				text = <"Cancelled">
+				description = <"Intent to request informed consent has been cancelled, prior to requesting consent from patient or patient's agent..">
+			>
+			["id20"] = <
+				text = <"Postponed">
+				description = <"Intent to request informed consent has been postponed.">
+			>
+			["id22"] = <
+				text = <"Informed Consent Not Obtained">
+				description = <"Informed consent was not obtainable from either the patient or patient's advocate.">
+			>
+			["id23"] = <
+				text = <"Completed">
+				description = <"Informed consent has been provided by the patient or patient's agent and the activity is now complete.">
+			>
+			["id26"] = <
+				text = <"Consent Document Used">
+				description = <"Identification of the consent form or document used.">
+			>
+			["id27"] = <
+				text = <"Review Date">
+				description = <"Date when consent status is due for review.">
+			>
+			["id28"] = <
+				text = <"Appointment Scheduled">
+				description = <"An appointment has been scheduled to request consent.">
+			>
+			["id29"] = <
+				text = <"Consent Requester">
+				description = <"Details about the healthcare provider who is requesting or recording the consent.">
+			>
+			["id30"] = <
+				text = <"Consent Provider">
+				description = <"Details about the subject (or subject's agent) who is being requested for, or providing, the consent for the procedure, clinical trial or healthcare-related activity.">
+			>
+			["id31"] = <
+				text = <"Procedure/Trial/Activity Description">
+				description = <"Narrative description of the procedure, clinical trial or healthcare-related activity.">
+			>
+			["id32"] = <
+				text = <"Intent">
+				description = <"Description of the intent of the procedure, clinical trial or healthcare-related activity.">
+			>
+			["id33"] = <
+				text = <"Name">
+				description = <"Identification of the information made available.">
+			>
+			["id34"] = <
+				text = <"Patient Information">
+				description = <"Details about Patient Information made available to the subject or subject's agent.">
+			>
+			["id35"] = <
+				text = <"Multimedia Representation">
+				description = <"Digital representation of the Patient Information made available.">
+			>
+			["id36"] = <
+				text = <"Description">
+				description = <"Narrative description of the patient information made available.">
+			>
+			["at14"] = <
+				text = <"Planned">
+				description = <"Need for informed consent is identified.">
+			>
+			["at20"] = <
+				text = <"Postponed">
+				description = <"Intent to request informed consent has been postponed.">
+			>
+			["at19"] = <
+				text = <"Cancelled">
+				description = <"Intent to request informed consent has been cancelled, prior to requesting consent from patient or patient's agent..">
+			>
+			["at28"] = <
+				text = <"Appointment Scheduled">
+				description = <"An appointment has been scheduled to request consent.">
+			>
+			["at15"] = <
+				text = <"Informed Consent Requested">
+				description = <"Informed consent has been requested from the patient or patient's agent, but no response has been received.">
+			>
+			["at16"] = <
+				text = <"Informed Consent Provided">
+				description = <"Informed consent has been provided by the patient or patient's agent.">
+			>
+			["at22"] = <
+				text = <"Informed Consent Not Obtained">
+				description = <"Informed consent was not obtainable from either the patient or patient's advocate.">
+			>
+			["at17"] = <
+				text = <"Informed Consent Refused">
+				description = <"In response to a request for informed consent, it has been refused by patient or patient's agent.">
+			>
+			["at18"] = <
+				text = <"Informed Consent Withdrawn">
+				description = <"Following initial provision of informed consent, it has been withrawn by the patient or patient's agent.">
+			>
+			["at23"] = <
+				text = <"Completed">
+				description = <"Informed consent has been provided by the patient or patient's agent and the activity is now complete.">
+			>
+			["at29"] = <
+				text = <"planned">
+				description = <"planned">
+			>
+			["at30"] = <
+				text = <"postponed">
+				description = <"postponed">
+			>
+			["at31"] = <
+				text = <"cancelled">
+				description = <"cancelled">
+			>
+			["at32"] = <
+				text = <"scheduled">
+				description = <"scheduled">
+			>
+			["at33"] = <
+				text = <"active">
+				description = <"active">
+			>
+			["at34"] = <
+				text = <"aborted">
+				description = <"aborted">
+			>
+			["at35"] = <
+				text = <"complete">
+				description = <"complete">
+			>
+			["at36"] = <
+				text = <"active">
+				description = <"active">
+			>
+			["at37"] = <
+				text = <"planned">
+				description = <"planned">
+			>
+			["at38"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at39"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at40"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at41"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at42"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at43"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at44"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at45"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at46"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at47"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at48"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at49"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at50"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at51"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at52"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at53"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at54"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at55"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at56"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at57"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at58"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at59"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at60"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at61"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at62"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at63"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at64"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at65"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at66"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at67"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at68"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at69"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at70"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at71"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at72"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at73"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at74"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at75"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at76"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at77"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at78"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at79"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at80"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at81"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at82"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at83"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at84"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at85"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at86"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at87"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at88"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at89"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at90"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at91"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at92"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at93"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at94"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at95"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at96"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at97"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at98"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at99"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at100"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at101"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at102"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at103"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at104"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at105"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at106"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at107"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at108"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at109"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at110"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at111"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at112"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at113"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at114"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at115"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at116"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at117"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at118"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at119"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Informed Consent Requested (synthesised)">
+				description = <"Informed consent has been requested from the patient or patient's agent, but no response has been received. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Form of Consent (synthesised)">
+				description = <"Form of the consent sought or provided. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Evidence of Consent (synthesised)">
+				description = <"Evidence of consent status. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Multimedia Representation (synthesised)">
+				description = <"Digital representation of the Patient Information made available. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at29"] = <http://openehr.org/id/526>
+			["at30"] = <http://openehr.org/id/527>
+			["at31"] = <http://openehr.org/id/528>
+			["at32"] = <http://openehr.org/id/529>
+			["at33"] = <http://openehr.org/id/245>
+			["at34"] = <http://openehr.org/id/531>
+			["at35"] = <http://openehr.org/id/532>
+			["at36"] = <http://openehr.org/id/245>
+			["at37"] = <http://openehr.org/id/526>
+			["at38"] = <http://openehr.org/id/387>
+			["at39"] = <http://openehr.org/id/388>
+			["at40"] = <http://openehr.org/id/389>
+			["at41"] = <http://openehr.org/id/390>
+			["at42"] = <http://openehr.org/id/391>
+			["at43"] = <http://openehr.org/id/392>
+			["at44"] = <http://openehr.org/id/393>
+			["at45"] = <http://openehr.org/id/394>
+			["at46"] = <http://openehr.org/id/395>
+			["at47"] = <http://openehr.org/id/396>
+			["at48"] = <http://openehr.org/id/397>
+			["at49"] = <http://openehr.org/id/398>
+			["at50"] = <http://openehr.org/id/399>
+			["at51"] = <http://openehr.org/id/400>
+			["at52"] = <http://openehr.org/id/409>
+			["at53"] = <http://openehr.org/id/410>
+			["at54"] = <http://openehr.org/id/411>
+			["at55"] = <http://openehr.org/id/412>
+			["at56"] = <http://openehr.org/id/413>
+			["at57"] = <http://openehr.org/id/425>
+			["at58"] = <http://openehr.org/id/426>
+			["at59"] = <http://openehr.org/id/427>
+			["at60"] = <http://openehr.org/id/428>
+			["at61"] = <http://openehr.org/id/429>
+			["at62"] = <http://openehr.org/id/415>
+			["at63"] = <http://openehr.org/id/416>
+			["at64"] = <http://openehr.org/id/417>
+			["at65"] = <http://openehr.org/id/418>
+			["at66"] = <http://openehr.org/id/419>
+			["at67"] = <http://openehr.org/id/420>
+			["at68"] = <http://openehr.org/id/421>
+			["at69"] = <http://openehr.org/id/422>
+			["at70"] = <http://openehr.org/id/423>
+			["at71"] = <http://openehr.org/id/424>
+			["at72"] = <http://openehr.org/id/401>
+			["at73"] = <http://openehr.org/id/402>
+			["at74"] = <http://openehr.org/id/404>
+			["at75"] = <http://openehr.org/id/405>
+			["at76"] = <http://openehr.org/id/406>
+			["at77"] = <http://openehr.org/id/407>
+			["at78"] = <http://openehr.org/id/414>
+			["at79"] = <http://openehr.org/id/387>
+			["at80"] = <http://openehr.org/id/388>
+			["at81"] = <http://openehr.org/id/389>
+			["at82"] = <http://openehr.org/id/390>
+			["at83"] = <http://openehr.org/id/391>
+			["at84"] = <http://openehr.org/id/392>
+			["at85"] = <http://openehr.org/id/393>
+			["at86"] = <http://openehr.org/id/394>
+			["at87"] = <http://openehr.org/id/395>
+			["at88"] = <http://openehr.org/id/396>
+			["at89"] = <http://openehr.org/id/397>
+			["at90"] = <http://openehr.org/id/398>
+			["at91"] = <http://openehr.org/id/399>
+			["at92"] = <http://openehr.org/id/400>
+			["at93"] = <http://openehr.org/id/409>
+			["at94"] = <http://openehr.org/id/410>
+			["at95"] = <http://openehr.org/id/411>
+			["at96"] = <http://openehr.org/id/412>
+			["at97"] = <http://openehr.org/id/413>
+			["at98"] = <http://openehr.org/id/425>
+			["at99"] = <http://openehr.org/id/426>
+			["at100"] = <http://openehr.org/id/427>
+			["at101"] = <http://openehr.org/id/428>
+			["at102"] = <http://openehr.org/id/429>
+			["at103"] = <http://openehr.org/id/415>
+			["at104"] = <http://openehr.org/id/416>
+			["at105"] = <http://openehr.org/id/417>
+			["at106"] = <http://openehr.org/id/418>
+			["at107"] = <http://openehr.org/id/419>
+			["at108"] = <http://openehr.org/id/420>
+			["at109"] = <http://openehr.org/id/421>
+			["at110"] = <http://openehr.org/id/422>
+			["at111"] = <http://openehr.org/id/423>
+			["at112"] = <http://openehr.org/id/424>
+			["at113"] = <http://openehr.org/id/401>
+			["at114"] = <http://openehr.org/id/402>
+			["at115"] = <http://openehr.org/id/404>
+			["at116"] = <http://openehr.org/id/405>
+			["at117"] = <http://openehr.org/id/406>
+			["at118"] = <http://openehr.org/id/407>
+			["at119"] = <http://openehr.org/id/414>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at36", "at37">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at6", "at7">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at38", "at39", "at40", "at41", "at42", "at43", "at44", "at45", "at46", "at47", "at48", "at49", "at50", "at51", "at52", "at53", "at54", "at55", "at56", "at57", "at58", "at59", "at60", "at61", "at62", "at63", "at64", "at65", "at66", "at67", "at68", "at69", "at70", "at71", "at72", "at73", "at74", "at75", "at76", "at77", "at78">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at79", "at80", "at81", "at82", "at83", "at84", "at85", "at86", "at87", "at88", "at89", "at90", "at91", "at92", "at93", "at94", "at95", "at96", "at97", "at98", "at99", "at100", "at101", "at102", "at103", "at104", "at105", "at106", "at107", "at108", "at109", "at110", "at111", "at112", "at113", "at114", "at115", "at116", "at117", "at118", "at119">
+		>
+	>

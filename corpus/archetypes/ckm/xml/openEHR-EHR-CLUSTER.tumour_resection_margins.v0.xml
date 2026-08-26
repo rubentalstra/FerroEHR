@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2009-05-17</original_author>
+    <original_author id="name">Dr Ian McNicoll</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">ian.mcnicoll@oceaninformatics.com</original_author>
+    <other_contributors>Sabine Leh, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Therese Högberg Mårder, Linköpings University, Sweden</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references"></other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">7323F700EC9DD50E535E654F4D7D7D30</other_details>
+    <other_details id="build_uid">ce6a67fd-d831-4730-8db6-c5663597405e</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Details zum operativen Resektionsrand bei einem malignen Tumor. Der Archetyp kann verwendet werden, um das Tumorvorkommen am Resektionsrand zu beschreiben, sowie Angaben zur Länge der Tumorausbreitung anzugeben. Sollte kein Tumorvorkommen am Resektionsrand nachweisbar sein, kann der Abstand vom Resektionsrand zum Tumor erhoben werden.</purpose>
+      <keywords>Malignität</keywords>
+      <keywords>Rand/Ränder</keywords>
+      <keywords>Tumor(e)</keywords>
+      <keywords>Krebs</keywords>
+      <keywords>Resektion</keywords>
+      <keywords>Histopathologie</keywords>
+      <keywords>Biopsie(n)</keywords>
+      <use>Wird hauptsächlich innerhalb eines histopathologischen Archetypen verwendet.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Details of surgical resection margin involvement of malignant tumours. May be used to describe scenarios where tumour is present at the resection margin, detailing the length of tumour involvement, or where tumour is absent from the margin, to indicate the distance of tumour from that margin.</purpose>
+      <keywords>malignancy</keywords>
+      <keywords>margins</keywords>
+      <keywords>tumour</keywords>
+      <keywords>cancer</keywords>
+      <keywords>resection</keywords>
+      <keywords>histopathology</keywords>
+      <keywords>biopsy</keywords>
+      <use>Normally used within a histopathology archetype.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>تفاصيل حول اكتناف حواف القطع الجراحي بالورم الخبيث. قد يستخدم لوصف سيناريوهات حيث يوجد فيها الورم موجودا عند حافة/هامش القطع, تفاصيل حول طول اكتناف الورم, أو حيث يكون الورم غائبا من الحافة/الهامش, للإشارة إلى المسافة بين الورم و الحافة/الهامش.</purpose>
+      <keywords>الخباثة</keywords>
+      <keywords>الحواف/الهوامش</keywords>
+      <keywords>الورم</keywords>
+      <keywords>السرطان</keywords>
+      <keywords>القطع</keywords>
+      <keywords>الهيستوباثولوجيا</keywords>
+      <keywords>الخزعة</keywords>
+      <use>يستخدم عادة في نموذج الهيستوباثولجيا</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Carina Lerch</author>
+    <author id="organisation">Heidelberg University Hospital</author>
+    <author id="email">carina.lerch@med.uni-heidelberg.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <uid>
+    <value>1ed870b1-760e-4441-886f-7a6d98d2dfab</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.tumour_resection_margins.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0014</code_list>
+                <code_list>at0015</code_list>
+                <code_list>at0017</code_list>
+                <code_list>at0016</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <property>
+                  <terminology_id>
+                    <value>openehr</value>
+                  </terminology_id>
+                  <code_string>122</code_string>
+                </property>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0.0</lower>
+                  </magnitude>
+                  <units>mm</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0020</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <property>
+                  <terminology_id>
+                    <value>openehr</value>
+                  </terminology_id>
+                  <code_string>122</code_string>
+                </property>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0.0</lower>
+                  </magnitude>
+                  <units>mm</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0021</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Surgical resection margins</items>
+        <items id="description">Details of tumour involvement at margins of surgical resections/biopsies.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Marginal involvement</items>
+        <items id="description">Evidence of tumour at a surgical resection margin.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tumour present</items>
+        <items id="description">Details where tumour is present at the surgical resection margin.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Maximum linear involvement</items>
+        <items id="description">When tumour is present at surgical resection margin, the maximal length of involvement.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tumour absent</items>
+        <items id="description">Details where tumour is absent from surgical resection margins.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Distance from resection margin</items>
+        <items id="description">When tumour is absent, the distance from tumour to the named surgical resection margin.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Description</items>
+        <items id="description">A text description of tumour involvement at the surgical resection margin.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Present</items>
+        <items id="description">Ttumour is present at the surgical resection margin.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Absent</items>
+        <items id="description">Tumour is absent from the surgical resection margin.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Indeterminate</items>
+        <items id="description">Presence of tumour at surgical resection margins has not been determined.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Equivocal</items>
+        <items id="description">Presence of tumour at the surgical resection margin is equivocal.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Margin name</items>
+        <items id="description">The name of the margin being described.</items>
+        <items id="comment">For example: 'closest margin', 'circumferential margin', 'deep margin', 'vascular margin' or 'bronchial margin'.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Margin location</items>
+        <items id="description">The location of the margin being described.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Nature of involvement</items>
+        <items id="description">The nature of involvement of the tumour with the surgical margin.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tumour name</items>
+        <items id="description">Name of the tumour for which the 'Distance from resection margin' applies.</items>
+        <items id="comment">For example: 'Invasive tumour' or 'Cancer in situ'.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">الورم - حواف/هوامش القطع الجراحي</items>
+        <items id="description">تفاصيل حول اكتناف الورم بحواف/هوامش القطع/الخزعات الجراحية</items>
+      </items>
+      <items code="at0001">
+        <items id="text">اكتناف الحواف</items>
+        <items id="description">الدليل على وجود الورم في هامش القطع الجراحي</items>
+      </items>
+      <items code="at0006">
+        <items id="text">يوجد ورم</items>
+        <items id="description">توجد تفاصيل حول حافة القطع الجراحي</items>
+      </items>
+      <items code="at0007">
+        <items id="text">حد أقصى من الاكتناف الخطي</items>
+        <items id="description">إذا كان الورم موجودا بالفعل عند حافة القطع الجراحي, الحد الأقصى لطول الاكتناف</items>
+      </items>
+      <items code="at0008">
+        <items id="text">لا يوجد ورم</items>
+        <items id="description">التفاصيل التي لا يوجد فيها ورم في حواف القطع الجراحي</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Distance from resection margin (en)</items>
+        <items id="description">*When tumour is absent, the distance from tumour to the named surgical resection margin. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">الوصف</items>
+        <items id="description">وصف نصي لاكتناف الورم عند حافة القطع الجراحي</items>
+      </items>
+      <items code="at0014">
+        <items id="text">موجود</items>
+        <items id="description">الورم موجود في حافة القطع الجراحي</items>
+      </items>
+      <items code="at0015">
+        <items id="text">غائب</items>
+        <items id="description">الورم غائب عن حافة القطع الجراحي</items>
+      </items>
+      <items code="at0016">
+        <items id="text">غير محدد</items>
+        <items id="description">لم يتم تحديد وجود الورم عند حواف القطع الجراحي</items>
+      </items>
+      <items code="at0017">
+        <items id="text">غير قابل للتحديد</items>
+        <items id="description">وجود الورم عند حواف القطع الجراحي غير قابل للتحديد</items>
+      </items>
+      <items code="at0018">
+        <items id="text">اسم الحافة/الهامش</items>
+        <items id="description">*The name of the margin being described. (en)</items>
+        <items id="comment">*For example: 'closest margin', 'circumferential margin', 'deep margin', 'vascular margin' or 'bronchial margin'. (en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">مكان الحافة</items>
+        <items id="description">مكان الحافة التي يتم وصفها</items>
+      </items>
+      <items code="at0020">
+        <items id="text">طبيعة الاكتناف</items>
+        <items id="description">طبيعة اكتناف الورم في الحافة الجراحية</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Tumour name (en)</items>
+        <items id="description">*Name of the tumour for which the 'Distance from resection margin' applies. (en)</items>
+        <items id="comment">*For example: 'Invasive tumour' or 'Cancer in situ'. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Operative Resektionsränder</items>
+        <items id="description">Details über das Tumorvorkommen an operativen Resektionsrändern bzw. Biopsien.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Status zum Resektionsrand</items>
+        <items id="description">Nachweis von Tumorvorkommen am Resektionsrand.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tumorvorkommen</items>
+        <items id="description">Details zu dem Tumorvorkommen am Resektionsrand.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Maximale lineare Ausbreitung</items>
+        <items id="description">Falls ein Tumorvorkommen im Resektionsrand nachgewiesen wird, so ist die maximale Länge der Ausbreitung anzugeben.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tumorfrei</items>
+        <items id="description">Details zum tumorfreien Resektionsrand.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Abstand vom Resektionsrand</items>
+        <items id="description">Angabe zum Abstand zwischen Tumor und dem genannten Resektionsrand, falls der Tumor innerhalb des Resektionsrandes nicht nachweisbar ist.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Beschreibung</items>
+        <items id="description">Eine Beschreibung des Tumorvorkommens am Resektionsrand.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Vorhanden</items>
+        <items id="description">Tumor am Resektionsrand ist nachweisbar/vorhanden.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Nicht vorhanden</items>
+        <items id="description">Tumor am Resektionsrand nicht nachweisbar/nicht vorhanden.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Nicht bestimmt</items>
+        <items id="description">Tumorvorkommen am Resektionsrand wurde nicht bestimmt.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Nicht eindeutig</items>
+        <items id="description">Der Nachweis von Tumorvorkommen am Resektionsrand ist nicht eindeutig zu bestimmen.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Resektionsrandbezeichnung</items>
+        <items id="description">Die Bezeichnung des Resektionsrandes, der beschrieben wird.</items>
+        <items id="comment">Beispiel: "nächstgelegener Rand", "umlaufender Rand", "tiefer Rand", "vaskulärer Rand" oder "Bronchialrand".</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Resektionsrand Lokalisation</items>
+        <items id="description">Die Lokalisation des Resektionsrandes, der beschrieben wird.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Art der Ausbreitung</items>
+        <items id="description">Die Art der Ausbreitung des Tumors am Resektionsrand.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tumorbezeichnung</items>
+        <items id="description">Bezeichnung des Tumors, für den der "Abstand vom Resektionsrand" gilt.</items>
+        <items id="comment">Beispiel: "Invasiver Tumor" oder "In-Situ-Karzinom".</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

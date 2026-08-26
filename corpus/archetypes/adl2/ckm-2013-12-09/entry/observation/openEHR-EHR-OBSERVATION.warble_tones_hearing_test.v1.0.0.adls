@@ -1,0 +1,379 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.warble_tones_hearing_test.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"?">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"10/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A structure to record the results of testing the hearing thresholds of patients with developmental age between seven months and 18 months of age">
+			use = <"To assess hearing thresholds of patients with developmental age between seven months and 18 months of age">
+			keywords = <"hearing", "warble", "tones">
+			misuse = <"">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"هي بِنية لتسجيل نتائج اختبار عَتَبات السمع لدى المرضى الذين تتراوح أعمارهم النمائية ما بين سبعة أشهر و ثمانية عشرة شهرا">
+			use = <"لتقييم العتبات السمعية للمرضى الذين تترواح أعمارهم ما بين سبعة أشهر و ثمانية عشرا شهرا">
+			keywords = <"السماع", "اللُّحمَوية", "النغمات">
+			misuse = <"">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Warble Tones Hearing Test
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Side
+										value matches {
+											DV_CODED_TEXT[id27] matches {
+												defining_code matches {[ac1]}		-- Side (synthesised)
+											}
+										}
+									}
+									CLUSTER[id19] occurrences matches {0..1} matches {	-- Details
+										items matches {
+											ELEMENT[id18] occurrences matches {0..1} matches {	-- Frequency
+												value matches {
+													DV_QUANTITY[id28] matches {
+														property matches {[at31]}
+														units matches {"Hz", "kHz"}
+													}
+													DV_CODED_TEXT[id29] matches {
+														defining_code matches {[ac2]}		-- Frequency (synthesised)
+													}
+												}
+											}
+											ELEMENT[id21] occurrences matches {0..1} matches {	-- Hearing Threshold
+												value matches {
+													DV_QUANTITY[id30] matches {
+														property matches {[at32]}
+														units matches {"dB"}
+													}
+												}
+											}
+											ELEMENT[id20] occurrences matches {0..1} matches {	-- Response
+												value matches {
+													DV_CODED_TEXT[id31] matches {
+														defining_code matches {[ac3]}		-- Response (synthesised)
+													}
+												}
+											}
+											ELEMENT[id25] occurrences matches {0..1} matches {	-- Image
+												value matches {
+													DV_MULTIMEDIA[id32] matches {
+														media_type matches {[ac4]}		-- Image (synthesised)
+													}
+												}
+											}
+										}
+									}
+									ELEMENT[id26] occurrences matches {0..1} matches {	-- Reliability
+										value matches {
+											DV_TEXT[id33] 
+										}
+									}
+									ELEMENT[id24] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id34] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Warble Tones Hearing Test">
+				description = <"A paediatric behavioural test, for assessing hearing thresholds of patients with developmental age between seven months and 18 months of age">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Side">
+				description = <"Side being tested">
+			>
+			["at6"] = <
+				text = <"Left">
+				description = <"*">
+			>
+			["at7"] = <
+				text = <"Right">
+				description = <"*">
+			>
+			["id18"] = <
+				text = <"Frequency">
+				description = <"Record frequency of Warble tone stimulus presented">
+			>
+			["id19"] = <
+				text = <"Details">
+				description = <"*">
+			>
+			["id20"] = <
+				text = <"Response">
+				description = <"Consistent response of infant to stimulus">
+			>
+			["id21"] = <
+				text = <"Hearing Threshold">
+				description = <"Record of hearing threshold in dB">
+			>
+			["at22"] = <
+				text = <"Positive">
+				description = <"*">
+			>
+			["at23"] = <
+				text = <"Negative">
+				description = <"*">
+			>
+			["id24"] = <
+				text = <"Comment">
+				description = <"Comment on test">
+			>
+			["id25"] = <
+				text = <"Image">
+				description = <"Image of test result">
+			>
+			["id26"] = <
+				text = <"Reliability">
+				description = <"Estimation of the reliability of the test result - indicated by behaviour of child eg cooperative etc.">
+			>
+			["at27"] = <
+				text = <"4kHz">
+				description = <"*">
+			>
+			["at28"] = <
+				text = <"2kHz">
+				description = <"*">
+			>
+			["at29"] = <
+				text = <"1kHz">
+				description = <"*">
+			>
+			["at30"] = <
+				text = <"0,5kHz">
+				description = <"*">
+			>
+			["at31"] = <
+				text = <"Frequency">
+				description = <"Frequency">
+			>
+			["at32"] = <
+				text = <"Loudness">
+				description = <"Loudness">
+			>
+			["at33"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at34"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at35"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at36"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at37"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Side (synthesised)">
+				description = <"Side being tested (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Frequency (synthesised)">
+				description = <"Record frequency of Warble tone stimulus presented (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Response (synthesised)">
+				description = <"Consistent response of infant to stimulus (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Image (synthesised)">
+				description = <"Image of test result (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"اختبار النغمات اللُّحمَوية السمعي">
+				description = <"اختبار سلوكي متعلق بطب الأطفال, من أجل تقييم عَتَبَات السمع لدى المرضى الذين تتراوح أعمارهم النَّمائية ما بين سبعة أشهر و ثمانية عشر شهرا ">
+			>
+			["id3"] = <
+				text = <"إحدى الوقائع">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"الجانب">
+				description = <"الجانب الذي يتم اختباره">
+			>
+			["at6"] = <
+				text = <"الأيسر">
+				description = <"*">
+			>
+			["at7"] = <
+				text = <"الأيمن">
+				description = <"*">
+			>
+			["id18"] = <
+				text = <"التكرار/ التردد">
+				description = <"تسجيل تكرار/تردد مُنَبِّه النغمات اللُّحموية التي يتم تقديمها">
+			>
+			["id19"] = <
+				text = <"التفاصيل">
+				description = <"*">
+			>
+			["id20"] = <
+				text = <"الاستجابة">
+				description = <"الاستجابة المُتَّسِقة من الطفل للمُنبِّه">
+			>
+			["id21"] = <
+				text = <"عتبة السمع">
+				description = <"تسجيل عتبة السمع بالديسي بِل">
+			>
+			["at22"] = <
+				text = <"إيجابي">
+				description = <"*">
+			>
+			["at23"] = <
+				text = <"سلبي">
+				description = <"*">
+			>
+			["id24"] = <
+				text = <"التعليق">
+				description = <"تعليق على الاختبار">
+			>
+			["id25"] = <
+				text = <"الصورة">
+				description = <"صورة نتيجة الاختبار">
+			>
+			["id26"] = <
+				text = <"المُعَوَّلية">
+				description = <"تقدير مُعَوَّلية نتيجة الاختبار - الذي تتم الإشارة إليه بسلوك الطفل, مثلا تعاونيّ, إلى آخره ">
+			>
+			["at27"] = <
+				text = <"4 كيلو هرتز">
+				description = <"*">
+			>
+			["at28"] = <
+				text = <"2 كيلو هرتز">
+				description = <"*">
+			>
+			["at29"] = <
+				text = <"1 كيلو هرتز">
+				description = <"*">
+			>
+			["at30"] = <
+				text = <"0.5 كيلو هرتز">
+				description = <"*">
+			>
+			["at31"] = <
+				text = <"*Frequency (en)">
+				description = <"*Frequency (en)">
+			>
+			["at32"] = <
+				text = <"*Loudness (en)">
+				description = <"*Loudness (en)">
+			>
+			["at33"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["at34"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["at35"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["at36"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["at37"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["ac1"] = <
+				text = <"الجانب (synthesised)">
+				description = <"الجانب الذي يتم اختباره (synthesised)">
+			>
+			["ac2"] = <
+				text = <"التكرار/ التردد (synthesised)">
+				description = <"تسجيل تكرار/تردد مُنَبِّه النغمات اللُّحموية التي يتم تقديمها (synthesised)">
+			>
+			["ac3"] = <
+				text = <"الاستجابة (synthesised)">
+				description = <"الاستجابة المُتَّسِقة من الطفل للمُنبِّه (synthesised)">
+			>
+			["ac4"] = <
+				text = <"الصورة (synthesised)">
+				description = <"صورة نتيجة الاختبار (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at31"] = <http://openehr.org/id/382>
+			["at32"] = <http://openehr.org/id/123>
+			["at33"] = <http://openehr.org/id/425>
+			["at34"] = <http://openehr.org/id/426>
+			["at35"] = <http://openehr.org/id/427>
+			["at36"] = <http://openehr.org/id/428>
+			["at37"] = <http://openehr.org/id/429>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at6", "at7">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at27", "at28", "at29", "at30">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at22", "at23">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at33", "at34", "at35", "at36", "at37">
+		>
+	>

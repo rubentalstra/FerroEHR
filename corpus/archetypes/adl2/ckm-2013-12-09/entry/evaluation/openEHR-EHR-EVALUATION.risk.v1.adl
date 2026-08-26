@@ -1,0 +1,187 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-EVALUATION.risk.v1
+
+concept
+	[at0000]	-- Evaluation of risk of condition
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+				["organisation"] = <"University of Heidelberg, Cental Queensland University">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.biz">
+		["date"] = <"23/04/2006">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation des Vorhandenseins eines Risikos mit möglichen Auswirkungen jetzt oder in der Zukunft">
+			use = <"">
+			keywords = <"Einschätzung", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the risk of a condition arising in the future">
+			use = <"">
+			keywords = <"assessment", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+
+definition
+	EVALUATION[at0000] matches {	-- Evaluation of risk of condition
+		data matches {
+			ITEM_TREE[at0001] matches {	-- structure
+				items cardinality matches {1..*; ordered} matches {
+					ELEMENT[at0002] matches {	-- Index condition
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Significance of risk
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0006, 	-- Not significant
+									at0007, 	-- Minimal significance
+									at0008, 	-- Significant
+									at0009]	-- Highly significant
+								}
+							}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Rationale
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[at0010] matches {	-- List
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0011] occurrences matches {0..1} matches {	-- Risk calculation
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["de"] = <
+			items = <
+				["at0000"] = <
+					text = <"Beurteilung des Risikos eines Zustandes">
+					description = <"Beurteilung zur Angabe eines oder keines erheblichen Risikos der zu behandelnden Person mit Auswirkungen jetzt oder in der Zukunft">
+				>
+				["at0001"] = <
+					text = <"structure">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Zustand">
+					description = <"Der Zustand, auf den sich die Risikoeinschätzung bezieht">
+				>
+				["at0003"] = <
+					text = <"Bedeutung des Risikos">
+					description = <"Die Wahrscheinlichkeit, dass diese Person diesen Zustand entwickelt oder in der Zukunft darunter leiden wird">
+				>
+				["at0004"] = <
+					text = <"Begründung">
+					description = <"Gerechtfertigung dieser Einschätzung">
+				>
+				["at0006"] = <
+					text = <"Nicht bedeutungsvoll">
+					description = <"Für die Person wird kein höheres Risiko geschätzt, als für die restliche Population">
+				>
+				["at0007"] = <
+					text = <"Minimal bedeutungsvoll">
+					description = <"Die Person hat eventuell ein etwas erhöhtes Risiko diesen Zustand zu entwickeln">
+				>
+				["at0008"] = <
+					text = <"Bedeutungsvoll">
+					description = <"Die Person hat ein erhöhtes Risiko diesen Zustand zu entwickeln als die allgemeine Population">
+				>
+				["at0009"] = <
+					text = <"Sehr bedeutungsvoll">
+					description = <"Es ist anzunehmen, dass die Person den Zustand entwickeln wird">
+				>
+				["at0010"] = <
+					text = <"List">
+					description = <"@ internal @">
+				>
+				["at0011"] = <
+					text = <"Risikoberechnung">
+					description = <"Die Berechnung des Risikos">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Evaluation of risk of condition">
+					description = <"Evaluation to indicate that there is, or is not, a significant risk of this subject of care having, now or in the future, a condition.">
+				>
+				["at0001"] = <
+					text = <"structure">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Index condition">
+					description = <"The condition on which the risk assessment is focussed">
+				>
+				["at0003"] = <
+					text = <"Significance of risk">
+					description = <"The likelihood that this person will develop this condition or suffer in this way in the future">
+				>
+				["at0004"] = <
+					text = <"Rationale">
+					description = <"Justification for this risk assessment">
+				>
+				["at0006"] = <
+					text = <"Not significant">
+					description = <"The person is not assessed at being at higher risk than the general population">
+				>
+				["at0007"] = <
+					text = <"Minimal significance">
+					description = <"The person may be of somewhat greater risk of developing the condition ">
+				>
+				["at0008"] = <
+					text = <"Significant">
+					description = <"The person is considered to be more likely to develop the condition than the general population">
+				>
+				["at0009"] = <
+					text = <"Highly significant">
+					description = <"The person is considered to be likely to develop the condition">
+				>
+				["at0010"] = <
+					text = <"List">
+					description = <"@ internal @">
+				>
+				["at0011"] = <
+					text = <"Risk calculation">
+					description = <"*">
+				>
+			>
+		>
+	>

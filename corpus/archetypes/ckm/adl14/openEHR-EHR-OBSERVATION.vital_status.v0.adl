@@ -1,0 +1,127 @@
+﻿archetype (adl_version=1.4; uid=8af8d91c-6ed1-4f4f-b1c3-9715e915cfb3)
+	openEHR-EHR-OBSERVATION.vital_status.v0
+
+concept
+	[at0000]	-- Vital status
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2022-09-20">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record whether an individual is alive or dead at a specified point in time.">
+			use = <"Use to record whether an individual is alive or dead at a specified point in time.">
+			keywords = <"alive", "dead", "deceased", "living", "vital", "status">
+			misuse = <"Not to be used to record details about the death of an individual - use EVALUATION.death_summary or EVALUATION.cause_of_death for this purpose.">
+			copyright = <"© openEHR Foundation, Ministry of Health and Wellness Jamaica">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"CCA3A00DE23504D6BC6B9A602A8185EB">
+		["build_uid"] = <"f89140e0-d746-48d1-ab20-629a6beba148">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] occurrences matches {1..*} matches {    -- Vital status
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..*} matches {    -- Any point in time event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Vital status
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0005,    -- Alive
+													at0006,    -- Dead
+													at0009]    -- Unknown
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0007] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0008] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Vital status">
+					description = <"Status of an individual as alive or dead.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any point in time event">
+					description = <"Default, unspecified point in time event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Vital status">
+					description = <"Whether an individual is alive or dead.">
+					comment = <"Usually only relevant at a specified point in time. For example: record as alive or dead at the time of recording information within a disease registry.">
+				>
+				["at0005"] = <
+					text = <"Alive">
+					description = <"The individual is not dead.">
+				>
+				["at0006"] = <
+					text = <"Dead">
+					description = <"The individual is no longer alive.">
+				>
+				["at0007"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0008"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0009"] = <
+					text = <"Unknown">
+					description = <"It is unknown if the individual is alive or dead.">
+				>
+			>
+		>
+	>

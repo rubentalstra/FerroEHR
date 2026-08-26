@@ -1,0 +1,152 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.substance_use-caffeine.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.substance_use.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"6/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"This is an archetype used to record details of the use of all common forms of caffeine">
+			use = <"Use to record details of the use of all common forms of caffeine.  This includes use at specific point in time, over intervals of time, and use of mathematical functions such as average or minimum eg average consumption over a week.  
+A typical use would be to record usage in an caffeine consumption diary.  ">
+			keywords = <"substance", "addiction", "consumption", "use", "caffeine", "coffee">
+			misuse = <"Not to be used for recording persistent and summary details about the use of caffeine - this should be captured using the EVALUATION.substance_use_summary-caffeine archetype.  ">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"21247F693D79FCEFFCAADBFA8F40FA32">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Caffeine consumption
+		/data[id2]/events[id3]/data[id4]/items[id5]/value matches {
+			DV_CODED_TEXT[id20.1] matches {
+				defining_code matches {[at0.19]}
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items[id12]/value matches {
+			DV_CODED_TEXT[id21.1] matches {
+				defining_code matches {[ac0.1]}		-- Form (synthesised)
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items matches {
+			after [id6]
+			CLUSTER[id0.25] occurrences matches {0..1} matches {	-- Amount consumed
+				items cardinality matches {0..1; unordered} matches {
+					ELEMENT[id13] 
+					ELEMENT[id13.1] matches {	-- Cups of coffee or tea
+						value matches {
+							DV_QUANTITY[id0.26] matches {
+								property matches {[at0.25]}
+								units matches {"/d", "/wk"}
+							}
+						}
+					}
+					ELEMENT[id13.2] matches {	-- Shots of espresso coffee
+						value matches {
+							DV_QUANTITY[id0.27] matches {
+								property matches {[at0.25]}
+								units matches {"/d", "/wk"}
+							}
+						}
+					}
+					ELEMENT[id13.3] matches {	-- Volume of soft drink
+						value matches {
+							DV_QUANTITY[id0.28] matches {
+								property matches {[at0.26]}
+								units matches {"ml/d", "ml/wk"}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.19"] = <
+				text = <"Caffeine">
+				description = <"Caffeine consumption">
+			>
+			["at0.20"] = <
+				text = <"Coffee - instant">
+				description = <"Source of caffeine is instant coffee">
+			>
+			["at0.21"] = <
+				text = <"Coffee - brewed/filtered">
+				description = <"Source of caffeine is brewed or filtered coffee">
+			>
+			["at0.22"] = <
+				text = <"Coffee - espresso">
+				description = <"Source of caffeine is espresso coffee, including cappuchino, latte etc">
+			>
+			["at0.23"] = <
+				text = <"Tea">
+				description = <"Source of caffeine is tea">
+			>
+			["at0.24"] = <
+				text = <"Soft drink">
+				description = <"Source of caffeine is soft drink eg cola">
+			>
+			["id0.25"] = <
+				text = <"Amount consumed">
+				description = <"Amount consumed - only one quantity is permitted per form">
+			>
+			["id1.1"] = <
+				text = <"Caffeine consumption">
+				description = <"Archetype to record the actual use or consumption of caffeine at the present time, a specific time or over a period of time. ">
+			>
+			["id13.1"] = <
+				text = <"Cups of coffee or tea">
+				description = <"Consumption of instant coffee, brewed coffee, filtered coffee or tea, in cups">
+			>
+			["id13.2"] = <
+				text = <"Shots of espresso coffee">
+				description = <"Consumption of espresso coffee by shots, whether alone or mixed with milk in cappuchino or latte etc">
+			>
+			["id13.3"] = <
+				text = <"Volume of soft drink">
+				description = <"Consumption of caffeine-containing soft drink by volume">
+			>
+			["at0.25"] = <
+				text = <"Frequency">
+				description = <"Frequency">
+			>
+			["at0.26"] = <
+				text = <"Flow rate, volume">
+				description = <"Flow rate, volume">
+			>
+			["ac0.1"] = <
+				text = <"Form (synthesised)">
+				description = <"Form of caffeine consumed (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.25"] = <http://openehr.org/id/382>
+			["at0.26"] = <http://openehr.org/id/126>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.20", "at0.21", "at0.22", "at0.23", "at0.24">
+		>
+	>

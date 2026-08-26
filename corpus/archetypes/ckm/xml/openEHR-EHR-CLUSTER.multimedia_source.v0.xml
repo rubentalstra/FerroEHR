@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2019-12-10</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjorn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">FHIR Resource Media: HL7 [Internet]; [cited 2019 Dec 10]. Available from https://www.hl7.org/fhir/media.html.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">705FA8078781F2C4FD5B73FBBF4D1709</other_details>
+    <other_details id="build_uid">392cc6e3-0289-46b5-a2fa-65196e68c04a</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Dokumentation von Metadaten zu multimedialen klinischen Daten, die nicht im Multimedia-Datentyp erfasst werden.</purpose>
+      <keywords>Bild</keywords>
+      <keywords>Audio</keywords>
+      <keywords>Ton</keywords>
+      <keywords>Text</keywords>
+      <keywords>Video</keywords>
+      <keywords>Videosequenz</keywords>
+      <keywords>Anwendung</keywords>
+      <keywords>Fotografie</keywords>
+      <keywords>Animation</keywords>
+      <keywords>Grafik</keywords>
+      <use>Zur Dokumentation von Metadaten zu multimedialen klinischen Daten, die nicht im Multimedia-Datentyp erfasst werden.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere metadata om en multimediarepresentasjon av kliniske data som ikke er dekket av kun datatypen Multimedia.</purpose>
+      <keywords>bilde</keywords>
+      <keywords>lyd</keywords>
+      <keywords>tekst</keywords>
+      <keywords>video</keywords>
+      <keywords>applikasjon</keywords>
+      <use>Brukes for å registrere ytterligere metadata om en multimediarepresentasjon av kliniske data som ikke er dekket av kun datatypen Mulitmedia.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para gravar detalhes de metadados sobre uma representação multimídia dos dados clínicos não capturados usando o tipo de dado de multimídia sozinho.</purpose>
+      <keywords>imagem</keywords>
+      <keywords>áudio</keywords>
+      <keywords>texto</keywords>
+      <keywords>vídeo</keywords>
+      <keywords>aplicação</keywords>
+      <use>Usado para gravar metadados adicionais sobre uma representação multimídia do dado clínico que não é capturado usando o tipo de dado multimídia sozinho.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about text, audio, images, animations, video and interactive content generated or acquired during the provision of healthcare.</purpose>
+      <keywords>image</keywords>
+      <keywords>audio</keywords>
+      <keywords>text</keywords>
+      <keywords>video</keywords>
+      <keywords>application</keywords>
+      <keywords>file</keywords>
+      <use>Use to record details about text, audio, images, animations, video and interactive content generated or acquired during the provision of healthcare.&#xD;
+&#xD;
+Examples include but are not limited to:&#xD;
+- A photo of an injury;&#xD;
+- A diagram of the location of a specific clinical finding;&#xD;
+- A digital Xray or CT scan result;&#xD;
+- An audio or video recording of an interview;&#xD;
+- Data output from a clinical device, such as an ECG machine; or&#xD;
+- A scanned image of hand-written clinical notes.&#xD;
+&#xD;
+The 'Content' data element allows for the multimedia content to be captured and stored within the health record using the Multimedia data type, or to be referenced elsewhere using the URI data type.&#xD;
+&#xD;
+If more than one resource is acquired or used as part of a single activity, use one instance of this archetype to represent each resource.&#xD;
+&#xD;
+The context of each resource should be contained within the parent archetype. For example: details about the modality, view or aspect of a radiographic image will be captured within the OBSERVATION.imaging_test_result archetype.</use>
+      <misuse>Not to be used to represent multimedia content that is supplied to an individual or carer during the provision of healthcare - use CLUSTER.multimedia_supply for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Ramona Wellmann</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">wellmann.ramona@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen HF, Norway</author>
+    <author id="email">john.tore.valand@helse-bergen.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Fernanda Maia Ewerton</author>
+    <author id="organisation">Core Consulting</author>
+    <author id="email">fernanda.maiaewerton@gmail.com</author>
+    <accreditation>Hospital Alemão Oswaldo Cruz (HAOC)</accreditation>
+  </translations>
+  <uid>
+    <value>bf56d324-11d0-42ca-9405-282885f4d6b5</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.multimedia_source.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_MULTIMEDIA</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_URI</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_DATE_TIME&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.device\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Multimedia source</items>
+        <items id="description">A multimedia resource that is generated or acquired during the provision of healthcare.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Content</items>
+        <items id="description">Digital representation of the resource.</items>
+        <items id="comment">The actual content will be captured and stored using the Multimedia data type. For example: RTF or PDF for a document; JPG for an image; MP4 for a video; or WAV for an audio file. If the content is stored elsewhere the external location can be referenced using the URI data type.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Resource name</items>
+        <items id="description">Name or title of the multimedia resource.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Created</items>
+        <items id="description">The time, date, partial date or period when the resource was generated or authored.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the resource.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the multimedia source not captured in other fields.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Identifier</items>
+        <items id="description">Identifier for the resource.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Source device</items>
+        <items id="description">Details about the device used to generate or author the resource.</items>
+        <items id="comment">For example: the camera used to capture an image.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Creator</items>
+        <items id="description">Details about the individual or organisation who generated or authored the resource.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Additional details</items>
+        <items id="description">Further details about the multimedia source.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">*Media capture (en)</items>
+        <items id="description">Detalhes sobre a representação multimídia dos dados clínicos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Content (en)</items>
+        <items id="description">*Digital representation of the resource. (en)</items>
+        <items id="comment">*The actual content will be captured and stored using the Multimedia data type. For example: RTF or PDF for a document; JPG for an image; MP4 for a video; or WAV for an audio file. If the content is stored elsewhere the external location can be referenced using the URI data type. (en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Resource name (en)</items>
+        <items id="description">*Name or title of the photo, video, audio file or document. (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Created (en)</items>
+        <items id="description">*The time, date, partial date or period when the resource was generated or authored. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Descrição</items>
+        <items id="description">*Narrative description about the resource. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the multimedia source not captured in other fields. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*Identifier for the resource. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Source device (en)</items>
+        <items id="description">*Details about the device used to create or acquire the resource. (en)</items>
+        <items id="comment">*For example: the camera used to capture an image. (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Creator (en)</items>
+        <items id="description">*Details about the individual or organisation that generated or authored the resource. (en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Further details about the multimedia source. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">*Media capture (en)</items>
+        <items id="description">Details zur multimedialen Darstellung der klinischen Daten.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Content (en)</items>
+        <items id="description">*Digital representation of the resource. (en)</items>
+        <items id="comment">*The actual content will be captured and stored using the Multimedia data type. For example: RTF or PDF for a document; JPG for an image; MP4 for a video; or WAV for an audio file. If the content is stored elsewhere the external location can be referenced using the URI data type. (en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Resource name (en)</items>
+        <items id="description">*Name or title of the photo, video, audio file or document. (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Created (en)</items>
+        <items id="description">*The time, date, partial date or period when the resource was generated or authored. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Beschreibung</items>
+        <items id="description">*Narrative description about the resource. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the multimedia source not captured in other fields. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*Identifier for the resource. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Source device (en)</items>
+        <items id="description">*Details about the device used to create or acquire the resource. (en)</items>
+        <items id="comment">*For example: the camera used to capture an image. (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Creator (en)</items>
+        <items id="description">*Details about the individual or organisation that generated or authored the resource. (en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Further details about the multimedia source. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Media capture (en)</items>
+        <items id="description">Detaljer om en multimediarepresentasjon av kliniske data.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Content (en)</items>
+        <items id="description">*Digital representation of the resource. (en)</items>
+        <items id="comment">*The actual content will be captured and stored using the Multimedia data type. For example: RTF or PDF for a document; JPG for an image; MP4 for a video; or WAV for an audio file. If the content is stored elsewhere the external location can be referenced using the URI data type. (en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Resource name (en)</items>
+        <items id="description">*Name or title of the photo, video, audio file or document. (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Created (en)</items>
+        <items id="description">*The time, date, partial date or period when the resource was generated or authored. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Beskrivelse</items>
+        <items id="description">*Narrative description about the resource. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the multimedia source not captured in other fields. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*Identifier for the resource. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Source device (en)</items>
+        <items id="description">*Details about the device used to create or acquire the resource. (en)</items>
+        <items id="comment">*For example: the camera used to capture an image. (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Creator (en)</items>
+        <items id="description">*Details about the individual or organisation that generated or authored the resource. (en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Further details about the multimedia source. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

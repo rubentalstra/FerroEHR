@@ -1,0 +1,103 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-SECTION.diagnostic_reports.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			author = <
+				["name"] = <"Art Latyp Латыпов Артур Шамилевич">
+				["organisation"] = <"RusBITech РусБИТех, Москва">
+			>
+			accreditation = <"hmm">
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"7/03/2010">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To demonstrate a design pattern for representation of a List of Diagnostic Reports.">
+			use = <"Use to support the representation of diagnostic reports that have been recorded.">
+			keywords = <"diagnostic", "report", "laboratory", "imaging", "radiology", "pathology", "list">
+			misuse = <"">
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			purpose = <"Дизайн представления списка обоснования диагнозов">
+			use = <"Используется для поддержки представления списка обоснований диагноза">
+			keywords = <"диагностический", "список", "обоснование", "уточненный", "лаборатория", "визуализация", "радиология", "патоморфология", "диагноз", "окончательный", "предварительный", "рабочий">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Ian McNicoll, Ocean Informatics, Australia", "Heath Frankel, Ocean Informatics, Australia">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"EE922E416EC2C85EE6DF568D33B963CB">
+	>
+
+definition
+	SECTION[id1] matches {	-- Diagnostic Reports
+		items matches {
+			allow_archetype OBSERVATION[id2] matches {	-- Laboratory reports
+				include
+					archetype_id/value matches {/openEHR-EHR-OBSERVATION\.lab_test(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype OBSERVATION[id3] matches {	-- Imaging reports
+				include
+					archetype_id/value matches {/openEHR-EHR-OBSERVATION\.imaging(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype EVALUATION[id4] matches {	-- Diagnostic report synopsis
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.clinical_synopsis(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Diagnostic Reports">
+				description = <"Suggested design pattern for including Diagnostic Reports in a template.">
+			>
+			["id2"] = <
+				text = <"Laboratory reports">
+				description = <"Slot constrained to specifically include archetypes representing reports/results of laboratory tests.">
+			>
+			["id3"] = <
+				text = <"Imaging reports">
+				description = <"Slot constrained to specifically include archetypes representing reports/results of imaging tests.">
+			>
+			["id4"] = <
+				text = <"Diagnostic report synopsis">
+				description = <"Slot constrained to include archetypes representing narrative synopses of laboratory and/or imaging test results.">
+			>
+		>
+		["ru"] = <
+			["id1"] = <
+				text = <"Обоснование диагноза">
+				description = <"Предлагаемый дизайн для включения в шаблон обоснований диагнозов">
+			>
+			["id2"] = <
+				text = <"Отчеты о лабораторных данных">
+				description = <"Слот, включающий архетипы результатов лабораторных тестов">
+			>
+			["id3"] = <
+				text = <"Отчеты по методам визуализации">
+				description = <"Слот, включающий архетипы визуализационных обследований">
+			>
+			["id4"] = <
+				text = <"Эпикриз с обоснованием диагноза">
+				description = <"Слот, включающий архетипы для краткого описания лабораторных и других параклинических результатов">
+			>
+		>
+	>

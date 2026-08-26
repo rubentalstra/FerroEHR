@@ -1,0 +1,100 @@
+﻿archetype (adl_version=1.4; uid=1d9417b0-2abe-4cb6-b725-eeaa5b493f8b)
+	openEHR-EHR-COMPOSITION.advance_care.v0
+
+concept
+	[at0000]	-- Advance care
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2021-04-13">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To hold information about a plan for the management of future health and social care requirements, including chronic illness and end of life care.">
+			use = <"Use as a container to hold information about a plan for the management of future health and social care requirements, including chronic illness and end of life care, and the content should reflect the individual's unique health situation and circumstances.
+
+This archetype has been specifically designed to carry one, or more, of:
+- the EVALUATION.advance_care_directive, representing the preferences of an individual about their future care, from the point of view of the individual or their guardian; and
+- the EVALUATION.advance_intervention_decisions archetypes, representing the decisions about the overall intent of care and possible treatments, activities and diagnostic or therapeutic procedures that may be life-saving, life-prolonging or cause undesirable side effects, from the point of view of a clinician; or 
+- other archetypes that are clinically relevant and relevant to integrated care or end-of-life planning. 
+
+This archetype can be used as a single COMPOSITION for querying information about any anticipatory care preferences or decisions, with different archetypes clearly differentiating the source of the information as individual or clinician.">
+			keywords = <"advance care, directive, intervention, decision,", ...>
+			misuse = <"Not to be used to carry archetypes that are related to orders or management of an acute or emergency situation.
+
+Not to be used to carry archetypes that are related to care plans related to management current health and social requirements - use COMPOSITION.care_plan for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"25A207093B9E4A32A7F2A9463F5D434F">
+		["build_uid"] = <"6fb8d70b-2a61-4dca-957b-665b5cffaba6">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	COMPOSITION[at0000] matches {    -- Advance care
+		category matches {
+			DV_CODED_TEXT[at0001] matches {    -- Coded text
+				defining_code matches {
+					[openehr::431]
+				}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT[at0002] matches {    -- Event Context
+				other_context matches {
+					ITEM_TREE[at0003] matches {    -- Item tree
+						items cardinality matches {0..*; unordered} matches {
+							allow_archetype CLUSTER[at0004] occurrences matches {0..*} matches {    -- Extension
+								include
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Advance care">
+					description = <"A plan for the management of future health and social care requirements, including chronic illness and end of life care.">
+				>
+				["at0001"] = <
+					text = <"Coded text">
+					description = <"">
+				>
+				["at0002"] = <
+					text = <"Event Context">
+					description = <"">
+				>
+				["at0003"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+			>
+		>
+	>

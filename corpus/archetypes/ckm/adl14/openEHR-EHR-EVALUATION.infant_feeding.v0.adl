@@ -1,0 +1,230 @@
+﻿archetype (adl_version=1.4; uid=be4576ab-2b52-4108-8360-e90652b79e28)
+	openEHR-EHR-EVALUATION.infant_feeding.v0
+
+concept
+	[at0000]	-- Infant feeding summary
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2013-03-20">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a summary of early infant feeding activity, particularly focused on breast and formula feeding.">
+			use = <"Use to record a summary of early infant feeding activity, particularly focused on breast and formula feeding.">
+			keywords = <"breast", "feeding", "infant", "formula", "bottle", "fed", "wean">
+			misuse = <"">
+			copyright = <"© Australian Digital Health Agency, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Infant Feeding Summary, Draft Archetype [Internet]. Australian Digital Health Agency, Australian Digital Health Agency Clinical Knowledge Manager [cited: 2016-08-22]. Available from: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.1253">
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"B98121418E23F121BA5F588BABAFDB67">
+		["build_uid"] = <"018a40e4-3aa2-45c2-9ec4-855d65797d9e">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	EVALUATION[at0000] matches {    -- Infant feeding summary
+		data matches {
+			ITEM_TREE[at0001] matches {    -- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {    -- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..1} matches {    -- Overall feeding type
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0015,    -- Predominantly breastfed
+									at0016,    -- Predominantly formula fed
+									at0017]    -- Mixed breast and formula feeding
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					CLUSTER[at0003] occurrences matches {0..*} matches {    -- Feeding episode
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0006] occurrences matches {0..1} matches {    -- Type
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0011,    -- Predominantly Breastfed
+											at0012,    -- Predominantly Formula
+											at0013]    -- Mixed
+										}
+									}
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0004] occurrences matches {0..1} matches {    -- Age Commenced
+								value matches {
+									DV_DURATION matches {
+										value matches {PYMWD/|>=P0Y|}
+									}
+								}
+							}
+							ELEMENT[at0005] occurrences matches {0..1} matches {    -- Age Ceased
+								value matches {
+									DV_DURATION matches {*}
+								}
+							}
+							ELEMENT[at0009] occurrences matches {0..1} matches {    -- Comment
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+						}
+					}
+					ELEMENT[at0007] occurrences matches {0..1} matches {    -- Total Duration of Breast Feeding
+						value matches {
+							DV_DURATION matches {
+								value matches {PYMWD}
+							}
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {    -- Age Commenced Solid Foods
+						value matches {
+							DV_DURATION matches {
+								value matches {PMWD}
+							}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..1} matches {    -- Age Weaned
+						value matches {
+							DV_DURATION matches {
+								value matches {PYM}
+							}
+						}
+					}
+					ELEMENT[at0019] occurrences matches {0..1} matches {    -- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0021] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0020] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Infant feeding summary">
+					description = <"Summary of early infant feeding activity, particularly focused on breast and formula feeding.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Description">
+					description = <"Narrative description about the overall feeding history for the infant.">
+				>
+				["at0003"] = <
+					text = <"Feeding episode">
+					description = <"Details about a pattern of feeding.">
+				>
+				["at0004"] = <
+					text = <"Age Commenced">
+					description = <"The age of the infant when the selected type of feeding was commenced.">
+					comment = <"If commenced at birth, which will be recorded as 0 days, weeks or months, then this could be captured or displayed in a system as 'Birth'.">
+				>
+				["at0005"] = <
+					text = <"Age Ceased">
+					description = <"The age of the infant when the selected type of feeding was ceased.">
+				>
+				["at0006"] = <
+					text = <"Type">
+					description = <"The predominant type of feeding for a period of time.">
+				>
+				["at0007"] = <
+					text = <"Total Duration of Breast Feeding">
+					description = <"The total amount of time that the infant was predominantly breastfed.">
+				>
+				["at0008"] = <
+					text = <"Age Commenced Solid Foods">
+					description = <"The age of the infant when commenced on solid foods.">
+				>
+				["at0009"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the feeding activity not captured in other fields.">
+				>
+				["at0010"] = <
+					text = <"Age Weaned">
+					description = <"The age of the infant when weaned.">
+				>
+				["at0011"] = <
+					text = <"Predominantly Breastfed">
+					description = <"Infant was solely breast fed, or the proportion of the volume of milk supplied by breast feeding was significantly greater than the volume from bottled formula.">
+				>
+				["at0012"] = <
+					text = <"Predominantly Formula">
+					description = <"Infant was solely fed on bottled formula, or the proportion of the volume of milk supplied by feeding with bottled formula was significantly greater than by breast feeding.">
+				>
+				["at0013"] = <
+					text = <"Mixed">
+					description = <"The volume of milk supplied by breast feeding was similar to that supplied as bottled formula.">
+				>
+				["at0014"] = <
+					text = <"Overall feeding type">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Predominantly breastfed">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Predominantly formula fed">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Mixed breast and formula feeding">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"Comment">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"Extension">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+			>
+		>
+	>

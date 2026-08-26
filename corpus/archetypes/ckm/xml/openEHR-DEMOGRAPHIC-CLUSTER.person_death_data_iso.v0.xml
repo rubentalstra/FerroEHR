@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2009-05-20</original_author>
+    <original_author id="name">Sergio Miranda Freire &amp; Rigoleta Dutra Mediano Dias</original_author>
+    <original_author id="organisation">Universidade do Estado do Rio de Janeiro - UERJ</original_author>
+    <original_author id="email">sergio@lampada.uerj.br</original_author>
+    <other_contributors>Rigoleta Dutra, Ministry of Defense, Brazil (openEHR Editor)</other_contributors>
+    <other_contributors>Sergio Freire, State University of Rio de Janeiro, Brazil (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">ISO/TS 22220:2008(E) - Identification of Subject of Care - Technical Specification - International Organization for Standardization</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">637B911C4FDDA0BA860B6314C740E561</other_details>
+    <other_details id="build_uid">6793f095-4efc-459a-9e48-4b5ffca3dd69</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Demographische Daten zum Tod einer Person.</purpose>
+      <keywords>Demografische Daten zum Tod</keywords>
+      <keywords>Demografische Daten des Todes</keywords>
+      <use>Wird in der Bevölkerungsforschung verwendet, um Daten über den Tod einer Person zu sammeln.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Coleta de dados demográficos sobre o óbito de um indivíduo</purpose>
+      <keywords>serviço demográfico</keywords>
+      <keywords>dados demográficos do óbito</keywords>
+      <use>Usado em serviços de demografia para coletar dados relativos ao óbito de um indivíduo</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Representation of a person's demographic death data</purpose>
+      <keywords>demographic service</keywords>
+      <keywords>death demographic data</keywords>
+      <use>Used in demographic services to collect data about a person's death</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout</author>
+    <author id="email">ballout.sarah@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Sergio Miranda Freire</author>
+    <author id="organisation">Universidade do Estado do Rio de Janeiro - UERJ</author>
+    <author id="email">sergio@lampada.uerj.br</author>
+  </translations>
+  <uid>
+    <value>dcacd08d-dac5-4a24-bd02-bb15699f785b</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-DEMOGRAPHIC-CLUSTER.person_death_data_iso.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0020</code_list>
+                <code_list>at0021</code_list>
+                <code_list>at0022</code_list>
+                <code_list>at0023</code_list>
+                <code_list>at0024</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-DEMOGRAPHIC-CLUSTER\.person_other_death_data[a-zA-Z0-9_-]*\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-DEMOGRAPHIC-CLUSTER\.person_other_death_data[a-zA-Z0-9_-]*\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>true</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Dados do óbito</items>
+        <items id="description">Dados demográficos do óbito</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Data do óbito</items>
+        <items id="description">A data do óbito da pessoa</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Fonte da notificação</items>
+        <items id="description">Um código que informa sobre a fonte de notificação do óbito. Este campo fornece uma indicação da confiabilidade da informação</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Dados adicionais do óbito que são específicos de cada país</items>
+        <items id="description">Dados específicos de um país</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Cartório</items>
+        <items id="description">Indica que este óbito foi comunicado por um cartório</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Prestador de assistência à saúde</items>
+        <items id="description">Indica que este óbito foi comunicado por um prestador de assistência à saúde</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Parente</items>
+        <items id="description">Indica que este óbito foi comunicado por um parente</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Outra fonte</items>
+        <items id="description">Indica que este óbito foi comunicado por uma outra fonte</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Desconhecida</items>
+        <items id="description">Indica que a fonte de notificação deste óbito é desconhecida</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Death data</items>
+        <items id="description">Death demographic data</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Death date</items>
+        <items id="description">The date of death of a person</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Source of notification</items>
+        <items id="description">Indicates the source of information about a subject of care’s death. This field provides an indication of the certainty of the information</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Additional death data that are country specific</items>
+        <items id="description">Country specific data</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Registry</items>
+        <items id="description">Indicate that the notification source is a registry</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Healthcare provider</items>
+        <items id="description">Indicate that the notification source is a healthcare provider</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Relative</items>
+        <items id="description">Indicate that the notification source is a relative</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Other</items>
+        <items id="description">Indicate that the notification source is another source</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Unknown</items>
+        <items id="description">Indicate that the notification source is unknown</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Daten zum Tod</items>
+        <items id="description">Demografische Daten des Todes.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Datum zum Tod</items>
+        <items id="description">Datum zum Tod einer Person.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Informationsquelle</items>
+        <items id="description">Gibt an, woher die Informationen über den Tod stammen und wie sicher diese Informationen sind.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Zusätzliche Daten zum Tod, die länderspezifisch sind</items>
+        <items id="description">Länderspezifische Daten zum Tod.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Sterberegister</items>
+        <items id="description">Der Tod wurde von einem Sterberegister/notariell gemeldet.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Gesundheitsdienstleister</items>
+        <items id="description">Zeigt an, dass der Tod von einem Gesundheitsdienstleister gemeldet wurde.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Verwandte</items>
+        <items id="description">Zeigt an, dass der Tod von einem Verwandten gemeldet wurde.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Eine andere Quelle</items>
+        <items id="description">Zeigt an, dass der Tod von einer anderen Quelle gemeldet wurde.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Unbekannt</items>
+        <items id="description">Zeigt an, dass die Quelle der Benachrichtigung über den Tod unbekannt ist.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

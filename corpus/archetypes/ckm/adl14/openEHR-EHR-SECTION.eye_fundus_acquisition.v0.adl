@@ -1,0 +1,104 @@
+﻿archetype (adl_version=1.4; uid=b4b75321-1eae-4b8b-8975-40ecb70d5058)
+	openEHR-EHR-SECTION.eye_fundus_acquisition.v0
+
+concept
+	[at0000]	-- Eye fundus image acquisition and validation
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			author = <
+				["name"] = <"?">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Aitor Eguzkitza">
+		["organisation"] = <"Universidad Pública de Navarra - Complejo Hospitalario de Navarra">
+		["email"] = <"aitor.eguzkiza@unavarra.es">
+		["date"] = <"2014-05-26">
+	>
+	details = <
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			purpose = <"Gestionar el proceso de adquisición de imágenes de fondo de ojo, al tiempo que las imágenes resultantes son validadas para fines diagnóstico.">
+			use = <"Se utiliza para agrupar los detalles clínicos de adquisición y validación de los estudios diagnósticos que incluyan imágenes de fondo de ojo.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Manage the process of acquiring eye fundus images, whilst every resulting image is validated for diagnostic purposes.">
+			use = <"Use to group acquisition and validation details during clinical studies including eye fundus imaging.">
+			keywords = <"imaging", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["revision"] = <"0.0.1-alpha">
+		["build_uid"] = <"c3f83dcc-9720-45a8-aff3-a39f01d45f3a">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"C3766D8562C65ADC424761BBD9F28FF6">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	SECTION[at0000] matches {	-- Adquisición de imágenes clínicas
+		items cardinality matches {1..*; unordered} matches {
+			allow_archetype ACTION[at0001] occurrences matches {0..*} matches {	-- Exámen imagenológico
+				include
+					archetype_id/value matches {/openEHR-EHR-ACTION\.imaging_exam(-[a-zA-Z0-9_]+)*\.v([0-9]+)/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype OBSERVATION[at0003] occurrences matches {0..*} matches {	-- Validación de imágenes
+				include
+					archetype_id/value matches {/openEHR-EHR-OBSERVATION\.fundoscopic_examination(-[a-zA-Z0-9_]+)*\.v([0-9]+)/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["es"] = <
+			items = <
+				["at0000"] = <
+					text = <"Adquisición de imágenes clínicas">
+					description = <"Define el proceso de adquisición y validación de pruebas diagnósticas basadas en imágenes.">
+				>
+				["at0001"] = <
+					text = <"Exámen imagenológico">
+					description = <"Actividad clínica en torno a la realización de un examen imagenológico de fondo de ojo.">
+				>
+				["at0003"] = <
+					text = <"Validación de imágenes">
+					description = <"Revisión del procedimiento diagnóstico utilizado a medida que las imágenes de fondo de ojo se van adquiriendo, para validar su uso con fines diagnósticos.">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Eye fundus image acquisition and validation">
+					description = <"Defines the process of acquiring and validating eye fundus image studies.">
+				>
+				["at0001"] = <
+					text = <"Imaging acquisition">
+					description = <"Clinical activity that takes place when conducting eye fundus image studies.">
+				>
+				["at0003"] = <
+					text = <"Image validation">
+					description = <"Review of the eye fundus images acquired to validate their use for diagnostic purposes.">
+				>
+			>
+		>
+	>

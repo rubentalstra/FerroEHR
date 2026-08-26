@@ -1,0 +1,986 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2025-05-23</original_author>
+    <original_author id="name">Silje Ljosland Bakke</original_author>
+    <original_author id="organisation">Helse Vest IKT AS</original_author>
+    <original_author id="email">silje.ljosland.bakke@helse-vest-ikt.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Tara Bonet Chinillach, Catalan Health Service, Spain</other_contributors>
+    <other_contributors>Grete Hovde Bøe, Sykehuspartner HF, Norway</other_contributors>
+    <other_contributors>Aydin Dadfar, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Aleksander Furnes, Helse Nord IKT, Norway</other_contributors>
+    <other_contributors>Kristina Førde, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Gigja Gudbrandsdottir, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Joachim Hansen, UNN, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Elin Kristiansen, Sykehuspartner HF, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Martin Milde, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Olha Nikolaieva, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Terje Nordberg, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Ruben Rognmo, Helse Nord IKT, Norway</other_contributors>
+    <other_contributors>Lena Schell-Majoor, University of Oldenburg, Germany</other_contributors>
+    <other_contributors>Marte Vassli Gullesen, HNIKT, Norway</other_contributors>
+    <other_contributors>Linn Wiker Røstengen, OUS, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Sylvester RJ, Rodríguez O, Hernández V, Turturica D, Bauerová L, Bruins HM, et al. European Association of Urology (EAU) Prognostic Factor Risk Groups for Non-muscle-invasive Bladder Cancer (NMIBC) Incorporating the WHO 2004/2016 and WHO 1973 Classification Systems for Grade: An Update from the EAU NMIBC Guidelines Panel. Eur Urol. 2021 Apr;79(4):480-488. doi: 10.1016/j.eururo.2020.12.033. Epub 2021 Jan 6. PubMed PMID: 33419683.&#xD;
+&#xD;
+Compérat EM, Burger M, Gontero P, Mostafid AH, Palou J, Rouprêt M, et al. Grading of Urothelial Carcinoma and The New "World Health Organisation Classification of Tumours of the Urinary System and Male Genital Organs 2016". Eur Urol Focus. 2019 May;5(3):457-466. doi: 10.1016/j.euf.2018.01.003. Epub 2018 Jan 20. PubMed PMID: 29366854.&#xD;
+&#xD;
+Humphrey PA, Moch H, Cubilla AL, Ulbright TM, Reuter VE. The 2016 WHO Classification of Tumours of the Urinary System and Male Genital Organs—Part B: Prostate and Bladder Tumours. Eur Urol. 2016 Sep;70(1):93-105. doi: 10.1016/j.eururo.2016.02.028. PubMed PMID: 26996659.&#xD;
+&#xD;
+Gontero P, Baard J, Birtle A, Compérat E, Domínguez Escrig J, Fiorini E, Liedberg F, Mariappan P, Masson-Lecomte A, Pradère B, Rai B, Seisen T, Shariat S, Teoh J, Van Rhijn B, Wood R, Xylinas E, D'Andrea D, Moschini M, Soria F, Soukup V, Čapoun O. EAU Guidelines on Non-muscle-invasive Bladder Cancer (TaT1 and CIS). [revised 2025]. [Internet]. Arnhem, The Netherlands: EAU Guidelines Office; 2024. Available from: https://uroweb.org/guidelines/non-muscle-invasive-bladder-cancer.&#xD;
+&#xD;
+EAU NMIBC Risk Calculator. In: [Internet]. Arnhem, Netherlands: European Association of Urology; 2021. Available from: https://nmibc.net.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">3BD0B1892C41D02AA829D036A75E8718</other_details>
+    <other_details id="build_uid">4afa2872-98ab-4042-bde8-e80acbd027f7</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere resultatene for hver enkelt parameter og den resulterende risikogruppen for EAU NMIBC risikovurdering (2021).</purpose>
+      <keywords>blære</keywords>
+      <keywords>kreft</keywords>
+      <keywords>stratifisering</keywords>
+      <keywords>TURBT</keywords>
+      <keywords>ikke-muskelinvasiv</keywords>
+      <keywords>urotelialt</keywords>
+      <keywords>karsinom</keywords>
+      <keywords>prognostisk</keywords>
+      <keywords>gruppe</keywords>
+      <use>Brukes for å registrere resultatene for hver enkelt parameter og den resulterende risikogruppen for EAU NMIBC risikovurdering (2021), basert på WHO 2004/2016- eller WHO 1973-graderingssystemene.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record each component parameter and the risk group for the EAU NMIBC risk assessment (2021).</purpose>
+      <keywords>bladder</keywords>
+      <keywords>cancer</keywords>
+      <keywords>stratification</keywords>
+      <keywords>TURBT</keywords>
+      <keywords>non–muscle-invasive</keywords>
+      <keywords>urothelial</keywords>
+      <keywords>carcinoma</keywords>
+      <keywords>prognostic</keywords>
+      <keywords>group</keywords>
+      <use>Use to record each component parameter and the risk group for the EAU NMIBC risk assessment (2021), based on the WHO 2004/2016 or WHO 1973 grading systems.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Grete Hovde Bøe, Silje Ljosland Bakke</author>
+    <author id="organisation">Sykehuspartner HF, Helse Vest IKT AS</author>
+    <author id="email">grete.kristin.hovde.boe@sykehuspartner.no, silje.ljosland.bakke@helse-vest-ikt.no</author>
+    <other_details id="other_contributors">Elin Kristiansen, Sykehuspartner, Norway&#xD;
+Aleksander Spikkerud Furnes, Helse Nord IKT, Norway&#xD;
+Silje Ljosland Bakke, Helse Vest IKT AS</other_details>
+  </translations>
+  <uid>
+    <value>e35c36ab-d159-4110-af04-66d4fb90bab9</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.eau_nmibc_2021.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0013</code_list>
+                <code_list>at0014</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0009</code_list>
+                <code_list>at0010</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0028</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0029</code_list>
+                <code_list>at0030</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0011</code_list>
+                <code_list>at0012</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0015</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0016</code_list>
+                <code_list>at0017</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0019</code_list>
+                <code_list>at0020</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0022</code_list>
+                <code_list>at0023</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0024</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0025</code_list>
+                <code_list>at0026</code_list>
+                <code_list>at0027</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0002</code_list>
+                <code_list>at0003</code_list>
+                <code_list>at0004</code_list>
+                <code_list>at0005</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">EAU NMIBC risk assessment (2021)</items>
+        <items id="description">The European Association of Urology (EAU) 2021 risk assessment for non–muscle-invasive bladder cancer (NMIBC) stratify patients based on the prognostic factors tumour characteristics, patient age, and WHO grading systems for urothelial neoplasms.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Risk group</items>
+        <items id="description">Risk of recurrence based on the component parameters.</items>
+        <items id="comment">Additional clinical risk factors are: age &gt; 70; multiple papillary tumours; and tumour diameter &gt; 3 cm.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Low Risk</items>
+        <items id="description">A primary, single, TaT1 LG/G1 tumour &lt; 3 cm in diameter without CIS in a patient ≤ 70 years OR A primary Ta LG/G1 tumour without CIS with at most ONE of the additional clinical risk factors.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Intermediate Risk</items>
+        <items id="description">Patients without CIS who are not included in either the low-, high-, or very high-risk groups.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">High Risk</items>
+        <items id="description">All T1 HG/G3 without CIS, EXCEPT those included in the very high-risk group OR All CIS patients, EXCEPT those included in the very high-risk group OR Ta LG/G2 or T1G1, no CIS with all 3 risk factors OR Ta HG/G3 or T1 LG, no CIS with at least 2 risk factors OR T1G2 no CIS with at least 1 risk factor.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Very High Risk</items>
+        <items id="description">Ta HG/G3 and CIS with all 3 risk factors OR T1G2 and CIS with at least 2 risk factors OR T1 HG/G3 and CIS with at least 1 risk factor OR T1 HG/G3 no CIS with all 3 risk factors.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Age</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tumor status</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Maximum tumor diameter</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Primary</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Recurrent</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">&lt; 3 cm</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">≥ 3 cm</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">≤ 70 years</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">&gt; 70 years</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0015">
+        <items id="text">Stage</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">Ta</items>
+        <items id="description">Non-invasive papillary tumor confined to the urothelium.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">T1</items>
+        <items id="description">Tumor invasion into the lamina propria, sparing the muscularis propria.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Concomitant CIS</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0019">
+        <items id="text">No</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0020">
+        <items id="text">Yes</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0021">
+        <items id="text">WHO grade 2004/2016</items>
+        <items id="description"></items>
+        <items id="comment">Only one of the two classification systems (WHO 1973 or WHO 2004/2016) should be used at one time.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">LMP-LG</items>
+        <items id="description">Non-invasive papillary tumours with minimal atypia and orderly cells.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">HG</items>
+        <items id="description">Tumours with significant architectural and nuclear atypia, frequent mitoses, and loss of normal cell structure.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">WHO grade 1973</items>
+        <items id="description"></items>
+        <items id="comment">Only one of the two classification systems (WHO 1973 or WHO 2004/2016) should be used at one time.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">G1</items>
+        <items id="description">Well-differentiated tumours with minimal atypia and orderly architecture.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">G2</items>
+        <items id="description">Moderately differentiated tumours with intermediate atypia and architectural irregularities.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">G3</items>
+        <items id="description">Poorly differentiated tumours with marked atypia, disorganized structure, and frequent mitoses.&#xD;
+&#xD;
+</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Number of tumors</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0029">
+        <items id="text">Single</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0030">
+        <items id="text">Multiple</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">EAU NMIBC risikogruppering (2021)</items>
+        <items id="description">Den europeiske urologiforeningen (EAU) sin risikovurdering fra 2021 for ikke-muskelinvasiv blærekreft (NMIBC) stratifiserer pasienter basert på prognostiske faktorer som svulstkarakteristika, pasientens alder og WHO-graderingssystemer for urotheliale neoplasmer.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Risikogruppe</items>
+        <items id="description">Risiko for residiv basert på parametrene.</items>
+        <items id="comment">Ytterligere kliniske risikofaktorer er: alder &gt; 70 år; multiple papillære tumorer; og tumordiameter &gt; 3 cm.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Lav risiko</items>
+        <items id="description">En primær, solitær TaT1 LG/G1-svulst &amp;lt; 3 cm i diameter uten CIS hos en pasient ≤ 70 år ELLER en primær Ta LG/G1-svulst uten CIS med maksimalt ÉN av de ytterligere kliniske risikofaktorene.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Middels risiko</items>
+        <items id="description">Pasienter uten CIS som ikke er inkludert i verken lav-, høy- eller svært høyrisikogruppene.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Høy risiko</items>
+        <items id="description">Alle T1 HG/G3 uten CIS, UNNTATT de som er inkludert i gruppen med svært høy risiko ELLER Alle CIS-pasienter, UNNTATT de som er inkludert i gruppen med svært høy risiko ELLER Ta LG/G2 eller T1G1, ingen CIS med alle 3 risikofaktorer ELLER Ta HG/G3 eller T1 LG, ingen CIS med minst 2 risikofaktorer ELLER T1G2 ingen CIS med minst 1 risikofaktor.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Svært høy risiko</items>
+        <items id="description">Ta HG/G3 og CIS med alle 3 risikofaktorer ELLER T1G2 og CIS med minst 2 risikofaktorer ELLER T1 HG/G3 og CIS med minst 1 risikofaktor ELLER T1 HG/G3 ingen CIS med alle 3 risikofaktorer.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Alder</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tumorstatus</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Maksimum tumordiameter</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Primær</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Residiv</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">&lt; 3 cm</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">≥ 3 cm</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">≤ 70 år</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">&gt; 70 år</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0015">
+        <items id="text">Stadium</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">Ta</items>
+        <items id="description">Ikke-invasiv papillær tumor begrenset til urotelet.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">T1</items>
+        <items id="description">Tumorinfiltrasjon av lamina propria, uten infiltrasjon i muscularis propria.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Samtidig CIS</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0019">
+        <items id="text">Nei</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0021">
+        <items id="text">WHO-grad 2004/2016</items>
+        <items id="description"></items>
+        <items id="comment">Bare ett av de to klassifiseringssystemene (WHO 1973 eller WHO 2004/2016) skal brukes om gangen.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">LMP-LG</items>
+        <items id="description">Ikke-invasive papillære tumorer med minimal atypi og ordnede celler.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">HG</items>
+        <items id="description">Tumorer med markert arkitektur og kjerneatypi, hyppige mitoser og tap av normal cellestruktur.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">WHO-grad 1973</items>
+        <items id="description"></items>
+        <items id="comment">Bare ett av de to klassifiseringssystemene (WHO 1973 eller WHO 2004/2016) skal brukes om gangen.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">G1</items>
+        <items id="description">Veldifferensierte tumorer med minimal atypi og ordnet arkitektur.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">G2</items>
+        <items id="description">Moderat differensierte tumorer med intermediær atypi og arkitektoniske uregelmessigheter.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">G3</items>
+        <items id="description">Dårlig differensierte tumorer med markert atypi, desorganisert arkitektur og hyppige mitoser.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Antall svulster</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0029">
+        <items id="text">Solitær</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0030">
+        <items id="text">Multiple</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

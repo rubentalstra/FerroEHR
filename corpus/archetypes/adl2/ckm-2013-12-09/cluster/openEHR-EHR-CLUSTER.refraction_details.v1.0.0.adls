@@ -1,0 +1,219 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.refraction_details.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Gustavo M Bacelar-Silva">
+		["email"] = <"mail@gustavobacelar.com">
+		["date"] = <"2012-09-10">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of ocular refraction applied either as part of visual acuity testing, to report a subject's current correction of spectacles or contact lenses, or to request a new ocular prescription.">
+			use = <"This archetype is normally used within the OBSERVATION.visual_acuity archetype to record a refraction applied as part of measurement or within INSTRUCTION and ACTION archetypes where a prescription order and supply process is being modelled.">
+			keywords = <"eye", "correction">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Gustavo Bacelar-Silva, Brazil (Editor)", "Mike Mair, Timaru Eye Clinic, New Zealand", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	references = <
+		["1"] = <"IHE Eye Care Domain. General Eye Evaluation (GEE) [Internet]. IHE; 2012. Available from: http://www.ihe.net/Technical_Framework/upload/IHE_EyeCare_Supp_GEE_Rev1-1_TI_2012-06-29.pdf">
+		["2"] = <"Royal College of Opthalmologists. Cataract National Dataset for Adults [Internet]. 2011. Available from: http://www.rcophth.ac.uk/page.asp?section=583&sectionTitle=Cataract+National+Data+Set+for+Adults">
+		["3"] = <"CfH, UK. Do Once & Share - Glaucoma [Internet]. [cited 2012 Sep 26]. Available from: http://www.doasglaucoma.org/">
+		["4"] = <"DICOM Supplement 30 [Internet]. [cited 2012 Sep 26]. Available from: http://medical.nema.org/">
+	>
+	other_details = <
+		["current_contact"] = <"Gustavo M Bacelar-Silva, mail@gustavobacelar.com">
+		["MD5-CAM-1.0.1"] = <"4B259AEE31FB4F6D8630D61477395668">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Refraction Details
+		items matches {
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Power of Sphere
+				value matches {
+					DV_QUANTITY[id18] matches {
+						property matches {[at15]}
+						magnitude matches {|-100.0..100.0|}
+						precision matches {2}
+						units matches {"dioptre"}
+					}
+				}
+			}
+			ELEMENT[id6] occurrences matches {0..1} matches {	-- Power of Cylinder
+				value matches {
+					DV_QUANTITY[id19] matches {
+						property matches {[at15]}
+						magnitude matches {|-100.0..100.0|}
+						precision matches {2}
+						units matches {"dioptre"}
+					}
+				}
+			}
+			ELEMENT[id7] occurrences matches {0..1} matches {	-- Axis of Cylinder
+				value matches {
+					DV_QUANTITY[id20] matches {
+						property matches {[at16]}
+						magnitude matches {|0.0..180.0|}
+						precision matches {1}
+						units matches {"°"}
+					}
+				}
+			}
+			ELEMENT[id8] occurrences matches {0..1} matches {	-- Prism Strength
+				value matches {
+					DV_QUANTITY[id21] matches {
+						property matches {[at15]}
+						units matches {"dioptre"}
+					}
+				}
+			}
+			ELEMENT[id9] occurrences matches {0..1} matches {	-- Prism Base Direction
+				value matches {
+					DV_CODED_TEXT[id22] matches {
+						defining_code matches {[ac1]}		-- Prism Base Direction (synthesised)
+					}
+					DV_QUANTITY[id23] matches {
+						property matches {[at16]}
+						magnitude matches {|0.0..360.0|}
+						units matches {"°"}
+					}
+				}
+			}
+			ELEMENT[id15] occurrences matches {0..1} matches {	-- Reading Addition Power
+				value matches {
+					DV_QUANTITY[id24] matches {
+						property matches {[at15]}
+						precision matches {2}
+						units matches {"dioptre"}
+					}
+				}
+			}
+			ELEMENT[id16] occurrences matches {0..1} matches {	-- Intermediate Distance Power
+				value matches {
+					DV_QUANTITY[id25] matches {
+						property matches {[at15]}
+						precision matches {2}
+						units matches {"dioptre"}
+					}
+				}
+			}
+			ELEMENT[id17] occurrences matches {0..1} matches {	-- Interpupillary Distance
+				value matches {
+					DV_QUANTITY[id26] matches {
+						property matches {[at17]}
+						magnitude matches {|0.0..500.0|}
+						precision matches {1}
+						units matches {"mm"}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Refraction Details">
+				description = <"Details of ocular refraction for both measurement and therapetic purposes.">
+			>
+			["id5"] = <
+				text = <"Power of Sphere">
+				description = <"Correction of the sphere,  the base correction upon which cylinder, reading addition and prism may be superimposed.">
+			>
+			["id6"] = <
+				text = <"Power of Cylinder">
+				description = <"Correction of the cylinder.">
+			>
+			["id7"] = <
+				text = <"Axis of Cylinder">
+				description = <"Correction of the axis.">
+			>
+			["id8"] = <
+				text = <"Prism Strength">
+				description = <"Strength of the prism.">
+			>
+			["id9"] = <
+				text = <"Prism Base Direction">
+				description = <"Prism base direction expressed as a numeric angle or as coded text.">
+			>
+			["at10"] = <
+				text = <"Base in">
+				description = <"The prism base is directed inwards.">
+			>
+			["at11"] = <
+				text = <"Base out">
+				description = <"The prism base is directed outwards.">
+			>
+			["at12"] = <
+				text = <"Base up">
+				description = <"The prism base is directed upwards.">
+			>
+			["at13"] = <
+				text = <"Base down">
+				description = <"The prism base is directed downwards.">
+			>
+			["at14"] = <
+				text = <"Base oblique">
+				description = <"The prism base is directed obliquely.">
+			>
+			["id15"] = <
+				text = <"Reading Addition Power">
+				description = <"The difference in spherical power between distance and near corrections.">
+			>
+			["id16"] = <
+				text = <"Intermediate Distance Power">
+				description = <"The intermediate distance power applied to the correction.">
+			>
+			["id17"] = <
+				text = <"Interpupillary Distance">
+				description = <"The distance between the center of the pupils of the two eyes.">
+			>
+			["at15"] = <
+				text = <"Refractive power">
+				description = <"Refractive power">
+			>
+			["at16"] = <
+				text = <"Angle, plane">
+				description = <"Angle, plane">
+			>
+			["at17"] = <
+				text = <"Length">
+				description = <"Length">
+			>
+			["ac1"] = <
+				text = <"Prism Base Direction (synthesised)">
+				description = <"Prism base direction expressed as a numeric angle or as coded text. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			["id5"] = <http://snomed.info/id/251795007>
+			["id6"] = <http://snomed.info/id/251797004>
+			["id7"] = <http://snomed.info/id/251799001>
+			["id8"] = <http://snomed.info/id/251762001>
+			["id9"] = <http://snomed.info/id/246223004>
+			["id15"] = <http://snomed.info/id/397282003>
+			["id16"] = <http://snomed.info/id/251802005>
+			["id17"] = <http://snomed.info/id/397258008>
+		>
+		["openehr"] = <
+			["at15"] = <http://openehr.org/id/685>
+			["at16"] = <http://openehr.org/id/497>
+			["at17"] = <http://openehr.org/id/122>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at10", "at11", "at12", "at13", "at14">
+		>
+	>

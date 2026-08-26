@@ -1,0 +1,2494 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2006-03-22</original_author>
+    <original_author id="name">Sam Heard</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">sam.heard@oceaninformatics.com</original_author>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Grethe Almenning, Bergen kommune, Norway</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University Hospital, Bergen, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Einar Fosse, UNN HF, Norwegian Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Sabine Leh, Helse-Bergen, Norway</other_contributors>
+    <other_contributors>Hallvard Lærum, Oslo Universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Bergen, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Editor)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Collin C, Wade DT, Davies S, Horne V. The Barthel ADL Index: a reliability study. Int Disabil Stud. 1988;10(2):61-3. PubMed PMID: 3403500.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, Australia</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">85363F8925FD7F3838511B6F66ED5C0E</other_details>
+    <other_details id="build_uid">babaad62-d01b-4987-85aa-1831f976b2e9</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung einer funktionellen Bewertung für Alltagsaktivitäten unter Verwendung der modifizierten Version des Barthel-Index.</purpose>
+      <keywords>Score</keywords>
+      <keywords>Index</keywords>
+      <keywords>Aktivitäten</keywords>
+      <keywords>Alltag</keywords>
+      <keywords>Abhängigkeit</keywords>
+      <use>Zur Darstellung einer funktionellen Bewertung für Alltagsaktivitäten unter Verwendung der modifizierten Version des Barthel-Index.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ru</code_string>
+      </language>
+      <purpose>Для записи оценки зависимости от посторонней помощи в повседневной жизни. Общая оценка - сумма баллов каждого атрибута.</purpose>
+      <keywords>баллы</keywords>
+      <keywords>индекс</keywords>
+      <keywords>активность</keywords>
+      <keywords>независимость</keywords>
+      <keywords>повседневная жизнь</keywords>
+      <use>Для оценки независимости от посторонней помощи. Часто в доме престарелых.</use>
+      <misuse>Не использовать для описания индивидуальных особенностей.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere Barthel ADL-indeks skår for behov for hjelp til aktiviteter i dagliglivet.</purpose>
+      <keywords>Registrering</keywords>
+      <keywords>Indeks</keywords>
+      <keywords>Aktivitet</keywords>
+      <keywords>Daglig</keywords>
+      <keywords>Avhengighet</keywords>
+      <keywords>Hjelpebehov</keywords>
+      <keywords>Mestring</keywords>
+      <keywords>Selvstendighet</keywords>
+      <use>Brukes for å registrere Barthel ADL-indeks skår for behov for hjelp til aktiviteter i dagliglivet. Totalskåren er summen av de enkelte underpunktene.&#xD;
+&#xD;
+OBS: Maryland State Medical Society har copyright på Barthel indeks. Den kan brukes til ikke-kommersielle formål med følgende sitat:&#xD;
+Mahoney FI, Barthel D. “Functional evaluation: the Barthel Index.” Maryland State Med Journal 1965;14:56-61. Used with permission. &#xD;
+&#xD;
+For modifisering eller kommersiell bruk kreves det tillatelse.</use>
+      <misuse>Om en kun bruker enkeltelementer fra scoringen må feltet "Totalskår" ikke benyttes, siden summering av enkeltelementer fra arketypen vil gi ufullstendig totalskår.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>لتسجيل حرز الاعتماد على المساعدة للقيام بالأنشطة المهمة في الحياة اليومية. &#xD;
+الحرز الإجمالي هو مجموع الأحراز الترتيبية لكل صفة.</purpose>
+      <keywords>الحرز</keywords>
+      <keywords>المعامل</keywords>
+      <keywords>الأنشطة</keywords>
+      <keywords>الحياة اليومية</keywords>
+      <keywords>الاعتمادية</keywords>
+      <use>لتجميع حرز استقلالية الأشخاص - حتى في دار المسنين.</use>
+      <misuse>لا يستخدم لتسجيل خصائص الأفراد.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a functional assessment for activities of daily living using the modified version of the Barthel index.</purpose>
+      <keywords>score</keywords>
+      <keywords>index</keywords>
+      <keywords>activities</keywords>
+      <keywords>daily living</keywords>
+      <keywords>dependency</keywords>
+      <use>Use to record a functional assessment for activities of daily living using the modified version of the Barthel index.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>To record a score of dependency on help to undertake important activities of daily living. The total score is the sum of the ordinal scores for each attribute.</purpose>
+      <keywords>score</keywords>
+      <keywords>index</keywords>
+      <keywords>activities</keywords>
+      <keywords>daily living</keywords>
+      <keywords>dependency</keywords>
+      <use>For scoring people's independence - often in a nursing home.</use>
+      <misuse>Not to be used to record individual features.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ru</code_string>
+    </language>
+    <author id="name">Igor Lizunov</author>
+    <author id="email">i.lizunov@infinnity.ru</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">????</author>
+  </translations>
+  <uid>
+    <value>a957dd67-200d-491f-b1da-aee9c1da7b1a</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.modified_barthel_index.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0001</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0008</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0037</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0044</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0038</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0005</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0006</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0007</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0035</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0036</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0030</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0031</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0032</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0033</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0026</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0027</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0028</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0029</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0021</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0022</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0023</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0024</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0025</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0017</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0039</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0012</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0014</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0040</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0041</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0042</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0043</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0010</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0016</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>20</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0047</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>true</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0048</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0049</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0045</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0046</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Modified Barthel index(en)</items>
+        <items id="description">*Modification of the Barthel index, used as a functional assessment for activities of daily living (ADL).(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*history(nl)</items>
+        <items id="description">*@ internal @(nl)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Bladder(en)</items>
+        <items id="description">*Assessment of urinary control over the previous week, occasional accident &lt;= 1 time per week.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Incontinent of catheter(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Af en toe een ongelukje (max. 1 keer per 24 uur)(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Continent (gedurende meer dan 7 dagen)(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Bowels(en)</items>
+        <items id="description">*Over the previous week, occasional accident is once per week.(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Baden/douche(nl)</items>
+        <items id="description">*Onafhankelijk = zonder toezicht of hulp in en uit bad stappen en zichzelf wassen.(nl)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Afhankelijk(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Onafinankelik(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Dressing(en)</items>
+        <items id="description">*Ability to choose clothes, put them on and fasten them.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Afhankelijk(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">*Heeft hulp nodig maar kan oeveer de helft zelf(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Totaal(nl)</items>
+        <items id="description">*Totaal Barthel-index voorbeeld.(nl)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Mobiliteit(nl)</items>
+        <items id="description">*Hulp = een ongetraind persoon, incl. toezicht en morele steun.Onafhankelijk = kan zich verplaatsen in huis of op afdeling; hulpmiddel mag worden gebruikt. Een patiÃ«nt in rolstoel moet zonder hulp met hoeken en deuren kunnen omgaan.(nl)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Immobile(en)</items>
+        <items id="description">*Person can get less than 50 metres in wheelchair.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Wheel chair independent(en)</items>
+        <items id="description">*Wheelchair independent (including corners).(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Walks with help(en)</items>
+        <items id="description">*Person walks with assistance of one person, with physical or verbal assistance.(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Transfer(en)</items>
+        <items id="description">*Transfer from bed to chair and back.(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Unable, no sitting balance(en)</items>
+        <items id="description">*No sitting balance, a lifting device is used.(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Major help, can sit(en)</items>
+        <items id="description">*A strong trained person or 2 people required, patient can sit straight.(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Weinig hulp (met hulp van woorden of lichamelijk)(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Independent(en)</items>
+        <items id="description">*Person can move from bed to chair independently.(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Feeding(en)</items>
+        <items id="description">*Ability to eat food.(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Niet in staat(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*Heeft hulp nodig bij snijden, smeren van boter, enz.(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0029">
+        <items id="text">*Onafhankelijk(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0030">
+        <items id="text">*Toiletgebruik(nl)</items>
+        <items id="description">*Met hulp = kan zich afvegen en enige van bovenstaande handelingen uitvoeren.Onafhankelijk = in staat om naar toilet te gaan, zich voldoende uit te kleden, schoon te maken, aan te kleden en weg te gaan.(nl)</items>
+      </items>
+      <items code="at0031">
+        <items id="text">*Afhankelijk(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Heeft enige hulp nodig maar kan sommige dingen zelf(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0033">
+        <items id="text">*Onafhankelijk (op en af, uit- en aankleden, afvegen)(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0034">
+        <items id="text">*Grooming(en)</items>
+        <items id="description">*Ability over the previous 24-48 hours to attend to personal hygiene such as brushing teeth, shaving and washing.(en)</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Heeft hulp nodig(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0036">
+        <items id="text">*Onafhankelijk (gezicht, haar, tanden, scheren)(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Incontinent(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Continent(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">*Onafhankelijk(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*Trappen(nl)</items>
+        <items id="description">*Trappen.(nl)</items>
+      </items>
+      <items code="at0041">
+        <items id="text">*Neit in staat(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Heeft hulp nodig (woorden, lichamelijk of hulpmiddel)(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Onafhankelijk naar boven en naar beneden(nl)</items>
+        <items id="description">**(nl)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Occasional accident(en)</items>
+        <items id="description">*Less than or equal to once per week.(en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.(en)</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the modified Barthel index, not captured in other fields.(en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Confounding factors(en)</items>
+        <items id="description">*Narrative descripiton of any issues or factors that may impact on the scoring.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">*Modified Barthel index(en)</items>
+        <items id="description">*Modification of the Barthel index, used as a functional assessment for activities of daily living (ADL).(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Bladder(en)</items>
+        <items id="description">*Assessment of urinary control over the previous week, occasional accident &lt;= 1 time per week.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Incontinent of catheter</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Af en toe een ongelukje (max. 1 keer per 24 uur)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Continent (gedurende meer dan 7 dagen)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Bowels(en)</items>
+        <items id="description">*Over the previous week, occasional accident is once per week.(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Baden/douche</items>
+        <items id="description">Onafhankelijk = zonder toezicht of hulp in en uit bad stappen en zichzelf wassen.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Afhankelijk</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Onafinankelik</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Dressing(en)</items>
+        <items id="description">*Ability to choose clothes, put them on and fasten them.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Afhankelijk</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Heeft hulp nodig maar kan oeveer de helft zelf</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Totaal</items>
+        <items id="description">Totaal Barthel-index voorbeeld.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Mobiliteit</items>
+        <items id="description">Hulp = een ongetraind persoon, incl. toezicht en morele steun.Onafhankelijk = kan zich verplaatsen in huis of op afdeling; hulpmiddel mag worden gebruikt. Een patiÃ«nt in rolstoel moet zonder hulp met hoeken en deuren kunnen omgaan.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Immobile(en)</items>
+        <items id="description">*Person can get less than 50 metres in wheelchair.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Wheel chair independent(en)</items>
+        <items id="description">*Wheelchair independent (including corners).(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Walks with help(en)</items>
+        <items id="description">*Person walks with assistance of one person, with physical or verbal assistance.(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Transfer(en)</items>
+        <items id="description">*Transfer from bed to chair and back.(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Unable, no sitting balance(en)</items>
+        <items id="description">*No sitting balance, a lifting device is used.(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Major help, can sit(en)</items>
+        <items id="description">*A strong trained person or 2 people required, patient can sit straight.(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Weinig hulp (met hulp van woorden of lichamelijk)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Independent(en)</items>
+        <items id="description">*Person can move from bed to chair independently.(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Feeding(en)</items>
+        <items id="description">*Ability to eat food.(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Niet in staat</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Heeft hulp nodig bij snijden, smeren van boter, enz.</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Onafhankelijk</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Toiletgebruik</items>
+        <items id="description">Met hulp = kan zich afvegen en enige van bovenstaande handelingen uitvoeren.Onafhankelijk = in staat om naar toilet te gaan, zich voldoende uit te kleden, schoon te maken, aan te kleden en weg te gaan.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Afhankelijk</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Heeft enige hulp nodig maar kan sommige dingen zelf</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Onafhankelijk (op en af, uit- en aankleden, afvegen)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0034">
+        <items id="text">*Grooming(en)</items>
+        <items id="description">*Ability over the previous 24-48 hours to attend to personal hygiene such as brushing teeth, shaving and washing.(en)</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Heeft hulp nodig</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Onafhankelijk (gezicht, haar, tanden, scheren)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Incontinent</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Continent</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Onafhankelijk</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Trappen</items>
+        <items id="description">Trappen.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Neit in staat</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Heeft hulp nodig (woorden, lichamelijk of hulpmiddel)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Onafhankelijk naar boven en naar beneden</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Occasional accident(en)</items>
+        <items id="description">*Less than or equal to once per week.(en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.(en)</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the modified Barthel index, not captured in other fields.(en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Confounding factors(en)</items>
+        <items id="description">*Narrative descripiton of any issues or factors that may impact on the scoring.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Modified Barthel index</items>
+        <items id="description">Modification of the Barthel index, used as a functional assessment for activities of daily living (ADL).</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Bladder</items>
+        <items id="description">Assessment of urinary control over the previous week, occasional accident &lt;= 1 time per week.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Incontinent (or unable to manage catheter)</items>
+        <items id="description">Incontinent of urine or catheterised.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Occasional accident</items>
+        <items id="description">Less than or equal to once per week.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Continent (manages catheter alone)</items>
+        <items id="description">Continent includes self management of catheter.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Bowels</items>
+        <items id="description">Over the previous week, occasional accident is once per week.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Bathing</items>
+        <items id="description">Independent = without supervision or help when getting in and out of the bath and when washing.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Dependent</items>
+        <items id="description">Needs assistance with baths or showers.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Independent</items>
+        <items id="description">No help required when getting in and out of the bath or when washing.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Dressing</items>
+        <items id="description">Ability to choose clothes, put them on and fasten them.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Dependent</items>
+        <items id="description">Requires assistance choosing and putting on clothes.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Needs help but can do about half unaided</items>
+        <items id="description">Needs help only with buttons, zippers but can put on clothes unaided.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Total score</items>
+        <items id="description">Sum of the individual scores assigned for each of the contributing variables.</items>
+        <items id="comment">A score of 0-9 indicates high dependency, 10-19 moderate dependency and 20 is independent.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Mobility</items>
+        <items id="description">Ability to get about the house or institution.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Immobile</items>
+        <items id="description">Person can get less than 50 metres in wheelchair.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Wheel chair independent</items>
+        <items id="description">Wheelchair independent (including corners).</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Walks with help</items>
+        <items id="description">Person walks with assistance of one person, with physical or verbal assistance.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Transfer</items>
+        <items id="description">Transfer from bed to chair and back.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Unable, no sitting balance</items>
+        <items id="description">No sitting balance, a lifting device is used.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Major help, can sit</items>
+        <items id="description">A strong trained person or 2 people required, patient can sit straight.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Minor help</items>
+        <items id="description">A person is required for supervision or some help.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Independent</items>
+        <items id="description">Person can move from bed to chair independently.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Feeding</items>
+        <items id="description">Ability to eat food.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Unable to eat unassisted</items>
+        <items id="description">Requires manual feeding.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Needs help</items>
+        <items id="description">Requires help cutting, spreading butter or requires modified diet - able to eat alone.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Independent</items>
+        <items id="description">Able to eat alone.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Toilet use</items>
+        <items id="description">Ability to use toilet over the previous 48 hours.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Dependent</items>
+        <items id="description">Person is completely dependent of others to use the toilet.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Needs some help but can do some tasks alone</items>
+        <items id="description">Person is self-supporting in some toileting tasks.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Independent (on &amp; off, dressing, wiping)</items>
+        <items id="description">Person is fully self-supporting in all toileting tasks.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Grooming</items>
+        <items id="description">Ability over the previous 24-48 hours to attend to personal hygiene such as brushing teeth, shaving and washing.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Needs help</items>
+        <items id="description">Needs help with personal care.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Independent</items>
+        <items id="description">Able to brush teeth, hair, wash face, shave.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Incontinent (or requires enemas)</items>
+        <items id="description">Incontinent of faeces or requires enemas.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Continent</items>
+        <items id="description">Continent of faeces.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Independent</items>
+        <items id="description">Person can use any aid (not wheelchair) around the house or ward.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Stairs</items>
+        <items id="description">Ability to negotiate stairs.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Unable</items>
+        <items id="description">Unable to use stairs.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Needs help</items>
+        <items id="description">Verbal, physical or other assistance.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Independent</items>
+        <items id="description">Can carry aid alone if required.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Occasional accident</items>
+        <items id="description">Less than or equal to once per week.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the modified Barthel index, not captured in other fields.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Confounding factors</items>
+        <items id="description">Narrative descripiton of any issues or factors that may impact on the scoring.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ru">
+      <items code="at0000">
+        <items id="text">*Modified Barthel index(en)</items>
+        <items id="description">*Modification of the Barthel index, used as a functional assessment for activities of daily living (ADL).(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">История</items>
+        <items id="description">Внутренний элемент.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Bladder(en)</items>
+        <items id="description">*Assessment of urinary control over the previous week, occasional accident &lt;= 1 time per week.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Недержание или калоприёмник</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Иногда аварии (макс. 1 раз в 24 часа)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Запор (задержка стула более 7 дней)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Bowels(en)</items>
+        <items id="description">*Over the previous week, occasional accident is once per week.(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Пользование ванной/душем</items>
+        <items id="description">Самостоятельно: без присмотра и помощи может дойти до ванной  и самостоятельно моется.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Невозможно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Самостоятельно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Dressing(en)</items>
+        <items id="description">*Ability to choose clothes, put them on and fasten them.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Невозможно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Нужна помощь с кнопками, пуговицами, молниями</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Общий</items>
+        <items id="description">Общий индекс Бартеля - значение.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Подвижность</items>
+        <items id="description">Прогулки, по неровной поверхности.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Immobile(en)</items>
+        <items id="description">*Person can get less than 50 metres in wheelchair.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Wheel chair independent(en)</items>
+        <items id="description">*Wheelchair independent (including corners).(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Walks with help(en)</items>
+        <items id="description">*Person walks with assistance of one person, with physical or verbal assistance.(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Transfer(en)</items>
+        <items id="description">*Transfer from bed to chair and back.(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Unable, no sitting balance(en)</items>
+        <items id="description">*No sitting balance, a lifting device is used.(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Major help, can sit(en)</items>
+        <items id="description">*A strong trained person or 2 people required, patient can sit straight.(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">С незначительной физической или словесной помощью</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Independent(en)</items>
+        <items id="description">*Person can move from bed to chair independently.(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Feeding(en)</items>
+        <items id="description">*Ability to eat food.(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Невозможно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Нужна помощь: нарезать, намазать масло и т.д.</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Самостоятельно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Пользование туалетом</items>
+        <items id="description">Самостоятельно - может сам пойти в туалет, достаточно раздеться, соблюсти чистоту, одеться и уйти.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Невозможно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0032">
+        <items id="text">С посторонней помощью, некоторые действия - самостоятельно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Независимый (включения и выключения, одевания и раздевания, вытирания</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0034">
+        <items id="text">*Grooming(en)</items>
+        <items id="description">*Ability over the previous 24-48 hours to attend to personal hygiene such as brushing teeth, shaving and washing.(en)</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Требуется помощь</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Полностью самостоятельно (мытьё лица, волос, бритьё, чистка зубов)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Недержание</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Задержка</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Самостоятельно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Лестницы</items>
+        <items id="description">Лестницы.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Невозможно</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0042">
+        <items id="text">С помощью слов или поддерживающих устройств</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Самостоятельно поднимается и опускается</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Occasional accident(en)</items>
+        <items id="description">*Less than or equal to once per week.(en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.(en)</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the modified Barthel index, not captured in other fields.(en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Confounding factors(en)</items>
+        <items id="description">*Narrative descripiton of any issues or factors that may impact on the scoring.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Modified Barthel index(en)</items>
+        <items id="description">*Modification of the Barthel index, used as a functional assessment for activities of daily living (ADL).(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Bladder(en)</items>
+        <items id="description">*Assessment of urinary control over the previous week, occasional accident &lt;= 1 time per week.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Helt inkontinent</items>
+        <items id="description">Helt inkontinent eller trenger permanent kateter.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Nedsatt kontroll</items>
+        <items id="description">Nedsatt kontroll og enkelte "uhell" eller holder seg tørr med uridom eller kateter, men trenger hjelp for å bruke dette.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kontinent</items>
+        <items id="description">Holder seg evt. tørr ved bruk av uridom &#xD;
+eller mestrer bruk av kateter på egen hånd.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Bowels(en)</items>
+        <items id="description">*Over the previous week, occasional accident is once per week.(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Bading/dusj</items>
+        <items id="description">Evne til å bade eller dusje på egen hånd.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Trenger hjelp</items>
+        <items id="description">Trenger hjelp.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Selvhjulpen</items>
+        <items id="description">Helt selvhjulpen.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Dressing(en)</items>
+        <items id="description">*Ability to choose clothes, put them on and fasten them.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Trenger hjelp til mer enn halvparten</items>
+        <items id="description">Trenger hjelp til mer enn halvparten ved påkledning.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Trenger hjelp, men klarer halvparten innen rimelig tid</items>
+        <items id="description">Trenger hjelp, men klarer halvparten innen rimelig tid.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Sumskår</items>
+        <items id="description">Summen av de 10 elementene i Barthel ADL-indeks. Tall på 0-9 indikerer høyt hjelpebehov, 10-19 moderat hjelpebehov og 20 er selvhjulpen.</items>
+        <items id="comment">Dette feltet skal ikke brukes dersom man kun benytter utvalgte felt i arketypen.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Mobilitet</items>
+        <items id="description">Evne til å forflytte seg til fots eller i rullestol.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Immobile(en)</items>
+        <items id="description">*Person can get less than 50 metres in wheelchair.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Wheel chair independent(en)</items>
+        <items id="description">*Wheelchair independent (including corners).(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Walks with help(en)</items>
+        <items id="description">*Person walks with assistance of one person, with physical or verbal assistance.(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Transfer(en)</items>
+        <items id="description">*Transfer from bed to chair and back.(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Unable, no sitting balance(en)</items>
+        <items id="description">*No sitting balance, a lifting device is used.(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Major help, can sit(en)</items>
+        <items id="description">*A strong trained person or 2 people required, patient can sit straight.(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Klarer forflytning med litt hjelp eller tilsyn</items>
+        <items id="description">Klarer forflytning med litt hjelp eller tilsyn.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Independent(en)</items>
+        <items id="description">*Person can move from bed to chair independently.(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Feeding(en)</items>
+        <items id="description">*Ability to eat food.(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Helt avhengig av hjelp</items>
+        <items id="description">Helt avhengig av hjelp.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Behov for noe hjelp</items>
+        <items id="description">Behov for noe hjelp, f.eks. til å skjære opp maten.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Selvhjulpen</items>
+        <items id="description">Helt selvhjulpen. Kan bruke nødvendige hjelpemidler &#xD;
+og spiser innen rimelig tid.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Toalettbesøk</items>
+        <items id="description">Evne til å gå på toalettet.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Kan ikke bruke toalett</items>
+        <items id="description">Kan ikke bruke toalett.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Trenger hjelp</items>
+        <items id="description">Trenger hjelp til forflytning, klær, tørke seg.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Selvhjulpen</items>
+        <items id="description">Selvhjulpen ved toalettbesøk eller bruk av toalettstol. Ordner klær, tørker seg, spyler toalettet eller tømmer &#xD;
+bekken.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">*Grooming(en)</items>
+        <items id="description">*Ability over the previous 24-48 hours to attend to personal hygiene such as brushing teeth, shaving and washing.(en)</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Trenger hjelp</items>
+        <items id="description">Trenger hjelp til en eller flere oppgaver.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Selvhjulpen</items>
+        <items id="description">Selvhjulpen. Klarer å vaske ansiktet, kjemme håret, &#xD;
+pusse tenner og barbere seg.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Helt inkontinent</items>
+        <items id="description">Helt inkontinent eller hyppige "uhell".</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Kontinent</items>
+        <items id="description">Klarer selv evt. å sette stikkpille/klyx.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Kan gå uten hjelp, evt med stokk/krykker</items>
+        <items id="description">Klarer å gå 50 meter, kan bruke stokk eller krykker, men ikke annet ganghjelpemiddel.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Trappegang</items>
+        <items id="description">Evne til å gå i trapper.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Kan ikke gå i trapp</items>
+        <items id="description">Kan ikke gå i trapp.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Trenger hjelp/tilsyn</items>
+        <items id="description">Trenger hjelp/tilsyn av en person.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Selvhjulpen</items>
+        <items id="description">Kan evt. bruke ganghjelpemidler.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Nedsatt kontroll</items>
+        <items id="description">Nedsatt kontroll og enkelte "uhell" eller trenger hjelp til evt. å sette stikkpiller/klyx.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the modified Barthel index, not captured in other fields.(en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Fritekstbeskrivelse av problemer eller faktorer som kan ha påvirkning på skåringen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Modifizierter Barthel-Index</items>
+        <items id="description">Änderung des Barthel-Index, der als funktionelle Bewertung für Alltagsaktivitäten (ADL) verwendet wird.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardwert, ein undefinierter/s Zeitpunkt oder Intervallereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Harnblase</items>
+        <items id="description">Beurteilung der Urinkontrolle in der Vorwoche, gelegentlicher Urinverlust &lt;= 1 Mal pro Woche.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Inkontinent</items>
+        <items id="description">Urininkontinenz oder katheterisiert.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Gelegentlicher Urinverlust</items>
+        <items id="description">Weniger als oder gleich einmal pro Woche.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kontinent (Selbstkatheterismus)</items>
+        <items id="description">Kontinent, umfasst eigenständige Anwendung von Katheter.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Darm</items>
+        <items id="description">In der Vorwoche kam es einmal pro Woche zu gelegentlichen Kontrollverlusten.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Baden</items>
+        <items id="description">Selbstständig = ohne Aufsicht oder Hilfe beim Ein- und Aussteigen aus dem Bad und beim Waschen.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Abhängig</items>
+        <items id="description">Benötigt Unterstützung beim Baden oder Duschen.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Selbstständig</items>
+        <items id="description">Keine Hilfe beim An- und Auskleiden im Bad oder beim Waschen erforderlich.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">An- und Auskleiden</items>
+        <items id="description">Fähigkeit, Kleidung auszuwählen, anzuziehen und zu befestigen.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Abhängig</items>
+        <items id="description">Benötigt Unterstützung beim Auswählen und Anziehen von Kleidung.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Benötigt Hilfe, kann aber ungefähr die Hälfte ohne Hilfe tun</items>
+        <items id="description">Benötigt Hilfe nur mit Knöpfen, Reißverschlüssen, kann aber ohne fremde Hilfe Kleidung anziehen.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Gesamtpunktzahl</items>
+        <items id="description">Summe der einzelnen Bewertungen, die für jede der beitragenden Variablen zugewiesen wurden.</items>
+        <items id="comment">Ein Wert von 0-9 zeigt eine hohe Abhängigkeit an, 10-19 eine moderate Abhängigkeit und mit 20 ist sebstständig.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Mobilität</items>
+        <items id="description">Fähigkeit, sich im Haus oder in der Einrichtung zurechtzufinden.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Immobil</items>
+        <items id="description">Person kann weniger als 50 Meter im Rollstuhl zurücklegen.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Unabhängig mit Rollstuhl</items>
+        <items id="description">Unabhängig mit Rollstuhl (einschließlich Ecken)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Unterstütztes Gehen</items>
+        <items id="description">Die Person geht mit Hilfe einer Person, mit körperlicher oder verbaler Hilfe.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Transfer</items>
+        <items id="description">Transfer vom Bett zum Stuhl und zurück.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Unfähig, keine Sitzbalance</items>
+        <items id="description">Keine Sitzbalance, eine Hebevorrichtung wird verwendet.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Mit großer Hilfe, kann sitzen</items>
+        <items id="description">Eine körperlich kräftige Person oder 2 Personen erforderlich, der Patient kann gerade sitzen.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Mit kleiner Hilfe</items>
+        <items id="description">Eine Person ist zur Überwachung oder Hilfe erforderlich.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Selbstständig</items>
+        <items id="description">Die Person kann sich selbstständig vom Bett zum Stuhl bewegen.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Essen</items>
+        <items id="description">Fähigkeit zu essen.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Unfähig allein zu essen</items>
+        <items id="description">Erfordert manuelle Fütterung.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Benötigt Hilfe</items>
+        <items id="description">Benötigt Hilfe beim Schneiden, Butter auftragen oder erfordert eine veränderte Ernährung - kann alleine essen.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Selbständig</items>
+        <items id="description">Fähig, allein zu essen.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Toilettenbenutzung</items>
+        <items id="description">Fähigkeit, die Toilette in den letzten 48 Stunden zu benutzen.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Abhängig</items>
+        <items id="description">Die Person ist völlig von anderen abhängig, um die Toilette zu benutzen.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Benötigt Hilfe, kann aber einige Aufgaben alleine erledigen</items>
+        <items id="description">Die Person ist selbstständig bei einigen Toilettenaufgaben.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Selbständig (Hinsetzen &amp; Aufstehen, Anziehen, Abwischen)</items>
+        <items id="description">Die Person ist bei allen Toilettenaufgaben völlig selbständig.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Körperpflege</items>
+        <items id="description">Fähigkeit in den letzten 24-48 Stunden, sich um persönliche Hygiene wie Zähneputzen, Rasieren und Waschen zu kümmern.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Benötigt Hilfe</items>
+        <items id="description">Benötigt Hilfe bei der Körperpflege.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Selbständig</items>
+        <items id="description">Kann Zähne putzen, Haare und Gesicht waschen, sich rasieren.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Inkontinent (oder erfordert Einläufe)</items>
+        <items id="description">Stuhlinkontinenz oder erfordert Einläufe.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Kontinent</items>
+        <items id="description">Stuhlkontinenz.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Selbstständig</items>
+        <items id="description">Die Person kann jedes Hilfsmittel (nicht Rollstuhl) rund um das Haus oder die Station benutzen.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Treppe</items>
+        <items id="description">Fähigkeit, Treppen zu steigen.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Unfähig</items>
+        <items id="description">Unfähig, Treppen zu steigen.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Benötigt Hilfe</items>
+        <items id="description">Mündliche, körperliche oder sonstige Unterstützung.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Selbstständig</items>
+        <items id="description">Kann alleine, mit Hilfsmitteln bei Bedarf.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Gelegentlicher Stuhlverlust</items>
+        <items id="description">Weniger als oder gleich einmal pro Woche.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen oder CIMI-Modelle.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung des modifizierten Barthel-Index, die in anderen Feldern nicht dargestellt wurde.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Einflussfaktoren</items>
+        <items id="description">Beschreibung aller Probleme oder Faktoren, die sich auf die Bewertung auswirken können.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

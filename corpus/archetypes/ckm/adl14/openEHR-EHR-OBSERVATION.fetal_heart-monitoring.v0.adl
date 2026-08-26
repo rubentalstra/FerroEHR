@@ -1,0 +1,511 @@
+﻿archetype (adl_version=1.4; uid=ec6a2fb8-e8f1-3e41-b282-cb23715c5e35)
+	openEHR-EHR-OBSERVATION.fetal_heart-monitoring.v0
+specialise
+	openEHR-EHR-OBSERVATION.fetal_heart.v0
+
+concept
+	[at0000.1]	-- Fetal heart monitoring
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2011-12-20">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record observations about the fetal heart rate, usually using a cardiotocograph or similar device over a time in late pregnancy or labour, as an assessment about fetal wellbeing in utero.">
+			use = <"Use to record observations about the fetal heart rate, usually using a cardiotocograph or similar device over a period of time in late pregnancy or labour, as an assessment about fetal wellbeing.
+
+Use to capture findings from electronic monitoring, including cardiotocography.
+
+Use is restricted to recording details about the heart beat of a fetus.">
+			keywords = <"fetal", "heart", "beat", "rate", "rhythm">
+			misuse = <"Not to be used to record simple, intermittent measurements of fetal heart rate - use the parent archetype OBSERVATION.fetal_heart instead.
+
+Not to be used for recording the heart rate of infants, children or adults.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["references"] = <"SOGC Fetal health Surveillance: antepartum and intrapartum Consensus Guideline: http://www.sogc.org/guidelines/documents/gui197CPG0709r.pdf
+
+Intrapartum care: management and delivery of care to women in labour: http://www.nice.org.uk/nicemedia/live/11837/36275/36275.pdf">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia">
+		["MD5-CAM-1.0.1"] = <"E30FED2FE0AE5E457C2CE6CC28CC0110">
+		["build_uid"] = <"3120cd50-4b70-4f4e-8ab8-c91910d26bfa">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000.1] matches {    -- Fetal heart monitorin
+		subject matches {
+			PARTY_RELATED matches {
+				relationship matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::3]
+						}
+					}
+				}
+			}
+		}
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Presence
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0026,    -- Present
+													at0027]    -- Absent
+												}
+											}
+										}
+									}
+									ELEMENT[at0005] occurrences matches {0..1} matches {    -- Rate
+										value matches {
+											C_DV_QUANTITY <
+												
+												list = <
+													["1"] = <
+														units = <"1/min">
+														magnitude = <|0.0..<1000.0|>
+														precision = <|0|>
+													>
+												>
+											>
+										}
+									}
+									ELEMENT[at0.1] occurrences matches {0..1} matches {    -- Variability
+										value matches {
+											DV_INTERVAL<DV_QUANTITY> matches {
+												lower matches {
+													C_DV_QUANTITY <
+													
+														list = <
+															["1"] = <
+																units = <"1/min">
+																magnitude = <|0.0..<1000.0|>
+																precision = <|0|>
+																	>
+														>
+													>
+												}
+												upper matches {
+													C_DV_QUANTITY <
+														
+														list = <
+															["1"] = <
+																units = <"1/min">
+																magnitude = <|0.0..<1000.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+										}
+									}
+									ELEMENT[at0.2] occurrences matches {0..1} matches {    -- Variability category
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0.11,    -- Absent
+													at0.12,    -- Minimal
+													at0.13,    -- Moderate
+													at0.14]    -- Marked
+												}
+											}
+										}
+									}
+									ELEMENT[at0.3] occurrences matches {0..1} matches {    -- Variability description
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0.4] occurrences matches {0..1} matches {    -- Accelerations
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0.15,    -- Absent
+													at0.16,    -- Spontaneously present
+													at0.17,    -- Present with fetal scalp stimulation
+													at0.18]    -- Absent with fetal scalp stimulation
+												}
+											}
+										}
+									}
+									ELEMENT[at0.5] occurrences matches {0..1} matches {    -- Early decelerations
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0.19,    -- None
+													at0.20,    -- Occasional
+													at0.21]    -- Repetitive
+												}
+											}
+										}
+									}
+									ELEMENT[at0.6] occurrences matches {0..1} matches {    -- Uncomplicated variable decelerations
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0.22,    -- None
+													at0.23,    -- Occasional
+													at0.24]    -- Repetitive
+												}
+											}
+										}
+									}
+									ELEMENT[at0.7] occurrences matches {0..1} matches {    -- Complicated variable decelerations
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0.25,    -- None
+													at0.26,    -- Occasional
+													at0.27]    -- Repetitive
+												}
+											}
+										}
+									}
+									ELEMENT[at0.8] occurrences matches {0..1} matches {    -- Late decelerations
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0.28,    -- None
+													at0.29,    -- Occasional
+													at0.30]    -- Repetitive
+												}
+											}
+										}
+									}
+									ELEMENT[at0.9] occurrences matches {0..1} matches {    -- Prolonged decelerations
+										value matches {
+											DV_DURATION matches {
+												value matches {PTMS/|>=PT0S|}
+											}	
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..*} matches {    -- Clinical interpretation
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									allow_archetype CLUSTER[at0.10] occurrences matches {0..*} matches {    -- Multimedia representation
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.multimedia\.v0|openEHR-EHR-CLUSTER\.multimedia\.v1/}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {    -- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0011] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0012] occurrences matches {0..1} matches {    -- Position of mother
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0013,    -- Standing
+													at0014,    -- Sitting
+													at0015,    -- Reclining
+													at0016,    -- Lying
+													at0017]    -- Lying with tilt to left
+												}
+											}
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {    -- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0023] occurrences matches {0..1} matches {    -- In labour
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0024,    -- In labour
+													at0025]    -- Not in labour
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0018] matches {    -- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0020] occurrences matches {0..*} matches {    -- Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					allow_archetype CLUSTER[at0021] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Presence">
+					description = <"The fetal heart beat is detected.">
+					comment = <"Implied as present if fetal heart rate > 0.">
+				>
+				["at0005"] = <
+					text = <"Rate">
+					description = <"The observed fetal heart rate.">
+				>
+				["at0009"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the fetal heart rate, not captured in other fields.">
+				>
+				["at0010"] = <
+					text = <"Clinical interpretation">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of the fetal heart rate.">
+					comment = <"For example, bradycardia or tachycardia.">
+				>
+				["at0011"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0012"] = <
+					text = <"Position of mother">
+					description = <"The position of the mother when the fetal heart rate was measured.">
+				>
+				["at0013"] = <
+					text = <"Standing">
+					description = <"Mother standing at the time of fetal heart rate measurement.">
+				>
+				["at0014"] = <
+					text = <"Sitting">
+					description = <"Mother sitting at the time of fetail heart rate measurement.">
+				>
+				["at0015"] = <
+					text = <"Reclining">
+					description = <"Mother reclining at the time of fetal heart rate measurement.">
+				>
+				["at0016"] = <
+					text = <"Lying">
+					description = <"Lying flat at the time of fetal heart rate measurement.">
+				>
+				["at0017"] = <
+					text = <"Lying with tilt to left">
+					description = <"Mother lying flat with some lateral tilt towards the left.">
+				>
+				["at0018"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0022"] = <
+					text = <"Confounding factors">
+					description = <"Description of incidental factors, not recorded elsewhere, that may be influencing the fetal heart rate measurement.">
+					comment = <"For example, maternal fever or exertion.">
+				>
+				["at0020"] = <
+					text = <"Device">
+					description = <"Details about the device used to detect the fetal heart rate.">
+					comment = <"For example: Pinard's stethoscope or Doppler Ultrasound.">
+				>
+				["at0026"] = <
+					text = <"Present">
+					description = <"The fetal heart beat is detected.">
+				>
+				["at0027"] = <
+					text = <"Absent">
+					description = <"The fetal heart beat is not detected.">
+				>
+				["at0021"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+				["at0023"] = <
+					text = <"In labour">
+					description = <"Is the mother in active labor during the observation?">
+				>
+				["at0024"] = <
+					text = <"In labour">
+					description = <"The mother is in labour as the observation is made.">
+				>
+				["at0025"] = <
+					text = <"Not in labour">
+					description = <"The mother is not in labour as the observation is made.">
+				>
+				["at0000.1"] = <
+					text = <"Fetal heart monitoring">
+					description = <"Observations about the fetal heart rate, usually using a cardiotocograph or similar device over a period of time.">
+				>
+				["at0.1"] = <
+					text = <"Variability">
+					description = <"Variability in the fetal heart rate observed during the monitoring interval.">
+				>
+				["at0.2"] = <
+					text = <"Variability category">
+					description = <"Variability in the fetal heart rate observed during the monitoring interval.">
+				>
+				["at0.3"] = <
+					text = <"Variability description">
+					description = <"Narrative description of the pattern of variability observed during the monitoring interval.">
+					comment = <"For example: a sinusoidal pattern.">
+				>
+				["at0.4"] = <
+					text = <"Accelerations">
+					description = <"Presence of accelerations observed during the monitoring interval.">
+				>
+				["at0.5"] = <
+					text = <"Early decelerations">
+					description = <"Frequency of early accelerations observed during the monitoring interval.">
+				>
+				["at0.6"] = <
+					text = <"Uncomplicated variable decelerations">
+					description = <"Frequency of uncomplicated variable decelerations observed during the monitoring interval.">
+				>
+				["at0.7"] = <
+					text = <"Complicated variable decelerations">
+					description = <"Frequency of complicated variable decelerations observed during the monitoring interval.">
+				>
+				["at0.8"] = <
+					text = <"Late decelerations">
+					description = <"Frequency of late decelerations observed during the monitoring interval.">
+				>
+				["at0.9"] = <
+					text = <"Prolonged decelerations">
+					description = <"Duration of a single, prolonged deceleration observed during the monitoring interval.">
+					comment = <"Can be recorded multiple times during the period of observation - one duration recorded for each discrete deceleration.">
+				>
+				["at0.10"] = <
+					text = <"Multimedia representation">
+					description = <"Digital representation of the monitoring findings.">
+					comment = <"For example: video or recording of the CTG.">
+				>
+				["at0.11"] = <
+					text = <"Absent">
+					description = <"Heart rate variability is undetectable.">
+				>
+				["at0.12"] = <
+					text = <"Minimal">
+					description = <"Heart rate variability is greater than undetectable, but less than or equal to 5 beats per minute.">
+				>
+				["at0.13"] = <
+					text = <"Moderate">
+					description = <"Heart rate variability is between 6-25 beats per minute.">
+				>
+				["at0.14"] = <
+					text = <"Marked">
+					description = <"Heart rate variability is greater than 25 beats per minute.">
+				>
+				["at0.15"] = <
+					text = <"Absent">
+					description = <"Heart rate accelerations are undetectable.">
+				>
+				["at0.16"] = <
+					text = <"Spontaneously present">
+					description = <"Heart rate accelerations are present and occurring spontaneously.">
+				>
+				["at0.17"] = <
+					text = <"Present with fetal scalp stimulation">
+					description = <"Fetal heart accelerations are detected as a result of fetal scalp stimulation.">
+				>
+				["at0.18"] = <
+					text = <"Absent with fetal scalp stimulation">
+					description = <"Fetal heart rate accelerations are not detected with fetal scalp stimulation.">
+				>
+				["at0.19"] = <
+					text = <"None">
+					description = <"No decelerations detected.">
+				>
+				["at0.20"] = <
+					text = <"Occasional">
+					description = <"Occasional decelerations detected but occur in association with less than 50% of uterine contractions.">
+				>
+				["at0.21"] = <
+					text = <"Repetitive">
+					description = <"Decelerations detected in association with over 50% of uterine contractions.">
+				>
+				["at0.22"] = <
+					text = <"None">
+					description = <"No decelerations detected.">
+				>
+				["at0.23"] = <
+					text = <"Occasional">
+					description = <"Occasional decelerations detected but occur in association with less than 50% of uterine contractions.">
+				>
+				["at0.24"] = <
+					text = <"Repetitive">
+					description = <"Decelerations detected in association with over 50% of uterine contractions.">
+				>
+				["at0.25"] = <
+					text = <"None">
+					description = <"No decelerations detected.">
+				>
+				["at0.26"] = <
+					text = <"Occasional">
+					description = <"Occasional decelerations detected but occur in association with less than 50% of uterine contractions.">
+				>
+				["at0.27"] = <
+					text = <"Repetitive">
+					description = <"Decelerations detected in association with over 50% of uterine contractions.">
+				>
+				["at0.28"] = <
+					text = <"None">
+					description = <"No decelerations detected.">
+				>
+				["at0.29"] = <
+					text = <"Occasional">
+					description = <"Occasional decelerations detected but occur in association with less than 50% of uterine contractions.">
+				>
+				["at0.30"] = <
+					text = <"Repetitive">
+					description = <"Decelerations detected in association with over 50% of uterine contractions.">
+				>
+			>
+		>
+	>

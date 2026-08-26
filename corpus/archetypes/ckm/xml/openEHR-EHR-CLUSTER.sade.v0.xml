@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2012-09-07</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">Ocean Informatics, UK</original_author>
+    <original_author id="email">ian.mcnicoll@oceaninformatics.com</original_author>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Sade classification, Draft Archetype [Internet]. Digital Health Agency, Australian Digital Health Agency Clinical Knowledge Manager. No longer available.&#xD;
+Personal communication with clinical domain experts.&#xD;
+&#xD;
+Sadé J, Berco E. Atelectasis and secretory otitis media. Ann. Otol. Rhinol. Laryngol. 1976 Apr;85(2 Suppl 25 Pt 2):6&#xD;
+&#xD;
+Lancaster J, Srinivasan V. Management of tympanic membrane retraction pockets. Australian Journal of Otolaryngology 2002;5(1):17–20.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">47E9553AAAE9E71CBFECF41402E17256</other_details>
+    <other_details id="build_uid">b87219de-00f6-46a4-b6e6-4af0cf04bf5a</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the grading of tympanic membrane pars tensa retraction based on the classification by Sade.</purpose>
+      <keywords>retraction</keywords>
+      <keywords>atelectasis</keywords>
+      <keywords>tympanic</keywords>
+      <keywords>membrane</keywords>
+      <keywords>drum</keywords>
+      <keywords>pars tensa</keywords>
+      <use>Use to record the grading of tympanic membrane retraction, particularly by specialist physicians. &#xD;
+&#xD;
+Designed to be optionally nested within the CLUSTER.exam_tympanic_membrane archetype to provide additional detail on tympanic membrane retraction, if it is useful within a given clinical scenario.&#xD;
+&#xD;
+This archetype extends the Sade Classification to allow recording of 'No visible retraction' where applicable.&#xD;
+Sade Stage 5 (spontaneous perforation) is described in some documentation but is not described in the original paper and appears not to be in common usage.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>92cdf944-0002-4faf-837d-8fa5b6b7a3f9</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.sade.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0007</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0008</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Sade Classification</items>
+        <items id="description">Grading of the degree of tympanic membrane pars tensa retraction / atelectasis.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Sade Classification</items>
+        <items id="description">Grading of the degree of tympanic membrane pars tensa retraction / atelectasis based on the Sade Classification.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">No visible retraction</items>
+        <items id="description">The tympanic membrane pars tensa is not visibly retracted.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Stage 1 :  Mild retraction</items>
+        <items id="description">The tympanic membrane pars tensa is mildly retracted.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Stage 2 : Retraction onto incudostapedial joint</items>
+        <items id="description">The tympanic membrane pars tensa is retracted onto the incudostapedial joint.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Stage 3 :  Retraction onto promontory</items>
+        <items id="description">The tympanic membrane pars tensa is retracted onto the promontary.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Stage 4 : Adhesion of pars tensa to medial wall</items>
+        <items id="description">The tympanic membrane pars tensa is adherent to the medial wall.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Stage 5 : Spontaneous perforation with otorrhea and polyp formation</items>
+        <items id="description">The tympanic membrane is spontaneously perforated with evidence of otorrhea and polyp formation.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

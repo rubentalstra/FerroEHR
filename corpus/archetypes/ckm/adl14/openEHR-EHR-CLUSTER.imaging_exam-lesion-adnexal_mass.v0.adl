@@ -1,0 +1,846 @@
+﻿archetype (adl_version=1.4; uid=c48fbeda-df84-47b2-be2c-cff4bbdedf7e)
+	openEHR-EHR-CLUSTER.imaging_exam-lesion-adnexal_mass.v0
+specialise
+	openEHR-EHR-CLUSTER.imaging_exam-lesion.v0
+
+concept
+	[at0000.1.1]	-- Imaging examination of an adnexal mass
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Natalia Strauch">
+				["organisation"] = <"Medizinische Hochschule Hannover">
+				["email"] = <"Strauch.Natalia@mh-hannover.de">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Peter Fedorcsak, Vebjørn Arntzen">
+				["organisation"] = <"University of Oslo, Oslo University Hospital">
+				["email"] = <"peterfe@uio.no, varntzen@ous-hf.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2021-11-24">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"*To record the findings on radiological examination of a single adnexal mass. (en)">
+			use = <"*Use to record the findings on radiological examination of a single adnexal mass.
+
+The intent of this archetype is to describe the key attributes which would support a determination of the risk of an adnexal mass being malignant.
+
+This archetype has been specifically designed to be used in the 'Additional details' SLOT within any of the CLUSTER.imaging_exam family of archetypes which will provide the context for the adnexal mass, for example CLUSTER.imaging_exam-pelvis, CLUSTER.imaging_exam-ovary, or the CLUSTER.imaging_exam-fallopian_tube archetypes, but can also be used within other ENTRY or CLUSTER archetypes where clinically appropriate.
+
+If there is more than one adnexal mass within the context of the same body structure or region, use a separate instance of this archetype to describe each mass. (en)">
+			keywords = <"*abnormality (en)", "*lesion (en)", "*mass (en)", "*tumour (en)", "*tumor (en)", "*nodule (en)", "*cyst (en)", "*ovary (en)", "*fallopian (en)">
+			misuse = <"*Not to be used to record findings for a specified body structure or region. Use other archetypes from the CLUSTER.imaging_exam family for this purpose.
+
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression. (en)">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"*To record the findings on radiological examination of a single adnexal mass. (en)">
+			use = <"*Use to record the findings on radiological examination of a single adnexal mass.
+
+The intent of this archetype is to describe the key attributes which would support a determination of the risk of an adnexal mass being malignant.
+
+This archetype has been specifically designed to be used in the 'Additional details' SLOT within any of the CLUSTER.imaging_exam family of archetypes which will provide the context for the adnexal mass, for example CLUSTER.imaging_exam-pelvis, CLUSTER.imaging_exam-ovary, or the CLUSTER.imaging_exam-fallopian_tube archetypes, but can also be used within other ENTRY or CLUSTER archetypes where clinically appropriate.
+
+If there is more than one adnexal mass within the context of the same body structure or region, use a separate instance of this archetype to describe each mass. (en)">
+			keywords = <"*lesion (en)", "*mass (en)", "*tumour (en)", "*tumor (en)", "*nodule (en)", "*cyst (en)", "*ovary (en)", "*fallopian (en)">
+			misuse = <"*Not to be used to record findings for a specified body structure or region. Use other archetypes from the CLUSTER.imaging_exam family for this purpose.
+
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression. (en)">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the findings on radiological examination of a single adnexal mass.">
+			use = <"Use to record the findings on radiological examination of a single adnexal mass.
+
+The intent of this archetype is to describe the key attributes which would support a determination of the risk of an adnexal mass being malignant.
+
+This archetype has been specifically designed to be used in the 'Additional details' SLOT within any of the CLUSTER.imaging_exam family of archetypes which will provide the context for the adnexal mass, for example CLUSTER.imaging_exam-pelvis, CLUSTER.imaging_exam-ovary, or the CLUSTER.imaging_exam-fallopian_tube archetypes, but can also be used within other ENTRY or CLUSTER archetypes where clinically appropriate.
+
+If there is more than one adnexal mass within the context of the same body structure or region, use a separate instance of this archetype to describe each mass.">
+			keywords = <"abnormality", "lesion", "mass", "tumour", "tumor", "nodule", "cyst", "ovary", "fallopian">
+			misuse = <"Not to be used to record findings for a specified body structure or region. Use other archetypes from the CLUSTER.imaging_exam family for this purpose.
+
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "SB Bhattacharyya, Bhattacharyyas Clinical Records Research & Informatics LLP, India", "Peter Fedorcsak, University of Oslo, Norway (openEHR Editor)", "Heather Grain, Llewelyn Grain Informatics, Australia", "Evelyn Hovenga, EJSH Consulting, Australia", "Anjali Kulkarni, Karkinos, India", "Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Mikael Nyström, Cambio Healthcare Systems AB, Sweden", "Norwegian Review Summary, Norwegian Public Hospitals, Norway">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"164D568C5F4AD3390BA4C842D95BD91C">
+		["build_uid"] = <"070aa77f-d36f-4e90-b8b7-977c7e69f195">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1.1] matches {    -- Imaging examination of an adnexal mass
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001.1.1] matches {    -- Body structure
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0.0.1]    -- Adnexal mass
+						}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {    -- Imaging findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Additional details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.imaging_exam-lymph_node(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lymph_node_group(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lesion(-[a-zA-Z0-9_]+)*\.v0/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Impression
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.2] occurrences matches {0..1} matches {    -- Label
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.3.1] occurrences matches {0..1} matches {    -- Type
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.4] occurrences matches {0..3} matches {    -- Diameter
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"mm">
+								magnitude = <|>=0.0|>
+								precision = <|0|>
+							>
+							["2"] = <
+								units = <"cm">
+								magnitude = <|>=0.0|>
+								precision = <|1|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.9] occurrences matches {0..1} matches {    -- Shape
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.10] occurrences matches {0..1} matches {    -- Texture
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.11] occurrences matches {0..1} matches {    -- Definition
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.14] occurrences matches {0..1} matches {    -- Contour
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.15] occurrences matches {0..1} matches {    -- Margin
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.16] occurrences matches {0..1} matches {    -- Calcification
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.17,    -- Present
+							at0.18]    -- Absent
+						}
+					}
+				}
+			}
+			ELEMENT[at0.19] occurrences matches {0..1} matches {    -- Effect
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.20] occurrences matches {0..1} matches {    -- Vascularisation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.25] occurrences matches {0..1} matches {    -- Vascularisation description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.0.15] occurrences matches {0..3} matches {    -- Solid diameter
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"mm">
+								magnitude = <|>=0.0|>
+								precision = <|0|>
+							>
+							["2"] = <
+								units = <"cm">
+								magnitude = <|>=0.0|>
+								precision = <|1|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.0.8] occurrences matches {0..3} matches {    -- Number of cyst locules
+				value matches {
+					DV_COUNT matches {
+						magnitude matches {|>=0|}
+					}
+				}
+			}
+			ELEMENT[at0.0.13] occurrences matches {0..1} matches {    -- Number of papillary projections
+				value matches {
+					DV_COUNT matches {
+						magnitude matches {|>=0|}
+					}
+				}
+			}
+			ELEMENT[at0.0.14] occurrences matches {0..1} matches {    -- Maximal septum thickness
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"mm">
+								magnitude = <|>=0.0|>
+								precision = <|0|>
+							>
+						>
+					>
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0.0.1"] = <
+					text = <"Adnexal mass">
+					description = <"">
+				>
+				["at0.0.13"] = <
+					text = <"Number of papillary projections">
+					description = <"The number of papillary projections in the adnexal mass.">
+				>
+				["at0.0.14"] = <
+					text = <"Maximal septum thickness">
+					description = <"The measured width of the thickest septum.">
+				>
+				["at0.0.15"] = <
+					text = <"Solid diameter">
+					description = <"A measured diameter of the largest solid tissue component.">
+					comment = <"This data element has 3 occurrences to allow for 3 measurements in different axes.">
+				>
+				["at0.0.8"] = <
+					text = <"Number of cyst locules">
+					description = <"The number of cyst locules in the adnexal mass.">
+				>
+				["at0.5"] = <
+					text = <"Diameter">
+					description = <"A measured diameter of the lesion.">
+				>
+				["at0.6"] = <
+					text = <"Dimension 1">
+					description = <"The measured length of the longest axis of the lesion.">
+				>
+				["at0.7"] = <
+					text = <"Dimension 2">
+					description = <"The measured length of an axis of the lesion perpendicular to Dimension 1.">
+				>
+				["at0.8"] = <
+					text = <"Dimension 3">
+					description = <"The measured length of an axis of the lesion perpendicular to Dimension 1 and Dimension 2..">
+				>
+				["at0000.1.1"] = <
+					text = <"Imaging examination of an adnexal mass">
+					description = <"Findings on radiological examination of an adnexal mass identified in the pelvis, usually related to a single ovary and/or fallopian tube and associated connective tissues.">
+				>
+				["at0001.1.1"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+				>
+				["at0.3.1"] = <
+					text = <"Type">
+					description = <"The type of mass.">
+					comment = <"For example: Unilocular cyst (A unilocular cyst without septa, solid parts or papillary structures); Unilocular-solid cyst (A unilocular cyst with a measurable solid component or at least one papillary structure); Multilocular cyst (A cyst with at least one septum but no measurable solid components or papillary projections); Multilocular-solid cyst (A cyst with at least one septum and a measurable solid component or at least one papillary projection); Solid tumour (A tumor where the solid components comprise 80% or more of the tumour when assessed in a two-dimensional section); and Indeterminate (It is not possible to determine the type of mass).">
+				>
+				["at0.12"] = <
+					text = <"Well-defined">
+					description = <"The lesion is well-defined.">
+				>
+				["at0.13"] = <
+					text = <"Poorly-defined">
+					description = <"The lesion is poorly-defined.">
+				>
+				["at0.21"] = <
+					text = <"None">
+					description = <"No blood flow can be detected.">
+				>
+				["at0.22"] = <
+					text = <"Mild">
+					description = <"Minimal blood flow can be detected.">
+				>
+				["at0.23"] = <
+					text = <"Moderate">
+					description = <"Moderate blood flow can be detected.">
+				>
+				["at0.24"] = <
+					text = <"Marked">
+					description = <"Marked blood flow can be detected.">
+				>
+				["at0003"] = <
+					text = <"Structured body site">
+					description = <"Structured details about the area of the body under examination.">
+					comment = <"For example: details about a relative anatomical location, such as '2cm distal to the appendix'. If the body site has been fully identified in the 'Body structure' or 'Body site' data elements, then this SLOT becomes redundant.">
+				>
+				["at0.1"] = <
+					text = <"Lesion">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Texture">
+					description = <"The texture of the lesion.">
+				>
+				["at0.11"] = <
+					text = <"Definition">
+					description = <"The definition of the lesion.">
+					comment = <"For example: 'Well-defined' (The lesion is well-defined); and 'Poorly-defined' (The lesion is poorly-defined).">
+				>
+				["at0.14"] = <
+					text = <"Contour">
+					description = <"The contour of the lesion.">
+				>
+				["at0.15"] = <
+					text = <"Margin">
+					description = <"The margin of the lesion.">
+				>
+				["at0.16"] = <
+					text = <"Calcification">
+					description = <"Presence of calcification in the lesion.">
+				>
+				["at0.17"] = <
+					text = <"Present">
+					description = <"Calcification is observed.">
+				>
+				["at0.18"] = <
+					text = <"Absent">
+					description = <"Calcification is not observed.">
+				>
+				["at0.19"] = <
+					text = <"Effect">
+					description = <"Narrative description about the effect of the lesion on surrounding structures.">
+					comment = <"For example: presence of an echo shadow behind the lesion or that it is distorting adjacent structures.">
+				>
+				["at0.2"] = <
+					text = <"Label">
+					description = <"A label for the lesion.">
+					comment = <"Use to differentiate one lesion from another when there is more than one present within the context of the same body structure or region. ">
+				>
+				["at0.20"] = <
+					text = <"Vascularisation">
+					description = <"Assessment of the blood flow to the lesion.">
+					comment = <"For example: Doppler score 0/None; Doppler score 1/ Mild; Doppler score 2/Moderate; or Doppler score 3/Marked.">
+				>
+				["at0.3"] = <
+					text = <"Type">
+					description = <"The type of lesion.">
+					comment = <"Coding of the lesion with an external terminology is preferred, where possible. For example, a cyst or nodule from the SNOMED 4147007 | Mass (morphologic lesion) | hierarchy.">
+				>
+				["at0.4"] = <
+					text = <"Diameter">
+					description = <"A measured diameter of the lesion.">
+					comment = <"This data element has 3 occurrences to allow for 3 measurements in different axes.">
+				>
+				["at0.9"] = <
+					text = <"Shape">
+					description = <"The shape of the lesion.">
+				>
+				["at0000.1"] = <
+					text = <"Imaging examination of a lesion">
+					description = <"Findings on radiological examination of a single, unexpected or abnormal finding within an identified body structure or region.">
+					comment = <"For example: a mass; a thrombosis; a polyp; or a calculus.">
+				>
+				["at0001.1"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+				>
+				["at0.25"] = <
+					text = <"Vascularisation description">
+					description = <"Narrative descripiton about the blood flow to the lesion.">
+				>
+				["at0000"] = <
+					text = <"Imaging examination of a body structure">
+					description = <"Findings on radiological examination of a specified body structure or region.">
+				>
+				["at0001"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+					comment = <"For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended.">
+				>
+				["at0002"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"For example: a lymph node group (body structure) which found in the 'Right axilla'. Coding of 'Body site' with a terminology, such as SNOMED CT, is desirable. If the body site has been fully identified in the 'Body structure' data element, this data element becomes redundant.">
+				>
+				["at0004"] = <
+					text = <"Imaging findings">
+					description = <"Narrative description of the imaging findings observed during this examination.">
+				>
+				["at0005"] = <
+					text = <"Additional details">
+					description = <"Additional structured details about imaging findings for the identified body structure or region, or findings of related structures.">
+				>
+				["at0006"] = <
+					text = <"Impression">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of all imaging findings for the identified body structure.">
+					comment = <"Also referred to as 'Interpretation' or 'Opinion'. For example: 'No abnormality detected' or 'Free fluid present'. Coding of the 'Impression' with a terminology is permitted, if useful. Multiple occurrences allow for more than one coded impression. A narrative description may include a comparison with previous studies of the identified body structure, if appropriate.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the imaging findings of the body structure, not captured in other fields.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0.0.1"] = <
+					text = <"Oppfylning i adneks">
+					description = <"">
+				>
+				["at0.0.13"] = <
+					text = <"Antall papillære utspring">
+					description = <"Antall papillære utspring i oppfylningen.">
+				>
+				["at0.0.14"] = <
+					text = <"*Maximal septum thickness (en)">
+					description = <"Den største bredden av skilleveggen.">
+				>
+				["at0.0.15"] = <
+					text = <"Solid diameter">
+					description = <"Diameter for den største solide vevskomponenten.">
+					comment = <"Elementet har 3 forekomster for å tillate registrering av målinger i 3 retninger.">
+				>
+				["at0.0.8"] = <
+					text = <"Antall cystiske kamre">
+					description = <"Antall cystiske kamre i oppfylningen.">
+				>
+				["at0.5"] = <
+					text = <"*Diameter(en)">
+					description = <"*A measured diameter of the lesion.(en)">
+				>
+				["at0.6"] = <
+					text = <"*Dimension 1(en)">
+					description = <"*The measured length of the longest axis of the lesion.(en)">
+				>
+				["at0.7"] = <
+					text = <"*Dimension 2(en)">
+					description = <"*The measured length of an axis of the lesion perpendicular to Dimension 1.(en)">
+				>
+				["at0.8"] = <
+					text = <"*Dimension 3(en)">
+					description = <"*The measured length of an axis of the lesion perpendicular to Dimension 1 and Dimension 2..(en)">
+				>
+				["at0000.1.1"] = <
+					text = <"Bildediagnostisk undersøkelse - oppfylning i adneks">
+					description = <"*Findings on radiological examination of an adnexal mass identified in the pelvis, usually related to a single ovary and/or fallopian tube and associated connective tissues. (en)">
+				>
+				["at0001.1.1"] = <
+					text = <"Struktur">
+					description = <"Navn av undersøkt struktur eller område på eller i kroppen.">
+				>
+				["at0.3.1"] = <
+					text = <"Type">
+					description = <"*The type of mass. (en)">
+					comment = <"*For example: Unilocular cyst (A unilocular cyst without septa, solid parts or papillary structures); Unilocular-solid cyst (A unilocular cyst with a measurable solid component or at least one papillary structure); Multilocular cyst (A cyst with at least one septum but no measurable solid components or papillary projections); Multilocular-solid cyst (A cyst with at least one septum and a measurable solid component or at least one papillary projection); Solid tumour (A tumor where the solid components comprise 80% or more of the tumour when assessed in a two-dimensional section); and Indeterminate (It is not possible to determine the type of mass). (en)">
+				>
+				["at0.12"] = <
+					text = <"Godt avgrenset">
+					description = <"Avviket er godt avgrenset.">
+				>
+				["at0.13"] = <
+					text = <"Svakt avgrenset">
+					description = <"Avviket er svakt avgrenset.">
+				>
+				["at0.21"] = <
+					text = <"Ingen">
+					description = <"Ingen blodforsyning kan sees.">
+				>
+				["at0.22"] = <
+					text = <"Mild">
+					description = <"Liten blodtilstrømning kan sees.">
+				>
+				["at0.23"] = <
+					text = <"Moderat">
+					description = <"Moderat blodtilstrømning kan sees.">
+				>
+				["at0.24"] = <
+					text = <"Markert">
+					description = <"Markert blodtilstrømning kan sees.">
+				>
+				["at0.1"] = <
+					text = <"*Lesion (en)">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Tekstur">
+					description = <"Avvikets tekstur.">
+				>
+				["at0.11"] = <
+					text = <"Avgrensning">
+					description = <"Avvikets avgrensning.">
+					comment = <"*For example: 'Well-defined' (The lesion is well-defined); and 'Poorly-defined' (The lesion is poorly-defined). (en)">
+				>
+				["at0.14"] = <
+					text = <"Kontur">
+					description = <"Avvikets kontur.">
+				>
+				["at0.15"] = <
+					text = <"Grenseflate">
+					description = <"Avvikets grenseflate.">
+				>
+				["at0.16"] = <
+					text = <"Forkalkning">
+					description = <"Tilstedeværelse av forkalkning i avviket.">
+				>
+				["at0.17"] = <
+					text = <"Tilstede">
+					description = <"Forkalkning kan sees.">
+				>
+				["at0.18"] = <
+					text = <"Fraværende">
+					description = <"Forkalkning kan ikke sees.">
+				>
+				["at0.19"] = <
+					text = <"Effekt">
+					description = <"Fritekstbeskrivelse av avvikets effekt på omkringliggende strukturer.">
+					comment = <"*For example: presence of an echo shadow behind the lesion or that it is distorting adjacent structures. (en)">
+				>
+				["at0.2"] = <
+					text = <"Identifisering">
+					description = <"*A label for the lesion. (en)">
+					comment = <"*Use to differentiate one lesion from another when there is more than one present within the context of the same body structure or region.  (en)">
+				>
+				["at0.20"] = <
+					text = <"Blodforsyning">
+					description = <"Undersøkelse av avvikets blodforsyning.">
+					comment = <"*For example: Doppler score 0/None; Doppler score 1/ Mild; Doppler score 2/Moderate; or Doppler score 3/Marked. (en)">
+				>
+				["at0.3"] = <
+					text = <"Type">
+					description = <"*The type of lesion. (en)">
+					comment = <"*Coding of the lesion with an external terminology is preferred, where possible. For example, a cyst or nodule from the SNOMED 4147007 | Mass (morphologic lesion) | hierarchy. (en)">
+				>
+				["at0.4"] = <
+					text = <"Diameter">
+					description = <"Avvikets diameter.">
+					comment = <"Elementet har 3 forekomster for å tillate registrering av målinger i 3 retninger.">
+				>
+				["at0.9"] = <
+					text = <"Form">
+					description = <"Avvikets form.">
+				>
+				["at0000.1"] = <
+					text = <"*Imaging examination of a lesion (en)">
+					description = <"*Findings on radiological examination of a single, unexpected or abnormal finding within an identified body structure or region. (en)">
+					comment = <"*For example: a mass; a thrombosis; a polyp; or a calculus. (en)">
+				>
+				["at0001.1"] = <
+					text = <"Struktur">
+					description = <"Navn av undersøkt struktur eller område i kroppen.">
+				>
+				["at0.25"] = <
+					text = <"*Vascularisation description (en)">
+					description = <"*Narrative descripiton about the blood flow to the lesion. (en)">
+				>
+				["at0000"] = <
+					text = <"Bildediagnostisk undersøkelse - kroppsstruktur">
+					description = <"Funn eller observasjoner ved radiologisk undersøkelse av et definert organ eller en kroppsdel.">
+				>
+				["at0001"] = <
+					text = <"Kroppsstruktur">
+					description = <"Identifisering av organet eller kroppsdelen som svaret gjelder.">
+					comment = <"For eksempel \"Lever\", \"Høyre ankel\" eller \"Lymfeknutegruppe\". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT.">
+				>
+				["at0002"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av organ eller kroppsdel.">
+					comment = <"For eksempel en lymfeknutegruppe (Kroppsstruktur) som er funnet i \"Høyre aksille\" (Anatomisk lokalisasjon). Det er ønskelig å kode \"Anatomisk lokalisasjon\" med en terminologi, som SNOMED CT. Dersom den anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\".">
+				>
+				["at0003"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Strukturerte detaljer om organ eller kroppsdel.">
+					comment = <"For eksempel detaljert om en relativ anatomisk lokalisasjon, som \"2 cm distalt for appendix\". Dersom den nøyaktige eller relative anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0004"] = <
+					text = <"Funn">
+					description = <"Fritekstlig beskrivelse av funn eller observasjoner på bilder tatt under denne undersøkelsen.">
+				>
+				["at0005"] = <
+					text = <"Ytterligere detaljer">
+					description = <"Ytterligere strukturerte detaljer om funn eller observasjoner på bilder for det definerte organet eller kroppsdelen, eller om funn eller observasjoner hos tilhørende kroppsstrukturer.">
+				>
+				["at0006"] = <
+					text = <"Resymé">
+					description = <"Enkeltord, frase eller kortfattet beskrivelse som uttrykker den kliniske betydningen av alle funn og observasjoner for den definerte kroppsstrukturen.">
+					comment = <"Kan også kalles \"Tolkning\" eller \"Inntrykk\". For eksempel \"Uten anmerkning\" eller \"Fri væske\". Dersom det er nyttig, er det åpent for å kode \"Resymé\" med en terminologi. Flere svar kan kodes ved at elementet er åpent for å være gjentakende. En beskrivelse i fritektst kan også brukes og kan inneholde en sammenligning med tidligere undersøkelser av samme kroppsstruktur.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn eller observasjoner på bilder av kroppsstrukturen og som ikke er fanget i andre felt.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0.0.1"] = <
+					text = <"Adnexal mass">
+					description = <"">
+				>
+				["at0.0.13"] = <
+					text = <"Number of papillary projections">
+					description = <"The number of papillary projections in the adnexal mass.">
+				>
+				["at0.0.14"] = <
+					text = <"*Maximal septum thickness (en)">
+					description = <"The measured width of the thickest septum.">
+				>
+				["at0.0.15"] = <
+					text = <"Solid diameter">
+					description = <"A measured diameter of the largest solid tissue component.">
+					comment = <"This data element has 3 occurrences to allow for 3 measurements in different axes.">
+				>
+				["at0.0.8"] = <
+					text = <"Number of cyst locules">
+					description = <"The number of cyst locules in the adnexal mass.">
+				>
+				["at0.5"] = <
+					text = <"Diameter">
+					description = <"A measured diameter of the lesion.">
+				>
+				["at0.6"] = <
+					text = <"Dimension 1">
+					description = <"The measured length of the longest axis of the lesion.">
+				>
+				["at0.7"] = <
+					text = <"Dimension 2">
+					description = <"The measured length of an axis of the lesion perpendicular to Dimension 1.">
+				>
+				["at0.8"] = <
+					text = <"Dimension 3">
+					description = <"The measured length of an axis of the lesion perpendicular to Dimension 1 and Dimension 2..">
+				>
+				["at0000.1.1"] = <
+					text = <"Bildgebende Untersuchung einer Körperstruktur">
+					description = <"*Findings on radiological examination of an adnexal mass identified in the pelvis, usually related to a single ovary and/or fallopian tube and associated connective tissues. (en)">
+				>
+				["at0001.1.1"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Zum Beispiel: „Leber“, „Rechtes Fußgelenk“ oder „Lymphknotengruppe“. Es wird empfohlen, die Körperstruktur mit einer geeigneten Terminologie, wie z. B. SNOMED CT, zu codieren.">
+				>
+				["at0.3.1"] = <
+					text = <"Art">
+					description = <"*The type of mass. (en)">
+					comment = <"*For example: Unilocular cyst (A unilocular cyst without septa, solid parts or papillary structures); Unilocular-solid cyst (A unilocular cyst with a measurable solid component or at least one papillary structure); Multilocular cyst (A cyst with at least one septum but no measurable solid components or papillary projections); Multilocular-solid cyst (A cyst with at least one septum and a measurable solid component or at least one papillary projection); Solid tumour (A tumor where the solid components comprise 80% or more of the tumour when assessed in a two-dimensional section); and Indeterminate (It is not possible to determine the type of mass). (en)">
+				>
+				["at0.12"] = <
+					text = <"Gut definiert">
+					description = <"Die Anomalie ist gut definiert.">
+				>
+				["at0.13"] = <
+					text = <"Schlecht definiert">
+					description = <"Die Anomalie ist schlecht definiert.">
+				>
+				["at0.21"] = <
+					text = <"Keine">
+					description = <"Es ist kein Blutfluss feststellbar.">
+				>
+				["at0.22"] = <
+					text = <"Leicht">
+					description = <"Ein minimaler Blutfluss kann festgestellt werden.">
+				>
+				["at0.23"] = <
+					text = <"Mäßig">
+					description = <"Ein mäßiger Blutfluss kann festgestellt werden.">
+				>
+				["at0.24"] = <
+					text = <"Deutlich">
+					description = <"Eine deutliche Durchblutung kann festgestellt werden.">
+				>
+				["at0.1"] = <
+					text = <"*Lesion (en)">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Beschaffenheit">
+					description = <"Beschaffenheit der Anomalie.">
+				>
+				["at0.11"] = <
+					text = <"Definition">
+					description = <"Die Definition der Anomalie.">
+					comment = <"*For example: 'Well-defined' (The lesion is well-defined); and 'Poorly-defined' (The lesion is poorly-defined). (en)">
+				>
+				["at0.14"] = <
+					text = <"Kontur">
+					description = <"Die Kontur der Anomalie.">
+				>
+				["at0.15"] = <
+					text = <"Rand">
+					description = <"Der Rand der Anomalie.">
+				>
+				["at0.16"] = <
+					text = <"Kalzifizierung">
+					description = <"Vorhandensein von Verkalkung in der Anomalie.">
+				>
+				["at0.17"] = <
+					text = <"Vorhanden">
+					description = <"Kalzifizierung wird beobachtet.">
+				>
+				["at0.18"] = <
+					text = <"Nicht vorhanden">
+					description = <"Kalzifizierung wird nicht beobachtet.">
+				>
+				["at0.19"] = <
+					text = <"Wirkung">
+					description = <"Beschreibung über die Wirkung der Anomalie auf umliegende Strukturen.">
+					comment = <"*For example: presence of an echo shadow behind the lesion or that it is distorting adjacent structures. (en)">
+				>
+				["at0.2"] = <
+					text = <"Label">
+					description = <"*A label for the lesion. (en)">
+					comment = <"*Use to differentiate one lesion from another when there is more than one present within the context of the same body structure or region.  (en)">
+				>
+				["at0.20"] = <
+					text = <"Vaskularisierung">
+					description = <"Beurteilung des Blutflusses zur Anomalie.">
+					comment = <"*For example: Doppler score 0/None; Doppler score 1/ Mild; Doppler score 2/Moderate; or Doppler score 3/Marked. (en)">
+				>
+				["at0.3"] = <
+					text = <"Art">
+					description = <"*The type of lesion. (en)">
+					comment = <"*Coding of the lesion with an external terminology is preferred, where possible. For example, a cyst or nodule from the SNOMED 4147007 | Mass (morphologic lesion) | hierarchy. (en)">
+				>
+				["at0.4"] = <
+					text = <"Durchmesser">
+					description = <"Ein gemessener Durchmesser der Anomalie.">
+					comment = <"Dieses Datenelement hat drei Vorkommen, um drei Messungen in verschiedenen Achsen zu ermöglichen.">
+				>
+				["at0.9"] = <
+					text = <"Form">
+					description = <"Die Form der Anomalie.">
+				>
+				["at0000.1"] = <
+					text = <"*Imaging examination of a lesion (en)">
+					description = <"*Findings on radiological examination of a single, unexpected or abnormal finding within an identified body structure or region. (en)">
+					comment = <"*For example: a mass; a thrombosis; a polyp; or a calculus. (en)">
+				>
+				["at0001.1"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder -region.">
+				>
+				["at0.25"] = <
+					text = <"*Vascularisation description (en)">
+					description = <"*Narrative descripiton about the blood flow to the lesion. (en)">
+				>
+				["at0000"] = <
+					text = <"Bildgebende Untersuchung einer Körperstruktur">
+					description = <"Befunde zur radiologischen Untersuchung einer bestimmten Körperstruktur oder -region.">
+				>
+				["at0001"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Zum Beispiel: „Leber“, „Rechtes Fußgelenk“ oder „Lymphknotengruppe“. Es wird empfohlen, die Körperstruktur mit einer geeigneten Terminologie, wie z. B. SNOMED CT, zu codieren.">
+				>
+				["at0002"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des zu untersuchenden Bereichs des Körpers.">
+					comment = <"Zum Beispiel: eine Lymphknotengruppe (Körperstruktur), die sich in der „rechten Achselhöhle“ befindet. Eine Kodierung von „Körperstelle“ mit einer Terminologie, wie z. B. SNOMED CT, ist wünschenswert. Wenn die Körperstelle im Datenelement „Körperstruktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+				["at0003"] = <
+					text = <"Körperstelle strukturiert">
+					description = <"Strukturierte Angaben zum untersuchten Körperbereich.">
+					comment = <"Zum Beispiel: Angaben zu einer relativen anatomischen Lokalisation, wie z. B. „2 cm distal zum Blinddarm“. Wenn die Körperstelle in den Datenelementen „Körperstruktur“ oder „Körperstelle“ vollständig identifiziert wurde, wird dieser SLOT überflüssig.">
+				>
+				["at0004"] = <
+					text = <"Bildgebende Befunde">
+					description = <"Beschreibung der bei dieser Untersuchung beobachteten bildgebenden Befunde.">
+				>
+				["at0005"] = <
+					text = <"Zusätzliche Angaben">
+					description = <"Zusätzliche strukturierte Angaben zu bildgebenden Befunden für die identifizierte Körperstruktur oder -region oder befundbezogene Strukturen.">
+				>
+				["at0006"] = <
+					text = <"Interpretation">
+					description = <"Einzelnes Wort, Satz oder kurze Beschreibung, die die klinische Bedeutung und Signifikanz aller bildgebenden Befunde für die identifizierte Körperstruktur darstellt.">
+					comment = <"Auch als „Eindruck“ oder „Meinung“ bezeichnet. Zum Beispiel: „Keine Anomalie erkannt“ oder „Freie Flüssigkeit vorhanden“. Eine Kodierung des „Interpretation“ mit einer Terminologie ist zulässig, sofern sinnvoll. Mehrere Vorkommen ermöglichen mehr als eine codierte Interpretation. Eine einfache Beschreibung kann gegebenenfalls einen Vergleich mit früheren Studien der identifizierten Körperstruktur beinhalten.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzlicher Text über die bildgebenden Befunde der Körperstruktur, der in anderen Bereichen nicht erfasst wurde.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0.0.1"] = <[SNOMED-CT::445039006]>
+			>
+		>
+	>

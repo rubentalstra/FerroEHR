@@ -1,0 +1,57 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.braden_scale-child.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.braden_scale.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2011-08-01">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"The Modified Braden Q Scale for Predicting Pressure Sore Risk is an assessment tool used to assess the risk of pressure ulcer development in children aged between 21 days and 5 years.">
+			use = <"To assess risk of pressure ulcer development in children from 21 days to 5 years of age.
+The Braden Scale is copyrighted as \"Copyright Nursecom Inc\".">
+			keywords = <"pressure", "sore", "ulcer", "Braden", "child", "paediatric">
+			misuse = <"The Braden Q Scale should not be used unless the terms of copyright have been observed.
+The Braden Scale should not be used for adults or children over 5 years of age - use OPENEHR-EHR-OBSERVATION.braden_scale
+The Braden Scale should not be used for children less than  21 days old - use OPENEHR-EHR-OBSERVATION.braden_scale_neonate.v1">
+		>
+	>
+	references = <
+		["1"] = <"Curley  MAQ, Razmus IS, Roberts KE, Wypij D. Predicting  pressure ulcer risk  in pediatric patients-the Braden Q scale. Nursing Research. 2003; 52(1) 22-31.">
+		["2"] = <"Bergstrom, N., Braden, B., Laguzza, A. & Holman, A. (1987). The Braden Scale for predicting pressure sore risk. Nursing Research. 36(4), 205-210.">
+		["3"] = <"Braden, B. J. & Blanchard, S. (2007). Risk assessment in pressure ulcer prevention. In D. L. Krasner, G. T. Rodeheaver, & R. G. Sibbald (Eds.), Chronic Wound Care: A Clinical Source Book for Healthcare Professionals (4th ed.). Wayne PA: HMP Communications">
+		["4"] = <"Ayello, E.A. & Braden, B. (2002) How and why to do pressure ulcer risk assessment. Advances in Wound Care, 15 (3), 125-131.">
+		["5"] = <"Prevention Plus - Home of the Braden Scale [Internet]. [date unknown];[cited 2011 Aug 1] Available from: http://bradenscale.com/index.htm">
+		["6"] = <"Modified Braden Q Scale for Paediatric Use [Internet]. [date unknown];[cited 2011 Aug 8] Available from: http://nursing.advanceweb.com/SharedResources/Downloads/2007/090107/NW/nng090107_p55table1.pdf">
+	>
+	other_details = <
+		["current_contact"] = <"Ian McNicoll, Ocean Informatics, UK, ian.mcnicoll@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"89A23500F28810BE628D28B0AABF82C1">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Modified Braden Q Scale
+		/data[id2]/events[id3]/data[id4]/items[id23]/value[id44]/magnitude matches {|6..20|}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Modified Braden Q Scale">
+				description = <"The Modified Braden Q Scale for paediatric use.">
+			>
+		>
+	>

@@ -1,0 +1,32 @@
+{
+    "_type": "UPDATE_ATTESTATION",
+    "committer": {
+        "_type": "PARTY_IDENTIFIED",
+        "name": "Dr Senior Reviewer"
+    },
+    "description": {
+        "_type": "DV_CODED_TEXT",
+        "value": "countersigned at ward round",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+                "_type": "TERMINOLOGY_ID",
+                "value": "local"
+            },
+            "code_string": "at0007"
+        }
+    },
+    "reason": {
+        "_type": "DV_CODED_TEXT",
+        "value": "witnessed",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+                "_type": "TERMINOLOGY_ID",
+                "value": "openehr"
+            },
+            "code_string": "648"
+        }
+    },
+    "is_pending": false
+}

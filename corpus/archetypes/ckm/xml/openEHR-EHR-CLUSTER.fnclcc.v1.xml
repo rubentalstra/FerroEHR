@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2024-03-19</original_author>
+    <original_author id="name">Kanika Kuwelker</original_author>
+    <original_author id="organisation">Helse Vest IKT</original_author>
+    <original_author id="email">kanika.kuwelker@helse-vest-ikt.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>June Marie Nepstad Knappskog, Helse Nord IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Hans Kristian Haugland, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Anjali Kulkarni, Karkinos, India</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Nina Louise Jebsen, Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Olha Nikolaieva, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Terje Nordberg, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Terje Sagmyr, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Olga Zaikova, OUS, Radiumhospitalet, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Kumar R, Ludwig JA, Madewell JE. Soft Tissue Sarcomas. In: Oncologic Imaging: A Multidisciplinary Approach 2 ed. Elselvier: Saunders; 2022. Chapter 38; p.656-669.&#xD;
+&#xD;
+Jean-Michel Coindre; Grading of Soft Tissue Sarcomas: Review and Update. Arch Pathol Lab Med 1 October 2006; 130 (10): 1448–1453. doi: https://doi.org/10.5858/2006-130-1448-GOSTSR&#xD;
+&#xD;
+https://emedicine.medscape.com/article/2006584-overview?form=fpf&#xD;
+&#xD;
+https://www.cancer.org/cancer/types/soft-tissue-sarcoma/detection-diagnosis-staging/staging.html&#xD;
+&#xD;
+Norwegian translation: Helsedirektoratet. Nasjonalt handlingsprogram med retningslinjer for diagnostikk, behandling og oppfølging av sarkom. [revised 2022 February]. [Internet]. 2022 February. Available from: https://www.helsedirektoratet.no/retningslinjer/sarkomer-handlingsprogram</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">14FF06CB22469F2DAFDD8520F2C92AD2</other_details>
+    <other_details id="build_uid">020c6d3e-8965-4f6a-870e-9276550e77dc</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere histologisk grad av bløtvevssarkom ved bruk av FNCLCC sitt graderingssystem.</purpose>
+      <keywords>sarkom, bløtvev, kreft, neoplasi, malignitet, onkologi, tumordifferensiering, tumornekrose, mitotosetall, grad, FNCLCC</keywords>
+      <use>Brukes for å registrere histologisk grad av bløtvevssarkom ved bruk av FNCLCC sitt graderingssystem.&#xD;
+&#xD;
+Arketypen er utviklet for å brukes i en ENTRY-arketype som vil gi den kliniske eller patologiske konteksten for registreringen. For eksempel: I SLOTet "Spesifikke detaljer" i arketypen Problem/diagnose (EVALUATION.problem_diagnosis), i en relevant patologirelatert CLUSTER-arketype som igjen nøstes i arketypen Laboratorieresultat (OBSERVATION.laboratory_test_result). Dette gir også mulighet for å registrere kroppssted.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the histological grading of soft tissue sarcoma using the FNCLCC grading system.</purpose>
+      <keywords>sarcoma, soft tissue, tumour, cancer, neoplasia, oncology, malignancy, tumor differentiation, tumor necrosis, mitotic count, grading, grade, FNCLCC</keywords>
+      <use>Use to record the histological grading of soft tissue sarcoma using the FNCLCC grading system.&#xD;
+&#xD;
+The archetype is designed to be used in an ENTRY archetype that will provide the clinical or pathological context. For example: In the "Specific Details" SLOT in the EVALUATION.problem_diagnose (Problem/Diagnosis) archetype, or nested in a relevant pathology-related CLUSTER archetype which is again nested in the laboratory response archetype (OBSERVATION.laboratory_test_result). This will also allow for documentation of body site.</use>
+      <misuse />
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Kanika Kuwelker,  John Tore Valand</author>
+    <author id="organisation">Helse Vest IKT</author>
+    <author id="email">kanika.kuwelker@helse-vest-ikt.no, , john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>1d34bdb2-68dd-44ce-920e-013185252790</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.fnclcc.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0008</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0009</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0010</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0011</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0012</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0013</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0014</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0015</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0016</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>2</lower>
+                    <upper>8</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0022</code_list>
+                <code_list>at0018</code_list>
+                <code_list>at0019</code_list>
+                <code_list>at0020</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">FNCLCC grading system</items>
+        <items id="description">The histological grading of soft tissue sarcoma using the FNCLCC grading system.</items>
+        <items id="comment">FNCLCC - Fédération Nationale des Centres de Lutte Contre le Cancer.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tumour differentiation</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0006">
+        <items id="text">Mitotic count</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tumour necrosis</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Sarcoma closely resembling normal adult mesenchymal tissue (e.g., low-grade liposarcoma).</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Sarcomas for which histological typing is certain (e.g., myxoid/round cell liposarcoma).</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Embryonal and undifferentiated sarcomas, sarcomas of doubtful type, synovial sarcomas, soft tissue osteosarcoma, Ewing sarcoma/primitive neuroectodermal tumor (PNET) of soft tissue.</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">0-9 mitoses per 1,7 mm2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">10-19 mitoses per 1.7 mm2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">≥20 mitoses per 1.7 mm2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">No necrosis</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0015">
+        <items id="text">&lt;50% tumor necrosis</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">≥50% tumor necrosis</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0017">
+        <items id="text">Histological grade</items>
+        <items id="description">Assessment of histological grade based on the total score in the FNCLCC grading system.</items>
+        <items id="comment">In clinical practice for soft tissue sarcomas, the 'Histological grade' result from this archetype is commonly reused to populate the 'Histopathological grade (G)' data element within the CLUSTER.tnm and CLUSTER.tnm-pathological archetypes. In that situation, this grading may be recorded within this archetype and also copied to the TNM archetypes.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Grade 1</items>
+        <items id="description">Total score 2 or 3.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Grade 2</items>
+        <items id="description">Total score 4 or 5.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Grade 3</items>
+        <items id="description">Total score 6, 7 or 8.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Total score</items>
+        <items id="description">The total sum of each component parameter for the FNCLCC grading system.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">GX</items>
+        <items id="description">Grade cannot be assessed.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">FNCLCC graderingssystem</items>
+        <items id="description">Histologisk gradering av bløtvevssarkom i henhold til FNCLCC sitt graderingssystem. </items>
+        <items id="comment">FNCLCC - Fédération Nationale des Centres de Lutte Contre le Cancer.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tumors differensiering</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0006">
+        <items id="text">Mitosetall</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tumornekrose</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Sarkom som ligner normalt og modent mesenkymalt vev</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Sarkom der histologisk type er sikker</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Embryonale og udifferensierte sarkomer</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">0-9 mitoser per 1,7 mm2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">10-19 mitoser per 1,7 mm2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">≥20 mitoser per 1,7 mm2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">Ingen nekrose</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0015">
+        <items id="text">&lt; 50 % nekrose (også vurdert makroskopisk)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">≥ 50 % nekrose (også vurdert makroskopisk)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0017">
+        <items id="text">Histologisk grad</items>
+        <items id="description">Vurdering av histologisk grad basert på total skår i FNCLCC graderingssystem.</items>
+        <items id="comment">I klinisk praksis for bløtvevssarkomer, blir 'Histologisk grad'-resultatet fra arketypen ofte gjenbrukt for å fylle ut dataelementet 'Histopatologisk gradering (G)' i arketypene TNM-klassifikasjon klinisk (CLUSTER.tnm) og TNM-klassifikasjon patologi (CLUSTER.tnm-pathological.v1).&#xD;
+</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Grad 1</items>
+        <items id="description">Totalt 2 eller 3 poeng.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Grad 2</items>
+        <items id="description">Totalt 4 eller 5 poeng.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Grad 3</items>
+        <items id="description">Totalt 6, 7 eller 8 poeng.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Total skår</items>
+        <items id="description">Den totale summen av hver komponentparameter for FNCLCC graderingssystem.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">GX</items>
+        <items id="description">Grad kan ikke vurderes.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

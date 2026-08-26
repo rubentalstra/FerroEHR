@@ -1,0 +1,92 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.speech.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"10/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record obervations of a patient's speech">
+			use = <"">
+			keywords = <"speech", ...>
+			misuse = <"">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Speech
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Clarity of speech
+										value matches {
+											DV_CODED_TEXT[id6] matches {
+												defining_code matches {[ac1]}		-- Clarity of speech (synthesised)
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Speech">
+				description = <"To record observations of a ptient's speech pattern or quality">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Clarity of speech">
+				description = <"*">
+			>
+			["at6"] = <
+				text = <"Incomprehensible">
+				description = <"*">
+			>
+			["at7"] = <
+				text = <"Unclear to parents">
+				description = <"*">
+			>
+			["at8"] = <
+				text = <"Unclear to strangers">
+				description = <"*">
+			>
+			["at9"] = <
+				text = <"Clear">
+				description = <"*">
+			>
+			["ac1"] = <
+				text = <"Clarity of speech (synthesised)">
+				description = <"* (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at6", "at7", "at8", "at9">
+		>
+	>

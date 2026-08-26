@@ -1,0 +1,906 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2023-03-15</original_author>
+    <original_author id="name">Hanne Marte Bårholm</original_author>
+    <original_author id="organisation">Helse Vest IKT AS</original_author>
+    <original_author id="email">hanne.marte.sandal.barholm@helse-vest-ikt.no</original_author>
+    <other_contributors>Andreas Abildgaard, OUS, Norway</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Stein Arne Rimehaug, Sunnaas sykehus, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ivar Berge, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Randi Brendberg, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Mona Didriksen, Helse Vest IKT, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Kija Indrearne, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Anjali Kulkarni, Karkinos, India</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Svenne Naumann, Finnmarkssykehuset, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hallvard Reigstad, Haukeland us, Norway</other_contributors>
+    <other_contributors>Terje Sagmyr, Helse Vest IKT, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Bodil Salvesen, Barneklinikken Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Natalia Strauch, Medizinische Hochschule Hannover, Germany</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Kanthan Theivendran, NHS, United Kingdom</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Tönnis D, Brunken D. Eine Abgrenzung normaler und pathologischer Hüftpfannendachwinkel zur Diagnose der Hüftdysplasie. Auswertungen von 2294 Pfannendachwinkeln kindlicher Hüftgelenke [Differentiation of normal and pathological acetabular roof angle in the diagnosis of hip dysplasia. Evaluation of 2294 acetabular roof angles of hip joints in children]. Arch Orthop Unfallchir. 1968;64(3):197-228. German. doi: 10.1007/BF02171260. PMID: 5730180.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">FF7EC6851CC77BF31757712A420EE48F</other_details>
+    <other_details id="build_uid">6704d38e-e7c9-4cb2-a841-4e5c4b8f602b</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>*To record the findings on radiological examination of a hip joint. (en)</purpose>
+      <keywords>Befund, Ergebnis, Bildgebung, Körper, Organ, System, Struktur, Region, Beobachtung, Diagnostik, Radiologie, Bild</keywords>
+      <use>*Use to record the findings on radiological examination of a specified body structure or region, and their interpretation.&#xD;
+&#xD;
+The intended scope for the CLUSTER.imaging_exam family of archetypes to be used to record all detailed findings on radiological examination. The family of specialised archetypes are derived from this generic parent archetype, CLUSTER.imaging_exam, designed as a universal pattern for recording any findings in any specified body structure or region and using any modality.&#xD;
+&#xD;
+This archetype and its related family of specialisations are designed to be nested within the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within the 'Additional details' SLOT in other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. If this archetype or its specialisations need to be extended with further levels of detailed findings, additional instances of the CLUSTER.imaging_exam or its specialisations can be nested in the 'Additional details' SLOT.&#xD;
+&#xD;
+Each structure- or region-specific specialisation of this parent archetype is intended to be inclusive of all reasonably anticipated and relevant findings. For example, the CLUSTER.imaging_exam-ovary will support recording of all findings that would be expected in reporting on imaging of the ovary using any radiological modality, including the size of the ovary, largest follicle size and the diameter and description of specific follicles. Similarly, CLUSTER.imaging_exam-lymph_node_group will contain data elements required to record specific findings of a lymph node group, including its precise or relative location in the body and the number of lymph nodes in the group. &#xD;
+&#xD;
+If an appropriate specialisation is not available for a body structure or region, this generic archetype can be used to record all relevant findings, including identification of the structure or region. (en)</use>
+      <misuse>Nicht zur Darstellung von Befunden verwenden, die außerhalb der identifizierten Körperstruktur oder -region beobachtet wurden. Verwenden Sie zu diesem Zweck eine separate Instanz eines oder mehrerer Archetypen aus der Familie CLUSTER.imaging_exam.&#xD;
+&#xD;
+Darf nicht verwendet werden, um Details in Bezug auf die Gesamtbefunde, den Kontext oder technische Details in Bezug auf ein vollständiges Testergebnis einer bildgebenden Untersuchung darzustellen. Verwenden Sie zu diesem Zweck das OBSERVATION.imaging_exam_result. Zum Beispiel Kommentare zur Studienqualität, zu Differenzialdiagnosen und zum Gesamteindruck.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere funn ved radiologisk undersøkelse av ett hofteledd.</purpose>
+      <keywords>funn</keywords>
+      <keywords>observasjon</keywords>
+      <keywords>bildediagnostikk</keywords>
+      <keywords>kropp</keywords>
+      <keywords>organ</keywords>
+      <keywords>kroppsstruktur</keywords>
+      <keywords>diagnostisk</keywords>
+      <keywords>radiologi</keywords>
+      <keywords>bilde</keywords>
+      <keywords>hofte</keywords>
+      <keywords>CT</keywords>
+      <keywords>MR</keywords>
+      <keywords>Ultralyd</keywords>
+      <keywords>Røntgen</keywords>
+      <keywords>Ledd</keywords>
+      <keywords>Hofte</keywords>
+      <use>Brukes for å registrere funn ved radiologisk undersøkelse av ett hofteledd.&#xD;
+&#xD;
+Det tiltenkte omfanget for denne arketypen er å kunne registrere detaljerte funn ved bildediagnostisk undersøkelse av hofteledd uavhengig av modalitet. Modalitet kan registeres i arketypen OBSERVATION.imaging_exam_result (Bildediagnostisk svar). Det er forventet at flere dataelementer kan bli lagt til når krav til slike er identifisert og bekreftet.&#xD;
+&#xD;
+Denne arketypen er utformet for å bli nøstet i SLOT'et "Strukturerte funn" i OBSERVATION.imaging_exam_result (Bildediagnostisk svar) eller i andre relevante Bildediagnostisk svar-arketyper, men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende. Bruk separate instanser av arketypen for å registrere funn fra hvert enkelt hofteledd.</use>
+      <misuse>Skal ikke brukes til å registrere funn som er gjort utenom det definerte organet eller den definerte kroppsdelen. Bruk en egen instans av en eller flere arketyper innen gruppen av CLUSTER.imaging_exam - arketyper (Undersøkelsesfunn) for dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere overordnede undersøkelsesfunn, kontekst eller tekniske detaljer relatert til bildeundersøkelsen. Bruk arketypen OBSERVATION.imaging_exam_result (Bildediagnostisk svar) for å registrere for eksempel kommentar om undersøkelseskvalitet, differensialdiagnose og overordnet konklusjon.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the findings on radiological examination of a hip joint.</purpose>
+      <keywords>finding, imaging, body, system, structure, region, observation, diagnostic, radiology, image, x-ray, ct, mri, ultrasound, joint, hip</keywords>
+      <use>Use to record the findings on radiological examination of a hip joint.&#xD;
+&#xD;
+The intended scope for this archetype is to record detailed findings on imaging examination of the hip joint using any modality. The imaging modality used can be recorded in the OBSERVATION.imaging_exam_result archetype. It is anticipated that further data elements may be added as requirements are identified and confirmed.&#xD;
+ &#xD;
+This archetype is designed to be nested within the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.&#xD;
+Use separate instances of this archetype to record each examination findings of each hip separately.</use>
+      <misuse>Not to be used to record findings observed outside the identified body structure or region. Use a separate instance of one or more archetypes from the CLUSTER.imaging_exam family for this purpose.&#xD;
+&#xD;
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch, Hanne Marte Bårholm</author>
+    <author id="organisation">Medizinische Hochschule Hannover, Helse Vest IKT</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de, hanne.marte.sandal.barholm@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen, John Tore Valand, Hanne Marte Bårholm</author>
+    <author id="organisation">Oslo University Hospital, Helse Vest IKT</author>
+    <author id="email">varntzen@ous-hf.no, john.tore.valand@helse-vest-ikt.no, hanne.marte.sandal.barholm@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>6f4e49a3-0c4f-4965-967c-c200808ec055</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.imaging_exam-hip_joint.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000.1</concept>
+  <parent_archetype_id>
+    <value>openEHR-EHR-CLUSTER.imaging_exam.v1</value>
+  </parent_archetype_id>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000.1</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001.1</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0.1</code_list>
+                <code_list>at0.2</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.imaging_exam-lymph_node(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lymph_node_group(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lesion(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.imaging_exam-lymph_node(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lymph_node_group(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lesion(-[a-zA-Z0-9_]+)*\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0.3</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>497</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>-360.0</lower>
+                <upper>360.0</upper>
+              </magnitude>
+              <units>deg</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0.4</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>497</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>-360.0</lower>
+                <upper>360.0</upper>
+              </magnitude>
+              <units>deg</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0.6</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>497</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>-360.0</lower>
+                <upper>360.0</upper>
+              </magnitude>
+              <units>deg</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0.5</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>497</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>-360.0</lower>
+                <upper>360.0</upper>
+              </magnitude>
+              <units>deg</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0.1">
+        <items id="text">Left hip joint</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0.2">
+        <items id="text">Right hip joint</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0.3">
+        <items id="text">Acetabular roof angle</items>
+        <items id="description">The angle is formed by one line drawn from the medial edge of the acetabular sourcil and through to the most lateral aspect of the sourcil and a second line drawn in the horizontal plane of the pelvis. Also known as acetabular index.</items>
+      </items>
+      <items code="at0.4">
+        <items id="text">Alpha angle (DDH)</items>
+        <items id="description">The angle is formed by the acetabular roof to the vertical cortex of the ilium and thus reflects the depth of the bony acetabular roof.</items>
+        <items id="comment">The alpha angle is a measurement used in the ultrasonographic assessment of developmental dysplasia of the hip (DDH), not to be confused with the alpha angle used in the evaluation of femoroacetabular impingement.</items>
+      </items>
+      <items code="at0.5">
+        <items id="text">Beta angle</items>
+        <items id="description">The angle is formed by the cartilaginous roof to the vertical cortex of the ilium and thus reflects the femoral head cartilaginous coverage.</items>
+      </items>
+      <items code="at0.6">
+        <items id="text">Alpha angle (cam morphology)</items>
+        <items id="description">The angle between a line from the center of the femoral head to the center of the femoral neck at its narrowest point, and a line from the center of the femoral head to a point where the distance from the bone to the center of the head is greater than the radius of the cartilage-covered femoral head.</items>
+        <items id="comment">The alpha angle is a measurement for the detection of cam morphology, which is sometimes associated with femoroacetabular impingement (FAI). Not to be confused with the alpha angle used in the evaluation of developmental dysplasia of the hip (DDH).</items>
+      </items>
+      <items code="at0000">
+        <items id="text">Imaging examination of a body structure</items>
+        <items id="description">Findings on radiological examination of a specified body structure or region.</items>
+      </items>
+      <items code="at0000.1">
+        <items id="text">Imaging examination of a hip joint</items>
+        <items id="description">Findings on radiological examination of a hip joint.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Body structure</items>
+        <items id="description">Identification of the body structure or region examined.</items>
+        <items id="comment">For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant.</items>
+      </items>
+      <items code="at0001.1">
+        <items id="text">Body structure</items>
+        <items id="description">Identification of the body structure or region examined.</items>
+        <items id="comment">For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Body site</items>
+        <items id="description">Identification of the area of the body under examination.</items>
+        <items id="comment">For example: a lymph node group (body structure) which found in the 'Right axilla'. Coding of 'Body site' with a terminology, such as SNOMED CT, is desirable. If the body site has been fully identified in the 'Body structure' data element, this data element becomes redundant.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Structured body site</items>
+        <items id="description">Structured details about the area of the body under examination.</items>
+        <items id="comment">For example: details about a relative anatomical location, such as '2cm distal to the appendix'. If the body site has been fully identified in the 'Body structure' or 'Body site' data elements, then this SLOT becomes redundant.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Imaging findings</items>
+        <items id="description">Narrative description of the imaging findings observed during this examination.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Additional details</items>
+        <items id="description">Additional structured details about imaging findings for the identified body structure or region, or findings of related structures.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Impression</items>
+        <items id="description">Single word, phrase or brief description that represents the clinical meaning and significance of all imaging findings for the identified body structure.</items>
+        <items id="comment">Also referred to as 'Interpretation' or 'Opinion'. For example: 'No abnormality detected' or 'Free fluid present'. Coding of the 'Impression' with a terminology is permitted, if useful. Multiple occurrences allow for more than one coded impression. A narrative description may include a comparison with previous studies of the identified body structure, if appropriate.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the imaging findings of the body structure, not captured in other fields.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0.1">
+        <items id="text">Venstre hofteledd</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0.2">
+        <items id="text">Høyre hofteledd</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0.3">
+        <items id="text">Acetabular helningsvinkel</items>
+        <items id="description">Vinkelen formes av én linje som går mellom den mediale og den laterale acetabularkanten, og en annen linje som går gjennom bekkenets horisontale plan. Også kjent som acetabular index.</items>
+      </items>
+      <items code="at0.4">
+        <items id="text">Alfavinkel (DDH)</items>
+        <items id="description">Vinkelen dannes av acetabulartaket og den vertikale cortex av ilium og reflekterer dermed dybden av det benete acetabulartaket.</items>
+        <items id="comment">Alfavinkelen er en måling gjort med ultralyd for å vurdere hofteleddsdysplasi (DDH - Developmental Dysplasia of the Hip). Må ikke forveksles med alfavinkelen brukt i vurdering av femoroacetabular impingement.</items>
+      </items>
+      <items code="at0.5">
+        <items id="text">Betavinkel</items>
+        <items id="description">Vinkelen dannes av brusktaket til den vertikale cortex av ilium og reflekterer dermed femurhodets bruskdekning.</items>
+      </items>
+      <items code="at0.6">
+        <items id="text">Alfavinkel (cam-morfologi)</items>
+        <items id="description">Vinkelen dannes av en linje fra sentrum av femurhodet til sentrum av femurhalsens tynneste punkt, og en annen linje fra sentrum av femurhodet til et punkt hvor avstanden fra beinet til sentrum av hodet er større enn radiusen av det bruskdekkede femurhodet.</items>
+        <items id="comment">Alfavinkelen er måling for å påvise cam-morfologi, som kan være assosiert med femoroacetabular impingement (FAI). Må ikke forveksles med alfavinkelen brukt for å vurdere hofteleddsdysplasi.</items>
+      </items>
+      <items code="at0000">
+        <items id="text">Bildediagnostisk undersøkelse - kroppsstruktur</items>
+        <items id="description">Funn eller observasjoner ved radiologisk undersøkelse av et definert organ eller en kroppsdel.</items>
+      </items>
+      <items code="at0000.1">
+        <items id="text">Bildediagnostisk undersøkelse - hofteledd</items>
+        <items id="description">Funn ved radiologisk undersøkelse av ett hofteledd.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Kroppsstruktur</items>
+        <items id="description">Identifisering av organet eller kroppsdelen som svaret gjelder.</items>
+        <items id="comment">For eksempel "Lever", "Høyre ankel" eller "Lymfeknutegruppe". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT. Dersom den aktuelle strukturen i kroppen er fullt ut angitt i dette "Kroppsstruktur"-elementet er det ikke nødvendig å bruke "Anatomisk lokalisasjon" eller "Strukturert anatomisk lokalisasjon".</items>
+      </items>
+      <items code="at0001.1">
+        <items id="text">Kroppsstruktur</items>
+        <items id="description">Identifisering av organet eller kroppsdelen som svaret gjelder.</items>
+        <items id="comment">For eksempel "Lever", "Høyre ankel" eller "Lymfeknutegruppe". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT. Dersom den aktuelle strukturen i kroppen er fullt ut angitt i dette "Kroppsstruktur"-elementet er det ikke nødvendig å bruke "Anatomisk lokalisasjon" eller "Strukturert anatomisk lokalisasjon".</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Anatomisk lokalisasjon</items>
+        <items id="description">Identifisering av organ eller kroppsdel.</items>
+        <items id="comment">For eksempel en lymfeknutegruppe (Kroppsstruktur) som er funnet i "Høyre aksille" (Anatomisk lokalisasjon). Det er ønskelig å kode "Anatomisk lokalisasjon" med en terminologi, som SNOMED CT. Dersom den anatomiske lokalisasjonen er fullt ut angitt i elementet "Kroppsstruktur" er det ikke nødvendig å bruke "Anatomisk lokalisasjon".</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Strukturert anatomisk lokalisasjon</items>
+        <items id="description">Strukturerte detaljer om organ eller kroppsdel.</items>
+        <items id="comment">For eksempel detaljert om en relativ anatomisk lokalisasjon, som "2 cm distalt for appendix". Dersom den nøyaktige eller relative anatomiske lokalisasjonen er fullt ut angitt i elementet "Kroppsstruktur" er det ikke nødvendig å bruke "Strukturert anatomisk lokalisasjon".</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Funn</items>
+        <items id="description">Fritekstlig beskrivelse av funn eller observasjoner på bilder tatt under denne undersøkelsen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om funn eller observasjoner på bilder for det definerte organet eller kroppsdelen, eller om funn eller observasjoner hos tilhørende kroppsstrukturer.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Resymé</items>
+        <items id="description">Enkeltord, frase eller kortfattet beskrivelse som uttrykker den kliniske betydningen av alle funn og observasjoner for den definerte kroppsstrukturen.</items>
+        <items id="comment">Kan også kalles "Tolkning" eller "Inntrykk". For eksempel "Uten anmerkning" eller "Fri væske". Dersom det er nyttig, er det åpent for å kode "Resymé" med en terminologi. Flere svar kan kodes ved at elementet er åpent for å være gjentakende. En beskrivelse i fritektst kan også brukes og kan inneholde en sammenligning med tidligere undersøkelser av samme kroppsstruktur.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om funn eller observasjoner på bilder av kroppsstrukturen og som ikke er fanget i andre felt.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0.1">
+        <items id="text">*Left hip joint (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0.2">
+        <items id="text">*Right hip joint (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0.3">
+        <items id="text">*Acetabular roof angle (en)</items>
+        <items id="description">*The angle is formed by one line drawn from the medial edge of the acetabular sourcil and through to the most lateral aspect of the sourcil and a second line drawn in the horizontal plane of the pelvis. Also known as acetabular index. (en)</items>
+      </items>
+      <items code="at0.4">
+        <items id="text">*Alpha angle (DDH) (en)</items>
+        <items id="description">*The angle is formed by the acetabular roof to the vertical cortex of the ilium and thus reflects the depth of the bony acetabular roof. (en)</items>
+        <items id="comment">*The alpha angle is a measurement used in the ultrasonographic assessment of developmental dysplasia of the hip (DDH), not to be confused with the alpha angle used in the evaluation of femoroacetabular impingement. (en)</items>
+      </items>
+      <items code="at0.5">
+        <items id="text">*Beta angle (en)</items>
+        <items id="description">*The angle is formed by the cartilaginous roof to the vertical cortex of the ilium and thus reflects the femoral head cartilaginous coverage. (en)</items>
+      </items>
+      <items code="at0.6">
+        <items id="text">*Alpha angle (cam morphology) (en)</items>
+        <items id="description">*The angle between a line from the center of the femoral head to the center of the femoral neck at its narrowest point, and a line from the center of the femoral head to a point where the distance from the bone to the center of the head is greater than the radius of the cartilage-covered femoral head. (en)</items>
+        <items id="comment">*The alpha angle is a measurement for the detection of cam morphology, which is sometimes associated with femoroacetabular impingement (FAI). Not to be confused with the alpha angle used in the evaluation of developmental dysplasia of the hip (DDH). (en)</items>
+      </items>
+      <items code="at0000">
+        <items id="text">Bildgebende Untersuchung einer Körperstruktur</items>
+        <items id="description">Befunde zur radiologischen Untersuchung einer bestimmten Körperstruktur oder -region.</items>
+      </items>
+      <items code="at0000.1">
+        <items id="text">*Imaging examination of a hip joint (en)</items>
+        <items id="description">*Findings on radiological examination of a hip joint. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Körperstruktur</items>
+        <items id="description">Identifizierung der untersuchten Körperstruktur oder Region.</items>
+        <items id="comment">*For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant. (en)</items>
+      </items>
+      <items code="at0001.1">
+        <items id="text">Körperstruktur</items>
+        <items id="description">Identifizierung der untersuchten Körperstruktur oder Region.</items>
+        <items id="comment">*For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant. (en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Körperstelle</items>
+        <items id="description">Identifizierung des zu untersuchenden Bereichs des Körpers.</items>
+        <items id="comment">Zum Beispiel: eine Lymphknotengruppe (Körperstruktur), die sich in der „rechten Achselhöhle“ befindet. Eine Kodierung von „Körperstelle“ mit einer Terminologie, wie z. B. SNOMED CT, ist wünschenswert. Wenn die Körperstelle im Datenelement „Körperstruktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Körperstelle strukturiert</items>
+        <items id="description">Strukturierte Angaben zum untersuchten Körperbereich.</items>
+        <items id="comment">Zum Beispiel: Angaben zu einer relativen anatomischen Lokalisation, wie z. B. „2 cm distal zum Blinddarm“. Wenn die Körperstelle in den Datenelementen „Körperstruktur“ oder „Körperstelle“ vollständig identifiziert wurde, wird dieser SLOT überflüssig.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Bildgebende Befunde</items>
+        <items id="description">Beschreibung der bei dieser Untersuchung beobachteten bildgebenden Befunde.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">Zusätzliche strukturierte Angaben zu bildgebenden Befunden für die identifizierte Körperstruktur oder -region oder befundbezogene Strukturen.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpretation</items>
+        <items id="description">Einzelnes Wort, Satz oder kurze Beschreibung, die die klinische Bedeutung und Signifikanz aller bildgebenden Befunde für die identifizierte Körperstruktur darstellt.</items>
+        <items id="comment">Auch als „Eindruck“ oder „Meinung“ bezeichnet. Zum Beispiel: „Keine Anomalie erkannt“ oder „Freie Flüssigkeit vorhanden“. Eine Kodierung des „Interpretation“ mit einer Terminologie ist zulässig, sofern sinnvoll. Mehrere Vorkommen ermöglichen mehr als eine codierte Interpretation. Eine einfache Beschreibung kann gegebenenfalls einen Vergleich mit früheren Studien der identifizierten Körperstruktur beinhalten.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzlicher Text über die bildgebenden Befunde der Körperstruktur, der in anderen Bereichen nicht erfasst wurde.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0.1">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>362907004</code_string>
+        </value>
+      </items>
+      <items code="at0.2">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>362908009</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

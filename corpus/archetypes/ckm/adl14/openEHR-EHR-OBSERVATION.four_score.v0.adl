@@ -1,0 +1,242 @@
+﻿archetype (adl_version=1.4; uid=0fb0ede1-a1aa-4c39-94d9-e2eebf7b49d8)
+	openEHR-EHR-OBSERVATION.four_score.v0
+
+concept
+	[at0000]	-- Full Outline of UnResponsiveness (FOUR) score
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Sidharth Ramesh">
+		["organisation"] = <"Medblocks">
+		["email"] = <"tornadoalert@gmail.com">
+		["date"] = <"2021-02-25">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and their total sum for the FOUR score.">
+			use = <"Use to record the results for each component parameter and their total sum for the FOUR score.">
+			keywords = <"four", "Glasgow", "Coma">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Heather Leslie, Atomica Informatics, Australia", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Wijdicks EF, Bamlet WR, Maramattom BV, Manno EM, McClelland RL. Validation of a new coma scale: The FOUR score. Ann Neurol. 2005 Oct;58(4):585-93. doi: 10.1002/ana.20611. PMID: 16178024.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"F4AD363AFDE55FF718EDD253454A1566">
+		["build_uid"] = <"368faeb6-ea3b-4974-ac53-31bc4bf247d2">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Full Outline of UnResponsiveness (FOUR) score
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Eye response
+										value matches {
+											4|[local::at0012],
+											3|[local::at0013],
+											2|[local::at0014],
+											1|[local::at0015],
+											0|[local::at0016]
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {    -- Motor response
+										value matches {
+											4|[local::at0017],
+											3|[local::at0018],
+											2|[local::at0019],
+											1|[local::at0020],
+											0|[local::at0021]
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {    -- Brain stem reflexes
+										value matches {
+											4|[local::at0022],
+											3|[local::at0023],
+											2|[local::at0024],
+											1|[local::at0025],
+											0|[local::at0026]
+										}
+									}
+									ELEMENT[at0011] occurrences matches {0..1} matches {    -- Respiration
+										value matches {
+											1|[local::at0027],
+											2|[local::at0028],
+											3|[local::at0029],
+											4|[local::at0030],
+											5|[local::at0031]
+										}
+									}
+									ELEMENT[at0033] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..16|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0008] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0032] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Full Outline of UnResponsiveness (FOUR) score">
+					description = <"Screening tool to assess individuals with impaired levels of consciousness.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Eye response">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Motor response">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Brain stem reflexes">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Respiration">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Eyelids open or opened, tracking, or blinking to command">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Eyelids open but not tracking">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Eyelids closed but open to loud voice">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Eyelids closed but open to pain">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Eyelids remain closed with pain">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Thumbs-up, fist, or peace sign">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"Localizing to pain">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"Flexion response to pain">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"Extension response to pain">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"No response to pain or generalized myoclonus status">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Pupil and corneal reflexes present">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"One pupil wide and fixed">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Pupil or corneal reflexes present">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"Pupil and corneal reflexes absent">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"Absent pupil, corneal and cough reflex">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"Not intubated, regular breathing pattern">
+					description = <"">
+				>
+				["at0028"] = <
+					text = <"Not intubated, Cheyne–Stokes breathing pattern">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"Not intubated, irregular breathing">
+					description = <"">
+				>
+				["at0030"] = <
+					text = <"Breathes above ventilator rate">
+					description = <"">
+				>
+				["at0031"] = <
+					text = <"Breathes at ventilator rate or apnoea">
+					description = <"">
+				>
+				["at0032"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0033"] = <
+					text = <"Total score">
+					description = <"The total sum of each component parameter for the FOUR score.">
+				>
+			>
+		>
+	>

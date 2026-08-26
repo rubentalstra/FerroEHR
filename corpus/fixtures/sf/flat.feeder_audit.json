@@ -1,0 +1,12 @@
+{
+  "ctx/language": "en",
+  "ctx/territory": "NL",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
+  "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel",
+  "vitals/body_temperature:0/_feeder_audit/originating_system_audit|system_id": "orig-sys",
+  "vitals/body_temperature:0/_feeder_audit/originating_system_audit|version_id": "v1.2",
+  "vitals/body_temperature:0/_feeder_audit/feeder_system_audit|system_id": "feeder-sys",
+  "vitals/body_temperature:0/_feeder_audit/originating_system_item_id:0|id": "item-id-1",
+  "vitals/body_temperature:0/_feeder_audit/originating_system_item_id:0|issuer": "issuer1"
+}

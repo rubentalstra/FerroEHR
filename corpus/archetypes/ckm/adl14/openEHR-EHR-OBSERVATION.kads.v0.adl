@@ -1,0 +1,317 @@
+﻿archetype (adl_version=1.4; uid=c3d239df-7c6f-4511-b997-df45aa00a63d)
+	openEHR-EHR-OBSERVATION.kads.v0
+
+concept
+	[at0000]	-- Kutcher Adolescent Depression Scale (KADS)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Candice de Lisser, Keisha Barwise">
+		["organisation"] = <"Ministry of Health and Wellness, Jamaica">
+		["email"] = <"kbarwise@gmail.com">
+		["date"] = <"2020-09-17">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To to record the results of the Kutcher Adolescent Depression questionnaire.">
+			use = <"Use to record the results of the Kutcher Adolescent Depression Questionnaire.
+
+The original version of the KADS had 16 component questions. The most broadly used versions have either 6 or 11 questions. This archetype currently contains only the questions for the 11-item questionnaire. The 6-item version is a subset of the 11-item questionnaire.">
+			keywords = <"screening, mood, assessment, depression, mental health, adolescent", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Brooks, S. The Kutcher Adolescent Depression Scale (KADS). Child and Adolescent Psychopharmacology News. 2004; 9 (5):4-6. doi: 10.1521/capn.9.5.4.52044. 
+		
+LeBlanc JC, Almudevar A, Brooks SJ, Kutcher S. Screening for adolescent depression: comparison of the Kutcher Adolescent Depression Scale with the Beck depression inventory. J Child Adolesc Psychopharmacol. 2002 Summer;12(2):113-26. doi: 10.1089/104454602760219153. PMID: 12188980.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"DC46AC38C3B34AD0F73B786319CF0774">
+		["build_uid"] = <"5e0adcc2-1d05-4c70-81ec-5b14e91805d7">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Kutcher Adolescent Depression Scale (KADS)
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {    -- Point in time
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Low mood...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {    -- Irritable...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {    -- Trouble falling asleep...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0011] occurrences matches {0..1} matches {    -- Feeling decreased interest...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0012] occurrences matches {0..1} matches {    -- Feelings of worthlessness...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {    -- Feeling tired...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0014] occurrences matches {0..1} matches {    -- Trouble concentrating...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0015] occurrences matches {0..1} matches {    -- Life is not much fun...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {    -- Feeling worried...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {    -- Physical feelings of worry...
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0018] occurrences matches {0..1} matches {    -- Thoughts, plans, or actions about suicide or self-harm
+										value matches {
+											0|[local::at0023],
+											1|[local::at0024],
+											2|[local::at0025],
+											3|[local::at0026]
+										}
+									}
+									ELEMENT[at0019] occurrences matches {0..1} matches {    -- KADS-6 score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..18|}
+											}
+										}
+									}
+									ELEMENT[at0020] occurrences matches {0..1} matches {    -- KADS-11 score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..33|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0021] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0022] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Kutcher Adolescent Depression Scale (KADS)">
+					description = <"Psychological self-rating scale to assess the level of depression in adolescents.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Point in time">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0006"] = <
+					text = <"Much of the time">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Low mood...">
+					description = <"\"Low mood, sadness, feeling blah or down, depressed, just can’t be bothered.\"">
+					KADS16 = <"Q1">
+					KADS11 = <"Q1">
+					KADS6 = <"Q1">
+				>
+				["at0012"] = <
+					text = <"Feelings of worthlessness...">
+					description = <"\"Feelings of worthlessness, hopelessness, letting people down, not being a good person.\"">
+					KADS16 = <"Q5">
+					KADS11 = <"Q5">
+					KADS6 = <"Q2">
+				>
+				["at0013"] = <
+					text = <"Feeling tired...">
+					description = <"\"Feeling tired, feeling fatigued, low in energy, hard to get motivated, have to push to get things done, want to rest or lie down a lot.\"">
+					KADS16 = <"Q6">
+					KADS11 = <"Q6">
+					KADS6 = <"Q3">
+				>
+				["at0015"] = <
+					text = <"Life is not much fun...">
+					description = <"\"Feeling that life is not very much fun, not feeling good when usually (before getting sick) would feel good, not getting as much pleasure from fun things as usual (before getting sick).\"">
+					KADS16 = <"Q9">
+					KADS11 = <"Q8">
+					KADS6 = <"Q4">
+				>
+				["at0016"] = <
+					text = <"Feeling worried...">
+					description = <"\"Feeling worried, nervous, panicky, tense, keyed up, anxious.\"">
+					KADS16 = <"Q10">
+					KADS11 = <"Q9">
+					KADS6 = <"Q5">
+				>
+				["at0018"] = <
+					text = <"Thoughts, plans, or actions about suicide or self-harm">
+					description = <"\"Thoughts, plans, or actions about suicide or self-harm.\"">
+					KADS16 = <"Q13">
+					KADS11 = <"Q11">
+					KADS6 = <"Q6">
+				>
+				["at0005"] = <
+					text = <"Hardly Ever">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Most of the time">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"All of the time">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0020"] = <
+					text = <"KADS-11 score">
+					description = <"The total sum of each component parameter for the 11-item KADS score.">
+				>
+				["at0017"] = <
+					text = <"Physical feelings of worry...">
+					description = <"\"Physical feelings of worry like: headaches, butterflies, nausea, tingling, restlessness, diarrhea, shakes or tremors.\"">
+					KADS16 = <"Q11">
+					KADS11 = <"Q10">
+				>
+				["at0010"] = <
+					text = <"Trouble falling asleep...">
+					description = <"\"Trouble falling asleep, lying awake in bed.\"">
+					KADS16 = <"Q3a">
+					KADS11 = <"Q3">
+				>
+				["at0009"] = <
+					text = <"Irritable...">
+					description = <"\"Irritable, losing your temper easily, feeling pissed off, losing it.\"">
+					KADS16 = <"Q2">
+					KADS11 = <"Q2">
+				>
+				["at0011"] = <
+					text = <"Feeling decreased interest...">
+					description = <"\"Feeling decreased interest in hanging out with friends; being with your best friend; being with your  spouse/boyfriend/girlfriend; going out of the house; doing schoolwork or work; doing hobbies, sports, or recreation.\"">
+					KADS16 = <"Q4">
+					KADS11 = <"Q4">
+				>
+				["at0014"] = <
+					text = <"Trouble concentrating...">
+					description = <"\"Trouble concentrating, can’t keep your mind on schoolwork or work, daydreaming when you should be working, hard to focus when reading, getting “bored” with work or school.\"">
+					KADS16 = <"Q7">
+					KADS11 = <"Q7">
+				>
+				["at0019"] = <
+					text = <"KADS-6 score">
+					description = <"The total sum of each component parameter for the 6-item KADS score.">
+				>
+				["at0023"] = <
+					text = <"No thoughts or plans or actions">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Occasional thoughts, no plans or actions">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"Frequent thoughts, no plans or actions">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"Plans and/or actions that have hurt">
+					description = <"">
+				>
+			>
+		>
+	>

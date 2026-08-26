@@ -1,0 +1,2608 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2018-05-29</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marcos Barreto, Universidade Federal da Bahia (UFBA), Brazil</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Ady Angelica Castro Acosta, CIBERES-Hospital 12 de Octubre, Spain</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Heidi Koikkalainen, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Ronald Krawec, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Tomi Laptoš, Marand, Slovenia</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Paul Miller, SCIMP NHS Scotland, United Kingdom</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Rowan Thomas, St. Vincent's Hospital Melbourne, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Vinicius Tohoru Yoshiura, University of Sao Paulo, Brazil</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Home Modification Assessment &amp; Planning Tool [Internet]. Australia: SCOPE Access Home Modifications; 2015 [cited 2019 Dec 19]. Available from: http://scopehomeaccess.com.au/wp-content/uploads/2015/07/AWTS.pdf.&#xD;
+&#xD;
+Opoko A, Ibem E &amp; Adeyemi E. Housing aspiration in an informal urban settlement: A case study [Internet]. 2015; Urbani Izziv. 26. 10.5379/urbani-izziv-en-2015-26-02-003; [cited 2019 Dec 19] . Available at: https://www.researchgate.net/publication/307851190_Housing_aspiration_in_an_informal_urban_settlement_A_case_study.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">1C1B56A17810AD34CFD1B58C1E6CF354</other_details>
+    <other_details id="build_uid">b1085464-1851-4f11-b52a-70154205dd52</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en oversikt og beskrivelse om egenskapene til en bolig der et individ bor.</purpose>
+      <keywords>trapper</keywords>
+      <keywords>soverom</keywords>
+      <keywords>bad</keywords>
+      <keywords>tilgjengelighet</keywords>
+      <keywords>enebolig</keywords>
+      <keywords>leilighet</keywords>
+      <keywords>campingvogn</keywords>
+      <keywords>hytte</keywords>
+      <keywords>etasje</keywords>
+      <keywords>rullestol</keywords>
+      <keywords>areal</keywords>
+      <keywords>universell utforming</keywords>
+      <keywords>UU</keywords>
+      <use>Brukes for å registrere detaljer om egenskapene til en bolig der et individ bor, spesielt ting som kan ha betydning for individets helse og sikkerhet, eller ha innvirkning på ytelse av helsetjenester.&#xD;
+&#xD;
+Denne arketypen er utformet for å registrere attributter til et individs hjem, og vil kunne brukes til:&#xD;
+- å identifisere hjelpemidler som kan være nyttig i boligen&#xD;
+- registrere modifikasjoner og forbedringer for å støtte universell utforming (UU), eller&#xD;
+- bidra til offentlige undersøkelser knyttet til sykdomsutbrudd.&#xD;
+&#xD;
+Denne arketypen er utformet for å brukes i EVALUATION.housing_summary (Boligsammendrag) eller CLUSTER.housing_record (Bolig), men kan også bli brukt i hvilken som helst annen passende ENTRY- eller CLUSTER-arketype.&#xD;
+&#xD;
+Dersom det er nødvendig med spesifikke detaljer, kan arketyper legges til i elementet "Ytterligere detaljer". &#xD;
+&#xD;
+Grad av overensstemmelse med designprinsipper for universell utforming (UU) bør registreres i en egen arketype, som kan legges til i SLOT'et "Ytterligere detaljer".</use>
+      <misuse>Skal ikke brukes til å registrere detaljer om de sosiale forholdene individet bor under, bruk CLUSTER.living_arrangement til dette.&#xD;
+&#xD;
+Skal ikke brukes til å registrere den fysiske adressen der et individ bor, bruk demografiske arketyper for dette, eller CLUSTER.address (Adresse) dersom det er nødvendig å registrere adressen i den medisinske journalen.&#xD;
+&#xD;
+Skal ikke brukes til å registrere informasjon om boligen som ikke har noe betydning for helse, eller behov for helsetjenester til et individ. For eksempel bør ikke informasjon om dørlåsens kode til bruk for hjemmesykepleietjenesten registreres i denne arketypen.&#xD;
+&#xD;
+Skal ikke brukes for å registrere grad av overenstemmelse med prinsipper for universell utforming.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record an overview and description about aspects about the dwelling where an individual lives.</purpose>
+      <keywords>stairs</keywords>
+      <keywords>bedroom</keywords>
+      <keywords>bathroom</keywords>
+      <keywords>access</keywords>
+      <keywords>heating</keywords>
+      <keywords>cooling</keywords>
+      <use>Use to record details about the dwelling where an individual lives, particularly where this may have an impact on their health and safety or delivery of healthcare services.&#xD;
+&#xD;
+This archetype has been designed to be used to record attributes of an individual's home that might be used to:&#xD;
+- contribute to identification of aids/supports that might be useful in the home; &#xD;
+- record modifications or enhancements to support universal access; or&#xD;
+- inform investigations about public health outbreaks.&#xD;
+&#xD;
+This archetype has been designed to be used within the EVALUATION.housing_summary or CLUSTER.housing_record archetypes, but may be used within any other appropriate ENTRY or CLUSTER archetype. &#xD;
+&#xD;
+In additon to the specific examples for each room specific element, the following examples are universally appliccable: Access; circulation space; trip hazards; floor coverings; windows; lighting; heating; or cooling.&#xD;
+&#xD;
+If specific measurements or specific details are required, additional archetypes can be nested within the 'Additional details' SLOT.&#xD;
+&#xD;
+Compliance with Universal design principles should be recorded in a separate archetype, which may be nested within the 'Additional details' SLOT.</use>
+      <misuse>Not to be used to record details about the social circumstances in which the individual lives - use CLUSTER.living_arrangement for this purpose.&#xD;
+&#xD;
+Not to be used to record the physical address where an individual lives - use demographic archetypes for this purpose, or CLUSTER.address if the individual's address needs to be recorded within the health record.&#xD;
+&#xD;
+Not to be used to record information about the dwelling that does not impact on the health or health care needs of an individual. For example, the security access code for a home nurse visit should not be recorded using this archetype.&#xD;
+&#xD;
+Not to be used to record compliance with Universal design principles.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>Registrare una panoramica e una descrizione degli aspetti dell'abitazione in cui vive un individuo.</purpose>
+      <keywords>scale</keywords>
+      <keywords>camera da letto</keywords>
+      <keywords>bagno</keywords>
+      <keywords>accesso</keywords>
+      <use>Utilizzare per registrare i dettagli dell'abitazione in cui vive un individuo, in particolare quando ciò può avere un impatto sulla sua salute e sicurezza o sulla fornitura di servizi sanitari.&#xD;
+&#xD;
+Questo archetipo è stato progettato per essere utilizzato per registrare gli attributi dell'abitazione di un individuo che potrebbero essere utilizzati:&#xD;
+- contribuire all'identificazione di aiuti/supporti che potrebbero essere utili nella casa; &#xD;
+- registrare modifiche o miglioramenti a sostegno dell'accesso universale; oppure&#xD;
+- informare le indagini sulle epidemie di salute pubblica.&#xD;
+&#xD;
+Questo archetipo è stato progettato per essere utilizzato all'interno degli archetipi EVALUATION.housing_summary o CLUSTER.housing_record, ma può essere utilizzato all'interno di qualsiasi altro archetipo ENTRY o CLUSTER appropriato. &#xD;
+&#xD;
+Se sono richieste misurazioni specifiche o dettagli specifici, archetipi aggiuntivi possono essere annidati all'interno dello SLOT "Dettagli aggiuntivi".&#xD;
+&#xD;
+La conformità ai principi di progettazione universali deve essere registrata in un archetipo separato, che può essere annidato nello SLOT "Dettagli aggiuntivi".</use>
+      <misuse>Da non utilizzare per registrare i dettagli sulle circostanze sociali in cui vive l'individuo - utilizzare a tal fine CLUSTER.living_arrangement.&#xD;
+&#xD;
+Da non utilizzare per registrare l'indirizzo fisico in cui vive l'individuo - utilizzare gli archetipi demografici per questo scopo, o CLUSTER.address se l'indirizzo dell'individuo deve essere registrato all'interno della cartella clinica.&#xD;
+&#xD;
+Non deve essere utilizzato per registrare informazioni sull'abitazione che non hanno un impatto sulla salute o sulle esigenze sanitarie di un individuo. Ad esempio, il codice di accesso di sicurezza per la visita di un'infermiera a domicilio non deve essere registrato utilizzando questo archetipo.&#xD;
+&#xD;
+Non deve essere usato per registrare la conformità ai principi di progettazione universale.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen</author>
+    <author id="organisation">Oslo University Hospital</author>
+    <author id="email">varntzen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+    <author id="name">Paolo Anedda</author>
+    <author id="organisation">Inpeco</author>
+    <author id="email">paolo.anedda@inpeco.com</author>
+  </translations>
+  <uid>
+    <value>bf2195c5-2f4e-49b8-bfd8-aa6e05e84bb7</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.dwelling.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0054</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0055</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0036</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0041</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0028</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0057</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0026</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0035</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0029</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0015</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0016</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0037</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0046</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0038</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0040</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0039</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0020</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0034</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0033</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0023</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0056</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0058</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0048</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0049</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0050</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0051</code_list>
+                    <code_list>at0052</code_list>
+                    <code_list>at0053</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0043</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.multimedia\.v0|openEHR-EHR-CLUSTER\.multimedia\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.multimedia\.v0|openEHR-EHR-CLUSTER\.multimedia\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Dwelling</items>
+        <items id="description">An overview about the properties of a single structure, or a discrete space within a structure, and associated spaces in which an individual lives.</items>
+        <items id="comment">The intended scope of dwelling includes, but is not limited to: a building; part of a building; house; apartment; prison; houseboat; mobile home; or vehicle. It can also include the spaces associated with a structure or property, including the basement or yard.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Overall description</items>
+        <items id="description">Narrative description about all aspects of the dwelling.</items>
+        <items id="comment">For example: if basic living facilities are located on the same level.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Type</items>
+        <items id="description">The type of dwelling in which an individual lives.</items>
+        <items id="comment">Coding of the dwelling type with a terminology is preferred, where possible. The value sets for this data element are likely to vary between jurisdictions - it is anticipated that they will usually be set within a use-case specific template. For example: 'separate house'; 'flat, unit or apartment'; 'caravan or tent'; or 'house or flat attached to a shop or office'.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Additional details</items>
+        <items id="description">Further structured details about the dwelling.</items>
+        <items id="comment">This SLOT may be used to nest additional archetypes describing additional details about the dwelling that may be local to a jurisdiction.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the dwelling, not captured in other fields.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Access/egress</items>
+        <items id="description">Description about physical access to, and egress from, the dwellling.</items>
+        <items id="comment">Multiple occurrences will allow details for each access to be recorded. For example: driveway; path; fencing and gates; external stairs or lifts; doorsteps; electric door opener; rails; front access; rear access; or ramps for wheelchairs. For example: floor level of the entrance to the dwelling.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Entrance</items>
+        <items id="description">Description about an entrance to the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each entrance to be recorded. For example: weight and type of door; door handle; lock mechanism; or threshold step.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Parking</items>
+        <items id="description">Description about vehicle parking at or near the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each parking area to be recorded. The scope for this data element includes cars, motor scooters and other vehicles that require dedicated space or storage outside the home. For example: single/double car park; space to transfer in/out of car; protection from weather; overhead clearance; or garage door details.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Hallway</items>
+        <items id="description">Description about the hallway within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each hallway to be recorded. For example: width.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Internal stairs/lifts</items>
+        <items id="description">Description about internal steps and lifts within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each set of internal stairs or lifts to be recorded. For example: number of steps; condition; banister; or open/closed risers.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Living room</items>
+        <items id="description">Description about a living room within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each living room to be recorded. For example: chair height.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Kitchen</items>
+        <items id="description">Description about a kitchen within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each kitchen to be recorded. For example: storage space; bench heights; or appliances.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Bedroom</items>
+        <items id="description">Description about a bedroom within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each bedroom to be recorded. For example: bed size and type; bed height; bedside light; or telephone.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Toilet accessibility</items>
+        <items id="description">Description about accsessibility to a toilet.</items>
+        <items id="comment">Multiple occurrences will allow details for each toilet  to be recorded. The toilet could be located within a separate toilet room, within a bathroom or within another space in the dwelling or property. For example: location; emergency access; height of seat pan and distance from walls; or grab rails.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Bathroom</items>
+        <items id="description">Description about a bathroom within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each bathroom to be recorded. For example: location; type of bathing facility - shower/bath/shower over bath; bath height; recess size; screen; taps; or grab rails.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Laundry facilities</items>
+        <items id="description">Description about a laundry facility within, or associated with, the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each space with laundry facilities to be recorded. The laundry facilities could be located within a separate laundry room or within another space in the dwelling or property. For example: clothes line location and height.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Outdoor space</items>
+        <items id="description">Description about an outdoor space associated with the the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each outdoor space to be recorded. The intended scope of an outdoor space includes, but is not limited to: a yard; rooftop terrace; balcony; porch; garage; or shed. For example: current condition; size; slope; surface; stairs; or maintenance needs.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Emergency communication access</items>
+        <items id="description">Description about the emergency communication access.</items>
+        <items id="comment">Multiple occurrences will allow details for each emergency communication device to be recorded. For example: physical location of fixed phone or base stations; or presence of mobile handsets; personal safety alarms.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Fire protection</items>
+        <items id="description">Description about fire protection within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each fire protection system to be recorded. The intended scope for a fire protection system includes, but is not limited to: smoke and carbon monoxide detectors; fire extinguishers; or sprinklers. For example: location; in working order; maintenance needs; central monitoring; or serial connections.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Doorbell</items>
+        <items id="description">Description about a doorbell or alert system within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each doorbell to be recorded. For example: vibrating, flashing or audible; pitch; or volume.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Rubbish collection</items>
+        <items id="description">Description about rubbish bins and waste collection at the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each type of rubbish collection to be recorded. For example: location of rubbish bins or chute; or type of bins.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Mail</items>
+        <items id="description">Description about mail delivery and collection at the dwelling.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Water supply</items>
+        <items id="description">Description about how water is delivered into the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each water supply to be recorded. For example: piped water (in house); stand pipe; or yard pipe.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Water storage</items>
+        <items id="description">Description about the storage of potable water at the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each water storage to be recorded. For example: none; tank; or drum.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Toilet type</items>
+        <items id="description">Description about the type of toilet fixture at the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each toilet fixture to be recorded. For example: flush toilet; or pit latrine.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Number of bedrooms</items>
+        <items id="description">The number of bedrooms in the dwelling.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Number of bathrooms</items>
+        <items id="description">The number of bathrooms in the dwelling.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Water source</items>
+        <items id="description">Description about the source of water used at the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each water source to be recorded. This data element may be used to differentiate between public and private sources as well as the type of source. For example: public; lake; private well; borehole; rain; or water vendors.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Sewage disposal</items>
+        <items id="description">Description about the disposal of sewage from the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each type of sewage disposal to be recorded. For example: septic tank or cesspit; or public sewage system.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Number of toilets</items>
+        <items id="description">The number of toilet fixtures in the dwelling.</items>
+        <items id="comment">The toilet fixture could be located within a bathroom or similar space, or a separate toilet room. For example: toilet suite; urinal, pit latrine.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Condition</items>
+        <items id="description">Narrative description about the overall condition of the dwelling.</items>
+        <items id="comment">For example: leaking roof; rising damp; mould in the bathroom; broken floorboards; or holes in the walls.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Heating</items>
+        <items id="description">Description about how the dwelling is heated.</items>
+        <items id="comment">Multiple occurrences will allow details for each heating source to be recorded. For example: central heating; open fire.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Energy supply</items>
+        <items id="description">Description about sources of power to the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each energy supply to be recorded. For example: mains electricity; solar power; bottle gas; home generator; or fire wood.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Security and safety</items>
+        <items id="description">Description about security and safety measures within the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each security and safety measure to be recorded.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Connectivity</items>
+        <items id="description">Description about the internet and other forms of connectivity and communication. For example for home monitoring or other medical devices.</items>
+        <items id="comment">Multiple occurrences will allow details for each form of connectivity to be recorded. For example: internet access; cable; or PSTN line; mobile coverage.&#xD;
+</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Number of floors</items>
+        <items id="description">The number of floors within the dwelling.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Appliance</items>
+        <items id="description">Description about an appliance at the dwelling.</items>
+        <items id="comment">Multiple occurrences will allow details for each appliance to be recorded. For example: refrigerator; hot water boiler; clothes washer/dryer or dishwasher.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Cooling</items>
+        <items id="description">Description about how the dwelling is cooled.</items>
+        <items id="comment">Multiple occurrences will allow details for cooling source to be recorded. For example: air conditioning; fan.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Critical features</items>
+        <items id="description">Availability of critical appliances or services at the dwelling, which may support use of clinical decision support.</items>
+        <items id="comment">For example: hot water for hygiene; a refrigerator for food hygiene and safe medication storage.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Feature name</items>
+        <items id="description">The name of the feature.</items>
+        <items id="comment">Coding with a terminology is desirable, where possible. For example: refrigerator; hot running water; backup generator; food cooking facilities; </items>
+      </items>
+      <items code="at0050">
+        <items id="text">Presence</items>
+        <items id="description">Presence of any relevant feature.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Present</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0052">
+        <items id="text">Absent</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0053">
+        <items id="text">Unknown</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0054">
+        <items id="text">Number of rooms</items>
+        <items id="description">The number of rooms within the dwelling.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">Number of people</items>
+        <items id="description">The total number of people living in the dwelling.</items>
+        <items id="comment">The number of people in the household will be a subset of the people living in a shared dwelling.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">Ventilation</items>
+        <items id="description">Description about the ventilation within the dwelling.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">Persons per bedroom</items>
+        <items id="description">Number of household members sharing bedroom.</items>
+        <items id="comment">While this data element will usually record the number of people sleeping in the room where the index patient sleeps, this data element has multiple occurrences to allow for more than one bedroom to be recorded, if necessary.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">Cleanliness</items>
+        <items id="description">Description about the level of cleanliness of the dwelling.</items>
+        <items id="comment">For example: Adequate or Inadequate.&#xD;
+</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Boligegenskaper</items>
+        <items id="description">En oversikt over egenskaper til en bygning, eller en separat del av en bygning og tilhørende arealer, der ett eller flere mennesker bor.</items>
+        <items id="comment">Rammen for arketypen inkluderer, men er ikke begrenset til, en bygning, del av en bygning, hus, leilighet, fengsel, husbåt, campingvogn, bobil. Den kan også inkludere opplysninger om tilhørende arealer, som fellesarealer i et borettslag eller sameie, kjeller og hage.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Overordnet beskrivelse</items>
+        <items id="description">Fritekstlig beskrivelse om alle egenskaper til en bolig.</items>
+        <items id="comment">For eksempel om alle basale rom og fasiliteter er i samme etasje.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Type bolig</items>
+        <items id="description">Typen bolig individet bor i.</items>
+        <items id="comment">Dersom det er mulig, bør type bolig kodes med en terminologi. Verdisettet for dette elementet vil sannsynligvis variere mellom myndighetsområder, og det er antatt at verdisettet vil bli gitt i et brukerspesifikt templat. For eksempel verdisettet i OID-8709, eller det som måtte passe med brukssituasjonen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om boligen.</items>
+        <items id="comment">Dette SLOT'et kan brukes til å nøste arketyper som beskriver tilleggsdetaljer om boligen og som kan være aktuelle for det gjeldende myndighetsområdet.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om boligen som ikke fanges opp i andre felt.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adkomst</items>
+        <items id="description">*Description about physical access to, and egress from, the dwellling. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each access to be recorded. For example: driveway; path; fencing and gates; external stairs or lifts; doorsteps; electric door opener; rails; front access; rear access; or ramps for wheelchairs. For example: floor level of the entrance to the dwelling. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Inngang</items>
+        <items id="description">Beskrivelse om en inngang til en bolig.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer for hver inngang, for eksempel type og vekt på dør, dørhåndtak, type åpne-/lukkemekanisme eller dørstokk.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Parkering</items>
+        <items id="description">Beskrivelse av parkering i, eller nær boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer for flere parkeringsområder. Den tiltenkte bruken av dette elementet inkluderer, men er ikke begrenset til: bil, scooter, elektrisk rullestol eller andre kjøretøy som trenger dedikert område eller lagring utendørs. For eksempel: Enkel eller dobbel bilparkering, HC-plass, inn- og utlastingsplass, overbygd eller ikke, takhøyde eller detaljer om garasjedør.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Entré/Gang</items>
+        <items id="description">Beskrivelse av en entré eller gang i boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each hallway to be recorded. For example: width. (en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Innvendige trapper/heis.</items>
+        <items id="description">Beskrivelse av innvendig trapp og heis i boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each set of internal stairs or lifts to be recorded. For example: number of steps; condition; banister; or open/closed risers. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Stue</items>
+        <items id="description">Fritekstbeskrivelse av en stue eller oppholdsrom i boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each living room to be recorded. For example: chair height. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Kjøkken</items>
+        <items id="description">Beskrivelse om et kjøkken i boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each kitchen to be recorded. For example: storage space; bench heights; or appliances. (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Soverom</items>
+        <items id="description">Beskrivelse av et soverom i boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each bedroom to be recorded. For example: bed size and type; bed height; bedside light; or telephone. (en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Toilet accessibility (en)</items>
+        <items id="description">*Description about accsessibility to a toilet. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each toilet  to be recorded. The toilet could be located within a separate toilet room, within a bathroom or within another space in the dwelling or property. For example: location; emergency access; height of seat pan and distance from walls; or grab rails. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Bad</items>
+        <items id="description">Beskrivelse av et bad i boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each bathroom to be recorded. For example: location; type of bathing facility - shower/bath/shower over bath; bath height; recess size; screen; taps; or grab rails. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Klesvask</items>
+        <items id="description">Beskrivelse av fasiliteter for klesvask i eller i tilknytning til boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each space with laundry facilities to be recorded. The laundry facilities could be located within a separate laundry room or within another space in the dwelling or property. For example: clothes line location and height. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Uteområde</items>
+        <items id="description">Beskrivelse av uteområde i tilknytning til boligen.</items>
+        <items id="comment">*Multiple occurrences will allow details for each outdoor space to be recorded. The intended scope of an outdoor space includes, but is not limited to: a yard; rooftop terrace; balcony; porch; garage; or shed. For example: current condition; size; slope; surface; stairs; or maintenance needs. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Emergency communication access (en)</items>
+        <items id="description">*Description about the emergency communication access.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each emergency communication device to be recorded. For example: physical location of fixed phone or base stations; or presence of mobile handsets; personal safety alarms. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Brannsikring</items>
+        <items id="description">Beskrivelse av brannsikring i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om flere brannsikringstiltak. Den tiltenkte bruken av arketypen inkluderer, men er ikke begrenset til: Røyk- eller CO2-varsler, brannslukningsapparat og sprinkeranlegg. For eksempel: Plassering, funksjonell/ikke funksjonell, vedlikeholdsbehov, seriekoblet, eller koblet til sentral.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ringeklokke</items>
+        <items id="description">Beskrivelse av ringeklokke eller varslingssystem i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer for flere ringeklokker eller varslingssystemer. For eksempel: Vibrarsjons-, lys- eller lydvarsling, eller lydvolum.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Søppeloppsamling</items>
+        <items id="description">Beskrivelse av søppelcontainere og annen oppsamling av avfall i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om hver enkel metode for oppsamling av søppel. For eksempel: Plassering av søppelcontainere eller avfallssug, eller type søppelcontainer.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Post</items>
+        <items id="description">Beskrivelse om levering og henting av post til boligen.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Vanntilførsel</items>
+        <items id="description">Beskrivelse av hvordan vann blir tilført boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om flere typer vanntilførsel. For eksempel: Innlagt vann, felles/privat utendørs pumpe eller kran.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Lagring av vann</items>
+        <items id="description">Beskrivelse av hvorvidt, og i så fall hvordan vann lagres i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om flere vannlagringsmetoder. For eksempel: Ingen, vanntank eller tønne.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Type toalett</items>
+        <items id="description">Beskrivelse av typen avtrede i eller i tilknytning til boligen.</items>
+        <items id="comment">Multiple forekomster vil gjøre det mulig å registrere detaljer for hver enkelt type avtrede. For eksempel vannklosett, utedo eller latrine.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Antall soverom</items>
+        <items id="description">Antall soverom i boligen.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Antall baderom</items>
+        <items id="description">Antall baderom i boligen.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Vannkilde</items>
+        <items id="description">Beskrivelse av en vannkilde til boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om flere typer vannkilder. Dette elementet kan brukes til å skille mellom offentlig og privat vannforsyning i tillegg til typen kilde. For eksempel: Offentlig vannforsyning, privat brønn, borrehull, innsjø eller elv, regnvann eller kjøpevann.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kloakksystem</items>
+        <items id="description">Beskrivelse av hvilket kloakksystem det er i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om flere typer kloakksystem. For eksempel: Septiktank, latrinehull eller offentlig kloakksystem.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Antall toalett</items>
+        <items id="description">Antall toalett, i betydning selve toalettmøbelet, i boligen.</items>
+        <items id="comment">Toalettmøbelet kan være plassert i et eget rom, et baderom eller lignende. Eksempler: vegghengt toalett, urinal eller latrine.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Tilstand</items>
+        <items id="description">Fritekstlig beskrivelse om boligens fysiske tilstand.</items>
+        <items id="comment">For eksempel: Taklekkasje, fuktig kjeller, muggsopp på baderom, dårlig isolasjon, sprukne gulvfliser, hull i veggen.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Heating (en)</items>
+        <items id="description">*Description about how the dwelling is heated. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each heating source to be recorded. For example: central heating; open fire. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Energiforsyning</items>
+        <items id="description">Beskrivelse av energikilder til boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer for flere energiforsyningskilder. For eksempel: Strømnett, solenergi, gass, generator eller vedfyring.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Trygghetstiltak</items>
+        <items id="description">Beskrivelse av trygghetstiltak i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere flere trygghetstiltak.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Oppkobling</items>
+        <items id="description">*Description about the internet and other forms of connectivity and communication. For example for home monitoring or other medical devices.  (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each form of connectivity to be recorded. For example: internet access; cable; or PSTN line; mobile coverage.&#xD;
+ (en)</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Antall etasjer</items>
+        <items id="description">Hvor mange etasjer boligenheten består av. OBS: Ikke hvilken etasje boenheten er i.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Apparat</items>
+        <items id="description">Beskrivelse av apparat eller hvitevare i boligen.</items>
+        <items id="comment">Multiple forekomster gjør det mulig å registrere detaljer om flere apparater. For eksempel: Kjøleskap, fryser, vannkoker, vaskemaskin, tørketrommel eller oppvaskmaskin.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Cooling (en)</items>
+        <items id="description">*Description about how the dwelling is cooled. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for cooling source to be recorded. For example: air conditioning; fan. (en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Critical features (en)</items>
+        <items id="description">*Availability of critical appliances or services at the dwelling, which may support use of clinical decision support. (en)</items>
+        <items id="comment">*For example: hot water for hygiene; a refrigerator for food hygiene and safe medication storage. (en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Feature name (en)</items>
+        <items id="description">*The name of the feature. (en)</items>
+        <items id="comment">*Coding with a terminology is desirable, where possible. For example: refrigerator; hot running water; backup generator; food cooking facilities;  (en)</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Presence (en)</items>
+        <items id="description">*Presence of any relevant feature. (en)</items>
+      </items>
+      <items code="at0051">
+        <items id="text">*Present (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0052">
+        <items id="text">*Absent (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0053">
+        <items id="text">*Unknown (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0054">
+        <items id="text">*Number of rooms (en)</items>
+        <items id="description">*The number of rooms within the dwelling. (en)</items>
+      </items>
+      <items code="at0055">
+        <items id="text">*Number of people (en)</items>
+        <items id="description">*The total number of people living in the dwelling. (en)</items>
+        <items id="comment">*The number of people in the household will be a subset of the people living in a shared dwelling. (en)</items>
+      </items>
+      <items code="at0056">
+        <items id="text">*Ventilation (en)</items>
+        <items id="description">*Description about the ventilation within the dwelling. (en)</items>
+      </items>
+      <items code="at0057">
+        <items id="text">Persons per bedroom</items>
+        <items id="description">*Number of household members sharing bedroom. (en)</items>
+        <items id="comment">While this data element will usually record the number of people sleeping in the room where the index patient sleeps, this data element has multiple occurrences to allow for more than one bedroom to be recorded, if necessary.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">*Cleanliness (en)</items>
+        <items id="description">*Description about the level of cleanliness of the dwelling. (en)</items>
+        <items id="comment">*For example: Adequate or Inadequate.&#xD;
+ (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">Abitazione</items>
+        <items id="description">Una panoramica sulle proprietà di una singola struttura, o di uno spazio discreto all'interno di una struttura, e gli spazi associati in cui vive un individuo.</items>
+        <items id="comment">L'estensione dell'abitazione prevista comprende, ma non si limita a: un edificio; una parte di edificio; una casa; un appartamento; una prigione; una casa galleggiante; una casa mobile o un veicolo. Può anche includere gli spazi associati a una struttura o a una proprietà, compreso il seminterrato o il cortile.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Descrizione generale</items>
+        <items id="description">Descrizione narrativa di tutti gli aspetti dell'abitazione. </items>
+        <items id="comment">Per esempio: se le strutture abitative di base si trovano allo stesso livello.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tipo</items>
+        <items id="description">Il tipo di abitazione in cui vive un individuo. </items>
+        <items id="comment">Si preferisce, ove possibile, la codifica del tipo di abitazione con una terminologia. I set di valori per questo elemento di dati possono variare da una giurisdizione all'altra - si prevede che saranno di solito impostati all'interno di un modello specifico per il caso d'uso. Ad esempio: "casa separata"; "appartamento, unità o appartamento"; "roulotte o tenda"; o "casa o appartamento annesso a un negozio o a un ufficio"</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Dettagli aggiuntivi</items>
+        <items id="description">Più dettagli strutturati sull'abitazione.</items>
+        <items id="comment">Questo SLOT può essere utilizzato per annidare ulteriori archetipi che descrivono ulteriori dettagli sull'abitazione che può essere locale in una giurisdizione. </items>
+      </items>
+      <items code="at0004">
+        <items id="text">Commento</items>
+        <items id="description">Narrativa aggiuntiva sull'abitazione, non catturata in altri campi.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Accesso/uscita</items>
+        <items id="description">Descrizione dell'accesso e dell'uscita dall'abitazione. </items>
+        <items id="comment">*Multiple occurrences will allow details for each access to be recorded. For example: driveway; path; fencing and gates; external stairs or lifts; doorsteps; electric door opener; rails; front access; rear access; or ramps for wheelchairs. For example: floor level of the entrance to the dwelling. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Entrata</items>
+        <items id="description">Descrizione di un ingresso all'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli di ogni ingresso. Ad esempio: peso e tipo di porta; maniglia della porta; meccanismo di chiusura; o gradino di soglia.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Parcheggio</items>
+        <items id="description">Descrizione del parcheggio dei veicoli presso l'abitazione o nelle sue vicinanze.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni area di parcheggio. Il campo di applicazione di questo elemento di dati include auto, scooter a motore e altri veicoli che richiedono uno spazio dedicato o un deposito fuori casa. Ad esempio: parcheggio singolo/doppio; spazio per il trasferimento all'interno/all'esterno dell'auto; protezione dalle intemperie; spazio sopraelevato; o dettagli sulla porta del garage.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Corridoio</items>
+        <items id="description">Descrizione del corridoio all'interno dell'abitazione.</items>
+        <items id="comment">*Multiple occurrences will allow details for each hallway to be recorded. For example: width. (en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Scale interne/ascensori</items>
+        <items id="description">Descrizione dei gradini interni e degli ascensori all'interno dell'abitazione.</items>
+        <items id="comment">*Multiple occurrences will allow details for each set of internal stairs or lifts to be recorded. For example: number of steps; condition; banister; or open/closed risers. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Soggiorno</items>
+        <items id="description">Descrizione di un soggiorno all'interno dell'abitazione.</items>
+        <items id="comment">*Multiple occurrences will allow details for each living room to be recorded. For example: chair height. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Cucina</items>
+        <items id="description">Descrizione di una cucina all'interno dell'abitazione. </items>
+        <items id="comment">*Multiple occurrences will allow details for each kitchen to be recorded. For example: storage space; bench heights; or appliances. (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Camera da letto</items>
+        <items id="description">Descrizione di una camera da letto all'interno dell'abitazione.</items>
+        <items id="comment">*Multiple occurrences will allow details for each bedroom to be recorded. For example: bed size and type; bed height; bedside light; or telephone. (en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Toilet accessibility (en)</items>
+        <items id="description">*Description about accsessibility to a toilet. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each toilet  to be recorded. The toilet could be located within a separate toilet room, within a bathroom or within another space in the dwelling or property. For example: location; emergency access; height of seat pan and distance from walls; or grab rails. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Bagno</items>
+        <items id="description">Descrizione di un bagno all'interno dell'abitazione.</items>
+        <items id="comment">*Multiple occurrences will allow details for each bathroom to be recorded. For example: location; type of bathing facility - shower/bath/shower over bath; bath height; recess size; screen; taps; or grab rails. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Lavanderia</items>
+        <items id="description">Descrizione di una lavanderia all'interno dell'abitazione o associata ad essa.</items>
+        <items id="comment">*Multiple occurrences will allow details for each space with laundry facilities to be recorded. The laundry facilities could be located within a separate laundry room or within another space in the dwelling or property. For example: clothes line location and height. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Spazio esterno</items>
+        <items id="description">Descrizione di uno spazio esterno associato all'abitazione.</items>
+        <items id="comment">*Multiple occurrences will allow details for each outdoor space to be recorded. The intended scope of an outdoor space includes, but is not limited to: a yard; rooftop terrace; balcony; porch; garage; or shed. For example: current condition; size; slope; surface; stairs; or maintenance needs. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Emergency communication access (en)</items>
+        <items id="description">*Description about the emergency communication access.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each emergency communication device to be recorded. For example: physical location of fixed phone or base stations; or presence of mobile handsets; personal safety alarms. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Protezione antincendio</items>
+        <items id="description">Descrizione della protezione antincendio all'interno dell'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli di ogni sistema di protezione antincendio. Il campo di applicazione previsto per un sistema di protezione antincendio comprende, ma non si limita a: rilevatori di fumo e di monossido di carbonio, estintori o sprinkler. Per esempio: ubicazione; in ordine di funzionamento; necessità di manutenzione; monitoraggio centrale; o collegamenti seriali.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Campanello</items>
+        <items id="description">Descrizione di un campanello o di un sistema di allarme all'interno dell'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli di ogni campanello. Per esempio: vibrazione, lampeggiamento o udibile; tonalità; o volume.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Raccolta spazzatura</items>
+        <items id="description">Descrizione dei bidoni della spazzatura e della raccolta dei rifiuti presso l'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni tipo di raccolta dei rifiuti. Ad esempio: posizione dei bidoni o dello scivolo per la spazzatura; o tipo di bidoni.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Posta</items>
+        <items id="description">Descrizione della consegna e del ritiro della posta presso l'abitazione.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Fornitura dell'acqua</items>
+        <items id="description">Descrizione di come l'acqua viene consegnata all'interno dell'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni fornitura d'acqua. Per esempio: acqua in tubazione (in casa); tubo di stazionamento; o tubo di cantiere.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Stoccaggio dell'acqua</items>
+        <items id="description">Descrizione sulla conservazione dell'acqua potabile nell'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni deposito d'acqua. Per esempio: nessuna; serbatoio; o tamburo. </items>
+      </items>
+      <items code="at0026">
+        <items id="text">Tipo di bagno</items>
+        <items id="description">Descrizione del tipo di toilette dell'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni apparecchio da toilette. Ad esempio: toilette a filo pavimento; o latrina a fossa.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Numero di camere da letto</items>
+        <items id="description">Il numero di camere da letto nell'abitazione.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Numero di bagni</items>
+        <items id="description">Il numero di bagni dell'abitazione.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Sorgente d'acqua</items>
+        <items id="description">Descrizione della fonte d'acqua utilizzata presso l'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni fonte d'acqua. Questo elemento di dati può essere utilizzato per differenziare tra fonti pubbliche e private, nonché il tipo di fonte. Per esempio: pubblica; lago; pozzo privato; pozzo privato; trivellazione; pioggia; o fornitori di acqua.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Smaltimento delle acque di scarico</items>
+        <items id="description">Descrizione sullo smaltimento delle acque di scarico dell'abitazione.</items>
+        <items id="comment">Multipli eventi consentiranno di registrare i dettagli per ogni tipo di smaltimento delle acque di scarico. Ad esempio: fossa settica o fogna; o sistema fognario pubblico.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Numero di servizi igienici</items>
+        <items id="description">Il numero di servizi igienici nell'abitazione.</items>
+        <items id="comment">La toilette potrebbe essere situata all'interno di un bagno o di uno spazio simile, o in una stanza di toilette separata. Per esempio: suite di servizi igienici; orinatoio, latrina a fossa.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Condizione</items>
+        <items id="description">Descrizione narrativa sulle condizioni generali dell'abitazione.</items>
+        <items id="comment">Per esempio: tetto che perde, umidità che sale, muffa in bagno, assi del pavimento rotte o fori nei muri.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Heating (en)</items>
+        <items id="description">*Description about how the dwelling is heated. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each heating source to be recorded. For example: central heating; open fire. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Fornitura di energia</items>
+        <items id="description">Descrizione delle fonti di energia per l'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni fornitura di energia. Per esempio: elettricità di rete; energia solare; gas in bombole; generatore domestico; o legna da ardere.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Sicurezza e protezione</items>
+        <items id="description">Descrizione delle misure di sicurezza e di protezione all'interno dell'abitazione.</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli per ogni misura di sicurezza e di protezione.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Connettività</items>
+        <items id="description">*Description about the internet and other forms of connectivity and communication. For example for home monitoring or other medical devices.  (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for each form of connectivity to be recorded. For example: internet access; cable; or PSTN line; mobile coverage.&#xD;
+ (en)</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Numero di piani</items>
+        <items id="description">Il numero di piani all'interno dell'abitazione. </items>
+      </items>
+      <items code="at0043">
+        <items id="text">Elettrodomestico</items>
+        <items id="description">Descrizione di un elettrodomestico presso l'abitazione</items>
+        <items id="comment">Multiple occorrenze permetteranno di registrare i dettagli di ogni apparecchio. Ad esempio: frigorifero; boiler per l'acqua calda; lavatrice/asciugatrice o lavastoviglie.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Cooling (en)</items>
+        <items id="description">*Description about how the dwelling is cooled. (en)</items>
+        <items id="comment">*Multiple occurrences will allow details for cooling source to be recorded. For example: air conditioning; fan. (en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Critical features (en)</items>
+        <items id="description">*Availability of critical appliances or services at the dwelling, which may support use of clinical decision support. (en)</items>
+        <items id="comment">*For example: hot water for hygiene; a refrigerator for food hygiene and safe medication storage. (en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Feature name (en)</items>
+        <items id="description">*The name of the feature. (en)</items>
+        <items id="comment">*Coding with a terminology is desirable, where possible. For example: refrigerator; hot running water; backup generator; food cooking facilities;  (en)</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Presence (en)</items>
+        <items id="description">*Presence of any relevant feature. (en)</items>
+      </items>
+      <items code="at0051">
+        <items id="text">*Present (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0052">
+        <items id="text">*Absent (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0053">
+        <items id="text">*Unknown (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0054">
+        <items id="text">*Number of rooms (en)</items>
+        <items id="description">*The number of rooms within the dwelling. (en)</items>
+      </items>
+      <items code="at0055">
+        <items id="text">*Number of people (en)</items>
+        <items id="description">*The total number of people living in the dwelling. (en)</items>
+        <items id="comment">*The number of people in the household will be a subset of the people living in a shared dwelling. (en)</items>
+      </items>
+      <items code="at0056">
+        <items id="text">*Ventilation (en)</items>
+        <items id="description">*Description about the ventilation within the dwelling. (en)</items>
+      </items>
+      <items code="at0057">
+        <items id="text">*Persons per bedroom (en)</items>
+        <items id="description">*Number of household members sharing bedroom. (en)</items>
+        <items id="comment">*While this data element will usually record the number of people sleeping in the room where the index patient sleeps, this data element has multiple occurrences to allow for more than one bedroom to be recorded, if necessary. (en)</items>
+      </items>
+      <items code="at0058">
+        <items id="text">*Cleanliness (en)</items>
+        <items id="description">*Description about the level of cleanliness of the dwelling. (en)</items>
+        <items id="comment">*For example: Adequate or Inadequate.&#xD;
+ (en)</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0051">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>410515003</code_string>
+        </value>
+      </items>
+      <items code="at0052">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>410516002</code_string>
+        </value>
+      </items>
+      <items code="at0053">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>261665006</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

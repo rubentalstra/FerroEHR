@@ -1,0 +1,403 @@
+﻿archetype (adl_version=1.4; uid=6e31de2b-b33f-4c10-a165-b225814e8a89)
+	openEHR-EHR-CLUSTER.fetus_abdominal.v0
+
+concept
+	[at0000]	-- Palpation of a fetus (per abdomen)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2007-04-19">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the specific findings observed during the abdominal palpation of a single fetus in utero.">
+			use = <"Use to record the specific findings observed during the abdominal palpation of a single fetus in utero.
+
+This archetype has been specifically designed to be used in the 'Examination findings' SLOT within the CLUSTER.palpation_fetus archetype, but can also be used within the OBSERVATION.exam and other OBSERVATION or CLUSTER archetypes, where clinically appropriate.">
+			misuse = <"Not to be used to record the specific findings observed during the vaginal palpation of a fetus.">
+			copyright = <"© Northern Territory Department of Health (Australia), openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"8F58A91CABC48D8D9A84F1D1A6B9EED9">
+		["build_uid"] = <"511f33f2-8f2a-4ef9-8f51-26342cff3ef9">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Palpation of a fetus (per abdomen)
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {    -- Lie
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0002,    -- Longitudinal
+							at0003,    -- Oblique
+							at0004]    -- Transverse
+						}
+					}
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {    -- Presentation
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0006,    -- Vertex
+							at0007,    -- Breech
+							at0008,    -- Shoulder
+							at0009,    -- Face
+							at0010]    -- Brow
+						}
+					}
+				}
+			}
+			ELEMENT[at0011] occurrences matches {0..1} matches {    -- Position
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0012,    -- Right Occipito-Transverse (ROT)
+							at0013,    -- Right Occipito-Anterior (ROA)
+							at0014,    -- Right Occipito-Posterior (ROP)
+							at0015,    -- Occipito-Anterior (OA)
+							at0016,    -- Occipito-Posterior (OP)
+							at0017,    -- Left Occipito-Transverse (LOT)
+							at0018,    -- Left Occipito-Anterior (LOA)
+							at0019,    -- Left Occipito-Posterior (LOP)
+							at0020,    -- Right Sacro-Transverse (RST)
+							at0021,    -- Right Sacro-Anterior (RSA)
+							at0022,    -- Right Sacro-Posterior (RSP)
+							at0023,    -- Sacro-Anterior (SA)
+							at0024,    -- Sacro-Posterior (SP)
+							at0025,    -- Left Sacro-transverse (LST)
+							at0026,    -- Left Sacro-Anterior (LSA)
+							at0027,    -- Left Sacro-Posterior (LSP)
+							at0028,    -- Right Mento-Transverse (RMT)
+							at0029,    -- Right Mento-Anterior (RMA)
+							at0030,    -- Right Mento-Posterior (RMP)
+							at0031,    -- Mento-Anterior (MA)
+							at0032,    -- Mento-Posterior (MP)
+							at0033,    -- Left Mento-Transverse (LMT)
+							at0034,    -- Left Mento-Anterior (LMA)
+							at0035]    -- Left Mento-Posterior (LMP)
+						}
+					}
+				}
+			}
+			ELEMENT[at0036] occurrences matches {0..1} matches {    -- Attitude
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0037,    -- Flexed
+							at0038,    -- Deflexed
+							at0039]    -- Extended
+						}
+					}
+				}
+			}
+			ELEMENT[at0040] occurrences matches {0..1} matches {    -- Engagement description
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0041,    -- High and mobile
+							at0042,    -- At pelvic brim
+							at0043]    -- Engaged
+						}
+					}
+				}
+			}
+			ELEMENT[at0044] occurrences matches {0..1} matches {    -- Engagement estimation
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0045,    -- 0/5
+							at0046,    -- 1/5
+							at0047,    -- 2/5
+							at0048,    -- 3/5
+							at0049,    -- 4/5
+							at0050]    -- 5/5
+						}
+					}
+				}
+			}
+			ELEMENT[at0051] occurrences matches {0..1} matches {    -- Relative size
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0052,    -- Small for dates
+							at0053,    -- Normal
+							at0054]    -- Large for dates
+						}
+					}
+				}
+			}
+			ELEMENT[at0055] occurrences matches {0..1} matches {    -- Estimated weight
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::124]>
+						list = <
+							["1"] = <
+								units = <"kg">
+								magnitude = <|0.0..10.0|>
+							>
+							["2"] = <
+								units = <"g">
+								magnitude = <|0.0..10000.0|>
+							>
+						>
+					>
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Palpation of a fetus (per abdomen)">
+					description = <"Specific findings observed during the abdominal palpation of a single fetus in utero.">
+				>
+				["at0001"] = <
+					text = <"Lie">
+					description = <"Relationship of the longitudinal axis of the fetus to the long axis of the mother.">
+				>
+				["at0002"] = <
+					text = <"Longitudinal">
+					description = <"The fetal longitudinal axis is in alignment with the mother's longitudinal axis.">
+				>
+				["at0003"] = <
+					text = <"Oblique">
+					description = <"The fetal longitudinal axis is at an oblique angle to the mother's longitudinal axis. Sometimes also referred to as 'Unstable Lie'.">
+				>
+				["at0004"] = <
+					text = <"Transverse">
+					description = <"The fetal longitudinal axis is at right angles to the mother's longitudinal axis.">
+				>
+				["at0005"] = <
+					text = <"Presentation">
+					description = <"Identification of the presenting part of the fetus, determined by abdominal palpation.">
+				>
+				["at0006"] = <
+					text = <"Vertex">
+					description = <"The head is the presenting part.">
+				>
+				["at0007"] = <
+					text = <"Breech">
+					description = <"The buttock is the presenting part.">
+				>
+				["at0008"] = <
+					text = <"Shoulder">
+					description = <"A shoulder is the presenting part.">
+				>
+				["at0009"] = <
+					text = <"Face">
+					description = <"The face is the presenting part.">
+				>
+				["at0010"] = <
+					text = <"Brow">
+					description = <"The forehead is the presenting part.">
+				>
+				["at0011"] = <
+					text = <"Position">
+					description = <"Relationship between the fetal denominator and the maternal pelvis, determined by abdominal palpation.">
+				>
+				["at0012"] = <
+					text = <"Right Occipito-Transverse (ROT)">
+					description = <"The fetal occiput is pointing towards the right. Also known as Right Occipito-Lateral (ROL).">
+				>
+				["at0013"] = <
+					text = <"Right Occipito-Anterior (ROA)">
+					description = <"The fetal occiput is pointing anteriorly and towards the right.">
+				>
+				["at0014"] = <
+					text = <"Right Occipito-Posterior (ROP)">
+					description = <"The fetal occiput is pointing posteriorly and towards the right.">
+				>
+				["at0015"] = <
+					text = <"Occipito-Anterior (OA)">
+					description = <"The fetal occiput is pointing anteriorly, towards the pubic symphysis.">
+				>
+				["at0016"] = <
+					text = <"Occipito-Posterior (OP)">
+					description = <"The fetal occiput is pointing posteriorly, towards the sacrum.">
+				>
+				["at0017"] = <
+					text = <"Left Occipito-Transverse (LOT)">
+					description = <"The fetal occiput is pointing towards the left. Also known as Left Occcipito-Lateral (LOL).">
+				>
+				["at0018"] = <
+					text = <"Left Occipito-Anterior (LOA)">
+					description = <"The fetal occiput is pointing anteriorly and towards the left.">
+				>
+				["at0019"] = <
+					text = <"Left Occipito-Posterior (LOP)">
+					description = <"The fetal occiput is pointing posteriorly and towards the left.">
+				>
+				["at0020"] = <
+					text = <"Right Sacro-Transverse (RST)">
+					description = <"The fetal sacrum is pointing towards the right.">
+				>
+				["at0021"] = <
+					text = <"Right Sacro-Anterior (RSA)">
+					description = <"The fetal sacrum is pointing anteriorly and towards the right.">
+				>
+				["at0022"] = <
+					text = <"Right Sacro-Posterior (RSP)">
+					description = <"The fetal sacrum is pointing posteriorly and towards the right.">
+				>
+				["at0023"] = <
+					text = <"Sacro-Anterior (SA)">
+					description = <"The fetal sacrum is pointing anteriorly, towards the pubic symphysis.">
+				>
+				["at0024"] = <
+					text = <"Sacro-Posterior (SP)">
+					description = <"The fetal sacrum is pointing posteriorly, towards the sacrum.">
+				>
+				["at0025"] = <
+					text = <"Left Sacro-transverse (LST)">
+					description = <"The fetal sacrum is pointing towards the left.">
+				>
+				["at0026"] = <
+					text = <"Left Sacro-Anterior (LSA)">
+					description = <"The fetal sacrum is pointing anteriorly and towards the left.">
+				>
+				["at0027"] = <
+					text = <"Left Sacro-Posterior (LSP)">
+					description = <"The fetal sacrum is pointing posteriorly and towards the left.">
+				>
+				["at0028"] = <
+					text = <"Right Mento-Transverse (RMT)">
+					description = <"The fetal chin is pointing towards the right.">
+				>
+				["at0029"] = <
+					text = <"Right Mento-Anterior (RMA)">
+					description = <"The fetal chin is pointing anteriorly and towards the right.">
+				>
+				["at0030"] = <
+					text = <"Right Mento-Posterior (RMP)">
+					description = <"The fetal chin is pointing posteriorly and towards the right.">
+				>
+				["at0031"] = <
+					text = <"Mento-Anterior (MA)">
+					description = <"The fetal chin is pointing anteriorly, towards the pubic symphysis.">
+				>
+				["at0032"] = <
+					text = <"Mento-Posterior (MP)">
+					description = <"The fetal chin is pointing posteriorly, towards the sacrum.">
+				>
+				["at0033"] = <
+					text = <"Left Mento-Transverse (LMT)">
+					description = <"The fetal chin is pointing towards the left.">
+				>
+				["at0034"] = <
+					text = <"Left Mento-Anterior (LMA)">
+					description = <"The fetal chin is pointing anteriorly and towards the left.">
+				>
+				["at0035"] = <
+					text = <"Left Mento-Posterior (LMP)">
+					description = <"The fetal chin is pointing posteriorly and towards the left.">
+				>
+				["at0036"] = <
+					text = <"Attitude">
+					description = <"Description of the relationship of the fetal head and limbs to the body of the fetus, determined by abdominal palpation.">
+				>
+				["at0037"] = <
+					text = <"Flexed">
+					description = <"The fetus is fully flexed.">
+				>
+				["at0038"] = <
+					text = <"Deflexed">
+					description = <"The fetus is not flexed.">
+				>
+				["at0039"] = <
+					text = <"Extended">
+					description = <"The fetus is extended.">
+				>
+				["at0040"] = <
+					text = <"Engagement description">
+					description = <"Description about the engagement of the fetal head in the pelvis.">
+				>
+				["at0041"] = <
+					text = <"High and mobile">
+					description = <"The presenting part is floating high and mobile above the pelvic brim.">
+				>
+				["at0042"] = <
+					text = <"At pelvic brim">
+					description = <"The presenting part is at the pelvic brim.">
+				>
+				["at0043"] = <
+					text = <"Engaged">
+					description = <"The presenting part is engaged in the pelvis.">
+				>
+				["at0044"] = <
+					text = <"Engagement estimation">
+					description = <"The estimated proportion of the presenting part which is felt above the pelvic brim.">
+				>
+				["at0045"] = <
+					text = <"0/5">
+					description = <"Not engaged; none of the head is below the pelvic brim.">
+				>
+				["at0046"] = <
+					text = <"1/5">
+					description = <"Approximately 20% of the head is below the pelvic brim.">
+				>
+				["at0047"] = <
+					text = <"2/5">
+					description = <"Approximately 40% of the head is below the pelvic brim.">
+				>
+				["at0048"] = <
+					text = <"3/5">
+					description = <"Approximately 60% of the head is below the pelvic brim.">
+				>
+				["at0049"] = <
+					text = <"4/5">
+					description = <"Approximately 80% of the head is below the pelvic brim.">
+				>
+				["at0050"] = <
+					text = <"5/5">
+					description = <"Fully engaged; all of the head is below the pelvic brim.">
+				>
+				["at0051"] = <
+					text = <"Relative size">
+					description = <"The relative size of the baby compared to the normal for the estimated gestation.">
+				>
+				["at0052"] = <
+					text = <"Small for dates">
+					description = <"The size of the fetus appears smaller than expected for estimated gestation.">
+				>
+				["at0053"] = <
+					text = <"Normal">
+					description = <"The size of the fetus appears as expected for the estimated gestation.">
+				>
+				["at0054"] = <
+					text = <"Large for dates">
+					description = <"The size of the fetus appears larger than expected for the estimated gestation.">
+				>
+				["at0055"] = <
+					text = <"Estimated weight">
+					description = <"The estimated weight of the fetus on palpation.">
+				>
+			>
+		>
+	>

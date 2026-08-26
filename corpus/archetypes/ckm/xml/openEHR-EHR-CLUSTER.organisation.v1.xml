@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2021-04-14</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Dag Aarhus, Vestre Viken HF, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Keisha Barwise, MOHW/IDB HSSP Project, Jamaica</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Yexuan Cheng, 浙江大学, China</other_contributors>
+    <other_contributors>Candice de Lisser, Ministry of Health and Wellness, Jamaica</other_contributors>
+    <other_contributors>Valborg Ellingsen, Haraldsplass Diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Martin Grundberg, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Regional forvaltning EPJ, Helse Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Joost Holslag, Nedap, Netherlands</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Gunnar Jårvik, Helse Vest IKT AS, Norway</other_contributors>
+    <other_contributors>Gunn-Lisbeth Kleiven, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Shinji Kobayashi, National Institute of Public Health, Japan</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Sidharth Ramesh, Kasturba Medical College, India</other_contributors>
+    <other_contributors>Erik Skjemstad, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Natalia Strauch, Medizinische Hochschule Hannover, Germany</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Erik Sundvall, Karolinska Institutet + Karolinska University Hospital, Region Stockholm + Linköping University, Sweden</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Health Systems, Australia</other_contributors>
+    <other_contributors>Anders Thurin, VGR, Sweden</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Health Care Provider Identification - AS 4846-2006. New South Wales (AU): Standards Australia; 2006.&#xD;
+&#xD;
+HL7 FHIR Resource - Organization v4.0.1: R4 [Internet]. Health Level Seven International; [accessed 2021 05 04]. Available from: http://hl7.org/fhir/2021May/organization.html</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">0ADCCEE0B479EBC26653C18C49B07B19</other_details>
+    <other_details id="build_uid">dad5a265-3adc-46ea-af19-0af3935a76c6</other_details>
+    <other_details id="revision">1.0.4</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Informationen zur einer Organisation, wie sie bekannt sind oder im Rahmen der klinischen Dokumentation verstanden werden.</purpose>
+      <keywords>Organisation, Anbieter, Versorger, Betreuer, Netzwerk, Verbund, Gruppe</keywords>
+      <use>Der Archetyp wird verwendet, um Informationen zur einer Organisation darzustellen, wie sie bekannt sind oder im Rahmen der klinischen Dokumentation verstanden werden, oft ad hoc oder wenn die Verwendung von einem formellen demografischen Register oder einem Index nicht angemessen oder nicht möglich ist.&#xD;
+Beispiele beinhalten:&#xD;
+- der Inhaber einer Patientenverfügung unter Verwendung des SLOT „Inhaber der Kopie“ innerhalb des Archetyps EVALUATION.advance_care_directive oder&#xD;
+- Name und Kontaktdaten einer Organisation, die die Betreuung einer Person in ihrem zu Hause übernimmt.&#xD;
+&#xD;
+Dieser Archetyp wurde entwickelt, um Angaben zu offiziell anerkannten Einrichtungen, wie einem eingetragenen Unternehmen, einem Krankenhaus und seinen anerkannten „Unterorganisationen“, wie einer operativ getrennten oder spezialisierten Satellitenklinik oder einem häuslichen Pflegedienst, zu enthalten. Es kann auch verwendet werden, um Kontaktinformationen über informellere Netzwerke oder Gruppen darzustellen, wie z. B. eine lokale Selbsthilfegruppe.&#xD;
+&#xD;
+Dieser Archetyp könnte auch als Proxy für formale demografische Daten verwendet werden, wenn ein Template mit Domänenexperten überprüft wird – beispielsweise bei einer Bewertung, bei der die Prüfer erwarten würden, dass die Details zu der Organisation oben auf dem Bewertungsformular angezeigt werden.</use>
+      <misuse>Der Archetyp darf nicht verwendet werden, um ein offizielles Register oder einen Index darzustellen, zu ersetzen oder zu führen. Verwenden Sie zu diesem Zweck einen formellen Gesundheitsanbieter-Index (Health Provider Index) oder Archetypen, die auf dem openEHR Demographic Information Model basieren.&#xD;
+&#xD;
+Der Archetyp darf nicht verwendet werden, um den Pflegeort und ähnliche Datenelemente darzustellen, die formal in der Patientenakte unter Verwendung der Reference Model-Attribute dargestellt werden sollten.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera information om en organisation på det sätt som det ska representeras i en journalanteckning.&#xD;
+</purpose>
+      <keywords>organisation, vårdföretag, leverantör, vårdgivare, vårdenhet, enhet, avdelning, nätverk, grupp</keywords>
+      <use>Används för att registrera information om en organisation på det sätt som är etablerat och gör den begriplig i den kliniska dokumentationen. Ofta sker detta som en lösning när det inte är lämpligt eller möjligt att använda ett formellt demografiskt register eller index. &#xD;
+&#xD;
+Exempel på detta omfattar: &#xD;
+- rättighetsinnehavaren av ett vårdsystem för avancerat sjukvård och som utnyttjar den SLOT för Copyholder som finns i inbäddad i arketypen EVALUATION.advance_care_directive&#xD;
+- namn och kontaktuppgifter som kan behövas vid hemsjukvård.&#xD;
+&#xD;
+Används för att dokumentera information om etablerade enheter som vårdföretag eller sjukhus med organisatoriskt underliggande enheter som även har utlokaliserade enheter eller som bedriver hemsjukvård.&#xD;
+Arketypen kan även användas för dokumentation om mer informella nätverk och grupper, som samhällsorganiserade lokala stödgrupper. &#xD;
+&#xD;
+Används även för att ersätta en mer formellt genererad demografisk data, när exempelvis domänexperter granskar en mall, där granskare förväntar sig att se information om en organisation i ett formulär.&#xD;
+</use>
+      <misuse>Ska inte användas för att ersätta eller underhålla ett officiellt register eller index. Då skall istället arketyper baserat på openEHRs demografiska informationsmodell användas.&#xD;
+&#xD;
+Ska inte användas för beskrivning av platsen där vården utförs eller liknande datafält. Det formellt korrekta tillvägagångssättet är istället att använda attribut från Referensmodellen vid dokumentationen.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om en organisasjon, som man har informasjon om eller har forstått, i det kliniske dokumentasjonsarbeidet.</purpose>
+      <keywords>organisasjon, leverandør, omsorgsperson, nettverk, gruppe</keywords>
+      <use>Brukes for å registrere detaljer om en organisasjon, som man har informasjon om eller har forstått, i det kliniske dokumentasjonsarbeidet, ofte ad hoc eller i de tilfeller når det ikke er ønskelig eller mulig å bruke et formelt demografisk register eller indeks.&#xD;
+&#xD;
+For eksempel:&#xD;
+- kopiinnhaver av av et fremtidig behandlingsvalg ved å bruke "Kopiholder"-SLOTet i arketypen "EVALUATION.advance_care_directive" (Fremtidig behandlingsvalg).&#xD;
+- navn og kontaktdetaljer for en organisasjon som yter hjemmehjelp til en enkeltperson.&#xD;
+&#xD;
+Denne arketypen er utformet for å registrere detaljer om formelt anerkjente enheter, for eksempel en registrert virksomhet, et sykehus og dets "underorganisasjoner", en operativt separat eller spesialisert satellittklinikk eller hjemmetjeneste. Den kan også brukes til å registrere kontaktinformasjon om mer uformelle nettverk eller grupper, for eksempel en lokal støttegruppe.&#xD;
+&#xD;
+Denne arketypen kan også brukes som en midlertidig erstatning for formelle demografiske data når man gjennomgår et templat med domeneeksperter - for eksempel en vurdering der man i templatet forventer å se detaljer om en organisasjon i et vurderingsskjema.</use>
+      <misuse>Brukes ikke til å representere, erstatte eller vedlikeholde formelle demografiske opplysninger. Bruk et formelt pasientregister, helsepersonellregister eller arketyper basert på openEHR demografisk informasjonsmodell til dette formålet.&#xD;
+&#xD;
+Brukes ikke for å representere behandlingssted eller lignende dataelementer, som skal representeres formelt i pasientjournalen. Bruk attributter fra Referansemodellen for dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about an organisation as they are known or understood in the course of clinical documentation.</purpose>
+      <keywords>organisation, organization, provider, carer, network, group</keywords>
+      <use>Use to record details of an organisation as they are known or understood in the course of clinical documentation, often ad hoc or when it is not appropriate or possible to use a formal demographic register or index. Examples include:&#xD;
+- the copyholder of an advanced care record, using the 'Copyholder' SLOT within the EVALUATION.advance_care_directive archetype; or&#xD;
+- the name and contact details of an organisation providing home care to an individual.&#xD;
+&#xD;
+This archetype has been designed to carry details of formally recognised entities, such as a registered business, a hospital and its recognised 'sub-organisations', such as an operationally separate or specialised satellite clinic or home care service. It may also be used to carry contact information about more informal networks or groups, such as a local community support group.&#xD;
+&#xD;
+This archetype could also be used as a proxy for formal demographic data when reviewing a template with domain experts - for example, an assessment where reviewers would expect to see an organisations' details on an assessment form.</use>
+      <misuse>Not to be used to represent, replace or maintain an official register or index. Use a formal Health Provider Index for this purpose, or archetypes based on the openEHR Demographic Information Model.&#xD;
+&#xD;
+Not to be used to represent the location of care and similar data elements that should be represented formally in the health record using the Reference Model attributes.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Pour enregistrer les informations relatives à une organisation telles qu'elles sont connues ou entendues dans le cadre de la documentation clinique.</purpose>
+      <keywords>organisation, prestataire, soignant, réseau, groupe</keywords>
+      <use>À utiliser pour enregistrer les informations relatives à une organisation telles qu’elles sont connues ou entendues dans le cadre de la documentation clinique, souvent de manière ponctuelle ou lorsqu’il n’est pas approprié ou possible d’utiliser un registre ou un index démographique officiel. Exemples :&#xD;
+- le détenteur d’une directive anticipée de soins, à l’aide du SLOT « Copyholder » (détenteur) au sein de l’archétype EVALUATION.advance_care_directive ; ou&#xD;
+- le nom et les coordonnées d’une organisation fournissant des soins à domicile à une personne.&#xD;
+&#xD;
+Cet archétype a été conçu pour contenir les informations relatives à des entités officiellement reconnues, telles qu’une entreprise enregistrée, un hôpital et ses « sous-organisations » reconnues, par exemple une clinique satellite ou un service de soins à domicile fonctionnant de manière distincte ou spécialisée. Il peut également être utilisé pour contenir les coordonnées de réseaux ou de groupes plus informels, tels qu’un groupe de soutien communautaire local.&#xD;
+&#xD;
+Cet archétype pourrait également servir de substitut aux données démographiques officielles lors de l’examen d’un modèle avec des experts du domaine — par exemple, lors d’une évaluation où les évaluateurs s’attendraient à voir les coordonnées d’une organisation figurer sur un formulaire d’évaluation.</use>
+      <misuse>À ne pas utiliser pour enregister, remplacer ou tenir à jour un registre ou un index officiel. Utilisez à cette fin un index officiel des prestataires de soins de santé, ou des archétypes basés sur le modèle d’informations démographiques openEHR.&#xD;
+&#xD;
+À ne pas utiliser pour représenter le lieu de soins et des éléments de données similaires qui doivent être représentés de manière formelle dans le dossier médical à l’aide des attributs du modèle de référence.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout, Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Therese Lindberg, Erik Sundvall, Per Nemirovski, Jörgen Kuylenstierna, Manna Vosta, Åsa Skagerhult</author>
+    <author id="organisation">Cambio CDS, Karolinska Institutet + Karolinska University Hospital, Region Stockholm + Linköping University, B3 HealthTech, eWeave, Region Östergötland</author>
+    <author id="email">therese.lindberg@cambio.se, erik.sundvall@regionstockholm.se, per.nemirovski@b3.se, jorgen@eweave.se, manna.vosta@regionstockholm.se, asa.skagerhult@regionostergotland.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Liv Laugen, John Tore Valand, Vebjørn Arntzen, Kanika Kuwelker</author>
+    <author id="organisation">​Oslo University Hospital, Norway, Helse Bergen, Helse Vest IKT</author>
+    <author id="email">liv.laugen@ous-hf.no, john.tore.valand@helse-bergen.no, john.tore.valand@helse-vest-ikt.no, varntzen@ous-hf.no, kanika.kuwelker@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Jonas Bucher</author>
+    <author id="organisation">Cistec AG</author>
+    <author id="email">jonas.bucher@cistec.com</author>
+  </translations>
+  <uid>
+    <value>18f96334-947e-4451-ba42-1d790977f553</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.organisation.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.electronic_communication(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.electronic_communication(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Organisation</items>
+        <items id="description">An entity comprising one or more people and having a particular purpose.</items>
+        <items id="comment">For example: a company, institution, association, network, department, community group, healthcare practice group, payer/insurer, care team, or a group of neighbours who provide care or support.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Name</items>
+        <items id="description">The unstructured name or label for the organisation.</items>
+        <items id="comment">For example: 'Royal Children's Hospital'; 'ABC District Nursing Service'; 'YNWA Oslo' or 'JB Smith Lawyers'.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Contact person</items>
+        <items id="description">Details about one or more people within the organisation.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Identifier</items>
+        <items id="description">Identifier associated with the organisation.</items>
+        <items id="comment">Occurrences for this data element is set to 0..* to allow for more than one Identifier to be recorded. Note that the ID data type contains multiple subcomponents for recording the ID value, type, issuer and assigner.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Role</items>
+        <items id="description">The relationship or role of the organisation to the individual or subject of care.</items>
+        <items id="comment">For example: oncologist; palliative care home nursing service; or informal support network.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Address</items>
+        <items id="description">Details about an address for the organisation.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Additional details</items>
+        <items id="description">Additional details about the organisation.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the organisation not captured in other fields.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Parent organisation</items>
+        <items id="description">A larger organisation of which this organisation is a child or subsidiary.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Electronic communication</items>
+        <items id="description">Details about one or more types of electronic communication for the organisation.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Organisasjon</items>
+        <items id="description">En entitet som består av ett eller flere mennesker med et bestemt formål.</items>
+        <items id="comment">For eksempel: Et firma, institusjon, selskap, forening, nettverk, avdeling, gruppe i nærmiljøet, forsikringsselskap, behandlingsteam eller en gruppe av naboer som opptrer som støtte.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Navn</items>
+        <items id="description">Ustrukturert navn for organisasjonen.</items>
+        <items id="comment">For eksempel: "Haukeland Sykehus", "Årstad hjemmesykepleie", "YNWA Oslo" eller "JB Smith advokater".</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Kontaktperson</items>
+        <items id="description">Detaljer om én eller flere personer i organisasjonen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Identifikator</items>
+        <items id="description">Identifikator for organisasjonen.</items>
+        <items id="comment">Forekomster for dette dataelementet er satt til 0..* for å tillate at mer enn én identifikator kan registreres. Merk at ID-datatypen inneholder flere underkomponenter for registrering av ID-verdi, type, utsteder og tilordnet.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Rolle</items>
+        <items id="description">Forholdet eller rollen organisasjonen har til individet som pasientjournalen omhandler.</items>
+        <items id="comment">For eksempel: onkolog; palliativ hjemmetjeneste; eller uformelt støttenettverk.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adresse</items>
+        <items id="description">Detaljer om organisasjonens adresse.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om organisasjonen.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om organisasjonen som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Overordnet organisasjon</items>
+        <items id="description">En større organisasjon som denne organisasjonen er en del av.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Elektronisk kommunikasjon</items>
+        <items id="description">Detaljer om én eller flere former for elektronisk kommunikasjon med organisasjonen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Organisation</items>
+        <items id="description">Eine Einheit, die aus einer oder mehreren Personen besteht und ein bestimmtes Ziel hat.</items>
+        <items id="comment">Zum Beispiel: ein Unternehmen, eine Institution, ein Verband, ein Netzwerk, eine Abteilung, eine Gemeindegruppe, eine Gesundheitspraxisgruppe, ein Kostenträger/Versicherer, ein Pflegeteam oder eine Gruppe von Nachbarn, die Pflege oder Unterstützung leisten.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Namenszeile</items>
+        <items id="description">Der Name oder Bezeichnung der Organisation in unstrukturierter Form.</items>
+        <items id="comment">Zum Beispiel: „Royal Children's Hospital“, "ABC-Krankenpflegedienst", „YNWA Oslo“ oder „JB Smith Rechtsanwälte“.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Kontaktperson</items>
+        <items id="description">Details zu einer oder mehreren Personen innerhalb der Organisation.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Identifier</items>
+        <items id="description">Identifikator, der der identifizierten Organisation zugeordnet ist.</items>
+        <items id="comment">Kardinalität für dieses Datenelement wird auf 0..* gesetzt, damit mehr als ein Identifikator aufgezeichnet werden kann. Beachten Sie, dass der ID-Datentyp mehrere Unterkomponenten zum Aufzeichnen des ID-Werts, -Typs, -Ausstellers und -Zuweisers enthält.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Funktion</items>
+        <items id="description">Die Beziehung oder Rolle der Organisation zum Pflegebedürftigen oder Patient.</items>
+        <items id="comment">Zum Beispiel: Onkologe, ambulanter Palliativdienst oder informelles Supportnetzwerk.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adresse</items>
+        <items id="description">Angaben zu einer Adresse der Organisation.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Weitere Angaben zur Organisation.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzlicher Text zu der Organisation, der in anderen Bereichen nicht erfasst wird.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Muttergesellschaft</items>
+        <items id="description">Eine größere Organisation, von der diese Organisation ein Sub- oder Tochterunternehmen ist.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Elektronische Kommunikation</items>
+        <items id="description">Details zu einer oder mehreren Arten der elektronischen Kommunikation für die Organisation.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Organisation</items>
+        <items id="description">En organisatorisk entitet som består av en eller flera personer och som har ett särskilt syfte.</items>
+        <items id="comment">Exempelvis företag, institution, förening, nätverk, avdelning, samhällsgrupp, vårdgivargrupp, försäkringstagare eller försäkringsgivare, vårdteam, eller grupp som ger vård eller stöd.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Namn</items>
+        <items id="description">Namnet som en organisation är känd under.</items>
+        <items id="comment">Exempelvis Akademiska sjukhuset, Sahlgrenska universitetssjukhuset, YNWA Oslo, Karolinska universitetssjukhuset or JB Smith Lawyers.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Kontaktperson</items>
+        <items id="description">Uppgifter om en eller flera kontaktpersoner inom organisationen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Identifierare</items>
+        <items id="description">Identifierare associerad med organisationen.</items>
+        <items id="comment">Förekomsten av identifierare är satt till 0..*, vilket innebär att mer en typ av identifierare kan användas. Observera att det finns möjlighet att använda underliggande id-komponenter som typ, utfärdare och tillståndsgivare.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Roll</items>
+        <items id="description">Organisationens relation till eller roll gentemot vårdtagaren.</items>
+        <items id="comment">Exempelvis onkolog, palliativ hemsjukvård eller informell stödorganisation.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adress</items>
+        <items id="description">Organisationens adressuppgifter.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Ytterligare detaljer</items>
+        <items id="description">Ytterligare uppgifter om organisationen.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Kommentar</items>
+        <items id="description">Kommentarer avseende organisationen som inte beskrivs i övriga datafält.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Överordnad organisation</items>
+        <items id="description">Den större organisation som denna organisation är en del i.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Elektronisk kommunikation</items>
+        <items id="description">Ett eller flera elektroniska kommunikationssätt som organisationen använder.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Organisation</items>
+        <items id="description">Entité composée d’une ou de plusieurs personnes et ayant un objectif particulier.</items>
+        <items id="comment">Par exemple : une entreprise, une institution, une association, un réseau, un service, un groupe communautaire, un groupe de praticiens de santé, un payeur/assureur, une équipe soignante ou un groupe de voisins qui fournissent des soins ou un soutien.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Nom</items>
+        <items id="description">Nom ou libellé non structuré de l'organisation.</items>
+        <items id="comment">Par exemple : « Royal Children's Hospital » ; « ABC District Nursing Service » ; « YNWA Oslo » ou « JB Smith Lawyers ».</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Personne de contact</items>
+        <items id="description">Informations concernant une ou plusieurs personnes au sein de l'organisation.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Identifiant</items>
+        <items id="description">Identifiant associé à l'établissement.</items>
+        <items id="comment">Le nombre d'occurrences pour cet élément de données est défini à 0..* afin de permettre l'enregistrement de plusieurs identifiants. Il convient de noter que le type de données « ID » contient plusieurs sous-composants permettant d'enregistrer la valeur de l'identifiant, son type, son émetteur et son attributaire.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Rôle</items>
+        <items id="description">La relation ou le rôle de l'organisation vis-à-vis de la personne ou du sujet pris en charge.</items>
+        <items id="comment">Par exemple : oncologue ; service de soins palliatifs à domicile ; ou réseau de soutien informel.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adresse</items>
+        <items id="description">Informations relatives à l'adresse de l'organisme.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Détails supplémentaires</items>
+        <items id="description">Détails supplémentaires sur l'établissement.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Commentaire</items>
+        <items id="description">Informations supplémentaires sur l'établissement qui ne sont pas reprises dans d'autres champs.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Organisation mère</items>
+        <items id="description">Une organisation plus grande dont cette organisation est une filiale ou une entité dépendante.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Communication électronique</items>
+        <items id="description">Informations relatives à un ou plusieurs types de communication électronique utilisés par l'établissement.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

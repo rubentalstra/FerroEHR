@@ -1,0 +1,162 @@
+﻿archetype (adl_version=1.4)
+	openEHR-DEMOGRAPHIC-CLUSTER.person_death_data_iso.v1
+
+concept
+	[at0000]	-- Dados do óbito
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"20/05/2009">
+	>
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Coleta de dados demográficos sobre o óbito de um indivíduo">
+			use = <"Usado em serviços de demografia para coletar dados relativos ao óbito de um indivíduo">
+			keywords = <"serviço demográfico", "dados demográficos do óbito">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a person's demographic death data">
+			use = <"Used in demographic services to collect data about a person's death">
+			keywords = <"demographic service", "death demographic data">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"ISO/TS 22220:2008(E) - Identification of Subject of Care - Technical Specification - International Organization for Standardization">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- death demographic data
+		items cardinality matches {1..*; ordered} matches {	
+			ELEMENT[at0001] occurrences matches {1} matches { -- death date
+				value matches { 
+					DV_DATE matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- source of notification
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+								[local::
+								at0020,     -- 1 - Registry
+								at0021,     -- 2 - Healthcare provider
+								at0022,     -- 3 - Relative
+								at0023,     -- 4 - Other
+								at0024]     -- 9 - Unknown    
+						}
+					}
+				}
+			}
+	                allow_archetype CLUSTER[at0003] occurrences matches {0..1} matches {
+                		include
+                    			archetype_id/value matches {/(person_other_death_data)[a-zA-Z0-9_-]*\.v1/}
+            		}
+		}
+	}
+
+
+
+ontology
+	term_definitions = <
+		["pt-br"] = <
+			items = <
+				["at0000"] = <
+					text = <"Dados do óbito">
+					description = <"Dados demográficos do óbito">
+				>
+				["at0001"] = <
+					text = <"Data do óbito">
+					description = <"A data do óbito da pessoa">
+				>
+				["at0002"] = <
+					text = <"Fonte da notificação">
+					description = <"Um código que informa sobre a fonte de notificação do óbito. Este campo fornece uma indicação da confiabilidade da informação">
+				>
+				["at0003"] = <
+					text = <"Dados adicionais do óbito que são específicos de cada país">
+					description = <"Dados específicos de um país">
+				>
+				["at0020"] = <
+					text = <"Cartório">
+					description = <"Indica que este óbito foi comunicado por um cartório">
+				>
+				["at0021"] = <
+					text = <"Prestador de assistência à saúde">
+					description = <"Indica que este óbito foi comunicado por um prestador de assistência à saúde">
+				>
+				["at0022"] = <
+					text = <"Parente">
+					description = <"Indica que este óbito foi comunicado por um parente">
+				>
+				["at0023"] = <
+					text = <"Outra fonte">
+					description = <"Indica que este óbito foi comunicado por uma outra fonte">
+				>
+				["at0024"] = <
+					text = <"Desconhecida">
+					description = <"Indica que a fonte de notificação deste óbito é desconhecida">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Death data">
+					description = <"Death demographic data">
+				>
+				["at0001"] = <
+					text = <"Death date">
+					description = <"The date of death of a person">
+				>
+				["at0002"] = <
+					text = <"Source of notification">
+					description = <"Indicates the source of information about a subject of care’s death. This field provides an indication of the certainty of the information">
+				>
+				["at0003"] = <
+					text = <"Additional death data that are country specific">
+					description = <"Country specific data">
+				>
+				["at0020"] = <
+					text = <"Registry">
+					description = <"Indicate that the notification source is a registry">
+				>
+				["at0021"] = <
+					text = <"Healthcare provider">
+					description = <"Indicate that the notification source is a healthcare provider">
+				>
+				["at0022"] = <
+					text = <"Relative">
+					description = <"Indicate that the notification source is a relative">
+				>
+				["at0023"] = <
+					text = <"Other">
+					description = <"Indicate that the notification source is another source">
+				>
+				["at0024"] = <
+					text = <"Unknown">
+					description = <"Indicate that the notification source is unknown">
+				>
+			>
+		>
+	>

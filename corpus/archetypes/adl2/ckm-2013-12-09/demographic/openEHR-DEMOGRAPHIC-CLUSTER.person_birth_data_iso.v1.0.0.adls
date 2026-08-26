@@ -1,0 +1,173 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-CLUSTER.person_birth_data_iso.v1.0.0
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"20/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a person's birth data">
+			use = <"Used in demographic services to collect a person's birth data">
+			keywords = <"demographic service", "birth demographic data">
+			misuse = <"">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Coleta de dados demográficos do nascimento">
+			use = <"Usado em serviços de demografia para coletar dados do nascimento de uma pessoa">
+			keywords = <"serviço demográfico", "dados do nascimento">
+			misuse = <"">
+		>
+	>
+	references = <
+		["1"] = <"ISO/TS 22220:2008(E) - Identification of Subject of Care - Technical Specification - International Organization for Standardization">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Birth data
+		items matches {
+			ELEMENT[id2] occurrences matches {1} matches {	-- Birth date
+				value matches {
+					DV_DATE[id8] 
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Country of birth
+				value matches {
+					DV_CODED_TEXT[id9] matches {
+						defining_code matches {[ac1]}		-- Country codes
+					}
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- Birth plurality
+				value matches {
+					DV_CODED_TEXT[id10] matches {
+						defining_code matches {[ac2]}		-- Birth plurality codes
+					}
+				}
+			}
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Birth order
+				value matches {
+					DV_CODED_TEXT[id11] matches {
+						defining_code matches {[ac3]}		-- Birth order codes
+					}
+				}
+			}
+			ELEMENT[id6] matches {	-- Date of birth follow-up indicator
+				value matches {
+					DV_BOOLEAN[id12] 
+				}
+			}
+			allow_archetype CLUSTER[id7] occurrences matches {0..1} matches {	-- Country specific data
+				include
+					archetype_id/value matches {/(person_other_birth_data)[a-zA-Z0-9_-]*\.v1/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Dados do nascimento">
+				description = <"Dados demográficos do nascimento">
+			>
+			["id2"] = <
+				text = <"Data do nascimento">
+				description = <"A data do nascimento da pessoa">
+			>
+			["id3"] = <
+				text = <"país de nascimento">
+				description = <"O país onde a pessoa nasceu">
+			>
+			["id4"] = <
+				text = <"Nascimento multiplo">
+				description = <"Um indicador de nascimento múltiplo, mostrando o número total de nascimentos resultantes de uma única gestação">
+			>
+			["id5"] = <
+				text = <"Ordem de Nascimento">
+				description = <"A ordem seqüencial desta pessoa em um nascimento múltiplo, não importando se foi um nascido vivo ou morto">
+			>
+			["id6"] = <
+				text = <"Indicador de seguimento da data de nascimento">
+				description = <"Indicador que informa quando a data de nascimento corrente precisa de ser acompanhada para obter uma data mais acurada.">
+			>
+			["id7"] = <
+				text = <"Dados específicos de um país">
+				description = <"Dados adicionais do nascimento que são específicos de cada país">
+			>
+			["ac1"] = <
+				text = <"Códigos de países">
+				description = <"códigos válidos para paises">
+			>
+			["ac2"] = <
+				text = <"Códigos para nascimento múltiplo">
+				description = <"códigos válidos para nascimento múltiplo">
+			>
+			["ac3"] = <
+				text = <"Códigos para ordem de nascimento">
+				description = <"códigos válidos para  ordem de nascimento">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Birth data">
+				description = <"Birth demographic data">
+			>
+			["id2"] = <
+				text = <"Birth date">
+				description = <"The date of birth of a person">
+			>
+			["id3"] = <
+				text = <"Country of birth">
+				description = <"The country where a person was born">
+			>
+			["id4"] = <
+				text = <"Birth plurality">
+				description = <"An indicator of multiple birth, showing the total number of births resulting from a single pregnancy">
+			>
+			["id5"] = <
+				text = <"Birth order">
+				description = <"The sequential order of this person in a multiple birth regardless of live or still birth">
+			>
+			["id6"] = <
+				text = <"Date of birth follow-up indicator">
+				description = <"Flag that indicates when the current date of birth requires follow-up to obtain a more accurate date">
+			>
+			["id7"] = <
+				text = <"Country specific data">
+				description = <"Additional birth data that are country specific">
+			>
+			["ac1"] = <
+				text = <"Country codes">
+				description = <"valid codes for countries">
+			>
+			["ac2"] = <
+				text = <"Birth plurality codes">
+				description = <"valid codes for birth plurality">
+			>
+			["ac3"] = <
+				text = <"Birth order codes">
+				description = <"valid codes for birth order">
+			>
+		>
+	>

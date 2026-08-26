@@ -1,0 +1,490 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.autopsy.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+				["organisation"] = <"University of Heidelberg, Central Queensland University">
+			>
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			author = <
+				["name"] = <"Igor Lizunov">
+				["email"] = <"i.lizunov@infinnity.ru">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"22/03/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation von Befunden der Autopsie mittels strukturiertem Text">
+			use = <"">
+			misuse = <"Zur Dokumentation von Diagnosen sollte der EVALUATION.problem-diagnosis Archetyp benutzt werden">
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			purpose = <"Для записи результатов вскрытия, используя структурированный текст.">
+			use = <"*(en)">
+			misuse = <"Диагноз должен быть записан с использованием the EVALUATION.problem-diagnosis archetype.">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording findings at autopsy using structured text.">
+			use = <"">
+			misuse = <"Diagnoses should be recorded using the EVALUATION.problem-diagnosis archetype.">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"14F3AC36DA31136DF70679A61C93C15D">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Autopsy examination
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Clinical
+										value matches {
+											DV_TEXT[id19] 
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- External examination
+										value matches {
+											DV_TEXT[id20] 
+										}
+									}
+									CLUSTER[id7] occurrences matches {0..1} matches {	-- Internal examination
+										items matches {
+											ELEMENT[id8] matches {	-- System
+												name matches {
+													DV_CODED_TEXT[id21] matches {
+														defining_code matches {[ac1]}		-- System (synthesised)
+													}
+												}
+												value matches {
+													DV_TEXT[id22] 
+												}
+											}
+										}
+									}
+									CLUSTER[id17] occurrences matches {0..1} matches {	-- Microscopic examination
+										items matches {
+											ELEMENT[id18] matches {	-- Organ
+												name matches {
+													DV_CODED_TEXT[id23] matches {
+														defining_code matches {[ac2]}		-- Organ (synthesised)
+													}
+												}
+												value matches {
+													DV_TEXT[id24] 
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["id1"] = <
+				text = <"Autopsie Untersuchung">
+				description = <"Befunde einer Autopsie">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Klinisch">
+				description = <"Aussagen über klinische Befunde vor dem Tod">
+			>
+			["id6"] = <
+				text = <"Externe Untersuchung">
+				description = <"Befunde von externen Untersuchungen">
+			>
+			["id7"] = <
+				text = <"Interne Untersuchung">
+				description = <"Sammlung von Aussagen über bestimmte Systeme">
+			>
+			["id8"] = <
+				text = <"System">
+				description = <"Befunde bezüglich verschiedener Körpersysteme">
+			>
+			["at9"] = <
+				text = <"Kardiovaskuläres System">
+				description = <"Befunde des Perikards, des Herzens und der großen Gefäße">
+			>
+			["at10"] = <
+				text = <"Atmungssystem">
+				description = <"Befunde des Kehlkopf, der Luftröhre, der Bronchien, der Lungen und des Rippenfells">
+			>
+			["at11"] = <
+				text = <"Magen-Darm-Trakt">
+				description = <"Befunde der Speiseröhre, des Bauchfells, des Darms, der Leber (einschließlich der Gallenblase) und des Omentums">
+			>
+			["at12"] = <
+				text = <"Retikulohistiozytäres System">
+				description = <"Befunde der Milz, der Lymphknoten und des Knochenmarks">
+			>
+			["at13"] = <
+				text = <"Urogenital-Trakt">
+				description = <"Befunde der Niere, des Harnleiters, der Blase, der Prostata, der Hoden oder der Gebärmutter und der Eierstöcke">
+			>
+			["at14"] = <
+				text = <"Hormon-System">
+				description = <"Schilddrüse und Nebennieren">
+			>
+			["at15"] = <
+				text = <"Zentrales Nerven-System">
+				description = <"Gehirn, Kopfhaut, Hirnhaut, Rückenmark">
+			>
+			["at16"] = <
+				text = <"Bewegungsapparat">
+				description = <"Gliedmaßen, Wirbelsäule">
+			>
+			["id17"] = <
+				text = <"Mikroskopische Untersuchung">
+				description = <"Befunde der mikroskopischen Untersuchung der Organe">
+			>
+			["id18"] = <
+				text = <"Organ">
+				description = <"Befund bezüglich der Biopsie einzelner Organe">
+			>
+			["at19"] = <
+				text = <"Nebennieren">
+				description = <"Befunde bezüglich der Nebennierendrüsen">
+			>
+			["at20"] = <
+				text = <"Gehirn">
+				description = <"Befunde bezüglich des Gehirns">
+			>
+			["at21"] = <
+				text = <"Herz">
+				description = <"Befunde bezüglich des Herzens">
+			>
+			["at22"] = <
+				text = <"Nieren">
+				description = <"Befunde bezüglich der Nieren">
+			>
+			["at23"] = <
+				text = <"Leber">
+				description = <"Befunde bezüglich der Leber">
+			>
+			["at24"] = <
+				text = <"Lungen">
+				description = <"Befunde bezüglich der Lungen">
+			>
+			["at25"] = <
+				text = <"Bauchspeicheldrüse">
+				description = <"Befunde bezüglich der Bauchspeicheldrüse">
+			>
+			["at26"] = <
+				text = <"Hypophyse">
+				description = <"Befunde bezüglich der Hypophyse">
+			>
+			["at27"] = <
+				text = <"Dünndarm">
+				description = <"Befunde bezüglich des Dünndarms">
+			>
+			["at28"] = <
+				text = <"Milz">
+				description = <"Befunde bezüglich der Milz">
+			>
+			["at29"] = <
+				text = <"Schilddrüse">
+				description = <"Befunde bezüglich der Schilddrüse">
+			>
+			["at30"] = <
+				text = <"Wirbel">
+				description = <"Befunde bezüglich der Wirbelsäule">
+			>
+			["ac1"] = <
+				text = <"System (synthesised)">
+				description = <"Befunde bezüglich verschiedener Körpersysteme (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Organ (synthesised)">
+				description = <"Befund bezüglich der Biopsie einzelner Organe (synthesised)">
+			>
+		>
+		["ru"] = <
+			["id1"] = <
+				text = <"Вскрытие">
+				description = <"Заключение вскрытия.">
+			>
+			["id3"] = <
+				text = <"Любое событие">
+				description = <"**(ru)">
+			>
+			["id5"] = <
+				text = <"Clinical (en)">
+				description = <"*Statement about the clinical findings prior to death(en)">
+			>
+			["id6"] = <
+				text = <"Наружный осмотр">
+				description = <"Заключение наружного осмотра.">
+			>
+			["id7"] = <
+				text = <"Секция">
+				description = <"Заключения по системам органов.">
+			>
+			["id8"] = <
+				text = <"Система">
+				description = <"Заключение по системе органов.">
+			>
+			["at9"] = <
+				text = <"Сердечно-сосудистая система">
+				description = <"Заключение по состоянию перикарда, сердца и крупных сосудов.">
+			>
+			["at10"] = <
+				text = <"Дыхательная система">
+				description = <"Заключение по состоянию гортани, трахеи, бронхов, лёгких и плевры.">
+			>
+			["at11"] = <
+				text = <"Пищеварительная система">
+				description = <"Заключение по состоянию пищевода, желудка, печени, поджелудочной железы, кишечника, брюшной полости.">
+			>
+			["at12"] = <
+				text = <"Ретикуло-эндотелиальная система">
+				description = <"Заключение по состоянию селезёнки, лимфоузлов и костного мозга.">
+			>
+			["at13"] = <
+				text = <"Мочеполовая система">
+				description = <"Заключение по состоянию почек, мочеточников, мочевого пузыря, предстательной железы и яичек, или матки и яичников.">
+			>
+			["at14"] = <
+				text = <"Эндокринная система">
+				description = <"Щитовидная железа, надпочечники.">
+			>
+			["at15"] = <
+				text = <"Центральная нервная система">
+				description = <"Головной и спинной мозг, покровы черепа, оболочки мозга.">
+			>
+			["at16"] = <
+				text = <"Костно-мышечная система">
+				description = <"Конечности, позвоночник.">
+			>
+			["id17"] = <
+				text = <"Микроскопия">
+				description = <"Заключение о микроскопической структуре органа.">
+			>
+			["id18"] = <
+				text = <"Орган">
+				description = <"Заключение биопсии отдельных органов.">
+			>
+			["at19"] = <
+				text = <"Надпочечники">
+				description = <"Заключение относительно надпочечников.">
+			>
+			["at20"] = <
+				text = <"Головной мозг">
+				description = <"Заключение относительноголовного мозга.">
+			>
+			["at21"] = <
+				text = <"Сердце">
+				description = <"Заключение относительно сердца.">
+			>
+			["at22"] = <
+				text = <"Почки">
+				description = <"Заключение относительно почек.">
+			>
+			["at23"] = <
+				text = <"Печень">
+				description = <"Заключение относительно печени.">
+			>
+			["at24"] = <
+				text = <"Лёгкие">
+				description = <"Заключение относительно лёгких.">
+			>
+			["at25"] = <
+				text = <"Поджелудочная железа">
+				description = <"Заключение относительно поджелудочной железы.">
+			>
+			["at26"] = <
+				text = <"Гипофиз">
+				description = <"Заключение относительно гипофиза.">
+			>
+			["at27"] = <
+				text = <"Тонкий кишечник">
+				description = <"Заключение относительно тонкого кишечника.">
+			>
+			["at28"] = <
+				text = <"Селезёнка">
+				description = <"Заключение относительно селезёнки.">
+			>
+			["at29"] = <
+				text = <"Щитовидная железа">
+				description = <"Заключение относительно щитовидной железы.">
+			>
+			["at30"] = <
+				text = <"Позвоночник">
+				description = <"Заключение относительно позвоночника(ru)">
+			>
+			["ac1"] = <
+				text = <"Система (synthesised)">
+				description = <"Заключение по системе органов. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Орган (synthesised)">
+				description = <"Заключение биопсии отдельных органов. (synthesised)">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Autopsy examination">
+				description = <"Findings at autopsy.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Clinical">
+				description = <"Statement about the clinical findings prior to death.">
+			>
+			["id6"] = <
+				text = <"External examination">
+				description = <"Findings on external examination.">
+			>
+			["id7"] = <
+				text = <"Internal examination">
+				description = <"Collection of statements about particular systems.">
+			>
+			["id8"] = <
+				text = <"System">
+				description = <"Findings relating to different body systems.">
+			>
+			["at9"] = <
+				text = <"Cardiovascular system">
+				description = <"Findings of the pericardium, heart and large vessels.">
+			>
+			["at10"] = <
+				text = <"Respiratory system">
+				description = <"Findings about larynx, trachea, bronchi, lungs and pleura.">
+			>
+			["at11"] = <
+				text = <"Gastro-intestinal system">
+				description = <"Findings about oesophagus, peritoneum, bowel, liver (including gallbladder) and omentum.">
+			>
+			["at12"] = <
+				text = <"Reticulo-Endothelial system">
+				description = <"Findings about the spleen, lymphnodes and bone marrow.">
+			>
+			["at13"] = <
+				text = <"Genito-urinary system">
+				description = <"Findings about the kidneys, ureters, bladders, prostate, testicles or uterus, ovaries.">
+			>
+			["at14"] = <
+				text = <"Endocrine System">
+				description = <"Thyroid, adrenals.">
+			>
+			["at15"] = <
+				text = <"Central nervous system">
+				description = <"Brain, scalp, dura, spinal cord.">
+			>
+			["at16"] = <
+				text = <"Musculoskeletal system">
+				description = <"Limbs, vertebral column.">
+			>
+			["id17"] = <
+				text = <"Microscopic examination">
+				description = <"Findings on microscopy organised by organ.">
+			>
+			["id18"] = <
+				text = <"Organ">
+				description = <"Findings relating to biopsies of individual organs.">
+			>
+			["at19"] = <
+				text = <"Adrenals">
+				description = <"Findings related to the adrenal glands.">
+			>
+			["at20"] = <
+				text = <"Brain">
+				description = <"Findings related to the brain.">
+			>
+			["at21"] = <
+				text = <"Heart">
+				description = <"Findings relating to the heart.">
+			>
+			["at22"] = <
+				text = <"Kidneys">
+				description = <"Findings related to the kidneys.">
+			>
+			["at23"] = <
+				text = <"Liver">
+				description = <"Findings related to the liver.">
+			>
+			["at24"] = <
+				text = <"Lungs">
+				description = <"Findings related to the lungs.">
+			>
+			["at25"] = <
+				text = <"Pancreas">
+				description = <"Findings related to the pancreas.">
+			>
+			["at26"] = <
+				text = <"Pituitary">
+				description = <"Findings related to the pituitary.">
+			>
+			["at27"] = <
+				text = <"Small bowel">
+				description = <"Findings related to the small bowel.">
+			>
+			["at28"] = <
+				text = <"Spleen">
+				description = <"Findings related to the spleen.">
+			>
+			["at29"] = <
+				text = <"Thyroid">
+				description = <"Findings related to the thyroid.">
+			>
+			["at30"] = <
+				text = <"Vertebra">
+				description = <"Findings related to the spinal column.">
+			>
+			["ac1"] = <
+				text = <"System (synthesised)">
+				description = <"Findings relating to different body systems. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Organ (synthesised)">
+				description = <"Findings relating to biopsies of individual organs. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at9", "at10", "at11", "at12", "at13", "at14", "at15", "at16">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at19", "at20", "at21", "at22", "at23", "at24", "at25", "at26", "at27", "at28", "at29", "at30">
+		>
+	>

@@ -1,0 +1,418 @@
+﻿archetype (adl_version=1.4; uid=860b2c3b-2beb-4667-b77d-83945e14be68)
+	openEHR-EHR-OBSERVATION.scoff_questionnaire.v0
+
+concept
+	[at0000]	-- Eating disorder screening (SCOFF)
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["fi"] = <
+			language = <[ISO_639-1::fi]>
+			author = <
+				["name"] = <"Vesa Peltola">
+				["organisation"] = <"Tieto Finland">
+			>
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Vesa Peltola">
+				["organisation"] = <"Tieto Finland">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Vesa Peltola">
+		["organisation"] = <"Tieto Finland">
+		["date"] = <"2019-03-22">
+	>
+	details = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"Ett enkelt fem frågetest utarbetat för att användas av icke-professionella för att bedöma eventuell närvaro av en ätstörning.
+
+Bokstäverna i full akronym tas från nyckelord i frågorna:
+- Sick
+- Control
+- One stone (14 lbs./6.5 kg.)
+- Fat
+- Food">
+			use = <"Varje \"Ja\" svar ges en poäng. Med ett övergripande poäng på ≥ 2 är anorexi eller bulimi möjlig.">
+			keywords = <"ätande, störning, screening", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["fi"] = <
+			language = <[ISO_639-1::fi]>
+			purpose = <"Yksinkertainen viiden kysymyksen testi, joka on suunniteltu käytettäväksi muille kuin ammattilaisille syömishäiriön mahdollisen esiintymisen arvioimiseksi.
+
+Lyhenteen kirjaimet on otettu kysymysten avainsanoista:
+- Sick
+- Control
+- One stone (14 lbs./6.5 kg.)
+- Fat
+- Food">
+			use = <"Jokaisesta \"Kyllä\" -vastauksesta annetaan yksi piste. Kokonaispisteiden ollessa ≥2, mahdollinen anoreksia tai bulimia.">
+			keywords = <"syöminen, häiriö, seulonta", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A simple five question test devised for use by non-professionals to assess the possible presence of an eating disorder.
+
+The letters in the full acronym are taken from key words in the questions:
+- Sick
+- Control
+- One stone (14 lbs./6.5 kg.)
+- Fat
+- Food">
+			use = <"One point is assigned for every \"yes\"; a score greater than two (≥2) indicates a possible case of anorexia nervosa or bulimia nervosa.">
+			keywords = <"eating, disorder, screening", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Morgan JF, Reid F, Lacey JH (2000). \"The SCOFF questionnaire: a new screening tool for eating disorders\". West J Med. 172 (3): 164–5. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1070794/pdf/wjm17200164.pdf)">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"546421DE55FA40451569821D872027CF">
+		["build_uid"] = <"2a76b96e-a933-4e62-a561-e61a79ec0732">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Eating disorder screening (SCOFF)
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- ItemTree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Do you make yourself sick because you feel uncomfortably full?
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006]
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {    -- Do you worry that you have lost control over how much you eat?
+										value matches {
+											0|[local::at0008],
+											1|[local::at0009]
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {    -- Have you recently lost more than one stone (14 lb, 6,5 kg) in a 3-month period?
+										value matches {
+											0|[local::at0011],
+											1|[local::at0012]
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {    -- Do you believe yourself to be fat when others say you are too thin?
+										value matches {
+											0|[local::at0014],
+											1|[local::at0015]
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {    -- Would you say that food dominates your life?
+										value matches {
+											0|[local::at0017],
+											1|[local::at0018]
+										}
+									}
+									ELEMENT[at0019] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..5|}
+											}
+										}
+									}
+									ELEMENT[at0020] occurrences matches {0..1} matches {    -- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Eating disorder screening (SCOFF)">
+					description = <"Screening tool for eating disorders.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"*">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"ItemTree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Do you make yourself sick because you feel uncomfortably full?">
+					description = <"Do you make yourself sick because you feel uncomfortably full?">
+				>
+				["at0005"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Do you worry that you have lost control over how much you eat?">
+					description = <"Do you worry that you have lost control over how much you eat?">
+				>
+				["at0008"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Have you recently lost more than one stone (14 lb, 6,5 kg) in a 3-month period?">
+					description = <"Have you recently lost more than one stone (14 lb, 6,5 kg) in a 3-month period?">
+				>
+				["at0011"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Do you believe yourself to be fat when others say you are too thin?">
+					description = <"Do you believe yourself to be fat when others say you are too thin?">
+				>
+				["at0014"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Would you say that food dominates your life?">
+					description = <"Would you say that food dominates your life?">
+				>
+				["at0017"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"Total score">
+					description = <"One point is assigned for every \"yes\"; a score greater than two (≥2) indicates a possible case of anorexia nervosa or bulimia nervosa.">
+				>
+				["at0020"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the assessment of the SCOFF questionnaire, not captured in the structured elements.">
+				>
+			>
+		>
+		["fi"] = <
+			items = <
+				["at0000"] = <
+					text = <"Syömishäiriöseula (SCOFF)">
+					description = <"Syömishäiriöseula (SCOFF)">
+				>
+				["at0001"] = <
+					text = <"*History (en)">
+					description = <"*">
+				>
+				["at0002"] = <
+					text = <"Mikä tahansa tapahtuma">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"ItemTree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Oksennatko tuntiessasi olosi epämiellyttävän kylläiseksi?">
+					description = <"Oksennatko tuntiessasi olosi epämiellyttävän kylläiseksi?">
+				>
+				["at0005"] = <
+					text = <"Ei">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Kyllä">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Pelkäätkö menettäväsi hallinnan siihen kuinka paljon syöt?">
+					description = <"Pelkäätkö menettäväsi hallinnan siihen kuinka paljon syöt?">
+				>
+				["at0008"] = <
+					text = <"Ei">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Kyllä">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Onko Sinulla hiljattain ollut 3 kk kestänyttä jaksoa, jolloin laihduit yli kuusi kiloa?">
+					description = <"Onko Sinulla hiljattain ollut 3 kk kestänyttä jaksoa, jolloin laihduit yli kuusi kiloa?">
+				>
+				["at0011"] = <
+					text = <"Ei">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Kyllä">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Tunnetko itsesi lihavaksi, vaikka muiden mielestä olet liian laiha?">
+					description = <"Tunnetko itsesi lihavaksi, vaikka muiden mielestä olet liian laiha?">
+				>
+				["at0014"] = <
+					text = <"Ei">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Kyllä">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Hallitseeko ruoka mielestäsi elämääsi?">
+					description = <"Hallitseeko ruoka mielestäsi elämääsi?">
+				>
+				["at0017"] = <
+					text = <"Ei">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Kyllä">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"Yhteispisteet">
+					description = <"Jokaisesta \"Kyllä\" -vastauksesta annetaan yksi piste. Kokonaispisteiden ollessa ≥2, mahdollinen anoreksia tai bulimia.">
+				>
+				["at0020"] = <
+					text = <"Kommentti">
+					description = <"Narratiivista tekstiä SCOFF-kyselylomakkeen arvioinnista, jota ei ole kuvattu muissa strukturoiduissa elementeissä.">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000"] = <
+					text = <"Screeningtest för ätstörning (SCOFF)">
+					description = <"Screeningtest för ätstörning (SCOFF)">
+				>
+				["at0001"] = <
+					text = <"*History (en)">
+					description = <"*">
+				>
+				["at0002"] = <
+					text = <"Valfri händelse">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"ItemTree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Gör du så att du kräks för att du känner dig obehagligt mätt?">
+					description = <"Gör du så att du kräks för att du känner dig obehagligt mätt?">
+				>
+				["at0005"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Oroar du dig för att du har förlorat kontrollen över hur mycket du äter?">
+					description = <"Oroar du dig för att du har förlorat kontrollen över hur mycket du äter?">
+				>
+				["at0008"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Har du nyligen gått ner mer än 6 kg inom loppet av 3 månader?">
+					description = <"Har du nyligen gått ner mer än 6 kg inom loppet av 3 månader?">
+				>
+				["at0011"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Tycker du att du är fet även när andra säger att du är för smal?">
+					description = <"Tycker du att du är fet även när andra säger att du är för smal?">
+				>
+				["at0014"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Skulle du säga att mat dominerar ditt liv?">
+					description = <"Skulle du säga att mat dominerar ditt liv?">
+				>
+				["at0017"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"Totalt antal poäng">
+					description = <"Varje \"Ja\" svar ges en poäng. Med ett övergripande poäng på ≥ 2 är anorexi eller bulimi möjlig.">
+				>
+				["at0020"] = <
+					text = <"Kommentar">
+					description = <"Ytterligare berättande beskrivning av SCOFF som inte registrerats i övriga fält.">
+				>
+			>
+		>
+	>

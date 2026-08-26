@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-10-01</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjoern Arntzen, Oslo university hospital, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, National ICT Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Sistine Barretto-Daniels, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Yang Lu, University of Melbourne, Australia</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">B2D87AA57E3D01820E7DAE733A4644F7</other_details>
+    <other_details id="build_uid">f9f7d158-cc9b-4a04-8830-44e60129d110</other_details>
+    <other_details id="revision">1.0.3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera en sammanfattning av hälsoinformation om en individ, som representerar en delmängd av deras journal vid en angiven tidpunkt.</purpose>
+      <keywords>sammanfattning</keywords>
+      <keywords>synopsis</keywords>
+      <keywords>översikt</keywords>
+      <keywords>status</keywords>
+      <keywords>ögonblicksbild</keywords>
+      <use>Används som en behållare för att registrera en sammanfattning eller översikt av en patients hälsa eller välbefinnande vid en angiven tidpunkt (en ögonblicksbild).&#xD;
+&#xD;
+Författaren till en hälsosammanfattning är vanligtvis en hälso- och sjukvårdpersonal som är bekant med alla relevanta aspekter av individens hälsa som utgör innehållet i sammanfattningen.&#xD;
+&#xD;
+Omfattningen av en hälsosammanfattning kan variera i olika sammanhang. Det kan vara allt från en översikt över alla centrala aspekter av individens hälsa eller välbefinnande till en sammanfattning som fokuserar på en begränsad aspekt av individens hälsa.&#xD;
+&#xD;
+De avsedda läsarna av hälsosammanfattningen kommer att variera beroende på primärt syfte och fokus för sammanfattningen. De kan vara:&#xD;
+- eventuella framtida vårdgivare;&#xD;
+- hälso- och sjukvårdspersonal som inte har någon personlig kännedom om individen men är skyldiga att tillhandahålla hälso- och sjukvård, såsom akutbehandling eller när individen är på resa;&#xD;
+- hälso- och sjukvårdspersonal som endast hanterar specifika aspekter av individens hälsa, såsom diabetes eller graviditet; och&#xD;
+- individen själv.&#xD;
+&#xD;
+Sections/Content-komponenten har medvetet inte avgränsats. Detta gör att den kan fyllas med alla SECTION- eller ENTRY-arketyper som är lämpliga för det kliniska syftet inom en openEHR-template.&#xD;
+&#xD;
+Även om det kliniska innehållet inte är avgränsat, stöder den här arketypen enkla queries efter alla hälsosammanfattningar som kan finnas i en patientjournal.</use>
+      <misuse>Får inte användas för att registrera detaljer om en enskild klinisk konsultation, åtgärd, test eller bedömning etc.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere et sammendrag av helseinformasjon om et individ på et spesifisert tidspunkt.</purpose>
+      <keywords>sammendrag</keywords>
+      <keywords>oversikt</keywords>
+      <keywords>synopsis</keywords>
+      <keywords>sammenfatning</keywords>
+      <keywords>status</keywords>
+      <use>Brukes som en generisk konteiner for et sammendrag eller en oversikt over pasientens helse og/eller omsorgsstatus på et spesifikt tidspunkt.&#xD;
+&#xD;
+Forfatteren av helsesammendraget er vanligvis en kliniker som er kjent med alle de relevante aspektene om individets helse som sammendraget består av.&#xD;
+&#xD;
+Formålet med helsesammendraget kan variere utfra ulike kontekster, eksempler på helsesammendrag kan være en oversikt over alle relevant viktige aspekter knyttet til pasientens helse og/eller omsorg eller et sammendrag av informasjon fokusert på et begrenset område av individets helse.&#xD;
+&#xD;
+Mottakere av helsesammendraget vil variere utfra sammendragets primærfokus og kan være:&#xD;
+- Framtidige helsetjenesteytere.&#xD;
+- Klinikere som ikke har noe personlig kjennskap til individet, men som må yte helsetjenester, som akuttbehandling eller behandling når individet er på reise.&#xD;
+som ved diabetes eller gravidiet.&#xD;
+- Individet selv.&#xD;
+&#xD;
+Det er ikke satt begrensinger på hovedkomponenten Section/content. Dette gjør at man kan legge til hvilken som helst SECTION eller ENTRY arketype som er passende for det kliniske formålet i et templat.&#xD;
+&#xD;
+Selv om det kliniske innholdet er ubegrenset, gir denne arketypen muligheter for enkle spørringer etter alle sammendrag av helseinformasjon i en journal.</use>
+      <misuse>Brukes ikke for å registrere detaljer om en enkelt klinisk konsultasjon, prosedyre, prøve, vurdering eller lignende.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Gravar um sumário de informações de saúde sobre um indivíduo, representando um subconjunto de seu registro de saúde em um ponto específico no tempo.</purpose>
+      <keywords>sumário</keywords>
+      <keywords>sinopse</keywords>
+      <keywords>visão geral</keywords>
+      <keywords>estado</keywords>
+      <use>Usado como um repositório genérico para gravar um sumário ou visão geral da saúde e/ou situação do bem-estar de um paciente como um retrato da sua saúde em um ponto específico do tempo.&#xD;
+&#xD;
+O autor de um sumário de saúde é usualmente um clínico que está familiarizado com todos os aspectos relevantes da saúde do indivíduo, que é o conteúdo do sumário.&#xD;
+&#xD;
+O escopo de um sumário de saúde pode variar em diferentes contextos, indo de uma visão geral de todos os aspectos principais da saúde e/ou bem-estar do indivíduo a um sumário de informação focado em um aspecto restrito da saúde do indivíduo.&#xD;
+&#xD;
+Os leitores alvo do sumário de saúde irão variar de acordo com o propósito primário e o foco do sumário, e pode incluir:&#xD;
+- qualquer provedor de saúde futuro;&#xD;
+- clínicos que não tem nenhum conhecimento pessoal do indivíduo, mas são requeridos a fornecer cuidado em saúde, como no tratamento de emergência ou quando o indivíduo está em trânsito;&#xD;
+- clínicos que administram apenas aspectos específicos da saúde do indivíduo, como diabetes e gravidez; e&#xD;
+- os próprios indivíduos.&#xD;
+&#xD;
+Os componentes das Seções/Conteúdo principais foram deixados sem restrição deliberadamente. Isso permite que os campos sejam populados com quaisquer arquétipos tipo SECTION ou ENTRY apropriados para o propósito clínico dentro do modelo.&#xD;
+&#xD;
+Embora o conteúdo clínico seja irrestrito, este arquétipo suporta buscas simples para todos os sumários de saúde que podem estar contidos dentro de um registro de saúde.</use>
+      <misuse>Não deve ser usado para gravar detalhes sobre uma única consulta clínica, procedimento, teste ou avaliação, etc.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a summary of health information about an individual, representing a subset of their health record at a specified point in time.</purpose>
+      <keywords>summary</keywords>
+      <keywords>synopsis</keywords>
+      <keywords>overview</keywords>
+      <keywords>status</keywords>
+      <use>Use as a generic containter to record a summary or overview of a patient's health and/or welfare status as a snapshot of their health at a specified point in time. &#xD;
+&#xD;
+The author of a health summary is usually a clinician who is familiar with the all of the relevant aspects of the individual's health that is the content of the summary.&#xD;
+&#xD;
+The scope of a health summary can vary in different contexts, ranging from an overview of all key aspects of the individual's health and/or welfare to a summary of information focused on a limited aspect of the individual's health.&#xD;
+&#xD;
+The intended readers of the health summary will vary according to the primary purpose and focus of the summary, and may include:&#xD;
+- any future healthcare providers;&#xD;
+- clinicians who have no personal knowledge of the individual but are required to provide healthcare, such as emergency treatment or when the individual is travelling;&#xD;
+- clinicians managing only specific aspects of the individual's health, such as diabetes or pregnancy; and&#xD;
+- the individual themselves.&#xD;
+&#xD;
+The main Sections/Content component has been deliberately left unconstrained. This will allow it to be populated with any SECTION or ENTRY archetypes appropriate for the clinical purpose within a template. &#xD;
+&#xD;
+Even though clinical content is unconstrained, this archetype supports simple querying for all Health summaries that might be contained within a health record.</use>
+      <misuse>Not to be used to record details about a single clinical consultation, procedure, test or assessment etc.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Para registrar un resumen de información de salud sobre un individuo, que representa un subconjunto de su registro de salud en un momento de tiempo específico.</purpose>
+      <keywords>resumen</keywords>
+      <keywords>sinopsis</keywords>
+      <keywords>revisión</keywords>
+      <keywords>estatus</keywords>
+      <use>Usar como un contenedor genérico para registrar un resumen o revisión de la salud y/o bienestar de un paciente como una instantánea de su salud en un punto especificado en el tiempo.&#xD;
+&#xD;
+El autor de un resumen de salud es normalmente un profesional clínico familiar con todos los aspectos relevantes de la salud del individuo que compone el contenido del informe.&#xD;
+&#xD;
+El alcance de un resumen de salud puede variar en diferentes contextos, extendiéndose desde una revisión de todos los aspectos claves de la salud y/o bienestar del individuo a un resumen de la información focalizada en un aspecto en concreto de la salud del individuo.&#xD;
+&#xD;
+Los destinatarios de un resumen de salud variarán de acuerdo con el propósito principal del resumen, y puede incluir:&#xD;
+- cualquier proveedor de salud futuro del paciente;&#xD;
+- personal clínico que no tengan conocimiento personal del individuo pero tengan que proveer cuidados de salud al mismo, como pueden ser cuidados de urgencias o cuando el individuo se encuentra de viaje:&#xD;
+- personal clínico que gestione solamente aspectos específicos de la salud del individuo, tal como diabetes o embarazos;&#xD;
+- los propios individuos.&#xD;
+&#xD;
+Las secciones y contenidos principales se han dejado deliberadamente sin restringir. Esto permitirá popularlos con cualquier número de arquetipos Sección (SECTION) o Entrada (ENTRY) apropiados para el propósito clínico dentro de una plantilla.&#xD;
+&#xD;
+Incluso si el contenido clínico no se ha restringido, este arquetipo soporta consultas sencillas para obtener todos los resúmenes de salud que puedan estar contenidos dentro de un registro de salud</use>
+      <misuse>No debe ser usado para registrar detalles sobre una única consulta, procedimiento, prueba o evaluación clínica, etc.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Elham Gholami, Erik Sundvall, Hans Natvig, Claudia Ehrentraut, Rikard Lövström, Ann-Sofi Avindell</author>
+    <author id="organisation">Karolinska University Hospital (Region Stockholm), Akademiska sjukhuset (Region Uppsala), Region Uppsala, Akademiska sjukhuset, Cambio Healthcare Systems</author>
+    <author id="email">erik.sundvall@regionstockholm.se, claudia.ehrentraut@regionstockholm.se, hans.natvig@akademiska.se, rikard.lovstrom@regionstockholm.se, ann-sofi.avindell@cambio.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen HF</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Adriana Kitajima, Débora Farage, Fernanda Maia, Laíse Figueiredo, Marivan Abrahão</author>
+    <author id="organisation">Core Consulting</author>
+    <author id="email">contato@coreconsulting.com.br</author>
+    <accreditation>Hospital Alemão Oswaldo Cruz (HAOC)</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Diego Bosca</author>
+    <author id="organisation">VeraTech for Health</author>
+    <author id="email">yampeku@gmail.com</author>
+    <accreditation>English C1, Spanish native</accreditation>
+  </translations>
+  <uid>
+    <value>aab23408-3f8d-4bc8-b214-34af97e9abbd</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-COMPOSITION.health_summary.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>category</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id />
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>defining_code</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_CODE_PHRASE">
+            <rm_type_name>CODE_PHRASE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <terminology_id>
+              <value>openehr</value>
+            </terminology_id>
+            <code_list>433</code_list>
+          </children>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>context</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>EVENT_CONTEXT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id />
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>other_context</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ITEM_TREE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0001</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0002</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>.*</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Health summary</items>
+        <items id="description">Generic document containing a summary of health information about an individual.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Sammendrag av helseinformasjon</items>
+        <items id="description">Generisk dokument som inneholder sammendrag av helseinformasjon om et individ.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som er nødvendig for å registrere lokalt innhold/kontekst, eller for å sammenstille med andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Resumen de salud</items>
+        <items id="description">Documento genérico que contiene un resumen de la información de salud sobre un individuo.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional requerida para capturar contenidos locales o para alinearse con otros modelos de referencia o formalismos.</items>
+        <items id="comment">Por ejemplo: requisitos de información locales o metadatos adicionales necesarios para alinearse con FHIR, CIMI o equivalentes.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Sumário de saúde</items>
+        <items id="description">Documento genérico contendo um sumário das informações de saúde sobre um indivíduo.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais necessárias para capturar o conteúdo local ou para alinhar com outros modelos de referência/ formalismo.</items>
+        <items id="comment">Por exemplo: requisitos de informação local ou metadados adicionais para alinhar com equivalentes FHIR ou CIMI.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Hälsosammanfattning</items>
+        <items id="description">Dokument som innehåller en sammanfattning av hälsoinformation om en individ.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Extension</items>
+        <items id="description">Ytterligare information som krävs för lokal kontext eller anpassning till andra referensmodeller eller formella krav.</items>
+        <items id="comment">Exempelvis lokala informationskrav eller metadata för anpassning till FHIR- eller CIMI-motsvarigheter.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

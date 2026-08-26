@@ -1,0 +1,50 @@
+{
+  "_type": "EHR_STATUS",
+  "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+  "name": {
+    "value": "EHR Status"
+  },
+  "subject": {
+    "external_ref": {
+      "id": {
+        "_type": "GENERIC_ID",
+        "value": "__AUTO-GENRATED-BY-TEST__",
+        "scheme": "id_scheme"
+      },
+      "namespace": "patients",
+      "type": "PERSON"
+    }
+  },
+  "is_modifiable": true,
+  "is_queryable": true,
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+    },
+    "rm_version": "1.2.0"
+  },
+  "other_details": {
+    "_type": "ITEM_TREE",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "other details"
+    },
+    "archetype_node_id": "at0901",
+    "items": [
+      {
+        "_type": "ELEMENT",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "leaf"
+        },
+        "archetype_node_id": "at0902",
+        "value": {
+          "_type": "DV_PARAGRAPH",
+          "items": []
+        }
+      }
+    ]
+  }
+}

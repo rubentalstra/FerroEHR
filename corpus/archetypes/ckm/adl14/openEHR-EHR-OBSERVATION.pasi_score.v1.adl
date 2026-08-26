@@ -1,0 +1,668 @@
+﻿archetype (adl_version=1.4; uid=481f9e14-5908-4cef-9d0c-2d7f5503a0cd)
+	openEHR-EHR-OBSERVATION.pasi_score.v1
+
+concept
+	[at0000]	-- Psoriasis Area Severity Index (PASI)
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke og John Tore Valand, Helse Vest IKT, Hanne Marte Bårholm">
+				["organisation"] = <"Helse Bergen, Helse Vest IKT">
+				["email"] = <"john.tore.valand@helse-bergen.no, john.tore.valand@helse-vest-ikt.no, hanne.marte.sandal.barholm@helse-vest-ikt.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Silje Ljosland Bakke">
+		["organisation"] = <"Helse Bergen HF, Norway">
+		["email"] = <"silje.ljosland.bakke@helse-bergen.no">
+		["date"] = <"2014-02-18">
+	>
+	details = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere resultatene for hver enkelt parameter og deres totale skår for Psoriasis Area Severity Index (PASI).">
+			use = <"Brukes for å registrere resultatene for hver enkelt parameter og deres totale skår for Psoriasis Area Severity Index (PASI).
+
+Per dags dato finnes det ingen validert norsk oversettelse av verktøyet. Man har derfor i arketypen valgt å beholde orginalspråk for alle dataelementene. Om det på et tidspunkt etableres en validert norsk oversettelse, vil arketypen oppdateres med denne.">
+			keywords = <"hud", ...>
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the result for each component parameter and the total score for the Psoriasis Area Severity Index (PASI).">
+			use = <"Use to record the result for each component parameter and the total score for the Psoriasis Area Severity Index (PASI).">
+			keywords = <"skin", ...>
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "SB Bhattacharyya, Bhattacharyyas Clinical Records Research & Informatics LLP, India", "Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Editor)", "Knut Christian Lundekvam, Helse Bergen, hudavdelingen, Norway", "Mikkel Johan Gaup Grønmo, Regional forvaltning EPJ, Helse Nord, Norway (openEHR Editor)", "Evelyn Hovenga, EJSH Consulting, Australia", "Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)", "Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Silje M Solberg, Helse Bergen, Norway", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)", "Mikael Nyström, Cambio Healthcare Systems AB, Sweden", "Bjørn Næss, DIPS ASA, Norway", "Jayashree Panickar, Karolinska Institute, Sweden", "Terje Sagmyr, Helse Vest IKT, Norway (openEHR Editor)", "Norwegian Review Summary, Norwegian Public Hospitals, Norway", "John Tore Valand, Helse Bergen, Norway (openEHR Editor)", "Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Fredriksson T, Pettersson U. Severe psoriasis--oral therapy with a new retinoid . Dermatologica. 1978;157(4):238-44.
+
+Langley RG, Ellis CN. Evaluating psoriasis with Psoriasis Area and Severity Index, Psoriasis Global Assessment, and Lattice System Physician's Global Assessment. J Am Acad Dermatol. 2004 Oct;51(4):563-9.
+
+Bożek A, Reich A. The reliability of three psoriasis assessment tools: Psoriasis area and severity index, body surface area and physician global assessment. Adv Clin Exp Med. 2017 Aug;26(5):851-856.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"6D752470F41534C7963AF47D687C22F6">
+		["build_uid"] = <"57c06ed3-12d2-4b1e-b527-ac0175696aa2">
+		["revision"] = <"1.0.0">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Psoriasis Area Severity Index (PASI)
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									CLUSTER[at0004] occurrences matches {0..1} matches {    -- Head region (h)
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0005] occurrences matches {0..1} matches {    -- Erythema (E)
+												value matches {
+													0|[local::at0006],
+													1|[local::at0007],
+													2|[local::at0008],
+													3|[local::at0009],
+													4|[local::at0010]
+												}
+											}
+											ELEMENT[at0011] occurrences matches {0..1} matches {    -- Infiltration (I)
+												value matches {
+													0|[local::at0012],
+													1|[local::at0013],
+													2|[local::at0014],
+													3|[local::at0015],
+													4|[local::at0016]
+												}
+											}
+											ELEMENT[at0017] occurrences matches {0..1} matches {    -- Desquamation (D)
+												value matches {
+													0|[local::at0018],
+													1|[local::at0019],
+													2|[local::at0020],
+													3|[local::at0021],
+													4|[local::at0022]
+												}
+											}
+											ELEMENT[at0023] occurrences matches {0..1} matches {    -- Body surface area involvement (A)
+												value matches {
+													0|[local::at0024],
+													1|[local::at0025],
+													2|[local::at0026],
+													3|[local::at0027],
+													4|[local::at0028],
+													5|[local::at0029],
+													6|[local::at0030]
+												}
+											}
+											ELEMENT[at0038] occurrences matches {0..1} matches {    -- Score head region
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::380]>
+														list = <
+															["1"] = <
+																units = <"1">
+																magnitude = <|>=0.0|>
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+										}
+									}
+									CLUSTER[at0032] occurrences matches {0..1} matches {    -- Trunk region (t)
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0005] occurrences matches {0..1} matches {    -- Erythema (E)
+												value matches {
+													0|[local::at0006],
+													1|[local::at0007],
+													2|[local::at0008],
+													3|[local::at0009],
+													4|[local::at0010]
+												}
+											}
+											ELEMENT[at0011] occurrences matches {0..1} matches {    -- Infiltration (I)
+												value matches {
+													0|[local::at0012],
+													1|[local::at0013],
+													2|[local::at0014],
+													3|[local::at0015],
+													4|[local::at0016]
+												}
+											}
+											ELEMENT[at0017] occurrences matches {0..1} matches {    -- Desquamation (D)
+												value matches {
+													0|[local::at0018],
+													1|[local::at0019],
+													2|[local::at0020],
+													3|[local::at0021],
+													4|[local::at0022]
+												}
+											}
+											ELEMENT[at0023] occurrences matches {0..1} matches {    -- Body surface area involvement (A)
+												value matches {
+													0|[local::at0024],
+													1|[local::at0025],
+													2|[local::at0026],
+													3|[local::at0027],
+													4|[local::at0028],
+													5|[local::at0029],
+													6|[local::at0030]
+												}
+											}
+											ELEMENT[at0039] occurrences matches {0..1} matches {    -- Score trunk region
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::380]>
+														list = <
+															["1"] = <
+																units = <"1">
+																magnitude = <|>=0.0|>
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+										}
+									}
+									CLUSTER[at0033] occurrences matches {0..1} matches {    -- Upper extremities region (u)
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0005] occurrences matches {0..1} matches {    -- Erythema (E)
+												value matches {
+													0|[local::at0006],
+													1|[local::at0007],
+													2|[local::at0008],
+													3|[local::at0009],
+													4|[local::at0010]
+												}
+											}
+											ELEMENT[at0011] occurrences matches {0..1} matches {    -- Infiltration (I)
+												value matches {
+													0|[local::at0012],
+													1|[local::at0013],
+													2|[local::at0014],
+													3|[local::at0015],
+													4|[local::at0016]
+												}
+											}
+											ELEMENT[at0017] occurrences matches {0..1} matches {    -- Desquamation (D)
+												value matches {
+													0|[local::at0018],
+													1|[local::at0019],
+													2|[local::at0020],
+													3|[local::at0021],
+													4|[local::at0022]
+												}
+											}
+											ELEMENT[at0023] occurrences matches {0..1} matches {    -- Body surface area involvement (A)
+												value matches {
+													0|[local::at0024],
+													1|[local::at0025],
+													2|[local::at0026],
+													3|[local::at0027],
+													4|[local::at0028],
+													5|[local::at0029],
+													6|[local::at0030]
+												}
+											}
+											ELEMENT[at0040] occurrences matches {0..1} matches {    -- Score upper extremities region
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::380]>
+														list = <
+															["1"] = <
+																units = <"1">
+																magnitude = <|>=0.0|>
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+										}
+									}
+									CLUSTER[at0034] occurrences matches {0..1} matches {    -- Lower extremities region (l)
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0005] occurrences matches {0..1} matches {    -- Erythema (E)
+												value matches {
+													0|[local::at0006],
+													1|[local::at0007],
+													2|[local::at0008],
+													3|[local::at0009],
+													4|[local::at0010]
+												}
+											}
+											ELEMENT[at0011] occurrences matches {0..1} matches {    -- Infiltration (I)
+												value matches {
+													0|[local::at0012],
+													1|[local::at0013],
+													2|[local::at0014],
+													3|[local::at0015],
+													4|[local::at0016]
+												}
+											}
+											ELEMENT[at0017] occurrences matches {0..1} matches {    -- Desquamation (D)
+												value matches {
+													0|[local::at0018],
+													1|[local::at0019],
+													2|[local::at0020],
+													3|[local::at0021],
+													4|[local::at0022]
+												}
+											}
+											ELEMENT[at0023] occurrences matches {0..1} matches {    -- Body surface area involvement (A)
+												value matches {
+													0|[local::at0024],
+													1|[local::at0025],
+													2|[local::at0026],
+													3|[local::at0027],
+													4|[local::at0028],
+													5|[local::at0029],
+													6|[local::at0030]
+												}
+											}
+											ELEMENT[at0041] occurrences matches {0..1} matches {    -- Score lower extremities region
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::380]>
+														list = <
+															["1"] = <
+																units = <"1">
+																magnitude = <|>=0.0|>
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+										}
+									}
+									ELEMENT[at0035] occurrences matches {0..1} matches {    -- Total PASI-score
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::380]>
+												list = <
+													["1"] = <
+														units = <"1">
+														magnitude = <|>=0.0|>
+														precision = <|1|>
+													>
+												>
+											>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0036] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0037] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Psoriasis Area Severity Index (PASI)">
+					description = <"A quantitative rating scale for measuring the severity of psoriatic lesions based on area coverage and plaque appearance.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Head region (h)">
+					description = <"">
+				>
+				["at0005"] = <
+					text = <"Erythema (E)">
+					description = <"Assessment of the redness/erythema of the psoriatic plaques.">
+				>
+				["at0006"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Mild">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Severe">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Very severe">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Infiltration (I)">
+					description = <"Assessment of thickening of the psoriatic plaques.">
+				>
+				["at0012"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Mild">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Severe">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Very severe">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Desquamation (D)">
+					description = <"Assessment of scaling of the psoriatic plaques.">
+				>
+				["at0018"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"Mild">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Severe">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Very severe">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"Body surface area involvement (A)">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"No involvement">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"<10%">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"10%-29%">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"30%-49%">
+					description = <"">
+				>
+				["at0028"] = <
+					text = <"50%-69%">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"70%-89%">
+					description = <"">
+				>
+				["at0030"] = <
+					text = <"90%-100%">
+					description = <"">
+				>
+				["at0032"] = <
+					text = <"Trunk region (t)">
+					description = <"">
+				>
+				["at0033"] = <
+					text = <"Upper extremities region (u)">
+					description = <"">
+				>
+				["at0034"] = <
+					text = <"Lower extremities region (l)">
+					description = <"">
+				>
+				["at0035"] = <
+					text = <"Total PASI-score">
+					description = <"The total PASI score.">
+				>
+				["at0036"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0037"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0038"] = <
+					text = <"Score head region">
+					description = <"The total score for the head region.">
+				>
+				["at0039"] = <
+					text = <"Score trunk region">
+					description = <"The total score for the trunk region.">
+				>
+				["at0040"] = <
+					text = <"Score upper extremities region">
+					description = <"The total score for the upper extremities region.">
+				>
+				["at0041"] = <
+					text = <"Score lower extremities region">
+					description = <"The total score for the lower extremities region.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000"] = <
+					text = <"Psoriasis Area Severity Index (PASI)">
+					description = <"Et verktøy for å måle alvorlighetsgrad av psoriasis basert på affisert areal av hud og plakkenes utseende.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Uspesifisert hendelse">
+					description = <"Uspesifisert tidspunkt som kan defineres mer eksplisitt i en templat eller i en applikasjon.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Head region (h)">
+					description = <"">
+				>
+				["at0005"] = <
+					text = <"Erythema (E)">
+					description = <"Assessment of the redness/erythema of the psoriatic plaques.">
+				>
+				["at0006"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Mild">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Severe">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Very severe">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Infiltration (I)">
+					description = <"Assessment of thickening of the psoriatic plaques.">
+				>
+				["at0012"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Mild">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Severe">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Very severe">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Desquamation (D)">
+					description = <"Assessment of scaling of the psoriatic plaques.">
+				>
+				["at0018"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"Mild">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Severe">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Very severe">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"Body surface area involvement (A)">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"No involvement">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"<10%">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"10%-29%">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"30%-49%">
+					description = <"">
+				>
+				["at0028"] = <
+					text = <"50%-69%">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"70%-89%">
+					description = <"">
+				>
+				["at0030"] = <
+					text = <"90%-100%">
+					description = <"">
+				>
+				["at0032"] = <
+					text = <"Trunk region (t)">
+					description = <"">
+				>
+				["at0033"] = <
+					text = <"Upper extremities region (u)">
+					description = <"">
+				>
+				["at0034"] = <
+					text = <"Lower extremities region (l)">
+					description = <"">
+				>
+				["at0035"] = <
+					text = <"Total PASI-score">
+					description = <"The total PASI score.">
+				>
+				["at0036"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0037"] = <
+					text = <"Tilleggsinformasjon">
+					description = <"Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.">
+					comment = <"For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.">
+				>
+				["at0038"] = <
+					text = <"Score head region">
+					description = <"The total score for the head region.">
+				>
+				["at0039"] = <
+					text = <"Score trunk region">
+					description = <"The total score for the trunk region.">
+				>
+				["at0040"] = <
+					text = <"Score upper extremities region">
+					description = <"The total score for the upper extremities region.">
+				>
+				["at0041"] = <
+					text = <"Score lower extremities region">
+					description = <"The total score for the lower extremities region.">
+				>
+			>
+		>
+	>

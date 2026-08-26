@@ -1,0 +1,1292 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.ecg.v1
+
+concept
+	[at0000]	-- ECG recording
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Omer Hotomaroglu">
+		["organisation"] = <"Tepe International">
+		["email"] = <"omermatrix@ada.net.tr">
+		["date"] = <"2007-07-18">
+	>
+	details = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل تفسير تخطيط كهربية القلب عن النشاط الكهربي للقلب باستخدام جهيزة مخطط كهربية القلب.">
+			use = <"يستخدم لتسجيل تفاصيل تخطيط كهربية القلب الذي يستخدم 12 اتجاه بما في ذلك المعايير و التفسير.
+يستخدم لتسجيل تفاصيل اختبارات تخطيط كهربية القلب الذي يتم إجراؤه في أثناء المجهود البدني و الاختبار عند وجود ضغط.">
+			keywords = <"مُخَطَّط كهربية القلب", "عملية تخطيط كهربية القلب", "12 اتجاه">
+			misuse = <"لا يستخدم لتسجيل الاتجهات غير العيارية لتخطيط كهربية القلب.
+لا يستخدم لتسجيل مِرقَب /مِنطَر هولتر.">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the electrocardiographic interpretation of the electrical activity of the heart by an ECG device.">
+			use = <"Use to record details of a standard 12 lead ECG including parameters and interpretation. 
+Use to record details of ECGs performed during exercise conditions and stress testing.">
+			keywords = <"electrocardiograph", "ECG", "EKG", "electrocardiogram", "electrocardiography", "12 lead">
+			misuse = <"Not to be used for recordings with non-standard ECG leads.
+Not to be used for recording Holter monitor results.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Koray Atalag, University of Auckland, New Zealand", "Marja Buur, Medisch Centrum Alkmaar/ Code24, Netherlands", "Tamsin Cockayne, Australia", "Marc Cotran, identity vision systems, Canada", "Sam Heard, Ocean Informatics, Australia", "Eugene Igras, IRIS Systems, Inc., Canada", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Raymond Simkus, Brookswood Family Practice, Canada", "Tim Sturgill, United States">
+	other_details = <
+		["references"] = <"Lead descriptions - http://en.wikipedia.org/wiki/Electrocardiography [accessed 22 February, 2010]">
+		["MD5-CAM-1.0.1"] = <"DFCED3C93DE237C3B8DF90FD6F552C6C">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- ECG recording
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0005] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									CLUSTER[at0006] occurrences matches {0..1} matches {	-- Global ECG Parameters
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0013] occurrences matches {0..1} matches {	-- RR Rate
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::382]>
+														list = <
+															["1"] = <
+																units = <"/min">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0012] occurrences matches {0..1} matches {	-- PR interval
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0014] occurrences matches {0..1} matches {	-- QRS duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0007] occurrences matches {0..1} matches {	-- QT interval
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0008] occurrences matches {0..1} matches {	-- QTc interval
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											CLUSTER[at0023] occurrences matches {0..1} matches {	-- Axis
+												items cardinality matches {1..*; unordered} matches {
+													ELEMENT[at0020] occurrences matches {0..1} matches {	-- P axis
+														value matches {
+															C_DV_QUANTITY <
+																property = <[openehr::497]>
+																list = <
+																	["1"] = <
+																		units = <"°">
+																	>
+																>
+															>
+														}
+													}
+													ELEMENT[at0021] occurrences matches {0..1} matches {	-- QRS axis
+														value matches {
+															C_DV_QUANTITY <
+																property = <[openehr::497]>
+																list = <
+																	["1"] = <
+																		units = <"°">
+																	>
+																>
+															>
+														}
+													}
+													ELEMENT[at0022] occurrences matches {0..1} matches {	-- T axis
+														value matches {
+															C_DV_QUANTITY <
+																property = <[openehr::497]>
+																list = <
+																	["1"] = <
+																		units = <"°">
+																	>
+																>
+															>
+														}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[at0027] occurrences matches {0..12} matches {	-- Per-lead Parameters
+										name matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0029, 	-- Lead I
+													at0030, 	-- Lead II
+													at0031, 	-- Lead III
+													at0032, 	-- Lead aVR
+													at0033, 	-- Lead aVL
+													at0034, 	-- Lead aVF
+													at0035, 	-- Lead V1
+													at0036, 	-- Lead V2
+													at0037, 	-- Lead V3
+													at0038, 	-- Lead V4
+													at0039, 	-- Lead V5
+													at0040]	-- Lead V6
+												}
+											}
+										}
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0041] occurrences matches {0..1} matches {	-- P amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0028] occurrences matches {0..1} matches {	-- P duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0042] occurrences matches {0..1} matches {	-- P area
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::655]>
+														list = <
+															["1"] = <
+																units = <"Ashman units">
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0043] occurrences matches {0..1} matches {	-- P' amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0044] occurrences matches {0..1} matches {	-- P' duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0046] occurrences matches {0..1} matches {	-- P' area
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::655]>
+														list = <
+															["1"] = <
+																units = <"Ashman units">
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0048] occurrences matches {0..1} matches {	-- Q amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0049] occurrences matches {0..1} matches {	-- Q duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0050] occurrences matches {0..1} matches {	-- R amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0051] occurrences matches {0..1} matches {	-- R duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0053] occurrences matches {0..1} matches {	-- S amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0054] occurrences matches {0..1} matches {	-- S duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0055] occurrences matches {0..1} matches {	-- R' amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0056] occurrences matches {0..1} matches {	-- R' duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0057] occurrences matches {0..1} matches {	-- S' amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0058] occurrences matches {0..1} matches {	-- S' duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0059] occurrences matches {0..1} matches {	-- V.A.T.
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0060] occurrences matches {0..1} matches {	-- QRS p-p
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+																magnitude = <|>=0.0|>
+																precision = <|2|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0061] occurrences matches {0..1} matches {	-- QRS duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0062] occurrences matches {0..1} matches {	-- QRS area
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::655]>
+														list = <
+															["1"] = <
+																units = <"Ashman units">
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0063] occurrences matches {0..1} matches {	-- ST onset
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0064] occurrences matches {0..1} matches {	-- ST midpoint
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0065] occurrences matches {0..1} matches {	-- ST 80ms
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0066] occurrences matches {0..1} matches {	-- ST end
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0067] occurrences matches {0..1} matches {	-- ST duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0068] occurrences matches {0..1} matches {	-- ST slope
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::497]>
+														list = <
+															["1"] = <
+																units = <"°">
+																magnitude = <|-90.0..90.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0069] occurrences matches {0..1} matches {	-- ST shape
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0070, 	-- Straight
+															at0071, 	-- Concave upward
+															at0072]	-- Concave downward
+														}
+													}
+												}
+											}
+											ELEMENT[at0073] occurrences matches {0..1} matches {	-- T amplitude
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::374]>
+														list = <
+															["1"] = <
+																units = <"mV">
+																precision = <|2|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0074] occurrences matches {0..1} matches {	-- T duration
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::128]>
+														list = <
+															["1"] = <
+																units = <"millisec">
+																magnitude = <|>=0.0|>
+																precision = <|0|>
+															>
+														>
+													>
+												}
+											}
+											ELEMENT[at0075] occurrences matches {0..1} matches {	-- T area
+												value matches {
+													C_DV_QUANTITY <
+														property = <[openehr::655]>
+														list = <
+															["1"] = <
+																units = <"Ashman units">
+																precision = <|1|>
+															>
+														>
+													>
+												}
+											}
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..*} matches {	-- Automatic interpretation
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0081] occurrences matches {0..*} matches {	-- Overall interpretation
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- ECG Recording
+										value matches {
+											DV_MULTIMEDIA matches {*}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0077] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									allow_archetype CLUSTER[at0080] occurrences matches {0..1} matches {	-- Level of Exertion
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.level_of_exertion(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+									ELEMENT[at0079] occurrences matches {0..1} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0078] occurrences matches {0..1} matches {	-- Tilt
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0003] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0076] occurrences matches {0..1} matches {	-- ECG Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					allow_archetype CLUSTER[at0082] occurrences matches {0..1} matches {	-- ECG Viewer
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {	-- QTc calculation method
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ECG recording">
+					description = <"An electrocardiograph (ECG) is an interpretation of the electrical activity of the heart over time, recorded non-invasively using external skin electrodes.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Any event.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0005"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0006"] = <
+					text = <"Global ECG Parameters">
+					description = <"Details about the entire ECG.">
+				>
+				["at0007"] = <
+					text = <"QT interval">
+					description = <"Interval from the onset of the QRS complex to the end of the T wave.">
+				>
+				["at0008"] = <
+					text = <"QTc interval">
+					description = <"Corrected QT interval.">
+				>
+				["at0009"] = <
+					text = <"Automatic interpretation">
+					description = <"Interpretative comment on this recording originating from the device.">
+				>
+				["at0010"] = <
+					text = <"ECG Recording">
+					description = <"Multimedia representation of the ECG.">
+				>
+				["at0012"] = <
+					text = <"PR interval">
+					description = <"Measured interval from onset of P wave to QRS.">
+				>
+				["at0013"] = <
+					text = <"RR Rate">
+					description = <"Frequency of electrical ventricular contractions (measured from R wave to R wave) and indicative of the mechanical heart rate.">
+				>
+				["at0014"] = <
+					text = <"QRS duration">
+					description = <"QRS complex duration, measured from its onset to
+the ST segment onset (J point).">
+				>
+				["at0020"] = <
+					text = <"P axis">
+					description = <"Average direction of electrical activity during atrial depolarization.">
+				>
+				["at0021"] = <
+					text = <"QRS axis">
+					description = <"Average direction of electrical activity during ventricular depolarization.">
+				>
+				["at0022"] = <
+					text = <"T axis">
+					description = <"Average direction of electrical activity during ventricular repolarization.">
+				>
+				["at0023"] = <
+					text = <"Axis">
+					description = <"Details about the heart's electrical axis i.e. the general direction of the heart's depolarization wavefront.">
+				>
+				["at0025"] = <
+					text = <"QTc calculation method">
+					description = <"Method used to correct QT interval.">
+				>
+				["at0027"] = <
+					text = <"Per-lead Parameters">
+					description = <"Details about measured parameters for each named lead (specified in the run-time name constraint).">
+				>
+				["at0028"] = <
+					text = <"P duration">
+					description = <"Duration of P wave.">
+				>
+				["at0029"] = <
+					text = <"Lead I">
+					description = <"Lead I is the voltage between the (positive) left arm (LA) electrode and right arm (RA) electrode.">
+				>
+				["at0030"] = <
+					text = <"Lead II">
+					description = <"Lead II is the voltage between the (positive) left leg (LL) electrode and the right arm (RA) electrode.">
+				>
+				["at0031"] = <
+					text = <"Lead III">
+					description = <"Lead III is the voltage between the (positive) left leg (LL) electrode and the left arm (LA) electrode.">
+				>
+				["at0032"] = <
+					text = <"Lead aVR">
+					description = <"Lead augmented vector right (aVR) has the positive electrode (white) on the right arm. The negative electrode is a combination of the left arm (black) electrode and the left leg (red) electrode, which \"augments\" the signal strength of the positive electrode on the right arm.">
+				>
+				["at0033"] = <
+					text = <"Lead aVL">
+					description = <"Lead augmented vector left (aVL) has the positive (black) electrode on the left arm. The negative electrode is a combination of the right arm (white) electrode and the left leg (red) electrode, which \"augments\" the signal strength of the positive electrode on the left arm.">
+				>
+				["at0034"] = <
+					text = <"Lead aVF">
+					description = <"Lead augmented vector foot (aVF) has the positive (red) electrode on the left leg. The negative electrode is a combination of the right arm (white) electrode and the left arm (black) electrode, which \"augments\" the signal of the positive electrode on the left leg.">
+				>
+				["at0035"] = <
+					text = <"Lead V1">
+					description = <"Lead V1 is a precordial lead, placed in the fourth intercostal space (between ribs 4 & 5) just to the right of the sternum (breastbone).">
+				>
+				["at0036"] = <
+					text = <"Lead V2">
+					description = <"Lead V2 is a precordial lead, placed in the fourth intercostal space (between ribs 4 & 5) just to the left of the sternum.">
+				>
+				["at0037"] = <
+					text = <"Lead V3">
+					description = <"Lead V3 is a precordial lead, placed in between leads V2 and V4.">
+				>
+				["at0038"] = <
+					text = <"Lead V4">
+					description = <"Lead V4 is a precordial lead, placed in the fifth intercostal space (between ribs 5 & 6) in the mid-clavicular line (the imaginary line that extends down from the midpoint of the clavicle (collarbone).">
+				>
+				["at0039"] = <
+					text = <"Lead V5">
+					description = <"Lead V5 is a precordial lead, placed horizontally even with V4, but in the anterior axillary line. (The anterior axillary line is the imaginary line that runs down from the point midway between the middle of the clavicle and the lateral end of the clavicle; the lateral end of the collarbone is the end closer to the arm).">
+				>
+				["at0040"] = <
+					text = <"Lead V6">
+					description = <"Lead V6 is a precordial lead, placed horizontally even with V4 and V5 in the midaxillary line. (The midaxillary line is the imaginary line that extends down from the middle of the patient's armpit).">
+				>
+				["at0041"] = <
+					text = <"P amplitude">
+					description = <"P wave amplitude.">
+				>
+				["at0042"] = <
+					text = <"P area">
+					description = <"P wave area for monophasic P waves or the area of the initial portion of a biphasic P wave.">
+				>
+				["at0043"] = <
+					text = <"P' amplitude">
+					description = <"Amplitude of P' wave.">
+				>
+				["at0044"] = <
+					text = <"P' duration">
+					description = <"Duration of P' wave.">
+				>
+				["at0046"] = <
+					text = <"P' area">
+					description = <"Area of the terminal portion of a biphasic P wave.">
+				>
+				["at0048"] = <
+					text = <"Q amplitude">
+					description = <"Q wave amplitude.">
+				>
+				["at0049"] = <
+					text = <"Q duration">
+					description = <"Q wave duration.">
+				>
+				["at0050"] = <
+					text = <"R amplitude">
+					description = <"R wave amplitude.">
+				>
+				["at0051"] = <
+					text = <"R duration">
+					description = <"R wave duration.">
+				>
+				["at0053"] = <
+					text = <"S amplitude">
+					description = <"S wave amplitude.">
+				>
+				["at0054"] = <
+					text = <"S duration">
+					description = <"S wave duration.">
+				>
+				["at0055"] = <
+					text = <"R' amplitude">
+					description = <"R' wave amplitude.">
+				>
+				["at0056"] = <
+					text = <"R' duration">
+					description = <"R' wave duration.">
+				>
+				["at0057"] = <
+					text = <"S' amplitude">
+					description = <"S' wave amplitude.">
+				>
+				["at0058"] = <
+					text = <"S' duration">
+					description = <"S' wave duration.">
+				>
+				["at0059"] = <
+					text = <"V.A.T.">
+					description = <"Ventricular Activation Time is the interval from the onset of the QRS complex to the latest positive peak in the complex, or the latest substantial notch on the latest peak (whichever is later).">
+				>
+				["at0060"] = <
+					text = <"QRS p-p">
+					description = <"Peak-to-peak QRS complex amplitude.">
+				>
+				["at0061"] = <
+					text = <"QRS duration">
+					description = <"QRS complex duration, measured from its onset to the ST segment onset (J point).">
+				>
+				["at0062"] = <
+					text = <"QRS area">
+					description = <"The area of the QRS complex.">
+				>
+				["at0063"] = <
+					text = <"ST onset">
+					description = <"Elevation or depression at the onset (J point) of the ST segment.">
+				>
+				["at0064"] = <
+					text = <"ST midpoint">
+					description = <"Elevation or depression at the midpoint of the ST segment.">
+				>
+				["at0065"] = <
+					text = <"ST 80ms">
+					description = <"Elevation or depression of the ST segment 80 ms after the end of the QRS complex (J point).">
+				>
+				["at0066"] = <
+					text = <"ST end">
+					description = <"Elevation or depression at the end of the ST segment.">
+				>
+				["at0067"] = <
+					text = <"ST duration">
+					description = <"ST segment duration.">
+				>
+				["at0068"] = <
+					text = <"ST slope">
+					description = <"ST segment slope. Slope is measured in degrees for 25 mm/sec, 1mV/cm scaling.">
+				>
+				["at0069"] = <
+					text = <"ST shape">
+					description = <"The ST segment shape.">
+				>
+				["at0070"] = <
+					text = <"Straight">
+					description = <"The ST segment is straight.">
+				>
+				["at0071"] = <
+					text = <"Concave upward">
+					description = <"The ST segment is concave upward.">
+				>
+				["at0072"] = <
+					text = <"Concave downward">
+					description = <"The ST segment is concave downward.">
+				>
+				["at0073"] = <
+					text = <"T amplitude">
+					description = <"T wave amplitude.">
+				>
+				["at0074"] = <
+					text = <"T duration">
+					description = <"T wave duration.">
+				>
+				["at0075"] = <
+					text = <"T area">
+					description = <"The area of T wave.">
+				>
+				["at0076"] = <
+					text = <"ECG Device">
+					description = <"Details about the electrocardiograph device used to record the ECG.">
+				>
+				["at0077"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0078"] = <
+					text = <"Tilt">
+					description = <"The craniocaudal tilt of the surface on which the person is lying at the time of ECG recording.">
+				>
+				["at0079"] = <
+					text = <"Confounding factors">
+					description = <"Comment on and record other incidental factors that may be contributing to ECG recording.">
+				>
+				["at0080"] = <
+					text = <"Level of Exertion">
+					description = <"Details about physical activity undertaken at the time of ECG recording.">
+				>
+				["at0081"] = <
+					text = <"Overall interpretation">
+					description = <"An overall interpretative comment on this recording.">
+				>
+				["at0082"] = <
+					text = <"ECG Viewer">
+					description = <"Details of device used to view the ECG output.">
+				>
+			>
+		>
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"تسجيل تخطيط كهربية القلب">
+					description = <"مخطط كهربية القلب هو تفسير للنشاط الكهربي للقلب عبر الوقت, يتم تسجيله بشكل غير باضع باستخدام مساري/كهارب جلدية خارجية.">
+				>
+				["at0001"] = <
+					text = <"*Event Series(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"إحدى الوقائع">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0005"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0006"] = <
+					text = <"المعايير الشاملة لتخطيط كهربية القلب">
+					description = <"تفاصيل حول إجمالي تخطيط كهربية القلب">
+				>
+				["at0007"] = <
+					text = <"الفترة الفاصلة بين Q و T">
+					description = <"الفترة الفاصلة بين بداية مركب  
+QRS
+إلى نهاية موجة 
+T">
+				>
+				["at0008"] = <
+					text = <"الفترة الفاصلة المُصَحَّحَة بين الموجات Q و T">
+					description = <"الفترة الفاصلة المُصَحَّحَة بين الموجات Q و T">
+				>
+				["at0009"] = <
+					text = <"تفسير أوتوماتيكي - تلقائي">
+					description = <"تعليق تفسيري عن هذا التسجيل ينبع من الجهيزة.">
+				>
+				["at0010"] = <
+					text = <"تسجيل تخطيط كهربية القلب">
+					description = <"تمثيل باستخدام الوسائط المتعددة لتخطيط كهربية القلب.">
+				>
+				["at0012"] = <
+					text = <"الفترة الفاصلة بين موجة R و موجة P">
+					description = <"يتم قياس الفترة الفاصلة من بداية موجة
+P
+إلى موجات 
+ORS">
+				>
+				["at0013"] = <
+					text = <"معدل الموجات RR">
+					description = <"تكرار الانقباضات العمودية الكهربية (التي يتم قياسها بين موجة 
+R
+و التي تليها) و هو يشير إلى معدل القلب الحركي.">
+				>
+				["at0014"] = <
+					text = <"فترة الموجات QRS">
+					description = <"فترة مُرَكَّب 
+QRS
+يتم قياسها من بدايتها إلى بداية قطعة 
+ST
+و التي تعرف بنقطة 
+J">
+				>
+				["at0020"] = <
+					text = <"محور P">
+					description = <"متوسط اتجاه النشاط الكهربي خلال زوال استقطاب أذين القلب">
+				>
+				["at0021"] = <
+					text = <"محور QRS">
+					description = <"متوسط اتجاه النشاط الكهربي في أثناء زوال استقطاب بطين القلب">
+				>
+				["at0022"] = <
+					text = <"محور T">
+					description = <"متوسط اتجاه النشاط الكهربي في أثناء عودة استقطاب بطين القلب">
+				>
+				["at0023"] = <
+					text = <"المحور">
+					description = <"تفاصيل حول المحور الكهربي للقلب, بمعني الاتجاه العام لمقدمة موجة زوال استقطاب القلب">
+				>
+				["at0025"] = <
+					text = <"طريقة حساب الفترة الفاصلة المُصَحَّحَة بين الموجات Q و T">
+					description = <"الطريقة المستخدمة لتصحيح الفترة الزمنية بين الموجات
+Q
+و 
+T">
+				>
+				["at0027"] = <
+					text = <"المعايير الخاصة بكل اتجاه">
+					description = <"تفاصيل حول المعايير المقاسة لكل اتجاه بعينه - يتم تحديدها باسم مخصص أثناء القياس">
+				>
+				["at0028"] = <
+					text = <"مدة الموجة P">
+					description = <"مدة الموجة
+P">
+				>
+				["at0029"] = <
+					text = <"الاتجاه I">
+					description = <"الاتجاه 
+I
+هو الفولطاج (الفولطية) بين الكهربي/ المسرى الموجب للذراع الأيسر و كهربي / مسرى الذراع الأيمن">
+				>
+				["at0030"] = <
+					text = <"الاتجاه II">
+					description = <"الاتجاه 
+II
+هو الفولطاج (الفولطية) بين الكهربي/ المسرى الموجب للرجل اليسرى و كهربي / مسرى الرجل اليمنى">
+				>
+				["at0031"] = <
+					text = <"الاتجاه III">
+					description = <"الاتجاه
+III
+هو الفولطاج (الفولطية) بين الكهربي/ المسرى الموجب للرجل اليسرى و كهربي / مسرى الذراع اليسرى">
+				>
+				["at0032"] = <
+					text = <"اتجاه الذراع اليمنى">
+					description = <"اتجاه المُتَّجَه الأيمن المُزاد عند وجود المسرى/ الكهربي الأبيض على الذراع الأيمن.
+الكهربي/ المسرى السلبي هو مجموعة من الكهربي/ المسرى (الأسود) للذراع الأيسر, و الكهربي/ المسرى (الأحمر) للرجل اليسرى, و الذين يزيدان قوة الشارة الخاصة بالكهربي الموجب الموجود على الذراع الأيمن.">
+				>
+				["at0033"] = <
+					text = <"اتجاه الذراع اليسرى">
+					description = <"اتجاه المُتَّجَه الأيسر المُزاد عند وجود المسرى/ الكهربي الأسود على الذراع الأيسر.
+الكهربي/ المسرى السلبي هو مجموعة من الكهربي/ المسرى (الأبيض) للذراع الأيمن, و الكهربي/ المسرى (الأحمر) للرجل اليسرى, و الذين يزيدان قوة الشارة الخاصة بالكهربي الموجب الموجود على الذراع الأيسر.">
+				>
+				["at0034"] = <
+					text = <"اتجاه الساق اليسرى">
+					description = <"اتجاه المُتَّجَه الأيمن المُزاد عند وجود المسرى/ الكهربي الأبيض على الرجل اليسرى.
+الكهربي/ المسرى الأيسر هو مجموعة من الكهربي/ المسرى (الأبيض) للذراع الأيمن, و الكهربي/ المسرى (الأسود) للذراع الأيسر, و الذين يزيدان قوة الشارة الخاصة بالكهربي الموجب الموجود على الرجل اليسرى.">
+				>
+				["at0035"] = <
+					text = <"الاتجاه الصدري المتباعد 1">
+					description = <"الاتجاه الصدري المتباعد 1 هو اتجاه بَرْكي, يتم وضعه على الفراغ الوَرْبي (بين الأضلاع) الرابع (بين الأضلاع 4 و 5) عند الجزء الأيمن من عظمة القَصّ - عظمة الثدي.">
+				>
+				["at0036"] = <
+					text = <"الاتجاه الصدري المتباعد 2">
+					description = <"الاتجاه الصدري المتباعد 2 هو اتجاه بَرْكي, يتم وضعه على الفراغ الوَرْبي (بين الأضلاع) الرابع (بين الأضلاع 4 و 5) عند الجزء الأيسر من عظمة القَصّ - عظمة الثدي.">
+				>
+				["at0037"] = <
+					text = <"الاتجاه الصدري المتباعد 3">
+					description = <"الاتجاه الصدري المتباعد 3 هو اتجاه بَرْكي, يتم وضعه بين الاتجاهات الصدرية المتباعدة رقم 2 و 4 ">
+				>
+				["at0038"] = <
+					text = <"الاتجاه الصدري المتباعد 4">
+					description = <"الاتجاه الصدري المتباعد 4 هو اتجاه بَرْكي, يتم وضعه على الفراغ الوَرْبي (بين الأضلاع) الخامس (بين الأضلاع 5 و 6) عند الخط المُنَصِّف للترقوة - الخط التخيلي الذي يمتد من منتصف عظمة الترقوة باتجاه الأسفل">
+				>
+				["at0039"] = <
+					text = <"الاتجاه الصدري المتباعد 5">
+					description = <" الاتجاه الصدري المتباعد 5 هو اتجاه بَرْكي, يتم وضعه أفقيا على نفس الخط مع الاتجاه 4, و لكن على الخط الإبطي الأمامي. الخط الإبطي الأمامي هو الخط التخيلي الذي يتجه من النقطة المتوسطة بين منتصف الترقوة و النهاية الطرفية للترقوة باتجاه الأسفل, النهاية الطرفية للترقوة هي النهاية الأقرب إلى الذراع.">
+				>
+				["at0040"] = <
+					text = <"الاتجاه الصدري المتباعد 6">
+					description = <" الاتجاه الصدري المتباعد 6 هو اتجاه بَرْكي, يتم وضعه أفقيا على نفس الخط مع الاتجاه 4, و لكن على الخط المنَصِّف للإبط. الخط المُنَصِّف للإبط هو خط تخيلي يمتد من منتصف إبط المريض باتجاه الأسفل.">
+				>
+				["at0041"] = <
+					text = <"مدى الموجة P">
+					description = <"مدى الموجة 
+P">
+				>
+				["at0042"] = <
+					text = <" P الباحة">
+					description = <"باحة الموجة 
+P
+للموجات أحادية الطور أو منطقة الجزء المبدئي من موجة 
+P
+ثنائية الأطوار.">
+				>
+				["at0043"] = <
+					text = <" P' مدى الموجة ">
+					description = <" P' مدى الموجة ">
+				>
+				["at0044"] = <
+					text = <" P' مدة الموجة ">
+					description = <" P' مدة الموجة ">
+				>
+				["at0046"] = <
+					text = <" P' باحة">
+					description = <"الباحة من الجزء النهائي لموجة 
+P
+ثنائية الأطوار.">
+				>
+				["at0048"] = <
+					text = <"Q مدى الموجة ">
+					description = <"Q مدى الموجة ">
+				>
+				["at0049"] = <
+					text = <" Q مدة الموجة ">
+					description = <" Q مدة الموجة ">
+				>
+				["at0050"] = <
+					text = <"R مدى الموجة ">
+					description = <"R مدى الموجة ">
+				>
+				["at0051"] = <
+					text = <"R مدة الموجة ">
+					description = <" R مدة الموجة ">
+				>
+				["at0053"] = <
+					text = <"S مدى الموجة ">
+					description = <"S مدى الموجة ">
+				>
+				["at0054"] = <
+					text = <"S مدة الموجة ">
+					description = <"S مدة الموجة ">
+				>
+				["at0055"] = <
+					text = <"R' مدى الموجة ">
+					description = <"R' مدى الموجة ">
+				>
+				["at0056"] = <
+					text = <"R' مدة الموجة ">
+					description = <"R' مدة الموجة ">
+				>
+				["at0057"] = <
+					text = <"S' مدى الموجة ">
+					description = <"S' مدى الموجة ">
+				>
+				["at0058"] = <
+					text = <"S' مدة الموجة ">
+					description = <"S' مدة الموجة ">
+				>
+				["at0059"] = <
+					text = <"وقت تنشيط البطين">
+					description = <"الوقت المستغرق لتنشيط بطين القلب, و هو الفترة الفاصلة بين بداية مركب الـ
+QRS
+إلى آخر ذروة موجبة في المركب, أو آخر ثُلمَة جوهرية في آخر ذروة - أيهما كان الأخير">
+				>
+				["at0060"] = <
+					text = <"مدى مركب QRS من القمة إلى القمة">
+					description = <"مدى مركب 
+QRS
+ من القمة إلى القمة
+">
+				>
+				["at0061"] = <
+					text = <"مدة المركب QRS">
+					description = <"مدة المركب
+QRS
+و التي يتم قياسها من بدايتها إلى بداية قطعة 
+ST
+أو نقطة 
+J">
+				>
+				["at0062"] = <
+					text = <"QRS باحة ">
+					description = <"باحة المركب 
+QRS">
+				>
+				["at0063"] = <
+					text = <"ST بداية ">
+					description = <"الارتفاع أو الانخفاض في بداية القطعة 
+ST
+- النقطة
+J">
+				>
+				["at0064"] = <
+					text = <"النقطة المتوسطة في ST">
+					description = <"الارتفاع أو الانخفاض في النقطة المتوسطة من القطعة 
+ST">
+				>
+				["at0065"] = <
+					text = <"ST 80 ميللي ثانية">
+					description = <"الارتفاع أو الانخفاض في قطعة 
+ST
+بعد انتهاء المركب 
+QRS
+أو النقطة 
+J
+بفترة 
+80 ميللي ثانية">
+				>
+				["at0066"] = <
+					text = <"ST نهاية ">
+					description = <"الارتفاع أو الانخفاض عند نهاية القطعة 
+ST">
+				>
+				["at0067"] = <
+					text = <"مدة القطعة ST">
+					description = <"مدة القطعة ST">
+				>
+				["at0068"] = <
+					text = <"منحدَر ST">
+					description = <"منحدر قطعة 
+ST.
+يتم قياس المنحدر بدرجات على تدريج / سلم من 25 ميلليميتر لكل ثانية, و 1 ميللي فولت لكل سنتيمتر ">
+				>
+				["at0069"] = <
+					text = <" شكل القطعة ST">
+					description = <"شكل القطعة 
+ST">
+				>
+				["at0070"] = <
+					text = <"مستقيم">
+					description = <"*">
+				>
+				["at0071"] = <
+					text = <"مُقعَّر متجه لأعلى">
+					description = <"*">
+				>
+				["at0072"] = <
+					text = <"مُقعَّر متجه إلى الأسفل">
+					description = <"*">
+				>
+				["at0073"] = <
+					text = <" Tمدى الموجة ">
+					description = <"مدى الموجة 
+T">
+				>
+				["at0074"] = <
+					text = <" T مدة الموجة ">
+					description = <" T مدة الموجة ">
+				>
+				["at0075"] = <
+					text = <" T باحة الموجة ">
+					description = <" T باحة الموجة ">
+				>
+				["at0076"] = <
+					text = <"جهيزة تخطيط كهربية عضلة القلب">
+					description = <"تفاصيل حول جهيزة تخطيط كهربية عضلة القلب المستخدم للحصول على مخطط عضلة القلب.">
+				>
+				["at0077"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0078"] = <
+					text = <"الإمالة - الانحناءة">
+					description = <"الانحناءة / الإمالة الرأسية الذنبية للسطح الذي يستلقي عليه المريض في وقت إجراء تسجيل مخطط كهربية عضلة القلب.">
+				>
+				["at0079"] = <
+					text = <"العوامل المربكة">
+					description = <"تعليق حول و تسجيل للعوامل الطارئة التي قد تؤثر في تسجيل تخطيط كهربية عضلة القلب.">
+				>
+				["at0080"] = <
+					text = <"مستوى المجهود">
+					description = <"تفاصيل حول النشاط البدني الذي يتم إجراؤه في وقت تسجيل تخطيط كهربية القلب.">
+				>
+				["at0081"] = <
+					text = <"التفسير الإجمالي">
+					description = <"تعليق تفسيري إجمالي عن هذا التسجيل">
+				>
+				["at0082"] = <
+					text = <"عارض مخطط كهربية عضلة القلب">
+					description = <"تفاصيل حول الجهيزة المستخدمة لعرض ناتج تخطيط كهربية عضلة القلب.">
+				>
+			>
+		>
+	>

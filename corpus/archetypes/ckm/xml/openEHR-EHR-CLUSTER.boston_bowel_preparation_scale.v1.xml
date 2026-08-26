@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-10-26</original_author>
+    <original_author id="name">Bjørn Næss</original_author>
+    <original_author id="organisation">DIPS AS</original_author>
+    <original_author id="email">bna@dips.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Kåre Flø, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse-Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Geir Hoff, Sykehuset Telemark HF, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Morten Hørthe &lt;mho@dips.no&gt;</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Frode Stenvik, Helse Sør-Øst, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Pencho Tonchev, Medical University- Pleven, Bulgaria</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Lai, Edwin J., mfl. «The Boston Bowel Preparation Scale: A Valid and Reliable Instrument for Colonoscopy-Oriented Research». Gastrointestinal Endoscopy, bd. 69, nr. 3 Pt 2, mars 2009, s. 620–25. PubMed, doi:10.1016/j.gie.2008.05.057.&#xD;
+&#xD;
+Chaves Marques S: «The Boston Bowel Preparation Scale: Is It Already Being Used?» GE Port J Gastroenterol 2018;25:219-221. doi: 10.1159/000486805.&#xD;
+&#xD;
+Kreftregisteret, Tilbakemeldingsskjema, koloskopi, del 2, (Versjon 081215). https://www.kreftregisteret.no/globalassets/arkiv/gastronet-apent/skjema_koloskopi_versjon_38-060416.pdf. Accessed 27 Nov. 2020. Norwegian translation.&#xD;
+&#xD;
+An instructional video demonstrating how to use the BBPS is available online at “Gastroenterology Research.” Boston Medical Center, 7 July 2016, https://www.bmc.org/gastroenterology/research.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">129AD85D27161085BDD70B85518DE28A</other_details>
+    <other_details id="build_uid">2ae59789-64a7-4ffb-9537-d7f50a8a3a94</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>Brukes for å registrere tarmtømmingsgrad under koloskopi.</purpose>
+      <keywords>koloskopi, klyster, bbps, tarmtømming</keywords>
+      <use>Brukes for å registrere tarmtømmingsgrad under koloskopi.&#xD;
+&#xD;
+Null-verdien "Not applicable" kan benyttes av programvaren dersom bruker har behov for å markere for at det ikke er mulig å oppgi en verdi i ett eller flere av de ulike dataelementene. Det kan skyldes for eksempel at et segment av kolon er fjernet kirurgisk, eller av årsaker som ikke er knyttet til forberedelsene til undersøkelsen. Dette kan for eksempel være tekniske utfordringer, eller ustabil pasient.&#xD;
+&#xD;
+&#xD;
+&#xD;
+</use>
+      <misuse />
+      <copyright>© Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the quality of bowel cleanliness during colonoscopy.</purpose>
+      <keywords>colonoscopy, enema, bbps</keywords>
+      <use>Use to record the quality of bowel cleanliness during colonoscopy.&#xD;
+&#xD;
+If a segment of the colon is surgically absent or not seen for reasons unrelated to bowel preparation,&#xD;
+such as technical difficulties or patient instability, use a null flavour for 'Not applicable' for each relevant data element.</use>
+      <misuse />
+      <copyright>© Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand og Mikkel Gaup Grønmo</author>
+    <author id="organisation">Helse Bergen HF og Helse Nord RHF</author>
+    <author id="email">john.tore.valand@helse-bergen.no</author>
+  </translations>
+  <uid>
+    <value>17fdaefa-0ec3-48d0-8b07-97d6ee841168</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.boston_bowel_preparation_scale.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>9</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Boston Bowel Preparation Skala</items>
+        <items id="description">En skår for å vurdere og dokumentere tarmtømmingsgrad under koloskopi.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Høyre kolon</items>
+        <items id="description">Inkluderer coecum og ascendens.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Mucosa ikke sett</items>
+        <items id="description">Fast avføring tilstede.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Mucosa delvis sett</items>
+        <items id="description">Farget væske og avføringsrester tilstede.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Mucosa godt visualisert</items>
+        <items id="description">Små mengder farget væske eller avføring.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Mucosa komplett visualisert</items>
+        <items id="description">Ingen farget væske eller avføring.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Totalskår</items>
+        <items id="description">Summen av de de tre parameterne i Boston bowel preparation skala.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Transversum</items>
+        <items id="description">Inkluderer høyre og venstre fleksur.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Venstre kolon</items>
+        <items id="description">Descendens, sigmoideum og rektum.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Boston Bowel Preparation Scale</items>
+        <items id="description">An assessment score used to record the quality of bowel cleanliness during colonoscopy.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Right colon</items>
+        <items id="description">Including the cecum and ascending colon.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Unprepared colon segment with mucosa not seen.</items>
+        <items id="description">Because of solid stool that cannot be cleared.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Portion of mucosa of the colon segment seen.</items>
+        <items id="description">Other areas of the colon segment are not well seen because of staining, residual stool, and/or opaque liquid.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Mucosa of colon segment seen well.</items>
+        <items id="description">Minor amount of residual staining, small fragments of stool and/or opaque liquid.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Entire mucosa of colon segment seen well.</items>
+        <items id="description">No residual staining, small fragments of stool, or opaque liquid.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Total score</items>
+        <items id="description">The total sum of each component parameter for the Boston bowel preparation scale.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Transverse</items>
+        <items id="description">Including the hepatic and splenic flexures.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Left colon</items>
+        <items id="description">Including the descending colon, sigmoid colon and rectum.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0000">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>722818007</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

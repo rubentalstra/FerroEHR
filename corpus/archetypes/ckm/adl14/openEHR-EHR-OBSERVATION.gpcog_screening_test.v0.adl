@@ -1,0 +1,506 @@
+﻿archetype (adl_version=1.4; uid=77c0c862-981a-4d0a-830e-c8a745157086)
+	openEHR-EHR-OBSERVATION.gpcog_screening_test.v0
+
+concept
+	[at0000]	-- GPCOG screening test
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Hildegard Franke">
+		["organisation"] = <"freshEHR Clinical Informatics Ltd.">
+		["email"] = <"hildi@freshehr.com">
+		["date"] = <"2016-06-13">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Recording of the General Practitioner Assessment of Cognition (GPCOG) screening test.
+This test was designed as a GP screening tool for dementia. There are two components: a cognitive assessment conducted with the patient, and an informant questionnaire (only considered necessary if the results of the cognitive section are equivocal, i.e. score 5-8 inclusive). 
+Results > 8 or < 5 on the GPCOG patient section were assumed to be cognitively intact or impaired, respectively
+For patients requiring a informant questionnaire, scores of 3 or less out of 6 in this section indicates cognitive impairment.">
+			use = <"To record the results of the General Practitioner Assessment of Cognition (GPCOG) screening test.">
+			keywords = <"GPCOG", "screening", "dementia", "cognitive", "impairment">
+			misuse = <"">
+			copyright = <"© Clinical Models UK">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"UK Clinical Models">
+		["references"] = <"Dementia Partnerships: http://www.dementiapartnerships.org.uk/archive/primary-care/primarycaretoolkit/3-improving-diagnosis/cognitive-assessment-tools/ [cited 13-Jun-2016].">
+		["current_contact"] = <"Hildegard Franke, freshEHR Clinical Informatics Ltd.<hildi@freshehr.com>">
+		["original_namespace"] = <"uk.org.clinicalmodels">
+		["original_publisher"] = <"UK Clinical Models">
+		["custodian_namespace"] = <"uk.org.clinicalmodels">
+		["MD5-CAM-1.0.1"] = <"541EFF994F69A7ED42E543C62C75E494">
+		["build_uid"] = <"54130a8b-5ae5-4a7f-9d32-ad29086b74c0">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- GPCOG screening test
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {	-- Point in time
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									CLUSTER[at0038] occurrences matches {0..1} matches {	-- Step 1: patient examination
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0008] occurrences matches {0..1} matches {	-- Time orientation
+												value matches {
+													0|[local::at0009], 	-- Incorrect
+													1|[local::at0010]  	-- Correct
+												}
+											}
+											ELEMENT[at0014] occurrences matches {0..1} matches {	-- Clock drawing - specific time
+												value matches {
+													0|[local::at0015], 	-- Incorrect
+													1|[local::at0016]  	-- Correct
+												}
+											}
+											ELEMENT[at0011] occurrences matches {0..1} matches {	-- Clock drawing - all numbers
+												value matches {
+													0|[local::at0012], 	-- Incorrect
+													1|[local::at0013]  	-- Correct
+												}
+											}
+											ELEMENT[at0017] occurrences matches {0..1} matches {	-- Information
+												value matches {
+													0|[local::at0018], 	-- Incorrect
+													1|[local::at0019]  	-- Correct
+												}
+											}
+											ELEMENT[at0020] occurrences matches {0..1} matches {	-- Recall first name
+												value matches {
+													0|[local::at0021], 	-- Incorrect
+													1|[local::at0022]  	-- Correct
+												}
+											}
+											ELEMENT[at0023] occurrences matches {0..1} matches {	-- Recall surname
+												value matches {
+													0|[local::at0024], 	-- Incorrect
+													1|[local::at0025]  	-- Correct
+												}
+											}
+											ELEMENT[at0027] occurrences matches {0..1} matches {	-- Recall house number
+												value matches {
+													0|[local::at0028], 	-- Incorrect
+													1|[local::at0029]  	-- Correct
+												}
+											}
+											ELEMENT[at0030] occurrences matches {0..1} matches {	-- Recall street name
+												value matches {
+													0|[local::at0031], 	-- Incorrect
+													1|[local::at0032]  	-- Correct
+												}
+											}
+											ELEMENT[at0033] occurrences matches {0..1} matches {	-- Recall locality or town
+												value matches {
+													0|[local::at0034], 	-- Incorrect
+													1|[local::at0035]  	-- Correct
+												}
+											}
+											ELEMENT[at0036] occurrences matches {0..1} matches {	-- Total score
+												value matches {
+													DV_COUNT matches {
+														magnitude matches {|0..9|}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[at0039] occurrences matches {0..1} matches {	-- Step 2: informant interview
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0037] occurrences matches {0..1} matches {	-- Trouble remembering
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0040, 	-- Yes
+															at0041, 	-- No
+															at0042]	-- Don't know
+														}
+													}
+												}
+											}
+											ELEMENT[at0043] occurrences matches {0..1} matches {	-- Trouble recalling conversations
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0044, 	-- Yes
+															at0045, 	-- No
+															at0046]	-- Don't know
+														}
+													}
+												}
+											}
+											ELEMENT[at0047] occurrences matches {0..1} matches {	-- Difficulty finding right words or using wrong words
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0048, 	-- Yes
+															at0049, 	-- No
+															at0050]	-- Don't know
+														}
+													}
+												}
+											}
+											ELEMENT[at0051] occurrences matches {0..1} matches {	-- Less able to manage money
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0052, 	-- Yes
+															at0053, 	-- No
+															at0054, 	-- Don't know
+															at0055]	-- Not applicable
+														}
+													}
+												}
+											}
+											ELEMENT[at0056] occurrences matches {0..1} matches {	-- Less able to manage medication
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0057, 	-- Yes
+															at0058, 	-- No
+															at0059, 	-- Don't know
+															at0060]	-- Not applicable
+														}
+													}
+												}
+											}
+											ELEMENT[at0061] occurrences matches {0..1} matches {	-- Needs more assistance with transport
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0062, 	-- Yes
+															at0063, 	-- No
+															at0064, 	-- Don't know
+															at0065]	-- Not applicable
+														}
+													}
+												}
+											}
+											ELEMENT[at0066] occurrences matches {0..1} matches {	-- Total score
+												value matches {
+													DV_COUNT matches {
+														magnitude matches {|0..6|}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0004] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0005] occurrences matches {0..*} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0006] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0007] occurrences matches {0..*} matches {	-- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"GPCOG screening test">
+					description = <"The General Practitioner Assessment of Cognition (GPCOG) screening test.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Point in time">
+					description = <"A specific date and/or time which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0005"] = <
+					text = <"Confounding factors">
+					description = <"Narrative record of factors that may have contributed to the score.">
+				>
+				["at0006"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0007"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+				["at0008"] = <
+					text = <"Time orientation">
+					description = <"Statement whether the patient gives a correct or incorrect answer when asked to give the exact date today.">
+				>
+				["at0009"] = <
+					text = <"Incorrect">
+					description = <"The patient gives an incorrect answer.">
+				>
+				["at0010"] = <
+					text = <"Correct">
+					description = <"The patient gives the correct answer.">
+				>
+				["at0011"] = <
+					text = <"Clock drawing - all numbers">
+					description = <"Statement whether or not the patient marks all the correct numbers to indicate the hours of the clock with the correct spacing.">
+				>
+				["at0012"] = <
+					text = <"Incorrect">
+					description = <"The patient does not mark all the correct numbers to indicate the hours of the clock with the correct spacing.">
+				>
+				["at0013"] = <
+					text = <"Correct">
+					description = <"The patient marks all the correct number to indicate the hours of the clock with the correct spacing.">
+				>
+				["at0014"] = <
+					text = <"Clock drawing - specific time">
+					description = <"Statement whether the patient correctly marks in hands a specified time (i.e. 10 minutes past 11 o'clock) on a clock face.">
+				>
+				["at0015"] = <
+					text = <"Incorrect">
+					description = <"The patient does not correctly mark in hands a specified time (11.10) on a clock face.">
+				>
+				["at0016"] = <
+					text = <"Correct">
+					description = <"The patient correctly marks in hands a specified time (11.10) on a clock face.">
+				>
+				["at0017"] = <
+					text = <"Information">
+					description = <"Statement whether the patient gives a correct and specific answer when asked to say something that happened in the news recently. Recently = in the last week. If a general answer is given, e.g. \"lot of rain\", \"war\", further details should be asked for.">
+				>
+				["at0018"] = <
+					text = <"Incorrect">
+					description = <"Patient does not give specific and correct answer when asked to say something that happened in the news recently.">
+				>
+				["at0019"] = <
+					text = <"Correct">
+					description = <"Patient gives specific and correct answer when asked to say something that happened in the news recently.">
+				>
+				["at0020"] = <
+					text = <"Recall first name">
+					description = <"Statement whether patient correctly recalls first name of name and address phrase given at the start of the test.">
+				>
+				["at0021"] = <
+					text = <"Incorrect">
+					description = <"Patient does not correctly recall first name of name and address phrase given at the start of the test.">
+				>
+				["at0022"] = <
+					text = <"Correct">
+					description = <"Patient correctly recalls first name of name and address phrase given at the start of the test.">
+				>
+				["at0023"] = <
+					text = <"Recall surname">
+					description = <"Statement whether patient correctly recalls surname of name and address phrase given at the start of the test.">
+				>
+				["at0024"] = <
+					text = <"Incorrect">
+					description = <"Patient does not correctly recall surname of name and address phrase given at the start of the test.">
+				>
+				["at0025"] = <
+					text = <"Correct">
+					description = <"Patient correctly recalls surname of name and address phrase given at the start of the test.">
+				>
+				["at0027"] = <
+					text = <"Recall house number">
+					description = <"Statement whether patient correctly recalls house number of name and address phrase given at the start of the test.">
+				>
+				["at0028"] = <
+					text = <"Incorrect">
+					description = <"Patient does not correctly recall house number of name and address phrase given at the start of the test.">
+				>
+				["at0029"] = <
+					text = <"Correct">
+					description = <"Patient correctly recalls house number of name and address phrase given at the start of the test.">
+				>
+				["at0030"] = <
+					text = <"Recall street name">
+					description = <"Statement whether patient correctly recalls street name of name and address phrase given at the start of the test.">
+				>
+				["at0031"] = <
+					text = <"Incorrect">
+					description = <"Patient does not correctly recall street name of name and address phrase given at the start of the test.">
+				>
+				["at0032"] = <
+					text = <"Correct">
+					description = <"Patient correctly recalls street name of name and address phrase given at the start of the test.">
+				>
+				["at0033"] = <
+					text = <"Recall locality or town">
+					description = <"Statement whether patient correctly recalls locality or town of name and address phrase given at the start of the test.">
+				>
+				["at0034"] = <
+					text = <"Incorrect">
+					description = <"Patient does not correctly recall locality or town of name and address phrase given at the start of the test.">
+				>
+				["at0035"] = <
+					text = <"Correct">
+					description = <"Patient correctly recalls locality or town of name and address phrase given at the start of the test.">
+				>
+				["at0036"] = <
+					text = <"Total score">
+					description = <"The total score from all nine individual scores. If patient scores 9, no significant cognitive impairment and further testing not necessary. If patient scores 5-8, more information required. Proceed with Step 2, informant section. If patient scores 5-8, more information required. Proceed with Step 2, informant section.">
+				>
+				["at0037"] = <
+					text = <"Trouble remembering">
+					description = <"Statement whether, compared to a few years ago, the patient has more trouble remembering things that have happened recently than he/she used to.">
+				>
+				["at0038"] = <
+					text = <"Step 1: patient examination">
+					description = <"Step 1 of the GPCOG screening test, relating to the patient examination.">
+				>
+				["at0039"] = <
+					text = <"Step 2: informant interview">
+					description = <"Step 2 of the GPCOG screening test, relating to the informant interview. This section is required if the total score from Step 1 is between 5 and 8.">
+				>
+				["at0040"] = <
+					text = <"Yes">
+					description = <"The patient has more trouble remembering things that have happened recently than he/she used to.">
+				>
+				["at0041"] = <
+					text = <"No">
+					description = <"The patient does not have more trouble remembering things that have recently happened than he/she used to.">
+				>
+				["at0042"] = <
+					text = <"Don't know">
+					description = <"The informant doesn't know whether the patient has more trouble remembering thigns tha thave happened recently than he/she used to.">
+				>
+				["at0043"] = <
+					text = <"Trouble recalling conversations">
+					description = <"Statement whether, compared to a few years ago, the patient has more trouble recalling conversations a few days later.">
+				>
+				["at0044"] = <
+					text = <"Yes">
+					description = <"The patient has trouble recalling conversations a few days later.">
+				>
+				["at0045"] = <
+					text = <"No">
+					description = <"The patient does not have trouble recalling conversations a few days later.">
+				>
+				["at0046"] = <
+					text = <"Don't know">
+					description = <"The informant doesn't know whether the patient has trouble recalling conversations a few days later.">
+				>
+				["at0047"] = <
+					text = <"Difficulty finding right words or using wrong words">
+					description = <"Statement whether, compared to a few years ago, the patient, when speaking, has more difficulty in finding the right words or tends to use the wrong words more often.">
+				>
+				["at0048"] = <
+					text = <"Yes">
+					description = <"When speaking, the patient has difficulty in finding the right words or tends to use the wrong words more often.">
+				>
+				["at0049"] = <
+					text = <"No">
+					description = <"When speaking, the patient does not have difficulty in finding the right words and does not tend to use the wrong words more often.">
+				>
+				["at0050"] = <
+					text = <"Don't know">
+					description = <"The informant doesn't know whether the patient, when speaking, has more difficulty in finding the right words or tends to use the wrong words more often.">
+				>
+				["at0051"] = <
+					text = <"Less able to manage money">
+					description = <"Statement whether, compared to a few years ago, the patient is less able to manage money and financial affairs (e.g. paying bills, budgeting).">
+				>
+				["at0052"] = <
+					text = <"Yes">
+					description = <"The patient is less able to manage money and financial affairs.">
+				>
+				["at0053"] = <
+					text = <"No">
+					description = <"The patient is not less able to manage money and financial affairs.">
+				>
+				["at0054"] = <
+					text = <"Don't know">
+					description = <"The informant doesn't know whether the patient is less able to manage money and financial affairs.">
+				>
+				["at0055"] = <
+					text = <"Not applicable">
+					description = <"The question of whether the patient is less able to manage money or financial affairs is not applicable to this patient.">
+				>
+				["at0056"] = <
+					text = <"Less able to manage medication">
+					description = <"Statement whether, compared to a few years ago, the patient is less able to manage his/her medication independently.">
+				>
+				["at0057"] = <
+					text = <"Yes">
+					description = <"The patient is less able to manage his/her medication independently.">
+				>
+				["at0058"] = <
+					text = <"No">
+					description = <"The patient is not less able to manage his/her medication independently.">
+				>
+				["at0059"] = <
+					text = <"Don't know">
+					description = <"The informant doesn't know whether the patient is less able to manage his/her medication independently.">
+				>
+				["at0060"] = <
+					text = <"Not applicable">
+					description = <"The question whether the patient is less able to manage his/her medication independently is not relevant to this patient.">
+				>
+				["at0061"] = <
+					text = <"Needs more assistance with transport">
+					description = <"Statement whether, compared to a few years ago, the patient needs more assistance with transport (either private or public). If patient has difficulties only due to physical problems, e.g. bad leg, 'No' should be selected.">
+				>
+				["at0062"] = <
+					text = <"Yes">
+					description = <"The patient needs more assistance with transport.">
+				>
+				["at0063"] = <
+					text = <"No">
+					description = <"The patient does not need more assistance with transport.">
+				>
+				["at0064"] = <
+					text = <"Don't know">
+					description = <"The informant doesn't know whether the patient needs more assistance with transport.">
+				>
+				["at0065"] = <
+					text = <"Not applicable">
+					description = <"The question whether the patient needs more assistance with transport is not applicable to this patient.">
+				>
+				["at0066"] = <
+					text = <"Total score">
+					description = <"To get the total score, add the number of items answered 'No', 'Don't know' or 'Not applicable'. A total score of 0-3 indicates cognitive impairment, and standard investigations should be conducted.">
+				>
+			>
+		>
+	>

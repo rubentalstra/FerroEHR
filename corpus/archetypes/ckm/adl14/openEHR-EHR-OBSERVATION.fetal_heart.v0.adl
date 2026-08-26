@@ -1,0 +1,268 @@
+﻿archetype (adl_version=1.4; uid=ceb0a5b3-1032-3334-8ed9-fe226eabb938)
+	openEHR-EHR-OBSERVATION.fetal_heart.v0
+
+concept
+	[at0000]	-- Fetal heart rate
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2011-12-20">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about the fetal heart rate via intermittent observations.">
+			use = <"Use to record the intermittent observations of the heart rate and heart beat characteristics of a fetus during pregnancy.
+
+Only to be used where the subject of care is the fetus.">
+			keywords = <"fetal", "heart", "beat", "rate", "rhythm">
+			misuse = <"Not to be used to record more the complex details required for intervals of electronic fetal heart monitoring - use the specialisation OBSERVATION.fetal_heart-monitoring instead.
+
+Not to be used for recording the heart rate of infants, children or adults.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"SOGC Fetal health Surveillance: antepartum and intrapartum Consensus Guideline: http://www.sogc.org/guidelines/documents/gui197CPG0709r.pdf
+
+Intrapartum care: management and delivery of care to women in labour: http://www.nice.org.uk/nicemedia/live/11837/36275/36275.pdf">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"33E87488ECAB3CC3DE97115C41F455BC">
+		["build_uid"] = <"cbf49db5-05a6-458d-8bbf-aefb08dd9fa9">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Fetal heart rate
+		subject matches {
+			PARTY_RELATED matches {
+				relationship matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::3]
+						}
+					}
+				}
+			}
+		}
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Presence
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0026,    -- Present
+													at0027]    -- Absent
+												}
+											}
+										}
+									}
+									ELEMENT[at0005] occurrences matches {0..1} matches {    -- Rate
+										value matches {
+											C_DV_QUANTITY <
+												
+												list = <
+													["1"] = <
+														units = <"1/min">
+														magnitude = <|0.0..<1000.0|>
+														precision = <|0|>
+													>
+												>
+											>
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..*} matches {    -- Clinical interpretation
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {    -- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0011] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0012] occurrences matches {0..1} matches {    -- Position of mother
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0013,    -- Standing
+													at0014,    -- Sitting
+													at0015,    -- Reclining
+													at0016,    -- Lying
+													at0017]    -- Lying with tilt to left
+												}
+											}
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {    -- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0023] occurrences matches {0..1} matches {    -- In labour
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0024,    -- In labour
+													at0025]    -- Not in labour
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0018] matches {    -- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0020] occurrences matches {0..*} matches {    -- Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					allow_archetype CLUSTER[at0021] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Fetal heart rate">
+					description = <"Observations about the fetal heart rate.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Presence">
+					description = <"The fetal heart beat is detected.">
+					comment = <"Implied as present if fetal heart rate > 0.">
+				>
+				["at0005"] = <
+					text = <"Rate">
+					description = <"The observed fetal heart rate.">
+				>
+				["at0009"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the fetal heart rate, not captured in other fields.">
+				>
+				["at0010"] = <
+					text = <"Clinical interpretation">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of the fetal heart rate.">
+					comment = <"For example, bradycardia or tachycardia.">
+				>
+				["at0011"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0012"] = <
+					text = <"Position of mother">
+					description = <"The position of the mother when the fetal heart rate was measured.">
+				>
+				["at0013"] = <
+					text = <"Standing">
+					description = <"Mother standing at the time of fetal heart rate measurement.">
+				>
+				["at0014"] = <
+					text = <"Sitting">
+					description = <"Mother sitting at the time of fetail heart rate measurement.">
+				>
+				["at0015"] = <
+					text = <"Reclining">
+					description = <"Mother reclining at the time of fetal heart rate measurement.">
+				>
+				["at0016"] = <
+					text = <"Lying">
+					description = <"Lying flat at the time of fetal heart rate measurement.">
+				>
+				["at0017"] = <
+					text = <"Lying with tilt to left">
+					description = <"Mother lying flat with some lateral tilt towards the left.">
+				>
+				["at0018"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0022"] = <
+					text = <"Confounding factors">
+					description = <"Description of incidental factors, not recorded elsewhere, that may be influencing the fetal heart rate measurement.">
+					comment = <"For example, maternal fever or exertion.">
+				>
+				["at0020"] = <
+					text = <"Device">
+					description = <"Details about the device used to detect the fetal heart rate.">
+					comment = <"For example, Pinard's stethoscope or Doppler Ultrasound.">
+				>
+				["at0026"] = <
+					text = <"Present">
+					description = <"The fetal heart beat is detected.">
+				>
+				["at0027"] = <
+					text = <"Absent">
+					description = <"The fetal heart beat is not detected.">
+				>
+				["at0021"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+				["at0023"] = <
+					text = <"In labour">
+					description = <"Is the mother in active labor during the observation?">
+				>
+				["at0024"] = <
+					text = <"In labour">
+					description = <"The mother is in labour as the observation is made.">
+				>
+				["at0025"] = <
+					text = <"Not in labour">
+					description = <"The mother is not in labour as the observation is made.">
+				>
+			>
+		>
+	>

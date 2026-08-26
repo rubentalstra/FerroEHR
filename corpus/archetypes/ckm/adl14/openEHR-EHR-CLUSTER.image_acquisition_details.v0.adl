@@ -1,0 +1,169 @@
+﻿archetype (adl_version=1.4; uid=f6c7ba7a-a9a6-407f-8899-e00447a49117)
+	openEHR-EHR-CLUSTER.image_acquisition_details.v0
+
+concept
+	[at0000]	-- Image acquisition details
+language
+	original_language = <[ISO_639-1::zh]>
+description
+	original_author = <
+		["name"] = <"">
+	>
+	details = <
+		["zh"] = <
+			language = <[ISO_639-1::zh]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"FF02513C6090BFB605AE36C5999D8EE8">
+		["build_uid"] = <"8852be89-cdcf-4a6e-a43c-756fee5ed7bb">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Image acquisition details
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Scan mode
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- ECG-synchronization
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Use of duel energy?
+				value matches {
+					DV_BOOLEAN matches {
+						value matches {True, False}
+					}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- Scan range
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"cm">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Pitch
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::380]>
+						list = <
+							["1"] = <
+								units = <"1">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- Tube voltage
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::374]>
+						list = <
+							["1"] = <
+								units = <"mV">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {	-- Tube current
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::334]>
+						list = <
+							["1"] = <
+								units = <"A">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0010] occurrences matches {0..1} matches {	-- Dose-length product (DLP)
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0009] occurrences matches {0..1} matches {	-- CT dose index (CTDI)
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::508]>
+						list = <
+							["1"] = <
+								units = <"Gy">
+							>
+						>
+					>
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["zh"] = <
+			items = <
+				["at0000"] = <
+					text = <"Image acquisition details">
+					description = <"unknown">
+				>
+				["at0001"] = <
+					text = <"Scan mode">
+					description = <"*">
+				>
+				["at0002"] = <
+					text = <"ECG-synchronization">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Use of duel energy?">
+					description = <"*">
+				>
+				["at0004"] = <
+					text = <"Scan range">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Pitch">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Tube voltage">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Tube current">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"CT dose index (CTDI)">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Dose-length product (DLP)">
+					description = <"*">
+				>
+			>
+		>
+	>

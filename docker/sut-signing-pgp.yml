@@ -19,7 +19,7 @@
 # address it with `on: sut_pgp`.
 #
 # The mounted key is the committed TEST OpenPGP secret key
-# (tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc) — test-only, no
+# (corpus/keys/cnf-signing.sec.asc) — test-only, no
 # passphrase; its paired public key is the pgp ixit's signing.public_key.
 services:
   ferroehr:
@@ -27,4 +27,4 @@ services:
       FERROEHR__SIGNING__MODE: pgp
       FERROEHR__SIGNING__KEY_PATH: /etc/ferroehr/cnf-signing.sec.asc
     volumes:
-      - ./tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc:/etc/ferroehr/cnf-signing.sec.asc:ro
+      - ./corpus/keys/cnf-signing.sec.asc:/etc/ferroehr/cnf-signing.sec.asc:ro

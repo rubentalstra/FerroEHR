@@ -1,0 +1,133 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-microalbumin.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"D B Hutchinson">
+		["organisation"] = <"NHS CfH, United Kingdom">
+		["date"] = <"17/09/2008">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results of microalbumin investigation.">
+			use = <"Will normally be reported back to the requesting clinician within the context of an overall Composition-based laboratory report.
+">
+			keywords = <"lab", "pathology", "biochemistry", "laboratory">
+			misuse = <"Specialisations may be more appropriate for specific structured reports such as for microbiology or histopathology.">
+		>
+	>
+	other_contributors = <"Ian McNicoll, Ocean Informatics, United Kingdom", ...>
+	references = <
+		["1"] = <"NEHTA, Australia. Pathology Episode v1.0 - Data Group library [Internet]. 2009;[cited 2009 Dec 8 ] Available from: http://www.nehta.gov.au/data-group-library/data-specifications/dgl-pathology">
+		["2"] = <"IHE. IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"01E5AB5E4C98B58950942CB1E8B234AC">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Urine microalbumin
+		/data[id2]/events matches {
+			EVENT[id3] occurrences matches {0..1} matches {
+				data matches {
+					ITEM_TREE[id4] matches {
+						items matches {
+							ELEMENT[id79.3] occurrences matches {0..1} matches {	-- Urine microalbumin
+								value matches {
+									DV_QUANTITY[id0.91] matches {
+										property matches {[at0.1]}
+										magnitude matches {|>=0.0|}
+										precision matches {1}
+										units matches {"mg/l"}
+									}
+								}
+							}
+							ELEMENT[id79.2] occurrences matches {0..1} matches {	-- Urine creatinine
+								value matches {
+									DV_QUANTITY[id0.92] matches {
+										property matches {[at0.1]}
+										magnitude matches {|>=0.0|}
+										precision matches {1}
+										units matches {"mg/l"}
+									}
+								}
+							}
+							ELEMENT[id79.1] occurrences matches {0..1} matches {	-- Urine albumin:creatinine ratio
+								value matches {
+									DV_PROPORTION[id0.93] matches {
+										numerator matches {|>=0.0|}
+										is_integral matches {False}
+									}
+								}
+							}
+							ELEMENT[id79] 
+						}
+					}
+				}
+			}
+			INTERVAL_EVENT[id0.90] occurrences matches {0..1} matches {	-- 24 hr collection
+				math_function matches {
+					DV_CODED_TEXT[id0.94] matches {
+						defining_code matches {[at0.2]}
+					}
+				}
+				width matches {
+					DV_DURATION[id0.95] matches {
+						value matches {P1D}
+					}
+				}
+				data matches {
+					use_node ITEM_TREE[id0.96] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[id3]/data[id4]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.90"] = <
+				text = <"24 hr collection">
+				description = <"Total measurement over a 24 hour period.">
+			>
+			["id1.1"] = <
+				text = <"Urine microalbumin">
+				description = <"To record the results of microalbumin investigations.">
+			>
+			["id79.1"] = <
+				text = <"Urine albumin:creatinine ratio">
+				description = <"Ratio of albumin and creatinine in this specimen.">
+			>
+			["id79.2"] = <
+				text = <"Urine creatinine">
+				description = <"Creatinine level in this urine specimen.">
+			>
+			["id79.3"] = <
+				text = <"Urine microalbumin">
+				description = <"Microalbumin level in this specimen.">
+			>
+			["at0.1"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+			["at0.2"] = <
+				text = <"total">
+				description = <"total">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/119>
+			["at0.2"] = <http://openehr.org/id/148>
+		>
+	>

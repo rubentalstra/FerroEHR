@@ -1,0 +1,107 @@
+﻿archetype (adl_version=1.4; uid=8b0073a3-2bb7-4f39-98e8-7c8d44e87d87)
+	openEHR-EHR-COMPOSITION.social_summary.v0
+
+concept
+	[at0000]	-- Social summary
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics, Australia">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2013-06-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a  persistent and evolving summary record of information about social circumstances and experiences that may impact an individual's health.">
+			use = <"Use to record a  persistent and evolving summary record of information about social circumstances or experiences that may have a potential impact on an individual's health.
+
+This archetype has been designed primarily to hold the EVALUATION.social_summary archetype as the framework to contain nested, detailed CLUSTER archetypes, each of which will describe the various aspects of the specific social circumstances or experiences in detail.
+
+The scope of Social summary record/document can include, but is not limited to:
+- an overview;
+- household details;
+- housing details;
+- education and training details;
+- occupation details; and
+- domestic/family violence information.
+
+The intent of this COMPOSITION is for use as a persistent summary, however it has been identified that for implementation the archetype also needs additional attributes related to the context of the event. As a result, the COMPOSITION has been temporarily modified as an EVENT COMPOSITION which allows addition of an Items SLOT into which additional context-related archetypes can be included. This new requirement for context-related attributes in the Persistent COMPOSITION has been requested as a future openEHR Reference Model update.
+
+Initial design of this archetype was funded by the Hearing Health project, Northern Territory, Australia.">
+			keywords = <"social", "family", "education", "occupation", "environment", "housing", "finances">
+			misuse = <"">
+			copyright = <"© Australian Digital Health Agency, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Social Summary, Draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. Authored: 2013Jun 12. Available at: http://dcm.nehta.org.au/ckm#showArchetype_1013.1.1324_2 (discontinued)">
+		["current_contact"] = <"Dr Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"2D04858FEBCA975FC1B29CF1BA233E23">
+		["build_uid"] = <"56f14af5-164b-49fc-89c7-7409dad76886">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	COMPOSITION[at0000] matches {	-- Social summary
+		category matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {[openehr::433]}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT matches {
+				other_context matches {
+					ITEM_TREE[at0002] matches {	-- Tree
+						items cardinality matches {0..*; unordered} matches {
+							allow_archetype ITEM[at0003] occurrences matches {0..*} matches {	-- Items
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.document_entry_metadata(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+						}
+					}
+				}
+			}
+		}
+		content cardinality matches {1..*; unordered} matches {
+			allow_archetype EVALUATION[at0001] occurrences matches {0..*} matches {	-- Social summary
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.social_summary(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Social summary">
+					description = <"A persistent and evolving summary record of information about social circumstances and experiences that may impact an individual's health.">
+				>
+				["at0001"] = <
+					text = <"Social summary">
+					description = <"Summary information about social circumstances or experiences that may have a potential impact on an individual's health.">
+				>
+				["at0002"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0003"] = <
+					text = <"Items">
+					description = <"Additional COMPOSITION related data.">
+				>
+			>
+		>
+	>

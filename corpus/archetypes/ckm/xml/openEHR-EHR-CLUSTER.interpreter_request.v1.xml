@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-05-04</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">heather.leslie@oceaninformatics.com</original_author>
+    <other_contributors>Paula Anderson, UCLH, United Kingdom</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Birgitte Bjerkely, Senter for sjeldne diagnoser, OUS, Norway</other_contributors>
+    <other_contributors>Anita Bjørnnes, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Randi Brendberg, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Valborg Ellingsen, Haraldsplass Diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Jessica Hansen, Universitetet i Oslo, Norway</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Sanjeev Hiremath, IDEAMED International, Australia</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Roar Holm, Helse Vest IKT A/S, Norway</other_contributors>
+    <other_contributors>Liv Ingrid Svela, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Siren Kraakenes, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Panita Laksuktom, Haukeland universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Øygunn Leite Kallevik, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Rose Mari Eikås, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Jagan Mohan, Mahatma Gandhi Medical College and Research Institute, India</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anine Ramberg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Jussara Rotzsch, Hospital Alemão Oswaldo Cruz, Brazil</other_contributors>
+    <other_contributors>Gro-Hilde Severinsen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Laila Storesund, Haraldsplass diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Eivind Stormo, DIPS AS, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Susanne Trønnes, Norway</other_contributors>
+    <other_contributors>Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">Avgrenet fra: Interpreter Details, Draft Archetype [Internet]. openEHR Foundation, openEHR Clinical Knowledge Manager [cited: 2017-02-10]. Available from: http://openehr.org/ckm/#showArchetype_1013.1.1972</other_details>
+    <other_details id="current_contact">Heather Leslie, Ocean Informatics&lt;heather.leslie@oceaninformatics.com&gt;</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">AB43D3BD1278B53DC41E6FA396191893</other_details>
+    <other_details id="build_uid">985c6a90-c4cd-4c4c-9bd0-19184b0b808f</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere krav og preferanser for riktig tolking for å støtte kommunikasjonen.</purpose>
+      <keywords>tolk</keywords>
+      <keywords>språk</keywords>
+      <keywords>tegn</keywords>
+      <keywords>tale</keywords>
+      <keywords>tolking</keywords>
+      <keywords>oversetter</keywords>
+      <keywords>skrivetolking</keywords>
+      <use>Brukes for å registrere krav og preferanser for riktig tolking for å støtte kommunikasjonen, vanligvis i forbindelse med en spesifikk aktivitet eller ved utførelsen av en klinisk tjeneste.&#xD;
+&#xD;
+Denne arketypen er utviklet for å benyttes i SLOT'et "Pasientens behov" i arketypen INSTRUCTION.service_request (Helsetjenesterekvirering). Arketypen kan også benyttes i andre INSTRUCTION-arketyper for å dokumentere tolkebehov.</use>
+      <misuse>Brukes ikke for å registrere detaljer om et språk. Bruk arketypen CLUSTER.language (Språk) for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere evne og måter for utveksling av informasjon med et individ. Bruk arketypen EVALUATION.communication_capability (Evne til kommunikasjon) for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere detaljer om en tolking som er gjennomført. Bruk arketypen ACTION.interpretation for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere administrativt språk og behov for tolking for å kunne levere helsetjenester eller helserelaterte tjenester. Bruk arketypen ADMIN_ENTRY.translation_requirements (Tolkebehov) for dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record requirements and preferences for appropriate interpretation to assist with communication.</purpose>
+      <keywords>interpreter</keywords>
+      <keywords>language</keywords>
+      <keywords>translator</keywords>
+      <keywords>sign</keywords>
+      <keywords>signing</keywords>
+      <use>Use to record requirements and preferences for appropriate interpretation to assist with communication, commonly with a specific activity or provision of a clinical service.&#xD;
+&#xD;
+This archetype is specifically designed to be nested within the 'Patient requirements' SLOT in the INSTRUCTION.service_request archetype but could be used within other INSTRUCTION archetypes which require participation of an interpreter.</use>
+      <misuse>Not to be used to record details about a language - use CLUSTER.language for this purpose.&#xD;
+&#xD;
+Not to be used to record capability and means for exchanging information with an individual - use EVALUATION.communication_capability for this purpose.&#xD;
+&#xD;
+Not to be used to record details about an interpretation that was performed - use the proposed ACTION.interpretation.&#xD;
+&#xD;
+Not to be used to record administrative information about the ability of the healthcare provider or clinical system to communicate with an indivdual - for this purpose use ADMIN_ENTRY.translation_requirements.</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen HF, Norway</author>
+  </translations>
+  <uid>
+    <value>aa4095ef-76a4-48eb-9033-56b8d0b485a5</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.interpreter_request.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0010</code_list>
+                <code_list>at0011</code_list>
+                <code_list>at0012</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </occurrences>
+        <node_id>at0039</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>name</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0040</code_list>
+                <code_list>at0041</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0031</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0035</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0027</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0028</code_list>
+                <code_list>at0029</code_list>
+                <code_list>at0034</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.person_name(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.individual_professional(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.person_name(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.individual_professional(-[a-zA-Z0-9_]+)*\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Interpreter request</items>
+        <items id="description">Requirements and preferences for appropriate interpretation to assist with communication.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative description about the requirements for the interpretation not captured in other fields.</items>
+        <items id="comment">For example: reason for gender preference; or requesting an interpreter with specific qualifications, knowledge or skills.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Preferred interpreter</items>
+        <items id="description">Identification of the individual interpreter that is preferred for the interpretation.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Communication channel</items>
+        <items id="description">The preferred way of delivery for the interpretation.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Face-to-face meeting</items>
+        <items id="description">Physical attendence of the interpreter.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Videoconference</items>
+        <items id="description">Remote video and audio interpretation.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Audioconference</items>
+        <items id="description">Audio interpretation only.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Preferred gender</items>
+        <items id="description">The preferred gender of the interpreter.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Male</items>
+        <items id="description">A male interpreter is preferred.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Female</items>
+        <items id="description">A female interpreter is preferred.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Language</items>
+        <items id="description">Language and method of communication for the interpretation.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">No preference</items>
+        <items id="description">There is no gender preference for the interpreter.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative description about the requested language not captured in other fields.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Per language</items>
+        <items id="description">Details about the requested language.</items>
+        <items id="comment">The run-time name constraint can be used to specify whether the language is preferred for communication by the individual, or an alternative.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Preferred language</items>
+        <items id="description">Preferred language and/or method of communication for an individual.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Alternative language</items>
+        <items id="description">Other language, and/or method of communication that could be used for an individual.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Forespørsel om tolk</items>
+        <items id="description">Krav og preferanser for riktig tolking for å støtte kommunikasjonen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekstbeskrivelse om tolkebehovet som ikke er dekket av andre felt.</items>
+        <items id="comment">For eksempel: Årsak til at et bestemt kjønn er foretrukket, eller at man etterspør en tolk med spesifikke kvalifikasjoner, kunnskaper eller evner.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Foretrukket tolk</items>
+        <items id="description">Detaljer om tolken som er foretrukket til tolkingen.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Kommunikasjonskanal</items>
+        <items id="description">Den foretrukne måten å levere tolkingen på.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Fremmøte</items>
+        <items id="description">Tolking der tolken er fysisk tilstede.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Skjerm</items>
+        <items id="description">Tolking via video og lyd, tolken er ikke fysisk tilstede.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Telefon</items>
+        <items id="description">Tolking med lyd, tolken er ikke fysisk tilstede.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Foretrukket kjønn</items>
+        <items id="description">Ønsket kjønn på tolken.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Mann</items>
+        <items id="description">En mannlig tolk er foretrukket.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Kvinne</items>
+        <items id="description">En kvinnelig tolk er foretrukket.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Språk</items>
+        <items id="description">Språk og modalitet for tolkingen.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Ingen preferanser</items>
+        <items id="description">Det er ingen kjønnspreferanser for tolken.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekstbeskrivelse om det forespurte språket som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Per språk</items>
+        <items id="description">Detaljer om forespurt språk for tolkingen.</items>
+        <items id="comment">"Run-time name constraint" (navnebegrensning) lagt på clusteret "Per språk" kan brukes for å spesifisere om språket er foretrukket i kommunikasjonen med individet eller om det er et alternativt språk som kan benyttes.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Foretrukket språk</items>
+        <items id="description">Individets foretrukne språk og kommunikasjonsmetode.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Alternativt språk</items>
+        <items id="description">Andre språk og kommunikasjonsmetoder som kan benyttes av individet.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

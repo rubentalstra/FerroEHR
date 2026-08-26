@@ -1,0 +1,183 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.specimen_preparation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"openEHR Archetype Editorial Group / Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/01/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of laboratory specimen processing">
+			use = <"Generally used within a CLUSTER.specimen archetype.">
+			keywords = <"specimen", "laboratory", "sample", "histopathology", "histology", "pathology">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sam Heard Ocean Informatics", "Heather Leslie Ocean Informatics", "Koray Atalag University of Auckland">
+	references = <
+		["1"] = <"Digital Imaging and Communications in Medicine (DICOM) Supplement 122: Specimen Module and Revised Pathology SOP Classes">
+		["2"] = <"DICOM Standards Committee, Working Groups 26, Pathology">
+		["3"] = <"IHE Anatomic Pathology Technical Framework Volume 1 (PAT TF-1) Revision 1.2 – Trial Implementation">
+		["4"] = <"November 24, 2008">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"C60D15BE23A7EBCA43402617561C5189">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Specimen preparation
+		items matches {
+			CLUSTER[id78] occurrences matches {0..1} matches {	-- Processing step
+				items matches {
+					ELEMENT[id73] occurrences matches {0..1} matches {	-- Date and time of processing step
+						value matches {
+							DV_DATE_TIME[id89] 
+						}
+					}
+					ELEMENT[id86] occurrences matches {0..1} matches {	-- Parent specimen ID
+						value matches {
+							DV_TEXT[id90] 
+						}
+					}
+					ELEMENT[id72] occurrences matches {0..1} matches {	-- Processing step type
+						value matches {
+							DV_CODED_TEXT[id91] matches {
+								defining_code matches {[ac1]}		-- Processing step type (synthesised)
+							}
+						}
+					}
+					ELEMENT[id75] occurrences matches {0..1} matches {	-- Specimen processing type
+						value matches {
+							DV_TEXT[id92] 
+						}
+					}
+				}
+			}
+			ELEMENT[id88] occurrences matches {0..1} matches {	-- Description
+				value matches {
+					DV_TEXT[id93] 
+				}
+			}
+			CLUSTER[id87] occurrences matches {0..1} matches {	-- Specific preparation
+				items cardinality matches {0..1; unordered} matches {
+					ELEMENT[id74] occurrences matches {0..1} matches {	-- Sampling method
+						value matches {
+							DV_TEXT[id94] 
+						}
+					}
+					ELEMENT[id85] occurrences matches {0..1} matches {	-- Staining method
+						value matches {
+							DV_TEXT[id95] 
+						}
+					}
+					ELEMENT[id76] occurrences matches {0..1} matches {	-- Embedding medium
+						value matches {
+							DV_TEXT[id96] 
+						}
+					}
+					ELEMENT[id77] occurrences matches {0..1} matches {	-- Fixative
+						value matches {
+							DV_TEXT[id97] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Specimen preparation">
+				description = <"To record details of laboratory specimen processing">
+			>
+			["id72"] = <
+				text = <"Processing step type">
+				description = <"A DICOM compatible code describing a single processing step.">
+			>
+			["id73"] = <
+				text = <"Date and time of processing step">
+				description = <"The data and time that the processing step occured.">
+			>
+			["id74"] = <
+				text = <"Sampling method">
+				description = <"The sampling method used. e.g dissection, block sampling">
+			>
+			["id75"] = <
+				text = <"Specimen processing type">
+				description = <"A physical process applied to the specimen e.g.  block embedding">
+			>
+			["id76"] = <
+				text = <"Embedding medium">
+				description = <"The medium within which the specimen is embedded e.g paraffin">
+			>
+			["id77"] = <
+				text = <"Fixative">
+				description = <"The fixative used ">
+			>
+			["id78"] = <
+				text = <"Processing step">
+				description = <"Used to support DICOM Supp 122 compatible specimen processing steps. Describes the single immediate processing step to go from parent to current specimen">
+			>
+			["at79"] = <
+				text = <"Specimen collection">
+				description = <"*">
+			>
+			["at80"] = <
+				text = <"Specimen receiving">
+				description = <"*">
+			>
+			["at81"] = <
+				text = <"Sampling of tussue specimen">
+				description = <"*">
+			>
+			["at82"] = <
+				text = <"Staining">
+				description = <"*">
+			>
+			["at83"] = <
+				text = <"Specimen processing">
+				description = <"*">
+			>
+			["at84"] = <
+				text = <"Specimen storage">
+				description = <"*">
+			>
+			["id85"] = <
+				text = <"Staining method">
+				description = <"Stain used for a microscopy slide.">
+			>
+			["id86"] = <
+				text = <"Parent specimen ID">
+				description = <"The specimen ID of the parent from which this specimen was prepared">
+			>
+			["id87"] = <
+				text = <"Specific preparation">
+				description = <"Details of the specific preparation carried out during a single processing step.">
+			>
+			["id88"] = <
+				text = <"Description">
+				description = <"A general description of the specimen prepartion.">
+			>
+			["ac1"] = <
+				text = <"Processing step type (synthesised)">
+				description = <"A DICOM compatible code describing a single processing step. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at79", "at80", "at81", "at82", "at83", "at84">
+		>
+	>

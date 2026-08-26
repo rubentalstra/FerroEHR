@@ -1,0 +1,314 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.infant_feeding.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Record details about feeding a person.">
+			use = <"">
+			misuse = <"">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Feeding
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id30] occurrences matches {0..1} matches {	-- Description
+										value matches {
+											DV_TEXT[id32] 
+										}
+									}
+									ELEMENT[id31] occurrences matches {0..1} matches {	-- Infant feeding category
+										value matches {
+											DV_CODED_TEXT[id33] matches {
+												defining_code matches {[ac1]}		-- Infant feeding category (synthesised)
+											}
+										}
+									}
+									CLUSTER[id29] occurrences matches {0..1} matches {	-- Breast feeding
+										items matches {
+											ELEMENT[id23] occurrences matches {0..1} matches {	-- Proportion
+												value matches {
+													DV_PROPORTION[id34] matches {
+														type matches {2}
+													}
+												}
+											}
+											ELEMENT[id25] occurrences matches {0..1} matches {	-- Time taken
+												value matches {
+													DV_QUANTITY[id35] matches {
+														property matches {[at35]}
+														magnitude matches {|>=0.0|}
+														precision matches {0}
+														units matches {"min"}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id17] occurrences matches {0..1} matches {	-- Other method
+										items matches {
+											ELEMENT[id18] occurrences matches {0..1} matches {	-- Type
+												value matches {
+													DV_CODED_TEXT[id36] matches {
+														defining_code matches {[ac2]}		-- Type (synthesised)
+													}
+												}
+											}
+											ELEMENT[id24] occurrences matches {0..1} matches {	-- Volume by this method
+												value matches {
+													DV_QUANTITY[id37] matches {
+														property matches {[at36]}
+														magnitude matches {|>=0.0|}
+														precision matches {0}
+														units matches {"ml"}
+													}
+												}
+											}
+											ELEMENT[id27] occurrences matches {0..1} matches {	-- Content
+												value matches {
+													DV_TEXT[id38] 
+												}
+											}
+											use_node ELEMENT[id39] /data[id2]/events[id3]/data[id4]/items[id29]/items[id23]	-- /data[id2]/events[Any event]/data[id4]/items[Breast feeding]/items[Proportion]
+											use_node ELEMENT[id40] /data[id2]/events[id3]/data[id4]/items[id29]/items[id25]	-- /data[id2]/events[Any event]/data[id4]/items[Breast feeding]/items[Time taken]
+										}
+									}
+									CLUSTER[id5] occurrences matches {0..1} matches {	-- Function
+										items matches {
+											ELEMENT[id11] occurrences matches {0..1} matches {	-- Description
+												value matches {
+													DV_TEXT[id41] 
+												}
+											}
+											ELEMENT[id6] occurrences matches {0..1} matches {	-- Sucking
+												value matches {
+													DV_ORDINAL[id42] matches {
+														[value, symbol] matches {
+															[{0}, {[at7]}],
+															[{1}, {[at8]}],
+															[{2}, {[at9]}],
+															[{3}, {[at10]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id12] occurrences matches {0..1} matches {	-- Swallowing
+												value matches {
+													DV_ORDINAL[id43] matches {
+														[value, symbol] matches {
+															[{0}, {[at13]}],
+															[{1}, {[at14]}],
+															[{2}, {[at15]}],
+															[{3}, {[at16]}]
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Feeding">
+				description = <"Information about the feeding of the person">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Function">
+				description = <"*">
+			>
+			["id6"] = <
+				text = <"Sucking">
+				description = <"The ability to suck">
+			>
+			["at7"] = <
+				text = <"unable to suck">
+				description = <"No ability to suck">
+			>
+			["at8"] = <
+				text = <"some ability">
+				description = <"Can make sucking action but not effective">
+			>
+			["at9"] = <
+				text = <"reduced sucking">
+				description = <"Can suck effectively but not sufficient for needs">
+			>
+			["at10"] = <
+				text = <"normal">
+				description = <"Able to suck normally">
+			>
+			["id11"] = <
+				text = <"Description">
+				description = <"Description of feeding">
+			>
+			["id12"] = <
+				text = <"Swallowing">
+				description = <"Ability to swallow">
+			>
+			["at13"] = <
+				text = <"Unable to swallow">
+				description = <"Not able to pass food to the back of mouth and swallow">
+			>
+			["at14"] = <
+				text = <"Some ability to swallow">
+				description = <"Some ability to swallow but very limited and/or does not protect airway">
+			>
+			["at15"] = <
+				text = <"Reduced swallow">
+				description = <"Able to swallow but not sufficient for needs or major risk of aspiration">
+			>
+			["at16"] = <
+				text = <"Normal">
+				description = <"Can swallow normally">
+			>
+			["id17"] = <
+				text = <"Other method">
+				description = <"The method of feeding">
+			>
+			["id18"] = <
+				text = <"Type">
+				description = <"Type of feeding">
+			>
+			["at20"] = <
+				text = <"Bottle">
+				description = <"Feeding from the bottle">
+			>
+			["at21"] = <
+				text = <"Nasogastric tube">
+				description = <"Feeding by naso-gastric tube">
+			>
+			["at22"] = <
+				text = <"Gastrostomy tube">
+				description = <"Feeding by gastrostomy tube">
+			>
+			["id23"] = <
+				text = <"Proportion">
+				description = <"The proportion by this method">
+			>
+			["id24"] = <
+				text = <"Volume by this method">
+				description = <"Volume delivered by this method">
+			>
+			["id25"] = <
+				text = <"Time taken">
+				description = <"Time feeding by this method">
+			>
+			["id27"] = <
+				text = <"Content">
+				description = <"The milk or other food delivered">
+			>
+			["at28"] = <
+				text = <"Spoon">
+				description = <"Feeding by spoon or similar">
+			>
+			["id29"] = <
+				text = <"Breast feeding">
+				description = <"Record about breast feeding">
+			>
+			["id30"] = <
+				text = <"Description">
+				description = <"*">
+			>
+			["id31"] = <
+				text = <"Infant feeding category">
+				description = <"The content of the feeding">
+			>
+			["at32"] = <
+				text = <"Breast">
+				description = <"Only breast milk">
+			>
+			["at33"] = <
+				text = <"Formula">
+				description = <"Only baby formula">
+			>
+			["at34"] = <
+				text = <"Mixed">
+				description = <"Breast and formular mixed">
+			>
+			["at35"] = <
+				text = <"Time">
+				description = <"Time">
+			>
+			["at36"] = <
+				text = <"Volume">
+				description = <"Volume">
+			>
+			["id39"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id40"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Infant feeding category (synthesised)">
+				description = <"The content of the feeding (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Type (synthesised)">
+				description = <"Type of feeding (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Sucking (synthesised)">
+				description = <"The ability to suck (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Swallowing (synthesised)">
+				description = <"Ability to swallow (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at35"] = <http://openehr.org/id/128>
+			["at36"] = <http://openehr.org/id/129>
+		>
+	>
+	value_sets = <
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at20", "at21", "at22", "at28">
+		>
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at32", "at33", "at34">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at7", "at8", "at9", "at10">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at13", "at14", "at15", "at16">
+		>
+	>

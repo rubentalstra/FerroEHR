@@ -1,0 +1,298 @@
+﻿archetype (adl_version=1.4; uid=7fcc9ef1-40f3-444f-a934-c2b1a84d241b)
+	openEHR-EHR-CLUSTER.coronary_artery_stenosis.v0
+
+concept
+	[at0000]	-- Coronary artery stenosis
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["date"] = <"2020-08-31">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"45C75D44B81CB8FA426302BB3DDE841A">
+		["build_uid"] = <"070c6768-4f5b-4876-ae52-8e607e3775bc">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Coronary artery stenosis
+		items cardinality matches {1..*; unordered} matches {
+			allow_archetype CLUSTER[at0046] occurrences matches {0..*} matches {    -- Calcium score [Cluster]
+				include
+					archetype_id/value matches {/.*/}
+			}
+			ELEMENT[at0047] occurrences matches {0..1} matches {    -- Presence of plaque
+				value matches {
+					DV_BOOLEAN matches {*}
+				}
+			}
+			ELEMENT[at0001] occurrences matches {0..1} matches {    -- Stenosis location
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0021,    -- Proximal RCA (pRCA)
+							at0022,    -- Mid RCA (mRCA)
+							at0023,    -- Distal RCA (dRCA)
+							at0024,    -- PDA-R (R-PDA)
+							at0025,    -- Left main (LM)
+							at0026,    -- Proximal LAD (pLAD)
+							at0027,    -- Mid LAD (mLAD)
+							at0028,    -- Distal LAD (dLAD)
+							at0029,    -- D1
+							at0030,    -- D2
+							at0031,    -- Proximal LCx (pCx)
+							at0032,    -- OM1
+							at0033,    -- Mid and distal LCx (LCx)
+							at0034,    -- OM2
+							at0035,    -- PDA-L (L-PDA)
+							at0036,    -- PLB-R (R-PLB)
+							at0037,    -- Ramus intermedius (RI)
+							at0038]    -- PLB-L (L-PLB)
+						}
+					}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {    -- Stenosis severity
+				value matches {
+					0|[local::at0015],
+					1|[local::at0016],
+					2|[local::at0017],
+					3|[local::at0018],
+					4|[local::at0019],
+					5|[local::at0020]
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {    -- Lesion length
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0039,    -- Discrete
+							at0040,    -- Tubular
+							at0041]    -- Diffuse
+						}
+					}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {    -- Plaque type
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Modifier
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0042,    -- S
+							at0043,    -- V
+							at0044,    -- N
+							at0045]    -- G
+						}
+					}
+				}
+			}
+			ELEMENT[at0048] occurrences matches {0..1} matches {    -- Vulnerable plaque assessment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0008] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Coronary artery stenosis">
+					description = <"Details of coronary arterial calcific plaque and the situation of stenosis.">
+				>
+				["at0001"] = <
+					text = <"Stenosis location">
+					description = <"A standardized approach to coronary segmentation.">
+				>
+				["at0004"] = <
+					text = <"Stenosis severity">
+					description = <"Quantitative assessment of stenosis severity.">
+				>
+				["at0005"] = <
+					text = <"Lesion length">
+					description = <"Quantitative assessment of stenosis severity.">
+				>
+				["at0006"] = <
+					text = <"Plaque type">
+					description = <"The type of detected plaque.">
+				>
+				["at0007"] = <
+					text = <"Modifier">
+					description = <"To indicate that a study is not fully evaluable or non-diagnostic (N) or to indicate the presence of stents (S), grafts (G), and vulnerable plaque (V).">
+				>
+				["at0008"] = <
+					text = <"Comment">
+					description = <"To describe uninterpretable segments.">
+				>
+				["at0015"] = <
+					text = <"Normal">
+					description = <"absence of plaque and no luminal stenosis">
+				>
+				["at0016"] = <
+					text = <"Minimal">
+					description = <"plaque with <25% stenosis">
+				>
+				["at0017"] = <
+					text = <"Mild">
+					description = <"25% to 49% stenosis">
+				>
+				["at0018"] = <
+					text = <"Moderate">
+					description = <"50% to 69% stenosis">
+				>
+				["at0019"] = <
+					text = <"Severe">
+					description = <"70% to 99% stenosis">
+				>
+				["at0020"] = <
+					text = <"Occluded">
+					description = <"apparent occlusion">
+				>
+				["at0021"] = <
+					text = <"Proximal RCA (pRCA)">
+					description = <"Ostium of the RCA(right coronary artery) to one-half the distance to the acute margin of heart.">
+				>
+				["at0022"] = <
+					text = <"Mid RCA (mRCA)">
+					description = <"End of proximal RCA to the acute margin of heart.">
+				>
+				["at0023"] = <
+					text = <"Distal RCA (dRCA)">
+					description = <"End of mid RCA to origin of the PDA (posterior descending artery)">
+				>
+				["at0024"] = <
+					text = <"PDA-R (R-PDA)">
+					description = <"PDA from RCA.">
+				>
+				["at0025"] = <
+					text = <"Left main (LM)">
+					description = <"Ostium of LM to bifurcation of LAD (left anterior descending artery) and LCx (left circumflex artery).">
+				>
+				["at0026"] = <
+					text = <"Proximal LAD (pLAD)">
+					description = <"End of LM to the first large septal or D1 (first diagonal; >1.5 mm in size) whichever is most proximal.">
+				>
+				["at0027"] = <
+					text = <"Mid LAD (mLAD)">
+					description = <"End of proximal LAD to one-half the distance to the apex.">
+				>
+				["at0028"] = <
+					text = <"Distal LAD (dLAD)">
+					description = <"End of mid LAD to end of LAD.">
+				>
+				["at0029"] = <
+					text = <"D1">
+					description = <"First diagonal branch D1.">
+				>
+				["at0030"] = <
+					text = <"D2">
+					description = <"Second diagonal branch D2.">
+				>
+				["at0031"] = <
+					text = <"Proximal LCx (pCx)">
+					description = <"End of LM to the origin of the OM1 (first obtuse marginal).">
+				>
+				["at0032"] = <
+					text = <"OM1">
+					description = <"First OM1 traversing the lateral wall of the left ventricle.">
+				>
+				["at0033"] = <
+					text = <"Mid and distal LCx (LCx)">
+					description = <"Traveling in the atrioventricular groove, distal to the OM1 branch to the end of the vessel or origin of the L-PDA (left PDA).">
+				>
+				["at0034"] = <
+					text = <"OM2">
+					description = <"Second marginal OM2.">
+				>
+				["at0035"] = <
+					text = <"PDA-L (L-PDA)">
+					description = <"PDA from LCx.">
+				>
+				["at0036"] = <
+					text = <"PLB-R (R-PLB)">
+					description = <"PLB(posterior-lateral branch) from RCA.">
+				>
+				["at0037"] = <
+					text = <"Ramus intermedius (RI)">
+					description = <"Vessel originating from the left main between the LAD and LCx in case of a trifurcation.">
+				>
+				["at0038"] = <
+					text = <"PLB-L (L-PLB)">
+					description = <"PLB from LCx.">
+				>
+				["at0039"] = <
+					text = <"Discrete">
+					description = <"The lesion length is below 10mm.">
+				>
+				["at0040"] = <
+					text = <"Tubular">
+					description = <"The lesion length is between 10-20mm.">
+				>
+				["at0041"] = <
+					text = <"Diffuse">
+					description = <"The lesion length is above 20mm.">
+				>
+				["at0042"] = <
+					text = <"S">
+					description = <"To indicate the presence of stents.">
+				>
+				["at0043"] = <
+					text = <"V">
+					description = <"To indicate vulnerable plaque.">
+				>
+				["at0044"] = <
+					text = <"N">
+					description = <"Not fully evaluable or non-diagnostic.">
+				>
+				["at0045"] = <
+					text = <"G">
+					description = <"To indicate grafts.">
+				>
+				["at0046"] = <
+					text = <"Calcium score [Cluster]">
+					description = <"">
+				>
+				["at0047"] = <
+					text = <"Presence of plaque">
+					description = <"">
+				>
+				["at0048"] = <
+					text = <"Vulnerable plaque assessment">
+					description = <"">
+				>
+			>
+		>
+	>

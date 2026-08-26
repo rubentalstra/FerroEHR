@@ -1,0 +1,107 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-COMPOSITION.prescription.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"23/03/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A composition for transfering medication orders to the pharmacy.">
+			use = <"This composition is only required for transfer of medications to the pharmacy.">
+			keywords = <"medication", "prescribe", "order">
+			misuse = <"Medication orders, as instructions, have a prescribe action that records prescription and communication to the pharmacy. This composition is only required if the medication orders are required to be transmitted within openEHR to the pharmacy.">
+		>
+	>
+
+definition
+	COMPOSITION[id1] matches {	-- Prescription
+		category matches {
+			DV_CODED_TEXT[id8] matches {
+				defining_code matches {[at7]}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT[id9] matches {
+				other_context matches {
+					ITEM_TREE[id2] matches {
+						items matches {
+							ELEMENT[id3] occurrences matches {0..1} matches {	-- Prescription category
+								value matches {
+									DV_CODED_TEXT[id10] matches {
+										defining_code matches {[ac1]}		-- Prescription category (synthesised)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		content matches {
+			allow_archetype SECTION[id7] matches {	-- Section: Medications
+				include
+					archetype_id/value matches {/openEHR-EHR-SECTION\.medications\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Prescription">
+				description = <"Set of medication orders communicated to pharmacy">
+			>
+			["id3"] = <
+				text = <"Prescription category">
+				description = <"Australian prescription category">
+			>
+			["at4"] = <
+				text = <"PBS">
+				description = <"Australian pharmaceutical benefits scheme">
+			>
+			["at5"] = <
+				text = <"RPBS">
+				description = <"Repatriation pharmaceutical benefits scheme (ADF)">
+			>
+			["at6"] = <
+				text = <"Private">
+				description = <"Entire cost met by patient or agent">
+			>
+			["id7"] = <
+				text = <"Section: Medications">
+				description = <"*">
+			>
+			["at7"] = <
+				text = <"event">
+				description = <"event">
+			>
+			["ac1"] = <
+				text = <"Prescription category (synthesised)">
+				description = <"Australian prescription category (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at7"] = <http://openehr.org/id/433>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at4", "at5", "at6">
+		>
+	>

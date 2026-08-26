@@ -1,0 +1,292 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.timed_25_foot_walk.v1.0.0
+
+language
+	original_language = <[ISO_639-1::de]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Michael Braun">
+				["organisation"] = <"University Medical Center Freiburg, Germany">
+				["email"] = <"braun@imbi.uni-freiburg.de">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Michael Braun">
+		["organisation"] = <"University Medical Center Freiburg, Germany">
+		["email"] = <"braun@imbi.uni-freiburg.de">
+		["date"] = <"2012-06-25">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Protokollierung der Messungen, die während eines Timed 25-Foot Walk aufgenommen wurden, in der Regel als Teil der Testreihe des Multiple Sclerosis Functional Composite (MSFC).">
+			use = <"Verwendung zur Aufzeichnung der Messungen, die während eines Timed 25-Foot Walk aufgenommen wurden. Dieser Test wird normalerweise als eine Komponente des Multiple Sclerosis Functional Composite (MSFC) durchgeführt, kann jedoch auch davon unabhängig eingesetzt werden. Der Patient wird zu einem Ende einer klar markierten Strecke von 25 Fuß (7,62 m) Länge geführt. Dann wird er angewiesen, diese Strecke so schnell wie möglich, jedoch sicher, zurückzulegen. Die Aufgabe wird anschließend sofort wiederholt, der Patient legt dieselbe Strecke auf umgekehrtem Weg zurück. Unterstützende Hilfsmittel (i. Allg. die gewohnten Gehhilfen) dürfen beim Test verwendet werden. Siehe MSFC-Handbuch für detaillierte Handlungsanweisungen. Der Test sollte nur von einer entsprechend geschulten Person durchgeführt werden.">
+			keywords = <"Timed 25-Foot Walk", "T25-FW", "T25FW", "TW", "Multiple Sclerosis Functional Composite", "MSFC">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the measurements recorded during a Timed 25-Foot Walk test, normally as part of the Multiple Sclerosis Functional Composite (MSFC) suite of tests.">
+			use = <"Use to record the measurements recorded during a Timed 25-Foot Walk test. This test is commonly carried out as one component of the Multiple Sclerosis Functional Composite (MSFC) assessment, but may be performed independently. The patient is directed to one end of a clearly marked 25-foot (7,62 m) course. Then he is instructed to walk this course as quickly as possible, but safely. The task is immediately administered again by having the patient walk back the same distance. Assistive devices (in general, customary walking devices) may be used when doing this task. Use the MSFC Manual for detailed administration instructions. The test should only be administred by a suitably trained person.">
+			keywords = <"Timed 25-Foot Walk", "T25-FW", "T25FW", "TW", "Multiple Sclerosis Functional Composite", "MSFC">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Athanasios Anastasiou, UoP, United Kingdom", "Sebastian Bischoff, gfnmediber, Germany", "Martin Boeker, University Medical Center Freiburg, Germany", "Michael Braun, University Medical Center Freiburg, Germany (Editor)", "Sebastian Garde, Ocean Informatics, Germany", "Eugene Igras, IRIS Systems, Inc., Canada", "Heather Leslie, Ocean Informatics, Australia", "Sebastian Mansow-Model, gfnmediber GmbH, Germany", "Catalina Martínez-Costa, Medical University of Graz, Austria", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Alexander U. Brandt, gfnmediber GmbH, Germany">
+	references = <
+		["1"] = <"Fischer JS, Jak AJ, Kniker JE, Rudick RA, Cutter G. Multiple Sclerosis Functional Composite (MSFC), Administration and Scoring Manual: National Multiple Sclerosis Society; 2001.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"EBC56378345269E681B5B2FCDADCF273">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Timed 25-Foot Walk
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					POINT_EVENT[id3] occurrences matches {0..1} matches {	-- Trial 1
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Time
+										value matches {
+											DV_DURATION[id22] matches {
+												value matches {PTS/|PT0S..PT180S|}
+											}
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Trial Not Completed?
+										value matches {
+											DV_BOOLEAN[id23] matches {
+												value matches {True}
+											}
+										}
+									}
+									ELEMENT[id7] matches {	-- Reasons For Non-completion
+										value matches {
+											DV_TEXT[id24] 
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[id10] matches {
+								items matches {
+									ELEMENT[id11] matches {	-- Confounding Factors
+										value matches {
+											DV_TEXT[id25] 
+										}
+									}
+								}
+							}
+						}
+					}
+					POINT_EVENT[id8] occurrences matches {0..1} matches {	-- Trial 2
+						data matches {
+							use_node ITEM_TREE[id26] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[Trial 1]/data[id4]
+						}
+						state matches {
+							use_node ITEM_TREE[id27] /data[id2]/events[id3]/state[id10]	-- /data[id2]/events[Trial 1]/state[id10]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id12] matches {
+				items matches {
+					ELEMENT[id13] matches {	-- Unilateral Assistive Device
+						value matches {
+							DV_CODED_TEXT[id28] matches {
+								defining_code matches {[ac1]}		-- Unilateral Assistive Device (synthesised)
+							}
+							DV_TEXT[id29] 
+						}
+					}
+					ELEMENT[id21] matches {	-- Bilateral Assistive Device
+						value matches {
+							DV_CODED_TEXT[id30] matches {
+								defining_code matches {[ac2]}		-- Bilateral Assistive Device (synthesised)
+							}
+							DV_TEXT[id31] 
+						}
+					}
+					ELEMENT[id18] occurrences matches {0..1} matches {	-- More Than Two Attempts?
+						value matches {
+							DV_BOOLEAN[id32] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id19] matches {	-- Reasons For More Than Two Attempts
+						value matches {
+							DV_TEXT[id33] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["id1"] = <
+				text = <"Timed 25-Foot Walk">
+				description = <"Der Timed 25-Foot Walk ist eine quantitative Messung der Beweglichkeit und Motorik der unteren Extremitäten. Dieser Test bildet die erste Komponente des Multiple Sclerosis Functional Composite (MSFC), eine Reihe von drei Tests zur Verlaufsdokumentation der Multiplen Sklerose.">
+			>
+			["id3"] = <
+				text = <"Test 1">
+				description = <"Erster von zwei Teilen des Timed 25-Foot Walk.">
+			>
+			["id5"] = <
+				text = <"Zeit">
+				description = <"Benötigte Zeit für eine erfolgreich zurückgelegte Gehstrecke von 25 Fuß.">
+			>
+			["id6"] = <
+				text = <"Test nicht beendet?">
+				description = <"Konnte die Strecke nicht zurückgelegt werden oder wurde der Test vorzeitig abgebrochen?">
+			>
+			["id7"] = <
+				text = <"Gründe für Nichtbeenden">
+				description = <"Angabe der Gründe, falls die Strecke nicht zurückgelegt werden konnte oder der Test vorzeitig abgebrochen wurde.">
+			>
+			["id8"] = <
+				text = <"Test 2">
+				description = <"Zweiter von zwei Teilen des Timed 25-Foot Walk.">
+			>
+			["id11"] = <
+				text = <"Begleitumstände">
+				description = <"Angabe jedweder Umstände, welche die Leistung des Patienten beeinflusst haben könnten.">
+			>
+			["id13"] = <
+				text = <"Unilaterale Gehhilfe">
+				description = <"Angabe, welches unterstützende Hilfsmittel verwendet wurde.">
+			>
+			["at14"] = <
+				text = <"Sprunggelenkorthese">
+				description = <"Gehorthese, Knöchel-Fuss-Orthese.">
+			>
+			["at15"] = <
+				text = <"Stock">
+				description = <"Geh- oder Krückstock.">
+			>
+			["at16"] = <
+				text = <"Krücke">
+				description = <"Unterarmgehstütze.">
+			>
+			["at17"] = <
+				text = <"Gehwagen/Rollator">
+				description = <"Gehwagen oder Rollator.">
+			>
+			["id18"] = <
+				text = <"Mehr als zwei Anläufe?">
+				description = <"Wurden mehr als zwei Anläufe benötigt, um zwei erfolgreiche Testläufe zu erhalten?">
+			>
+			["id19"] = <
+				text = <"Gründe für mehr als zwei Anläufe">
+				description = <"Gründe für mehr als zwei Anläufe, um zwei erfolgreiche Testläufe zu erhalten.">
+			>
+			["id21"] = <
+				text = <"Bilaterale Gehhilfen">
+				description = <"Angabe, welche unterstützenden Hilfsmittel verwendet wurden.">
+			>
+			["ac1"] = <
+				text = <"Unilaterale Gehhilfe (synthesised)">
+				description = <"Angabe, welches unterstützende Hilfsmittel verwendet wurde. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Bilaterale Gehhilfen (synthesised)">
+				description = <"Angabe, welche unterstützenden Hilfsmittel verwendet wurden. (synthesised)">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Timed 25-Foot Walk">
+				description = <"The Timed 25-Foot Walk is a quantitative test of lower extremity mobility and motor function. It is the first component of the Multiple Sclerosis Functional Composite (MSFC), a series of three tests to document the course of Multiple Sclerosis.">
+			>
+			["id3"] = <
+				text = <"Trial 1">
+				description = <"First of two trials of the Timed 25-Foot Walk.">
+			>
+			["id5"] = <
+				text = <"Time">
+				description = <"Time required to successfully complete the 25-foot walking distance.">
+			>
+			["id6"] = <
+				text = <"Trial Not Completed?">
+				description = <"Could the distance not be completed or was the trial terminated prematurely?">
+			>
+			["id7"] = <
+				text = <"Reasons For Non-completion">
+				description = <"Record the reasons, if the distance could not be completed or the test was terminated prematurely.">
+			>
+			["id8"] = <
+				text = <"Trial 2">
+				description = <"Second of two trials of the Timed 25-Foot Walk.">
+			>
+			["id11"] = <
+				text = <"Confounding Factors">
+				description = <"Record any circumstances that you believe may have affected the patient's performance.">
+			>
+			["id13"] = <
+				text = <"Unilateral Assistive Device">
+				description = <"Record which unilateral assistive devices were used.">
+			>
+			["at14"] = <
+				text = <"Ankle-foot orthosis">
+				description = <"Ankle-Foot Orthosis (AFO).">
+			>
+			["at15"] = <
+				text = <"Cane">
+				description = <"Walking stick or cane.">
+			>
+			["at16"] = <
+				text = <"Crutch">
+				description = <"Underarm crutch.">
+			>
+			["at17"] = <
+				text = <"Walker/rollator">
+				description = <"Walker or rollator device.">
+			>
+			["id18"] = <
+				text = <"More Than Two Attempts?">
+				description = <"Were there more than two attempts to get two successful trials?">
+			>
+			["id19"] = <
+				text = <"Reasons For More Than Two Attempts">
+				description = <"Reasons for more than two attempts to get two successful trials.">
+			>
+			["id21"] = <
+				text = <"Bilateral Assistive Device">
+				description = <"Record which bilateral assistive devices were used.">
+			>
+			["ac1"] = <
+				text = <"Unilateral Assistive Device (synthesised)">
+				description = <"Record which unilateral assistive devices were used. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Bilateral Assistive Device (synthesised)">
+				description = <"Record which bilateral assistive devices were used. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at14", "at15", "at16", "at17">
+		>
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at14", "at15", "at16">
+		>
+	>

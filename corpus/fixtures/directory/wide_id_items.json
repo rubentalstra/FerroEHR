@@ -1,0 +1,20 @@
+{
+  "_type": "FOLDER",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "root"
+  },
+  "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+  "items": [
+    {
+      "_type": "OBJECT_REF",
+      "namespace": "legacy.pas.example.org",
+      "type": "ANY",
+      "id": {
+        "_type": "GENERIC_ID",
+        "value": "A2-4715-0099",
+        "scheme": "local_ehr_scheme"
+      }
+    }
+  ]
+}

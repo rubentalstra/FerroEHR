@@ -1,0 +1,98 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.bodily_output-urination.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.bodily_output.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"11/11/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record related to, and measurements of  actual or estimated urination.">
+			use = <"Use to record urine output.
+Use in comnination with CLUSTER.fluid.v1
+Supercedes OBSERVATION.urine_output.v1 ">
+			keywords = <"production", "output", "fluid", "fluid balance", "input output", "io", "urine", "urinary", "bladder", "micturition">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", "Heather Leslie, Ocean Informatics, Australia">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"85B710F8FA65D82AD8135C106E174D88">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Urination
+		/data[id2]/events[id3]/data[id4]/items matches {
+			allow_archetype CLUSTER[id17.1] matches {	-- Urine detail
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.fluid(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			CLUSTER[id33] matches {
+				items matches {
+					ELEMENT[id34.1] 	-- Passed urine
+					ELEMENT[id35.1] 	-- Datetime urine last passed
+					ELEMENT[id37.1] 	-- Period elapsed since urine last passed
+					ELEMENT[id38.1] 	-- Difficulty passing urine
+				}
+			}
+			CLUSTER[id0.40] occurrences matches {0..1} matches {	-- Continence
+				items matches {
+					ELEMENT[id0.41] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id0.42] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.40"] = <
+				text = <"Continence">
+				description = <"Findings related to continence.">
+			>
+			["id0.41"] = <
+				text = <"Description">
+				description = <"Description of continence issues.">
+			>
+			["id1.1"] = <
+				text = <"Urination">
+				description = <"Recording of findings and measurement (or estimation) of urination.">
+			>
+			["id17.1"] = <
+				text = <"Urine detail">
+				description = <"Details of the fluid or substance observed being observed.">
+			>
+			["id34.1"] = <
+				text = <"Passed urine">
+				description = <"Has the subject passed urine?">
+			>
+			["id35.1"] = <
+				text = <"Datetime urine last passed">
+				description = <"The data and/or time that urine was last passed.">
+			>
+			["id37.1"] = <
+				text = <"Period elapsed since urine last passed">
+				description = <"The period elapsed since urine was last passed.">
+			>
+			["id38.1"] = <
+				text = <"Difficulty passing urine">
+				description = <"Description of  any difficulty passing urine.">
+			>
+		>
+	>

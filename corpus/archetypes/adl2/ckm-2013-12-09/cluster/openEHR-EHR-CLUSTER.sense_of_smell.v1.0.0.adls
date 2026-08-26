@@ -1,0 +1,94 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.sense_of_smell.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"14/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a patient's sense of smell or response to specific odour tests">
+			use = <"">
+			keywords = <"smell", "odour">
+			misuse = <"">
+		>
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Sense of smell
+		items matches {
+			CLUSTER[id2] matches {	-- Odour tested
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Name of odour
+						value matches {
+							DV_TEXT[id8] 
+						}
+					}
+					ELEMENT[id4] occurrences matches {0..1} matches {	-- Result
+						value matches {
+							DV_CODED_TEXT[id9] matches {
+								defining_code matches {[ac1]}		-- Result (synthesised)
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id7] occurrences matches {0..1} matches {	-- Comment
+				value matches {
+					DV_TEXT[id10] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Sense of smell">
+				description = <"To record a patient's sense of smell or response to specific odour tests">
+			>
+			["id2"] = <
+				text = <"Odour tested">
+				description = <"A series of odour tests for sense of smell">
+			>
+			["id3"] = <
+				text = <"Name of odour">
+				description = <"The name of the odour tested">
+			>
+			["id4"] = <
+				text = <"Result">
+				description = <"Was the odour correctly identified?">
+			>
+			["at5"] = <
+				text = <"Correctly identified">
+				description = <"*">
+			>
+			["at6"] = <
+				text = <"Incorrectly identified">
+				description = <"*">
+			>
+			["id7"] = <
+				text = <"Comment">
+				description = <"A comment or text description of the patient's sense of smell">
+			>
+			["ac1"] = <
+				text = <"Result (synthesised)">
+				description = <"Was the odour correctly identified? (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at5", "at6">
+		>
+	>

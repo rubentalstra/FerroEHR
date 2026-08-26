@@ -1,0 +1,748 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2012-01-04</original_author>
+    <original_author id="name">Sam Heard</original_author>
+    <original_author id="organisation">NT mEHR Project</original_author>
+    <original_author id="email">sam.heard@oceaninformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Mongelli M. Evaluation of Gestation. Medscape Reference. See http://emedicine.medscape.com/article/259269-overview#showall (accessed Jan 2012)&#xD;
+&#xD;
+Peek MJ, Devonald KJ, Beilby R, Ellwood D. The value of routine early pregnancy ultrasound in the antenatal booking clinic. Aust N Z J Obstet Gynaecol. May 1994;34(2):140-3.&#xD;
+&#xD;
+Geirsson RT, Busby-Earle RM. Certain dates may not provide a reliable estimate of gestational age. Br J Obstet Gynaecol. Jan 1991;98(1):108-9.&#xD;
+&#xD;
+Guerrero R, Florez PE. The duration of pregnancy. Lancet. Aug 2 1969;2(7614):268-9.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">1FC0ADBACFC434B9FE18DCD9CD10CC68</other_details>
+    <other_details id="build_uid">097b26e3-218f-4051-9337-c4797a4f7894</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>*To record the estimated or known duration of an active pregnancy at a point in time. (en)</purpose>
+      <keywords>*gestation (en)</keywords>
+      <keywords>*gestational age (en)</keywords>
+      <keywords>*conceptional age (en)</keywords>
+      <use>*To record the estimated or known duration of an active pregnancy at a point in time, especially to provide clinical context for associated pregnancy-related findings or assessments. For example: in the context of an antenatal consultation, an assertion by the clinician that the history, findings, assessments and plans were recorded on the basis of an assertion that the gestation of the pregnancy was 32 weeks. (en)</use>
+      <misuse>*Not to record the historical gestational age of the fetus at or after birth. This is recorded in the CLUSTER.birth_detail. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the estimated or known duration of an active pregnancy at a point in time.</purpose>
+      <keywords>gestation</keywords>
+      <keywords>gestational age</keywords>
+      <keywords>conceptional age</keywords>
+      <use>To record the estimated or known duration of an active pregnancy at a point in time, especially to provide clinical context for associated pregnancy-related findings or assessments. For example: in the context of an antenatal consultation, an assertion by the clinician that the history, findings, assessments and plans were recorded on the basis of an assertion that the gestation of the pregnancy was 32 weeks.</use>
+      <misuse>Not to record the historical gestational age of the fetus at or after birth. This is recorded in the CLUSTER.birth_detail.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen</author>
+    <author id="organisation">Oslo University Hospital</author>
+    <author id="email">varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>19de240d-26a0-49f4-a81e-a611b7ef23bc</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.gestation_assertion.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <pattern>PWD</pattern>
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>P0W</lower>
+                                <upper>P60W</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <pattern>PWD</pattern>
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>P0W</lower>
+                                <upper>P60W</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0020</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0021</code_list>
+                            <code_list>at0022</code_list>
+                            <code_list>at0023</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0019</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0007</code_list>
+                    <code_list>at0008</code_list>
+                    <code_list>at0009</code_list>
+                    <code_list>at0010</code_list>
+                    <code_list>at0011</code_list>
+                    <code_list>at0012</code_list>
+                    <code_list>at0013</code_list>
+                    <code_list>at0014</code_list>
+                    <code_list>at0015</code_list>
+                    <code_list>at0016</code_list>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Gestation assertion</items>
+        <items id="description">A statement or declaration by a clinician about the estimated or known duration of an active pregnancy at a specific point-in-time, usually based on EDD estimations and used as the basis for clinical decision-making.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Date of measurement</items>
+        <items id="description">The date and time of the measurement of gestation.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Gestational age</items>
+        <items id="description">Estimated duration of an active pregnancy.</items>
+        <items id="comment">Commonly this is estimated using the same method used to calculate the agreed or active 'Estimated Date of Delivery (EDD)' - frequently using the onset of the last menstrual period (LMP), or calculated from the measurement of fetal parameters during a pregnancy ultrasound.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Fetal age</items>
+        <items id="description">Calculated duration of an active pregnancy based on a known date/time of conception.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Gestational age basis</items>
+        <items id="description">The rationale underpinning the calculation of gestational age.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Ultrasound - first trimester</items>
+        <items id="description">An ultrasound done before 14 weeks gestation.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ultrasound - second trimester</items>
+        <items id="description">An ultrasound done between 14 and 28 weeks gestation.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Ultrasound - third trimester</items>
+        <items id="description">An ultrasound done greater than 28 weeks gestation.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Onset of Last Menstrual Period (LMP)</items>
+        <items id="description">The date of the first day of the last menstruation.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Date of conception</items>
+        <items id="description">The date of conception is known.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Uterine examination - first trimester</items>
+        <items id="description">The size of the uterus before 14 weeks gestation.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Uterine examination - second trimester</items>
+        <items id="description">The fundal height measured between 14 and 28 weeks gestation.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Uterine examination - third trimester</items>
+        <items id="description">The fundal height after 28 weeks gestation.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Date of first positive pregnancy test</items>
+        <items id="description">Date of first positive pregnancy test, ideally involving serial pregnancy tests with a known sensitivity.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Expected Date of Delivery (EDD)</items>
+        <items id="description">Calculated back from the agreed or active EDD.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Comment</items>
+        <items id="description">Narrative description about the assertion of gestation, not captured in other fields.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Trimester</items>
+        <items id="description">Duration of pregnancy grouped into 12-14 week intervals.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">First trimester</items>
+        <items id="description">First day of last normal menstrual period until the end of week 12 of a pregnancy.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Second trimester</items>
+        <items id="description">Beginning of week 13 to the end of week 28 of a pregnancy.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Third trimester</items>
+        <items id="description">Beginning of week 29 until birth.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Gestasjonsalder</items>
+        <items id="description">*A statement or declaration by a clinician about the estimated or known duration of an active pregnancy at a specific point-in-time, usually based on EDD estimations and used as the basis for clinical decision-making. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Dato for måling</items>
+        <items id="description">Dato eller Dato/Tid for målingen av gestasjonsalder.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Gestasjonsalder</items>
+        <items id="description">*Estimated duration of an active pregnancy. (en)</items>
+        <items id="comment">*Commonly this is estimated using the same method used to calculate the agreed or active 'Estimated Date of Delivery (EDD)' - frequently using the onset of the last menstrual period (LMP), or calculated from the measurement of fetal parameters during a pregnancy ultrasound. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Fetal age (en)</items>
+        <items id="description">*Calculated duration of an active pregnancy based on a known date/time of conception. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Gestational age basis (en)</items>
+        <items id="description">*The rationale underpinning the calculation of gestational age. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Ultralyd - første trimester</items>
+        <items id="description">En ultralydundersøkelse gjennomført før uke 14.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ultralyd - andre trimester</items>
+        <items id="description">En ultralydundersøkelse gjennomført mellom uke 14 og 28.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Ultralyd - tredje trimester</items>
+        <items id="description">En ultralydundersøkelse gjennomført senere enn uke 28.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Onset of Last Menstrual Period (LMP) (en)</items>
+        <items id="description">Dato for den første dagen av siste menstruasjon.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Konsepsjonsdato</items>
+        <items id="description">Datoen fertiliseringen skjedde er kjent.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Livmorundersøkelse - første trimester</items>
+        <items id="description">Størrelsen av livmoren før uke 14.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Livmorundersøkelse - andre trimester</items>
+        <items id="description">Høyden på fundus målt mellom uke 14 og 28.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Livmorundersøkelse - tredje trimester</items>
+        <items id="description">Høyden på fundus målt etter uke 28.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Dato for første positive graviditetstest</items>
+        <items id="description">*Dato den første graviditetstesten var positiv, fortrinnsvis med en *serial?* graviditetstest med en kjent sensitivitet.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Expected Date of Delivery (EDD) (en)</items>
+        <items id="description">*Calculated back from the agreed or active EDD. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Kommentar</items>
+        <items id="description">*Narrative description about the assertion of gestation, not captured in other fields. (en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Trimester</items>
+        <items id="description">Varighet av svangerskap, gruppert i intervaller av 12-14 uker.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Første trimester</items>
+        <items id="description">Første dag av siste normale menstruasjonsperiode fram til slutten av 12. uke i et svangerskap.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Andre trimester</items>
+        <items id="description">Begynnelsen av uke 13 til slutten av uke 28 i et svangerskap.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Tredje trimester</items>
+        <items id="description">Begynnelsen av uke 29 fram til fødsel.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,166 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.vaccination_summary.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2012-11-23">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a summary of the vaccination status for an identified infectious disease or agent.">
+			use = <"Use to record a summary statement by a clinician about the vaccination status for an identified infectious disease or agent.
+
+This archetype does not presume any particular schedule or protocol for vaccination.">
+			keywords = <"vaccination", "immunisation", "immunization", "summary", "primary", "course", "booster">
+			misuse = <"Not to be used to record a status of the subject's possible immune status. Immune status and need for ongoing vaccination or booster will be a clinical decision determined by a number of factors - clinical evidence of previous infection; vaccination status; vaccination history; serology results; contraindications; adverse reactions; and the clinical trigger eg a needle stab injury or exposure to an infectious disease/agent.">
+		>
+	>
+	other_contributors = <"Merrilyn Curtis, AnalyzeIT, Australia", "Sistine Barretto-Daniels, Ocean Informatics, Australia">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"252D262E3AD5452A4EADF46B46666452">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Vaccination Summary
+		data matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] occurrences matches {1..*} matches {	-- Infectious Disease or Agent
+						value matches {
+							DV_TEXT[id17] 
+						}
+					}
+					ELEMENT[id4] occurrences matches {0..1} matches {	-- Primary Course Status
+						value matches {
+							DV_CODED_TEXT[id18] matches {
+								defining_code matches {[ac1]}		-- Primary Course Status (synthesised)
+							}
+						}
+					}
+					ELEMENT[id9] occurrences matches {0..1} matches {	-- Date Primary Course Completed
+						value matches {
+							DV_DATE_TIME[id19] 
+						}
+					}
+					ELEMENT[id10] occurrences matches {0..1} matches {	-- Date of Last Booster
+						value matches {
+							DV_DATE_TIME[id20] 
+						}
+					}
+					ELEMENT[id11] occurrences matches {0..1} matches {	-- Vaccination Status
+						value matches {
+							DV_CODED_TEXT[id21] matches {
+								defining_code matches {[ac2]}		-- Vaccination Status (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id14] matches {
+				items matches {
+					ELEMENT[id15] occurrences matches {0..1} matches {	-- Next Review Due
+						value matches {
+							DV_DATE_TIME[id22] 
+						}
+					}
+					ELEMENT[id16] occurrences matches {0..1} matches {	-- Last Updated
+						value matches {
+							DV_DATE_TIME[id23] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Vaccination Summary">
+				description = <"Summary of the vaccination status for an identified infectious disease or agent.">
+			>
+			["id3"] = <
+				text = <"Infectious Disease or Agent">
+				description = <"Identification of the infectious disease or agent.">
+			>
+			["id4"] = <
+				text = <"Primary Course Status">
+				description = <"Status of the primary course of vaccinations.">
+			>
+			["at5"] = <
+				text = <"Not commenced">
+				description = <"Primary course was not commenced.">
+			>
+			["at6"] = <
+				text = <"Incomplete">
+				description = <"Primary course was commenced but not completed.">
+			>
+			["at7"] = <
+				text = <"Complete">
+				description = <"Primary course was completed.">
+			>
+			["at8"] = <
+				text = <"Indeterminate">
+				description = <"The available information is inadequate to determin the status of the primary course.">
+			>
+			["id9"] = <
+				text = <"Date Primary Course Completed">
+				description = <"The date on which the primary  (or catch-up) course of vaccines was completed.">
+			>
+			["id10"] = <
+				text = <"Date of Last Booster">
+				description = <"The date of which the last vaccine booster was administered.">
+			>
+			["id11"] = <
+				text = <"Vaccination Status">
+				description = <"An assertion about whether the vaccination course is up-to-date.">
+			>
+			["at12"] = <
+				text = <"Vaccination up-to-date">
+				description = <"The vaccination course is up-to-date.">
+			>
+			["at13"] = <
+				text = <"Vaccination not up-to-date">
+				description = <"The vaccination course is not up-to-date.">
+			>
+			["id15"] = <
+				text = <"Next Review Due">
+				description = <"The date at which the immunisation summary should be reviewed and possibly updated.">
+			>
+			["id16"] = <
+				text = <"Last Updated">
+				description = <"The date on which the immunisation summary was last updated.">
+			>
+			["ac1"] = <
+				text = <"Primary Course Status (synthesised)">
+				description = <"Status of the primary course of vaccinations. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Vaccination Status (synthesised)">
+				description = <"An assertion about whether the vaccination course is up-to-date. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at5", "at6", "at7", "at8">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at12", "at13">
+		>
+	>

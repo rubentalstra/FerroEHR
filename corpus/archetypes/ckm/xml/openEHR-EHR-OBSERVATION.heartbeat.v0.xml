@@ -1,0 +1,2774 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2006-03-26</original_author>
+    <original_author id="name">Sam Heard</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">sam.heard@oceaninformatics.com</original_author>
+    <other_contributors>Morten Aas, Diakonhjemmet Sykehus, Norway</other_contributors>
+    <other_contributors>Tomas Alme, Norway</other_contributors>
+    <other_contributors>Magnus Alvestad, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Nadim Anani, Karolinska Institutet, Sweden</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Gustavo Bacelar-Silva, Healthcare Designs, Brazil (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University Hospital, Bergen, Norway</other_contributors>
+    <other_contributors>Diego Bosca, IBIME group, Spain</other_contributors>
+    <other_contributors>Pål Brekke, OUS Rikshospitalet, Norway</other_contributors>
+    <other_contributors>Einar Bugge, UNN HF, Fag- og forskningssenteret, Norway</other_contributors>
+    <other_contributors>Rong Chen, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>Stephen Chu, Queensland Health, Australia</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Angela de Zwart, Orion Health, New Zealand</other_contributors>
+    <other_contributors>Graham Denyer, Australian Antarctic Division, Australia</other_contributors>
+    <other_contributors>Paul Donaldson, Nursing Informatics Australia, Australia</other_contributors>
+    <other_contributors>Shahla Foozonkhah, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Einar Fosse, UNN HF, Norwegian Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Sebastian Garde, Ocean Informatics, Germany</other_contributors>
+    <other_contributors>John George, HSCIC, United Kingdom</other_contributors>
+    <other_contributors>Soon Ghee Yap, Singapore General Hospital, Singapore</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Bjørn Grøva, Diretoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Atle Hansen, Universitetssykehuset Nord-Norge, Norway</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Kristian Heldal, Telemark Hospital Trust, Norway</other_contributors>
+    <other_contributors>Andreas Hering, Helse Bergen HF, Haukeland universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Eugene Igras, IRIS Systems, Inc., Canada</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Athanasios Kleontas, Ergobyte Informatics, Greece</other_contributors>
+    <other_contributors>Shinji Kobayashi, Kyoto University, Japan</other_contributors>
+    <other_contributors>Robert Legan, NEHTA, Australia</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Rohan Martin, Ambulance Victoria, Australia</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Jeroen Meintjens, Medisch Centrum Alkmaar, Netherlands</other_contributors>
+    <other_contributors>Monica Merchat, Hospital Cardiac Electrophysiology, MS Health Informatics Student, former ICU nurse, former Anesthesia Technician, United States</other_contributors>
+    <other_contributors>Bjoern Naess, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Arturo Romero, SESCAM, Spain</other_contributors>
+    <other_contributors>Jussara Rotzsch, UNB, Brazil</other_contributors>
+    <other_contributors>Thomas Schopf, University Hospital of North-Norway, Norway</other_contributors>
+    <other_contributors>Nils Thomas Songstad, UNN HF, BUK, Barneavdelingen., Norway</other_contributors>
+    <other_contributors>Thor-Einar Stemland, Helse Bergen, FOU Seksjon for e-helse, Norway</other_contributors>
+    <other_contributors>Arne Løberg Sæter, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Jan Inge Sørheim, Helse Bergen, Haukeland uniersitetssjukehus, Norway</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Bergen/Haraldsplass sykehus, Norway</other_contributors>
+    <other_contributors>Kevin Thon, SKDE, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Pulse/Heart beat, Published archetype [Internet]. openEHR Foundation, openEHR Clinical Knowledge Manager [cited: 2024-02-15]. Available from: https://ckm.openehr.org/ckm/archetypes/1013.1.4295.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">089AFE707DBFD8F934EB03311CCF13A2</other_details>
+    <other_details id="build_uid">e5809cd3-ba27-4db6-85b7-63555341b8d2</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ru</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record findings about a series of heartbeats.</purpose>
+      <keywords>rate</keywords>
+      <keywords>rhythm</keywords>
+      <keywords>beat</keywords>
+      <keywords>heart</keywords>
+      <keywords>vital</keywords>
+      <keywords>sign</keywords>
+      <use>Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+In clinical practice and daily use, the terms 'heart beat' and 'pulse' may be used interchangeably, depending on the context and method of measurement. 'Heart beat' is the broader term that covers any method of measuring the heart action, whereas 'pulse' specifically describes measuring the heart action through the palpation of a pulse. When designing templates for scenarios where it can't be anticipated whether specifically 'heart beat' or specifically 'pulse' will be measured, and it's not important to the clinical scenario to tell them apart, this archetype should be used. When 'heartbeat' and 'pulse ' are both being recorded, use this archetype to record only the heartbeat measured at or near the heart.&#xD;
+&#xD;
+A companion archetype has been created as a specialisation of this archetype - OBSERVATION.heartbeat-pulse -  to specifically record the 'Pulse' as pressure waves in the arteries.&#xD;
+&#xD;
+The measured heart rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event.</use>
+      <misuse>Not to be used to record findings specifically about a series of arterial pulses, observed directly from a single arterial site. Use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report. Use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate. Use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit. Use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record concepts such as "Target heart rate". Use specific archetypes such as EVALUATION.goal for these purposes.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-co</code_string>
+      </language>
+      <purpose>*To record findings about a series of heartbeats, observed at or near the heart. (en)</purpose>
+      <keywords>*rate (en)</keywords>
+      <keywords>*rhythm (en)</keywords>
+      <keywords>*beat (en)</keywords>
+      <keywords>*heart (en)</keywords>
+      <keywords>*vital (en)</keywords>
+      <keywords>*sign (en)</keywords>
+      <use>*Use to record findings about a series of heartbeats, including rate and regularity.&#xD;
+&#xD;
+The measured rate can be recorded using a device, although the R-R rate recorded as part of an ECG should be recorded separately.&#xD;
+&#xD;
+Measurements such as the maximum heart rate during an interval can be recorded using 'Maximum' event. (en)</use>
+      <misuse>*Not to be used to record findings about a series of arterial pulses, observed directly from a single arterial site - use the specialised OBSERVATION.heartbeat-pulse archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the heart rate measured as R-R rate in the context of an Electrocardiograph report - use the OBSERVATION.ecg archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record other details of a cardiovascular examination or assessment. Use the CLUSTER.exam-heart archetype or other archetypes from the CLUSTER.exam family for the purpose of recording physical examination findings, such as the position of the apex beat, murmurs and bruits.&#xD;
+&#xD;
+Not to be used to record fetal heart rate - use the OBSERVATION.fetal_heart archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record a pulse deficit - use the OBSERVATION.pulse_deficit archetype for this purpose.&#xD;
+&#xD;
+Concepts such as Target Heart Rate should be recorded in specific archetypes such as EVALUATION.goal. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Jasmin Buck, Sebastian Garde, Ramona Wellmann</author>
+    <author id="organisation">University of Heidelberg, Central Queensland University, Hannover Medical School</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ru</code_string>
+    </language>
+    <author id="name">Vyacheslav Mavrin</author>
+    <author id="organisation">JSC Comsoft</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Erik Sundvall; Åsa Skagerhult, Kirsi Poikela</author>
+    <author id="organisation">Region Östergötland, Tieto Sweden AB</author>
+    <author id="email">asa.skagerhult@regionostergotland.se, ext.kirsi.poikela@tieto.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Vesa Peltola</author>
+    <author id="organisation">Tieto Finland</author>
+    <author id="email">vesa.peltola@tieto.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Helse Bergen HF</author>
+    <author id="email">.</author>
+    <accreditation>RN</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Pablo Pazos</author>
+    <author id="organisation">CaboLabs - Health Informatics</author>
+    <author id="email">pablo.pazos@cabolabs.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-co</code_string>
+    </language>
+    <author id="name">Jose Florez-Arango</author>
+    <accreditation>MD MS PhD</accreditation>
+  </translations>
+  <uid>
+    <value>7d8d244c-eb23-4619-935a-43bf338f1ab8</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.heartbeat.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0001</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at1005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at1024</code_list>
+                            <code_list>at1025</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <property>
+                          <terminology_id>
+                            <value>openehr</value>
+                          </terminology_id>
+                          <code_string>382</code_string>
+                        </property>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <upper_included>false</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0.0</lower>
+                            <upper>1000.0</upper>
+                          </magnitude>
+                          <precision>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>0</upper>
+                          </precision>
+                          <units>/min</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0006</code_list>
+                            <code_list>at1028</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at1022</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at1023</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at1059</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0012</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0013</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at1003</code_list>
+                            <code_list>at1001</code_list>
+                            <code_list>at1002</code_list>
+                            <code_list>at1000</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at1018</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at1017</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.level_of_exertion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.level_of_exertion(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>openEHR-EHR-CLUSTER\.level_of_exertion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.level_of_exertion(-[a-zA-Z0-9_]+)*\.v0</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>INTERVAL_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at1036</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0002]/events[at0003]/data[at0001]</target_path>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0002]/events[at0003]/state[at0012]</target_path>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>math_function</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>openehr</value>
+                    </terminology_id>
+                    <code_list>144</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at1019</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at1032</code_list>
+                    <code_list>at1033</code_list>
+                    <code_list>at1060</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at1013</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at1056</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*structure(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*history(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Regular?(en)</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Regular(en)</items>
+        <items id="description">*The pattern is regular.(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*List(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*List(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">*Lying(en)</items>
+        <items id="description">*The subject was lying flat.(en)</items>
+      </items>
+      <items code="at1001">
+        <items id="text">*Sitting(en)</items>
+        <items id="description">*The subject was sitting (for example on bed or chair).(en)</items>
+      </items>
+      <items code="at1002">
+        <items id="text">*Reclining(en)</items>
+        <items id="description">*The subject was reclining at an approximate angle of 45 degrees, with the legs elevated to the level of the pelvis.(en)</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*The subject was standing, walking or running.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">*Presence(en)</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">*Device(en)</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">*Exertion(en)</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">*Confounding factors(en)</items>
+        <items id="description">*Narrative description about any incidental factors that may affect interpretation of the physical findings.(en)</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">*Method(en)</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">*For example, auscultation or electronic monitoring. (en)</items>
+      </items>
+      <items code="at1022">
+        <items id="text">*Clinical description(en)</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">*Clinical interpretation(en)</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">*Not detected(en)</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">*Irregular(en)</items>
+        <items id="description">*The pattern is irregular.(en)</items>
+      </items>
+      <items code="at1032">
+        <items id="text">*Palpation(en)</items>
+        <items id="description">*The findings are observed by physical touch of the observer on the subject.(en)</items>
+      </items>
+      <items code="at1033">
+        <items id="text">*Auscultation(en)</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-co">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*structure(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*history(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Regular?(en)</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Regular(en)</items>
+        <items id="description">*The pattern is regular.(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*List(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*List(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">*Lying(en)</items>
+        <items id="description">*The subject was lying flat.(en)</items>
+      </items>
+      <items code="at1001">
+        <items id="text">*Sitting(en)</items>
+        <items id="description">*The subject was sitting (for example on bed or chair).(en)</items>
+      </items>
+      <items code="at1002">
+        <items id="text">*Reclining(en)</items>
+        <items id="description">*The subject was reclining at an approximate angle of 45 degrees, with the legs elevated to the level of the pelvis.(en)</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*The subject was standing, walking or running.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">*Presence(en)</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">*Device(en)</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">*Exertion(en)</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">*Confounding factors(en)</items>
+        <items id="description">*Narrative description about any incidental factors that may affect interpretation of the physical findings.(en)</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">*Method(en)</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">*For example, auscultation or electronic monitoring. (en)</items>
+      </items>
+      <items code="at1022">
+        <items id="text">*Clinical description(en)</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">*Clinical interpretation(en)</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">*Not detected(en)</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">*Irregular(en)</items>
+        <items id="description">*The pattern is irregular.(en)</items>
+      </items>
+      <items code="at1032">
+        <items id="text">*Palpation(en)</items>
+        <items id="description">*The findings are observed by physical touch of the observer on the subject.(en)</items>
+      </items>
+      <items code="at1033">
+        <items id="text">*Auscultation(en)</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Heartbeat</items>
+        <items id="description">A series of cardiac cycles of contraction and relaxation.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">structure</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">history</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Heart rate</items>
+        <items id="description">The measured rate of the heartbeat.</items>
+        <items id="comment">For example: 72/min.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Regularity</items>
+        <items id="description">The regularity of the heartbeat.</items>
+        <items id="comment">This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Regular</items>
+        <items id="description">The pattern is regular.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Position</items>
+        <items id="description">The body position of the individual during the observation.</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Lying</items>
+        <items id="description">The subject was lying flat.</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Sitting</items>
+        <items id="description">The subject was sitting (for example on bed or chair).</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Reclining</items>
+        <items id="description">The subject was reclining at an approximate angle of 45 degrees, with the legs elevated to the level of the pelvis.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">Standing/upright</items>
+        <items id="description">The subject was standing, walking or running.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Presence</items>
+        <items id="description">Observation about detection of a heartbeat.</items>
+        <items id="comment">It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min.</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Device</items>
+        <items id="description">Details about the device used to observe the heartbeat.</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Exertion</items>
+        <items id="description">Details about the level of physical activity performed during the observation.</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Confounding factors</items>
+        <items id="description">Narrative description about any incidental factors that may affect interpretation of the physical findings.</items>
+        <items id="comment">For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever.</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Method</items>
+        <items id="description">The method used to observe the heartbeat.</items>
+        <items id="comment">For example, auscultation or electric monitoring. </items>
+      </items>
+      <items code="at1022">
+        <items id="text">Clinical description</items>
+        <items id="description">Narrative description about the heartbeat.</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Clinical interpretation</items>
+        <items id="description">Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm.</items>
+        <items id="comment">For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'.</items>
+      </items>
+      <items code="at1024">
+        <items id="text">Present</items>
+        <items id="description">A heartbeat can be detected.</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Not detected</items>
+        <items id="description">A heartbeat cannot be detected.</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Irregular</items>
+        <items id="description">The pattern is irregular.</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpation</items>
+        <items id="description">The findings are observed by physical touch of the observer on the subject.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Auscultation</items>
+        <items id="description">The findings are observed using a manual amplifying device, such as a stethoscope.</items>
+      </items>
+      <items code="at1036">
+        <items id="text">Maximum heart rate</items>
+        <items id="description">Maximum heart rate observed during a specified time interval.</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the findings not captured in other fields.</items>
+      </items>
+      <items code="at1060">
+        <items id="text">Electric</items>
+        <items id="description">The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Structure</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Jedes Ereignis</items>
+        <items id="description">Ein Standardwert, ein spezifizierter Zeitpunkt oder ein Intervallereignis, welches explizit in einem Template oder während der Laufzeit definiert werden kann.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Regelmäßigkeit</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Regelmäßig</items>
+        <items id="description">Der Verlauf ist regelmäßig.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Körperhaltung</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Liegend</items>
+        <items id="description">Der Patient lag flach.</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Sitzend</items>
+        <items id="description">Der Patient saß (zum Beispiel auf einem Bett oder einem Stuhl).</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Zurücklehnend</items>
+        <items id="description">Der Patient saß zurück gelehnt in einem Winkel von 45 Grad und seine Beine waren bis zur Höhe des Beckens angehoben.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*Der Patient stand, ging oder rannte.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Vorhandensein</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Gerät</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Anstrengung</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Störfaktoren</items>
+        <items id="description">Die Beschreibung aller zufälligen Faktoren, die die Interpretation der physikalischen Ergebnisse beeinflussen können.</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Methode</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">Zum Beispiel auskultatorisch oder über elektronisches Monitoring, z.B. mit einem Blutdruckmessgerät.</items>
+      </items>
+      <items code="at1022">
+        <items id="text">Klinische Beschreibung</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Klinische Interpretation</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Nicht ermittelbar</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Unregelmäßig</items>
+        <items id="description">Der Verlauf ist unregelmäßig.</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpation</items>
+        <items id="description">Der Befund wurde durch physisches Tasten des Beobachters am Patienten erlangt.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Auskultation</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Erweiterung</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Kommentar</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ru">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Дерево</items>
+        <items id="description">@ внутреннийl @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">История</items>
+        <items id="description">@ внутреннийl @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Regular?(en)</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Regular(en)</items>
+        <items id="description">*The pattern is regular.(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Дерево</items>
+        <items id="description">@ внутреннийl @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Дерево</items>
+        <items id="description">@ внутреннийl @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Position(en)</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">*Lying(en)</items>
+        <items id="description">*The subject was lying flat.(en)</items>
+      </items>
+      <items code="at1001">
+        <items id="text">*Sitting(en)</items>
+        <items id="description">*The subject was sitting (for example on bed or chair).(en)</items>
+      </items>
+      <items code="at1002">
+        <items id="text">*Reclining(en)</items>
+        <items id="description">*The subject was reclining at an approximate angle of 45 degrees, with the legs elevated to the level of the pelvis.(en)</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*The subject was standing, walking or running.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">*Presence(en)</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">*Device(en)</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">*Exertion(en)</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">*Confounding factors(en)</items>
+        <items id="description">*Narrative description about any incidental factors that may affect interpretation of the physical findings.(en)</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">*Method(en)</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">*For example, auscultation or electronic monitoring. (en)</items>
+      </items>
+      <items code="at1022">
+        <items id="text">*Clinical description(en)</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">*Clinical interpretation(en)</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">*Not detected(en)</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">*Irregular(en)</items>
+        <items id="description">*The pattern is irregular.(en)</items>
+      </items>
+      <items code="at1032">
+        <items id="text">*Palpation(en)</items>
+        <items id="description">*The findings are observed by physical touch of the observer on the subject.(en)</items>
+      </items>
+      <items code="at1033">
+        <items id="text">*Auscultation(en)</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">structure</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">history</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Algum evento</items>
+        <items id="description">Predefinido, ponto não especificado ou evento de intervalo que pode ser explicitamente definido em um modelo ou em tempo de execução.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Regular?</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Regular</items>
+        <items id="description">O padrão é regular.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Posição</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Deitado</items>
+        <items id="description">O sujeito estava deitado.</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Sentado</items>
+        <items id="description">O sujeito estava sentado (por exemplo, na cama ou cadeira)</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Reclinado</items>
+        <items id="description">O sujeito estava reclinado em um ângulo aproximado de 45°, com as pernas elevadas ao nível da pelve.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*O sujeito estava em pé, andando ou correndo.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Presença</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Dispositivo</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Esforço</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Fatores de confusão</items>
+        <items id="description">Descrição narrativa sobre quaisquer fatores incidentais que possam afetar a interpretação dos achados físicos.</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Método</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">Por exemplo, ausculta ou monitorização eletrônica.</items>
+      </items>
+      <items code="at1022">
+        <items id="text">Descrição clínica</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Interpretação clínica</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Não detectado</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Irregular</items>
+        <items id="description">O padrão é irregular.</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpação</items>
+        <items id="description">Os resultados são observados pelo toque físico no sujeito do cuidado pelo observador.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Ausculta</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Extensão</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Comentários</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">structure</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">history</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Ospecificerad händelse</items>
+        <items id="description">Standardmässig ospecificerad tidpunkt eller tidsintervall som kan anges explicit i en mall, eller genereras automatiskt av vissa IT-system.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Regelbunden</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Regelbunden</items>
+        <items id="description">Mönstret är regelbundet.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Kroppsställning</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Liggande</items>
+        <items id="description">Patienten låg plant.</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Sittande</items>
+        <items id="description">Patienten satt, exempelvis på en säng eller en stol.</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Halvliggande</items>
+        <items id="description">Patienten låg i ungefär 45 graders vinkel, med benen upphöjda till bäckennivå.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*Patienten stod, gick eller sprang.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Närvaro</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Utrustning</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Ansträngning</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Möjliga felkällor</items>
+        <items id="description">Beskrivning av faktorer som kan påverka tolkningen av de fysiska fynden.</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Metod</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">Exempelvis stetoskop eller elektronisk övervakning.</items>
+      </items>
+      <items code="at1022">
+        <items id="text">Klinisk beskrivning</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Klinisk tolkning</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Frånvaro</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Oregelbunden</items>
+        <items id="description">Mönstret är oregelbundet.</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpation</items>
+        <items id="description">Läkare eller sjuksköterska observerar fynden genom fysisk beröring av patienten.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Auskultation</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Tilläggsinformation</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Kommentar</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">estructura</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">historia</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">evento</items>
+        <items id="description">Evento de punto o intervalo de tiempo que puede ser definido explícitamente por una plantilla o en tiempo de ejecución.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Regularidad</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Regular</items>
+        <items id="description">El patrón es regular</items>
+      </items>
+      <items code="at0010">
+        <items id="text">lista</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">lista</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Posición</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Acostado</items>
+        <items id="description">El sujeto está acostado de forma horizontal</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Sentado</items>
+        <items id="description">El sujeto está sentado en una silla o cama</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Reclinado</items>
+        <items id="description">El sujeto está reclinado en un ángulo aproximado a los 45 grados, con las piernas elevadas al nivel de la pelvis.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*El sujeto está parado, caminando o corriendo.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Presencia del pulso</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Dispositivo</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Ejercicio</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Factores de confusión</items>
+        <items id="description">Descripción narrativa sobre factores que pueden afectar a los valores medidos.</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Método</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">Por ejemplo, auscultación o monitoreo electrónico.</items>
+      </items>
+      <items code="at1022">
+        <items id="text">Descripción clínica</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Interpretación clínica</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Ausente</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Irregular</items>
+        <items id="description">El patrón es irregular</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpación</items>
+        <items id="description">Los hallazgos se realizam mediante contacto físico sobre el sujeto.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Auscultación</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Extensión</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Comentarios</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">structure</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">history</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Mikä tahansa tapahtuma</items>
+        <items id="description">Oletusarvoinen, määrittämättömänä ajanhetkenä tai ajanjaksolla ilmenevä tapahtuma, joka voi olla määritetty tarkasti jossakin mallissa tai suorituksen aikana.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Säännöllinen?</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Säännöllinen</items>
+        <items id="description">Syke on säännöllinen.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Asento</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Makuulla</items>
+        <items id="description">Tutkittava oli makuulla.</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Istuen</items>
+        <items id="description">Tutkittava istui (esimerkiksi vuoteella tai tuolissa).</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Taaksepäin nojaten</items>
+        <items id="description">Tutkittava nojasi taaksepäin noin 45 asteen kulmassa jalat nostettuina lantion tasalle.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*Tutkittava istui, käveli tai juoksi.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Läsnäolo</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Laite</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Rasitus</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Sekoittavat tekijät</items>
+        <items id="description">Kertomusmuodossa oleva kuvaus satunnaistekijöistä, jotka saattavat vaikuttaa fysikaalisten löydösten tulkintaan.</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Menetelmä</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">For example, auscultation or electronic monitoring. </items>
+      </items>
+      <items code="at1022">
+        <items id="text">Kliininen kuvaus</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Kliininen tulkinta</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Ei havaittu</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Epäsäännöllinen</items>
+        <items id="description">Syke on epäsäännöllinen.</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpaatio</items>
+        <items id="description">Löydökset havaitaan havaitsijan koskettaessa tutkittavaa fyysisesti.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Auskultaatio</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Laajennus</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Kommentti</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Heartbeat (en)</items>
+        <items id="description">*Findings about consecutive cardiac cycles of contraction and relaxation, observed at or near the heart. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">structure</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">history</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Heart rate (en)</items>
+        <items id="description">*The measured rate of the heartbeat. (en)</items>
+        <items id="comment">*For example: 72/min. (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Rytme</items>
+        <items id="description">*The regularity of the heartbeat. (en)</items>
+        <items id="comment">*This data element allows a choice of datatypes. Use the DV_TEXT data type to support inclusion of alternative or extended value sets. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Regelmessig</items>
+        <items id="description">Rytmen er regelmessig.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">List</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Stilling</items>
+        <items id="description">*The body position of the individual during the observation. (en)</items>
+      </items>
+      <items code="at1000">
+        <items id="text">Liggende</items>
+        <items id="description">Liggende flatt ved tidspunkt for målingen.</items>
+      </items>
+      <items code="at1001">
+        <items id="text">Sittende</items>
+        <items id="description">Sittende (for eksempel på en stol eller på en seng med føttene på gulvet) ved tidspunktet for målingen.</items>
+      </items>
+      <items code="at1002">
+        <items id="text">Tilbakelent</items>
+        <items id="description">Sittende tilbakelent ca 45º og med beina hevet til hoftehøyde ved tidspunkt for målingen.</items>
+      </items>
+      <items code="at1003">
+        <items id="text">*Standing/upright(en)</items>
+        <items id="description">*Stående, gående eller løpende ved tidspunktet for målingen.</items>
+      </items>
+      <items code="at1005">
+        <items id="text">Tilstedeværelse</items>
+        <items id="description">*Observation about detection of a heartbeat. (en)</items>
+        <items id="comment">*It can be implied that the heartbeat is present if Rate &gt;0 /min.&#xD;
+It can be implied that the heartbeat is present if 'Heart rate' &gt;0 /min. (en)</items>
+      </items>
+      <items code="at1013">
+        <items id="text">Måleapparat</items>
+        <items id="description">*Details about the device used to observe the heartbeat. (en)</items>
+      </items>
+      <items code="at1017">
+        <items id="text">Fysisk anstrengelse</items>
+        <items id="description">*Details about the level of physical activity performed during the observation. (en)</items>
+      </items>
+      <items code="at1018">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Tekstlig beskrivelse av eventuelle andre faktorer som kan påvirke tolkningen av funnene.</items>
+        <items id="comment">*For example, presence of a pacemaker; level of anxiety;  and the presence of pain or fever. (en)</items>
+      </items>
+      <items code="at1019">
+        <items id="text">Målemetode</items>
+        <items id="description">*Method used to observe the heartbeat. (en)</items>
+        <items id="comment">For eksempel palpasjon, auskultasjon eller elektronisk monitorering.</items>
+      </items>
+      <items code="at1022">
+        <items id="text">Klinisk beskrivelse</items>
+        <items id="description">*Narrative description about the heartbeat. (en)</items>
+      </items>
+      <items code="at1023">
+        <items id="text">Klinisk tolkning</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the findings, including the rhythm. (en)</items>
+        <items id="comment">*For example: 'bradycardia'; or 'ectopic beats'. Coding with a terminology is preferred, where possible. This data element has multiple occurrences to allow the recording of more than one 'Clinical interpretation'. (en)</items>
+      </items>
+      <items code="at1024">
+        <items id="text">*Present (en)</items>
+        <items id="description">*A heartbeat can be detected. (en)</items>
+      </items>
+      <items code="at1025">
+        <items id="text">Fraværende</items>
+        <items id="description">*A heartbeat cannot be detected. (en)</items>
+      </items>
+      <items code="at1028">
+        <items id="text">Uregelmessig</items>
+        <items id="description">Rytmen er uregelmessig.</items>
+      </items>
+      <items code="at1032">
+        <items id="text">Palpasjon</items>
+        <items id="description">Funnene observeres ved at observatøren med fingertuppene kjenner på pulsen eller hjerteslagene til individet.</items>
+      </items>
+      <items code="at1033">
+        <items id="text">Auskultasjon</items>
+        <items id="description">*The findings are observed using a manual amplifying device, such as a stethoscope. (en)</items>
+      </items>
+      <items code="at1036">
+        <items id="text">*Maximum heart rate (en)</items>
+        <items id="description">*Maximum heart rate observed during a specified time interval. (en)</items>
+      </items>
+      <items code="at1056">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at1059">
+        <items id="text">Kommentar</items>
+        <items id="description">*Additional narrative about the findings not captured in other fields. (en)</items>
+      </items>
+      <items code="at1060">
+        <items id="text">*Electric (en)</items>
+        <items id="description">*The findings are observed using a device which measures the electrical activity of the heart, such as a chest strap monitor. (en)</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0005">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>364074009</code_string>
+        </value>
+      </items>
+      <items code="at0004">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>364075005</code_string>
+        </value>
+      </items>
+      <items code="at1028">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>361137007</code_string>
+        </value>
+      </items>
+      <items code="at1022">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>703852005</code_string>
+        </value>
+      </items>
+      <items code="at1003">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>10904000</code_string>
+        </value>
+      </items>
+      <items code="at1001">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>33586001</code_string>
+        </value>
+      </items>
+      <items code="at1002">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>272580008</code_string>
+        </value>
+      </items>
+      <items code="at0013">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>9851009</code_string>
+        </value>
+      </items>
+      <items code="at1023">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>243814003</code_string>
+        </value>
+      </items>
+      <items code="at1059">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>703852005</code_string>
+        </value>
+      </items>
+      <items code="at0000">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>248646004</code_string>
+        </value>
+      </items>
+      <items code="at1000">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>40199007</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,252 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-EVALUATION.goal.v1
+
+concept
+	[at0000]	-- Goal
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2006-09-02">
+	>
+	details = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل الأهداف العامة و الأهداف المُحَدَّدة القابلة للقياس (و ربما الإضافية) المؤدية إلى الهدف العام.">
+			use = <"">
+			keywords = <"الهدف", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording general goals and specific measurable (and perhaps incremental) targets towards that goal.">
+			use = <"Use to record overall goals, along with one or more specific measurable targets towards the goal.">
+			keywords = <"target", "goal", "plan">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"7E02F7728771D9FDEB9DE3809A92D38C">
+	>
+
+definition
+	EVALUATION[at0000] matches {	-- Goal
+		data matches {
+			ITEM_TREE[at0001] matches {	-- Tree
+				items cardinality matches {1..*; ordered} matches {
+					ELEMENT[at0002] matches {	-- Goal Name
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Proposed Achievement Date
+						value matches {
+							DV_DATE matches {*}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Actual Achievement Date
+						value matches {
+							DV_DATE matches {*}
+						}
+					}
+					ELEMENT[at0013] occurrences matches {0..1} matches {	-- Actual Outcome
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					CLUSTER[at0005] occurrences matches {0..*} matches {	-- Specific Target
+						items cardinality matches {1..4; ordered} matches {
+							ELEMENT[at0010] occurrences matches {0..1} matches {	-- Target
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0007] occurrences matches {0..1} matches {	-- Target measurement
+								value matches {
+									DV_INTERVAL<DV_COUNT> matches {
+										upper matches {
+											DV_COUNT matches {*}
+										}
+										lower matches {
+											DV_COUNT matches {*}
+										}
+									}
+									DV_INTERVAL<DV_QUANTITY> matches {
+										upper matches {
+											C_DV_QUANTITY <
+												property = <[openehr::0]>
+											>
+										}
+										lower matches {
+											C_DV_QUANTITY <
+												property = <[openehr::0]>
+											>
+										}
+									}
+									DV_DURATION matches {*}
+									DV_QUANTITY matches {*}
+									DV_COUNT matches {*}
+									DV_PROPORTION matches {*}
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0006] matches {	-- Target archetype node
+								value matches {
+									DV_URI matches {*}
+								}
+							}
+							ELEMENT[at0008] occurrences matches {0..1} matches {	-- Proposed Target Date
+								value matches {
+									DV_DATE matches {*}
+								}
+							}
+							ELEMENT[at0009] occurrences matches {0..1} matches {	-- Actual Target Date
+								value matches {
+									DV_DATE matches {*}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"*Goal(en)">
+					description = <"*A future health state that is agreed to by the person.(en)">
+				>
+				["at0001"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"*Goal Name(en)">
+					description = <"*The name of the goal that is to be achieved.(en)">
+				>
+				["at0003"] = <
+					text = <"*Proposed Achievement Date(en)">
+					description = <"*The date at which the goal is proposed to be achieved.(en)">
+				>
+				["at0004"] = <
+					text = <"*Actual Achievement Date(en)">
+					description = <"*The date the goal was achieved.(en)">
+				>
+				["at0005"] = <
+					text = <"*Specific Target(en)">
+					description = <"*A specific target outcome.(en)">
+				>
+				["at0006"] = <
+					text = <"*Target archetype node(en)">
+					description = <"*The archetype identifier and path of the specific node that should be used to capture the actual measurement.(en)">
+				>
+				["at0007"] = <
+					text = <"*Target measurement(en)">
+					description = <"*The target measurement value or range of values.(en)">
+				>
+				["at0008"] = <
+					text = <"*Proposed Target Date(en)">
+					description = <"*The proposed date for achieving the target.(en)">
+				>
+				["at0009"] = <
+					text = <"*Actual Target Date(en)">
+					description = <"*The actual date the target was achieved.(en)">
+				>
+				["at0010"] = <
+					text = <"*Target(en)">
+					description = <"*The name of a specific target.(en)">
+				>
+				["at0011"] = <
+					text = <"*Description(en)">
+					description = <"*A narrative description of the goal and targets to be achieved.(en)">
+				>
+				["at0013"] = <
+					text = <"*Actual Outcome(en)">
+					description = <"*Single word, phrase or brief description which represents the clinical meaning and significance of the outcome actually achieved.(en)">
+					comment = <"*Coding with a terminology is preferred, where possible. For example:  Target Weight acheived, Poor diabetes control.(en)">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Goal">
+					description = <"A future health state that is agreed to by the person.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Goal Name">
+					description = <"The name of the goal that is to be achieved.">
+				>
+				["at0003"] = <
+					text = <"Proposed Achievement Date">
+					description = <"The date at which the goal is proposed to be achieved.">
+				>
+				["at0004"] = <
+					text = <"Actual Achievement Date">
+					description = <"The date the goal was achieved.">
+				>
+				["at0005"] = <
+					text = <"Specific Target">
+					description = <"A specific target outcome.">
+				>
+				["at0006"] = <
+					text = <"Target archetype node">
+					description = <"The archetype identifier and path of the specific node that should be used to capture the actual measurement.">
+				>
+				["at0007"] = <
+					text = <"Target measurement">
+					description = <"The target measurement value or range of values.">
+				>
+				["at0008"] = <
+					text = <"Proposed Target Date">
+					description = <"The proposed date for achieving the target.">
+				>
+				["at0009"] = <
+					text = <"Actual Target Date">
+					description = <"The actual date the target was achieved.">
+				>
+				["at0010"] = <
+					text = <"Target">
+					description = <"The name of a specific target.">
+				>
+				["at0011"] = <
+					text = <"Description">
+					description = <"A narrative description of the goal and targets to be achieved.">
+				>
+				["at0013"] = <
+					text = <"Actual Outcome">
+					description = <"Single word, phrase or brief description which represents the clinical meaning and significance of the outcome actually achieved.">
+					comment = <"Coding with a terminology is preferred, where possible. For example:  Target Weight acheived, Poor diabetes control.">
+				>
+			>
+		>
+	>

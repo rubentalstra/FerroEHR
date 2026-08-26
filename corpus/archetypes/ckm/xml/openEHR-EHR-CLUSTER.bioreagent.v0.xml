@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-01-28</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Peter Fedorcsak, University of Oslo, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">https://en.wikipedia.org/wiki/Reagent</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">1FB126497097E69496ED78B6AB9B2BEF</other_details>
+    <other_details id="build_uid">2679f21d-f91c-4958-ad4f-cd553575e2d6</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Aufzeichnung der Details zu einem Bioreagenz oder Laborverbrauchsmaterial, das im Rahmen eines diagnostischen oder therapeutischen Verfahrens im Gesundheitswesen verwendet wird.</purpose>
+      <keywords>Chemikalie</keywords>
+      <keywords>Biochemikalie</keywords>
+      <keywords>Reagenz</keywords>
+      <keywords>Biosubstanz</keywords>
+      <keywords>Substanz</keywords>
+      <keywords>Laborprodukt</keywords>
+      <keywords>Material</keywords>
+      <keywords>Medium</keywords>
+      <use>Zur Erfassung der Details eines Bioreagenz oder Laborverbrauchsmaterials, das im Rahmen eines diagnostischen oder therapeutischen Verfahrens im Gesundheitswesen verwendet wird.&#xD;
+&#xD;
+Dieser Archetyp wurde für die breite Wiederverwendung in anderen Archetypen entwickelt, die die Verwendung eines bestimmten Bioreagenz identifizieren müssen. Beispielsweise kann er im SLOT „Verfahrensdetails“ des Archetyps ACTION.procedure bei Verfahren der assistierten Reproduktion verschachtelt werden, wie z. B.:&#xD;
+- Denudation von Eizellen;&#xD;
+- Assistierte Aktivierung von Eizellen;&#xD;
+- Kryokonservierung und Auftauen von Zellen oder Embryonen; und&#xD;
+- Befruchtung durch intrazytoplasmatische Spermieninjektion (ICSI).</use>
+      <misuse>Nicht zur Erfassung von Daten über Arzneimittel mit direkter pharmakologischer, metabolischer oder immunologischer Wirkung. Beispiel: Ein verschreibungspflichtiges Arzneimittel sollte mit dem Archetyp „INSTRUCTION.medication_order“ erfasst werden, der sich auf Wirkstoffe, Dosierung usw. konzentriert.&#xD;
+&#xD;
+Nicht zur Erfassung von Daten über medizinische Geräte, Instrumente oder Ausrüstung, die bei diagnostischen oder therapeutischen Verfahren eingesetzt werden, verwenden Sie hierfür den entsprechenden Archetyp.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>*To record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare. (en)</purpose>
+      <keywords>*chemical (en)</keywords>
+      <keywords>*biochemical (en)</keywords>
+      <keywords>*reagent (en)</keywords>
+      <keywords>*biosubstance (en)</keywords>
+      <keywords>*substance (en)</keywords>
+      <keywords>*laboratory (en)</keywords>
+      <keywords>*product (en)</keywords>
+      <keywords>*material (en)</keywords>
+      <keywords>*medium (en)</keywords>
+      <use>*Use to record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare.&#xD;
+&#xD;
+This archetype has been designed for broad reuse within other archetypes that need to identify the use of a specific bioreagent. For example, to nest within the 'Procedure detail' SLOT in the ACTION.procedure archetype in assisted reproduction treatment procedures such as: &#xD;
+- oocyte denudation; &#xD;
+- assisted oocyte activation; &#xD;
+- cryopreservation and thawing of cells or embryos; and&#xD;
+- fertilisation by intracytoplasmic sperm injection (ICSI). (en)</use>
+      <misuse>*Not to be used to record data about medicinal products that exert a direct pharmacological, metabolic or immunologic effect. For example: a medicine that requires a prescription should be recorded using the  INSTRUCTION.medication_order archetype, focused on the active ingredients, dosage etc.&#xD;
+&#xD;
+Not to be used to record data about medical devices, instruments or equipment used during diagnostic or therapeutic procedures - use the appropriate archetype for this purpose. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>*To record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare. (en)</purpose>
+      <keywords>*chemical (en)</keywords>
+      <keywords>*biochemical (en)</keywords>
+      <keywords>*reagent (en)</keywords>
+      <keywords>*biosubstance (en)</keywords>
+      <keywords>*substance (en)</keywords>
+      <keywords>*laboratory (en)</keywords>
+      <keywords>*product (en)</keywords>
+      <keywords>*material (en)</keywords>
+      <keywords>*medium (en)</keywords>
+      <use>*Use to record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare.&#xD;
+&#xD;
+This archetype has been designed for broad reuse within other archetypes that need to identify the use of a specific bioreagent. For example, to nest within the 'Procedure detail' SLOT in the ACTION.procedure archetype in assisted reproduction treatment procedures such as: &#xD;
+- oocyte denudation; &#xD;
+- assisted oocyte activation; &#xD;
+- cryopreservation and thawing of cells or embryos; and&#xD;
+- fertilisation by intracytoplasmic sperm injection (ICSI). (en)</use>
+      <misuse>*Not to be used to record data about medicinal products that exert a direct pharmacological, metabolic or immunologic effect. For example: a medicine that requires a prescription should be recorded using the  INSTRUCTION.medication_order archetype, focused on the active ingredients, dosage etc.&#xD;
+&#xD;
+Not to be used to record data about medical devices, instruments or equipment used during diagnostic or therapeutic procedures - use the appropriate archetype for this purpose. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en detaljert oversikt over bioreagenser eller forbruksvarer anvendt ved en diagnostisk- eller behandlingsrettet prosedyre.</purpose>
+      <keywords>kjemikalie</keywords>
+      <keywords>biokjemisk</keywords>
+      <keywords>reagens</keywords>
+      <keywords>bioreagens</keywords>
+      <keywords>stoff</keywords>
+      <keywords>laboratorie</keywords>
+      <keywords>produkt</keywords>
+      <keywords>materiale</keywords>
+      <keywords>medium</keywords>
+      <use>Bruk for å registrere en detaljert oversikt over bioreagens eller forbruksvare anvendt ved en diagnostisk- eller behandlingsrettet prosedyre.&#xD;
+&#xD;
+Denne arketypen ble utviklet for bruke inne i andre arketyper hvor det er nødvendig å identifisere bruk av et bestemt bioreagens. For eksempel kan denne arketypen nøstes i SLOTet 'Prosedyredetaljer' i ACTION.procedure arketypene laget for assistert befruktning:&#xD;
+- denudering av oocytt;&#xD;
+- assistert oocyttaktivering;&#xD;
+- nedfrysing og opptining av celler eller embryo;&#xD;
+- intracytoplasmatisk spermiemikroinjeksjon.</use>
+      <misuse>Skal ikke brukes til å registrere data om legemidler som har en direkte farmakologisk, metabolsk eller immunologisk effekt. For eksempel: en medisin som krever resept skal registreres ved å bruke arketypen INSTRUCTION.medication_order (Legemiddelordinering), med fokus på de aktive ingrediensene, dosering osv.&#xD;
+&#xD;
+Skal ikke brukes til å registrere data om medisinsk utstyr, instrumenter eller utstyr som brukes under diagnostiske eller terapeutiske prosedyrer - bruk riktig arketype for dette formålet.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>*To record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare. (en)</purpose>
+      <keywords>*chemical (en)</keywords>
+      <keywords>*biochemical (en)</keywords>
+      <keywords>*reagent (en)</keywords>
+      <keywords>*biosubstance (en)</keywords>
+      <keywords>*substance (en)</keywords>
+      <keywords>*laboratory (en)</keywords>
+      <keywords>*product (en)</keywords>
+      <keywords>*material (en)</keywords>
+      <keywords>*medium (en)</keywords>
+      <use>*Use to record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare.&#xD;
+&#xD;
+This archetype has been designed for broad reuse within other archetypes that need to identify the use of a specific bioreagent. For example, to nest within the 'Procedure detail' SLOT in the ACTION.procedure archetype in assisted reproduction treatment procedures such as: &#xD;
+- oocyte denudation; &#xD;
+- assisted oocyte activation; &#xD;
+- cryopreservation and thawing of cells or embryos; and&#xD;
+- fertilisation by intracytoplasmic sperm injection (ICSI). (en)</use>
+      <misuse>*Not to be used to record data about medicinal products that exert a direct pharmacological, metabolic or immunologic effect. For example: a medicine that requires a prescription should be recorded using the  INSTRUCTION.medication_order archetype, focused on the active ingredients, dosage etc.&#xD;
+&#xD;
+Not to be used to record data about medical devices, instruments or equipment used during diagnostic or therapeutic procedures - use the appropriate archetype for this purpose. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare.</purpose>
+      <keywords>chemical</keywords>
+      <keywords>biochemical</keywords>
+      <keywords>reagent</keywords>
+      <keywords>biosubstance</keywords>
+      <keywords>substance</keywords>
+      <keywords>laboratory</keywords>
+      <keywords>product</keywords>
+      <keywords>material</keywords>
+      <keywords>medium</keywords>
+      <use>Use to record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare.&#xD;
+&#xD;
+This archetype has been designed for broad reuse within other archetypes that need to identify the use of a specific bioreagent. For example, to nest within the 'Procedure detail' SLOT in the ACTION.procedure archetype in assisted reproduction treatment procedures such as: &#xD;
+- oocyte denudation; &#xD;
+- assisted oocyte activation; &#xD;
+- cryopreservation and thawing of cells or embryos; and&#xD;
+- fertilisation by intracytoplasmic sperm injection (ICSI).</use>
+      <misuse>Not to be used to record data about medicinal products that exert a direct pharmacological, metabolic or immunologic effect. For example: a medicine that requires a prescription should be recorded using the  INSTRUCTION.medication_order archetype, focused on the active ingredients, dosage etc.&#xD;
+&#xD;
+Not to be used to record data about medical devices, instruments or equipment used during diagnostic or therapeutic procedures - use the appropriate archetype for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>*To record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare. (en)</purpose>
+      <keywords>*chemical (en)</keywords>
+      <keywords>*biochemical (en)</keywords>
+      <keywords>*reagent (en)</keywords>
+      <keywords>*biosubstance (en)</keywords>
+      <keywords>*substance (en)</keywords>
+      <keywords>*laboratory (en)</keywords>
+      <keywords>*product (en)</keywords>
+      <keywords>*material (en)</keywords>
+      <keywords>*medium (en)</keywords>
+      <use>*Use to record the details about a bioreagent or laboratory consumable used as part of a diagnostic or therapeutic procedure in healthcare.&#xD;
+&#xD;
+This archetype has been designed for broad reuse within other archetypes that need to identify the use of a specific bioreagent. For example, to nest within the 'Procedure detail' SLOT in the ACTION.procedure archetype in assisted reproduction treatment procedures such as: &#xD;
+- oocyte denudation; &#xD;
+- assisted oocyte activation; &#xD;
+- cryopreservation and thawing of cells or embryos; and&#xD;
+- fertilisation by intracytoplasmic sperm injection (ICSI). (en)</use>
+      <misuse>*Not to be used to record data about medicinal products that exert a direct pharmacological, metabolic or immunologic effect. For example: a medicine that requires a prescription should be recorded using the  INSTRUCTION.medication_order archetype, focused on the active ingredients, dosage etc.&#xD;
+&#xD;
+Not to be used to record data about medical devices, instruments or equipment used during diagnostic or therapeutic procedures - use the appropriate archetype for this purpose. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Anneka Sargeant, Martin Koch</author>
+    <author id="organisation">Institut für Medizinische Informatik - Universitätsmedizin Göttingen, Servei Català de la Salut</author>
+    <author id="email">anneka.sargeant@med.uni-goettingen.de, martinandreaskoch@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Elham Gholami</author>
+    <author id="organisation">SLL</author>
+    <author id="email">elham.gholami@sll.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Alan March</author>
+    <author id="organisation">Hospital Universitario Austral, Buenos Aires, Argentina</author>
+    <author id="email">amarch@cas.austral.edu.ar</author>
+    <accreditation>MD</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand, Peter Fedorcsak, Liv Laugen</author>
+    <author id="organisation">Helse Bergen HF, University of Oslo, ​Oslo University Hospital, Norway</author>
+    <author id="email">peterfe@uio.no, liv.laugen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <uid>
+    <value>dd46f157-d547-4ec7-a7a4-92406071524c</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.bioreagent.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Bioreagent (en)</items>
+        <items id="description">*A substance, compound, product or material used to identify or manipulate the chemical matter, or used to support the growth of cells or tissues, as part of a diagnostic or therapeutic procedure in healthcare. (en)</items>
+        <items id="comment">*For example: antibodies, immortalised cell lines, and tool compounds. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Name (en)</items>
+        <items id="description">*Identification of the reagent or consumable, preferably by a common name, a formal fully descriptive name or, if required, by class or category. (en)</items>
+        <items id="comment">*For example: "Sperm immobilisation solution". (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Type(en)</items>
+        <items id="description">*The category or type of reagent or consumable. (en)</items>
+        <items id="comment">*For example: "Cell culture medium". (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">المُصَنِّع</items>
+        <items id="description">اسم المُصَنِّع</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Batch number (en)</items>
+        <items id="description">*The number assigned by the manufacturer which identifies a group of items manufactured at the same time, usually found on the label or packaging material. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">تاريخ انتهاء الصلاحية</items>
+        <items id="description">*Date after which the device/product is no longer fit for use, usually found on the reagent itself or printed on the accompanying packaging. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">تعليق</items>
+        <items id="description">*Additional narrative about the bioreagent not captured in other fields. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*A unique identifier allocated by a specified registry. (en)</items>
+        <items id="comment">*For example: Chemical Abstracts Service (CAS) number; Beilstein Registry number; or Enzyme Commission (EC) number. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*New element(en)</items>
+        <items id="description">*The number assigned by the manufacturer, as it appears in the manufacturer's catalogue, labeling, or accompanying packaging. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Bioreagent</items>
+        <items id="description">A substance, compound, product or material used to identify or manipulate the chemical matter, or used to support the growth of cells or tissues, as part of a diagnostic or therapeutic procedure in healthcare.</items>
+        <items id="comment">For example: antibodies, immortalised cell lines, and tool compounds.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Name</items>
+        <items id="description">Identification of the reagent or consumable, preferably by a common name, a formal fully descriptive name or, if required, by class or category.</items>
+        <items id="comment">For example: "Sperm immobilisation solution".</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Type</items>
+        <items id="description">The category or type of reagent or consumable.</items>
+        <items id="comment">For example: "Cell culture medium".</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Manufacturer</items>
+        <items id="description">Name of manufacturer.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Batch number</items>
+        <items id="description">The number assigned by the manufacturer which identifies a group of items manufactured at the same time, usually found on the label or packaging material.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Date of expiry</items>
+        <items id="description">Date after which the device/product is no longer fit for use, usually found on the reagent itself or printed on the accompanying packaging.</items>
+        <items id="comment">This date usually applies only to single use or disposable devices.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the bioreagent not captured in other fields.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identifier</items>
+        <items id="description">A unique identifier allocated by a specified registry.</items>
+        <items id="comment">For example: Chemical Abstracts Service (CAS) number; Beilstein Registry number; or Enzyme Commission (EC) number.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Catalogue number</items>
+        <items id="description">The number assigned by the manufacturer, as it appears in the manufacturer's catalogue, labeling, or accompanying packaging.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">*Bioreagent (en)</items>
+        <items id="description">*A substance, compound, product or material used to identify or manipulate the chemical matter, or used to support the growth of cells or tissues, as part of a diagnostic or therapeutic procedure in healthcare. (en)</items>
+        <items id="comment">*For example: antibodies, immortalised cell lines, and tool compounds. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Name (en)</items>
+        <items id="description">*Identification of the reagent or consumable, preferably by a common name, a formal fully descriptive name or, if required, by class or category. (en)</items>
+        <items id="comment">*For example: "Sperm immobilisation solution". (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Type(en)</items>
+        <items id="description">*The category or type of reagent or consumable. (en)</items>
+        <items id="comment">*For example: "Cell culture medium". (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricante</items>
+        <items id="description">Fabricante del dispositivo.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Batch number (en)</items>
+        <items id="description">*The number assigned by the manufacturer which identifies a group of items manufactured at the same time, usually found on the label or packaging material. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Fecha de vencimiento</items>
+        <items id="description">*Date after which the device/product is no longer fit for use, usually found on the reagent itself or printed on the accompanying packaging. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comentario</items>
+        <items id="description">*Additional narrative about the bioreagent not captured in other fields. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*A unique identifier allocated by a specified registry. (en)</items>
+        <items id="comment">*For example: Chemical Abstracts Service (CAS) number; Beilstein Registry number; or Enzyme Commission (EC) number. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*New element(en)</items>
+        <items id="description">*The number assigned by the manufacturer, as it appears in the manufacturer's catalogue, labeling, or accompanying packaging. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">*Bioreagent (en)</items>
+        <items id="description">*A substance, compound, product or material used to identify or manipulate the chemical matter, or used to support the growth of cells or tissues, as part of a diagnostic or therapeutic procedure in healthcare. (en)</items>
+        <items id="comment">*For example: antibodies, immortalised cell lines, and tool compounds. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Name (en)</items>
+        <items id="description">*Identification of the reagent or consumable, preferably by a common name, a formal fully descriptive name or, if required, by class or category. (en)</items>
+        <items id="comment">*For example: "Sperm immobilisation solution". (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tipo</items>
+        <items id="description">*The category or type of reagent or consumable. (en)</items>
+        <items id="comment">*For example: "Cell culture medium". (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricante</items>
+        <items id="description">Nome do fabricante.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Batch number (en)</items>
+        <items id="description">*The number assigned by the manufacturer which identifies a group of items manufactured at the same time, usually found on the label or packaging material. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Data de validade</items>
+        <items id="description">*Date after which the device/product is no longer fit for use, usually found on the reagent itself or printed on the accompanying packaging. (en)</items>
+        <items id="comment">*This date usually applies only to single use or disposable devices.(en)&#xD;
+Esta data geralmente se aplica apenas para dispositivos de uso único ou descartáveis.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comentários</items>
+        <items id="description">*Additional narrative about the bioreagent not captured in other fields. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*A unique identifier allocated by a specified registry. (en)</items>
+        <items id="comment">*For example: Chemical Abstracts Service (CAS) number; Beilstein Registry number; or Enzyme Commission (EC) number. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Número do catálogo</items>
+        <items id="description">*The number assigned by the manufacturer, as it appears in the manufacturer's catalogue, labeling, or accompanying packaging. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Bioreagens</items>
+        <items id="description">Et substans/stoff, materiale eller sammensatt produkt som brukes til å identifisere eller manipulere det kjemiske stoffet, eller brukes til å støtte veksten av celler eller vev, som en del av en diagnostisk eller terapeutisk prosedyre i helsevesenet.</items>
+        <items id="comment">For eksempel: antistoff, cellelinjer, eller produkter.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Navn</items>
+        <items id="description">Identifisering av reagens eller forbruksvare, fortrinnsvis ved vanlig navn, ved formelt, fullt beskrivende navn, eller hvis påkrevet, ved klasse eller kategori.</items>
+        <items id="comment">For eksempel: "Løsning for immobilisering av spermier".</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Type</items>
+        <items id="description">Kategori eller type reagens eller forbruksvare.</items>
+        <items id="comment">For eksempel: "Celledyrkningsmedium".</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Produsent</items>
+        <items id="description">Navnet til produsenten.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Batch/lot-nummer</items>
+        <items id="description">Nummeret tildelt av produsenten som identifiserer en gruppe enheter som er produsert samtidig, som regel funnet på etiketten eller pakningsvedlegget.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Utløpsdato</items>
+        <items id="description">Datoen produktet ikke lenger er egnet for bruk. Datoen finnes vanligvis på produktet eller på pakningsvedlegget.</items>
+        <items id="comment">Denne datoen gjelder vanligvis for engangsutstyr eller utstyr som ikke skal gjenbrukes.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Fritekstopplysninger om bioreagens som ikke er fanget opp i andre felter.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identifikator</items>
+        <items id="description">En unik identifikator tildelt av et spesifisert register.</items>
+        <items id="comment">For eksempel: Chemical Abstracts Service (CAS) nummer; Beilstein Registry nummer; eller Enzyme Commission (EC) nummer.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Katalognummer</items>
+        <items id="description">Nummer tildelt av produsenten, slik det framstår i produsentens katalog, merking eller medfølgende pakningsvedlegg.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Bioreagenz</items>
+        <items id="description">Eine Substanz, Verbindung, ein Produkt oder Material, das zur Identifizierung oder Manipulation chemischer Stoffe oder zur Unterstützung des Wachstums von Zellen oder Geweben als Teil eines diagnostischen oder therapeutischen Verfahrens im Gesundheitswesen verwendet wird.</items>
+        <items id="comment">Zum Beispiel: Antikörper, immortalisierte Zelllinien und Werkzeugverbindungen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Name</items>
+        <items id="description">Identifizierung des Reagenz oder Verbrauchsmaterials, vorzugsweise durch einen gebräuchlichen Namen, einen formalen, vollständig beschreibenden Namen oder, falls erforderlich, durch Klasse oder Kategorie.</items>
+        <items id="comment">Beispiel: „Lösung zur Spermienimmobilisierung“.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Typ</items>
+        <items id="description">Die Kategorie oder Art des Reagenz oder Verbrauchsmaterials.</items>
+        <items id="comment">Beispiel: „Zellkulturmedium“.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Hersteller</items>
+        <items id="description">Name des Herstellers.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Losnummer</items>
+        <items id="description">Die vom Hersteller vergebene Nummer identifiziert eine Gruppe gleichzeitig hergestellter Artikel und befindet sich normalerweise auf dem Etikett oder dem Verpackungsmaterial.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Ablaufdatum</items>
+        <items id="description">Datum, nach dem das Gerät/Produkt nicht mehr gebrauchstauglich ist. Normalerweise auf dem Reagenz selbst oder auf der beiliegenden Verpackung aufgedruckt.</items>
+        <items id="comment">Dieses Datum gilt normalerweise nur für Einmalprodukte oder Einwegprodukte.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Informationen zum Bioreagenz, die in anderen Feldern nicht erfasst wurden.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identifizierung</items>
+        <items id="description">Eine eindeutige Identifizierung, die von einem bestimmten Register zugewiesen wird.</items>
+        <items id="comment">Zum Beispiel: Chemical Abstracts Service (CAS)-Nummer, Beilstein-Registrierungsnummer oder Enzyme Commission (EC)-Nummer.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Katalognummer</items>
+        <items id="description">Die vom Hersteller vergebene Nummer, wie sie im Katalog, auf dem Etikett oder der beiliegenden Verpackung des Herstellers erscheint.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">*Bioreagent (en)</items>
+        <items id="description">*A substance, compound, product or material used to identify or manipulate the chemical matter, or used to support the growth of cells or tissues, as part of a diagnostic or therapeutic procedure in healthcare. (en)</items>
+        <items id="comment">*For example: antibodies, immortalised cell lines, and tool compounds. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Name (en)</items>
+        <items id="description">*Identification of the reagent or consumable, preferably by a common name, a formal fully descriptive name or, if required, by class or category. (en)</items>
+        <items id="comment">*For example: "Sperm immobilisation solution". (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Typ</items>
+        <items id="description">*The category or type of reagent or consumable. (en)</items>
+        <items id="comment">*For example: "Cell culture medium". (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tillverkare</items>
+        <items id="description">Tillverkares namn</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Batch number (en)</items>
+        <items id="description">*The number assigned by the manufacturer which identifies a group of items manufactured at the same time, usually found on the label or packaging material. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Utgångsdatum</items>
+        <items id="description">*Date after which the device/product is no longer fit for use, usually found on the reagent itself or printed on the accompanying packaging. (en)</items>
+        <items id="comment">Detta datum gäller vanligtvis utrustning som ska användas en gång.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">kommentarer</items>
+        <items id="description">*Additional narrative about the bioreagent not captured in other fields. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Identifier (en)</items>
+        <items id="description">*A unique identifier allocated by a specified registry. (en)</items>
+        <items id="comment">*For example: Chemical Abstracts Service (CAS) number; Beilstein Registry number; or Enzyme Commission (EC) number. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Katalognummer</items>
+        <items id="description">*The number assigned by the manufacturer, as it appears in the manufacturer's catalogue, labeling, or accompanying packaging. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

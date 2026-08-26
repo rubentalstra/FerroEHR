@@ -1,0 +1,97 @@
+﻿archetype (adl_version=1.4; uid=5d241b4b-34b9-4ae7-bd68-56381b871f31)
+	openEHR-EHR-COMPOSITION.empower_odl.v0
+
+concept
+	[at0000]	-- ODL (EMPOWER)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Hans Demski">
+		["organisation"] = <"Helmholtz Zentrum München">
+		["email"] = <"demski@helmholtz-muenchen.de">
+		["date"] = <"2012-12-14">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Aggregating several observations and action for recording of observations of daily living (ODLs) by a patient.
+
+Based on the data model developed within the EMPOWER project, www.empower-fp7,eu.">
+			use = <"Composition of ODLs for self-monitoring.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["current_contact"] = <"Hans Demski, Helmholtz Zentrum München, demski@helmholtz-muenchen.de">
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["revision"] = <"0.0.1-alpha">
+		["build_uid"] = <"f9932249-4a55-4b23-b968-6cbbb5f7f8e6">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"F97815033DDF6ED3BC2EB4298F9B9895">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	COMPOSITION[at0000] matches {	-- ODL (EMPOWER)
+		category matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {[openehr::433]}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT matches {
+				other_context matches {
+					ITEM_TREE[at0001] matches {*}
+				}
+			}
+		}
+		content cardinality matches {1..*; unordered} matches {
+			allow_archetype OBSERVATION[at0002] occurrences matches {0..*} matches {	-- OBSERVATION
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype ACTION[at0003] occurrences matches {0..*} matches {	-- ACTION
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype EVALUATION[at0004] occurrences matches {0..*} matches {	-- EVALUATION
+				include
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ODL (EMPOWER)">
+					description = <"Observation of daily living data that is reported by the patient himself while self-monitoring.">
+				>
+				["at0001"] = <
+					text = <"Baum">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"OBSERVATION">
+					description = <"Slot for an observation.">
+				>
+				["at0003"] = <
+					text = <"ACTION">
+					description = <"Slot for an action.">
+				>
+				["at0004"] = <
+					text = <"EVALUATION">
+					description = <"Slot for an evaluation.">
+				>
+			>
+		>
+	>

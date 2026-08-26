@@ -1,0 +1,305 @@
+﻿archetype (adl_version=1.4; uid=bab2f8cc-9e20-3677-8ca6-adb8072ae492)
+	openEHR-EHR-ACTION.review.v0
+
+concept
+	[at0000]	-- Review
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2011-03-09">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of clinical activity regarding the performance of a formal clinical review of a subject's clinical situation, a specific aspect of their clinical care or a specified part of the health record.">
+			use = <"Use to record details of clinical activity regarding the performance of a formal clinical review of a subject's clinical situation, a specific aspect of their clinical care or a specified part of the health record. For example: recording activity around the performance of a formal Medicines Review; or a care coordinator reviewing progress of Care Plans; or a file review by a case worker.">
+			keywords = <"record", "review", "medication", "vaccination", "adverse reaction", "allergy", "medicine">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"04B78D1D0BE812327814EB8704AE1877">
+		["build_uid"] = <"e33b4092-0267-4036-bdfc-5c968e1a57e6">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	ACTION[at0000] matches {    -- Review
+		ism_transition matches {
+			ISM_TRANSITION[at0003] matches {    -- Review planned
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::526]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0003]    -- Review planned
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0010] matches {    -- Review postponed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::527]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0010]    -- Review postponed
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0012] matches {    -- Review cancelled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::528]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0012]    -- Review cancelled
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0004] matches {    -- Review scheduled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::529]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0004]    -- Review scheduled
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0019] matches {    -- Review rescheduled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::529]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0019]    -- Review rescheduled
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0006] matches {    -- Review performed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::245]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0006]    -- Review performed
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0011] matches {    -- Review suspended
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::530]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0011]    -- Review suspended
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0013] matches {    -- Review aborted
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::531]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0013]    -- Review aborted
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0016] matches {    -- Review completed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::532]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0016]    -- Review completed
+						}
+					}
+				}
+			}
+		}
+		description matches {
+			ITEM_TREE[at0001] matches {    -- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {    -- Review activity
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0015] occurrences matches {0..1} matches {    -- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..1} matches {    -- Reason
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0017] matches {    -- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0018] occurrences matches {0..1} matches {    -- Start date/time
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0020] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Review">
+					description = <"Clinical activity regarding the performance of a formal clinical review of a subject's clinical situation, a specific aspect of their clinical care or a specified part of the health record.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Review activity">
+					description = <"Identification of the item or activity that is being reviewed.">
+					comment = <"Coding with a terminology is preferred, if available. For example: Medicines List; Care Plan Review; or File Review.">
+				>
+				["at0003"] = <
+					text = <"Review planned">
+					description = <"The review activity is planned.">
+				>
+				["at0004"] = <
+					text = <"Review scheduled">
+					description = <"The review activity has been scheduled.">
+				>
+				["at0006"] = <
+					text = <"Review performed">
+					description = <"The review activity has been performed.">
+				>
+				["at0010"] = <
+					text = <"Review postponed">
+					description = <"The review has been postponed.">
+				>
+				["at0011"] = <
+					text = <"Review suspended">
+					description = <"The review activity has been suspended.">
+				>
+				["at0012"] = <
+					text = <"Review cancelled">
+					description = <"The review activity has been cancelled.">
+				>
+				["at0013"] = <
+					text = <"Review aborted">
+					description = <"The review activity has been aborted.">
+				>
+				["at0014"] = <
+					text = <"Reason">
+					description = <"Reason that the care pathway step for the identified Review Activity was carried out.">
+					comment = <"For example, the reason for the cancellation or suspension of the Review Activity">
+				>
+				["at0015"] = <
+					text = <"Description">
+					description = <"Narrative description of the Review Activity relevant for the care pathway step.">
+					comment = <"For example: description of the Medicines Review that was performed; or the Care Plan review that is planned or scheduled.">
+				>
+				["at0016"] = <
+					text = <"Review completed">
+					description = <"The review activity has been completed.">
+				>
+				["at0017"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0018"] = <
+					text = <"Start date/time">
+					description = <"The start date and/or time for the Review activity.">
+					comment = <"This will indicate the scheduled date/time when recorded against the Scheduled care pathway step or the actual Start date/time in the Procedure performed step.">
+				>
+				["at0019"] = <
+					text = <"Review rescheduled">
+					description = <"The review activity has been rescheduled.">
+				>
+				["at0020"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+	>

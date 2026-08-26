@@ -1,0 +1,27 @@
+template (adl_version=2.0.6; rm_release=1.0.2; generated)
+    openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0
+
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"openEHR CNF">
+    >
+
+definition
+    COMPOSITION[id1] matches {    -- Adl2 flat
+        content cardinality matches {1..*; unordered} matches {
+            use_archetype OBSERVATION[id2, openEHR-EHR-OBSERVATION.cnf_count_a.v1.0.0]
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <text = <"Adl2 flat">; description = <"ADL2 FLAT-parity encounter">>
+            ["id2"] = <text = <"Observation one">; description = <"The constrained observation filling the content slot">>
+        >
+    >

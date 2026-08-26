@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2016-07-25</original_author>
+    <original_author id="name">Aitor Eguzkitza</original_author>
+    <original_author id="organisation">Universidad Pública de Navarra - Complejo Hospitalario de Navarra</original_author>
+    <original_author id="email">aitor.eguzkiza@unavarra.es</original_author>
+    <other_contributors>José Andonegui, Hospital de Navarra, jose.andonegui.navarro@cfnavarra.es</other_contributors>
+    <other_contributors>Luis Serrano, Universidad Pública de Navarra (UPNA), lserrano@unavarra.es</other_contributors>
+    <other_contributors>Jesús D. Trigo, Universidad Pública de Navarra (UPNA), jesusdaniel.trigo@unavarra.es</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">B3C9DEFCF4C51DF03638B3307B83475A</other_details>
+    <other_details id="build_uid">8428eae8-ab75-4cac-b68a-b4ed1f286b86</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the clinical findings on examination of the eye fundus in which diagnostic decision is based.</purpose>
+      <keywords>eye</keywords>
+      <keywords>posterior chamber</keywords>
+      <keywords>examination</keywords>
+      <use>It can be attached to EVALUATION type archetypes related to the diagnose of DR. This CLUSTER fits perfectly into the "Problem/diagnosis" archetype.&#xD;
+This archetype is applied to key findings supporting the diagnostic decision.</use>
+      <misuse>Do not get confused with "examination_findings" archetypes, since these are similar in the use case of DR's diagnose.&#xD;
+While "examination_findings" include objectively all findings within eye fundus, this archetype about diagnostic criterion focuses on the specific findings in which diagnosis is grounded.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar detalles clínicos observados en el estudio del fondo de ojo en los que se ha basado la decisión diagnóstica.</purpose>
+      <keywords>ojo</keywords>
+      <keywords>cámara posterior</keywords>
+      <use>Se utiliza anidado a arquetipos de tipo EVALUATION relacionados con el diagnóstico de la RD. Encaja perfectamente en el arquetipo "Problem/diagnosis". &#xD;
+&#xD;
+Este arquetipo se aplica a los hallazgos que han sido clave en la decisión diagnóstica.</use>
+      <misuse>No debe confundirse con los arquetipos "examination_findings", ya que en el caso de la RD es muy similar. Mientras "examination_findings" recoge todos los hallazgos de forma objetiva y sin tener en cuenta ninguna afección, este arquetipo de criterio diagnóstico se centra en los hallazgos concretos que han fundamentado el diagnóstico.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">?</author>
+  </translations>
+  <uid>
+    <value>a11c81e6-a2c2-4bdc-9c53-3e1584c87f01</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.diagnostic_criteria_dr.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0052</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0059</code_list>
+                <code_list>at0054</code_list>
+                <code_list>at0055</code_list>
+                <code_list>at0056</code_list>
+                <code_list>at0057</code_list>
+                <code_list>at0058</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0045</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0050</code_list>
+                <code_list>at0048</code_list>
+                <code_list>at0049</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0036</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0038</code_list>
+                <code_list>at0039</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0053</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_BOOLEAN</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>BOOLEAN</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_BOOLEAN">
+                  <true_valid>true</true_valid>
+                  <false_valid>true</false_valid>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0060</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="CONSTRAINT_REF">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <reference>ac0001</reference>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Criterio diagnóstico RD</items>
+        <items id="description">Hallazgos directamente relacionados con el diagnóstico de la retinopatía diabética identificados durante el estudio del fondo de ojo.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Patrones de retinopatía</items>
+        <items id="description">Identifica los trastornos en la retina desde una perspectiva global.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Retinopatía diabética estable</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Retinopatía diabética proliferativa</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Patrones de isquemia macular</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Edema macular diabético difuso</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Edema macular diabético focal</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Sin edema macular</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Patrones de secreción</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0053">
+        <items id="text">Patrones de isquemia retiniana</items>
+        <items id="description">Todo signo de estrechamiento y deformación capilar entra en esta clasificación (hemorragias macrovasculares, arrosariamientos venosos, anomalias microvasculares intraretinianas).</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Exudación neovascular</items>
+        <items id="description">Se debe a roturas en los nuevos vasos creados a consecuencia de la retinopatía diabética proliferativa.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">Exudación macular</items>
+        <items id="description">Se refiere a cualquier pérdida de fluído situada en la mácula.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">Exudación focal</items>
+        <items id="description">En el edema macular diabético, algunos pacientes pueden presentar exudaciones progresivas situadas discretamente (focal) y que nacen a partir de microaneurismas.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">Exudación indeterminada</items>
+        <items id="description">Habitualmente en pacientes con edema macular diabético difuso, aparecen exudados "indeterminados" similares a los focales, pero con poca o ninguna correlación con la presencia de microaneurismas.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">Exudación mixta</items>
+        <items id="description">Pacientes con edema macular diabético combinan varios patrónes de exudación, que además pueden incluir maculopatía isquémica.</items>
+      </items>
+      <items code="at0059">
+        <items id="text">Sin exudación</items>
+        <items id="description">No hay ningún tipo de exudación.</items>
+      </items>
+      <items code="at0060">
+        <items id="text">Hallazgos clínicos</items>
+        <items id="description">Hallazgos en la cámara posterior del ojo que han resultado relevantes en la obtención de un diagnóstico para la retinopatía diabética.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Diagnostic criteria DR</items>
+        <items id="description">Findings concerning directly the diagnose of diabetic retinopathy identified during eye fundus study.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Patterns of retinopathy</items>
+        <items id="description">Identifies disorders within the retina from an overall perspective.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Stable diabetic retinopathy</items>
+        <items id="description">Patient presenting a stable state of dianetic retinopathy.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Proliferative diabetic retinopathy</items>
+        <items id="description">Patient presenting a proliferative state of diabetic retinopathy.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Patterns of macular ischaemia</items>
+        <items id="description">Patterns of ischaemia, related to the diagnosis of DR, identified in the patient's macula.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Diffuse diabetic macular edema</items>
+        <items id="description">Patient presenting a diffuse diabetic macular edema.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Focal diabetic macular edema</items>
+        <items id="description">Patient presenting a focal diabetic macular edema.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">No macular edema</items>
+        <items id="description">Patient not presenting macular edema.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Patterns of leakage</items>
+        <items id="description">Patterns of leakage, related to the diagnosis of DR, identified in the patient's posterior pole of eye.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">Patterns of retinal ischaemia</items>
+        <items id="description">Every sign of narrowing, deformation or anomaly regarding to blood vessels corresponds to this classification (blot haemorrhage, venous beading, intra-retinal microvascular anomalies).</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Neovascular leakage</items>
+        <items id="description">Due to breaking of new vessels created as a result of diabetic retinopathy.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">Macular leakage</items>
+        <items id="description">Refers to any loss of fluid located in the macula.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">Focal leakage</items>
+        <items id="description">In diabetic macular oedema, some patients may show progressive leakages in discrete locations (focal) rising from "culprit" microaneurysms.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">Indeterminate leakage</items>
+        <items id="description">In many patients with diffuse diabetic macular oedema, an“indeterminate” leakage similar to focal ones appears, with little or no correlation to the presence of microaneurysms.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">Mixed leakage</items>
+        <items id="description">Many patients, with diabetic macular oedema have a mixed pattern of leakage, which may further include ischemic maculopathy.</items>
+      </items>
+      <items code="at0059">
+        <items id="text">No leakage</items>
+        <items id="description">There is not any type of leakage.</items>
+      </items>
+      <items code="at0060">
+        <items id="text">Clinical findings diabetic retinopathy</items>
+        <items id="description">Findings from the posterior chamber of the eye that have been decisive in obtaining a diagnosis for diabetic retinopathy.</items>
+      </items>
+    </term_definitions>
+    <constraint_definitions language="es">
+      <items code="ac0001">
+        <items id="text">Hallazgos cámara posterior del ojo</items>
+        <items id="description">Lista de los posibles hallazogs clínicos en la cámara posterior del ojo.</items>
+      </items>
+    </constraint_definitions>
+    <constraint_definitions language="en">
+      <items code="ac0001">
+        <items id="text">Findings on the posterior chamber of the eye</items>
+        <items id="description">List of possible clinical findings on posterior chamber of the eye.</items>
+      </items>
+    </constraint_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0036">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>4855003</code_string>
+        </value>
+      </items>
+      <items code="at0038">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>390834004</code_string>
+        </value>
+      </items>
+      <items code="at0039">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>59276001</code_string>
+        </value>
+      </items>
+      <items code="at0048">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>314010006</code_string>
+        </value>
+      </items>
+      <items code="at0060">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>29555009</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

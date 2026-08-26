@@ -1,0 +1,130 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.asa_status.v1
+
+concept
+	[at0000]	-- ASA Physical Status Classification
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2010-06-25">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the degree of 'sickness' or 'physical state' prior to selecting the anaesthetic or prior to performing surgery.">
+			use = <"Used for recordkeeping, for communicating between colleagues, and to create a uniform system for statistical analysis.
+
+This archetype has been designed to be used within a variety of ENTRY archetypes - for example an EVALUATION for a pre-operative anaesthetic assessment or an infection control investigation.">
+			keywords = <"ASA", "pre-operative", "surgery">
+			misuse = <"Not intended for use as a measure to predict operative risk.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["references"] = <"American Society for Anesthesiologists: http://www.asahq.org/clinical/physicalstatus.htm
+Cleveland Clinic (provided examples of each state): http://my.clevelandclinic.org/services/Anesthesia/hic_ASA_Physical_Classification_System.aspx">
+		["MD5-CAM-1.0.1"] = <"76575A6A3B720EDD812A00380EC8810B">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- ASA Physical Status Classification
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- ASA patient status
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0003, 	-- 1 - A normal healthy patient
+							at0004, 	-- 2 - A patient with mild systemic disease
+							at0005, 	-- 3 - A patient with severe systemic disease
+							at0006, 	-- 4 - A patient with severe systemic disease that is a constant threat to life
+							at0007, 	-- 5 - A moribund patient who is not expected to survive without the operation
+							at0008, 	-- 6 - A declared brain-dead patient whose organs are being removed for donor purposes
+							at0009, 	-- 1E - A normal healthy patient (Emergency)
+							at0010, 	-- 2E - A patient with mild systemic disease (Emergency)
+							at0011, 	-- 3E - A patient with severe systemic disease (Emergency)
+							at0012, 	-- 4E - A patient with severe systemic disease that is a constant threat to life (Emergency)
+							at0013]	-- 5E - A moribund patient who is not expected to survive without the operation (Emergency)
+						}
+					}
+				}
+			}
+			ELEMENT[at0014] occurrences matches {0..1} matches {	-- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ASA Physical Status Classification">
+					description = <"Classification system adopted by the American Society of Anesthesiologists for assessing preoperative physical status.">
+				>
+				["at0001"] = <
+					text = <"ASA patient status">
+					description = <"Assessed pre-operative status of a patient.">
+				>
+				["at0003"] = <
+					text = <"1 - A normal healthy patient">
+					description = <"No organic, physiologic, or psychiatric disturbance; excludes the very young and very old; healthy with good exercise tolerance.">
+				>
+				["at0004"] = <
+					text = <"2 - A patient with mild systemic disease">
+					description = <"No functional limitations; has a well-controlled disease of one body system; controlled hypertension or diabetes without systemic effects, cigarette smoking without chronic obstructive pulmonary disease (COPD); mild obesity, pregnancy.">
+				>
+				["at0005"] = <
+					text = <"3 - A patient with severe systemic disease">
+					description = <"Some functional limitation; has a controlled disease of more than one body system or one major system; no immediate danger of death; controlled congestive heart failure (CHF), stable angina, old heart attack, poorly controlled hypertension, morbid obesity, chronic renal failure; bronchospastic disease with intermittent symptoms.">
+				>
+				["at0006"] = <
+					text = <"4 - A patient with severe systemic disease that is a constant threat to life">
+					description = <"Has at least one severe disease that is poorly controlled or at end stage; possible risk of death; unstable angina, symptomatic COPD, symptomatic CHF, hepatorenal failure.">
+				>
+				["at0007"] = <
+					text = <"5 - A moribund patient who is not expected to survive without the operation">
+					description = <"Not expected to survive > 24 hours without surgery; imminent risk of death; multiorgan failure, sepsis syndrome with hemodynamic instability, hypothermia, poorly controlled coagulopathy.">
+				>
+				["at0008"] = <
+					text = <"6 - A declared brain-dead patient whose organs are being removed for donor purposes">
+					description = <"6 - A declared brain-dead patient whose organs are being removed for donor purposes.">
+				>
+				["at0009"] = <
+					text = <"1E - A normal healthy patient (Emergency)">
+					description = <"ASA status 1, in an emergency situation.">
+				>
+				["at0010"] = <
+					text = <"2E - A patient with mild systemic disease (Emergency)">
+					description = <"ASA status 2, in an emergency situation.">
+				>
+				["at0011"] = <
+					text = <"3E - A patient with severe systemic disease (Emergency)">
+					description = <"ASA status 3, in an emergency situation.">
+				>
+				["at0012"] = <
+					text = <"4E - A patient with severe systemic disease that is a constant threat to life (Emergency)">
+					description = <"ASA status 4, in an emergency situation.">
+				>
+				["at0013"] = <
+					text = <"5E - A moribund patient who is not expected to survive without the operation (Emergency)">
+					description = <"ASA status 5, in an emergency situation.">
+				>
+				["at0014"] = <
+					text = <"Comment">
+					description = <"Narrative comment about the ASA patient status assessment.">
+				>
+			>
+		>
+	>

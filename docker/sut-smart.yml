@@ -19,7 +19,7 @@
 # for the SMART boundary cases. The signing lane (sut-signing-pgp.yml)
 # STACKS on top of this overlay.
 #
-# THE ISSUER IS COMMITTED TEST MATERIAL. `tools/cnf-runner/party/smart/`
+# THE ISSUER IS COMMITTED TEST MATERIAL. `docs/conformance/party/smart/`
 # holds a passphrase-less RSA test keypair in public version control, so the
 # runner can mint per-case scope-carrying access tokens — the CDR validates
 # tokens and never issues them (master06 §Supported Authentication Flows),
@@ -76,4 +76,4 @@ services:
       FERROEHR__AUTH__OIDC__ALGORITHMS: "RS256"
       FERROEHR__AUTH__OIDC__JWKS_JSON_FILE: /etc/ferroehr/cnf-smart-jwks.json
     volumes:
-      - ./tools/cnf-runner/party/smart/jwks.json:/etc/ferroehr/cnf-smart-jwks.json:ro
+      - ./docs/conformance/party/smart/jwks.json:/etc/ferroehr/cnf-smart-jwks.json:ro

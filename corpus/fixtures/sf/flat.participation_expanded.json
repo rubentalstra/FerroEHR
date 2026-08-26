@@ -1,0 +1,13 @@
+{
+  "ctx/language": "en",
+  "ctx/territory": "NL",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
+  "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel",
+  "ctx/participation_name:0": "Dr. Marcus Johnson",
+  "ctx/participation_function:0": "requester",
+  "ctx/participation_identifiers:0|issuer:0": "issuer1",
+  "ctx/participation_identifiers:0|assigner:0": "assigner1",
+  "ctx/participation_identifiers:0|id:0": "id1",
+  "ctx/participation_identifiers:0|type:0": "PERSON"
+}

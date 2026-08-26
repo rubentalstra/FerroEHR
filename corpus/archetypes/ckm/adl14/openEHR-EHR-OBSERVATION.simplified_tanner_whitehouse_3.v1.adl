@@ -1,0 +1,232 @@
+﻿archetype (adl_version=1.4; uid=2e0c948b-020b-415d-9b61-3ccdd7335ab2)
+	openEHR-EHR-OBSERVATION.simplified_tanner_whitehouse_3.v1
+
+concept
+	[at0000]	-- Simplified Tanner-Whitehouse III assessment
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"John Tore Valand">
+				["organisation"] = <"Helse Bergen">
+				["email"] = <"john.tore.valand@helse-vest-ikt.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"John Tore Valand">
+		["organisation"] = <"Helse Vest IKT AS">
+		["email"] = <"john.tore.valand@helse-vest-ikt.no">
+		["date"] = <"2022-10-21">
+	>
+	details = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere Simplified Tanner-Whitehouse-III Skeletal Maturity Assessment.">
+			use = <"Brukes for å registrere Simplified Tanner-Whitehouse-III Skeletal Maturity Assessment.
+
+Per dags dato finnes det ingen validert norsk oversettelse av verktøyet. Man har derfor i arketypen valgt å beholde orginalspråk for alle dataelementene. Om det på et tidspunkt etableres en validert norsk oversettelse, vil arketypen oppdateres med denne.">
+			keywords = <"sanders, modenhet, skoliose, skjelettalder, skjelettalderbestemmelse, skjelett, bein", ...>
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the simplified Tanner-Whitehouse III skeletal maturity assessment.">
+			use = <"Use to record the simplified Tanner-Whitehouse III skeletal maturity assessment.">
+			keywords = <"sanders, maturity, scoliosis, skeletal, age, bone", ...>
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "SB Bhattacharyya, Bhattacharyyas Clinical Records Research & Informatics LLP, India", "Randi Brendberg, Helse Nord RHF, Norway", "Mikkel Johan Gaup Grønmo, Regional forvaltning EPJ, Helse Nord, Norway (openEHR Editor)", "Evelyn Hovenga, EJSH Consulting, Australia", "Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Thomas Natvik, Helse Bergen, Norway", "Mikael Nyström, Cambio Healthcare Systems AB, Sweden", "Terje Sagmyr, Helse Vest IKT, Norway", "Norwegian Review Summary, Norwegian Public Hospitals, Norway", "John Tore Valand, Helse Bergen, Norway (openEHR Editor)", "Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Sanders JO, Khoury JG, Kishan S, et al. Predicting scoliosis progression from skeletal maturity: a simplified classification during adolescence. J Bone Joint Surg Am 2008;90(3):541 (Table 1).
+
+Muscoloskeletal Key, The Simplified Tanner-Whitehouse-III Skeletal Maturity Assessment table 1.2. Accessed: 29.09.22. Available from: https://musculoskeletalkey.com/anatomy-and-normal-development-in-children/.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"5D48C0F86F2395B214777F101A45F07C">
+		["build_uid"] = <"1b644790-a980-4b1e-a451-578433eafec7">
+		["revision"] = <"1.0.0">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Simplified Tanner-Whitehouse III skeletal maturity assessment
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Simplified Tanner-Whitehouse III stage
+										value matches {
+											1|[local::at0005],
+											2|[local::at0006],
+											3|[local::at0007],
+											4|[local::at0008],
+											5|[local::at0009],
+											6|[local::at0010],
+											7|[local::at0011],
+											8|[local::at0012]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0013] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0014] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Simplified Tanner-Whitehouse III assessment">
+					description = <"A classification for the skeletal maturity stage in children, based on radiological assessment of the hand and wrist.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Stage">
+					description = <"Assessed skeletal maturity.">
+				>
+				["at0005"] = <
+					text = <"Juvenile slow">
+					description = <"Digital epiphyses are not covered.">
+				>
+				["at0006"] = <
+					text = <"Preadolescent slow">
+					description = <"All digital epiphyses are covered.">
+				>
+				["at0007"] = <
+					text = <"Adolescent rapid-early">
+					description = <"The preponderance of digits are capped. The second through fifth metacarpal epiphyses are wider than their metaphyses.">
+				>
+				["at0008"] = <
+					text = <"Adolescent rapid-late">
+					description = <"Any of distal phalangeal physes are clearly beginning to close.">
+				>
+				["at0009"] = <
+					text = <"Adolescent steady-early">
+					description = <"All distal phalangeal physes are closed. Others are open.">
+				>
+				["at0010"] = <
+					text = <"Adolescent steady-late">
+					description = <"Middle or proximal phalangeal physes are closing.">
+				>
+				["at0011"] = <
+					text = <"Early mature">
+					description = <"Only distal radial physis is open. Metacarpal physeal scars may be present.">
+				>
+				["at0012"] = <
+					text = <"Mature">
+					description = <"Distal radial physis is completely closed.">
+				>
+				["at0013"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000"] = <
+					text = <"Simplified Tanner-Whitehouse III assessment">
+					description = <"En klassifisering for grad av skjelettmodenhet hos barn, basert på radiologisk undersøkelse av hånd og håndledd.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Uspesifisert hendelse">
+					description = <"Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Stage">
+					description = <"Vurdert skjelettmodenhet.">
+				>
+				["at0005"] = <
+					text = <"Juvenile slow">
+					description = <"Digital epiphyses are not covered.">
+				>
+				["at0006"] = <
+					text = <"Preadolescent slow">
+					description = <"All digital epiphyses are covered.">
+				>
+				["at0007"] = <
+					text = <"Adolescent rapid-early">
+					description = <"The preponderance of digits are capped. The second through fifth metacarpal epiphyses are wider than their metaphyses.">
+				>
+				["at0008"] = <
+					text = <"Adolescent rapid-late">
+					description = <"Any of distal phalangeal physes are clearly beginning to close.">
+				>
+				["at0009"] = <
+					text = <"Adolescent steady-early">
+					description = <"All distal phalangeal physes are closed. Others are open.">
+				>
+				["at0010"] = <
+					text = <"Adolescent steady-late">
+					description = <"Middle or proximal phalangeal physes are closing.">
+				>
+				["at0011"] = <
+					text = <"Early mature">
+					description = <"Only distal radial physis is open. Metacarpal physeal scars may be present.">
+				>
+				["at0012"] = <
+					text = <"Mature">
+					description = <"Distal radial physis is completely closed.">
+				>
+				["at0013"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Tilleggsinformasjon">
+					description = <"Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.">
+					comment = <"For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.">
+				>
+			>
+		>
+	>

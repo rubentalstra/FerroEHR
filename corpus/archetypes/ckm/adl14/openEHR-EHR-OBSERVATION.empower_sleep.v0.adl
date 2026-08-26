@@ -1,0 +1,164 @@
+﻿archetype (adl_version=1.4; uid=f71bc0f7-c6e6-4642-b6d8-a4039482a50a)
+	openEHR-EHR-OBSERVATION.empower_sleep.v0
+
+concept
+	[at0000]	-- Sleep (EMPOWER)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Ilias Lamprinos">
+		["organisation"] = <"Intracom Telecom">
+		["email"] = <"labil@intracom.gr">
+		["date"] = <"2012-11-23">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Recording observations of daily living related to sleep.
+
+Based on the data model developed within the EMPOWER project, www.empower-fp7,eu.">
+			use = <"Record observations of the duration of a sleep slot and related sleep information, as observed by the monitoring subject, i.e. the patient himself. The archetype is intended to capture sleep time in the conext of applications that collect Observations of Daily Living.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Chrysa Papadaki, chrpapa@intracom.gr, Intracom Telecom", "Hans Demski, Helmholtz Zentrum München GmbH, demski@helmholtz-muenchen.de">
+	other_details = <
+		["current_contact"] = <"Hans Demski, Helmholtz Zentrum München GmbH, demski@helmholtz-muenchen.de">
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["revision"] = <"0.0.1-alpha">
+		["build_uid"] = <"498c8566-cd16-4a2f-910a-133c39f3ebd5">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"0E6471220A37C0E9D62A4BB5FCC52078">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Sleep (EMPOWER)
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {3..*; unordered} matches {
+									ELEMENT[at0005] matches {	-- Sleep slot duration
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::128]>
+												list = <
+													["1"] = <
+														units = <"h">
+														magnitude = <|0.0..24.0|>
+														precision = <|1|>
+													>
+												>
+											>
+										}
+									}
+									ELEMENT[at0017] matches {	-- Perceived Sleep Quality
+										value matches {
+											0|[local::at0018], 	-- Very Bad
+											1|[local::at0019], 	-- Fairly Bad
+											2|[local::at0020], 	-- Neutral
+											3|[local::at0021], 	-- Fairly Good
+											4|[local::at0022]  	-- Very Good
+										}
+									}
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+										null_flavour existence matches {0..1} matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {[openehr::271]}
+											}
+										}
+									}
+									allow_archetype CLUSTER[at0025] occurrences matches {0..*} matches {	-- Related Symptom
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.symptom\.v1/}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"MTH", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Sleep (EMPOWER)">
+					description = <"Recording observations regarding sleep.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Any sleep event during a single day.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Comment">
+					description = <"Any comment related to the cause of sleep disturbance.">
+				>
+				["at0005"] = <
+					text = <"Sleep slot duration">
+					description = <"The duration of a sleep event, in hours.">
+				>
+				["at0017"] = <
+					text = <"Perceived Sleep Quality">
+					description = <"Percetpion of sleep quality by the subject him/herself.">
+				>
+				["at0018"] = <
+					text = <"Very Bad">
+					description = <"Very Bad.">
+				>
+				["at0019"] = <
+					text = <"Fairly Bad">
+					description = <"Fairly Bad.">
+				>
+				["at0020"] = <
+					text = <"Neutral">
+					description = <"Neutral.">
+				>
+				["at0021"] = <
+					text = <"Fairly Good">
+					description = <"Fairly Good.">
+				>
+				["at0022"] = <
+					text = <"Very Good">
+					description = <"Very Good.">
+				>
+				["at0025"] = <
+					text = <"Related Symptom">
+					description = <"Symptoms related to recorded sleep session.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["MTH"] = <
+			items = <
+				["at0000"] = <[MTH::C0037313]>
+				["at0005"] = <[MTH::C0424574]>
+				["at0017"] = <[MTH::C0424563]>
+			>
+		>
+	>

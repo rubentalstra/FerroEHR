@@ -1,0 +1,1015 @@
+﻿archetype (adl_version=1.4; uid=3e5b2b98-ed29-4e45-8054-fd65abb0c53f)
+	openEHR-EHR-CLUSTER.imaging_exam-heart.v0
+specialise
+	openEHR-EHR-CLUSTER.imaging_exam.v1
+
+concept
+	[at0000.1]	-- Imaging examination of the heart
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Natalia Strauch">
+				["organisation"] = <"Medizinische Hochschule Hannover">
+				["email"] = <"Strauch.Natalia@mh-hannover.de">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Vebjørn Arntzen">
+				["organisation"] = <"Oslo University Hospital">
+				["email"] = <"varntzen@ous-hf.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2024-06-24">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"*To record the findings on radiological examination of the heart, and their interpretation. (en)">
+			use = <"*Use to record the findings on radiological examination of the heart, and their interpretation.
+
+This archetype and its related family of specialisations are designed to be nested within the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within the 'Additional details' SLOT in other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. If this archetype or its specialisations need to be extended with further levels of detailed findings, additional instances of the CLUSTER.imaging_exam or its specialisations can be nested in the 'Additional details' SLOT.
+
+The design of this archetype is intended to be inclusive of all reasonably anticipated and relevant findings. (en)">
+			keywords = <"*heart (en)", "*valve (en)", "*ventricle (en)", "*aorta (en)", "*aortic (en)", "*pulmonary (en)", "*tricuspid (en)", "*mitral (en)", "*atrium (en)", "*atria (en)">
+			misuse = <"Nicht zur Darstellung von Befunden verwenden, die außerhalb der identifizierten Körperstruktur oder -region beobachtet wurden. Verwenden Sie zu diesem Zweck eine separate Instanz eines oder mehrerer Archetypen aus der Familie CLUSTER.imaging_exam.
+
+Darf nicht verwendet werden, um Details in Bezug auf die Gesamtbefunde, den Kontext oder technische Details in Bezug auf ein vollständiges Testergebnis einer bildgebenden Untersuchung darzustellen. Verwenden Sie zu diesem Zweck das OBSERVATION.imaging_exam_result. Zum Beispiel Kommentare zur Studienqualität, zu Differenzialdiagnosen und zum Gesamteindruck.">
+			copyright = <"© openEHR Foundation">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"*To record the findings on radiological examination of the heart, and their interpretation. (en)">
+			use = <"*Use to record the findings on radiological examination of the heart, and their interpretation.
+
+This archetype and its related family of specialisations are designed to be nested within the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within the 'Additional details' SLOT in other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. If this archetype or its specialisations need to be extended with further levels of detailed findings, additional instances of the CLUSTER.imaging_exam or its specialisations can be nested in the 'Additional details' SLOT.
+
+The design of this archetype is intended to be inclusive of all reasonably anticipated and relevant findings. (en)">
+			keywords = <"*heart (en)", "*valve (en)", "*ventricle (en)", "*aorta (en)", "*aortic (en)", "*pulmonary (en)", "*tricuspid (en)", "*mitral (en)", "*atrium (en)", "*atria (en)">
+			misuse = <"Skal ikke brukes til å registrere funn som er gjort utenom det definerte organet eller den definerte kroppsdelen. Bruk en egen instans av en eller flere arketyper innen gruppen av CLUSTER.imaging_exam - arketyper (Undersøkelsesfunn) for dette formålet.
+
+Skal ikke brukes til å registrere overordnede undersøkelsesfunn, kontekst eller tekniske detaljer relatert til bildeundersøkelsen. Bruk arketypen OBSERVATION.imaging_exam_result (Bildediagnostisk svar) for å registrere for eksempel kommentar om undersøkelseskvalitet, differensialdiagnose og overordnet konklusjon.">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the findings on radiological examination of the heart, and their interpretation.">
+			use = <"Use to record the findings on radiological examination of the heart, and their interpretation.
+
+This archetype and its related family of specialisations are designed to be nested within the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within the 'Additional details' SLOT in other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. If this archetype or its specialisations need to be extended with further levels of detailed findings, additional instances of the CLUSTER.imaging_exam or its specialisations can be nested in the 'Additional details' SLOT.
+
+The design of this archetype is intended to be inclusive of all reasonably anticipated and relevant findings.">
+			keywords = <"heart", "valve", "ventricle", "aorta", "aortic", "pulmonary", "tricuspid", "mitral", "atrium", "atria">
+			misuse = <"Not to be used to record findings observed outside the identified body structure or region. Use a separate instance of one or more archetypes from the CLUSTER.imaging_exam family for this purpose.
+
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"C1DDC8CD90B61EB0FBF794086BFC9761">
+		["build_uid"] = <"28cd0ae8-f1d5-4cb9-9129-5f092b7d1e4e">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {    -- Imaging examination of the heart
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001.1] matches {    -- Body structure
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0.36]    -- Heart
+						}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {    -- Imaging findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Additional details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.imaging_exam-lymph_node(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lymph_node_group(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lesion(-[a-zA-Z0-9_]+)*\.v0/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Impression
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.1] occurrences matches {0..1} matches {    -- Relative ventricular size
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.2,    -- Normal
+							at0.3]    -- Enlarged
+						}
+					}
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.49] occurrences matches {0..1} matches {    -- Valves normal?
+				value matches {
+					DV_BOOLEAN matches {*}
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.50,    -- Normal
+							at0.51]    -- Abnormal
+						}
+					}
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.20] occurrences matches {0..1} matches {    -- Tricuspid stenosis (TS)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.21,    -- Present
+							at0.22,    -- Absent
+							at0.23]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.24] occurrences matches {0..1} matches {    -- Tricuspid regurgitation (TR)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.25,    -- Present
+							at0.26,    -- Absent
+							at0.27]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.37] occurrences matches {0..1} matches {    -- Pulmonary stenosis (PS)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.38,    -- Present
+							at0.39,    -- Absent
+							at0.40]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.41] occurrences matches {0..1} matches {    -- Pulmonary regurgitation (PR)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.42,    -- Present
+							at0.43,    -- Absent
+							at0.44]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.4] occurrences matches {0..1} matches {    -- Mitral stenosis (MS)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.5,    -- Present
+							at0.6,    -- Absent
+							at0.7]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.8] occurrences matches {0..1} matches {    -- Mitral regurgitation (MR)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.9,    -- Present
+							at0.10,    -- Absent
+							at0.11]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.12] occurrences matches {0..1} matches {    -- Aortic stenosis (AS)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.13,    -- Present
+							at0.14,    -- Absent
+							at0.15]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.16] occurrences matches {0..1} matches {    -- Aortic regurgitation (AR)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.17,    -- Present
+							at0.18,    -- Absent
+							at0.19]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.28] occurrences matches {0..1} matches {    -- Pericarditis
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.29,    -- Present
+							at0.30,    -- Absent
+							at0.31]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.32] occurrences matches {0..1} matches {    -- Myocarditis
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.33,    -- Present
+							at0.34,    -- Absent
+							at0.35]    -- Indeterminate
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Imaging examination of the heart">
+					description = <"Findings on radiological examination of the heart.">
+				>
+				["at0025"] = <
+					text = <"Element">
+					description = <"">
+				>
+				["at0.1"] = <
+					text = <"Relative ventricular size">
+					description = <"Description of the comparative size of both cardiac ventricles relative to established normal ranges.">
+				>
+				["at0.2"] = <
+					text = <"Normal">
+					description = <"">
+				>
+				["at0.3"] = <
+					text = <"Enlarged">
+					description = <"">
+				>
+				["at0.4"] = <
+					text = <"Mitral stenosis (MS)">
+					description = <"Statement about the presence or absence of mitral stenosis.">
+				>
+				["at0.5"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.6"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.7"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.8"] = <
+					text = <"Mitral regurgitation (MR)">
+					description = <"Statement about the presence or absence of mitral regurgitation.">
+				>
+				["at0.9"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.11"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.12"] = <
+					text = <"Aortic stenosis (AS)">
+					description = <"Statement about the presence or absence of aortic stenosis.">
+				>
+				["at0.13"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.14"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.15"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.16"] = <
+					text = <"Aortic regurgitation (AR)">
+					description = <"Statement about the presence or absence of aortic regurgitation.">
+				>
+				["at0.17"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.18"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.19"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.20"] = <
+					text = <"Tricuspid stenosis (TS)">
+					description = <"Statement about the presence or absence of tricuspid stenosis.">
+				>
+				["at0.21"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.22"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.23"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"Tricuspid regurgitation (TR)">
+					description = <"Statement about the presence or absence of tricuspid regurgitation.">
+				>
+				["at0.25"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.26"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.27"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.28"] = <
+					text = <"Pericarditis">
+					description = <"Statement about the presence or absence of pericarditis.">
+				>
+				["at0.29"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.30"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.31"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.32"] = <
+					text = <"Myocarditis">
+					description = <"Statement about the presence or absence of myocarditis.">
+				>
+				["at0.33"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.34"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0001.1"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+					comment = <"For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant.">
+				>
+				["at0.36"] = <
+					text = <"Heart">
+					description = <"">
+				>
+				["at0.37"] = <
+					text = <"Pulmonary stenosis (PS)">
+					description = <"Statement about the presence or absence of pulmonary stenosis.">
+				>
+				["at0.38"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.39"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.40"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.41"] = <
+					text = <"Pulmonary regurgitation (PR)">
+					description = <"Statement about the presence or absence of pulmonary regurgitation.">
+				>
+				["at0.42"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.43"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.49"] = <
+					text = <"Valves normal?">
+					description = <"Overarching assessment about the condition and functionality of all heart valves, reflecting their structural integrity, movement, and any abnormalities observed.">
+				>
+				["at0000"] = <
+					text = <"Imaging examination of a body structure">
+					description = <"Findings on radiological examination of a specified body structure or region.">
+				>
+				["at0001"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+					comment = <"For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant.">
+				>
+				["at0002"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"For example: a lymph node group (body structure) which found in the 'Right axilla'. Coding of 'Body site' with a terminology, such as SNOMED CT, is desirable. If the body site has been fully identified in the 'Body structure' data element, this data element becomes redundant.">
+				>
+				["at0003"] = <
+					text = <"Structured body site">
+					description = <"Structured details about the area of the body under examination.">
+					comment = <"For example: details about a relative anatomical location, such as '2cm distal to the appendix'. If the body site has been fully identified in the 'Body structure' or 'Body site' data elements, then this SLOT becomes redundant.">
+				>
+				["at0004"] = <
+					text = <"Imaging findings">
+					description = <"Narrative description of the imaging findings observed during this examination.">
+				>
+				["at0005"] = <
+					text = <"Additional details">
+					description = <"Additional structured details about imaging findings for the identified body structure or region, or findings of related structures.">
+				>
+				["at0006"] = <
+					text = <"Impression">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of all imaging findings for the identified body structure.">
+					comment = <"Also referred to as 'Interpretation' or 'Opinion'. For example: 'No abnormality detected' or 'Free fluid present'. Coding of the 'Impression' with a terminology is permitted, if useful. Multiple occurrences allow for more than one coded impression. A narrative description may include a comparison with previous studies of the identified body structure, if appropriate.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the imaging findings of the body structure, not captured in other fields.">
+				>
+				["at0.50"] = <
+					text = <"Normal">
+					description = <"All valves appear normal.">
+				>
+				["at0.51"] = <
+					text = <"Abnormal">
+					description = <"Valvular damage is observed.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Imaging examination of the heart (en)">
+					description = <"*Findings on radiological examination of the heart. (en)">
+				>
+				["at0025"] = <
+					text = <"*Element (en)">
+					description = <"">
+				>
+				["at0.1"] = <
+					text = <"*Relative ventricular size (en)">
+					description = <"*Description of the comparative size of both cardiac ventricles relative to established normal ranges. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Normal (en)">
+					description = <"">
+				>
+				["at0.3"] = <
+					text = <"*Enlarged (en)">
+					description = <"">
+				>
+				["at0.4"] = <
+					text = <"*Mitral stenosis (MS) (en)">
+					description = <"*Statement about the presence or absence of mitral stenosis. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.6"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.7"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.8"] = <
+					text = <"*Mitral regurgitation (MR) (en)">
+					description = <"*Statement about the presence or absence of mitral regurgitation. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.11"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.12"] = <
+					text = <"*Aortic stenosis (AS) (en)">
+					description = <"*Statement about the presence or absence of aortic stenosis. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.14"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.15"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.16"] = <
+					text = <"*Aortic regurgitation (AR) (en)">
+					description = <"*Statement about the presence or absence of aortic regurgitation. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.18"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.19"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.20"] = <
+					text = <"*Tricuspid stenosis (TS) (en)">
+					description = <"*Statement about the presence or absence of tricuspid stenosis. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.22"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.23"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Tricuspid regurgitation (TR) (en)">
+					description = <"*Statement about the presence or absence of tricuspid regurgitation. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.26"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.27"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.28"] = <
+					text = <"*Pericarditis (en)">
+					description = <"*Statement about the presence or absence of pericarditis. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.30"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.31"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.32"] = <
+					text = <"*Myocarditis (en)">
+					description = <"*Statement about the presence or absence of myocarditis. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.34"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0001.1"] = <
+					text = <"Kroppsstruktur">
+					description = <"Identifisering av organet eller kroppsdelen som svaret gjelder.">
+					comment = <"For eksempel \"Lever\", \"Høyre ankel\" eller \"Lymfeknutegruppe\". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT. Dersom den aktuelle strukturen i kroppen er fullt ut angitt i dette \"Kroppsstruktur\"-elementet er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\" eller \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0.36"] = <
+					text = <"*Heart (en)">
+					description = <"">
+				>
+				["at0.37"] = <
+					text = <"*Pulmonary stenosis (PS) (en)">
+					description = <"*Statement about the presence or absence of pulmonary stenosis. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.39"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.40"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.41"] = <
+					text = <"*Pulmonary regurgitation (PR) (en)">
+					description = <"*Statement about the presence or absence of pulmonary regurgitation. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.43"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.49"] = <
+					text = <"*Valves normal? (en)">
+					description = <"*Overarching assessment about the condition and functionality of all heart valves, reflecting their structural integrity, movement, and any abnormalities observed. (en)">
+				>
+				["at0000"] = <
+					text = <"Bildediagnostisk undersøkelse - kroppsstruktur">
+					description = <"Funn eller observasjoner ved radiologisk undersøkelse av et definert organ eller en kroppsdel.">
+				>
+				["at0001"] = <
+					text = <"Kroppsstruktur">
+					description = <"Identifisering av organet eller kroppsdelen som svaret gjelder.">
+					comment = <"For eksempel \"Lever\", \"Høyre ankel\" eller \"Lymfeknutegruppe\". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT. Dersom den aktuelle strukturen i kroppen er fullt ut angitt i dette \"Kroppsstruktur\"-elementet er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\" eller \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0002"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av organ eller kroppsdel.">
+					comment = <"For eksempel en lymfeknutegruppe (Kroppsstruktur) som er funnet i \"Høyre aksille\" (Anatomisk lokalisasjon). Det er ønskelig å kode \"Anatomisk lokalisasjon\" med en terminologi, som SNOMED CT. Dersom den anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\".">
+				>
+				["at0003"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Strukturerte detaljer om organ eller kroppsdel.">
+					comment = <"For eksempel detaljert om en relativ anatomisk lokalisasjon, som \"2 cm distalt for appendix\". Dersom den nøyaktige eller relative anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0004"] = <
+					text = <"Funn">
+					description = <"Fritekstlig beskrivelse av funn eller observasjoner på bilder tatt under denne undersøkelsen.">
+				>
+				["at0005"] = <
+					text = <"Ytterligere detaljer">
+					description = <"Ytterligere strukturerte detaljer om funn eller observasjoner på bilder for det definerte organet eller kroppsdelen, eller om funn eller observasjoner hos tilhørende kroppsstrukturer.">
+				>
+				["at0006"] = <
+					text = <"Resymé">
+					description = <"Enkeltord, frase eller kortfattet beskrivelse som uttrykker den kliniske betydningen av alle funn og observasjoner for den definerte kroppsstrukturen.">
+					comment = <"Kan også kalles \"Tolkning\" eller \"Inntrykk\". For eksempel \"Uten anmerkning\" eller \"Fri væske\". Dersom det er nyttig, er det åpent for å kode \"Resymé\" med en terminologi. Flere svar kan kodes ved at elementet er åpent for å være gjentakende. En beskrivelse i fritektst kan også brukes og kan inneholde en sammenligning med tidligere undersøkelser av samme kroppsstruktur.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn eller observasjoner på bilder av kroppsstrukturen og som ikke er fanget i andre felt.">
+				>
+				["at0.50"] = <
+					text = <"*Normal (en)">
+					description = <"*All valves appear normal. (en)">
+				>
+				["at0.51"] = <
+					text = <"*Abnormal (en)">
+					description = <"*Valvular damage is observed. (en)">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Imaging examination of the heart (en)">
+					description = <"*Findings on radiological examination of the heart. (en)">
+				>
+				["at0025"] = <
+					text = <"*Element (en)">
+					description = <"">
+				>
+				["at0.1"] = <
+					text = <"*Relative ventricular size (en)">
+					description = <"*Description of the comparative size of both cardiac ventricles relative to established normal ranges. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Normal (en)">
+					description = <"">
+				>
+				["at0.3"] = <
+					text = <"*Enlarged (en)">
+					description = <"">
+				>
+				["at0.4"] = <
+					text = <"*Mitral stenosis (MS) (en)">
+					description = <"*Statement about the presence or absence of mitral stenosis. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.6"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.7"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.8"] = <
+					text = <"*Mitral regurgitation (MR) (en)">
+					description = <"*Statement about the presence or absence of mitral regurgitation. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.11"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.12"] = <
+					text = <"*Aortic stenosis (AS) (en)">
+					description = <"*Statement about the presence or absence of aortic stenosis. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.14"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.15"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.16"] = <
+					text = <"*Aortic regurgitation (AR) (en)">
+					description = <"*Statement about the presence or absence of aortic regurgitation. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.18"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.19"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.20"] = <
+					text = <"*Tricuspid stenosis (TS) (en)">
+					description = <"*Statement about the presence or absence of tricuspid stenosis. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.22"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.23"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Tricuspid regurgitation (TR) (en)">
+					description = <"*Statement about the presence or absence of tricuspid regurgitation. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.26"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.27"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.28"] = <
+					text = <"*Pericarditis (en)">
+					description = <"*Statement about the presence or absence of pericarditis. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.30"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.31"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.32"] = <
+					text = <"*Myocarditis (en)">
+					description = <"*Statement about the presence or absence of myocarditis. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.34"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0001.1"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"*For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant. (en)">
+				>
+				["at0.36"] = <
+					text = <"*Heart (en)">
+					description = <"">
+				>
+				["at0.37"] = <
+					text = <"*Pulmonary stenosis (PS) (en)">
+					description = <"*Statement about the presence or absence of pulmonary stenosis. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.39"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.40"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.41"] = <
+					text = <"*Pulmonary regurgitation (PR) (en)">
+					description = <"*Statement about the presence or absence of pulmonary regurgitation. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.43"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.49"] = <
+					text = <"*Valves normal? (en)">
+					description = <"*Overarching assessment about the condition and functionality of all heart valves, reflecting their structural integrity, movement, and any abnormalities observed. (en)">
+				>
+				["at0000"] = <
+					text = <"Bildgebende Untersuchung einer Körperstruktur">
+					description = <"Befunde zur radiologischen Untersuchung einer bestimmten Körperstruktur oder -region.">
+				>
+				["at0001"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Zum Beispiel: „Leber“, „Rechter Knöchel“ oder „Lymphknotengruppe“. Es wird empfohlen, die Körperstruktur mit einer geeigneten Terminologie, wie SNOMED CT, zu kodieren. Wenn die Körperstruktur in diesem Element „Körperstruktur“ vollständig identifiziert wurde, dann werden das Datenelement „Körperstelle“ und der SLOT „Strukturierte Körperstelle“ überflüssig.">
+				>
+				["at0002"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des zu untersuchenden Bereichs des Körpers.">
+					comment = <"Zum Beispiel: eine Lymphknotengruppe (Körperstruktur), die sich in der „rechten Achselhöhle“ befindet. Eine Kodierung von „Körperstelle“ mit einer Terminologie, wie z. B. SNOMED CT, ist wünschenswert. Wenn die Körperstelle im Datenelement „Körperstruktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+				["at0003"] = <
+					text = <"Körperstelle strukturiert">
+					description = <"Strukturierte Angaben zum untersuchten Körperbereich.">
+					comment = <"Zum Beispiel: Angaben zu einer relativen anatomischen Lokalisation, wie z. B. „2 cm distal zum Blinddarm“. Wenn die Körperstelle in den Datenelementen „Körperstruktur“ oder „Körperstelle“ vollständig identifiziert wurde, wird dieser SLOT überflüssig.">
+				>
+				["at0004"] = <
+					text = <"Bildgebende Befunde">
+					description = <"Beschreibung der bei dieser Untersuchung beobachteten bildgebenden Befunde.">
+				>
+				["at0005"] = <
+					text = <"Zusätzliche Angaben">
+					description = <"Zusätzliche strukturierte Angaben zu bildgebenden Befunden für die identifizierte Körperstruktur oder -region oder befundbezogene Strukturen.">
+				>
+				["at0006"] = <
+					text = <"Interpretation">
+					description = <"Einzelnes Wort, Satz oder kurze Beschreibung, die die klinische Bedeutung und Signifikanz aller bildgebenden Befunde für die identifizierte Körperstruktur darstellt.">
+					comment = <"Auch als „Eindruck“ oder „Meinung“ bezeichnet. Zum Beispiel: „Keine Anomalie erkannt“ oder „Freie Flüssigkeit vorhanden“. Eine Kodierung des „Interpretation“ mit einer Terminologie ist zulässig, sofern sinnvoll. Mehrere Vorkommen ermöglichen mehr als eine codierte Interpretation. Eine einfache Beschreibung kann gegebenenfalls einen Vergleich mit früheren Studien der identifizierten Körperstruktur beinhalten.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzlicher Text über die bildgebenden Befunde der Körperstruktur, der in anderen Bereichen nicht erfasst wurde.">
+				>
+				["at0.50"] = <
+					text = <"*Normal (en)">
+					description = <"*All valves appear normal. (en)">
+				>
+				["at0.51"] = <
+					text = <"*Abnormal (en)">
+					description = <"*Valvular damage is observed. (en)">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0001"] = <[SNOMED-CT::80891009]>
+			>
+		>
+	>

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2012-11-28</original_author>
+    <original_author id="name">Ilias Lamprinos</original_author>
+    <original_author id="organisation">Intracom Telecom</original_author>
+    <original_author id="email">labil@intracom.gr</original_author>
+    <other_contributors>Chrysa Papadaki, Intracom Telecom,  chrpapa@intracom.gr</other_contributors>
+    <other_contributors>Hans Demski, Helmholtz Zentrum München GmbH, demski@helmholtz-muenchen.de</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Hans Demski, Helmholtz Zentrum München GmbH, demski@helmholtz-muenchen.de</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">90A42F385EBC2C7064B5945A0466525A</other_details>
+    <other_details id="build_uid">f80bfcf1-9665-458e-8027-206d6980bb19</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>This archetype is used to facilitate recording of the self-assesment of the subject's mood. &#xD;
+&#xD;
+Based on the data model developed within the EMPOWER project, www.empower-fp7,eu.</purpose>
+      <use>Self-assesment of the subject's mood, as an observation of daily living.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>8f2d19ff-4c4c-4e5b-b3f9-a261f8827c63</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.empower_mood.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0007</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Mood Level (EMPOWER)</items>
+        <items id="description">Mood level provides a description of the mood state.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Mood</items>
+        <items id="description">Indicates the current mood state of the patient.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Cheerful</items>
+        <items id="description">Highly pleasant emotion characterized by outward manifestations of gratification; joy.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Euthymic</items>
+        <items id="description">Euthymic mood.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Indifferent</items>
+        <items id="description">Lack of emotion or emotional expression; a disorder of motivation that persists over time.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Sad</items>
+        <items id="description">Feeling sad.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Depressed</items>
+        <items id="description">Feelings of grief or unhappiness.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="MTH">
+      <items code="at0000">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0424113</code_string>
+        </value>
+      </items>
+      <items code="at0001">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0424113</code_string>
+        </value>
+      </items>
+      <items code="at0003">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>112080002</code_string>
+        </value>
+      </items>
+      <items code="at0004">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0233475</code_string>
+        </value>
+      </items>
+      <items code="at0005">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0085632</code_string>
+        </value>
+      </items>
+      <items code="at0006">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C2987511</code_string>
+        </value>
+      </items>
+      <items code="at0007">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0344315</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

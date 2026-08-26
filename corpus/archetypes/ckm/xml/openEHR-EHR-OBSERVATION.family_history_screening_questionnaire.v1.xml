@@ -1,0 +1,1475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-08-20</original_author>
+    <original_author id="name">Marit Alice Venheim</original_author>
+    <original_author id="organisation">Helse Vest IKT AS</original_author>
+    <original_author id="email">marit.alice.venheim@helse-vest-ikt-no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Hugo Claudio Briceño García, Catsalut, Spain</other_contributors>
+    <other_contributors>Clara Calleja Vega, CatSalut. Servei Català de la Salut., Spain</other_contributors>
+    <other_contributors>Christian Chevalley, ADOC, Thailand</other_contributors>
+    <other_contributors>Giovanni Delussu, crs4, Italy</other_contributors>
+    <other_contributors>Mona Didriksen, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Manuela Domingo, hospital general universitario dr. balmis, Spain</other_contributors>
+    <other_contributors>Gunn Elin Blakkisrud, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Aleksander Furnes, Helse Nord IKT, Norway</other_contributors>
+    <other_contributors>Ciprian Gerstenberger, HN IKT, Norway</other_contributors>
+    <other_contributors>Rosane Gotardo, Systema Ltda., Brazil</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Atle Hansen, Universitetssykehuset Nord-Norge, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Susanna Jönsson, Region Värmland, Sweden</other_contributors>
+    <other_contributors>Mika Kiviaho, Tietoevry Care, Finland</other_contributors>
+    <other_contributors>June Marie Nepstad Knappskog, Helse Nord IKT AS, Norway (openEHR Editor), Norway</other_contributors>
+    <other_contributors>Martin Koch, Servei Català de la Salut, Spain</other_contributors>
+    <other_contributors>Ronald Krawec, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Lise Kristin Knutsen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Anjali Kulkarni, Karkinos, India</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Eli Larsen, UNN, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Darin Leonhardt, PLRI für medizinische Informatik/ Medizinische Hochschule, Germany</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ruth Lochan, Akademiska Sjukhuset Uppsala, Sweden</other_contributors>
+    <other_contributors>Michael Lutz, BITsoft, Germany</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Norway redaktør)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Arunakiry Natarajan, medondo, Germany</other_contributors>
+    <other_contributors>Svenne Naumann, Finnmarkssykehuset, Norway</other_contributors>
+    <other_contributors>Olha Nikolaieva, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Terje Nordberg, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Marlene Pérez Colman, Digital Health and Care Wales, United Kingdom</other_contributors>
+    <other_contributors>Benjamin Senst, Germany</other_contributors>
+    <other_contributors>Andre Smitt-Ingebretsen, Sørlandet sykehus HF, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Wouter Zanen, Eurotranplant, Netherlands</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">726282DF184EE57A937A54D9EAE46D13</other_details>
+    <other_details id="build_uid">9ba86842-e1ee-4201-bfc9-41f2247e68e7</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Für die Erstellung eines Rahmens für die Aufzeichnung von Antworten auf vordefinierte Screening-Fragen zu gesundheitlichen Problemen bei genetischen und nicht-genetischen Familienmitgliedern.</purpose>
+      <keywords>Familie, Geschichte, Gesundheit, Zustand, Problem, Diagnose, Familiengeschichte, relativ, biologisch, Beziehung, Hintergrund, genetisch</keywords>
+      <use>*Use to create a framework for recording answers to pre-defined screening questions about health-related problems found in both genetic and non-genetic family members.&#xD;
+&#xD;
+Traditionally the scope of family history has been focused on identifying factors or biomarkers in genetically related family members. Non-genetic family members may also be included, such as adopted or long term fostered children, those related by marriage, or other unrelated individuals who participate in the regular life and influence of the family.&#xD;
+&#xD;
+The intended scope of this archetype is to include the broadest range of problems or issues that might be found within families. It includes problems or diagnoses that are:&#xD;
+- genetically inheritable, such as breast cancer or Huntington’s disease&#xD;
+- not genetically inheritable but influenced by psychological, social, or environmental factors related to the family, such as exposure to toxins in the family home, domestic violence, sexual abuse, alcoholism and other addictions.&#xD;
+&#xD;
+This archetype has two discrete approaches for screening for family history:&#xD;
+- All relationships - Does  *anyone* in the family have ‘Problem/diagnosis name’? &#xD;
+- Specified relationship - Does your 'Relationship'  have ‘Problem/diagnosis name’? &#xD;
+&#xD;
+Common use cases include, but are not limited to:&#xD;
+- Systematic questioning in any consultation, for example:&#xD;
+--- Is there a history of heart disease in the family?&#xD;
+--- Is there a history of mental health problems in the family?&#xD;
+--- Is there a history of addiction in the family?&#xD;
+--- Did your mother have diabetes?&#xD;
+- Specific questioning related to chronic disease management or preventive health.&#xD;
+&#xD;
+Templates for specific use cases may be constrained to relationships with genetic family members if required.&#xD;
+&#xD;
+The semantics of this archetype are intentionally loose, and querying this archetype would normally only be useful or safe within the context of each specific template. In a template, each data element would usually be renamed to the specific question asked. Where value sets have been proposed for common use cases, these can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case.&#xD;
+&#xD;
+Use separate EVENTs to specify whether the questions relate to a point in time or an interval of time. For example: "Do any family members have COVID now?" as a point in time EVENT and "Have any family members had COVID during the past 4 weeks?" as an interval EVENT.&#xD;
+&#xD;
+The source of the information in a questionnaire response may vary in different contexts but can be specifically identified using the 'Information provider' element in the Reference Model.&#xD;
+&#xD;
+This archetype has been designed to be used as a screening tool or to record simple questionnaire-format data for use in situations such as a disease registry. If the screening questionnaire identifies the presence of a health concern in a family member, it is recommended that the clinical system record the specific details using the EVALUATION.family_history archetype or the CLUSTER.family_prevalence archetype. (en)</use>
+      <misuse>*Not to be used to record details about the presence or absence of a family-related problem outside of a screening context. Use EVALUATION.family_history or EVALUATION.exclusion_specific for these purposes.&#xD;
+&#xD;
+Not to be used to record details about a specific health-related problem. Use EVALUATION.problem_diagnosis for this purpose.&#xD;
+&#xD;
+Not to be used to record a Family Pedigree chart of health problems/diagnoses. Use the EVALUATION.family_history archetype for this purpose. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å lage et rammeverk for registrering av svar på forhåndsdefinerte spørsmål om helserelaterte forhold hos både genetiske og ikke-genetiske familiemedlemmer.</purpose>
+      <keywords>familie, historie, anamnese, helse, forhold, problem, diagnose, familiehistorie, slektning, biologisk, bakgrunn, genetisk</keywords>
+      <use>Brukes for å lage et rammeverk for registrering av svar på forhåndsdefinerte spørsmål om helserelaterte forhold hos både genetiske og ikke-genetiske familiemedlemmer.&#xD;
+&#xD;
+Tradisjonelt har omfanget av en familieanamnese vært fokusert på å identifisere faktorer eller biomarkører hos genetisk beslektede familiemedlemmer. Denne arketypen utvider omfanget til også å kunne inkludere ikke-genetiske familiemedlemmer, for eksempel adopterte barn, fosterbarn, ektefeller, eller andre ubeslektede individer som inngår i familiens daglige liv og påvirkning.&#xD;
+&#xD;
+Arketypen omfatter et bredest mulig spekter av problemer, bekymringer eller plager som kan oppstå i familier. Dette omfatter kjente problemer eller diagnoser som:&#xD;
+- Genetisk arvelige, for eksempel brystkreft eller Huntingtons sykdom.&#xD;
+- Ikke-genetisk arvelige, men som likevel kan være påvirket av psykologiske, sosiale eller miljømessige faktorer knyttet til familien, for eksempel eksponering for giftstoffer i hjemmet, vold i hjemmet, seksuelle overgrep, alkoholisme eller andre avhengigheter.&#xD;
+&#xD;
+Denne arketypen har to tilnærminger for å kartlegge familieanamnese:&#xD;
+- Alle relasjoner – Har et hvilket som helst familiemedlem «Problem-/diagnosenavn»?&#xD;
+- Spesifikk relasjon – Har det spesifikke familiemedlemmet, som er angitt under "Relasjon" "Problem-/diagnosenavn"?&#xD;
+&#xD;
+Vanlige bruksområder inkluderer, men er ikke begrenset til:&#xD;
+- Systematiske spørsmål ved konsultasjoner, for eksempel:&#xD;
+--- Er det kjent hjertesykdom i familien?&#xD;
+--- Er det psykiske helseproblemer i familien?&#xD;
+--- Finnes det avhengighetsproblemer i familien?&#xD;
+--- Har din mor diabetes?&#xD;
+- Spesifikke spørsmål relatert til håndtering av kronisk sykdom eller forebyggende helse.&#xD;
+&#xD;
+Templater for spesifikke brukstilfeller kan, om nødvendig, begrenses til relasjoner med genetiske familiemedlemmer.&#xD;
+&#xD;
+Semantikken til denne arketypen er med vilje løst definert, og spørringer etter data i denne arketypen vil normalt bare være hensiktsmessig eller sikker i konteksten av det spesifikke templatet. I et templat vil hvert dataelement vanligvis døpes om til det spesifikke spørsmålet man ønsker svar på. Flere steder er det foreslått verdisett som passer til de vanligste bruksområder, men det er allikevel mulig å tilpasse/endre verdisett for lokal bruk ved å benytte de alternative datatypene DV_TEXT eller DV_BOOLEAN for å harmonere verdisettet til hvert enkelt brukstilfelle.&#xD;
+&#xD;
+Bruk egne EVENTer for å skille mellom spørsmål som omhandler et hvilket som helst tidspunkt eller et tidsintervall. For eksempel; "Har noen familiemedlemmer COVID nå?" som en tidspunktshendelse (point in time EVENT) sammenlignet med "Har noen familiemedlemmer hatt COVID de siste fire ukene?" som en intervallhendelse (Interval EVENT)&#xD;
+&#xD;
+Kilden til informasjonen i et spørreskjema kan variere i ulike kontekster, men kan identifiseres spesifikt ved å benytte "Information provider"-elementet i openEHR referansemodellen.&#xD;
+&#xD;
+Denne arketypen er laget for å bli brukt i et spørreskjema eller for å registrere enkle strukturerte data til for eksempel et sykdomsregister. Dersom det i spørreskjemaet identifiseres at signifikante helserelaterte forhold er tilstede hos et familiemedlem, anbefales det at disse registreres og lagres i pasientjournalen i en relevant arketype, for eksempel i arketypene EVALUATION.family_history (Familieanamnese) eller i CLUSTER.family_prevalence (Familieprevalens).</use>
+      <misuse>Brukes ikke for å registrere tilstedeværelse eller fravær av helserelaterte forhold hos familiemedlemmer utenfor konteksten av kartleggingen. Bruk arketypene EVALUATION.family_history (Familieanamnese) eller EVALUATION.exclusion_specific (Eksklusjonsutsagn - spesifikt) for dette formålet.&#xD;
+&#xD;
+Brukes ikke som basis for et slektstre over helseproblemer og diagnoser. Bruk arketypen EVALUATION.family_history (Familieanamnese) for dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To create a framework for recording answers to pre-defined screening questions about health-related problems found in both genetic and non-genetic family members.</purpose>
+      <keywords>family, history, health, condition, problem, diagnosis, family history, relative, biological, relationship, background, genetic</keywords>
+      <use>Use to create a framework for recording answers to pre-defined screening questions about health-related problems found in both genetic and non-genetic family members.&#xD;
+&#xD;
+Traditionally the scope of family history has been focused on identifying factors or biomarkers in genetically related family members. Non-genetic family members may also be included, such as adopted or long term fostered children, those related by marriage, or other unrelated individuals who participate in the regular life and influence of the family.&#xD;
+&#xD;
+The intended scope of this archetype is to include the broadest range of problems or issues that might be found within families. It includes problems or diagnoses that are:&#xD;
+- genetically inheritable, such as breast cancer or Huntington’s disease&#xD;
+- not genetically inheritable but influenced by psychological, social, or environmental factors related to the family, such as exposure to toxins in the family home, domestic violence, sexual abuse, alcoholism and other addictions.&#xD;
+&#xD;
+This archetype has two discrete approaches for screening for family history:&#xD;
+- All relationships - Does *anyone* in the family have ‘Problem/diagnosis name’? &#xD;
+- Specified relationship - Does your 'Relationship' have ‘Problem/diagnosis name’? &#xD;
+&#xD;
+Common use cases include, but are not limited to:&#xD;
+- Systematic questioning in any consultation, for example:&#xD;
+--- Is there a history of heart disease in the family?&#xD;
+--- Is there a history of mental health problems in the family?&#xD;
+--- Is there a history of addiction in the family?&#xD;
+--- Did your mother have diabetes?&#xD;
+- Specific questioning related to chronic disease management or preventive health.&#xD;
+&#xD;
+Templates for specific use cases may be constrained to relationships with genetic family members if required.&#xD;
+&#xD;
+The semantics of this archetype are intentionally loose, and querying this archetype would normally only be useful or safe within the context of each specific template. In a template, each data element would usually be renamed to the specific question asked. Where value sets have been proposed for common use cases, these can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case.&#xD;
+&#xD;
+Use separate EVENTs to specify whether the questions relate to a point in time or an interval of time. For example: "Do any family members have COVID now?" as a point in time EVENT and "Have any family members had COVID during the past 4 weeks?" as an interval EVENT.&#xD;
+&#xD;
+The source of the information in a questionnaire response may vary in different contexts but can be specifically identified using the 'Information provider' element in the Reference Model.&#xD;
+&#xD;
+This archetype has been designed to be used as a screening tool or to record simple questionnaire-format data for use in situations such as a disease registry. If the screening questionnaire identifies the presence of a health concern in a family member, it is recommended that the clinical system record the specific details using the EVALUATION.family_history archetype or the CLUSTER.family_prevalence archetype.</use>
+      <misuse>Not to be used to record details about the presence or absence of a family-related problem outside of a screening context. Use EVALUATION.family_history or EVALUATION.exclusion_specific for these purposes.&#xD;
+&#xD;
+Not to be used to record a Family Pedigree chart of health problems/diagnoses. Use the EVALUATION.family_history archetype for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Henning Schmidt, Darin Leonhardt, Martin Koch</author>
+    <author id="organisation">Medizinische Hochschule Hannover, PLRI für medizinische Informatik/ Medizinische Hochschule, Servei Català de la Salut</author>
+    <author id="email">hschmidt@n-z-a.de, leonhardt.darin@mh-hannover.de, martinandreaskoch@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Marit Alice Venheim, John Tore Valand, Liv Laugen, Vebjørn Arntzen, Hanne Marte Bårholm, Kanika Kuwelker</author>
+    <author id="organisation">Helse Vest IKT AS, Helse Bergen, ​Oslo University Hospital, Norway</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no, marit.alice.venheim@helse-vest-ikt.no, john.tore.valand@helse-bergen.no, john.tore.valand@helse-vest-ikt.no, liv.laugen@ous-hf.no, varntzen@ous-hf.no, hanne.marte.sandal.barholm@helse-vest-ikt.no, kanika.kuwelker@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>ef2d55ec-d1f5-45d3-a123-472d91c327bc</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.family_history_screening_questionnaire.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0038</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0042</node_id>
+                    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                      <rm_attribute_name>items</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0043</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0044</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0045</code_list>
+                                <code_list>at0046</code_list>
+                                <code_list>at0047</code_list>
+                                <code_list>at0048</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_BOOLEAN</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0050</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <cardinality>
+                        <is_ordered>false</is_ordered>
+                        <is_unique>false</is_unique>
+                        <interval>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>1</lower>
+                        </interval>
+                      </cardinality>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                      <rm_attribute_name>items</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0018</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0035</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0010</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0011</code_list>
+                                <code_list>at0012</code_list>
+                                <code_list>at0013</code_list>
+                                <code_list>at0041</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_BOOLEAN</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0049</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_DATE_TIME</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_INTERVAL&lt;DV_DATE_TIME&gt;</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_INTERVAL&lt;DV_DURATION&gt;</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="ARCHETYPE_SLOT">
+                        <rm_type_name>CLUSTER</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>0</lower>
+                        </occurrences>
+                        <node_id>at0036</node_id>
+                        <includes>
+                          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                          <expression xsi:type="EXPR_BINARY_OPERATOR">
+                            <type>Boolean</type>
+                            <operator>2007</operator>
+                            <precedence_overridden>false</precedence_overridden>
+                            <left_operand xsi:type="EXPR_LEAF">
+                              <type>String</type>
+                              <item xsi:type="xsd:string">archetype_id/value</item>
+                              <reference_type>attribute</reference_type>
+                            </left_operand>
+                            <right_operand xsi:type="EXPR_LEAF">
+                              <type>C_STRING</type>
+                              <item xsi:type="C_STRING">
+                                <pattern>.*</pattern>
+                              </item>
+                              <reference_type>constraint</reference_type>
+                            </right_operand>
+                          </expression>
+                        </includes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0028</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <cardinality>
+                        <is_ordered>false</is_ordered>
+                        <is_unique>false</is_unique>
+                        <interval>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>1</lower>
+                        </interval>
+                      </cardinality>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0039</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>.*</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0029</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Family history screening questionnaire</items>
+        <items id="description">Series of questions and associated answers used to screen for health-related problems found in genetic and non-genetic family members.</items>
+        <items id="comment">The answers may be self-reported.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Screening purpose</items>
+        <items id="description">The context or reason for screening.</items>
+        <items id="comment">This data element is intended to provide collection context for the question/answer groups when queried at a later date. It is not expected that this data element will be exposed to the individual, but only stored in data. For example: pre-admission screening or the name of the actual questionnaire.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Specific relationship</items>
+        <items id="description">Details about an identified problem or diagnosis in a specific relationship or relationship degree.</items>
+        <items id="comment">‘Relationship’ is the focus of the question, and in order to answer the question both the 'Relationship' and the 'Problem/diagnosis name' need to be mandatory. For example: 'Does your father have diabetes?' or 'Have any of your first degree relations had colorectal cancer?'</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Presence?</items>
+        <items id="description">Is there a history of a problem or diagnosis in family members?</items>
+        <items id="comment">In a template, the data element would usually be renamed to the specific question asked. The proposed value set can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case. In cases where an individual is adopted and no information is available, it is recommended to record 'Unknown'. For example: Does your father have diabetes?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Yes</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">No</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Unknown</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0018">
+        <items id="text">Relationship</items>
+        <items id="description">The relationship of the family member to the individual.</items>
+        <items id="comment">For example: First degree relative, mother, step-father, maternal grandmother, or paternal uncle. Coding of the relationship with a terminology is preferred, where possible and including specification of maternal and paternal as required.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the specific problem, diagnosis or family member, not captured in other fields.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Problem/diagnosis name</items>
+        <items id="description">Identification of a problem or diagnosis, or grouping of problems or diagnoses in the family.</items>
+        <items id="comment">Coding of the 'Problem/diagnosis name' with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Additional details</items>
+        <items id="description">Structured details or questions about the specific problem or diagnosis.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the history of any problem or diagnosis in the family.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Additional details</items>
+        <items id="description">Structured details or questions about screening for significant problems or diagnoses in family members.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Unsure</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0042">
+        <items id="text">Any family member</items>
+        <items id="description">Presence of a specific problem or diagnosis in any family member.</items>
+        <items id="comment">'Problem/Diagnosis name' has been made mandatory as it is the sole focus of the question with no further details anticipated. For example: “Does anyone in the family have diabetes?”.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Problem/diagnosis name</items>
+        <items id="description">Identification of a specific problem or diagnosis, or a grouping of problems or diagnoses, in the family.</items>
+        <items id="comment">For example: 'Colorectal cancer' or 'Cancer'; 'Angina' or 'Cardiovascular disease'. Coding of the 'Problem/diagnosis name' with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Presence?</items>
+        <items id="description">Is there a history of a problem or diagnosis, or grouping of problems or diagnoses in the family?</items>
+        <items id="comment">In a template, the data element would usually be renamed to the specific question asked. The proposed value set can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case. In cases where an individual is adopted and no information is available, it is recommended to record 'Unknown'. For example: Does any in your family have diabetes?</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Yes</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0046">
+        <items id="text">No</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0047">
+        <items id="text">Unknown</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0048">
+        <items id="text">Unsure</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0049">
+        <items id="text">Timing</items>
+        <items id="description">Indication of timing related to the problem or diagnosis.</items>
+        <items id="comment">The 'Timing' data element has deliberately been loosely modelled to support the myriad of ways that it can be used in questionnaires to capture when an issue, problem or diagnosis occured. The specific and intended semantics can be further clarified in a template. For example: the actual date and/or time; the start and stop time for when the issue, problem or diagnosis occured; the interval of time during which the issue, problem or diagnosis occured; the duration of the issue, problem or diagnosis; the age of the individual at the time of the issue, problem or diagnosis; or the duration of time since it occurred. A partial date is valid, using the DV_DATE_TIME data type, to record only a year.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the specific problem or diagnosis in the family, not captured in other fields.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Kartleggingsspørsmål om familieanamnese</items>
+        <items id="description">Spørsmål og tilhørende svar som brukes til å kartlegge helserelaterte forhold hos både genetiske og ikke-genetiske familiemedlemmer.</items>
+        <items id="comment">Svarene kan være selvrapporterte.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kartleggingsformål</items>
+        <items id="description">Konteksten eller årsaken for kartleggingen.</items>
+        <items id="comment">Dette dataelementet er ment for å sette en kontekst for spørsmålene om man senere ønsker å gjøre spørringer på dataene. Det er ikke forventet at dette dataelementet skal være synlig for en bruker av skjemaet, men kun tilgjengelig i de lagrede dataene. For eksempel: "Preoperativ screening" eller navnet på det faktiske spørreskjemaet.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Spesifikk relasjon</items>
+        <items id="description">Detaljer om et identifisert problem eller en diagnose i en bestemt familierelasjon eller slektsgrad.</items>
+        <items id="comment">"Relasjon" er hovedfokuset i spørsmålet, og for å kunne besvare det må både "Relasjon" og "Problem/diagnosenavn" være obligatoriske. For eksempel: "Har din far diabetes?" eller "Har noen av dine førstegradsslektninger hatt kolorektal kreft?"</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Tilstede?</items>
+        <items id="description">Har det spesifikke problemet eller diagnosen noen gang vært tilstede hos familiemedlemmer?</items>
+        <items id="comment">Navnet på dataelementet kan omformuleres til det spesifikke spørsmålet i et templat eller brukergrensesnitt. Det foreslåtte verdisettet kan tilpasses/endres i det enkelte bruksområde ved å benytte de alternative datatypene DV_TEXT eller DV_BOOLEAN. I tilfeller der et individ er adoptert eller ingen informasjon er tilgjengelig anbefales det å registere "Ukjent.&#xD;
+For eksempel: Har faren din diabetes?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Nei</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Ukjent</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0018">
+        <items id="text">Relasjon</items>
+        <items id="description">Relasjonen mellom familiemedlemmet og individet.</items>
+        <items id="comment">For eksempel: Mor, stefar, farmor, onkel på farsside. Koding av relasjonen med en terminologi er foretrukket der dette er mulig, og kan inkludere en spesifisering av mors- og farslinje ved behov.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om det spesifikke problemet, diagnosen eller familiemedlemmet som ikke er omfattet av andre felt.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Utvidelse</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Problem/diagnosenavn</items>
+        <items id="description">Navnet på problemet eller diagnosen, eller en gruppe av problemer eller diagnoser i familien</items>
+        <items id="comment">Koding av problem/diagnosenavnet med en terminologi foretrekkes, der det er mulig.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Strukturerte detaljer eller spørsmål om det spesifikke problemet eller diagnosen.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse om problemer eller diagnoser hos familiemedlemmer.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Strukturerte detaljer eller spørsmål om kartleggingen av problemer eller diagnoser hos familiemedlemmer.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Usikker</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0042">
+        <items id="text">I familien</items>
+        <items id="description">Detaljer om et spesifikt problem eller diagnose hos et hvilket som helst familiemedlem.</items>
+        <items id="comment">"Problem/diagnosenavn" har blitt gjort obligatorisk ettersom det er hovedfokuset i spørsmålet, og ingen ytterligere detaljer er forventet. For eksempel: "Har noen i familien diabetes?".</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Problem/diagnosenavn</items>
+        <items id="description">Navnet på problemet eller diagnosen, eller på en gruppe av problemer eller diagnoser i familien.</items>
+        <items id="comment">For eksempel: "Kolorektal kreft" eller "Kreft", "Angina" eller "Hjerte- og karsykdom". Koding av "Problem-/diagnosenavn" med en terminologi foretrekkes der det er mulig.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Tilstede?</items>
+        <items id="description">Har det spesifikke problemet eller diagnosen noen gang vært tilstede i familien?</items>
+        <items id="comment">Navnet på dataelementet kan omformuleres til det spesifikke spørsmålet i et templat eller brukergrensesnitt. Det foreslåtte verdisettet kan tilpasses/endres i det enkelte bruksområde ved å benytte de alternative datatypene DV_TEXT eller DV_BOOLEAN. I tilfeller der et individ er adoptert eller ingen informasjon er tilgjengelig anbefales det å registere "Ukjent".&#xD;
+For eksempel: Har noen i familien din diabetes?</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0046">
+        <items id="text">Nei</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0047">
+        <items id="text">Ukjent</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0048">
+        <items id="text">Usikker</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0049">
+        <items id="text">Tidsangivelse</items>
+        <items id="description">Tidsangivelse for problemet eller diagnosen.</items>
+        <items id="comment">Dataelementet "Tidsangivelse" er med hensikt løst modellert for å støtte ulike måter å angi tidsangivelser for bekymringen, plagen, problemet eller diagnosen i et spørreskjema. Den konkrete semantikken defineres i templatet. For eksempel: Bekymringen, plagen, problemet eller diagnosen faktiske dato og/eller klokkeslett, start- og slutttid for bekymringen, plagen, problemet eller diagnosen, et tidsintervall for når bekymringen, plagen, problemet eller diagnosen oppstod, varigheten av bekymringen, plagen, problemet eller diagnosen, individets alder på tidspunktet for bekymringen, plagen, problemet eller diagnosen, eller hvor lenge det siden det oppstod. Kan være en deldato, for eksempel bare år, ved å bruke datatypen DV_DATE_TIME.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om det spesifikke problemet eller diagnosen som ikke er omfattet av andre felt.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Fragebogen zur Familienanamnese</items>
+        <items id="description">Eine Reihe von Fragen und zugehörigen Antworten dient zum Screening auf gesundheitliche Probleme bei genetischen und nicht genetischen Familienmitgliedern.</items>
+        <items id="comment">Die Antworten können selbstberichtet sein.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Jedes Ereignis</items>
+        <items id="description">Standardmäßiger, nicht spezifizierter Zeitpunkt oder Intervallereignis, das explizit in einer Vorlage oder zur Laufzeit definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Untersuchungsgrund</items>
+        <items id="description">Der Hintergrund oder die Begründung für die Untersuchung.</items>
+        <items id="comment">Dieses Datenelement soll den Sammlungskontext für die Frage-/Antwortgruppen bereitstellen, wenn sie zu einem späteren Zeitpunkt abgefragt werden. Es wird nicht erwartet, dass dieses Datenelement der Person zugänglich gemacht wird, sondern nur in den Daten gespeichert wird. Zum Beispiel: Voraufnahme-Screening oder der Name des eigentlichen Fragebogens.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Spezifisches Problem oder Diagnose</items>
+        <items id="description">*Details about an identified problem or diagnosis in a specific relationship or relationship degree. (en)</items>
+        <items id="comment">*‘Relationship’ is the focus of the question, and in order to answer the question both the relationship and the diagnosis need to be mandatory. For example: “Does your father have diabetes?” or “Have any of your first degree relations had colorectal cancer?” (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Präsenz</items>
+        <items id="description">Gibt es eine Vorgeschichte der spezifischen Probleme oder Diagnosen bei Familienmitgliedern?</items>
+        <items id="comment">In einem Template wird das Datenelement üblicherweise in die konkrete Frage umbenannt. Der vorgeschlagene Wertesatz kann für die lokale Verwendung angepasst werden, indem die Datentypen DV_TEXT oder DV_BOOLEAN verwendet werden, um dem jeweiligen Anwendungsfall gerecht zu werden. Bei Adoptionen ohne verfügbare Informationen empfiehlt sich die Angabe „Unbekannt“.&#xD;
+Beispiel: Gibt es in Ihrer Familie Diabetes?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Nein</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Unbekannt</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0018">
+        <items id="text">Beziehung</items>
+        <items id="description">Die Beziehung des Familienmitglieds zur Person.</items>
+        <items id="comment">Zum Beispiel: Mutter, Stiefvater, Großmutter mütterlicherseits oder Onkel väterlicherseits. Die Kodierung der Beziehung mit einer Terminologie wird bevorzugt, wenn möglich, einschließlich der Angabe von mütterlicherseits und väterlicherseits, falls erforderlich.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Informationen über das spezifische Problem, die Diagnose oder das Familienmitglied, die in anderen Feldern nicht erfasst werden.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Problem-/Diagnosenname</items>
+        <items id="description">Nennung des signifikanten Problems oder der Diagnose, die bei den Familienmitgliedern festgestellt wurde, mit Namen.</items>
+        <items id="comment">Die Kodierung des "Problem-/Diagnosenamens" mit einer Terminologie wird, wenn möglich, bevorzugt.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Strukturierte Angaben oder Fragen zu dem spezifischen Problem oder der Diagnose.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Beschreibung</items>
+        <items id="description">Narrative Beschreibung der Vorgeschichte etwaiger Probleme oder Diagnosen in der Familie.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Strukturierte Angaben oder Fragen zum Screening auf signifikante Probleme oder Diagnosen bei Familienmitgliedern.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Unsicher</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Any family member (en)</items>
+        <items id="description">Details zu einem bestimmten Problem oder einer Diagnose oder einer Gruppierung von Problemen oder Diagnosen in der Familie.</items>
+        <items id="comment">*'Problem/Diagnosis name' has been made mandatory as it is the sole focus of the question with no further details anticipated. For example: “Does anyone in the family have diabetes?”.  (en)</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Problem-/Diagnosename</items>
+        <items id="description">*Identification of a specific problem or diagnosis, or a grouping of problems or diagnoses, in the family. (en)</items>
+        <items id="comment">*For example: 'Colorectal cancer' or 'Cancer'; 'Angina' or 'Cardiovascular disease'. Coding of the 'Problem/diagnosis name' with a terminology is preferred, where possible. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Präsenz</items>
+        <items id="description">Gibt es eine Vorgeschichte der spezifischen Probleme oder Diagnosen bei Familienmitgliedern?</items>
+        <items id="comment">In einem Template wird das Datenelement üblicherweise in die konkrete Frage umbenannt. Der vorgeschlagene Wertesatz kann für die lokale Verwendung angepasst werden, indem die Datentypen DV_TEXT oder DV_BOOLEAN verwendet werden, um dem jeweiligen Anwendungsfall gerecht zu werden. Bei Adoptionen ohne verfügbare Informationen empfiehlt sich die Angabe „Unbekannt“.&#xD;
+Beispiel: Gibt es in Ihrer Familie Diabetes?</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0046">
+        <items id="text">Nein</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0047">
+        <items id="text">Unbekannt</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0048">
+        <items id="text">Unsicher</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0049">
+        <items id="text">Zeitablauf</items>
+        <items id="description">Angabe des Zeitablaufs des Problems oder der Diagnose.</items>
+        <items id="comment">Das Datenelement „Zeitablauf“ wurde bewusst locker modelliert, um die vielfältigen Einsatzmöglichkeiten in Fragebögen zur Erfassung des Auftretens eines Problems oder einer Diagnose zu unterstützen. Die spezifische und beabsichtigte Semantik kann in einem Template weiter präzisiert werden. Beispiele: das tatsächliche Datum und/oder die Uhrzeit; der Start- und Endzeitpunkt des Auftretens des Problems oder der Diagnose; der Zeitraum, in dem das Problem oder die Diagnose auftrat; die Dauer des Problems oder der Diagnose; das Alter der Person zum Zeitpunkt des Auftretens des Problems oder der Diagnose; oder der Zeitraum seit dem Auftreten. Ein Teildatum ist mit dem Datentyp DV_DATE_TIME gültig, um nur ein Jahr aufzuzeichnen.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the specific problem or diagnosis in the family, not captured in other fields. (en)</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0011">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>373066001</code_string>
+        </value>
+      </items>
+      <items code="at0012">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>373067005</code_string>
+        </value>
+      </items>
+      <items code="at0013">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>261665006</code_string>
+        </value>
+      </items>
+      <items code="at0045">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>373066001</code_string>
+        </value>
+      </items>
+      <items code="at0046">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>373067005</code_string>
+        </value>
+      </items>
+      <items code="at0047">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>261665006</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

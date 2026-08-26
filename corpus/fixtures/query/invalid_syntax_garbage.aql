@@ -1,0 +1,1 @@
+SELECT e/ehr_id/value WHERE e/ehr_id/value = 'x'

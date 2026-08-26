@@ -1,0 +1,25 @@
+{
+  "_type": "FOLDER",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "root"
+  },
+  "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+  "links": [
+    {
+      "_type": "LINK",
+      "meaning": {
+        "_type": "DV_TEXT",
+        "value": "follow-up to"
+      },
+      "type": {
+        "_type": "DV_TEXT",
+        "value": "issue"
+      },
+      "target": {
+        "_type": "DV_EHR_URI",
+        "value": "ehr://example.org/problem-thread"
+      }
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.organisation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Hans Demski">
+				["organisation"] = <"Helmholtz Zentrum München">
+				["email"] = <"demski@helmholtz-muenchen.de">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"12/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of an organisation, for example, a third party such as a care agency">
+			use = <"Use to identify an organisation that is not able to be identified by a reference within the electronic health record">
+			keywords = <"organisation", "agency">
+			misuse = <"Not to be used to identify the active care organisation which maintains the record and which would normally have a system reference to the organisation details.
+
+Not to be used to identify organisations who can be uniquely referenced from registers of demographic details eg within the electronic health record, master indexes etc.">
+		>
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation von Angaben zu einer Einrichtung, z.B. einem Pflegeheim.">
+			use = <"Zur Bezeichnung einer Einrichtung die nicht über einen Verweis in der elektronischen Krankenakte identifiziert werden kann.">
+			keywords = <"Einrichtung", "Institution">
+			misuse = <"Nicht zur Bezeichnung der betreuenden Einrichtung zu verwenden, die die Akte pflegt und normalerweise über einen systeminternen Verweis zu den Einrichtungsdaten verfügt.
+
+
+Nicht zur Identifikation von Einrichtungen zu benutzen, die eindeutig Registern mit demografischen Daten zugeordnet werden können (z.B. einer elektronischen Krankenakte, einem Master Patient Index, etc.).">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	references = <
+		["1"] = <"From NHS Scotland SCI-XML messaging standards http://www.isdscotland.org/isd/files/general-v2-7.xsd NHS Scotland Interoperability Working Group http://www.isdscotland.org/isd/5194.html">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"B932A22934CC38489610A47273A86DA8">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Organisation
+		items matches {
+			ELEMENT[id2] matches {	-- Name of Organisation
+				value matches {
+					DV_TEXT[id13] 
+				}
+			}
+			ELEMENT[id12] occurrences matches {0..1} matches {	-- Identifier
+				value matches {
+					DV_TEXT[id14] 
+				}
+			}
+			allow_archetype CLUSTER[id9] occurrences matches {0..1} matches {	-- Address details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.address\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[id10] occurrences matches {0..1} matches {	-- Telecom details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.telecom_details\.v1/}
+			}
+			CLUSTER[id6] matches {	-- Contact Person Details
+				items matches {
+					allow_archetype CLUSTER[id11] matches {	-- Contact person's name
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.person_name\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[id8] occurrences matches {0..1} matches {	-- Role in organisation
+						value matches {
+							DV_TEXT[id15] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Organisation">
+				description = <"Details of an organisation ">
+			>
+			["id2"] = <
+				text = <"Name of Organisation">
+				description = <"Name of the organisation">
+			>
+			["id6"] = <
+				text = <"Contact Person Details">
+				description = <"Details about contact person within organisation">
+			>
+			["id8"] = <
+				text = <"Role in organisation">
+				description = <"Contact's role in organisation">
+			>
+			["id9"] = <
+				text = <"Address details">
+				description = <"Details about Address">
+			>
+			["id10"] = <
+				text = <"Telecom details">
+				description = <"Details about telecommunications">
+			>
+			["id11"] = <
+				text = <"Contact person's name">
+				description = <"*">
+			>
+			["id12"] = <
+				text = <"Identifier">
+				description = <"Identifier of organisation">
+			>
+		>
+		["de"] = <
+			["id1"] = <
+				text = <"Einrichtung">
+				description = <"Angaben zu einer Einrichtung">
+			>
+			["id2"] = <
+				text = <"Einrichtungsname">
+				description = <"Name der Einrichtung">
+			>
+			["id6"] = <
+				text = <"Kontaktperson">
+				description = <"Angaben zur Kontaktperson innerhalb der Einrichtung">
+			>
+			["id8"] = <
+				text = <"Rolle der Kontaktperson">
+				description = <"Angaben zur Rolle der Kontaktperson innerhalb der Einrichtung">
+			>
+			["id9"] = <
+				text = <"Adressangaben">
+				description = <"Angaben zur Adresse">
+			>
+			["id10"] = <
+				text = <"Kontaktdetails">
+				description = <"Angaben zu den Kontaktdaten">
+			>
+			["id11"] = <
+				text = <"Name der Kontaktperson">
+				description = <"*">
+			>
+			["id12"] = <
+				text = <"*New element(en)">
+				description = <"**(en)">
+			>
+		>
+	>

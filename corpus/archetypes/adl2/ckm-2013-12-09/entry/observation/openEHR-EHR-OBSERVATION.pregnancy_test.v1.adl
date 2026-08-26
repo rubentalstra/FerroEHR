@@ -1,0 +1,120 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.pregnancy_test.v1
+
+concept
+	[at0000]	-- Pregnancy test
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"Sam.Heard@OceanInformatics.biz">
+		["date"] = <"20/04/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the result of a commercially produced pregnancy test">
+			use = <"For use with a commercial product">
+			keywords = <"pregnancy", "test", "confirmation">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"Initial">
+	other_contributors = <"Heather Leslie", ...>
+
+definition
+	OBSERVATION[at0000] matches {	-- Pregnancy test
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {	-- Time
+						data matches {
+							ITEM_SINGLE[at0003] matches {	-- Single
+								item matches {
+									ELEMENT[at0004] matches {	-- Result
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0005, 	-- Negative
+													at0006, 	-- Inconclusive
+													at0007, 	-- Weakly positive
+													at0008]	-- Strongly positive
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[at0009] matches {	-- List
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0010] occurrences matches {0..1} matches {	-- Product
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Pregnancy test">
+					description = <"Result of test using a commercial product to test for early pregnancy">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Time">
+					description = <"Time of test">
+				>
+				["at0003"] = <
+					text = <"Single">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Result">
+					description = <"The result of the pregnancy test">
+				>
+				["at0005"] = <
+					text = <"Negative">
+					description = <"The result does not show any sign of pregnancy">
+				>
+				["at0006"] = <
+					text = <"Inconclusive">
+					description = <"The result is inconclusive">
+				>
+				["at0007"] = <
+					text = <"Weakly positive">
+					description = <"The result is positive but the change is not strong">
+				>
+				["at0008"] = <
+					text = <"Strongly positive">
+					description = <"The resulting change is very obvious">
+				>
+				["at0009"] = <
+					text = <"List">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Product">
+					description = <"The product used for the test">
+				>
+			>
+		>
+	>

@@ -1,0 +1,665 @@
+﻿archetype (adl_version=1.4; uid=b6d9d7b6-bc4f-4352-b8fe-998a6841917a)
+	openEHR-EHR-CLUSTER.intravitreal_injection_details.v0
+
+concept
+	[at0000]	-- Intravitreal injection details
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Aitor Eguzkitza">
+		["organisation"] = <"Universidad Pública de Navarra & Complejo Hospitalario de Navarra">
+		["email"] = <"aitor.eguzkiza@unavarra.es">
+		["date"] = <"2015-06-16">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Provide details about intravitreal injection.">
+			use = <"Either to provide details about the procedure whenever a intravitreal injection is scheduled, or to register the consequent realization of that procedure.">
+			keywords = <"intraocular injection", "intravitreal injection">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Jose Andonegui Navarro, Complejo Hospitalario de Navarra, Spain", "Luis Serrano Arriezu, Institute of Smart Cities & Universidad Pública de Navarra, Spain", "Gustavo Bacelar-Silva, Healthcare Designs, Brazil", "Yves Genevier, Privantis, Switzerland", "Thomas Pedersen Bærland, DIPS, Norway", "Heather Leslie, Ocean Informatics, Australia", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["revision"] = <"0.0.1-alpha">
+		["references"] = <"- Avery RL, Bakri SJ, Blumenkranz MS, Brucker AJ, Cunningham ETJ, D'Amico DJ, et al. Intravitreal injection technique and monitoring: Updated guidelines of an expert panel. Retina (Philadelphia, Pa) 2014; 34:S1-S18.
+- Dossarps D, Bron AM, Koehrer P, Aho-Glélé LS, Creuzot-Garcher C, net F, et al. Endophthalmitis After Intravitreal Injections: Incidence, Presentation, Management, and Visual Outcome. American journal of ophthalmology 2015; 160(1):17-250.
+- Fagan XJ, Al-Qureshi S. Intravitreal injections: a review of the evidence for best practice. Clinical & experimental ophthalmology 2013; 41(5):500-7.
+- Nentwich MM, Yactayo-Miranda Y, Schwarzbach F, Wolf A, Kampik A, Mino de Kaspar H. Endophthalmitis after intravitreal injection: decreasing incidence and clinical outcome-8-year results from a tertiary ophthalmic referral center. Retina (Philadelphia, Pa) 2014; 34(5):943-50.
+- Website of the OpenEyes project: http://www.openeyes.org.uk/">
+		["build_uid"] = <"cdb9dd49-37cd-4477-b211-7a4b7c622d00">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"F618898F7B3503AA482C4B6195535636">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Intravitreal injection details
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0080] occurrences matches {0..1} matches {	-- Laterality
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0081, 	-- Left
+							at0082, 	-- Right
+							at0083]	-- Bilateral
+						}
+					}
+				}
+			}
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Clinical Setting
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0077, 	-- Office setting
+							at0078, 	-- Treatment room
+							at0079]	-- Operating room
+						}
+					}
+				}
+			}
+			ELEMENT[at0068] occurrences matches {0..1} matches {	-- Contraindications
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0069, 	-- Ocular hipertension/glaucoma
+							at0070, 	-- Previous conditions/surgeries
+							at0071, 	-- Recent surgery
+							at0072, 	-- Complex conditions
+							at0073, 	-- Anticoagulation
+							at0074, 	-- Allergy
+							at0075, 	-- Infection
+							at0076]	-- Abnormalities
+						}
+					}
+				}
+			}
+			CLUSTER[at0003] occurrences matches {0..*} matches {	-- Anaesthetic
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- Anaesthetic Type
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0005, 	-- Topical
+									at0065, 	-- Drops
+									at0066, 	-- Gel
+									at0067]	-- Injection
+								}
+							}
+						}
+					}
+					ELEMENT[at0006] occurrences matches {0..1} matches {	-- Anaesthetic Route
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0007, 	-- Retrobulbar
+									at0008, 	-- Peribulbar
+									at0009, 	-- Subtenons
+									at0010, 	-- Subconjunctival
+									at0011, 	-- Topical
+									at0012, 	-- Topical and intracameral
+									at0013]	-- Other
+								}
+							}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..1} matches {	-- Anaesthetic Agent
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[ac0002]}		-- Compounds for local anaesthesia
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[at0016] occurrences matches {0..1} matches {	-- Preparation
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0057] occurrences matches {0..1} matches {	-- Sterile Drape
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0058] occurrences matches {0..1} matches {	-- Speculum
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0060] occurrences matches {0..1} matches {	-- Sterile Gloves
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0059] occurrences matches {0..1} matches {	-- Surgical Masks
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0061] occurrences matches {0..1} matches {	-- Monitor IOP
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0084] occurrences matches {0..1} matches {	-- Anti-infective on Eyelids
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0085] occurrences matches {0..1} matches {	-- Dilation Required
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[at0017] occurrences matches {0..1} matches {	-- Pre Injection Skin Cleanser
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[ac0003]}		-- Anti-infective agents in ophthalmology
+							}
+						}
+					}
+					ELEMENT[at0015] occurrences matches {0..1} matches {	-- Pre Injection Conjunctival Cleanser
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[ac0004]}		-- Anti-infective agents in ophthalmology
+							}
+						}
+					}
+					ELEMENT[at0018] occurrences matches {0..1} matches {	-- Pre Injection IOP Lowering Therapy Required
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False; False}
+							}
+						}
+					}
+					ELEMENT[at0019] occurrences matches {0..1} matches {	-- Pre Injection IOP Lowering Therapy
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0041, 	-- Apraclonidine 0.5%
+									at0042, 	-- Apraclonidine 1%
+									at0043, 	-- Acetazolamide 250mg
+									at0044]	-- Acetazolamide 500mg
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[at0020] occurrences matches {0..1} matches {	-- Intravitreal Injections
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0021] occurrences matches {0..1} matches {	-- Compound Injected
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[ac0005]}		-- List of compounds validated for intraocular injection
+							}
+						}
+					}
+					ELEMENT[at0063] occurrences matches {0..1} matches {	-- Injection Site
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+								list = <
+									["1"] = <
+										units = <"mm">
+										magnitude = <|2.5..4.5|>
+										precision = <|1|>
+									>
+								>
+							>
+						}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {	-- Number of injections
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>=1|; 1}
+							}
+						}
+					}
+					ELEMENT[at0022] occurrences matches {0..1} matches {	-- Batch Number
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0024] occurrences matches {0..1} matches {	-- Batch Expiry Date
+						value matches {
+							DV_DATE matches {
+								value matches {yyyy-mm-dd}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[at0026] occurrences matches {0..1} matches {	-- Post Injection
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0027] occurrences matches {0..1} matches {	-- Post Injection IOP Lowering Therapy Required
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False; False}
+							}
+						}
+					}
+					ELEMENT[at0028] occurrences matches {0..1} matches {	-- Post Injection IOP Lowering Therapy
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0045, 	-- Apraclonidine 0.5%
+									at0046, 	-- Apraclonidine 1%
+									at0047, 	-- Acetazolamide 250mg
+									at0048]	-- Acetazolamide 500mg
+								}
+							}
+						}
+					}
+					CLUSTER[at0030] occurrences matches {0..1} matches {	-- Post Injection examination
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0031] occurrences matches {0..1} matches {	-- Counting Fingers
+								value matches {
+									DV_BOOLEAN matches {
+										value matches {True, False}
+									}
+								}
+							}
+							ELEMENT[at0032] occurrences matches {0..1} matches {	-- IOP Checked
+								value matches {
+									DV_BOOLEAN matches {
+										value matches {True, False}
+									}
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[at0049] occurrences matches {0..*} matches {	-- Post Injection Drops
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.medication_admin(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+			ELEMENT[at0029] occurrences matches {0..1} matches {	-- Complications
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0056, 	-- Infectious endophthalmitis
+							at0050, 	-- Subconjunctival haemorrage
+							at0051, 	-- Conjunctival damage
+							at0052, 	-- Corneal abrasion
+							at0053, 	-- Lens damage
+							at0054, 	-- Retinal damage
+							at0055]	-- Other
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Intravitreal injection details">
+					description = <"Details about intravitreal injection procedure.">
+				>
+				["at0001"] = <
+					text = <"Clinical Setting">
+					description = <"Allocation where the intravitreal injection takes place.">
+				>
+				["at0002"] = <
+					text = <"Anaesthetic Type">
+					description = <"Type of anesthesia chosen.">
+				>
+				["at0003"] = <
+					text = <"Anaesthetic">
+					description = <"Details concerning the anaesthetic prior to the procedure.">
+				>
+				["at0005"] = <
+					text = <"Topical">
+					description = <"Topical anaesthesia.">
+				>
+				["at0006"] = <
+					text = <"Anaesthetic Route">
+					description = <"Route chosen to apply the anesthesia.">
+				>
+				["at0007"] = <
+					text = <"Retrobulbar">
+					description = <"Retrobulbar anesthesia.">
+				>
+				["at0008"] = <
+					text = <"Peribulbar">
+					description = <"Peribulbar anesthesia.">
+				>
+				["at0009"] = <
+					text = <"Subtenons">
+					description = <"Sub-Tenons's anesthesia.">
+				>
+				["at0010"] = <
+					text = <"Subconjunctival">
+					description = <"Subconjunctival route.">
+				>
+				["at0011"] = <
+					text = <"Topical">
+					description = <"Topical route.">
+				>
+				["at0012"] = <
+					text = <"Topical and intracameral">
+					description = <"Topical and intracameral route.">
+				>
+				["at0013"] = <
+					text = <"Other">
+					description = <"Other route.">
+				>
+				["at0014"] = <
+					text = <"Anaesthetic Agent">
+					description = <"Anesthetic agent.">
+				>
+				["at0015"] = <
+					text = <"Pre Injection Conjunctival Cleanser">
+					description = <"Anti-infective agent used as antiseptic.">
+				>
+				["at0016"] = <
+					text = <"Preparation">
+					description = <"Details about preparation of the intervention.">
+				>
+				["at0017"] = <
+					text = <"Pre Injection Skin Cleanser">
+					description = <"Anti-infective agent used for skin cleanse.">
+				>
+				["at0018"] = <
+					text = <"Pre Injection IOP Lowering Therapy Required">
+					description = <"Select if pre Injection IOP lowering therapy is required.">
+				>
+				["at0019"] = <
+					text = <"Pre Injection IOP Lowering Therapy">
+					description = <"Therapy chosen to lower patient's IOP prior to injections.">
+				>
+				["at0020"] = <
+					text = <"Intravitreal Injections">
+					description = <"Details about application of injections.">
+				>
+				["at0021"] = <
+					text = <"Compound Injected">
+					description = <"Compound contained within the intravitreal injection.">
+				>
+				["at0022"] = <
+					text = <"Batch Number">
+					description = <"Batch number of the injections used.">
+				>
+				["at0024"] = <
+					text = <"Batch Expiry Date">
+					description = <"Expiry date for the batch of injections used.">
+				>
+				["at0025"] = <
+					text = <"Number of injections">
+					description = <"Number of injections involved in the current intervention.">
+				>
+				["at0026"] = <
+					text = <"Post Injection">
+					description = <"Details about procedures after intravitreal injections to guarantee patient's safety.">
+				>
+				["at0027"] = <
+					text = <"Post Injection IOP Lowering Therapy Required">
+					description = <"Select if IOP lowering is required after injection.">
+				>
+				["at0028"] = <
+					text = <"Post Injection IOP Lowering Therapy">
+					description = <"Therapy chosen to lower patient's IOP after injections.">
+				>
+				["at0029"] = <
+					text = <"Complications">
+					description = <"Possible complications due to intravitreal injections.">
+				>
+				["at0030"] = <
+					text = <"Post Injection examination">
+					description = <"Routine examination to check the patient's status after the therapy.">
+				>
+				["at0031"] = <
+					text = <"Counting Fingers">
+					description = <"Evaluation about if the patient is able to count fingers or not.">
+				>
+				["at0032"] = <
+					text = <"IOP Checked">
+					description = <"Intraocular pressure measurement is recommended or not.">
+				>
+				["at0041"] = <
+					text = <"Apraclonidine 0.5%">
+					description = <"Apraclonidine (trade name Iopidine Eye) 0.5% intra-ocular solution.">
+				>
+				["at0042"] = <
+					text = <"Apraclonidine 1%">
+					description = <"Apraclonidine (trade name Iopidine Eye) 1% intra-ocular solution.">
+				>
+				["at0043"] = <
+					text = <"Acetazolamide 250mg">
+					description = <"Acetazolamide (trade name Diamox) 250mg m/r capsule.">
+				>
+				["at0044"] = <
+					text = <"Acetazolamide 500mg">
+					description = <"Acetazolamide (trade name Diamox) 500mg m/r capsule.">
+				>
+				["at0045"] = <
+					text = <"Apraclonidine 0.5%">
+					description = <"Apraclonidine (trade name Iopidine Eye) 0.5% intra-ocular solution.">
+				>
+				["at0046"] = <
+					text = <"Apraclonidine 1%">
+					description = <"Apraclonidine (trade name Iopidine Eye) 1% intra-ocular solution.">
+				>
+				["at0047"] = <
+					text = <"Acetazolamide 250mg">
+					description = <"Acetazolamide (trade name Diamox) 250mg m/r capsule.">
+				>
+				["at0048"] = <
+					text = <"Acetazolamide 500mg">
+					description = <"Acetazolamide (trade name Diamox) 500mg m/r capsule.">
+				>
+				["at0049"] = <
+					text = <"Post Injection Drops">
+					description = <"Details about a preventive treatment of antibiotics after intravitreal injections.">
+				>
+				["at0050"] = <
+					text = <"Subconjunctival haemorrage">
+					description = <"Subconjunctival haemorrage.">
+				>
+				["at0051"] = <
+					text = <"Conjunctival damage">
+					description = <"Conjunctival damage (e.g. tear).">
+				>
+				["at0052"] = <
+					text = <"Corneal abrasion">
+					description = <"Corneal abrasion.">
+				>
+				["at0053"] = <
+					text = <"Lens damage">
+					description = <"Lens damage.">
+				>
+				["at0054"] = <
+					text = <"Retinal damage">
+					description = <"Retinal damage.">
+				>
+				["at0055"] = <
+					text = <"Other">
+					description = <"Other complication not provided in the list.">
+				>
+				["at0056"] = <
+					text = <"Infectious endophthalmitis">
+					description = <"Infectious endophthalmitis.">
+				>
+				["at0057"] = <
+					text = <"Sterile Drape">
+					description = <"Use or not of a sterile drape before injection.">
+				>
+				["at0058"] = <
+					text = <"Speculum">
+					description = <"Use of speculum or on the contrary manual eye lid retraction, to prevent contact of the eyelashes and eyelid margins with both the injection site and the injection needle.">
+				>
+				["at0059"] = <
+					text = <"Surgical Masks">
+					description = <"
+Use of surgical masks by clinicians and patients, or on the contrary, do not use mask but minimize speaking to reduce infection risk during procedure.">
+				>
+				["at0060"] = <
+					text = <"Sterile Gloves">
+					description = <"Use of sterile or nonsterile gloves during the intervention.">
+				>
+				["at0061"] = <
+					text = <"Monitor IOP">
+					description = <"*">
+				>
+				["at0063"] = <
+					text = <"Injection Site">
+					description = <"Distance in mm of the needle posterior to the limbus between the vertical and horizontal rectus muscles.">
+				>
+				["at0065"] = <
+					text = <"Drops">
+					description = <"Anaesthetic agent in drops form.">
+				>
+				["at0066"] = <
+					text = <"Gel">
+					description = <"Anaesthetic agent in gel form.">
+				>
+				["at0067"] = <
+					text = <"Injection">
+					description = <"Anaesthesia by injection.">
+				>
+				["at0068"] = <
+					text = <"Contraindications">
+					description = <"Identifies possible contraindications  (if any) to be considered before conducting ITV injections.">
+				>
+				["at0069"] = <
+					text = <"Ocular hipertension/glaucoma">
+					description = <"Patients with preeexisting ocular hipertension/glaucoma.">
+				>
+				["at0070"] = <
+					text = <"Previous conditions/surgeries">
+					description = <"Preexisting ocular conditions/previous ocular surgeries.">
+				>
+				["at0071"] = <
+					text = <"Recent surgery">
+					description = <"Recent postcataract surgery patients.">
+				>
+				["at0072"] = <
+					text = <"Complex conditions">
+					description = <"Complex medical or ocular conditions.">
+				>
+				["at0073"] = <
+					text = <"Anticoagulation">
+					description = <"Patients on anticoagulation.">
+				>
+				["at0074"] = <
+					text = <"Allergy">
+					description = <"Allergy to Povidone–Iodine.">
+				>
+				["at0075"] = <
+					text = <"Infection">
+					description = <"Active external infection, including active infection in blepharitis.">
+				>
+				["at0076"] = <
+					text = <"Abnormalities">
+					description = <"Eyelid, adnexal, and ocular surface abnormalities.">
+				>
+				["at0077"] = <
+					text = <"Office setting">
+					description = <"Intravitreal injections performed in ophthalmologist's office.">
+				>
+				["at0078"] = <
+					text = <"Treatment room">
+					description = <"Intravitreal injections performed in a dedicated treatment room.">
+				>
+				["at0079"] = <
+					text = <"Operating room">
+					description = <"Intravitreal injections performed in the operating room.">
+				>
+				["at0080"] = <
+					text = <"Laterality">
+					description = <"Eyes treated in the same sitting.">
+				>
+				["at0081"] = <
+					text = <"Left">
+					description = <"IVT injection on the left eye.">
+				>
+				["at0082"] = <
+					text = <"Right">
+					description = <"IVT injection on the right eye.">
+				>
+				["at0083"] = <
+					text = <"Bilateral">
+					description = <"IVT bilateral injection.">
+				>
+				["at0084"] = <
+					text = <"Anti-infective on Eyelids">
+					description = <"Application or not of anti-infective agent to the eyelids, including the eyelid margins and eyelashes.">
+				>
+				["at0085"] = <
+					text = <"Dilation Required">
+					description = <"Need or not of pupillary dilation prior to the surgical intervention.">
+				>
+			>
+		>
+	>
+	constraint_definitions = <
+		["en"] = <
+			items = <
+				["ac0002"] = <
+					text = <"Compounds for local anaesthesia">
+					description = <"Attach a list that restricts the anesthetic agents, to those compounds used in ophthalmology to anaesthetize patients prior to intravitreal injection.">
+				>
+				["ac0003"] = <
+					text = <"Anti-infective agents in ophthalmology">
+					description = <"List of anti-infective agents available for opthalmic use.">
+				>
+				["ac0004"] = <
+					text = <"Anti-infective agents in ophthalmology">
+					description = <"List of anti-infective agents available for opthalmic use.">
+				>
+				["ac0005"] = <
+					text = <"List of compounds validated for intraocular injection">
+					description = <"Compounds administered in ophthalmology in the form of intraocular injection.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0005"] = <[SNOMED-CT::6064005]>
+				["at0006"] = <[SNOMED-CT::54485002]>
+				["at0007"] = <[SNOMED-CT::418321004]>
+				["at0008"] = <[SNOMED-CT::418722009]>
+				["at0010"] = <[SNOMED-CT::372476004]>
+				["at0041"] = <[SNOMED-CT::330873002]>
+				["at0042"] = <[SNOMED-CT::353344004]>
+				["at0043"] = <[SNOMED-CT::330599004]>
+				["at0044"] = <[SNOMED-CT::376092000]>
+			>
+		>
+	>

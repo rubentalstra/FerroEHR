@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2013-03-12</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd, UK</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references"></other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">F2C3BD9252691BB3975C53648208D672</other_details>
+    <other_details id="build_uid">5fe10314-0b75-4673-8e12-e6e0695bd457</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a persistent and managed list of vaccinations that have been administered to an individual over time and to enable sharing of an Vaccination list between healthcare providers.</purpose>
+      <keywords>vaccination</keywords>
+      <keywords>immunisation</keywords>
+      <keywords>list</keywords>
+      <use>Use to record a persistent and managed list of vaccinations given to an individual. Alternatively, it may contain positive and explicit statements about known exclusions or absence of information about vaccinations. It is intended that the SECTION.vaccination_list archetype is nested within this archetype as design guidance for representing an Vaccination list.&#xD;
+&#xD;
+The intent of this archetype is to be a generic container for any Vaccination list, which may have a specific context or limitation of scope set within a template. This list can be utilised as a source of vaccination data for an active current Vaccination list within a clinical system, for the transition of care, data exchange, or as the basis for decision support. &#xD;
+&#xD;
+This list can be comprised of three types of archetype:&#xD;
+- statements about the positive administration of vaccinations are recorded using the ACTION.medication archetypes; OR&#xD;
+- a positive statement about the general exclusion of vaccination administration can be recorded using the general EVALUATION.exclusion_global archetype - for example: "Never received any vaccinations"; OR&#xD;
+- a positive statement about the exclusion of use of a specific medication can be recorded using the EVALUATION.exclusion_specific archetype - for example: "Never received Hepatitis B vaccination": OR&#xD;
+- a positive statement about no information being available - neither positive known administrations of vaccinations nor a positive exclusion - can be recorded using the EVALUATION.absence archetype.&#xD;
+&#xD;
+In order for a Vaccination list to be accurate and safe to use as the basis for decision support activities and for exchange, this Vaccination list should ideally be curated by a clinician responsible for the health record, rather than managed automatically by the clinical system through business rules alone.&#xD;
+&#xD;
+In local systems it is possible to generate a list of vaccinations by querying the database for all ACTION.medication archetypes that have been used to record each vaccination. However this list is useful to support exchange of a local Vaccination list with other healthcare.&#xD;
+&#xD;
+This archetype is intended to be represented and managed as a persistent list, however there are situations where the list may be used within episodic care and require additional attributes such as context etc to enable accurate recording. The openEHR reference model currently only allows context to be recorded within Event-based COMPOSITION archetypes. As a result, this archetype has been modelled as an Event, rather than Persistent, COMPOSITION, to allow for flexibility so that some clinical systems can safely manage Vaccination lists for episodes of care, while others will choose to implement this COMPOSITION to act in a persistent manner.</use>
+      <misuse>Not to be used to record lists of Medications that are not intended for persistence and ongoing revision and curation - use COMPOSITION.medication_list for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>Om een permanente en beheerde lijst van toegediende vaccinaties vast te leggen voor een individu over tijd en om het mogelijk te maken deze lijst te delen met andere zorgverleners.</purpose>
+      <keywords>Vaccinatie</keywords>
+      <keywords>Immunisatie</keywords>
+      <keywords>Lijst</keywords>
+      <use>Wordt gebruikt om een ​​permanente en beheerde lijst van een aan een persoon gegeven vaccinaties vast te leggen. Als alternatief kan het positieve en expliciete uitspraken bevatten over bekende uitsluitingen of het ontbreken van informatie over vaccinaties. Het is de bedoeling dat het archetype SECTION.vaccination_list in dit archetype wordt genest als ontwerprichtlijn voor het weergeven van een vaccinatielijst.&#xD;
+&#xD;
+De bedoeling van dit archetype is om een ​​generieke container te zijn voor elke vaccinatielijst, die een specifieke context of beperking van de reikwijdte kan hebben binnen een template. Deze lijst kan worden gebruikt als bron van vaccinatiegegevens voor een actieve actuele Vaccinatielijst binnen een klinisch systeem, voor zorgtransitie, gegevensuitwisseling of als basis voor beslissingsondersteuning.&#xD;
+&#xD;
+Deze lijst kan uit drie soorten archetypen bestaan:&#xD;
+- uitspraken over het positief toedienen van vaccinaties worden vastgelegd met behulp van de ACTION.medication archetypes; OF&#xD;
+- een positieve uitspraak over de algemene uitsluiting van vaccinatietoediening kan worden vastgelegd met behulp van het algemene archetype EVALUATION.exclusion_global - bijvoorbeeld: "Nooit vaccinaties ontvangen"; OF&#xD;
+- een positieve uitspraak over het uitsluiten van het gebruik van een bepaald medicijn kan worden vastgelegd met behulp van het EVALUATION.exclusion_specific archetype - bijvoorbeeld: "Nooit Hepatitis B-vaccinatie gekregen": OF&#xD;
+- een positieve verklaring dat er geen informatie beschikbaar is - noch positieve bekende vaccinaties noch een positieve uitsluiting - kan worden vastgelegd met behulp van het archetype EVALUATION.absence.&#xD;
+&#xD;
+Om ervoor te zorgen dat een vaccinatielijst nauwkeurig en veilig is om te gebruiken als basis voor beslissingsondersteunende activiteiten en voor uitwisseling, moet deze vaccinatielijst idealiter worden samengesteld door een arts die verantwoordelijk is voor het gezondheidsdossier, in plaats van automatisch te worden beheerd door het klinische systeem via zakelijke regels alleen.&#xD;
+&#xD;
+In lokale systemen is het mogelijk om een ​​lijst met vaccinaties te genereren door in de database te zoeken naar alle ACTION.medication-archetypen die zijn gebruikt om elke vaccinatie te registreren. Deze lijst is echter nuttig ter ondersteuning van de uitwisseling van een lokale Vaccinatielijst met andere zorginstellingen.&#xD;
+&#xD;
+Dit archetype is bedoeld om te worden weergegeven en beheerd als een permanente lijst, maar er zijn situaties waarin de lijst kan worden gebruikt binnen de episodische zorg en aanvullende attributen zoals context enz. vereisen om nauwkeurige registratie mogelijk te maken. Met het openEHR-referentiemodel kan momenteel alleen context worden vastgelegd binnen Event-based COMPOSITION-archetypen. Als gevolg hiervan is dit archetype gemodelleerd als een gebeurtenis, in plaats van een persistent, SAMENSTELLING, om flexibiliteit mogelijk te maken, zodat sommige klinische systemen veilig vaccinatielijsten voor zorgepisoden kunnen beheren, terwijl anderen ervoor zullen kiezen deze SAMENSTELLING te implementeren op een permanente manier.</use>
+      <misuse>Niet te gebruiken om lijsten met medicijnen op te nemen die niet bedoeld zijn voor persistente en voortdurende herziening en curatie - gebruik hiervoor COMPOSITION.medication_list.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">Wouter Zanen</author>
+    <author id="organisation">Stichting OpenEHR Nederland</author>
+    <author id="email">w.zanen@eurotransplant.org</author>
+  </translations>
+  <uid>
+    <value>7a89512f-4d71-4795-aee6-0d92330a0955</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-COMPOSITION.vaccination_list.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>category</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id />
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>defining_code</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_CODE_PHRASE">
+            <rm_type_name>CODE_PHRASE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <terminology_id>
+              <value>openehr</value>
+            </terminology_id>
+            <code_list>433</code_list>
+          </children>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>context</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>EVENT_CONTEXT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id />
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>other_context</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ITEM_TREE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0005</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>.*</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Vaccination list</items>
+        <items id="description">A persistent and managed list of vaccinations that have been administered to an individual over time.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local context or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">Vaccinatie lijst</items>
+        <items id="description">Een permanente en beheerde lijst van toegediende vaccinaties aan een persoon over een periode van tijd</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Extensie</items>
+        <items id="description">Aanvullende informatie die nodig is om de lokale context vast te leggen of om af te stemmen op andere referentiemodellen/formalismen.</items>
+        <items id="comment">Bijvoorbeeld: lokale ziekenhuisafdelingsinformatie of aanvullende metadata om af te stemmen op FHIR- of CIMI-equivalenten.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

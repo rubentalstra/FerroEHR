@@ -1,0 +1,225 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.obstetric_summary.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2011-02-24">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record an overview about the obstetric history of a woman for purposes of: providing a snapshot of her obstetric history, reporting to statutory bodies or supporting clinical decision support.">
+			use = <"Use to record an overview of the obstetric history of a woman, including a summary of all pregnancies and the associated outcomes or interventions. 
+
+Use this summary as the basis of statutory reporting regarding births.
+
+Use to record the TPAL overview of an obstetric history, if required - the numbers of Term Births (T), Preterm Births (P), Abortions (A) and Living Children (L). Some variations add Gravidity (G) and number of Multiple Births (M).
+
+Some data may be calculated or derived from individual pregnancy records if these are available.">
+			keywords = <"obstetric", "pregnancy", "parity", "gravida", "para", "terminations", "miscarriages", "abortions", "spontaneous", "live", "births", "stillbirths", "caesarean", "ectopic", "neonatal", "death", "tubal", "living", "multiple">
+			misuse = <"Not for recording summary information about a single pregnancy - use EVALUATION. pregnancy_summary for this purpose.
+
+Not for recording detailed information about each of the individual pregnancies, miscarriages, terminations, or deliveries. This information will be recorded using other specific archetypes as event-based data.">
+		>
+	>
+	other_contributors = <"Sheryl Alexander, NT Department of Health, Australia", "Margaret Cotter, AMSANT, Australia", "Michelle Dowden, Miwatj Health Ngalkanbuy Health, Australia", "Tim Garden, NTG Department of Health, Australia", "Sam Heard, Ocean Informatics, Australia (Editor)", "Michelle Kealy, Australia", "Bernadette Lack, Deptartment of Health, NT, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics UK, United Kingdom", "Jeremy Oats, NT Health, Australia", "Gary Sinclair, NT DoH, Australia", "Cherie Whitbread, Royal Darwin Hospital, Australia", "Jo Wright, NT Dept of Health, Australia">
+	references = <
+		["1"] = <"NEHTA Clinical Knowledge Manager [Internet]. Australia: National eHealth Transition Authority. [Draft EVALUATION archetype] Obstetric Summary; [authored 2011 Feb 24, cited 2011 Aug 17]. Available from http://dcm.nehta.org.au/ckm/OKM.html#showArchetype_1013.1.971_4.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"FF7DCD652C6FF29279A87DCDABEB391D">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Obstetric summary
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					ELEMENT[id15] occurrences matches {0..1} matches {	-- Ever Pregnant?
+						value matches {
+							DV_BOOLEAN[id20] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Gravidity (G)
+						value matches {
+							DV_COUNT[id21] matches {
+								magnitude matches {|0..<100|}
+							}
+						}
+					}
+					ELEMENT[id4] occurrences matches {0..1} matches {	-- Parity
+						value matches {
+							DV_COUNT[id22] matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[id16] occurrences matches {0..1} matches {	-- Term Births (T)
+						value matches {
+							DV_COUNT[id23] 
+						}
+					}
+					ELEMENT[id17] occurrences matches {0..1} matches {	-- Preterm Births (P)
+						value matches {
+							DV_COUNT[id24] 
+						}
+					}
+					ELEMENT[id18] occurrences matches {0..1} matches {	-- Abortions (A)
+						value matches {
+							DV_COUNT[id25] 
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Miscarriages
+						value matches {
+							DV_COUNT[id26] matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[id6] occurrences matches {0..1} matches {	-- Terminations
+						value matches {
+							DV_COUNT[id27] matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[id12] occurrences matches {0..1} matches {	-- Ectopic Pregnancies
+						value matches {
+							DV_COUNT[id28] 
+						}
+					}
+					ELEMENT[id13] occurrences matches {0..1} matches {	-- Stillbirths
+						value matches {
+							DV_COUNT[id29] 
+						}
+					}
+					ELEMENT[id7] occurrences matches {0..1} matches {	-- Live Births
+						value matches {
+							DV_COUNT[id30] matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[id11] occurrences matches {0..1} matches {	-- Caesarean Sections
+						value matches {
+							DV_COUNT[id31] matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[id19] occurrences matches {0..1} matches {	-- Multiple Births (M)
+						value matches {
+							DV_COUNT[id32] 
+						}
+					}
+					ELEMENT[id8] occurrences matches {0..1} matches {	-- Living Children (L)
+						value matches {
+							DV_COUNT[id33] matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id9] matches {
+				items matches {
+					ELEMENT[id10] occurrences matches {0..1} matches {	-- Date Updated
+						value matches {
+							DV_DATE_TIME[id34] 
+						}
+					}
+					ELEMENT[id14] occurrences matches {0..1} matches {	-- Stillbirth Definition
+						value matches {
+							DV_TEXT[id35] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Obstetric summary">
+				description = <"An overview of the obstetric history of a woman, including a summary of all pregnancies and the associated outcomes or interventions.">
+			>
+			["id3"] = <
+				text = <"Gravidity (G)">
+				description = <"Number of times a woman has been pregnant, including the current pregnancy, if appropriate.">
+			>
+			["id4"] = <
+				text = <"Parity">
+				description = <"Number of times a woman has given birth after 20 weeks and 0 days gestation.">
+			>
+			["id5"] = <
+				text = <"Miscarriages">
+				description = <"Number of times a woman has had a miscarriage at less than 20 weeks of gestation.">
+			>
+			["id6"] = <
+				text = <"Terminations">
+				description = <"Number of times a woman has had a pregnancy terminated, regardless of gestation.">
+			>
+			["id7"] = <
+				text = <"Live Births">
+				description = <"Number of babies born alive.">
+			>
+			["id8"] = <
+				text = <"Living Children (L)">
+				description = <"Number of children who remain alive.">
+			>
+			["id10"] = <
+				text = <"Date Updated">
+				description = <"The date this summary was last updated.">
+			>
+			["id11"] = <
+				text = <"Caesarean Sections">
+				description = <"Number of Caesarean sections performed.">
+			>
+			["id12"] = <
+				text = <"Ectopic Pregnancies">
+				description = <"Number of ectopic pregnancies.">
+			>
+			["id13"] = <
+				text = <"Stillbirths">
+				description = <"Number of stillbirths.">
+			>
+			["id14"] = <
+				text = <"Stillbirth Definition">
+				description = <"Definition of stillbirth.">
+			>
+			["id15"] = <
+				text = <"Ever Pregnant?">
+				description = <"Has the woman ever been pregnant?">
+			>
+			["id16"] = <
+				text = <"Term Births (T)">
+				description = <"Number of infants born on or after 37 weeks of gestation.">
+			>
+			["id17"] = <
+				text = <"Preterm Births (P)">
+				description = <"Number of infants born at less than 37 weeks of gestation.">
+			>
+			["id18"] = <
+				text = <"Abortions (A)">
+				description = <"Number of non-viable pregnancies from all causes and at any gestation, including miscarriages, induced terminations and ectopic pregnancies.">
+			>
+			["id19"] = <
+				text = <"Multiple Births (M)">
+				description = <"Number of birth events in which more than one fetus has been born.">
+			>
+		>
+	>

@@ -1,0 +1,213 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.bristol_stool_scale.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["sl"] = <
+			language = <[ISO_639-1::sl]>
+			author = <
+				["name"] = <"?">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2013-06-02">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a classification of characteristics of faeces after defaecation, according to the Bristol Stool Scale/Score, sometimes termed the 'Meyers' score.">
+			use = <"To record a classification of characteristics of faeces according to the Bristol Stool Scale/Score.">
+			keywords = <"stool", "faeces", "Bristol", "Meyers">
+			misuse = <"">
+		>
+		["sl"] = <
+			language = <[ISO_639-1::sl]>
+			purpose = <"*To record a classification of characteristics of faeces after defaecation, according to the Bristol Stool Scale/Score, sometimes termed the 'Meyers' score.(en)">
+			use = <"*To record a classification of characteristics of faeces according to the Bristol Stool Scale/Score.(en)">
+			keywords = <"*stool(en)", "*faeces(en)", "*Bristol(en)", "*Meyers(en)">
+			misuse = <"*(en)">
+		>
+	>
+	references = <
+		["1"] = <"http://en.wikipedia.org/wiki/Bristol_stool_scale">
+		["2"] = <"Lewis SJ, Heaton KW (1997). \"Stool form scale as a useful guide to intestinal transit time\". Scand. J. Gastroenterol. 32 (9): 920–4.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"DCC80A3C1D47C6D79DE0C2AA618943B6">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Bristol stool scale
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					POINT_EVENT[id3] occurrences matches {0..1} matches {	-- Point-in-time
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Bristol Stool scale
+										value matches {
+											DV_ORDINAL[id16] matches {
+												[value, symbol] matches {
+													[{1}, {[at7]}],
+													[{2}, {[at8]}],
+													[{3}, {[at9]}],
+													[{4}, {[at10]}],
+													[{5}, {[at11]}],
+													[{6}, {[at12]}],
+													[{7}, {[at13]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id17] 
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[id14] matches {
+								items matches {
+									ELEMENT[id15] occurrences matches {0..1} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT[id18] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Bristol stool scale">
+				description = <"Classification of faeces characteristics according to the Bristol Stool Scale/Score.">
+			>
+			["id3"] = <
+				text = <"Point-in-time">
+				description = <"The result at a single point in time.">
+			>
+			["id5"] = <
+				text = <"Comment">
+				description = <"Any additional comment about the scale result.">
+			>
+			["id6"] = <
+				text = <"Bristol Stool scale">
+				description = <"A score to assess the characteristics of faeces after defaecation.">
+			>
+			["at7"] = <
+				text = <"Separate hard lumps, like nuts (hard to pass)">
+				description = <"Stool consists of separate hard lumps, like nuts (hard to pass).">
+			>
+			["at8"] = <
+				text = <"Sausage-shaped, but lumpy">
+				description = <"Stool is sausage-shaped, but lumpy.">
+			>
+			["at9"] = <
+				text = <"Like a sausage but with cracks on its surface">
+				description = <"Stool is like a sausage but with cracks on its surface.">
+			>
+			["at10"] = <
+				text = <"Like a sausage or snake, smooth and soft">
+				description = <"Stool is like a sausage or snake, smooth and soft.">
+			>
+			["at11"] = <
+				text = <"Soft blobs with clear cut edges (passed easily)">
+				description = <"Stool consists of soft blobs with clear cut edges (passed easily).">
+			>
+			["at12"] = <
+				text = <"Fluffy pieces with ragged edges, a mushy stool">
+				description = <"Stool consists of fluffy pieces with ragged edges, a mushy stool.">
+			>
+			["at13"] = <
+				text = <"Watery, no solid pieces. Entirely liquid">
+				description = <"Stool is watery, no solid pieces. Entirely liquid.">
+			>
+			["ac1"] = <
+				text = <"Bristol Stool scale (synthesised)">
+				description = <"A score to assess the characteristics of faeces after defaecation. (synthesised)">
+			>
+			["id15"] = <
+				text = <"Confounding factors">
+				description = <"Factors of patient state which may effect interpretation of the results.">
+			>
+		>
+		["sl"] = <
+			["id1"] = <
+				text = <"Lestvica Bristol">
+				description = <"*Classification of faeces characteristics according to the Bristol Stool Score(en)">
+			>
+			["id3"] = <
+				text = <"*Point-in-time(en)">
+				description = <"**(en)">
+			>
+			["id5"] = <
+				text = <"*Comment(en)">
+				description = <"*Any additional comment about the scale result. (en)">
+			>
+			["id6"] = <
+				text = <"Lestvica Bristol">
+				description = <"*A score to assess the characteristics of faeces after defaecation.(en)">
+			>
+			["at7"] = <
+				text = <"A - Normalno/Formirano">
+				description = <"*Stool consists of separate hard lumps, like nuts (hard to pass).(en)">
+			>
+			["at8"] = <
+				text = <"Grudasto">
+				description = <"*Stool is sausage-shaped, but lumpy.(en)">
+			>
+			["at9"] = <
+				text = <"O - Obstipacija">
+				description = <"*Stool is like a sausage but with cracks on its surface.(en)">
+			>
+			["at10"] = <
+				text = <"S - Sluzasto">
+				description = <"*Stool is like a sausage or snake, smooth and soft.(en)">
+			>
+			["at11"] = <
+				text = <"Penasto">
+				description = <"*Stool consists of soft blobs with clear cut edges (passed easily).(en)">
+			>
+			["at12"] = <
+				text = <"E - Kašasto">
+				description = <"*Stool consists of fluffy pieces with ragged edges, a mushy stool.(en)">
+			>
+			["at13"] = <
+				text = <"I - Tekoče/Diareja">
+				description = <"*Stool is watery, no solid pieces. Entirely liquid.(en)">
+			>
+			["ac1"] = <
+				text = <"Lestvica Bristol (synthesised)">
+				description = <"*A score to assess the characteristics of faeces after defaecation.(en) (synthesised)">
+			>
+			["id15"] = <
+				text = <"*Confounding factors(en)">
+				description = <"*Factors of patient state which may effect interpretation of the results.(en)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at7", "at8", "at9", "at10", "at11", "at12", "at13">
+		>
+	>

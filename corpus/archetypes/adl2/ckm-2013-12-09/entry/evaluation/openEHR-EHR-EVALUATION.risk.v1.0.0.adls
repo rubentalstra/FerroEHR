@@ -1,0 +1,172 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.risk.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+				["organisation"] = <"University of Heidelberg, Cental Queensland University">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.biz">
+		["date"] = <"23/04/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation des Vorhandenseins eines Risikos mit möglichen Auswirkungen jetzt oder in der Zukunft">
+			use = <"">
+			keywords = <"Einschätzung", ...>
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the risk of a condition arising in the future">
+			use = <"">
+			keywords = <"assessment", ...>
+			misuse = <"">
+		>
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Evaluation of risk of condition
+		data matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; ordered} matches {
+					ELEMENT[id3] matches {	-- Index condition
+						value matches {
+							DV_TEXT[id13] 
+						}
+					}
+					ELEMENT[id4] occurrences matches {0..1} matches {	-- Significance of risk
+						value matches {
+							DV_CODED_TEXT[id14] matches {
+								defining_code matches {[ac1]}		-- Significance of risk (synthesised)
+							}
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Rationale
+						value matches {
+							DV_TEXT[id15] 
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[id11] matches {
+				items matches {
+					ELEMENT[id12] occurrences matches {0..1} matches {	-- Risk calculation
+						value matches {
+							DV_TEXT[id16] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["id1"] = <
+				text = <"Beurteilung des Risikos eines Zustandes">
+				description = <"Beurteilung zur Angabe eines oder keines erheblichen Risikos der zu behandelnden Person mit Auswirkungen jetzt oder in der Zukunft">
+			>
+			["id3"] = <
+				text = <"Zustand">
+				description = <"Der Zustand, auf den sich die Risikoeinschätzung bezieht">
+			>
+			["id4"] = <
+				text = <"Bedeutung des Risikos">
+				description = <"Die Wahrscheinlichkeit, dass diese Person diesen Zustand entwickelt oder in der Zukunft darunter leiden wird">
+			>
+			["id5"] = <
+				text = <"Begründung">
+				description = <"Gerechtfertigung dieser Einschätzung">
+			>
+			["at7"] = <
+				text = <"Nicht bedeutungsvoll">
+				description = <"Für die Person wird kein höheres Risiko geschätzt, als für die restliche Population">
+			>
+			["at8"] = <
+				text = <"Minimal bedeutungsvoll">
+				description = <"Die Person hat eventuell ein etwas erhöhtes Risiko diesen Zustand zu entwickeln">
+			>
+			["at9"] = <
+				text = <"Bedeutungsvoll">
+				description = <"Die Person hat ein erhöhtes Risiko diesen Zustand zu entwickeln als die allgemeine Population">
+			>
+			["at10"] = <
+				text = <"Sehr bedeutungsvoll">
+				description = <"Es ist anzunehmen, dass die Person den Zustand entwickeln wird">
+			>
+			["id12"] = <
+				text = <"Risikoberechnung">
+				description = <"Die Berechnung des Risikos">
+			>
+			["ac1"] = <
+				text = <"Bedeutung des Risikos (synthesised)">
+				description = <"Die Wahrscheinlichkeit, dass diese Person diesen Zustand entwickelt oder in der Zukunft darunter leiden wird (synthesised)">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Evaluation of risk of condition">
+				description = <"Evaluation to indicate that there is, or is not, a significant risk of this subject of care having, now or in the future, a condition.">
+			>
+			["id3"] = <
+				text = <"Index condition">
+				description = <"The condition on which the risk assessment is focussed">
+			>
+			["id4"] = <
+				text = <"Significance of risk">
+				description = <"The likelihood that this person will develop this condition or suffer in this way in the future">
+			>
+			["id5"] = <
+				text = <"Rationale">
+				description = <"Justification for this risk assessment">
+			>
+			["at7"] = <
+				text = <"Not significant">
+				description = <"The person is not assessed at being at higher risk than the general population">
+			>
+			["at8"] = <
+				text = <"Minimal significance">
+				description = <"The person may be of somewhat greater risk of developing the condition ">
+			>
+			["at9"] = <
+				text = <"Significant">
+				description = <"The person is considered to be more likely to develop the condition than the general population">
+			>
+			["at10"] = <
+				text = <"Highly significant">
+				description = <"The person is considered to be likely to develop the condition">
+			>
+			["id12"] = <
+				text = <"Risk calculation">
+				description = <"*">
+			>
+			["ac1"] = <
+				text = <"Significance of risk (synthesised)">
+				description = <"The likelihood that this person will develop this condition or suffer in this way in the future (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at7", "at8", "at9", "at10">
+		>
+	>

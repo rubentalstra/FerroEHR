@@ -1,0 +1,357 @@
+﻿archetype (adl_version=1.4; uid=7dfbf086-be1b-41e7-80f0-6addfdbc98e2)
+	openEHR-DEMOGRAPHIC-CLUSTER.person_identifier-provider.v0
+specialise
+	openEHR-DEMOGRAPHIC-CLUSTER.person_identifier.v0
+
+concept
+	[at0000.1]	-- Healthcare provider identifier
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"2009-05-22">
+	>
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação de dados relativos a um documento de identificação de um prestador de assistência (indivíduo/organização).">
+			use = <"Usado em serviçoS demográficos para registrar os dados relativos a um documento de identificação de um prestador de assistência à saúde (indivíduo/organização).">
+			keywords = <"serviço demográfico", "identificador de um prestador de assistência à saúde.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of data about a healthcare provider (individual/organisation) identifier.">
+			use = <"Used in demographic services to register data about a healthcare provider (individual/organisation) identifier.">
+			keywords = <"demographic service", "healthcare provider identifier">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Rigoleta Dutra, Ministry of Defense, Brazil (openEHR Editor)", "Sergio Freire, State University of Rio de Janeiro, Brazil (openEHR Editor)", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"ISO/DTS 27527:2007(E) - Provider Identification - Draft Technnical Specification - International Organization for Standardization">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"239A14834B79DBD3BF9C7E628C84418E">
+		["build_uid"] = <"ce37dad5-a661-4a49-a833-4cdd68e8e75e">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {	-- Healthcare provider Identifier
+		items matches {
+			ELEMENT[at0001] occurrences matches {1..*} matches {	-- identifier
+				value matches {
+					DV_IDENTIFIER matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {1..*} matches {	-- Geographic Scope
+				value matches {				    
+					DV_TEXT matches {*}	
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0010, 	-- Local
+							at0011, 	-- Regional
+							at0012, 	-- State
+							at0013]	        -- National
+						}
+					}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Issuing City
+				value matches {
+				    	DV_TEXT matches {*}
+					DV_CODED_TEXT matches {
+						defining_code matches {[ac0001]}    -- city codes
+					}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- Issuing State
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[ac0002]}    -- state codes
+					}
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Issuing Country
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[ac0003]}    -- country codes
+					}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- validity
+				value matches {
+					
+					DV_INTERVAL<DV_DATE> matches {
+						upper matches {
+							DV_DATE matches {*}
+						}
+						lower matches {
+							DV_DATE matches {*}
+						}
+					}
+
+				}
+			}
+			ELEMENT[at0.2] occurrences matches {1..*} matches {	-- Identifier usage
+				value matches {
+				    	DV_TEXT matches {*}
+					DV_CODED_TEXT matches {
+						defining_code matches {[ac0000.1]}
+					}
+				}
+			}
+                   	CLUSTER[at0.3] occurrences matches {0..*} matches {  -- Duplicate resolution
+                        	items cardinality matches {3..*; ordered} matches {
+                            		ELEMENT[at0.30] occurrences matches {0..1} matches {  -- not a duplicate of
+                               		       value matches {
+                                    		       DV_TEXT matches {*}  
+                                               }
+                                    	}
+                            		ELEMENT[at0.31] occurrences matches {0..1} matches {  -- duplicate of
+                               		       value matches {
+                                    		       DV_TEXT matches {*}  
+                                               }
+                                    	}
+                            		ELEMENT[at0.32] occurrences matches {1..*} matches {  -- confirmed by organisation
+                               		       value matches {
+                                    		       DV_TEXT matches {*}  
+                                               }
+                                    	}
+                            		ELEMENT[at0.33] occurrences matches {1..*} matches {  -- date confirmed
+                               		       value matches {
+                                    		       DV_DATE matches {*}  
+                                               }
+                                    	}
+                            		ELEMENT[at0.34] occurrences matches {1..*} matches {  -- retired identifier
+                               		       value matches {
+                                    		       DV_TEXT matches {*}  
+                                               }
+                                    	}
+                                 }
+                        }
+		}
+	}
+
+
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Healthcare provider identifier">
+					description = <"Healthcare provider identifier.">
+				>
+				["at0001"] = <
+					text = <"Identifier main data">
+					description = <"Identifier number or code, issuer, assigner and type of identifier.">
+				>
+				["at0002"] = <
+					text = <"Geographic scope">
+					description = <"Indicates the geographic area within which the identifier is valid.">
+				>
+				["at0003"] = <
+					text = <"Issuing City">
+					description = <"Indicates the city where the identifier was issued.">
+				>
+				["at0004"] = <
+					text = <"Issuing State">
+					description = <"Indicates the state where the identifier was issued.">
+				>
+				["at0005"] = <
+					text = <"Issuing Country">
+					description = <"Indicates the country where the identifier was issued.">
+				>
+				["at0006"] = <
+					text = <"Time validity">
+					description = <"Period in which this identifier is valid.">
+				>
+				["at0010"] = <
+					text = <"Local">
+					description = <"Indicates that this identifier is used locally.">
+				>
+				["at0011"] = <
+					text = <"Area/Regional/District">
+					description = <"Indicates that this identifier is used within a specific area.">
+				>
+				["at0012"] = <
+					text = <"State/Province/Territory">
+					description = <"Indicates that this identifier is used within a political boundary such as a state or territory or province.">
+				>
+				["at0013"] = <
+					text = <"National">
+					description = <"Indicates that this identifier is used nationally.">
+				>
+				["at0.2"] = <
+					text = <"Identifier Usage">
+					description = <"The purpose or intended use of this unique identifier.">
+				>
+				["at0.3"] = <
+					text = <"Duplicate resolution">
+					description = <"This group of data allow users to identify where they have determined that two identifiers which appears to be duplicates are not duplicated, or to indicate that where they are discovered to be duplicates -  which number is retired and no longer used, and which is retained.">
+				>
+				["at0.30"] = <
+					text = <"Not a duplicate of">
+					description = <"The identifier entered into this field is not a duplicate entry of this identifier.">
+				>
+				["at0.31"] = <
+					text = <"Duplicate of">
+					description = <"The identifier entered into this field is a duplicate entry of this identifier.">
+				>
+				["at0.32"] = <
+					text = <"Confirmed by organisation">
+					description = <"The organisation that has confirmed the duplicate or not duplicate status of this identifier.">
+				>
+				["at0.33"] = <
+					text = <"Date confirmed">
+					description = <"The date upon which this identifier was determined as a duplicate or not a duplicate.">
+				>
+				["at0.34"] = <
+					text = <"Retired identifider">
+					description = <"For a duplicate identifier set this field indicates if this number is the one retired (nor for further use) or not.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Identificador de um prestador de assistência à saúde">
+					description = <"Identificador de um prestador de assistência à saúde.">
+				>
+				["at0001"] = <
+					text = <"Dados principais do identificador">
+					description = <"Número ou código do documento de identificação, emissor, outorgante e tipo do documento.">
+				>
+				["at0002"] = <
+					text = <"Área geografica">
+					description = <"Indica a área geográfica onde o documento é váĺido.">
+				>
+				["at0003"] = <
+					text = <"Município emissor">
+					description = <"Indica o município onde o documento foi emitido.">
+				>
+				["at0004"] = <
+					text = <"Estado emissor">
+					description = <"Indica o estado onde o documento foi emitido.">
+				>
+				["at0005"] = <
+					text = <"País emissor">
+					description = <"Indica o país onde o documento foi emitido.">
+				>
+				["at0006"] = <
+					text = <"Validade da identificação">
+					description = <"Período de validade da identificacao.">
+				>
+				["at0010"] = <
+					text = <"Local">
+					description = <"Indica que esta identificação é usada localmente.">
+				>
+				["at0011"] = <
+					text = <"Regional">
+					description = <"Indica que esta identificação é usada em uma região.">
+				>
+				["at0012"] = <
+					text = <"Estadual">
+					description = <"Indica que esta identificação é usada em nível de um estado.">
+				>
+				["at0013"] = <
+					text = <"Nacional">
+					description = <"Indica que esta identificação é usada em nível nacional.">
+				>
+				["at0.2"] = <
+					text = <"Uso da identificação">
+					description = <"O propósito de uso deste identificador único.">
+				>
+				["at0.3"] = <
+					text = <"Resolução de duplicidade">
+					description = <"Este grupo de dados permite aos usuários identificar onde eles determinaram que dois identificadores que parecem ser duplicatas não são duplicatas, ou indicar, no caso de se descobrir qe eles são duplicatas: que número está inativo e não é mais usado, e qual deve ser mantido.">
+				>
+				["at0.30"] = <
+					text = <"Não é duplicata de">
+					description = <"O identificador digitado neste campo não é uma duplicata deste identificador.">
+				>
+				["at0.31"] = <
+					text = <"Duplicata de">
+					description = <"O identificador digitado neste campo não é uma duplicata deste identificador.">
+				>
+				["at0.32"] = <
+					text = <"Confirmado pela organização">
+					description = <"A organização que confirmou o status de duplicata ou não deste identificador.">
+				>
+				["at0.33"] = <
+					text = <"Data da confirmação">
+					description = <"A data onde este identificador foi determinado como sendo ou não uma duplicata.">
+				>
+				["at0.34"] = <
+					text = <"Identificador desativado">
+					description = <"Para um conjunto de identificadores duplicados, este campo indica se este número é o que deve ser desativado (não mais usado) ou não.">
+				>
+			>
+		>
+	>
+	constraint_definitions = <
+		["en"] = <
+			items = <
+				["ac0000.1"] = <
+					text = <"Identifier usage code">
+					description = <"Valid codes for usage of identifiers.">
+				>
+				["ac0001"] = <
+					text = <"City codes">
+					description = <"valid codes for city/town/locality.">
+				>
+				["ac0002"] = <
+					text = <"State codes">
+					description = <"valid codes for state/territory/province.">
+				>
+				["ac0003"] = <
+					text = <"Country codes">
+					description = <"valid codes for countries.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["ac0000.1"] = <
+					text = <"Código de uso do identificador.">
+					description = <"códigos válidos para os usos de identificadores.">
+				>
+				["ac0001"] = <
+					text = <"Códigos de cidades">
+					description = <"códigos válidos para cidade.">
+				>
+				["ac0002"] = <
+					text = <"Códigos de estados">
+					description = <"códigos válidos para estados.">
+				>
+				["ac0003"] = <
+					text = <"Códigos de países">
+					description = <"códigos válidos para paises.">
+				>
+			>
+		>
+	>

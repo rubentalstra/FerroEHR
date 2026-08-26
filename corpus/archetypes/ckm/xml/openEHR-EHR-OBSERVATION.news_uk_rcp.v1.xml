@@ -1,0 +1,2392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2013-06-02</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics Ltd.</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Marcus Baw, openGPSoC / BawMedical Ltd, United Kingdom</other_contributors>
+    <other_contributors>Kristian Berg, Universitetssykehuset Nord Norge, Norway</other_contributors>
+    <other_contributors>Mauricio Botero, Universidad de Caldas, Colombia</other_contributors>
+    <other_contributors>Bjørn Christensen, HUS, Norway</other_contributors>
+    <other_contributors>Rui Coutinho, Centro Hospitalar do Porto, Portugal</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Cecilie Graver, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Kristian Heldal, Telemark Hospital Trust, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Karl Trygve Kalleberg, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hallvard Lærum, Oslo Universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Vincent McCauley, Medical Software Industry Association, Australia</other_contributors>
+    <other_contributors>James McClay, University of Nebraska Medical Center, United States</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Bjoern Naess, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Martin Paulson, Sykehuset i Vestfold, Norway</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Vladimir Pizzo, Hospital Sírio Libanês, Brazil</other_contributors>
+    <other_contributors>Navin Ramachandran, NHS, United Kingdom</other_contributors>
+    <other_contributors>Norwegian Review Summary, National ICT Norway, Norway</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Lisbeth Sommervoll, Akershus Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Iztok Stotl, UKCLJ, Slovenia</other_contributors>
+    <other_contributors>Rowan Thomas, St. Vincent's Hospital Melbourne, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">Williams B, Alberti G, Ball C, Bell D, Binks R, Durham L, et al. National Early Warning Score (NEWS): Standardising the Assessment of Acute-Illness Severity in the NHS. London: The Royal College of Physicians, 2012.  https://www.rcplondon.ac.uk/file/32/download?token=vfwDKQVS&#xD;
+&#xD;
+National Early Warning Score (NEWS). [Internet]. London, UK: Royal College of Physicians; 2015 May. Available from: https://www.rcplondon.ac.uk/projects/outputs/national-early-warning-score-news. Suggested RCP UI layouts: https://www.rcplondon.ac.uk/file/38/download?token=VCIPyVbz or https://www.rcplondon.ac.uk/file/36/download?token=N11hBvdx.&#xD;
+&#xD;
+National Early Warning Score (NEWS). In: eHåndbok - Internettutgave [Internet]. Oslo, Norway: Oslo University Hospital; 2016 February. Available from: http://ehandboken.oslo-universitetssykehus.no/Modules/module_136/handbook_view.aspx?documentId=78636.&#xD;
+&#xD;
+Modified Early Warning Score (NT RMP), draft archetype, NEHTA Clinical Knowledge Manager [Internet]. NEHTA. Authored: 07 Feb 2013. Available at: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.1172_2 (accessed 01 June 2013).</other_details>
+    <other_details id="current_contact">Ian McNicoll, freshEHR Clinical Informatics Ltd., ian@freshehr.com</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">5B18DB0AF362723C40700F5F152507C5</other_details>
+    <other_details id="build_uid">c28674a9-a10f-4f16-b3f9-78dffb3771eb</other_details>
+    <other_details id="revision">1.2.2</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att bedöma och registrera försämring av den kliniska statusen, inklusive vitala funktioner, för en sjuk patient som är 16 år eller äldre. Detta görs genom att registrera en poängsumma som är baserad på kategorisering av fysiologiska mätvärden. Poängsumman kan användas som en förenklad metod för att göra en objektiv bedömning av patienten.</purpose>
+      <keywords>varning</keywords>
+      <keywords>AVPU</keywords>
+      <keywords>AF</keywords>
+      <keywords>HF</keywords>
+      <keywords>BT</keywords>
+      <keywords>temperatur</keywords>
+      <keywords>SBT</keywords>
+      <keywords>triage</keywords>
+      <keywords>NEWS</keywords>
+      <keywords>syrgas</keywords>
+      <keywords>saturation</keywords>
+      <keywords>syremättnad</keywords>
+      <keywords>sjukdom</keywords>
+      <keywords>grad</keywords>
+      <keywords>poäng</keywords>
+      <use>Används för att registrera en poängsumma baserat på kategorisering av fysiologiska mätvärden. Poängsumman används för att på ett objektivt sätt bedöma och följa försämringen av vitala funktioner hos sjuka patienter som är 16 år eller äldre.</use>
+      <misuse>Ska inte användas för att registrera enskilda fysiska mätningar eller kliniska observationer. Använd istället specifika arketyper (OBSERVATION) för att registrera&#xD;
+enskilda mätvärden såsom: OBSERVATION.blood_pressure, OBSERVATION.pulse, OBSERVATION.respirations, OBSERVATION.body_temperature, OBSERVATION.avpu, CLUSTER.ambient_oxygen eller OBSERVATION.indirect_oximetry.&#xD;
+&#xD;
+Ska inte användas för barn och ungdomar under 16 år eller under graviditet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>Fysiologisten lukemien ja havaintojen luokitteluun perustuva yksinkertainen menetelmä, jolla tuetaan objektiivista arviointia kliinisen heikkenemisen asteesta yli 16-vuotiailla huonovointisilla potilailla.</purpose>
+      <keywords>varoitus, AVPU, RR, HR, BP, lämpötila, SBP, triage, NEWS, Sats, MEWS, EWS, happi, saturaatio</keywords>
+      <use>Käytetään tallentamaan pisteytys, jolla voidaan arvioida kliininen heikkenemisen aste yli 16-vuotiaille huonovointisille potilaille.</use>
+      <misuse>Ei saa käyttää fysiologisten mittausten tai kliinisten havaintojen kirjaamiseen. Käytä tätä tarkoitusta varten OBSERVATION-arkkityyppejä - OBSERVATION.blood_pressure, OBSERVATION.pulse, OBSERVATION.respirations, OBSERVATION.body_temperature, OBSERVATION.avpu, CLUSTER.ambient_oxygen tai OBSERVATION.indirect_oximetry.&#xD;
+&#xD;
+Ei saa käyttää alle 16-vuotiaille tai raskaana oleville lapsille / teini-ikäisille.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en sammensatt skåring, basert på kategoriserte fysiologiske målinger og observasjoner for å støtte vurderingen av klinisk forverring hos pasient over 16 år.</purpose>
+      <keywords>varsling</keywords>
+      <keywords>triage</keywords>
+      <keywords>NEWS</keywords>
+      <keywords>sats</keywords>
+      <keywords>MEWS</keywords>
+      <keywords>TILT</keywords>
+      <keywords>forverring</keywords>
+      <use>Brukes for å registrere en sammensatt skåring for å støtte vurderingen av klinisk forverring hos pasient over 16 år.</use>
+      <misuse>Anvendes ikke for registrering av hver enkelt fysiologisk parameter eller klinisk observasjon. Bruk spesifikke OBSERVATION-arketyper for dette formål - OBSERVATION.blood_pressure, OBSERVATION.pulse, OBSERVATION.respirations, OBSERVATION.body_temperature, OBSERVATION.avpu, CLUSTER.ambient_oxygen og OBSERVATION.indirect_oximetry.&#xD;
+&#xD;
+Benyttes ikke for barn under 16 år, bruk en egen arketype for dette formålet.&#xD;
+&#xD;
+Benyttes vanligvis ikke for gravide.</misuse>
+      <copyright>© Clinical Models UK, Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>Para el registro de una escala compuesta basada en la categorización de mediciones y observaciones fisiológicas como método simple para fundamentar la evaluación objetiva del grado de deterioro clínico de un paciente enfermo mayor de 16 años.</purpose>
+      <keywords>alerta</keywords>
+      <keywords>AVPU</keywords>
+      <keywords>frecuencia respiratoria</keywords>
+      <keywords>frecuencia cardíaca</keywords>
+      <keywords>tensión arterial</keywords>
+      <keywords>temperatura</keywords>
+      <keywords>tensión arterial sistólica</keywords>
+      <keywords>triage</keywords>
+      <keywords>NEWS</keywords>
+      <keywords>saturación de oxígeno</keywords>
+      <keywords>MEWS</keywords>
+      <keywords>EWS</keywords>
+      <keywords>oxígeno</keywords>
+      <keywords>saturación</keywords>
+      <keywords>enfermedad</keywords>
+      <keywords>grado</keywords>
+      <keywords>puntaje</keywords>
+      <use>Utilizar para el registro de una escala compuesta para fundamentar la evaluación objetica del grado de deterioro clínico de un paciente enfermo mayor de 16 años.</use>
+      <misuse>No utilizar para el registro de cada medición fisiológica u observación clínica. Utilizar para ello los arquetipos OBSERVATION específicos - OBSERVATION.blood_pressure, OBSERVATION.pulse, OBSERVATION.respirations, OBSERVATION.body_temperature, OBSERVATION.avpu, CLUSTER.ambient_oxygen u OBSERVATION.indirect_oximetry.&#xD;
+No debe utilizarse para niños y adolescentes menores de 16 años ni durante el embarazo.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Gravar uma pontuação composta com base na categorização de leituras e observações fisiológicas, como um método simples para apoiar a avaliação objetiva do grau de deterioração clínica em um paciente com mal-estar acima dos 16 anos.</purpose>
+      <keywords>Atenção</keywords>
+      <keywords>FR</keywords>
+      <keywords>FC</keywords>
+      <keywords>Temp</keywords>
+      <keywords>PA</keywords>
+      <keywords>triagem</keywords>
+      <keywords>NEWS</keywords>
+      <keywords>oxigênio</keywords>
+      <keywords>saturação</keywords>
+      <keywords>doença</keywords>
+      <keywords>grau</keywords>
+      <keywords>score</keywords>
+      <keywords>PAS</keywords>
+      <keywords>pressão arterial sistólica</keywords>
+      <use>Use para registrar uma pontuação composta para apoiar a avaliação do grau de deterioração clínica em um paciente com mal-estar, com idade superior a 16 anos.</use>
+      <misuse>Não deve ser usado para registrar cada medida fisiológica ou observação clínica. Use os arquétipos OBSERVATION específicos para este propósito ´OBSERVATION.blood_pressure, OBSERVATION.pulse, OBSERVATION.respirations, OBSERVATION.body_temperature, OBSERVATION.avpu, CLUSTER.ambient_oxygen ou OBSERVATION.indirect_oximetry.&#xD;
+&#xD;
+Não deve ser utilizado para crianças/adolescentes com idade inferior a 16 anos ou durante a gravidez.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a composite score based on categorising physiological readings and observations, as a simple method to support objective assessment of the degree of clinical deterioration in an unwell patient over the age of 16 years.</purpose>
+      <keywords>warning</keywords>
+      <keywords>AVPU</keywords>
+      <keywords>RR</keywords>
+      <keywords>HR</keywords>
+      <keywords>BP</keywords>
+      <keywords>Temp</keywords>
+      <keywords>SBP</keywords>
+      <keywords>triage</keywords>
+      <keywords>NEWS</keywords>
+      <keywords>Sats</keywords>
+      <keywords>MEWS</keywords>
+      <keywords>EWS</keywords>
+      <keywords>oxygen</keywords>
+      <keywords>saturation</keywords>
+      <keywords>illness</keywords>
+      <keywords>degree</keywords>
+      <keywords>score</keywords>
+      <use>Use to record a composite score to support assessment of the degree of clinical deterioration in an unwell patient, over the age of 16 years.</use>
+      <misuse>Not to be used to record each physical measurement or clinical observation. Use specific OBSERVATION archetypes for this purpose - OBSERVATION.blood_pressure, OBSERVATION.pulse, OBSERVATION.respirations, OBSERVATION.body_temperature, OBSERVATION.avpu, CLUSTER.ambient_oxygen or OBSERVATION.indirect_oximetry.&#xD;
+&#xD;
+Not to be used for children/teens under the age of 16 years or in pregnancy.</misuse>
+      <copyright>© Clinical Models UK, Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Jarl Sandberg, Åsa Skagerhult</author>
+    <author id="organisation">Tieto Sweden AB, Region Östergötland</author>
+    <author id="email">jarl.sandberg@tieto.com, asa.skagerhult@regionostergotland.se</author>
+    <accreditation>Contributors/Reviewers: Sanna Åberg, Andreas Sundström, Erik Sundvall, Niclas Skyttberg, Harriet Haglund, Kirsi Poikela, Anette Larsson</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Vesa Peltola</author>
+    <author id="organisation">Tieto Finland Oy</author>
+    <author id="email">vesa.peltola@tieto.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Alan March</author>
+    <author id="organisation">Hospital Universitario Austral, Pilar, Buenos Aires, Argentina</author>
+    <author id="email">alandmarch@gmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen HF</author>
+    <author id="email">john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <uid>
+    <value>3e55b067-a9a8-42ea-9f20-3e7c32b71213</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.news_uk_rcp.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0006</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0029</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0030</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0031</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0032</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0033</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0036</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0037</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0007</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0022</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0023</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0038</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0039</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0014</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0015</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0016</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0012</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0010</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0008</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0024</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0025</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0028</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>20</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0047</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0048</code_list>
+                            <code_list>at0049</code_list>
+                            <code_list>at0050</code_list>
+                            <code_list>at0051</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0044</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0041</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0043</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0045</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0046</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">National Early Warning Score (NEWS)</items>
+        <items id="description">NEWS (National Early Warning Score) is a simple score used to provide an objective indication of a patient's degree of clinical deterioration. This version follows guidance issued by the UK Royal College of Physicians.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Point in time</items>
+        <items id="description">A specific date and/or time which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Systolic blood pressure</items>
+        <items id="description">Range category for the systolic blood pressure (SBP) measurement of a patient.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Heart rate</items>
+        <items id="description">Range category for the heart rate (HR) measurement of a patient.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Respiration rate</items>
+        <items id="description">Range category for the respiratory rate (RR) measurement of a patient.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Body temperature</items>
+        <items id="description">Range category for the body temperature (Temp) measurement of a patient.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Level of consciousness</items>
+        <items id="description">Observed category for the AVPU scale rating of a patient's conscious state.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">&lt;=40 or &gt;=131</items>
+        <items id="description">The heart rate measurement is less than/equal to 40 beats/min or greater than/equal to 131 beats/min; scored as 3 points.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">111-130</items>
+        <items id="description">The heart rate measurement is between 111 and 130 beats/min; scored as 2 points.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">41-50 or 91-110</items>
+        <items id="description">The heart rate measurement is between 41 and 50 beats/min or between 91 and 110 beats/min; scored as 1 point.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">51-90</items>
+        <items id="description">The heart rate measurement is between 51 and 90 beats/min; scored as 0 points.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">111-219</items>
+        <items id="description">The systolic blood pressure measurement is between 111 and 219 mmHg; scored as 0 points.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">101-110</items>
+        <items id="description">The systolic blood pressure measurement is between 101 and 110 mmHg; scored as 1 point.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">91-100</items>
+        <items id="description">The systolic blood pressure measurement is between 91 and 100 mmHg; scored as 2 points.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">&lt;=90 or &gt;= 220</items>
+        <items id="description">The systolic blood pressure measurement is less than/equal to 90 mmHg or greater than/equal to 220 mmHg; scored as 3 points.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">12-20</items>
+        <items id="description">The respiratory rate measurement is between 12 and 20 breaths/min; scored as 0 points.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">9-11</items>
+        <items id="description">The respiratory rate measurement is between 9 and 11 breaths/min; scored as 1 point.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">21-24</items>
+        <items id="description">The respiratory rate measurement is between 21 and 24 breaths/min; scored as 2 points.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">&lt;=8 or &gt;=25</items>
+        <items id="description">The respiratory rate measurement is less than/equal to 8 breaths/min or greater than/equal to 25 breaths/min; scored as 3 points.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">36.1-38.0</items>
+        <items id="description">The body temperature measurement is between 36.1 and 38.0 degrees Celsius; scored as 0 points.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">35.1-36.0 or 38.1-39.0</items>
+        <items id="description">The body temperature measurement is between 35.1 and 36.0 degrees Celsius or between 38.1 and 39.0 degrees Celsius; scored as 1 point.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">A</items>
+        <items id="description">The patient is alert or awake; scored as 0 points.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">V, P or U</items>
+        <items id="description">The patient responds only to voice or pain, or is unresponsive; scored as 3 points.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Total score</items>
+        <items id="description">The total sum of all the NEWS parameter ordinals.</items>
+        <items id="comment">Total score may be generated at run-time.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Oxygen saturation</items>
+        <items id="description">Range category for the oxygen saturation measurement of a patient.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">&gt;= 96</items>
+        <items id="description">The oxygen saturation level is greater than/equal to 96%;scored as 0 points.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">94-95</items>
+        <items id="description">The oxygen saturation level is between 94% and 95%; scored as 1 point.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">92-93</items>
+        <items id="description">The oxygen saturation level is between 92% and 93%; scored as 2 points.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">&lt;=91</items>
+        <items id="description">The oxygen saturation level is less than/equal to 91%; scored as 3 points.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Supplemental oxygen</items>
+        <items id="description">Range category depending on whether the patient is receiving supplemental oxygen.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">No</items>
+        <items id="description">The patient is not receiving supplemental oxygen; scored as 0 points.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Yes</items>
+        <items id="description">The patient is receiving supplemental oxygen; scored as 2 points.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">&gt;=39.1</items>
+        <items id="description">The body temperature is greater than/equal to 39.1 degrees Celcius; scored as 2 points.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">&lt;=35.0</items>
+        <items id="description">The body temperature is less than/equal to 35 degrees Celcius ; scored as 3 points.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Confounding factors</items>
+        <items id="description">Description of any incidental factors that may have contributed to the score.</items>
+        <items id="comment">For example: If the patient has COPD.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the overall NEWS score not captured in other fields.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">e.g. Local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Clinical risk category</items>
+        <items id="description">Overall category representing the urgency and scale of the clinical response required in response to the physiological parameters.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Low</items>
+        <items id="description">Ward-based response.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Low-medium</items>
+        <items id="description">Urgent ward-based response.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Medium</items>
+        <items id="description">Key threshold for urgent response.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">High</items>
+        <items id="description">Urgent or emergency response.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">National Early Warning Score (NEWS)</items>
+        <items id="description">NEWS (National Early Warning Score) er et skåringsverktøy som benyttes for å gi en objektiv vurdering av grad av klinisk forverring hos en pasient. Denne versjonen følger retningslinjer utgitt av the UK Royal College of Physicians.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tidspunkt</items>
+        <items id="description">En spesifikt dato/tidspunkt som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Systolisk blodtrykk</items>
+        <items id="description">Pasientens systoliske blodtrykk.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Hjertefrekvens/puls</items>
+        <items id="description">Pasientens hjertefrekvens.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Respirasjonsfrekvens</items>
+        <items id="description">Pasientens respirasjonsfrekvens.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kroppstemperatur</items>
+        <items id="description">Pasientens kroppstemperatur.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Bevissthetsgrad</items>
+        <items id="description">Observert kategori for AVPU scoring av pasientens bevissthetstilstand.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">≤40 eller ≥131</items>
+        <items id="description">Hjertefrekvensen målt som mindre enn eller lik 40 pulsslag per min eller større enn eller lik 131 pulsslag per min; skåres som 3 poeng.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">111-130</items>
+        <items id="description">Hjertefrekvensen målt fra og med 111 til og med 130 pulsslag per min; skåres som 2 poeng.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">41-50 eller 91-110</items>
+        <items id="description">Hjertefrekvensen målt fra og med 41 til og med 50 pulsslag per min eller fra og med 91 til og med 110 pulsslag per min; skåres som 1 poeng.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">51-90</items>
+        <items id="description">Hjertefrekvensen målt fra og med 51 til og med 90 pulsslag per min; skåres som 0 poeng.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">111-219</items>
+        <items id="description">Det systoliske blodtrykket målt fra og med 111 til og med 219 mmHg; skåres som 0 poeng.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">101-110</items>
+        <items id="description">Det systoliske blodtrykket målt fra og med 101 til og med 110 mmHg; skåres som 1 poeng.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">91-100</items>
+        <items id="description">Det systoliske blodtrykket målt fra og med 91 til og med 100 mmHg; skåres som 2 poeng.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">≤90 eller ≥220</items>
+        <items id="description">Det systoliske blodtrykket målt mindre enn eller lik 90 mmHg eller større enn eller lik 220 mmHg; skåres som 3 poeng.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">12-20</items>
+        <items id="description">Respirasjonsfrekvensen målt fra og med 12 til og med 20 pust per min; skåres som 0 poeng.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">9-11</items>
+        <items id="description">Respirasjonsfrekvensen målt fra og med 9 til og med 11 pust per min; skåres som 1 poeng.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">21-24</items>
+        <items id="description">Respirasjonsfrekvensen målt fra og med 21 til og med 24 pust per min; skåres som 2 poeng.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">≤8 eller ≥25</items>
+        <items id="description">Respirasjonsfrekvensen målt, mindre enn eller lik 8, eller større enn eller lik 25 pust per min; skåres som 3 poeng.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">36.1-38.0</items>
+        <items id="description">Kroppstemperatur målt fra og med 36,1 til og med 38,0 grader Celsius; skåres til 0 poeng.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">35.1-36.0 eller 38.1-39.0</items>
+        <items id="description">Kroppstemperatur målt fra og med 35,1 til og med 36,0 grader Celsius eller fra og med 38,1 til og med 39,0 grader Celsius; skåres til 1 poeng.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">A</items>
+        <items id="description">Pasienten er helt våken; skåres som 0 poeng.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">V, P eller U</items>
+        <items id="description">Pasienten reagerer kun på tiltale (V) eller smerte (P), eller reagerer ikke på tiltale (U), skåres som 3 poeng.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Totalskår</items>
+        <items id="description">Summen av skår til hvert enkelt NEWS-parameter.</items>
+        <items id="comment">Totalskår vil normalt beregnes automatisk i en applikasjon.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Oksygenmetning</items>
+        <items id="description">Pasientens oksygenmetning.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">≥96</items>
+        <items id="description">Oksygenmetning målt større enn eller lik 96 prosent; skåres som 0 poeng.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">94-95</items>
+        <items id="description">Oksygenmetning målt fra og med 94 til og med 95 prosent; skåres som 1 poeng.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">92-93</items>
+        <items id="description">Oksygenmetning målt fra og med 92 til og med 93 prosent; skåres som 2 poeng.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">≤91</items>
+        <items id="description">Oksygenmetning målt som mindre enn eller lik 91 prosent; skåres som 3 poeng.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Tilførsel av oksygen</items>
+        <items id="description">Om pasienten tilføres oksygen for å opprettholde oksygenmetningen.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Nei</items>
+        <items id="description">Pasienten tilføres ikke oksygen; skåres som 0 poeng.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Ja</items>
+        <items id="description">Pasienten tilføres oksygen; skåres som 2 poeng.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">≥39,1</items>
+        <items id="description">Kroppstemperatur målt større enn eller lik 39,1 grader Celcius; skåres som 2 poeng.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">≤35</items>
+        <items id="description">Kroppstemperatur målt mindre enn eller lik 35,0 grader Celcius; skåres som 3 poeng.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Kommentar til og registrering av faktorer som kan ha betydning for skåren.</items>
+        <items id="comment">For eksempel om pasienten har KOLS.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere kommentar til NEWS-skåringen som ikke er fanget opp i andre felt.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Klinisk risiko</items>
+        <items id="description">Overordnet kategori som representerer hastegrad og omfang for klinisk respons, basert på skåringen av de fysiologiske variablene.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Lav</items>
+        <items id="description">Oppfølging på sengepost.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Lav-middels</items>
+        <items id="description">Hasteoppfølging på sengepost.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Middels</items>
+        <items id="description">Rask respons.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Høy</items>
+        <items id="description">Øyeblikkelig respons.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">NEWS (UK RCP)</items>
+        <items id="description">NEWS (National Early Warning Score) es una escala simple utilizada para obtener una indicación objetiva del grado de deterioro clínico de un paciente. Esta versión se basa en las guías emitidas por el Royal College of Physicians del Reino Unido.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Point in time</items>
+        <items id="description">Fecha y/o hora que puede ser explícitamente definida en una plantilla o en tiempo de ejecución.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tensión arterial sistólica</items>
+        <items id="description">Rangos de categoría para la tensión arterial sistólica de un paciente.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Frecuencia cardíaca</items>
+        <items id="description">Rangos de categoría para la frecuencia cardíaca de un paciente.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Frecuencia respiratoria</items>
+        <items id="description">Rangos de categoría de frecuencia respiratoria (FR) de un paciente.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Temperatura corporal</items>
+        <items id="description">Rangos de categoría para la temperatura corporal del paciente.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Nivel de consciencia</items>
+        <items id="description">Categoria AVPU del estado de consciencia del paciente.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">&lt;=40 or &gt;=131</items>
+        <items id="description">La frecuencia cardíaca es menor o igual a 40 o mayor o igual a 131 latidos por minuto; recibe puntaje de 3.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">111-130</items>
+        <items id="description">La frecuencia cardíaca se encuentra entre 111 y 130 latidos por minuto; recibe puntaje de 2.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">41-50 o 91-110</items>
+        <items id="description">La frecuencia cardíaca se encuentra entre 41 y 50 o entre 91 y 110 latidos por minuto; recibe puntaje de 1.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">51-90</items>
+        <items id="description">La frecuencia cardíaca se encuentra entre 51 y 90 latidos por minuto; recibe puntaje de 0.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">111-219</items>
+        <items id="description">La tensión arterial sistólica se encuentra entre 111 y 219 mmHg; recibe puntaje de 0.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">101-110</items>
+        <items id="description">La tensión arterial sistólica se encuentra entre 101 y 110 mmHg; recibe puntaje de 1.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">91-100</items>
+        <items id="description">La tensión arterial sistólica se encuentra entre 91 y 100 mmHg; recibe puntaje de 2.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">&lt;=90 or &gt;= 220</items>
+        <items id="description">La tensión arterial sistólica es menor o igual a 90 o mayor o igual a 220 mmHg; recibe puntaje de 3.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">12-20</items>
+        <items id="description">La frecuencia respiratoria se encuentra entre 12 y 20 ciclos por minuto; recibe puntaje de 0.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">9-11</items>
+        <items id="description">La frecuencia respiratoria se encuentra entre 9 y 11 ciclos por minuto; recibe puntaje de 1.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">21-24</items>
+        <items id="description">La frecuencia respiratoria se encuentra entre 21 y 24 ciclos por minuto; recibe puntaje de 2.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">&lt;=8 or &gt;=25</items>
+        <items id="description">La frecuencia respiratoria es menor o igual a 8 o mayor o igual a 25 ciclos por minuto; recibe puntaje de 3.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">36.1-38.0</items>
+        <items id="description">La temperatura corporal del paciente se encuentra entre 36.1 y 38.0 grados centígrados; recibe un puntaje de 0.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">35.1-36.0 o 38.1-39.0</items>
+        <items id="description">La temperatura corporal del paciente se encuentra entre 36.1 y 38.0 o entre 38.1 y 39.0 grados centígrados; recibe un puntaje de 1.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">A</items>
+        <items id="description">El paciente se encuentra alerta o despierto; recibe puntaje de 0.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*V, P or U(en)</items>
+        <items id="description">*The patient responds only to voice or pain, or is unresponsive; scored as 3 points.(en)</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Puntaje total</items>
+        <items id="description">LA suma totoal de todos los parámetros ordinales del NEWS.</items>
+        <items id="comment">El puntaje total puede ser obtenido en tiempo de ejecución.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Saturación de oxígeno</items>
+        <items id="description">Rangos de categoría de saturación de oxígeno de un paciente.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">&gt;= 96</items>
+        <items id="description">La saturación de oxígeno es mayor o igual a 96%; recibe un puntaje de 0.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">94-95</items>
+        <items id="description">La saturación de oxígeno se encuentra entre 94 y 95 %; recibe un puntaje de 1.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">92-93</items>
+        <items id="description">La saturación de oxígeno se encuentra entre 92 y 93 %; recibe un puntaje de 2.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">&lt;=91</items>
+        <items id="description">La saturación de oxígeno es menor o igual a 91%; recibe un puntaje de 3.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Oxígeno suplementario</items>
+        <items id="description">Rangos de categoría según el paciente recibe o no oxígeno suplementario.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">No</items>
+        <items id="description">El paciente no esta recibiendo oxígeno suplementario; recibe puntaje de 0.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Si</items>
+        <items id="description">El paciente esta recibiendo oxígeno suplementario; recibe puntaje de 2.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">&gt;=39.1</items>
+        <items id="description">La temperatura corporal del paciente es mayor o igual a 39.1 grados centígrados; recibe un puntaje de 2.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">&lt;=35.0</items>
+        <items id="description">La temperatura corporal del paciente es menor o igual a 35.0 grados centígrados; recibe un puntaje de 3.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Factores de confusiín</items>
+        <items id="description">Descripción de cualquier factor incidental que pueda haber contribuido al puntaje.</items>
+        <items id="comment">Por ejemplo: si el paciente padece EPOC.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Comentario</items>
+        <items id="description">Narrativa adicional general acerca del puntaje NEWS no cubierto en otros campos.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional requerida para contemplar contenidos locales o para alinear con otros modelos o formalismos de referencia</items>
+        <items id="comment">ejemplo: requerimientos locales de información o metadatos adicionales necesarios para el alineamiento con FHIR o equivalentes de CIMI.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Clinical risk category(en)</items>
+        <items id="description">*Overall category representing the urgency and scale of the clinical response required in response to the physiological parameters.(en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Low(en)</items>
+        <items id="description">*Ward-based response.(en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Low-medium(en)</items>
+        <items id="description">*Urgent ward-based response.(en)</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Medium(en)</items>
+        <items id="description">*Key threshold for urgent response.(en)</items>
+      </items>
+      <items code="at0051">
+        <items id="text">*High(en)</items>
+        <items id="description">*Urgent or emergency response.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">NEWS (UK RCP)</items>
+        <items id="description">NEWS (National Early Warning Score) é uma pontuação simples utilizada para fornecer uma indicação objetiva do grau de deterioração clínica de um paciente. Esta versão segue orientação dada pelo UK Royal College of Physicians.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tempo</items>
+        <items id="description">Uma data específica e/ou o tempo que pode ser explicitamente definido em um modelo ou em tempo de execução.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Pressão Arterial Sistólica</items>
+        <items id="description">Escala de categoria para Pressão Arterial Sistólica (PAS) mensurada no paciente.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Frequência Cardíaca</items>
+        <items id="description">Escala de categoria para frequência cardíaca (FC) medidas no paciente.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Frequência Respiratória</items>
+        <items id="description">Escala de categoria para a medição da frequência respiratória (FR) de um paciente</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Temperatura corporal</items>
+        <items id="description">Escala de categoria para temperatura corporal (Temp) medida no paciente.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Nível de consciência</items>
+        <items id="description">Categoria observada para o AVPU - escala de classificação do estado do nível de consciência do paciente.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">&lt;=40 ou &gt;=131 bpm</items>
+        <items id="description">A frequência cardíaca medida está menor ou igual a 40 ou maior ou igual a 131 batimentos por minuto. Marcar como 3 pontos.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">111-130 bpm</items>
+        <items id="description">A frequência cardíaca medida está entre 111 e 130 batimentos por minuto. Marcar como 2 pontos.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">41-50 or 91-110 bpm</items>
+        <items id="description">A frequência cardíaca medida está entre 41 e 50 ou 91 a 110 batimentos por minuto. Marcar como 1 ponto.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">51-90 bpm</items>
+        <items id="description">A frequência cardíaca medida está entre 51 e 90 batimentos por minuto. Marcar como 0 ponto.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">111-219 mmHg</items>
+        <items id="description">A Pressão Arterial Sistólica mede entre 111 e 219 mmHG. Marcar como 0 ponto.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">101-110 mmHg</items>
+        <items id="description">A Pressão Arterial Sistólica mede entre 101 e 110 mmHG. Marcar como 1 ponto.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">91-100 mmHg</items>
+        <items id="description">A Pressão Arterial Sistólica mede entre 91 e 100 mmHG. Marcar como 2 pontos.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">&lt;=90 ou &gt;= 220 mmHg</items>
+        <items id="description">A Pressão Arterial Sistólica mede abaixo ou igual a 90 e maior ou igual a 200 mmHG. Marcar como 3 pontos.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">12-20 rpm</items>
+        <items id="description">A medição da frequência respiratória é entre 12 e 20 respirações/minuto. Marcar como 0 pontos.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">9-11 rpm</items>
+        <items id="description">A medição da frequência respiratória é entre 9 e 11 respirações/minuto. Marcar como 1 pontos.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">21-24 rpm</items>
+        <items id="description">A medição da frequência respiratória é entre 21 e 24 respirações/minuto. Marcar como 2 pontos.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">&lt;=8 ou &gt;=25 rpm</items>
+        <items id="description">A medição da frequência respiratória é menor ou igual a 8 ou maior ou igual a 25 respirações por minuto. Marcar como 3 pontos.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">36.1-38.0 °C</items>
+        <items id="description">A medição da temperatura do corpo é entre 36,1 e 38.0 graus Celsius. Marcar como 0 pontos.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">35.1-36.0 ou 38.1-39.0 °C</items>
+        <items id="description">A temperatura corporal mede entre 35.1 e 36.0 ou entre 38.1 e 39.0 graus Celsius. Marcar como 1 ponto.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">A</items>
+        <items id="description">O paciente está alerta ou acordado. Marcar como 0 ponto.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*V, P or U(en)</items>
+        <items id="description">*The patient responds only to voice or pain, or is unresponsive; scored as 3 points.(en)</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Score Total</items>
+        <items id="description">A soma total de todos os parâmetros ordinais do NEWS.</items>
+        <items id="comment">Pontuação total pode ser gerada em tempo de execução.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Saturação de oxigênio</items>
+        <items id="description">Escala de categoria para a medição de saturação de oxigênio de um paciente.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">&lt;=96 %</items>
+        <items id="description">O nível de saturação de oxigênio é maior ou igual a 96%. Marcar como 0 pontos.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">94-95 %</items>
+        <items id="description">O nível de saturação de oxigênio está entre 94% e 95%. Marcar como 1 ponto.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">92-93 %</items>
+        <items id="description">O nível de saturação de oxigênio está entre 92% e 93%. Marcar como 2 pontos.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">&lt;=91 %</items>
+        <items id="description">O nível de saturação de oxigênio é menor ou igual a 91%. Marcar como 3 pontos.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Oxigênio suplementar</items>
+        <items id="description">Escala de categoria depende do paciente estar recebendo oxigênio suplementar.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Não</items>
+        <items id="description">O paciente não está recebendo oxigênio suplementar. Marcar como 0 pontos.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Sim</items>
+        <items id="description">O paciente está recebendo oxigênio suplementar. Marcar como 2 pontos.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">&gt;=39.1 °C</items>
+        <items id="description">A temperatura corporal mede acima ou igual 39.1 graus Celsius. Marcar como 2 pontos.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">&lt;=35.0 °C</items>
+        <items id="description">A temperatura corporal mede abaixo ou igual 35 graus Celsius. Marcar como 3 pontos.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Fatores de confusão</items>
+        <items id="description">Descrição de quaisquer fatores incidentais que podem ter contribuído para a pontuação.</items>
+        <items id="comment">Por exemplo: se o paciente tem DPOC.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Comentários</items>
+        <items id="description">Narrativa adicional sobre a pontuação geral do NEWS não capturada em outros campos.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais necessárias para capturar conteúdo local ou alinhar com outros modelos/formalismos de referência.</items>
+        <items id="comment">ex.: Requisitos de informação local ou metadados adicionais para alinhar com equivalentes FHIR ou CIMI.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Clinical risk category(en)</items>
+        <items id="description">*Overall category representing the urgency and scale of the clinical response required in response to the physiological parameters.(en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Low(en)</items>
+        <items id="description">*Ward-based response.(en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Low-medium(en)</items>
+        <items id="description">*Urgent ward-based response.(en)</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Medium(en)</items>
+        <items id="description">*Key threshold for urgent response.(en)</items>
+      </items>
+      <items code="at0051">
+        <items id="text">*High(en)</items>
+        <items id="description">*Urgent or emergency response.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">NEWS</items>
+        <items id="description">NEWS (National Early Warning Score) är en poängskala som används för att ge en objektiv indikation om försämring av patientens kliniska status. Denna version följer riktlinjer utfärdade av UK Royal College of Physicians.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Händelseförlopp</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tidpunkt</items>
+        <items id="description">Den specifika tidpunkten när bedömningen är gjord.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Systoliskt blodtryck</items>
+        <items id="description">Intervall för uppmätt systoliskt blodtryck.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Hjärtfrekvens</items>
+        <items id="description">Intervall för uppmätt hjärtfrekvens.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Andningsfrekvens</items>
+        <items id="description">Intervall för uppmätt andningsfrekvens (AF).</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kroppstemperatur</items>
+        <items id="description">Intervall för uppmätt kroppstemperatur.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Medvetandegrad</items>
+        <items id="description">Kategorier för bedömning av medvetandegrad enligt AVPU-skalan.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">&lt;=40 eller &gt;=131</items>
+        <items id="description">Hjärtfrekvens lägre än eller lika med 40 slag per minut, alternativt högre än eller lika med 131 slag per minut. Sätts till 3 poäng.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">111-130</items>
+        <items id="description">Hjärtfrekvens mellan 111 och 130 slag per minut . Sätts till 2 poäng.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">41-50 eller 91-110</items>
+        <items id="description">Hjärtfrekvens mellan 41 och 50 slag per minut, alternativt mellan 91 och 110 slag per minut. Sätts till 1 poäng.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">51-90</items>
+        <items id="description">Hjärtfrekvens mellan 51 och 90 slag per minut. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">111-219</items>
+        <items id="description">Systoliskt blodtryck mellan 111 och 219 mmHg. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">101-110</items>
+        <items id="description">Systoliskt blodtryck mellan 101 och 110 mmHg. Sätts till 1 poäng.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">91-100</items>
+        <items id="description">Systoliskt blodtryck mellan 91 och 100 mmHg. Sätts till 2 poäng.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">&lt;=90 eller &gt;= 220</items>
+        <items id="description">Systoliskt blodtryck lägre än eller lika med 90 mmHg, alternativt högre än eller lika med 220 mmHg. Sätts till 3 poäng.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">12-20</items>
+        <items id="description">Andningsfrekvens mellan 12 och 20 andetag per minut. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">9-11</items>
+        <items id="description">Andningsfrekvens mellan 9 och 11 andetag per minut. Sätts till 1 poäng.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">21-24</items>
+        <items id="description">Andningsfrekvens mellan 21 och 24 andetag per minut. Sätts till 2 poäng.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">&lt;=8 eller &gt;=25</items>
+        <items id="description">Andningsfrekvens fler än eller lika med 8 andetag per minut, alternativt färre än eller lika med 25 andetag per minut. Sätts till 3 poäng.&#xD;
+</items>
+      </items>
+      <items code="at0022">
+        <items id="text">36,1-38,0</items>
+        <items id="description">Kroppstemperatur mellan 36,1 och 38,0 grader Celsius. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">35,1-36,0 eller 38,1-39,0</items>
+        <items id="description">Kroppstemperatur mellan 35,1 och 36,0 grader Celsius alternativt 38,1 och 39,0 grader Celsius. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">A</items>
+        <items id="description">Alert och vaken. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">V, P eller U</items>
+        <items id="description">Patienten reagerar endast på tilltal eller smärta, eller reagerar ej. Sätts till 3 poäng.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Totalpoäng (NEWS)</items>
+        <items id="description">Summan av alla NEWS-poäng.</items>
+        <items id="comment">Vissa IT-system kan automatiskt räkna ut totalpoängen. Detta kan variera mellan olika IT-system.&#xD;
+</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Syremättnad</items>
+        <items id="description">Intervall för uppmätt syremättnad (saturation).</items>
+      </items>
+      <items code="at0030">
+        <items id="text">&gt;= 96</items>
+        <items id="description">Syremättnad (saturation) högre än eller lika med 96%. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">94-95</items>
+        <items id="description">Syremättnad (saturation) mellan 94% och 95%. Sätts till 1 poäng.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">92-93</items>
+        <items id="description">Syremättnad (saturation) mellan 92% och 93%. Sätts till 2 poäng.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">&lt;=91</items>
+        <items id="description">Syremättnad (saturation) lägre än eller lika med 91%. Sätts till 3 poäng.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Syrgastillförsel</items>
+        <items id="description">Kategorier för aktiv syrgastillförsel.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Nej</items>
+        <items id="description">Patienten ges ingen syrgastillförsel. Sätts till 0 poäng.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Ja</items>
+        <items id="description">Patienten ges syrgastillförsel. Sätts till 2 poäng.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">&gt;=39,1</items>
+        <items id="description">Kroppstemperatur högre än eller lika med 39,1 grader Celcius. Sätts till 2 poäng.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">&lt;=35,0</items>
+        <items id="description">Kroppstemperatur lägre än eller lika med 35 grader Celsius. Sätts till 3 poäng.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Möjliga felkällor</items>
+        <items id="description">Beskrivning av faktorer och felkällor som kan påverka bedömningen av totalpoängen.</items>
+        <items id="comment">Exempelvis om patienten har KOL.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Kommentar</items>
+        <items id="description">Kommentarer avseende den sammanräknade NEWS-poängen som inte beskrivs i övriga fält.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Tilläggsinformation</items>
+        <items id="description">Plats för att infoga tilläggsinformation som krävs för lokala anpassningar eller anpassning till andra referensmodeller eller formella krav.</items>
+        <items id="comment">Exempelvis lokala informationskrav eller metadata för anpassning till FHIR- eller CIMI-motsvarigheter.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Klinisk riskkategori</items>
+        <items id="description">Riskkategorisering baserad på de fysiologiska parametrarna samt beskrivning av lämplig responsnivå för avdelningen.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Låg</items>
+        <items id="description">Avdelningsbaserade åtgärder.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Låg/medium</items>
+        <items id="description">Brådskande avdelningsbaserade åtgärder.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Medium</items>
+        <items id="description">Brådskande åtgärder.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Hög</items>
+        <items id="description">Akuta åtgärder.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">NEWS (UK RCP)</items>
+        <items id="description">NEWS (National Early Warning Score) on yksinkertainen pisteytysjärjestelmä, jolla saadaan objektiivista tietoa potilaan tilan kliinisestä heikkenemisestä. Tämä versio noudattaa UK Royal College of Physicians -järjestön ohjeita.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tapahtumasarja</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ajankohta</items>
+        <items id="description">Tietty päivämäärä ja/tai kellonaika, joka voi olla määritetty tarkasti jossakin mallissa tai suorituksen aikana.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Systolinen verenpaine</items>
+        <items id="description">Arvoalueluokka potilaan systolisen verenpaineen (SVP) mittausta varten.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Syke</items>
+        <items id="description">Arvoalueluokka potilaan sykkeen mittausta varten.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Hengitystaajuus</items>
+        <items id="description">Arvoalueluokka potilaan hengitystaajuuden (HT) mittausta varten.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Ruumiinlämpö</items>
+        <items id="description">Arvoalueluokka potilaan ruumiinlämmön (lämpö) mittausta varten.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tajunnantaso</items>
+        <items id="description">Potilaan tajunnantason pisteet AVPU-asteikolla.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">&lt;= 40 tai &gt;= 131</items>
+        <items id="description">Mitattu syke on pienempi tai yhtä suuri kuin 40 lyöntiä minuutissa tai suurempi tai yhtä suuri kuin 131 lyöntiä minuutissa; annetaan 3 pistettä.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">111-130</items>
+        <items id="description">Mitattu syke on 111–130 lyöntiä minuutissa; annetaan 2 pistettä.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">41–50 tai 91–110</items>
+        <items id="description">Mitattu syke on 41–50 lyöntiä minuutissa tai 91–110 lyöntiä minuutissa; annetaan 1 piste.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">51-90</items>
+        <items id="description">Mitattu syke on 51–90 lyöntiä minuutissa; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">111-219</items>
+        <items id="description">Mitattu systolinen verenpaine on 111–219 mmHg; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">101-110</items>
+        <items id="description">Mitattu systolinen verenpaine on 101–110 mmHg; annetaan 1 piste.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">91-100</items>
+        <items id="description">Mitattu systolinen verenpaine on 91–100 mmHg; annetaan 2 pistettä.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">&lt;= 90 tai &gt;= 220</items>
+        <items id="description">Mitattu systolinen verenpaine on pienempi tai yhtä suuri kuin 90 mmHg tai suurempi tai yhtä suuri kuin 220 mmHg; annetaan 3 pistettä.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">12-20</items>
+        <items id="description">Mitattu hengitystaajuus on 12–20 hengitystä minuutissa; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">9-11</items>
+        <items id="description">Mitattu hengitystaajuus on 9–11 hengitystä minuutissa; annetaan 1 pistettä.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">21-24</items>
+        <items id="description">Mitattu hengitystaajuus on 21–24 hengitystä minuutissa; annetaan 2 pistettä.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">&lt;= 8 tai &gt;= 25</items>
+        <items id="description">Mitattu hengitystaajuus on pienempi tai yhtä suuri kuin 8 hengitystä minuutissa tai suurempi tai yhtä suuri kuin 25 hengitystä minuutissa; annetaan 3 pistettä.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">36,1-38,0</items>
+        <items id="description">Mitattu ruumiinlämpö on 36,1–38,0 celsiusastetta; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">35,1–36,0 tai 38,1–39,0</items>
+        <items id="description">Mitattu ruumiinlämpö on 35,1–36,0 celsiusastetta tai 38,1–39,0 celsiusastetta; annetaan 1 piste.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">A</items>
+        <items id="description">Potilas on valppaana tai hereillä; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">V, P tai U</items>
+        <items id="description">Potilas reagoi vain puhutteluun, kipuun tai ärsykkeeseen; annetaan 3 pistettä.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Kokonaispisteet</items>
+        <items id="description">NEWS-parametrin osa-alueiden pisteiden summa.</items>
+        <items id="comment">Kokonaispisteet voidaan luoda suorituksen aikana.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Happisaturaatio</items>
+        <items id="description">Arvoalueluokka potilaan happisaturaation mittausta varten.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">&gt;= 96</items>
+        <items id="description">Happisaturaatiotaso on suurempi tai yhtä suuri kuin 96%; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">94-95</items>
+        <items id="description">Happisaturaatiotaso on 94–95 %; annetaan 1 piste.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">92-93</items>
+        <items id="description">Happisaturaatiotaso on 92–93 %; annetaan 2 pistettä.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">&lt;=91</items>
+        <items id="description">Happisaturaatiotaso on pienempi tai yhtä suuri kuin 91 %; annetaan 3 pistettä.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Lisähappi</items>
+        <items id="description">Arvoalueluokka sen mukaan, saako potilas lisähappea.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Ei</items>
+        <items id="description">Potilas ei saa lisähappea; annetaan 0 pistettä.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Kyllä</items>
+        <items id="description">Potilas saa lisähappea; annetaan 2 pistettä.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">&gt;=39,1</items>
+        <items id="description">Ruumiinlämpö on suurempi kuin/yhtä suuri kuin 39,1 celsiusastetta; annetaan 2 pistettä.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">&lt;=35,0</items>
+        <items id="description">Ruumiinlämpö on pienempi kuin/yhtä suuri kuin 35 celsiusastetta; annetaan 3 pistettä.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Sekoittavat tekijät</items>
+        <items id="description">Kuvaus mahdollisista satunnaisista tekijöistä, jotka ovat saattaneet vaikuttaa pistemäärään.</items>
+        <items id="comment">Esimerkki: Potilaalla on keuhkoahtaumatauti.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Kommentti</items>
+        <items id="description">NEWS-kokonaispisteiden kertomusmuodossa olevat lisätiedot, joita ei voida ilmoittaa muissa kentissä.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Laajennus</items>
+        <items id="description">Lisätiedot, joita tarvitaan paikallisen asiayhteyden kirjaamiseksi tai yhtenäistämiseksi muiden viitemallien tai formalismien kanssa.</items>
+        <items id="comment">Esimerkiksi paikalliset tietovaatimukset tai muu metadata, joilla saadaan aikaan vastaavuus vastaavien FHIR- tai CIMI-tietojen kanssa.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Riskiluokka</items>
+        <items id="description">Luokitus, joka kuvaa fysiologisiin parametreihin tarvittavan kliinisen vasteen kiireellisyyttä ja laajuutta. </items>
+      </items>
+      <items code="at0048">
+        <items id="text">Matala</items>
+        <items id="description">Matala riski</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Matala-kohtalainen</items>
+        <items id="description">Matala/kohtalainen riski</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Kohtalainen</items>
+        <items id="description">Kohtalainen riski</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Korkea</items>
+        <items id="description">Korkea riski</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

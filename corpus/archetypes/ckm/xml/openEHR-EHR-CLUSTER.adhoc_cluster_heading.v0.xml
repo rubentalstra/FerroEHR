@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2013-05-14</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Heath Frankel, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Sistine Barretto-Daniels, Ocean Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Adhoc Cluster Heading, Draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. Authored: 2013 May14. Available at: &#xD;
+http://dcm.nehta.org.au/ckm#showArchetype_1013.1.1288_1 (discontinued).</other_details>
+    <other_details id="current_contact">Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">35B9CFE3AB3A2FFD4F16E2004AF2D756</other_details>
+    <other_details id="build_uid">afa31384-01a3-45c3-9e01-f7982b736f04</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Eine generische Clusterüberschrift, welche üblicherweise im Rahmen der Template Modellierung umbenannt wird.</purpose>
+      <keywords>Überschrift</keywords>
+      <keywords>Cluster</keywords>
+      <keywords>Ad hoc</keywords>
+      <keywords>Clusterüberschrift</keywords>
+      <use>Für den Aufbau und die Benennung eines Clusters innerhalb eines definierten Templates.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>En generell rubrik för CLUSTER-arketyper vars namn vanligtvis ändras lokalt på template-nivå.</purpose>
+      <keywords>rubrik</keywords>
+      <keywords>ad hoc</keywords>
+      <use>Används för att skapa och namnge ett CLUSTER i en lokal template.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>A generic cluster header which is normally renamed locally at template level.</purpose>
+      <use>To construct and name a cluster within a local template.</use>
+      <misuse />
+      <copyright>© Australian Digital Health Agency, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Ramona Wellmann, Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">wellmann.ramona@mh-hannover.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Manna Vosta, Åsa Skagerhult, Per Pertoft Nemirovski</author>
+    <author id="organisation">Karolinska University Hospital, Region Östergötland, Region Uppsala</author>
+    <author id="email">manna.vosta@regionstockholm.se, asa.skagerhult@regionostergotland.se, per.pertoft.nemirovski@regionuppsala.se</author>
+  </translations>
+  <uid>
+    <value>2e9d508e-96e0-4636-9369-8531e6dda595</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.adhoc_cluster_heading.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>ITEM</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Adhoc cluster heading</items>
+        <items id="description">A generic cluster heading for contextual renaming within a template.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Content</items>
+        <items id="description">SLOT for Detailed Content.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Adhoc-Clusterüberschrift</items>
+        <items id="description">Eine generische Clusterüberschrift zur kontextuellen Umbenennung innerhalb eines Templates.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Inhalt</items>
+        <items id="description">SLOT für detaillierte Inhalte.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Adhoc-rubrik för CLUSTER</items>
+        <items id="description">En generell rubrik för CLUSTER-arketyper inom en template, vars namn kan bytas utifrån sammanhang.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Innehåll</items>
+        <items id="description">SLOT för detaljerat innehåll.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

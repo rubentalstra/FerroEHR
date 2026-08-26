@@ -1,0 +1,147 @@
+﻿archetype (adl_version=1.4; uid=324008cd-a778-3412-b5f5-0dd397daaf14)
+	openEHR-EHR-OBSERVATION.penetration_aspiration_scale.v0
+
+concept
+	[at0000]	-- Penetration-aspiration scale
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Christian Ghan">
+		["organisation"] = <"The Chris O'Brien Lifehouse at RPA">
+		["email"] = <"christian.ghan@lifehouserpa.org.au">
+		["date"] = <"2012-12-14">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A tool used to quantify the depth to which material passes into the airway, and to qualify if material entering the airway is able to be expelled or is retained.">
+			use = <"For use, usually by speech pathologists, in the assessment of a patient's dysphagia by video-fluoroscopic swallowing studies.">
+			keywords = <"dysphagia", "swallow", "speech", "aspiration">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Rosenbek JC, Robbins JA, Roecker EB, Coyle JL, Wood JL. A penetration-aspiration scale. Dysphagia. 1996 Spring;11(2):93-8. PubMed PMID: 8721066.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"D484571B2C2621449A638EF2CB2A22C6">
+		["build_uid"] = <"ead9f88c-30dd-473c-95cf-917cc46a9eb9">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Penetration-aspiration scale
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Penetration-aspiration scale
+										value matches {
+											1|[local::at0005],
+											2|[local::at0006],
+											3|[local::at0007],
+											4|[local::at0008],
+											5|[local::at0009],
+											6|[local::at0010],
+											7|[local::at0011],
+											8|[local::at0012]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0013] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0014] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Penetration-aspiration scale">
+					description = <"Scale to describe the disordered physiology of a person's swallow.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Penetration-aspiration scale">
+					description = <"Scale to describe penetration and aspiration events.">
+				>
+				["at0005"] = <
+					text = <"Neither penetration nor aspiration">
+					description = <"Material does not enter airway.">
+				>
+				["at0006"] = <
+					text = <"Penetration; above vocal folds; ejected">
+					description = <"Material enters airway, but remains above vocal folds; ejected from airway; no stasis.">
+				>
+				["at0007"] = <
+					text = <"Penetration; above vocal folds; not ejected">
+					description = <"Material remains above vocal folds; visible stasis remains.">
+				>
+				["at0008"] = <
+					text = <"Penetration; contacts vocal folds; ejected">
+					description = <"Material contacts vocal folds, but is ejected; no stasis.">
+				>
+				["at0009"] = <
+					text = <"Penetration; contacts vocal folds; not ejected">
+					description = <"Material contacts vocal folds, and is not ejected; visible stasis remains.">
+				>
+				["at0010"] = <
+					text = <"Aspiration; ejected">
+					description = <"Material passes glottis, but is ejected from airway; no visible subglottic stasis.">
+				>
+				["at0011"] = <
+					text = <"Aspiration; not ejected despite effort">
+					description = <"Material passes glottis, but is not ejected from airway; visible subglottic stasis despite patient's response.">
+				>
+				["at0012"] = <
+					text = <"Aspiration; no effort to eject">
+					description = <"Material passes glottis, and is not ejected; visible subglottic stasis; absent patient response.">
+				>
+				["at0013"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+	>

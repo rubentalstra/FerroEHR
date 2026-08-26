@@ -76,7 +76,7 @@ services:
       FERROEHR__AUTH__OIDC__JWKS_JSON_FILE: /etc/ferroehr/cnf-smart-jwks.json
     volumes:
       - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
-      - ./tools/cnf-runner/party/smart/jwks.json:/etc/ferroehr/cnf-smart-jwks.json:ro
+      - ./docs/conformance/party/smart/jwks.json:/etc/ferroehr/cnf-smart-jwks.json:ro
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_STABLE_PORT:-8082}:8080"
     deploy:

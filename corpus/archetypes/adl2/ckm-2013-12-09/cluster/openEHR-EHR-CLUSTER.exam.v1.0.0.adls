@@ -1,0 +1,126 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics, Australia">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"10/07/2010">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A generic cluster for recording findings on physical examination.">
+			use = <"">
+			keywords = <"examination", "physical">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"7A4C2ADCBED13A3BACDF8182872F37C0">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Examination
+		items matches {
+			CLUSTER[id5] occurrences matches {0..1} matches {	-- Normal statements
+				items matches {
+					ELEMENT[id6] matches {	-- Normal statement
+						value matches {
+							DV_TEXT[id11] 
+						}
+					}
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Clinical description
+				value matches {
+					DV_TEXT[id12] 
+				}
+			}
+			CLUSTER[id9] occurrences matches {0..1} matches {	-- Findings
+				items matches {
+					allow_archetype CLUSTER[id10] matches {	-- Detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+			ELEMENT[id7] matches {	-- Image
+				value matches {
+					DV_MULTIMEDIA[id13] matches {
+						media_type matches {[ac1]}		-- Image (synthesised)
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Examination">
+				description = <"Basic examination cluster for describing findings on physical examination when there is no named focus of examination.">
+			>
+			["id3"] = <
+				text = <"Clinical description">
+				description = <"Textural description of the part examined.">
+			>
+			["id5"] = <
+				text = <"Normal statements">
+				description = <"A group of statements about the normality of the examination.">
+			>
+			["id6"] = <
+				text = <"Normal statement">
+				description = <"A specific statement of normality.">
+			>
+			["id7"] = <
+				text = <"Image">
+				description = <"Drawing or image of the area examined.">
+			>
+			["id9"] = <
+				text = <"Findings">
+				description = <"Clinical findings.">
+			>
+			["id10"] = <
+				text = <"Detail">
+				description = <"More focused examination findings.">
+			>
+			["at1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at2"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at3"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Image (synthesised)">
+				description = <"Drawing or image of the area examined. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/426>
+			["at2"] = <http://openehr.org/id/427>
+			["at3"] = <http://openehr.org/id/429>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at1", "at2", "at3">
+		>
+	>

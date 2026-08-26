@@ -1,0 +1,86 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-INSTRUCTION.request-procedure.v1.0.0
+
+specialize
+	openEHR-EHR-INSTRUCTION.request.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"08/12/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Provide simple and generic details about the request for a procedure to be performed.">
+			use = <"Use to share details about the order or request for a procedure to be performed. This archetype has been designed to provide the core information required for a simple request for most procedures.  If more specific detail is required about the procedure it can be added via CLUSTER archetypes inserted into the Specific Details slot.">
+			keywords = <"request", "refer", "order", "service", "provide">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"A385C7315DE46E986F96E419774E3AB5">
+	>
+
+definition
+	INSTRUCTION[id1.1] matches {	-- Procedure request
+		/activities[id2]/action_archetype_id matches {/openEHR-EHR-ACTION\.procedure\.v1/}
+		/activities[id2]/description[id10]/items matches {
+			before [id136]
+			ELEMENT[id0.146] occurrences matches {0..1} matches {	-- Type of procedure
+				value matches {
+					DV_TEXT[id0.147] 
+				}
+			}
+			allow_archetype CLUSTER[id133] occurrences matches {0..1} matches {
+				include
+					archetype_id/value matches {/.*/}
+			}
+			before [id66]
+			ELEMENT[id0.145] occurrences matches {0..1} matches {	-- Objective
+				value matches {
+					DV_TEXT[id0.148] 
+				}
+			}
+			allow_archetype CLUSTER[id117] occurrences matches {0..1} matches {
+				include
+					archetype_id/value matches {/.*/}
+			}
+		}
+		/protocol[id9]/items matches {
+			allow_archetype CLUSTER[id142] occurrences matches {0..1} matches {
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[id143] occurrences matches {0..1} matches {
+				include
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.145"] = <
+				text = <"Objective">
+				description = <"Details about specific objective or goal to be achieved by procedure.">
+			>
+			["id0.146"] = <
+				text = <"Type of procedure">
+				description = <"*">
+			>
+			["id1.1"] = <
+				text = <"Procedure request">
+				description = <"Request for a procedure to be performed.">
+			>
+		>
+	>

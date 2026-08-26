@@ -1,0 +1,169 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-COMPOSITION.encounter.v1
+
+concept
+	[at0000]	-- Encounter
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ko"] = <
+			language = <[ISO_639-1::ko]>
+			author = <
+				["name"] = <"Seung-Jong Yu">
+				["organisation"] = <"Yonsei FM Clinic">
+				["email"] = <"seungjong.yu@gmail.com">
+			>
+			accreditation = <"Medical Doctor">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Edgardo Vazquez">
+				["organisation"] = <"VinculoMedico">
+			>
+			accreditation = <"Medical Doctor">
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"2005-10-10">
+	>
+	details = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"تسجيل المقابلة على هيئة ملاحظة تقدم الحالة">
+			use = <"">
+			keywords = <"التقدم", "ملاحظة", "المقابلة">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"Registrar una consulta como una nota de evolucion">
+			use = <"">
+			keywords = <"Evolucion", "Notas", "Encuentro", "Consulta">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Record of encounter as a progress note.">
+			use = <"">
+			keywords = <"progress", "note", "encounter">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["ko"] = <
+			language = <[ISO_639-1::ko]>
+			purpose = <"외래기록, 경과기록, 간호기록과 일반적인 노트 등과 같은 환자를 대면한 후 작성하는 기록 ">
+			use = <"">
+			keywords = <"*외래기록(ko)", "*경과기록(ko)", "*간호기록(ko)", "*노트(ko)">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"10250E3AD051C33DB43D2DA76A272E08">
+	>
+
+definition
+	COMPOSITION[at0000] matches {	-- Encounter
+		category matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {[openehr::433]}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT matches {
+				other_context matches {
+					ITEM_TREE[at0001] matches {	-- Tree
+						items cardinality matches {0..*; unordered} matches {
+							allow_archetype CLUSTER[at0002] occurrences matches {0..*} matches {	-- Local context
+								include
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"المقابلة">
+					description = <"مقابلة جنيسة (غير محدودة الملكية) أو بِنْية ملاحظة تقدم حالة المريض">
+				>
+				["at0001"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"*Local context(en)">
+					description = <"*Additional local context.(en)">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Encounter">
+					description = <"Generic encounter or progress note composition.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Local context">
+					description = <"Additional local context.">
+				>
+			>
+		>
+		["es-ar"] = <
+			items = <
+				["at0000"] = <
+					text = <"Consulta">
+					description = <"Composition de consulta generica o notas de evolucion ">
+				>
+				["at0001"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"*Local context(en)">
+					description = <"*Additional local context.(en)">
+				>
+			>
+		>
+		["ko"] = <
+			items = <
+				["at0000"] = <
+					text = <"환자대면">
+					description = <"외래기록, 경과기록, 간호기록와 일반노트와 같은 환자를 대면한 후 작성하는 기록 composition">
+				>
+				["at0001"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"사용자 환경">
+					description = <"추가적인 사용자 환경">
+				>
+			>
+		>
+	>

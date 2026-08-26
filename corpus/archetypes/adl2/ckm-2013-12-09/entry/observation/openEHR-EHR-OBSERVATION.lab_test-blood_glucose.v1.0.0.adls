@@ -1,0 +1,330 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-blood_glucose.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/01/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Recording blood glucose measurements with a full history and state model to allow the patient state to be recorded.
+
+
+">
+			use = <"For BSL measurements, GTTs and following other challenges.">
+			keywords = <"lab", "pathology", "biochemistry", "laboratory", "GTT", "glucose tolerance", "BSL", "blood sugar">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie AEG / Ocean Infomatics", "Sam Heard Ocean Informatics">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"52C1B996A12C2F159FF839326341D9B4">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Blood glucose
+		/data[id2]/events matches {
+			EVENT[id3] occurrences matches {0..1} matches {
+				data matches {
+					ITEM_TREE[id4] matches {
+						items matches {
+							ELEMENT[id79.2] occurrences matches {0..1} matches {	-- Blood glucose
+								value matches {
+									DV_QUANTITY[id0.112] matches {
+										property matches {[at0.114]}
+										[magnitude, units] matches {
+											[{|>=0.0|}, {"mmol/l"}],
+											[{0.0}, {"mg/dl"}]
+										}
+									}
+								}
+							}
+							ELEMENT[id79] 
+						}
+					}
+				}
+				state matches {
+					ITEM_TREE[id0.89] matches {
+						items matches {
+							CLUSTER[id0.90] occurrences matches {0..1} matches {	-- Diet
+								items matches {
+									ELEMENT[id0.91] occurrences matches {0..1} matches {	-- Intake
+										value matches {
+											DV_CODED_TEXT[id0.113] matches {
+												defining_code matches {[ac0.1; at0.95]}		-- Intake (synthesised)
+											}
+										}
+									}
+									ELEMENT[id0.96] occurrences matches {0..1} matches {	-- Duration
+										value matches {
+											DV_DURATION[id0.114] matches {
+												value matches {PDTHMS}
+											}
+										}
+									}
+									ELEMENT[id0.97] occurrences matches {0..1} matches {	-- Description
+										value matches {
+											DV_TEXT[id0.115] 
+										}
+									}
+								}
+							}
+							CLUSTER[id0.98] occurrences matches {0..1} matches {	-- Glucose challenge
+								items matches {
+									ELEMENT[id0.100] occurrences matches {0..1} matches {	-- Dose
+										value matches {
+											DV_QUANTITY[id0.116] matches {
+												property matches {[at0.115]}
+												magnitude matches {|>=0.0|}
+												units matches {"gm"}
+											}
+										}
+									}
+									ELEMENT[id0.101] occurrences matches {0..1} matches {	-- Route
+										value matches {
+											DV_CODED_TEXT[id0.117] matches {
+												defining_code matches {[ac0.2; at0.105]}		-- Route (synthesised)
+											}
+										}
+									}
+									ELEMENT[id0.99] occurrences matches {0..1} matches {	-- Timing
+										value matches {
+											DV_CODED_TEXT[id0.118] matches {
+												defining_code matches {[ac0.3; at0.104]}		-- Timing (synthesised)
+											}
+										}
+									}
+									use_node ELEMENT[id0.119] occurrences matches {0..1} /data[id2]/events[id3]/state[id0.89]/items[id0.90]/items[id0.96]	-- /data[id2]/events[id3]/state[id0.89]/items[Diet]/items[Duration]
+								}
+							}
+							CLUSTER[id0.107] occurrences matches {0..1} matches {	-- Insulin challenge
+								items matches {
+									ELEMENT[id0.110] occurrences matches {0..1} matches {	-- Dose
+										value matches {
+											DV_QUANTITY[id0.120] matches {
+												property matches {[at0.116]}
+												magnitude matches {|>=0.0|}
+												units matches {"U"}
+											}
+										}
+									}
+									ELEMENT[id0.111] occurrences matches {0..1} matches {	-- Route
+										value matches {
+											DV_CODED_TEXT[id0.121] matches {
+												defining_code matches {[ac0.4; at0.113]}		-- Route (synthesised)
+											}
+										}
+									}
+									use_node ELEMENT[id0.122] occurrences matches {0..1} /data[id2]/events[id3]/state[id0.89]/items[id0.98]/items[id0.99]	-- /data[id2]/events[id3]/state[id0.89]/items[Glucose challenge]/items[Timing]
+									use_node ELEMENT[id0.123] occurrences matches {0..1} /data[id2]/events[id3]/state[id0.89]/items[id0.90]/items[id0.96]	-- /data[id2]/events[id3]/state[id0.89]/items[Diet]/items[Duration]
+								}
+							}
+							CLUSTER[id0.108] occurrences matches {0..1} matches {	-- Event
+								items matches {
+									ELEMENT[id0.109] occurrences matches {0..1} matches {	-- Event name
+										value matches {
+											DV_TEXT[id0.124] 
+										}
+									}
+									use_node ELEMENT[id0.125] occurrences matches {0..1} /data[id2]/events[id3]/state[id0.89]/items[id0.98]/items[id0.99]	-- /data[id2]/events[id3]/state[id0.89]/items[Glucose challenge]/items[Timing]
+									use_node ELEMENT[id0.126] occurrences matches {0..1} /data[id2]/events[id3]/state[id0.89]/items[id0.90]/items[id0.96]	-- /data[id2]/events[id3]/state[id0.89]/items[Diet]/items[Duration]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.100"] = <
+				text = <"Dose">
+				description = <"Dose of glucose.">
+			>
+			["id0.101"] = <
+				text = <"Route">
+				description = <"The route of administration of the glucose challenge.">
+			>
+			["at0.103"] = <
+				text = <"Pre-challenge">
+				description = <"The sample was taken prior to the challenge.">
+			>
+			["at0.104"] = <
+				text = <"Post-challenge">
+				description = <"The sample was taken after the challenge.">
+			>
+			["at0.105"] = <
+				text = <"Oral">
+				description = <"The glucose was taken orally.">
+			>
+			["at0.106"] = <
+				text = <"Intravenous">
+				description = <"The glucose was administered intravenously">
+			>
+			["id0.107"] = <
+				text = <"Insulin challenge">
+				description = <"*">
+			>
+			["id0.108"] = <
+				text = <"Event">
+				description = <"An event.">
+			>
+			["id0.109"] = <
+				text = <"Event name">
+				description = <"A name for the event.">
+			>
+			["id0.110"] = <
+				text = <"Dose">
+				description = <"Dose of insulin.">
+			>
+			["id0.111"] = <
+				text = <"Route">
+				description = <"The route of administration of the insulin.">
+			>
+			["at0.112"] = <
+				text = <"Intravenous">
+				description = <"The insulin was administered intravenously.">
+			>
+			["at0.113"] = <
+				text = <"Subcutaneous">
+				description = <"The insulin was administered subcutaneously.">
+			>
+			["id0.90"] = <
+				text = <"Diet">
+				description = <"Description of when the patient has eaten.">
+			>
+			["id0.91"] = <
+				text = <"Intake">
+				description = <"Description of calorific intake.">
+			>
+			["at0.92"] = <
+				text = <"Fasting">
+				description = <"No calorific intake.">
+			>
+			["at0.93"] = <
+				text = <"Post-prandial">
+				description = <"After a meal">
+			>
+			["at0.94"] = <
+				text = <"Pre-prandial">
+				description = <"Before a meal.">
+			>
+			["at0.95"] = <
+				text = <"Random">
+				description = <"Timing is not known.">
+			>
+			["id0.96"] = <
+				text = <"Duration">
+				description = <"The timing of the specimen in relation to the intake.">
+			>
+			["id0.97"] = <
+				text = <"Description">
+				description = <"Description of the intake.">
+			>
+			["id0.98"] = <
+				text = <"Glucose challenge">
+				description = <"Information about a glucose challenge if relevant.">
+			>
+			["id0.99"] = <
+				text = <"Timing">
+				description = <"The relationship of the sample to the challenge.">
+			>
+			["id1.1"] = <
+				text = <"Blood glucose">
+				description = <"The concentration of glucose in the blood.
+">
+			>
+			["id79.2"] = <
+				text = <"Blood glucose">
+				description = <"Concentration of blood glucose in the sample.">
+			>
+			["at0.114"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+			["at0.115"] = <
+				text = <"Mass">
+				description = <"Mass">
+			>
+			["at0.116"] = <
+				text = <"Mass (Units)">
+				description = <"Mass (Units)">
+			>
+			["id0.119"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.122"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.123"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.125"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.126"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac0.1"] = <
+				text = <"Intake (synthesised)">
+				description = <"Description of calorific intake. (synthesised)">
+			>
+			["ac0.2"] = <
+				text = <"Route (synthesised)">
+				description = <"The route of administration of the glucose challenge. (synthesised)">
+			>
+			["ac0.3"] = <
+				text = <"Timing (synthesised)">
+				description = <"The relationship of the sample to the challenge. (synthesised)">
+			>
+			["ac0.4"] = <
+				text = <"Route (synthesised)">
+				description = <"The route of administration of the insulin. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.114"] = <http://openehr.org/id/119>
+			["at0.115"] = <http://openehr.org/id/124>
+			["at0.116"] = <http://openehr.org/id/445>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.92", "at0.93", "at0.94", "at0.95">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at0.105", "at0.106">
+		>
+		["ac0.3"] = <
+			id = <"ac0.3">
+			members = <"at0.103", "at0.104">
+		>
+		["ac0.4"] = <
+			id = <"ac0.4">
+			members = <"at0.112", "at0.113">
+		>
+	>

@@ -1,0 +1,75 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-INSTRUCTION.non_drug_therapy.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+				["organisation"] = <"University of Heidelberg, Central Queensland University">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation von Anweisungen zu nicht-medikamentösen Therapien">
+			use = <"">
+			keywords = <"nicht-medikamentös", "Sauerstoff">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record instructions about non-drug therapy">
+			use = <"">
+			keywords = <"non-drug", "oxygen">
+			misuse = <"">
+		>
+	>
+
+definition
+	INSTRUCTION[id1] matches {	-- Non-drug therapy
+		activities matches {
+			ACTIVITY[id2] occurrences matches {0..1} matches {	-- new activity
+				description matches {
+					allow_archetype ITEM_TREE[id3] occurrences matches {0..1} matches {
+						include
+							archetype_id/value matches {/openEHR-EHR-ITEM_TREE\.gas_administration\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["id1"] = <
+				text = <"nicht-medikamentöse Therapie">
+				description = <"Zur Verschreibung nicht-medikamentöser Therapien">
+			>
+			["id2"] = <
+				text = <"neue Handlung">
+				description = <"*">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Non-drug therapy">
+				description = <"For orders of non-drug therapy">
+			>
+			["id2"] = <
+				text = <"new activity">
+				description = <"*">
+			>
+		>
+	>

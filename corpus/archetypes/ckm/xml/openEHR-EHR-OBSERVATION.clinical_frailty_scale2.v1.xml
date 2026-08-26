@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-01-24</original_author>
+    <original_author id="name">John Tore Valand</original_author>
+    <original_author id="organisation">Helse Vest IKT</original_author>
+    <original_author id="email">john.tore.valand@helse-vest-ikt.no</original_author>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Astrid Askeland, Dips AS, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Hans Flaatten, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Tormod Førland, Dips Front, Norway</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Regional forvaltning EPJ, Helse Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Merete Havn Torland, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Lise Kristin Knutsen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Ian McNicoll, NDS, Scotland</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Dr Paul Miller, NDS, Scotland</other_contributors>
+    <other_contributors>Elisabeth Skaar, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Arild Stangeland, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Clinical Frailty Scale (CFS), Published archetype [Internet]. openEHR Foundation, openEHR Clinical Knowledge Manager [cited: 2022-01-27]. Available from: https://ckm.openehr.org/ckm/archetypes/1013.1.4691&#xD;
+&#xD;
+Rockwood K, Song X, MacKnight C, Bergman H, Hogan DB, McDowell I, Mitnitski A. A global clinical measure of fitness and frailty in elderly people. CMAJ. 2005 Aug 30;173(5):489-95. doi: 10.1503/cmaj.050051. PMID: 16129869; PMCID: PMC1188185. Available from: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1188185/.&#xD;
+&#xD;
+Pulok MH, Theou O, van der Valk AM, Rockwood K. The role of illness acuity on the association between frailty and mortality in emergency department patients referred to internal medicine. Age Ageing. 2020;49(6):1071-1079. &#xD;
+&#xD;
+Rockwood K, Theou O. Using the Clinical Frailty Scale in Allocating Scarce Health Care Resources. Can Geriatr J. 2020:23(3):210-215.&#xD;
+&#xD;
+Clinical Frailty Scale [Internet]. Dalhousie University. Dalhousie University; 2019 [cited 2022 Jan 27]. Available from: https://www.dal.ca/sites/gmr/our-tools/clinical-frailty-scale.html.&#xD;
+&#xD;
+Clinical Frailty Scale [Internet]. Norsk forening for geriatri. Den norske legeforening. Norwegian translation [cited 2021 08.12.21]. Available from: https://www.legeforeningen.no/foreningsledd/fagmed/norsk-forening-for-geriatri/fag/tester-og-registreringsskjemaer/</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">F6634E28D3EA7BFB28AA3177488BA047</other_details>
+    <other_details id="build_uid">0a7a1f2a-70a4-433d-b920-d8ef554c294c</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere vurdering av skrøpelighet i henhold til Clinical Frailty Scale 2.0.</purpose>
+      <keywords>skrøpelighet, geriatrisk, gammel, høy alder, aktivitet, terminal, eldre, aldring, Rockwood, svekket, svekkelse</keywords>
+      <use>Brukes for å registrere vurdering av skrøpelighet i henhold til Clinical Frailty Scale 2.0.&#xD;
+&#xD;
+I 2020 ble CFS revidert (versjon 2.0) med mindre endringer i navn på de ulike gradene og beskrivelsen av disse. Grad 4 ble endret fra fra "Sårbar" til "Lever med svært mild skrøpelighet", og grad 5-8 ble omarbeidet til "Lever med..." henholdsvis mild, moderat, alvorlig og svært alvorlig skrøpelighet.&#xD;
+&#xD;
+openEHR-arketyper er fritt tilgjengelige under en åpen lisens, men det spesifikke innholdet i denne Clinical Frailty Scale-arketypen er opphavsrettslig beskyttet. All bruk av denne arketypen i implementasjoner må gjøres i henhold til vilkår gitt av innehaverne av opphavsretten.&#xD;
+Erklæring om opphavsrett: Clinical Frailty Scale ©2005-2020 Rockwood, Version 2.0(EN). All rights reserved. &#xD;
+Informasjon om opphavsretten: https://www.geriatricmedicineresearch.ca.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the Clinical Frailty Scale (CFS) 2.0 assessment.</purpose>
+      <keywords>frailty, geriatric, old age, activity, end of life, rockwood, elderly, aging</keywords>
+      <use>Use to record the Clinical Frailty Scale (CFS) 2.0 assessment.&#xD;
+&#xD;
+In 2020 the CFS was revised (version 2.0) with minor clarifying edits to the level descriptions and their corresponding labels. Most notably, CFS level 2 changed from "Well" to "Fit", level 4 from "Vulnerable" to "Living with Very Mild Frailty", and levels 5-8 were each restated as "Living with..."and added their respective grades of frailty.&#xD;
+&#xD;
+While openEHR archetypes are all freely available under an open license, the specific content of this Clinical Frailty Scale archetype is copyright protected. Any use of this archetype within implementations must be in compliance with the terms established by the copyright owners.&#xD;
+Copyright statement: Clinical Frailty Scale ©2005-2020 Rockwood, Version 2.0(EN). All rights reserved. &#xD;
+For permission: https://www.geriatricmedicineresearch.ca.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Marit Alice Venheim, Silje Ljosland Bakke, John Tore Valand</author>
+    <author id="organisation">Helse Vest IKT, Helse Vest IKT AS, Helse Bergen</author>
+    <author id="email">marit.alice.venheim@helse-vest-ikt.no, silje.ljosland.bakke@helse-vest-ikt.no, john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>793d8a74-be1f-4a25-9799-d8a686e31207</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.clinical_frailty_scale2.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0034</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0035</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0036</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0037</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>5</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0038</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>6</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0039</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>7</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0040</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>8</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0041</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>9</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0042</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0015</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Clinical Frailty Scale (CFS 2.0)</items>
+        <items id="description">An assessment scale used to screen for frailty and to broadly stratify degrees of fitness and frailty in an individual over the age of 65.</items>
+        <items id="comment">Also known as the Rockwood Clinical Frailty Scale.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any point in time event</items>
+        <items id="description">Default, unspecified point in time event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Assessment</items>
+        <items id="description">Assessed level of frailty.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">ItemTree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Very fit</items>
+        <items id="description">People who are robust, active, energetic and motivated. They tend to exercise regularly and are among the fittest for their age.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Fit</items>
+        <items id="description">People who have no active disease symptoms but are less fit than category 1. Often, they exercise or are very active occasionally, e.g., seasonally.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Managing well</items>
+        <items id="description">People whose medical problems are well controlled, even if occasionally symptomatic, but often are not regularly active beyond routine walking.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Living with very mild frailty</items>
+        <items id="description">Previously 'Vulnerable', this category marks early transition from complete independence. While not dependent on others for daily help, often symptoms limit activities. A common complaint is being 'slowed up' and/or being tired during the day.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Living with mild frailty</items>
+        <items id="description">People who often have more evident slowing, and need help with high order instrumental activities of daily living (finances, transportation, heavy housework). Typically, mild frailty progressively impairs shopping and walking outside alone, meal preparation, medications and begins to restrict light housework.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Living with moderate frailty</items>
+        <items id="description">People who need help with all outside activities and with keeping house. Inside, they often have problems with stairs and need help with bathing and might need minimal assistance (cuing, standby) with dressing.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Living with severe frailty</items>
+        <items id="description">Completely dependent for personal care, from whatever cause (physical or cognitive). Even so, they seem stable and not at high risk of dying (within ~6 months).</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Living with very severe frailty</items>
+        <items id="description">Completely dependent for personal care and approaching end of life. Typically, they could not recover even from a minor illness.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Terminally Ill</items>
+        <items id="description">Approaching the end of life. This category applies to people with a life expectancy &lt;6 months, who are not otherwise living with severe frailty. (Many terminally ill people can still exercise until very close to death).</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Clinical Frailty Scale (CFS 2.0)</items>
+        <items id="description">Clinical Frailty Scale er en vurderingsskala for å gradere skrøpelighet hos de over 65 år ved å kartlegge graden av kondisjon og skrøpelighet.</items>
+        <items id="comment">Også kjent som Rockwood Clinical Frailty Scale.&#xD;
+</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert tidspunkthendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Vurdering</items>
+        <items id="description">Vurdering av skrøpelighetsnivå.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">ItemTree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Veldig sprek</items>
+        <items id="description">Personer som er robuste, aktive, energiske og motiverte. De trener gjerne regelmessig, og er blant de sprekeste i sin aldersgruppe.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Sprek</items>
+        <items id="description">Personer som ikke har aktive sykdomssymptomer, men er mindre spreke enn kategori 1. De kan ofte trene eller være veldig aktive av og til, f.eks. sesongbasert.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Klarer seg bra</items>
+        <items id="description">Personer med velkontrollerte medisinske problemer, selv om de kan ha symptomer av og til. De er ikke regelmessig aktive utover vanlig gange.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Lever med svært mild skrøpelighet</items>
+        <items id="description">Tidligere "sårbar". Denne kategorien markerer en overgang fra å være helt selvhjulpen. Selv om de ikke er avhengig av daglig hjelp fra andre, vil symptomer begrense aktivitet. De klager ofte over at de er "langsomme" og/eller blir slitne/trøtte ila. dagen.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Lever med mild skrøpelighet</items>
+        <items id="description">Disse er mer tydelig langsomme, og trenger hjelp til komplekse aktiviteter i dagliglivet (personlig økonomi, transport, tungt husarbeid). Vanligvis vil mild skrøpelighet i økende grad føre til problemer med å handle eller gå utenfor hjemmet alene, lage mat, håndtere medisiner, og begynner å begrense lett husarbeid.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Lever med moderat skrøpelighet</items>
+        <items id="description">Personer som må ha hjelp til alle aktiviteter utendørs og med å stelle hjemmet. Innendørs har de ofte problemer med trapper, trenger hjelp til bading/dusj og kan trenge litt hjelp til å kle på seg (veiledning, tilsyn).</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Lever med alvorlig skrøpelighet</items>
+        <items id="description">Helt avhengige av hjelp til personlig stell uansett årsak (fysisk eller kognitiv). Likevel fremstår de som stabile uten høy risiko for å dø (innen ~6 måneder).</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Lever med svært alvorlig skrøpelighet</items>
+        <items id="description">Helt avhengige av hjelp til personlig stell og nærmer seg livets slutt. Vanligvis vil de ikke komme seg igjen selv etter mild sykdom.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Terminalt syk</items>
+        <items id="description">Nærmer seg livets slutt. I denne kategorien inngår personer med en forventet levetid &lt;6 måneder uten at de lever med alvorlig skrøpelighet. (Mange terminalt syke pasienter kan være fysisk aktive inntil de er svært nær døden).</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

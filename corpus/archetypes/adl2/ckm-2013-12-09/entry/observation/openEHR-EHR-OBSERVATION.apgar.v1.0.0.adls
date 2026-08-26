@@ -1,0 +1,1496 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.apgar.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["fa"] = <
+			language = <[ISO_639-1::fa]>
+			author = <
+				["name"] = <"Shahla Foozonkhah">
+				["organisation"] = <"Ocean Informatics">
+				["email"] = <"Shahla.foozonkhah@oceanInformatics.com">
+			>
+		>
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Jasmin Buck, Sebastian Garde, Thilo Schuler">
+				["organisation"] = <"University of Heidelberg, Central Queensland University, Ocean Informatics">
+			>
+		>
+		["nl"] = <
+			language = <[ISO_639-1::nl]>
+			author = <
+				["name"] = <"Marja Buur">
+				["organisation"] = <"Medisch Centrum Alkmaar">
+				["email"] = <"m.buur-krom@mca.nl">
+			>
+			accreditation = <"Erna Vreeke">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Jussara Rötzsch">
+				["organisation"] = <"OpenEHR Foundation">
+			>
+			accreditation = <"Medical Doctor,  Psychiatrist, Clinical Modeler, OpenEHR Director, Coordinator of  WG ehealth infostructure of brazilian e-health program">
+		>
+		["es-cl"] = <
+			language = <[ISO_639-1::es-cl]>
+			author = <
+				["name"] = <"Sergio Carmona">
+			>
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			author = <
+				["name"] = <"Igor Lizunov">
+				["email"] = <"i.lizunov@infinnity.ru">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2004-05-18">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Records the Apgar score as a simple, repeatable method to document the state of the newborn infant immediately after birth.
+The root time of the event series is always birth.">
+			use = <"Allows recording of an assessment of the state of a neonate explicitly as 1, 2, 3, 5 and/or 10 minute events after birth, plus additional events as required. 
+Usual practice is to document the Apgar score at 1 and 5 minutes; further scores can be recorded as clinically indicated.  It is possible to record the Apgar score at any time after birth using this archetype.
+Common clinical practice is to record all 5 parameters plus the total, however this archetype allows any partial information to be recorded, if that is all that is available eg from historical data.
+If the total is to be calculated, it is necessary for all 5 ordinal values to be recorded.  The total is the sum of the five ordinal values (min 0, max 10).
+
+It is recognised that mnemonic learning aid for APGAR is commonly taught.  For example, in English: A for Appearance (skin color), P for Pulse (heart rate), G for Grimace (reflex irritability), A for Activity (muscle tone), and R for Respiration.  As this is not universally applicable for all languages, it is suggested that this mnemonic can be applied by renaming the data elements within templates if desired for a specific clinical scenario.">
+			keywords = <"newborn", "index", "score", "birth", "infant", "neonate", "assessment">
+			misuse = <"Partially complete score and add the 5 to give the total values​​.">
+		>
+		["es-cl"] = <
+			language = <[ISO_639-1::es-cl]>
+			purpose = <"Registrar el índice del Apgar o la valoración del recién nacido. El tiempo inicial de medida de la serie de eventos es siempre la hora de nacimiento.">
+			use = <"Permite registrar el bienestar del neonato al 1,2,5 y o 10 minutos después del nacimiento. Se puede registrar sólo el total - si es todo lo que está disponible - aúnque se deben completar los cinco valores númericos para que pueda ser calculado el total.  El total es la suma de los cinco valores númericos (el mínimo 0, el máximo 10).">
+			keywords = <"score", "apgar", "index", "recién nacido">
+			misuse = <"Completar el score parcialmente y no sumar los 5 valores para dar el total.">
+		>
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation des Apgar Wertes als eine einfache, nachvollziehbare Methode zur Dokumentation des Status eines Neugeborenen direkt nach der Geburt. Der zu Grunde liegende Zeitpunkt der Ereignisreihe ist immer die Geburt.">
+			use = <"Ermöglicht die Dokumentation des Wohlergehens des Säuglings 1, 2, 3, 5 und/oder 10 Minuten nach der Geburt, sowie zu anderen Zeitpunkten bei Bedarf. 
+Normale Praxis ist es, den Apgar Wert 1 und 5 Minuten nach der Geburt zu dokumentieren, weitere Werte können je nach klinischer Indikation ergänzt werden. Mit diesem Archetype ist es möglich, den Apgar Wert zu jedem Zeitpunkt nach der Geburt zu dokumentieren.
+Normale klinische Praxis ist es, alle 5 Parameter und den Gesamtwert zu dokumentieren, jedoch erlaubt dieser Archetyp die Dokumentation einer beliebigen Untermenge, wenn z.B. aus Altdaten nicht mehr verfügbar ist.
+Wenn der Gesamtwert errechnet werden soll, müssen Werte für alle 5 Komponenten dokumentiert werden. Der Geamtwert ergibt sich dann aus der Summe der fünf Einzelwerte (minimal: 0, maximal: 10),
+
+Häufig werden mnemonische Merkhilfen für APGAR gelehrt. Z.B. in Englisch: A für Appearance (Hautfarbe), P für Pulse (Herzfrequenz), G für Grimace (Reflexauslösbarkeit), A für Activity (Muskeltonus), und R für Respiration (Atmung). Da dies nicht generell in allen Sprachen anwendbar ist, wird empfohlen, dass solche Merkhilfen durch Umbenennung innerhalb von Templates erstellt werden können, wenn dies für ein bestimmtes klinisches Szenario erwünscht ist.">
+			keywords = <"Neugeborenes", "Index", "Score", "Geburt", "Säugling", "neonatal", "Beurteilung">
+			misuse = <"Completar el score parcialmente y no sumar los 5 valores para dar el total.">
+		>
+		["fa"] = <
+			language = <[ISO_639-1::fa]>
+			purpose = <"برای ثبت نمره آپگار به عنوان روشی ساده و قابل تکرار در اسناد حالت نوزاد بلافاصله بعد از تولد بکار می رود
+زمان اصلی سری رویدادها همیشه زمان تولد است ">
+			use = <" ثبت ارزیابی حالت نوزاد را بطور آشکار در دقایق یک ، دو ، سه و پنج و یا ده بعد تولد بعلاوه رویدادهای بیشتر در صورت نیاز را امکان پذیر می کند
+عملکرد معمول ثبت نمره آپگار در دقایق یک و پنج است ، نمرات بیشتر را می توان در صورت نیاز بالینی می توان ثبت نمود با این الگو ساز ثبت نمره آپگار در عر لحظه بعد از تولد امگان پذیر است
+عملکرد مشترک بالینی ثبت کلیه پنج پارامتر به علاوه کل است اما در صورتی که همه اطلاعات در دسترس باشند، این الگو ساز امکان ثبت هر گونه اطلاعات جزیی را امکان پذیر می کند به عنوان مثال داد های بیمارستانی
+در صورتی که کل نمره باید محاسبه شود باید کلیه ارزشها ی ترتیبی ثبت شوند . کل مجموع پنج ارزش ترتیبی حداقل صفرو حداکثر ده می باشد
+مشحص شده است که یادگیری حافظه ای آپکار معمولا تدریس می شودبرای مثال در انگلیس حرف \"ا\" برای ظاهر (رنگ پوست)و حرف \"پ\" برای نبض (میزان قلبی) ، حرف \"جی \" برای شکلک(رفلکس تحریک پذیری) ، حرف \"ا\" برای فعالیت (تون عضلانی ) و  حرف \"ر\" برای تنفس استفاده می شود.گرچه این مورد برای تمام زبانها و بطور کلی قابل کاربرد نیست ، پیشنهاد می شود که  در صورت تمایل  در سناریوهای بالینی خاص ،یادگیری حافظه ای می تواند با نامگذاری مجدد عناصر داده ای در داخل الگو بکار رود">
+			keywords = <"تازه بدنیا آمده", "شاخص", "نمره", "تولد", "شیر خوار", "نوزاد", "ارزیابی">
+			misuse = <"Completar el score parcialmente y no sumar los 5 valores para dar el total.">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"تسجيل حرز أبغار كطريقة بسيطة متكررة لتوثيق حالة الرضيع حديث الولادة بعد الولادة/ الوضع مباشرة.
+الوقت الجذري لهذه السلسة من الوقائع هي دائما الولادة/الوضع">
+			use = <"يسمح بتسجيل تقييم حالة حديث الولادة بشكل صريح عند وقائع زمنية بالتحديد هي 1, 2, 3, 5 و/أو 10 دقائق بعد الولادة/الوضع, بالإضافة إلى أي وقائع إضافية حسب الحاجة.
+
+تتضمن الممارسة المعتادة تسجيل حرز أبغار عند 1 و 5 دقائق, و يمكن تسجيل أحراز أخرى حسب الحاجة السريرية. و من الممكن تسجيل حرز أبغار عند أي نقطة زمنية بعد الولادة باستخدام هذا النموذج.
+
+تقتضي الممارسة السريرية المعتادة تسجيل الـ 5 معايير بالإضافة إلى الإجمالي, إلا أن هذا النموذج يسمح بتسجيل أي معلمات جزئية, إذا كان هذا هو المتاح, مثل التسجيل من بيانات تاريخية.
+
+إذا كان لابد من حساب الإجمالي, فإنه من الضروري لجميع الـ 5 قيم أن يتم تسجيلها. الإجمالي هو مجموع القيم المنفردة الخمسة - الحد الأدنى هو 0 و الحد الأقصى هو 10
+
+و من المعروف أن كلمة أبغار تضم الأحرف الأولى للمعايير التي يتم قياسها - باللغة الإنجليزية. و هي تكافئ المظهر (لون الجلد/البشرة), و النبض (معدل القلب), و التكشيرة (التوتر الانعكاسي) و النشاط (توتر العضلات) و التنفس.
+و حيث إن ذلك ليس قابلا للتطبيق حرفيا على اللغات الأخرى, فينبغي تطبيق هذا الاختصار بإعادة تسمية العناصر في داخل القوالب إذا كان من المرغوب في سيناريو سريري مُعيَّن.
+">
+			keywords = <"حديث الولادة", "معامل", "الحرز", "الولادة/الوضع", "الرضيع", "حديث الولادة", "تقييم">
+			misuse = <"Completar el score parcialmente y no sumar los 5 valores para dar el total.">
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			purpose = <"Запись оценки по шкале Апгар - простой, повторяемый метод оценки состояния новорожденного сразу после рождения.
+Первая оценка производится сразу после рождения, далее может быть серия повторных.">
+			use = <"Позволяет записывать состояние новорожденного по шкале Апгар  на 1, 2, 3, 4, 5 и / или 10 минуту после рождения, плюс дополнительно в более поздние сроки, если требуется
+Обычно практикуется документирование состояния новорожденного по Апгар на 1 и 5 минуте, друге оценки могут быть записаны по клиническим показаниям.
+Этот архетип позволяет записывать оценку по шкале Апгар в любое время после рождения.
+В общеклинической практике записывают 5 параметров плюс общую оценку, однако этот архетип позволяет вносить информацию частичное, если требуется, для формирования истории данных.
+Если общая оценка считается, то необходимо записать все 5 обычно используемых признаков. Общая оценка получается суммированием 5 обычных значений (мин 0, макс 10).">
+			keywords = <"новорожденный", "оценка", "балл", "младенец", "оценка состояния">
+			misuse = <"Completar el score parcialmente y no sumar los 5 valores para dar el total.">
+		>
+		["nl"] = <
+			language = <[ISO_639-1::nl]>
+			purpose = <"Registreren van de Apgar score; een eenvoudige, te herhalen score, om de toestand van de pasgeborene onmiddelijk na de geboorte te documenteren.">
+			use = <"Staat registratie toe van de beoordeling van de toestand van een pasgeborene, op 1, 2, 3, 5, en/of 10 minuten na de geboorte, plus toegevoegde gebeurtenissen, indien gewenst.
+Gewoonlijk wordt de Apgar score na 1 en 5 minuten gedaan, meerdere scores kunnen geregistreerd worden als dat klinisch geïndiceerd is. Het is bij gebruik van dit archetype mogelijk de Apgar score op ieder gewenst moment na de geboorte te registreren.
+Algemeen klinische praktijk is om alle 5 parameters plus het totaal te registreren, maar in dit archtype kan iedere gedeeltelijke informatie opgeslagen worden, dat beschikbaar is in b.v. historische data. Als het totaal berekend wordt, is het noodzakelijk dat alle 5 parameters als waarde geregistreerd worden. Het totaal is de som van de 5 waardes (min 0, max 10).
+Erkend wordt dat er gewoonlijk een ezelsbruggetje word gebruikt bij het aanleren van de Apgar score. Bijvoorbeeld: Appearance (kleur), Pulse (hartslag), Grimace (reactie op prikkels), Activity (spiertonus) en Respiration (ademhaling). Dit is niet universeel bruikbaar voor alle talen, gesuggereerd wordt dat dit geheugensteuntje kan worden toegepast door het hernoemen van de data elementen binnen templates, indien gewenst voor een specifiek klinisch scenario.">
+			keywords = <"pasgeborene", "index", "score", "geboorte", "kind", "neonaat", "beoordeling", "baby">
+			misuse = <"Completar el score parcialmente y no sumar los 5 valores para dar el total.">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Registra a escala de Apgar como um método simples e reproduzível de documentar o estado de saúde do recém-nato imediatamente após o nascimento">
+			use = <"Permite o registro de uma avaliação do estado de saúde de um recém-nascido explicitamente em eventos a 1, 2, 3, 5 e/ou 10 minutos depois do nascimento, e outros eventos adicionais se requeridos.
+Geralmente se documenta os escores obtidos nos primeiro e quinto minutos na escala de Apgar, os demais podem ser registrados se tiver indicação clínica. É possível registrar o escore Apgar a qualquer tempo após o nascimento usando esse arquétipo.
+A prática clínica comum é registrar todos os cinco parâmetros, mais o resultado global, entretanto esse arquétipo permite que qualquer informação parcial seja registrada, se for essa a única informação disponível, por exemplo, no histórico do paciente.
+O total só pode ser calculado se os cinco valores ordinais forem registrados. O total é a soma dos cinco valores ordinais (min0, max 10).
+
+Se reconhece que uma ajuda mnemônica para aprender a interpretar o escore Apgar é comumente ensinada. Em Português, por exemplo: A para Aparência (cor da pele), P para pulso ( frequência cardíaca), G para Contração do rosto (grimace-fr); A para atividade (tônus muscular) e R pra Respiração. Embora não seja aplicável em todas as línguas, se sugere que se possa utilizar esse mnemônico para renomear os elementos de dados dentro dos templates se desejado para um cenário clínico específico.">
+			keywords = <"*recém-nascido(s), recém-nato(s)", "*índice", "*escore, escala", "*nascimento(s),", "*bebê(s)", "*neonato(s)", "*avaliação(ões)">
+			misuse = <"Escore parcialmente completado e adicionar o 5 para obter o valor total.">
+		>
+	>
+	other_contributors = <"Paul Donaldson, Nursing Informatics Australia, Australia", "Sebastian Garde, Ocean Informatics, Germany (Editor)", "Anneke Goossen, Results 4 Care, Netherlands", "Anne Harbison, CPCER, Australia", "Sam Heard, Ocean Informatics, Australia", "Omer Hotomaroglu, Turkey", "Pieter Hummel, Medisch Centrum Alkmaar, Netherlands", "Andrew James, University of Toronto, Canada", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	references = <
+		["1"] = <"Apgar V.  A proposal of a New Method of Evaluation of the Newborn Infant. Curr Res Anesth Analg.  1953 Jul-Aug;32(4):260-7.">
+		["2"] = <"Apgar V, Holaday DA, James LS, Weisbrod IM, and Berrien C.  Evaluation of the newborn infant; second report.  J Am Med Assoc.  1958 Dec 13;168(15):1985-8.">
+		["3"] = <"Apgar V.  The newborn (Apgar) scoring system.  Pediatr Clin North Am. 1966 Aug;13(3):645-50.">
+		["4"] = <"Whaley LF, Wong DL (1979).  Nursing Care of Infants and Children.  St. Louis, Toronto, London, The C.V. Mosby Company.">
+		["5"] = <"http://en.wikipedia.org/wiki/Apgar_score">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"372512F41A8EE08D313FA66BA2AF3039">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Apgar score
+		data matches {
+			HISTORY[id3] matches {
+				events matches {
+					POINT_EVENT[id4] occurrences matches {0..1} matches {	-- 1 minute
+						offset matches {
+							DV_DURATION[id39] matches {
+								value matches {PT1M}
+							}
+						}
+						data matches {
+							ITEM_LIST[id2] matches {
+								items matches {
+									ELEMENT[id10] occurrences matches {0..1} matches {	-- Respiratory effort
+										value matches {
+											DV_ORDINAL[id40] matches {
+												[value, symbol] matches {
+													[{0}, {[at11]}],
+													[{1}, {[at12]}],
+													[{2}, {[at13]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Heart Rate
+										value matches {
+											DV_ORDINAL[id41] matches {
+												[value, symbol] matches {
+													[{0}, {[at7]}],
+													[{1}, {[at8]}],
+													[{2}, {[at9]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id14] occurrences matches {0..1} matches {	-- Muscle tone
+										value matches {
+											DV_ORDINAL[id42] matches {
+												[value, symbol] matches {
+													[{0}, {[at15]}],
+													[{1}, {[at16]}],
+													[{2}, {[at17]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id18] occurrences matches {0..1} matches {	-- Reflex irritability
+										value matches {
+											DV_ORDINAL[id43] matches {
+												[value, symbol] matches {
+													[{0}, {[at19]}],
+													[{1}, {[at20]}],
+													[{2}, {[at21]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id22] occurrences matches {0..1} matches {	-- Skin colour
+										value matches {
+											DV_ORDINAL[id44] matches {
+												[value, symbol] matches {
+													[{0}, {[at23]}],
+													[{1}, {[at24]}],
+													[{2}, {[at25]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id26] occurrences matches {0..1} matches {	-- Total
+										value matches {
+											DV_COUNT[id45] matches {
+												magnitude matches {|0..10|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					POINT_EVENT[id27] occurrences matches {0..1} matches {	-- 2 minute
+						offset matches {
+							DV_DURATION[id46] matches {
+								value matches {PT2M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id47] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id28] occurrences matches {0..1} matches {	-- 3 minute
+						offset matches {
+							DV_DURATION[id48] matches {
+								value matches {PT3M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id49] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id29] occurrences matches {0..1} matches {	-- 5 minute
+						offset matches {
+							DV_DURATION[id50] matches {
+								value matches {PT5M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id51] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id32] occurrences matches {0..1} matches {	-- 10 minute
+						offset matches {
+							DV_DURATION[id52] matches {
+								value matches {PT10M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id53] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					EVENT[id38] matches {	-- Any event
+						data matches {
+							use_node ITEM_LIST[id54] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[id30] matches {
+				items matches {
+					ELEMENT[id31] occurrences matches {0..1} matches {	-- Notes on measurement
+						value matches {
+							DV_TEXT[id55] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Apgar score">
+				description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle tone and skin colour.">
+			>
+			["id4"] = <
+				text = <"1 minute">
+				description = <"Apgar score 1 minute after birth.">
+			>
+			["id6"] = <
+				text = <"Heart Rate">
+				description = <"Recording of the infant's heart rate.">
+			>
+			["at7"] = <
+				text = <"Absent">
+				description = <"No heart beat is seen, felt or heard.">
+			>
+			["at8"] = <
+				text = <"<100 beats per minute">
+				description = <"Heart rate less than 100 beats per minute.">
+			>
+			["at9"] = <
+				text = <"≥100 beats per minute">
+				description = <"Heart rate greater than or equal to 100 beats per minute.">
+			>
+			["id10"] = <
+				text = <"Respiratory effort">
+				description = <"Observation of the infant's respiratory effort.">
+			>
+			["at11"] = <
+				text = <"Absent">
+				description = <"No effort to breath.">
+			>
+			["at12"] = <
+				text = <"Weak or irregular">
+				description = <"Some effort to breath, moving chest.">
+			>
+			["at13"] = <
+				text = <"Normal">
+				description = <"Breathing normally or crying.">
+			>
+			["id14"] = <
+				text = <"Muscle tone">
+				description = <"Observation of the infant's muscle tone.">
+			>
+			["at15"] = <
+				text = <"Limp or flaccid">
+				description = <"No spontaneous movement.">
+			>
+			["at16"] = <
+				text = <"Reduced tone">
+				description = <"Some flexion of extremities.">
+			>
+			["at17"] = <
+				text = <"Normal tone">
+				description = <"Normal, vigorous movements.">
+			>
+			["id18"] = <
+				text = <"Reflex irritability">
+				description = <"Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter.">
+			>
+			["at19"] = <
+				text = <"No response">
+				description = <"No response to stimulation.">
+			>
+			["at20"] = <
+				text = <"Reduced response">
+				description = <"Grimace or feeble cry when stimulated.">
+			>
+			["at21"] = <
+				text = <"Normal response">
+				description = <"Grimace, sneeze, cough or pulls away when stimulated.">
+			>
+			["id22"] = <
+				text = <"Skin colour">
+				description = <"Observation of the skin colour of the infant.">
+			>
+			["at23"] = <
+				text = <"Completely blue">
+				description = <"Body and extremities are blue.">
+			>
+			["at24"] = <
+				text = <"Body pink; extremities blue">
+				description = <"Body is pink; extremities are blue.">
+			>
+			["at25"] = <
+				text = <"Completely pink">
+				description = <"Body and extremities are pink; no cyanosis.">
+			>
+			["id26"] = <
+				text = <"Total">
+				description = <"The sum of the 5 ordinal scores for each component parameter.">
+			>
+			["id27"] = <
+				text = <"2 minute">
+				description = <"Apgar score 2 minutes after birth.">
+			>
+			["id28"] = <
+				text = <"3 minute">
+				description = <"Apgar score 3 minutes after birth.">
+			>
+			["id29"] = <
+				text = <"5 minute">
+				description = <"Apgar score 5 minutes after birth.">
+			>
+			["id31"] = <
+				text = <"Notes on measurement">
+				description = <"Notes on measurement of the Apgar score.">
+			>
+			["id32"] = <
+				text = <"10 minute">
+				description = <"Apgar score 10 minutes after birth.">
+			>
+			["id38"] = <
+				text = <"Any event">
+				description = <"Apgar score at any additional time, as required.">
+			>
+			["ac1"] = <
+				text = <"Respiratory effort (synthesised)">
+				description = <"Observation of the infant's respiratory effort. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Heart Rate (synthesised)">
+				description = <"Recording of the infant's heart rate. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Muscle tone (synthesised)">
+				description = <"Observation of the infant's muscle tone. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Reflex irritability (synthesised)">
+				description = <"Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Skin colour (synthesised)">
+				description = <"Observation of the skin colour of the infant. (synthesised)">
+			>
+		>
+		["es-cl"] = <
+			["id1"] = <
+				text = <"*Apgar score(en)">
+				description = <"*Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle tone and skin colour.(en)">
+			>
+			["id4"] = <
+				text = <"*1 minute(en)">
+				description = <"*Apgar score 1 minute after birth(en)">
+			>
+			["id6"] = <
+				text = <"Frecuencia cardíaca">
+				description = <"Valoración de la función cardíaca en el recién nacido.">
+			>
+			["at7"] = <
+				text = <"Sin latido cardíaco">
+				description = <"No presenta latidos cardíacos (palpación en la base del cordón umbilical).">
+			>
+			["at8"] = <
+				text = <"Menos de 100 latidos por minuto">
+				description = <"Frecuencia cardíaca menor a 100 latidos por minuto.">
+			>
+			["at9"] = <
+				text = <"Mayor o igual a 100 latidos por minutos">
+				description = <"Frecuencia cardíaca mayor o igual a 100 latidos por minuto.">
+			>
+			["id10"] = <
+				text = <"Respiración">
+				description = <"Valoración del esfuerzo respiratorio del neonato.">
+			>
+			["at11"] = <
+				text = <"Sin esfuerzo">
+				description = <"Sin esfuerzo respiratorio.">
+			>
+			["at12"] = <
+				text = <"Esfuerzo moderado">
+				description = <"Esfuerzo respiratorio debil e irregular.">
+			>
+			["at13"] = <
+				text = <"Llorando">
+				description = <"Llorando o respirando normalmente.">
+			>
+			["id14"] = <
+				text = <"*Muscle tone(en)">
+				description = <"*Observation of the infant's muscle tone(en)">
+			>
+			["at15"] = <
+				text = <"Flacido">
+				description = <"Flacido y sin movimientos espontáneos.">
+			>
+			["at16"] = <
+				text = <"*Reduced tone(en)">
+				description = <"*Some flexion of extremities(en)">
+			>
+			["at17"] = <
+				text = <"*Normal tone(en)">
+				description = <"*Normal, vigorous movements(en)">
+			>
+			["id18"] = <
+				text = <"*Reflex irritability(en)">
+				description = <"*Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter.(en)">
+			>
+			["at19"] = <
+				text = <"Ninguna respuesta a la aspiración de la vía aérea ">
+				description = <"Ninguna mueca o respuesta a la aspiración de la vía aérea.">
+			>
+			["at20"] = <
+				text = <"Mueca durante aspiración de la vía aérea">
+				description = <"Sólo mueca como reacción a la aspiración de la vía aérea.">
+			>
+			["at21"] = <
+				text = <"Mueca y tos/estornudo durante la aspiración de la vía aérea">
+				description = <"Mueca y tos, estornudo o gag como respuesta a la aspiración de la vía aérea.">
+			>
+			["id22"] = <
+				text = <"*Skin colour(en)">
+				description = <"*Observation of the skin colour of the infant(en)">
+			>
+			["at23"] = <
+				text = <"*Completely blue(en)">
+				description = <"*Body and extremities are blue(en)">
+			>
+			["at24"] = <
+				text = <"*Body pink; extremities blue(en)">
+				description = <"*Body is pink; extremities are blue(en)">
+			>
+			["at25"] = <
+				text = <"*Completely pink(en)">
+				description = <"*Body and extremities are pink; no cyanosis(en)">
+			>
+			["id26"] = <
+				text = <"Total">
+				description = <"El total es la suma de los puntajes de cada parámetro.">
+			>
+			["id27"] = <
+				text = <"*2 minute(en)">
+				description = <"*Apgar score 2 minutes after birth(en)">
+			>
+			["id28"] = <
+				text = <"*3 minute(en)">
+				description = <"*Apgar score 3 minutes after birth(en)">
+			>
+			["id29"] = <
+				text = <"*5 minute(en)">
+				description = <"*Apgar score 5 minutes after birth(en)">
+			>
+			["id31"] = <
+				text = <"Notas de medición ">
+				description = <"Notas sobre la medida del Apgar.">
+			>
+			["id32"] = <
+				text = <"*10 minute(en)">
+				description = <"*Apgar score 10 minutes after birth(en)">
+			>
+			["id38"] = <
+				text = <"*Any event(en)">
+				description = <"*Apgar score at any additional time, as required.(en)">
+			>
+			["ac1"] = <
+				text = <"Respiración (synthesised)">
+				description = <"Valoración del esfuerzo respiratorio del neonato. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Frecuencia cardíaca (synthesised)">
+				description = <"Valoración de la función cardíaca en el recién nacido. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"*Muscle tone(en) (synthesised)">
+				description = <"*Observation of the infant's muscle tone(en) (synthesised)">
+			>
+			["ac4"] = <
+				text = <"*Reflex irritability(en) (synthesised)">
+				description = <"*Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter.(en) (synthesised)">
+			>
+			["ac5"] = <
+				text = <"*Skin colour(en) (synthesised)">
+				description = <"*Observation of the skin colour of the infant(en) (synthesised)">
+			>
+		>
+		["de"] = <
+			["id1"] = <
+				text = <"Apgar-Score">
+				description = <"Klinischer Score, abgeleitet von der Beurteilung des Atemantriebs, Herzfrequenz, Reflexauslösbarkeit, Muskeltonus und Hautfarbe.">
+			>
+			["id4"] = <
+				text = <"1 Minute">
+				description = <"Apgar-Score 1 Minute nach Geburt.">
+			>
+			["id6"] = <
+				text = <"Herzfrequenz">
+				description = <"Beurteilung der Herzfrequenz des Neubegorenen.">
+			>
+			["at7"] = <
+				text = <"Kein Herzschlag">
+				description = <"Kein Herzschlag gesehen, gefühlt oder gehört.">
+			>
+			["at8"] = <
+				text = <"<100 Schläge pro Minute">
+				description = <"Herzfrequenz von weniger als 100 Schlägen pro Minute.">
+			>
+			["at9"] = <
+				text = <"≥100 Schläge pro Minute">
+				description = <"Herzfrequenz von mehr als oder genau 100 Schlägen pro Minute.">
+			>
+			["id10"] = <
+				text = <"Atemantrieb">
+				description = <"Beurteilung des Atemantriebs des Neugeborenen.">
+			>
+			["at11"] = <
+				text = <"Kein Bestreben">
+				description = <"Kein Bestreben zu atmen.">
+			>
+			["at12"] = <
+				text = <"Schwaches oder unregelmäßiges Bestreben">
+				description = <"Etwas bestrebt zu atmen, Brustkorb bewegt sich.">
+			>
+			["at13"] = <
+				text = <"Normal">
+				description = <"Normale Atmung oder Schreien.">
+			>
+			["id14"] = <
+				text = <"Muskeltonus">
+				description = <"Beobachtung des Musketonus des Neugeborenen.">
+			>
+			["at15"] = <
+				text = <"Schlaff">
+				description = <"Keine spontane Bewegung.">
+			>
+			["at16"] = <
+				text = <"Reduzierter Tonus">
+				description = <"Geringe Flexion der Extremitäten.">
+			>
+			["at17"] = <
+				text = <"Normaler Tonus">
+				description = <"Normale, kraftvolle Bewegung der Extremitäten.">
+			>
+			["id18"] = <
+				text = <"Reflexauslösbarkeit">
+				description = <"Beobachtung der Antwort des Neugeborens auf eine Reizstimulation, z.B. Absaugen des Oropharynxs und der Nasenlöcher mit einem weichem Gummikatheter.">
+			>
+			["at19"] = <
+				text = <"Keine Reaktion">
+				description = <"Keine Reaktion auf die Stimulation.">
+			>
+			["at20"] = <
+				text = <"Reduzierte Reaktion">
+				description = <"Grimassieren oder schwaches Schreien als Reaktion auf die Stimulation.">
+			>
+			["at21"] = <
+				text = <"Normale Reaktion">
+				description = <"Grimassieren, Niesen, Husten oder Wegziehen als Reaktion auf die Stimulation.">
+			>
+			["id22"] = <
+				text = <"Hautfarbe">
+				description = <"Beobachtung der Hautfarbe des Neugeborenen.">
+			>
+			["at23"] = <
+				text = <"Komplett blau">
+				description = <"Körper und Extremitäten sind blau.">
+			>
+			["at24"] = <
+				text = <"Akrozyanotisch">
+				description = <"Stamm ist rosig, Extremitäten sind blau.">
+			>
+			["at25"] = <
+				text = <"Komplett rosig">
+				description = <"Stamm und Extremitäten sind rosig; keine Zyanose.">
+			>
+			["id26"] = <
+				text = <"Gesamtwert">
+				description = <"Die Summe der Zahlenwerte aller 5 Komponenten.">
+			>
+			["id27"] = <
+				text = <"2 Minuten">
+				description = <"Apgar-Score 2 Minuten nach der Geburt.">
+			>
+			["id28"] = <
+				text = <"3 Minuten">
+				description = <"Apgar-Score 3 Minuten nach der Geburt.">
+			>
+			["id29"] = <
+				text = <"5 Minuten">
+				description = <"Apgar-Score 5 Minuten nach der Geburt.">
+			>
+			["id31"] = <
+				text = <"Anmerkungen zur Messung">
+				description = <"Anmerkungen zur Messung des Apgar-Scores.">
+			>
+			["id32"] = <
+				text = <"10 Minuten">
+				description = <"Apgar-Score 10 Minuten nach der Geburt">
+			>
+			["id38"] = <
+				text = <"Beliebiges Ereignis">
+				description = <"Apgar-Score zu beliebigen Zeitpunkten, je nach Bedarf.">
+			>
+			["ac1"] = <
+				text = <"Atemantrieb (synthesised)">
+				description = <"Beurteilung des Atemantriebs des Neugeborenen. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Herzfrequenz (synthesised)">
+				description = <"Beurteilung der Herzfrequenz des Neubegorenen. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Muskeltonus (synthesised)">
+				description = <"Beobachtung des Musketonus des Neugeborenen. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Reflexauslösbarkeit (synthesised)">
+				description = <"Beobachtung der Antwort des Neugeborens auf eine Reizstimulation, z.B. Absaugen des Oropharynxs und der Nasenlöcher mit einem weichem Gummikatheter. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Hautfarbe (synthesised)">
+				description = <"Beobachtung der Hautfarbe des Neugeborenen. (synthesised)">
+			>
+		>
+		["fa"] = <
+			["id1"] = <
+				text = <"نمره آپگار">
+				description = <"نمره بالینی استخراج شده از ارزیابی تلاش تنفسی ، ضربان قلب ، رفلکس تحریک پذیری ، تون عضلانی و رنگ پوست">
+			>
+			["id4"] = <
+				text = <"دقیقه اول">
+				description = <"نمره آپگار یک دقیقه بعد از تولد">
+			>
+			["id6"] = <
+				text = <"ضربان قلب">
+				description = <"ثبت ضربان قلب نوزاد">
+			>
+			["at7"] = <
+				text = <"عدم وجود">
+				description = <"ضربان قلبی مشاهده ، احساس یا شنیده نمی شود">
+			>
+			["at8"] = <
+				text = <"ضربان کمتر از 100 در هر دقیقه">
+				description = <"ضربان قلب کمتر از 100 ضربه در هر دقیقه است">
+			>
+			["at9"] = <
+				text = <"ضربان بیشتر یا مساوی 100 در هر دقیقه">
+				description = <"ضربان قلب بیشتریا برابر  100 ضربه در هر دقیقه است">
+			>
+			["id10"] = <
+				text = <"تلاش تنفسی">
+				description = <"مشاهده تلاش تنفسی نوزاد">
+			>
+			["at11"] = <
+				text = <"غیر موجود">
+				description = <"برای تنفس تلاش نمی کند">
+			>
+			["at12"] = <
+				text = <"ضعیف یا نا منظم">
+				description = <" برای تنفس تلاش می کند  ، سینه حرکت می کند">
+			>
+			["at13"] = <
+				text = <"ظبیعی">
+				description = <"تنفس طبیعی یا گریه کردن">
+			>
+			["id14"] = <
+				text = <"تون عضلانی">
+				description = <"مشاهده تلون عضلانی نوزاد">
+			>
+			["at15"] = <
+				text = <"مشاهده تلون عضلانی نوزاد">
+				description = <"حرکات خودبخودی وجود ندارد">
+			>
+			["at16"] = <
+				text = <"تون کاهش یافته">
+				description = <"برخی رفلکسها یا خمیدگی ها وجود دارد">
+			>
+			["at17"] = <
+				text = <"تون طبیعی">
+				description = <"طبیعی ، حرکات نیرومند">
+			>
+			["id18"] = <
+				text = <"رفلکس تحریک پذیری">
+				description = <"مشاهده پاسخ نوزاد به تحریکات محرک به عنوان مثال مکش دهانی حلقی و سوراخ بینی با کاتتر لاستیکی نرم  ">
+			>
+			["at19"] = <
+				text = <"پاسخ نمی دهد">
+				description = <"عدم پاسخ به تحریکات">
+			>
+			["at20"] = <
+				text = <"کاهش پاسخ">
+				description = <"گریه شکلکی یا ضعیف در زمان تحریک">
+			>
+			["at21"] = <
+				text = <"پاسخ طبیعی">
+				description = <"شکلک ، عطسه ف سرفه یا عقب کشیدن در زمان تحریک">
+			>
+			["id22"] = <
+				text = <"رنگ پوست">
+				description = <"مشاهده رنگ پوست نوزاد">
+			>
+			["at23"] = <
+				text = <"کاملا آبی">
+				description = <"دن و دستها و پاها آبی هستند">
+			>
+			["at24"] = <
+				text = <"بدن صورتی ، دستها و پاها آبی">
+				description = <"بدن صورتی ، دستها و پاها آبی هستند">
+			>
+			["at25"] = <
+				text = <"کاملا صورتی">
+				description = <"دن و دستها و پاها کاملا صورتی هستند هیچ سیانوزی وجود ندارد">
+			>
+			["id26"] = <
+				text = <"مجموع">
+				description = <"مجموع پنج نمره ترتیبی برای هر پارامتر جز  ">
+			>
+			["id27"] = <
+				text = <"دقیقه دو">
+				description = <"نمره آپگار دودقیقه بعد از تولد">
+			>
+			["id28"] = <
+				text = <"دقیقه سه">
+				description = <"نمره آپگار سه دقیقه بعد از تولد">
+			>
+			["id29"] = <
+				text = <"دقیقه پنج">
+				description = <"نمره آپگار پنج دقیقه بعد از تولد">
+			>
+			["id31"] = <
+				text = <"یادداشتهایی در مورد اندازه گیری">
+				description = <"یادداشتهایی در مورد اندازه گیری نمره آپگار">
+			>
+			["id32"] = <
+				text = <"دقیقه ده">
+				description = <"نمره آپگار ده دقیقه بعد از تولد">
+			>
+			["id38"] = <
+				text = <"هر رویداد">
+				description = <"نمره آپگار در هر زمان ممکن و در صورت نیاز">
+			>
+			["ac1"] = <
+				text = <"تلاش تنفسی (synthesised)">
+				description = <"مشاهده تلاش تنفسی نوزاد (synthesised)">
+			>
+			["ac2"] = <
+				text = <"ضربان قلب (synthesised)">
+				description = <"ثبت ضربان قلب نوزاد (synthesised)">
+			>
+			["ac3"] = <
+				text = <"تون عضلانی (synthesised)">
+				description = <"مشاهده تلون عضلانی نوزاد (synthesised)">
+			>
+			["ac4"] = <
+				text = <"رفلکس تحریک پذیری (synthesised)">
+				description = <"مشاهده پاسخ نوزاد به تحریکات محرک به عنوان مثال مکش دهانی حلقی و سوراخ بینی با کاتتر لاستیکی نرم   (synthesised)">
+			>
+			["ac5"] = <
+				text = <"رنگ پوست (synthesised)">
+				description = <"مشاهده رنگ پوست نوزاد (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"حرز أبغار">
+				description = <"الحرز السريري المشتق من تقييم المجهود التنفسي, معدل القلب, التوتر المنعكس, توتر العضلة و لون الجلد">
+			>
+			["id4"] = <
+				text = <"دقيقة واحدة">
+				description = <"حرز أبغار بعد دقيقة واحدة من الولادة/الوضع">
+			>
+			["id6"] = <
+				text = <"معدل القلب">
+				description = <"تسجيل معدل قلب الرضيع">
+			>
+			["at7"] = <
+				text = <"غائب">
+				description = <"لا يمكن سماع, رؤية أو الشعور بضربات القلب">
+			>
+			["at8"] = <
+				text = <"أقل من 100 ضربة في الدقيقة">
+				description = <"معدل القلب أقل من 100 ضربة في الدقيقة">
+			>
+			["at9"] = <
+				text = <"أكثر من أو يساوي 100 ضربة في الدقيقة">
+				description = <"معدل القلب أكبر من أو يساوي 100 ضربة في الدقيقة">
+			>
+			["id10"] = <
+				text = <"المجهود التنفسي">
+				description = <"ملاحظة المجهود التنفسي لدى الرضيع">
+			>
+			["at11"] = <
+				text = <"غائب">
+				description = <"لا يوجد بذل مجهود للتنفس">
+			>
+			["at12"] = <
+				text = <"ضعيف أو غير منتظم">
+				description = <"يوجد بعض المجهود للتنفس, الصدر يتحرك">
+			>
+			["at13"] = <
+				text = <"طبيعي">
+				description = <"يتنفس بشكل طبيعي أو يبكي">
+			>
+			["id14"] = <
+				text = <"توتر العضلة">
+				description = <"ملاحظة توتر عضلات الرضيع">
+			>
+			["at15"] = <
+				text = <"مرتخٍ/أعرج">
+				description = <"لا يوجد حركة تلقائية">
+			>
+			["at16"] = <
+				text = <"توتر منخفض">
+				description = <"يوجد بعض الثني للأطراف">
+			>
+			["at17"] = <
+				text = <"توتر طبيعي">
+				description = <"حركات طبيعية قوية">
+			>
+			["id18"] = <
+				text = <"التوتر الانعكاسي">
+				description = <"ملاحظة استجابة الرضيع لتحفيز مُهَيَّج, مثلا, مص محتويات البلعوم الفمي و فتحات الأنف باستخدام قثطار مطاطي ناعم.">
+			>
+			["at19"] = <
+				text = <"لا توجد استجابة">
+				description = <"لا يوجد استجابة للتحفيز">
+			>
+			["at20"] = <
+				text = <"استجابة منخفضة">
+				description = <"تكشيرة أو بكاء ضعيف عند التحفيز">
+			>
+			["at21"] = <
+				text = <"استجابة طبيعية">
+				description = <"تكشيرة, عُطاس, سعال, أو يتعبد عند تحفيزه">
+			>
+			["id22"] = <
+				text = <"لون الجلد/البشرة">
+				description = <"ملاحظة لون بشرة/جلد الرضيع">
+			>
+			["at23"] = <
+				text = <"أزرق تماما">
+				description = <"الجسم و الأطراف زرقاء اللون">
+			>
+			["at24"] = <
+				text = <"الجسم متورد و الأطراف زرقاء">
+				description = <"الجسم متورد و الأطراف زرقاء">
+			>
+			["at25"] = <
+				text = <"متورد تماما">
+				description = <"الجسم و الأطراف متوردة, لا يوجد ازرقاق">
+			>
+			["id26"] = <
+				text = <"الإجمالي">
+				description = <"مجموع الأحراز الخمسة المنفردة ">
+			>
+			["id27"] = <
+				text = <"عند دقيقتين">
+				description = <"حرز أبغار عند دقيقتين من الولادة/الوضع">
+			>
+			["id28"] = <
+				text = <"عند ثلاث دقائق">
+				description = <"حرز أبغار بعد ثلاث دقائق من الولادة/الوضع">
+			>
+			["id29"] = <
+				text = <"بعد خمس دقائق">
+				description = <"حرز أبغار بعد 5 دقائق من الولادة/الوضع">
+			>
+			["id31"] = <
+				text = <"ملاحظات حول القياس">
+				description = <"ملاحظات حول قياس حرز أبغار">
+			>
+			["id32"] = <
+				text = <"بعد 10 دقائق">
+				description = <"حرز أبغار بعد 10 دقائق من الولادة/الوضع">
+			>
+			["id38"] = <
+				text = <"إحدى الوقائع">
+				description = <"حرز أبغار عند أي وقت إضافي, حسب الحاجة">
+			>
+			["ac1"] = <
+				text = <"المجهود التنفسي (synthesised)">
+				description = <"ملاحظة المجهود التنفسي لدى الرضيع (synthesised)">
+			>
+			["ac2"] = <
+				text = <"معدل القلب (synthesised)">
+				description = <"تسجيل معدل قلب الرضيع (synthesised)">
+			>
+			["ac3"] = <
+				text = <"توتر العضلة (synthesised)">
+				description = <"ملاحظة توتر عضلات الرضيع (synthesised)">
+			>
+			["ac4"] = <
+				text = <"التوتر الانعكاسي (synthesised)">
+				description = <"ملاحظة استجابة الرضيع لتحفيز مُهَيَّج, مثلا, مص محتويات البلعوم الفمي و فتحات الأنف باستخدام قثطار مطاطي ناعم. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"لون الجلد/البشرة (synthesised)">
+				description = <"ملاحظة لون بشرة/جلد الرضيع (synthesised)">
+			>
+		>
+		["ru"] = <
+			["id1"] = <
+				text = <"Шкала Апгар">
+				description = <"Клиническая оценка полученная из оценки дыхания, частоты сердечных сокращений, рефлекторной возбудимости, мышечного тонуса и цвета кожи.">
+			>
+			["id4"] = <
+				text = <"1 минута">
+				description = <"Оценка по Апгар в 1 минуту после рождения.">
+			>
+			["id6"] = <
+				text = <"Сердцебиение">
+				description = <"Запись о ЧСС младенца.">
+			>
+			["at7"] = <
+				text = <"Отсутствует">
+				description = <"Нет дыхательных движений.">
+			>
+			["at8"] = <
+				text = <"<100 ударов в минуту">
+				description = <"ЧСС меньше 100 ударов в минуту.">
+			>
+			["at9"] = <
+				text = <"≥100 ударов в минуту">
+				description = <"ЧСС более 100 ударов в минуту.">
+			>
+			["id10"] = <
+				text = <"Дыхание">
+				description = <"Наблюдается за дыханием.">
+			>
+			["at11"] = <
+				text = <"Отсутствует">
+				description = <"Сердцебиение не видно, не слышно и не ощутимо.">
+			>
+			["at12"] = <
+				text = <"Слабое или нерегулярное">
+				description = <"Некоторые дыхательные движения, движения грудной клетки.">
+			>
+			["at13"] = <
+				text = <"Нормальное.">
+				description = <"Дыхание нормальное или крик.">
+			>
+			["id14"] = <
+				text = <"Мышечный тонус">
+				description = <"Оценка мышечного тонуса младенца.">
+			>
+			["at15"] = <
+				text = <"Вялый">
+				description = <"Нет спонтанных движений.">
+			>
+			["at16"] = <
+				text = <"Тонус ослаблен">
+				description = <"Слабое сгибание конечностей.">
+			>
+			["at17"] = <
+				text = <"Нормальный тонус">
+				description = <"Нормальные, энергичные движения.">
+			>
+			["id18"] = <
+				text = <"Рефлексы на раздражение">
+				description = <"Наблюдение за реакцией ребенка на раздражающее стимуляции, например, очищения ротоглотки и носовых отверстий мягким резиновым катетером.">
+			>
+			["at19"] = <
+				text = <"Нет реакции">
+				description = <"Нет реакци на стимуляцию.">
+			>
+			["at20"] = <
+				text = <"Реакция ослаблена">
+				description = <"Гримаса или слабый крик при стимуляции.">
+			>
+			["at21"] = <
+				text = <"Нормальная реакция">
+				description = <"Гримаса, чихание, кашель или отстранение при стимуляции.">
+			>
+			["id22"] = <
+				text = <"Цвет кожи">
+				description = <"Оценка цвета кожи младенца.">
+			>
+			["at23"] = <
+				text = <"Общий цианоз">
+				description = <"Цианоз туловища и конечностей.">
+			>
+			["at24"] = <
+				text = <"Акрозианоз, цианоз конечностей">
+				description = <"Туловище розовое, цианоз конечностей.">
+			>
+			["at25"] = <
+				text = <"Цианоза нет">
+				description = <"Туловище и конечности розовые. Цианоза нет">
+			>
+			["id26"] = <
+				text = <"Общая оценка">
+				description = <"Сумма баллов по 5 параметрам.">
+			>
+			["id27"] = <
+				text = <"2 минута">
+				description = <"Оценка по Апгар во 2 минуту после рождения.">
+			>
+			["id28"] = <
+				text = <"3 минута">
+				description = <"Оценка по Апгар в 3 минуту после рождения.">
+			>
+			["id29"] = <
+				text = <"5 минута">
+				description = <"Оценка по Апгар на 5 минуту после рождения.">
+			>
+			["id31"] = <
+				text = <"Примечания по измерению">
+				description = <"Примечания по измерению по шкале Апгар.">
+			>
+			["id32"] = <
+				text = <"10 минута">
+				description = <"Оценка по Апгар в 10 минуту после рождения.">
+			>
+			["id38"] = <
+				text = <"Любое время">
+				description = <"Оценка по Апгар в дополнительное время, если требуется.">
+			>
+			["ac1"] = <
+				text = <"Дыхание (synthesised)">
+				description = <"Наблюдается за дыханием. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Сердцебиение (synthesised)">
+				description = <"Запись о ЧСС младенца. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Мышечный тонус (synthesised)">
+				description = <"Оценка мышечного тонуса младенца. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Рефлексы на раздражение (synthesised)">
+				description = <"Наблюдение за реакцией ребенка на раздражающее стимуляции, например, очищения ротоглотки и носовых отверстий мягким резиновым катетером. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Цвет кожи (synthesised)">
+				description = <"Оценка цвета кожи младенца. (synthesised)">
+			>
+		>
+		["nl"] = <
+			["id1"] = <
+				text = <"Apgar score">
+				description = <"Score die bereikt wordt door beoordeling van ademhalingsinspanning, hartslag, reflexen,  spiertonus  en kleur.">
+			>
+			["id4"] = <
+				text = <"1 minuut">
+				description = <"Apgar score 1 minuut na de geboorte.">
+			>
+			["id6"] = <
+				text = <"Hartslag">
+				description = <"Opnemen van de hartslag van het kind.">
+			>
+			["at7"] = <
+				text = <"Afwezig">
+				description = <"Er is geen hartslag te zien, voelen of horen.">
+			>
+			["at8"] = <
+				text = <"<100 slagen per minuut">
+				description = <"Hartfrequentie minder dan 100 slagen per minuut.">
+			>
+			["at9"] = <
+				text = <"≥100 slagen per minuut">
+				description = <"Hartslag hoger of gelijk aan 100 slagen per minuut.">
+			>
+			["id10"] = <
+				text = <"Ademhalingsinspanning">
+				description = <"Observatie van de ademhalingsinspanning van het kind.">
+			>
+			["at11"] = <
+				text = <"Afwezig">
+				description = <"Geen ademhalingsinspanning.">
+			>
+			["at12"] = <
+				text = <"Matig of onregelmatig">
+				description = <"Enige ademhalingsinspanning, beweging van de borst.">
+			>
+			["at13"] = <
+				text = <"Normaal">
+				description = <"Normale ademhaling of huilend.">
+			>
+			["id14"] = <
+				text = <"Spiertonus">
+				description = <"Observatie van de spiertonus van het kind.">
+			>
+			["at15"] = <
+				text = <"Slap">
+				description = <"Geen spontane bewegingen.">
+			>
+			["at16"] = <
+				text = <"Verminderde tonus">
+				description = <"Enige flexie van de ledematen.">
+			>
+			["at17"] = <
+				text = <"Normale tonus">
+				description = <"Normale, krachtige bewegingen.">
+			>
+			["id18"] = <
+				text = <"Reactie op prikkels">
+				description = <"Observatie van de reactie van het kind op een irritante prikkeling, bijvoorbeeld het uitzuigen van de keel en neus met een zachte rubberen katheter.">
+			>
+			["at19"] = <
+				text = <"Geen reactie">
+				description = <"Geen reactie op prikkeling.">
+			>
+			["at20"] = <
+				text = <"Verminderde reactie">
+				description = <"Grimas of zwak huilen bij prikkeling.">
+			>
+			["at21"] = <
+				text = <"Normale reactie">
+				description = <"Grimas en niezen, hoesten of terugtrekken bij prikkeling.">
+			>
+			["id22"] = <
+				text = <"Huidskleur">
+				description = <"Observatie van de huidskleur van het kind.">
+			>
+			["at23"] = <
+				text = <"Helemaal blauw">
+				description = <"Lichaam en extremiteiten zijn blauw.">
+			>
+			["at24"] = <
+				text = <"Lichaam is roze, extremiteiten blauw">
+				description = <"Het lichaam van het kind is roze, de extremiteiten zijn blauw.">
+			>
+			["at25"] = <
+				text = <"Helemaal roze">
+				description = <"Lichaam en eztremiteiten zijn roze, geen cyanose.">
+			>
+			["id26"] = <
+				text = <"Totaal">
+				description = <"De som van de 5 afzonderlijke scores van iedere observatie.">
+			>
+			["id27"] = <
+				text = <"2 minuten">
+				description = <"Apgar score 2 minuten na de geboorte.">
+			>
+			["id28"] = <
+				text = <"3 minuten">
+				description = <"Apgar score 3 minuten na de geboorte.">
+			>
+			["id29"] = <
+				text = <"5 minuten">
+				description = <"Apgar score 5 minuten na de geboorte.">
+			>
+			["id31"] = <
+				text = <"Opmerkingen over de meting">
+				description = <"Opmerkingen over de meting van de Apgar score.">
+			>
+			["id32"] = <
+				text = <"10 minuten">
+				description = <"Apgar score 10 minuten na de geboorte.">
+			>
+			["id38"] = <
+				text = <"Any event">
+				description = <"Apgar score op elk toe te voegen tijdstip, indien nodig">
+			>
+			["ac1"] = <
+				text = <"Ademhalingsinspanning (synthesised)">
+				description = <"Observatie van de ademhalingsinspanning van het kind. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Hartslag (synthesised)">
+				description = <"Opnemen van de hartslag van het kind. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Spiertonus (synthesised)">
+				description = <"Observatie van de spiertonus van het kind. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Reactie op prikkels (synthesised)">
+				description = <"Observatie van de reactie van het kind op een irritante prikkeling, bijvoorbeeld het uitzuigen van de keel en neus met een zachte rubberen katheter. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Huidskleur (synthesised)">
+				description = <"Observatie van de huidskleur van het kind. (synthesised)">
+			>
+		>
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Escala Apgar">
+				description = <"Escala clínica derivada da avaliação do esforço respiratório, frequência cardíaca, reflexo de irritabilidade, tônus muscular e cor da pele.">
+			>
+			["id4"] = <
+				text = <"1 minuto">
+				description = <"Escore Apgar obtido 1 minuto apóss o nascimento.">
+			>
+			["id6"] = <
+				text = <"Frequência cardíaca">
+				description = <"Registro da frequência cardíaca do recém-nascido.">
+			>
+			["at7"] = <
+				text = <"Ausente">
+				description = <"Nenhum batimento cardíaco é visto, sentido ou escutado.">
+			>
+			["at8"] = <
+				text = <"<100 batimentos por minuto">
+				description = <"Frequência cardíaca inferior a 100 batimentos por minuto.">
+			>
+			["at9"] = <
+				text = <"≥100 batimentos por minuto">
+				description = <"Frequência cardíaca superior a 100 batimentos por minuto.">
+			>
+			["id10"] = <
+				text = <"Esforço respiratório">
+				description = <"Observação do esforço respiratório do recém-nascido.">
+			>
+			["at11"] = <
+				text = <"Ausente">
+				description = <"Nenhum  esforço para respirar.">
+			>
+			["at12"] = <
+				text = <"Fraco ou irregular">
+				description = <"Algum esforço para respirar, movimento do peito.">
+			>
+			["at13"] = <
+				text = <"Normal">
+				description = <"Respirando normalmente ou chorando.">
+			>
+			["id14"] = <
+				text = <"Tônus muscular">
+				description = <"Observação do tônus muscular do recém-nascido.">
+			>
+			["at15"] = <
+				text = <"Atônico ou flácido">
+				description = <"Sem movimento espontâneo.">
+			>
+			["at16"] = <
+				text = <"Tônus reduzido">
+				description = <"Alguma flexão de extremidades.">
+			>
+			["at17"] = <
+				text = <"Tônus normal">
+				description = <"Movimentos normais, vigorosos.">
+			>
+			["id18"] = <
+				text = <"Reflexo de irritabilidade">
+				description = <"Observação da resposta a um estímulo irritativo, por exemplo, sucção da orofaringe e narinas com um cateter de borracha macia.">
+			>
+			["at19"] = <
+				text = <"Nenhuma resposta">
+				description = <"Nenhuma resposta ao estímulo.">
+			>
+			["at20"] = <
+				text = <"Resposta reduzida">
+				description = <"Careta ou choro débil quando estimulado.">
+			>
+			["at21"] = <
+				text = <"Resposta normal">
+				description = <"Careta, espirro, tosse ou tenta se afastar quando estimulado.">
+			>
+			["id22"] = <
+				text = <"Cor da pele">
+				description = <"Observação da cor da pele do recém-nascido.">
+			>
+			["at23"] = <
+				text = <"Completamente azul">
+				description = <"Corpo e extremidades estão azuis">
+			>
+			["at24"] = <
+				text = <"Corpo cor de rosa; extremiddades azuis">
+				description = <"Corpo está cor de  rosa, extremidades estão azuis.">
+			>
+			["at25"] = <
+				text = <"Completamente cor de rosa">
+				description = <"Corpo e extremidade estão cor de  rosa, ausência de cianose.">
+			>
+			["id26"] = <
+				text = <"Total">
+				description = <"A soma dos 5 escores ordinais para cada parâmetro componente.">
+			>
+			["id27"] = <
+				text = <"2 minutos">
+				description = <"Escore Apgar 2 minutos após o nascimento.">
+			>
+			["id28"] = <
+				text = <"3 minutos">
+				description = <"escore Apgar 3 minutos após o nascimento.">
+			>
+			["id29"] = <
+				text = <"5 minutos">
+				description = <"Escore Apgar 5 minutos após o nascimento.">
+			>
+			["id31"] = <
+				text = <"Notas sobre a medida">
+				description = <"Notas sobre a medida da Escala Apgar.">
+			>
+			["id32"] = <
+				text = <"10 minutos">
+				description = <"escore Apgar 10 minutos após o nascimento">
+			>
+			["id38"] = <
+				text = <"Qualquer evento">
+				description = <"Escore Apgar em qualquer tempo adicional, se requerido.">
+			>
+			["ac1"] = <
+				text = <"Esforço respiratório (synthesised)">
+				description = <"Observação do esforço respiratório do recém-nascido. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Frequência cardíaca (synthesised)">
+				description = <"Registro da frequência cardíaca do recém-nascido. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Tônus muscular (synthesised)">
+				description = <"Observação do tônus muscular do recém-nascido. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Reflexo de irritabilidade (synthesised)">
+				description = <"Observação da resposta a um estímulo irritativo, por exemplo, sucção da orofaringe e narinas com um cateter de borracha macia. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Cor da pele (synthesised)">
+				description = <"Observação da cor da pele do recém-nascido. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			["/data[id3]/events[id4]/data[id2]/items[id26]"] = <http://snomed.info/id/169895004>
+			["/data[id3]/events[id29]/data[id2]/items[id26]"] = <http://snomed.info/id/169909004>
+			["/data[id3]/events[id32]/data[id2]/items[id26]"] = <http://snomed.info/id/169922007>
+			["/data[id3]/events[id38]/data[id2]/items[id26]"] = <http://snomed.info/id/364592005>
+			["id26"] = <http://snomed.info/id/249228009>
+		>
+		["LOINC"] = <
+			["/data[id3]/events[id4]"] = <http://loinc.org/id/48334-7>
+			["/data[id3]/events[id4]/data[id2]/items[id6]"] = <http://loinc.org/id/32407-9>
+			["/data[id3]/events[id4]/data[id2]/items[id10]"] = <http://loinc.org/id/32410-3>
+			["/data[id3]/events[id4]/data[id2]/items[id14]"] = <http://loinc.org/id/32408-7>
+			["/data[id3]/events[id4]/data[id2]/items[id18]"] = <http://loinc.org/id/32409-5>
+			["/data[id3]/events[id4]/data[id2]/items[id22]"] = <http://loinc.org/id/32406-1>
+			["/data[id3]/events[id4]/data[id2]/items[id26]"] = <http://loinc.org/id/9272-6>
+			["/data[id3]/events[id27]/data[id2]/items[id26]"] = <http://loinc.org/id/9273-4>
+			["/data[id3]/events[id29]"] = <http://loinc.org/id/48333-9>
+			["/data[id3]/events[id29]/data[id2]/items[id6]"] = <http://loinc.org/id/32412-9>
+			["/data[id3]/events[id29]/data[id2]/items[id10]"] = <http://loinc.org/id/32415-2>
+			["/data[id3]/events[id29]/data[id2]/items[id14]"] = <http://loinc.org/id/32413-7>
+			["/data[id3]/events[id29]/data[id2]/items[id18]"] = <http://loinc.org/id/32414-5>
+			["/data[id3]/events[id29]/data[id2]/items[id22]"] = <http://loinc.org/id/32411-1>
+			["/data[id3]/events[id29]/data[id2]/items[id26]"] = <http://loinc.org/id/9274-2>
+			["/data[id3]/events[id32]"] = <http://loinc.org/id/48332-1>
+			["/data[id3]/events[id32]/data[id2]/items[id6]"] = <http://loinc.org/id/32402-0>
+			["/data[id3]/events[id32]/data[id2]/items[id10]"] = <http://loinc.org/id/32405-3>
+			["/data[id3]/events[id32]/data[id2]/items[id14]"] = <http://loinc.org/id/32403-8>
+			["/data[id3]/events[id32]/data[id2]/items[id18]"] = <http://loinc.org/id/32404-6>
+			["/data[id3]/events[id32]/data[id2]/items[id22]"] = <http://loinc.org/id/32401-2>
+			["/data[id3]/events[id32]/data[id2]/items[id26]"] = <http://loinc.org/id/9271-8>
+			["at7"] = <http://loinc.org/id/LA6716>
+			["at8"] = <http://loinc.org/id/LA6717>
+			["at9"] = <http://loinc.org/id/LA6718>
+			["at11"] = <http://loinc.org/id/LA6725>
+			["at12"] = <http://loinc.org/id/LA6726>
+			["at13"] = <http://loinc.org/id/LA6727>
+			["at15"] = <http://loinc.org/id/LA6713>
+			["at16"] = <http://loinc.org/id/LA6714>
+			["at17"] = <http://loinc.org/id/LA6715>
+			["at19"] = <http://loinc.org/id/LA6719>
+			["at20"] = <http://loinc.org/id/LA6720>
+			["at21"] = <http://loinc.org/id/LA6721>
+			["at23"] = <http://loinc.org/id/LA6722>
+			["at24"] = <http://loinc.org/id/LA6723>
+			["at25"] = <http://loinc.org/id/LA6724>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at11", "at12", "at13">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at7", "at8", "at9">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at15", "at16", "at17">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at19", "at20", "at21">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at23", "at24", "at25">
+		>
+	>

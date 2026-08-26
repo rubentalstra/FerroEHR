@@ -1,0 +1,210 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-EVALUATION.triage.v1
+
+concept
+	[at0000]	-- Triage evaluation
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Dr. Leonardo Der Jachadurian">
+				["organisation"] = <"Bitios.com">
+			>
+			accreditation = <"Medical Doctor (Internal Medicine Specialist)">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.biz">
+		["date"] = <"12/04/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"An evaluative statement for the conclusions or summary by a clinician regarding need for priority of treatment">
+			use = <"">
+			keywords = <"triage", "evaluation", "assessment">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"بيان لتقييم الاستنتاجات أو الملخص الذي يقوم به الطبيب السريري لأولويات المعالجة.">
+			use = <"">
+			keywords = <"الفرز", "التقييم", "التقدير">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"Evaluación hecha por un médico, respecto a que prioridad es requerida para el manejo de la condición médica que motivó la evaluación.">
+			use = <"">
+			keywords = <"triage", "evaluación", "priorización">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"Initial">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"">
+	>
+
+definition
+	EVALUATION[at0000] matches {	-- Triage evaluation
+		data matches {
+			ITEM_TREE[at0001] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- Triage evaluation
+						value matches {
+							1|[local::at0014], 	-- Immediate
+							2|[local::at0015], 	-- Very urgent
+							3|[local::at0016], 	-- Urgent
+							4|[local::at0017], 	-- Standard
+							5|[local::at0018]  	-- Non-urgent
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {	-- Rationale
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Triage evaluation">
+					description = <"The evaluation of need for immediacy of treatment">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Triage evaluation">
+					description = <"Record of need for prioritisation of treatment">
+				>
+				["at0008"] = <
+					text = <"Rationale">
+					description = <"The rationale for the evaluation provided">
+				>
+				["at0014"] = <
+					text = <"Immediate">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Very urgent">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Urgent">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"Standard">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Non-urgent">
+					description = <"*">
+				>
+			>
+		>
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"تقييم الفرز">
+					description = <"تقييم الحاجة لفورية المعالجة">
+				>
+				["at0001"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"تقييم الفرز">
+					description = <"تسجيل للحاجة إلى ترتيب أولويات المعالجة">
+				>
+				["at0008"] = <
+					text = <"الأساس المنطقي">
+					description = <"الأساس المنطقي للتقييم الذي يتم تقديمه">
+				>
+				["at0014"] = <
+					text = <" مباشر/فوري/عاجل">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"عاجل/مُلِحّ جدا">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"عاجل/مُلِحّ">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"عياري">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"غير عاجل/غير مُلِحّ">
+					description = <"*">
+				>
+			>
+		>
+		["es-ar"] = <
+			items = <
+				["at0000"] = <
+					text = <"Evaluación Triage">
+					description = <"Evaluación de que urgencia es requerida para el tratamiento.">
+				>
+				["at0001"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"Evaluación Triage">
+					description = <"Registro de la necesidad de priorización del tratamiento.">
+				>
+				["at0008"] = <
+					text = <"Fundamentación">
+					description = <"La fundamentación de la evaluación provista.">
+				>
+				["at0014"] = <
+					text = <"Inmediata">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Muy urgente">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Urgente">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"Estándar">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"No urgente">
+					description = <"*">
+				>
+			>
+		>
+	>

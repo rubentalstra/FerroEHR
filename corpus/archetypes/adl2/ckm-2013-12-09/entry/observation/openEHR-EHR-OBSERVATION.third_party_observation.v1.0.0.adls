@@ -1,0 +1,106 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.third_party_observation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"????">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record third party observer/carer's observation of subject
+">
+			use = <"">
+			misuse = <"">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Carer observation
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Stimulus
+										value matches {
+											DV_TEXT[id16] 
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Description
+										value matches {
+											DV_TEXT[id17] 
+										}
+									}
+									ELEMENT[id7] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id18] 
+										}
+									}
+									ELEMENT[id8] occurrences matches {0..1} matches {	-- Level of concern
+										value matches {
+											DV_TEXT[id19] 
+										}
+									}
+									CLUSTER[id14] occurrences matches {0..1} matches {	-- Third Party details
+										items matches {
+											allow_archetype CLUSTER[id15] matches {	-- Cluster: Third Party details
+												include
+													archetype_id/value matches {/openEHR-EHR-CLUSTER\.individual_personal\.v1/}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Carer observation">
+				description = <"Third party observer/carer's observation of subject
+">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Stimulus">
+				description = <"Stimulus triggering the response being observed">
+			>
+			["id6"] = <
+				text = <"Description">
+				description = <"Detailed description of response by subject to stimulus">
+			>
+			["id7"] = <
+				text = <"Comment">
+				description = <"Additional comments about the observation and response">
+			>
+			["id8"] = <
+				text = <"Level of concern">
+				description = <"Degree of concern displayed by third party">
+			>
+			["id14"] = <
+				text = <"Third Party details">
+				description = <"*">
+			>
+			["id15"] = <
+				text = <"Cluster: Third Party details">
+				description = <"*">
+			>
+		>
+	>

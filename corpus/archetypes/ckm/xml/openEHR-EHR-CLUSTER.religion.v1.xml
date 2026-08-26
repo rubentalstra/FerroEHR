@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2016-11-17</original_author>
+    <original_author id="name">John Tore Valand</original_author>
+    <original_author id="organisation">Helse Bergen, Norway</original_author>
+    <original_author id="email">john.tore.valand@helse-bergen.no</original_author>
+    <other_contributors>Morten Aas, Diakonhjemmet Sykehus, Norway</other_contributors>
+    <other_contributors>Tomas Alme, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ivar Berge, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Kristian Berg, Vestvågøy kommune - Fagutviklingsavdelingen, Norway</other_contributors>
+    <other_contributors>Mate Bestek, 3fs, Slovenia</other_contributors>
+    <other_contributors>Anita Bjørnnes, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Stig Erik Hegrestad, Helse Førde, Norway</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Sebastian Garde, Ocean Informatics, Germany</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse-Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Daniel Habashi, PasientSky AS, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Liv Ingrid Svela, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Gunnar Jårvik, Helse Vest IKT AS, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Gunn-Lisbeth Kleiven, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Heidi Koikkalainen, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Tanja Riise, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Tesfay Teame, Folkehelseinstituttet, Norway</other_contributors>
+    <other_contributors>Jon Tysdahl, Furst medlab AS, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Year Book Australia, 2006: Religious Affiliation [Internet]. Australia: Australian Bureau of Statistics; 2006 [cited: 2016-12-14]. Available from: http://www.abs.gov.au/ausstats/abs@.nsf/46d1bc47ac9d0c7bca256c470025ff87/bfdda1ca506d6cfaca2570de0014496e!OpenDocument&#xD;
+&#xD;
+Religion, Draft Archetype [Internet]. Australian Digital Health Agency, Australian Digital Health Agency Clinical Knowledge Manager [cited: 2016-11-01]. No longer available</other_details>
+    <other_details id="current_contact">John Tore Valand, Helse Bergen, Norway</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">24F9269BA97E8326019D7D780C318873</other_details>
+    <other_details id="build_uid">a8e84a14-c94f-4443-b660-03aaf0d07d17</other_details>
+    <other_details id="revision">1.1.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere et individs livssyn og/eller religiøs eller ikke-religiøs praksis som kan ha betydning for utføring av helsetjenester eller andre tjenester.</purpose>
+      <keywords>religion</keywords>
+      <keywords>åndelig</keywords>
+      <keywords>tro</keywords>
+      <keywords>religiøs</keywords>
+      <keywords>ateisme</keywords>
+      <keywords>ateist</keywords>
+      <keywords>agnostisisme</keywords>
+      <keywords>agnostiker</keywords>
+      <keywords>holdning</keywords>
+      <keywords>hellig</keywords>
+      <keywords>profan</keywords>
+      <keywords>sekulær</keywords>
+      <keywords>verdisyn</keywords>
+      <keywords>overbevisning</keywords>
+      <keywords>humanisme</keywords>
+      <use>Brukes for å registrere et individs livssyn og/eller religiøs eller ikke-religiøs praksis og en overordnet beskrivelse om hvordan livssynet kan ha betydning for utføringen av helsetjenester eller andre tjenester. &#xD;
+&#xD;
+Brukes denne arketypen i et EPJ som benytter seg av et sentralt demografiregister, kan relevante demografiske data fra registeret benyttes for å populere dataelementer i denne arketypen. &#xD;
+&#xD;
+Arketypen er ment brukt i arketypen EVALUATION.social_summary (Sosialanamnese) eller i andre relevante arketyper.&#xD;
+&#xD;
+Har man behov for å registrere livssynet til noen andre enn individet som dokumentasjonen omhandler, for eksempel individets foreldre, settes begrensinger på referansemodellelementet "Subject" for å spesifisere rollen.</use>
+      <misuse>Brukes ikke for å registrere pasientens behandlingsønsker som kan være knyttet til et livssyn, særlig de som kan benyttes ved beslutningsstøtte. For eksempel skal ønsker knyttet til ernæring registreres i arketyper som omhandler ernæringsbehov. Behandlingsønsker registreres i arketyper som omhandler pasientens behandlingsønsker.</misuse>
+      <copyright>*© Nasjonal IKT HF, openEHR Foundation (en)</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the identification of the individual's religious or non-religious beliefs and/or practices which may be used for purposes related to provision of healthcare or other services.</purpose>
+      <keywords>religion</keywords>
+      <keywords>spiritual</keywords>
+      <keywords>belief</keywords>
+      <keywords>religious</keywords>
+      <keywords>atheism</keywords>
+      <keywords>agnosticism</keywords>
+      <keywords>attitude</keywords>
+      <keywords>sacred</keywords>
+      <keywords>profane</keywords>
+      <keywords>secular</keywords>
+      <keywords>atheist</keywords>
+      <keywords>agnostic</keywords>
+      <keywords>faith</keywords>
+      <keywords>creed</keywords>
+      <keywords>practice</keywords>
+      <use>Use to record the identification of the individual's religious or non-religious beliefs and/or practices and a general description about the impact of the individual's identified religious affiliation on the delivery of health services.&#xD;
+&#xD;
+If this archetype is being used within a health record context where a demographic server is deployed, then the relevant demographic data may be used to populate the data elements in this archetype.&#xD;
+&#xD;
+This archetype has been designed to be used within the EVALUATION.social_summary or other archetypes where clinically relevant.&#xD;
+&#xD;
+If the religion of someone other than the subject of care, such as their parents, needs to be recorded, restrict the "Subject" reference model element to specify the role.</use>
+      <misuse>Not to be used to record the specific preferences for care that may be related to a religious affiliation, especially those that might drive decision support. For example, record a dietary preference within archetypes recording diet requirements or a treatment preference within archetypes recording patient preferences.</misuse>
+      <copyright>© Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand, Silje Ljosland Bakke, Vebjørn Arntzen, Kristian Berg</author>
+    <author id="organisation">Helse Bergen HF, Nasjonal IKT HF, Oslo universitetssykehus HF</author>
+    <author id="email">john.tore.valand@helse-bergen.no</author>
+  </translations>
+  <uid>
+    <value>0113d386-ee31-47b8-af6c-583d76381fa8</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.religion.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Religious affiliation</items>
+        <items id="description">Identification of the individual's religious or non-religious beliefs and/or practices by which people order the conduct of their lives both practically and in a moral sense.</items>
+        <items id="comment">For example: Christianity, Catholicism, Islam, Wicca, Humanism, Animism, Atheism; Agnosticism; or none.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Religious affiliation</items>
+        <items id="description">Name of the belief and/or practice to which the individual is affiliated.</items>
+        <items id="comment">For example: Christianity; Catholicism; Islam; Wicca; Humanism; Animism; Atheism; Agnosticism; or none. Coding with a terminology is desirable, where possible.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the religious affiliation not captured in other fields.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Impact on care</items>
+        <items id="description">Narrative description about how care needs to be modified to support the individual's religious practice.</items>
+        <items id="comment">For example: Needs assistance to get out of bed to pray. Would like regular pastoral care.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Details</items>
+        <items id="description">Additional details about the individual's religious affiliation.</items>
+        <items id="comment">For example: religious organisation or contact person.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Livssyn</items>
+        <items id="description">Et individs livssyn og/eller religiøs eller ikke-religiøs overbevisning og/eller praksis som individet fører livet sitt etter, både praktisk og moralsk.</items>
+        <items id="comment">For eksempel: Kristendom, Katolisisme, Islam, Wiccan, Humanisme, Animisme, Ateisme, Agnostisisme eller ingen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Livssyn</items>
+        <items id="description">Navn på livssyn og/eller praksis som individet identifiserer seg med, eller har tilknytning til.</items>
+        <items id="comment">For eksempel: Kristendom, Katolisisme, islamisme, wicca, humanisme, animisme, ateisme, agnostisisme eller ingen. Koding av "Livssyn" med en terminologi er ønskelig der det er mulig.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om livssynet som ikke er dekket av andre felt.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Innvirkning på behandling</items>
+        <items id="description">Fritekstbeskrivelse av hvordan behandling/pleie må tilpasses for å støtte individets livssyn og praksis.</items>
+        <items id="comment">For eksempel: Trenger hjelp til å stå opp av senga for å be. Ønsker regelmessig kontakt med en prest.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Detaljer</items>
+        <items id="description">Ytterligere detaljer om individets livssyn.</items>
+        <items id="comment">For eksempel: Religiøs organisasjon eller kontaktperson.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

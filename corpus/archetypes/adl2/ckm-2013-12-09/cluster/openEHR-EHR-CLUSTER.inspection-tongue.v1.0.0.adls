@@ -1,0 +1,148 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.inspection-tongue.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.inspection.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"23/05/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the findings on inspection of the tongue.">
+			use = <"For use with the exam clusters for recording findings on inspection">
+			keywords = <"inspect", "visual", "tongue">
+			misuse = <"Should only be used in the exam observation">
+		>
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Inspection of tongue
+		/items[id2]/items[id3]/value matches {
+			DV_CODED_TEXT[id54.1] matches {
+				defining_code matches {[at0.62]}
+			}
+		}
+		/items[id7]/items matches {
+			after [id35]
+			CLUSTER[id0.58] occurrences matches {0..1} matches {	-- Size
+				items matches {
+					ELEMENT[id0.59] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id0.64] 
+						}
+					}
+					ELEMENT[id0.60] occurrences matches {0..1} matches {	-- Presence of atrophy
+						value matches {
+							DV_BOOLEAN[id0.65] matches {
+								value matches {True, False}
+							}
+						}
+					}
+					CLUSTER[id0.61] occurrences matches {0..1} matches {	-- Details
+						items matches {
+							allow_archetype CLUSTER[id0.63] occurrences matches {0..1} matches {	-- Cluster: Size and Dimension
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.size\.v1|openEHR-EHR-CLUSTER\.dimensions\.v1/}
+							}
+						}
+					}
+				}
+			}
+			before [id50]
+			CLUSTER[id0.52] occurrences matches {0..1} matches {	-- Movements
+				items matches {
+					ELEMENT[id0.53] occurrences matches {0..1} matches {	-- Deviation on protrusion
+						value matches {
+							DV_CODED_TEXT[id0.66] matches {
+								defining_code matches {[ac0.1]}		-- Deviation on protrusion (synthesised)
+							}
+						}
+					}
+					ELEMENT[id0.57] occurrences matches {0..1} matches {	-- Description of Involuntary movements
+						value matches {
+							DV_TEXT[id0.67] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.52"] = <
+				text = <"Movements">
+				description = <"Movements of the tongue">
+			>
+			["id0.53"] = <
+				text = <"Deviation on protrusion">
+				description = <"Does the tongue deviate on protrusion">
+			>
+			["at0.54"] = <
+				text = <"None">
+				description = <"*">
+			>
+			["at0.55"] = <
+				text = <"Deviates to right">
+				description = <"*">
+			>
+			["at0.56"] = <
+				text = <"Deviates to left">
+				description = <"*">
+			>
+			["id0.57"] = <
+				text = <"Description of Involuntary movements">
+				description = <"Description of any involuntary movements of the tongue">
+			>
+			["id0.58"] = <
+				text = <"Size">
+				description = <"*">
+			>
+			["id0.59"] = <
+				text = <"Description">
+				description = <"Text description of the size of the tongue">
+			>
+			["id0.60"] = <
+				text = <"Presence of atrophy">
+				description = <"Does the tongue show signs of atrophy?">
+			>
+			["id0.61"] = <
+				text = <"Details">
+				description = <"*">
+			>
+			["at0.62"] = <
+				text = <"Tongue normal">
+				description = <"*">
+			>
+			["id0.63"] = <
+				text = <"Cluster: Size and Dimension">
+				description = <"*">
+			>
+			["id1.1"] = <
+				text = <"Inspection of tongue">
+				description = <"The findings on physical examination by inspection of the tongue">
+			>
+			["ac0.1"] = <
+				text = <"Deviation on protrusion (synthesised)">
+				description = <"Does the tongue deviate on protrusion (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.54", "at0.55", "at0.56">
+		>
+	>

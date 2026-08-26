@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2008-10-27</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">heather.leslie@oceaninformatics.com</original_author>
+    <other_contributors>Ian McNicoll, Ocean Informatics,UK</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">27606DDC8BC11CD99B544D4C7D992C00</other_details>
+    <other_details id="build_uid">8c1b0ea0-439c-406d-a7a9-f5f0b392965f</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Dokumentation der Anstrengung/Belastung, der der Patient ausgesetzt ist oder ausgesetzt war.</purpose>
+      <keywords>Übung</keywords>
+      <keywords>Bewegung</keywords>
+      <keywords>körperliche Anstrengung</keywords>
+      <keywords>Belastung</keywords>
+      <keywords>Belastungsgrad</keywords>
+      <keywords>Belastungsintensität</keywords>
+      <keywords>Tätigkeit</keywords>
+      <keywords>Beschäftigung</keywords>
+      <keywords>Betätigung</keywords>
+      <keywords>Kraftanstrengung</keywords>
+      <keywords>Anstrengung</keywords>
+      <keywords>Ausübung</keywords>
+      <keywords>Aktivität</keywords>
+      <keywords>Maßnahme</keywords>
+      <keywords>Energie</keywords>
+      <keywords>Tatkraft</keywords>
+      <keywords>Kraft</keywords>
+      <use>Zur Dokumentation des Belastungsgrads und der Phase der Belastung (Zeitpunkt) - zur Bereitstellung von Status- und Kontextinformationen innerhalb einer OBSERVATION-Klasse wie z.B. Blutdruckmessung.</use>
+      <misuse>Dient nicht der Dokumentation der eigentlichen Übungen/Aktivitäten und Messungen. Diese sollten in der dafür vorgesehenen OBSERVATION-Klasse erfasst werden.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Record information about the amount of energy expenditure that has been, or is being, experienced by the patient.</purpose>
+      <keywords>exercise</keywords>
+      <keywords>work</keywords>
+      <keywords>exertion</keywords>
+      <keywords>activity</keywords>
+      <keywords>energy</keywords>
+      <use>Record information about phase and levels of exertion - to provide state/context information within OBSERVATIONS such as Blood Pressure.</use>
+      <misuse>Not to be used to record actual exercise activities and measurements which should be recorded as OBSERVATIONS in their own right.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>لتسجيل معلومات حول كمية إنفاق الطاقة التي مر/ أو يمر بها المريض</purpose>
+      <keywords>التمرين</keywords>
+      <keywords>العمل</keywords>
+      <keywords>المجهود</keywords>
+      <keywords>النشاط</keywords>
+      <keywords>الطاقة</keywords>
+      <use>لتسجيل معلومات حول طور و مستويات المجهود - للإمداد بمعلومات حول السياق/الحالة في داخل الملاحظات مثل ضغط الدم.</use>
+      <misuse>لا يستخدم لتسجيل نشاطات التمرين الفعلي و القياسات التي ينبغي تسجيلها على هيئة ملاحظات منفردة بذاتها</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Ramona Wellmann</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">wellmann.ramona@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <uid>
+    <value>06ad50b7-b6e0-4fad-8dec-8d29678bb953</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.level_of_exertion.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0016</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0011</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0012</code_list>
+                    <code_list>at0013</code_list>
+                    <code_list>at0014</code_list>
+                    <code_list>at0015</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <property>
+                  <terminology_id>
+                    <value>openehr</value>
+                  </terminology_id>
+                  <code_string>130</code_string>
+                </property>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0.0</lower>
+                    <upper>1000.0</upper>
+                  </magnitude>
+                  <units>J/min</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Level of exertion</items>
+        <items id="description">Record information about level of exertion.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Measured</items>
+        <items id="description">The measured level of exertion.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">At rest</items>
+        <items id="description">The person is at rest, prior to undertaking exercise.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">During exertion</items>
+        <items id="description">The person is exerting themselves at the time.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Post-exertion</items>
+        <items id="description">Measurement is taken after exertion has ceased.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Phase</items>
+        <items id="description">The phase or context of exercise.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Exercise intensity</items>
+        <items id="description">Amount of work being done during exercise.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Intensity</items>
+        <items id="description">Semiquantitative description of the intensity of exercise undertaken.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Low Intensity</items>
+        <items id="description">Up to 80% Maximal Heart Rate.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Medium Intensity</items>
+        <items id="description">80-85% of Maximal Heart Rate.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">High Intensity</items>
+        <items id="description">85-90% Maximal Heart Rate.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Flat Out</items>
+        <items id="description">90-100% Maximal Heart Rate.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Description</items>
+        <items id="description">Description of the exertion.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">مستوى المجهود</items>
+        <items id="description">لتسجيل معلومات حول مستوى المجهود</items>
+      </items>
+      <items code="at0005">
+        <items id="text">تم قياسه</items>
+        <items id="description">مستوى المجهود الذي تم قياسه</items>
+      </items>
+      <items code="at0006">
+        <items id="text">عند الراحة</items>
+        <items id="description">الشخص في وضع الراحة, قبل إجراء التمرين</items>
+      </items>
+      <items code="at0007">
+        <items id="text">في أثناء المجهود</items>
+        <items id="description">الشخص يبذل مجهودا في هذا الوقت</items>
+      </items>
+      <items code="at0008">
+        <items id="text">ما بعد المجهود</items>
+        <items id="description">يتم إجراء القياس بعد توقف التمرين</items>
+      </items>
+      <items code="at0009">
+        <items id="text">الطور</items>
+        <items id="description">طور أو سياق التمرين</items>
+      </items>
+      <items code="at0010">
+        <items id="text">شدة التمرين</items>
+        <items id="description">كمية العمل التي يتم فعلها خلال التمرين</items>
+      </items>
+      <items code="at0011">
+        <items id="text">الشدة</items>
+        <items id="description">وصف نصف كمي لشدة التمرين الذي يتم فعله</items>
+      </items>
+      <items code="at0012">
+        <items id="text">شدة منخفضة</items>
+        <items id="description">الحد الأقصى من معدل ضربات القلب يتجاوز 80 %</items>
+      </items>
+      <items code="at0013">
+        <items id="text">شدة متوسطة</items>
+        <items id="description">الحد الأقصى من معدل ضربات القلب بين 80 - 85 %</items>
+      </items>
+      <items code="at0014">
+        <items id="text">شدة مرتفعة</items>
+        <items id="description">الحد الأقصى من معدل ضربات القلب بين 85 - 90%</items>
+      </items>
+      <items code="at0015">
+        <items id="text">مُسَطَّح</items>
+        <items id="description">الحد الأقصى من معدل ضربات القلب بين 90 - 100%</items>
+      </items>
+      <items code="at0016">
+        <items id="text">الوصف</items>
+        <items id="description">وصف المجهود</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Belastungsgrad</items>
+        <items id="description">Aufzeichnung von Informationen zum Belastungsgrad/Zustand des Patienten.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Messwert</items>
+        <items id="description">Gemessener Grad der körperlichen Anstrengung.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">In Ruhe</items>
+        <items id="description">Die Person befindet sich im Ruhezustand vor Beginn der Übung/körperlichen Anstrengung.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Während der Kraftanstrengung</items>
+        <items id="description">Die Person übt gerade die körperliche Anstrengung aus.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Nach der körperlichen Anstrengung</items>
+        <items id="description">Die Messung wird nach Abschluss der Belastung durchgeführt.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Phase</items>
+        <items id="description">Die Phase oder der Kontext zur Übung/körperlichen Anstrengung.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Intensität der Übung</items>
+        <items id="description">Die körperliche Anstrengung/Intensität, die während der Übung geleistet wird.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Intensität</items>
+        <items id="description">Semiquantitative Beschreibung der Intensität der körperlichen Anstrengung.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Geringe Intensität</items>
+        <items id="description">Bis zu 80 % der maximalen Herzfrequenz.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Mittlere Intensität</items>
+        <items id="description">80-85 % der maximalen Herzfrequenz.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Hohe Intensität</items>
+        <items id="description">85-90 % der maximalen Herzfrequenz.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Völlige Anstrengung/"auf Hochtouren arbeiten"/"Vollgas"</items>
+        <items id="description">90-100 % der maximalen Herzfrequenz.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung der körperlichen Anstrengung.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0006">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>128975004</code_string>
+        </value>
+      </items>
+      <items code="at0007">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>128976003</code_string>
+        </value>
+      </items>
+      <items code="at0008">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>128978002</code_string>
+        </value>
+      </items>
+      <items code="at0010">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>251894003</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

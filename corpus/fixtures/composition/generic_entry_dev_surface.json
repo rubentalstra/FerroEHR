@@ -1,0 +1,53 @@
+{
+  "_type": "COMPOSITION",
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+    },
+    "rm_version": "1.2.0"
+  },
+  "name": { "_type": "DV_TEXT", "value": "development surface" },
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+    "code_string": "en"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+    "code_string": "NL"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "event",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+      "code_string": "433"
+    }
+  },
+  "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" },
+  "content": [
+    {
+      "_type": "GENERIC_ENTRY",
+      "name": { "_type": "DV_TEXT", "value": "entry" },
+      "archetype_node_id": "openEHR-EHR-GENERIC_ENTRY.msg.v1",
+      "data": {
+        "_type": "CLUSTER",
+        "name": { "_type": "DV_TEXT", "value": "data" },
+        "archetype_node_id": "at0000",
+        "items": [
+          {
+            "_type": "ELEMENT",
+            "name": { "_type": "DV_TEXT", "value": "leaf" },
+            "archetype_node_id": "at0001",
+            "value": { "_type": "DV_TEXT", "value": "x" }
+          }
+        ]
+      }
+    }
+  ]
+}

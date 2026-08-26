@@ -1,0 +1,1586 @@
+﻿archetype (adl_version=1.4; uid=76d73704-9504-43af-939d-117e8b05dd34)
+	openEHR-EHR-CLUSTER.exam-palpation_cervix.v0
+specialise
+	openEHR-EHR-CLUSTER.exam.v2
+
+concept
+	[at0000.1]	-- Palpation of the cervix
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Nina Schewe, Natalia Strauch, Darin Leonhardt">
+				["organisation"] = <"Medizinische Hochschule Hannover, PLRI für medizinische Informatik/ Medizinische Hochschule">
+				["email"] = <"schewe.nina@mh-hannover.de, Strauch.Natalia@mh-hannover.de, leonhardt.darin@mh-hannover.de">
+			>
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Erik Sundvall">
+				["organisation"] = <"Region Östergötland + Linköping University">
+				["email"] = <"erik.sundvall@regionostergotland.se">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke, Vebjørn Arntzen">
+				["organisation"] = <"Nasjonal IKT HF, Oslo University Hospital">
+				["email"] = <"varntzen@ous-hf.no">
+			>
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Adriana Kitajima">
+				["organisation"] = <"Hospital Alemão Oswaldo Cruz - HAOC">
+				["email"] = <"adrianakitajima@gmail.com">
+			>
+		>
+		["el"] = <
+			language = <[ISO_639-1::el]>
+			author = <
+				["name"] = <"Erasmia Partafylla">
+				["organisation"] = <"Sigmasoft">
+				["email"] = <"c.partafylla@sigmasoft.gr">
+			>
+		>
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			author = <
+				["name"] = <"Julio de Sosa">
+				["organisation"] = <"Servei Català de la Salut">
+				["email"] = <"juliodesosa@catsalut.cat">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2015-06-23">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"*To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation. (en)">
+			use = <"*Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+			copyright = <"© openEHR Foundation">
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"*To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation. (en)">
+			use = <"*Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"fynd, undersökningsfynd, fysisk undersökning, u.a., utan anmärkning", ...>
+			misuse = <"*Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+			copyright = <"© openEHR Foundation">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"*To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation. (en)">
+			use = <"*Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+			copyright = <"© openEHR Foundation">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"*To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation. (en)">
+			use = <"*Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+			copyright = <"© openEHR Foundation">
+		>
+		["el"] = <
+			language = <[ISO_639-1::el]>
+			purpose = <"*To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation. (en)">
+			use = <"*Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation.">
+			use = <"Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element.">
+			misuse = <"Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			purpose = <"*To record a narrative description and clinical interpretation of the cervical findings obtained by manual palpation. (en)">
+			use = <"*Use to record a narrative description and clinical interpretation of the findings obtained by manual palpation of the cervix, such as a bimanual examination during pregnancy or labour.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-palpation_vagina or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used to record findings about the visual observation of the cervix during a speculum examination. Use CLUSTER.exam-inspection_cervix for this purpose.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)", "SB Bhattacharyya, Sudisa Consultancy Services, India", "Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway", "Shahla Foozonkhah, Iran ministry of health and education, Iran", "Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom (openEHR Editor)", "Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)", "Ingrid Heitmann, Oslo universitetssykehus HF, Norway", "Hilde Hollås, DIPS ASA, Norway", "Evelyn Hovenga, EJSH Consulting, Australia", "Lars Ivar Mehlum, Helse Bergen HF, Norway", "Sabine Leh, Haukeland University Hospital, Department of Pathology, Norway", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom", "Lars Morgan Karlsen, DIPS ASA, Norway", "Bjørn Næss, DIPS ASA, Norway", "Andrej Orel, Marand d.o.o., Slovenia", "Vladimir Pizzo, Hospital Sírio Libanês, Brazil", "Jussara Rotzsch, UNB, Brazil", "Anoop Shah, University College London, United Kingdom", "Line Silsand, Universitetssykehuset i Nord-Norge, Norway", "Norwegian Review Summary, Nasjonal IKT HF, Norway", "Nyree Taylor, Ocean Informatics, Australia (openEHR Editor)", "Rowan Thomas, St. Vincent's Hospital Melbourne, Australia", "Jon Tysdahl, Furst medlab AS, Norway", "John Tore Valand, Helse Bergen, Norway (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"5B918249BE99A14661A271C50223C657">
+		["build_uid"] = <"a3ca36c0-9991-413c-8a32-3093953af483">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {    -- Palpation of the cervix
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001.1] matches {    -- System or structure examined
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0.1]    -- Cervix
+						}
+					}
+				}
+			}
+			ELEMENT[at0012] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0011] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2/}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {    -- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.2] occurrences matches {0..1} matches {    -- Relative position
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.3,    -- Anterior
+							at0.4,    -- Normal
+							at0.5,    -- Posterior
+							at0.6,    -- Left
+							at0.7]    -- Right
+						}
+					}
+				}
+			}
+			ELEMENT[at0.8] occurrences matches {0..1} matches {    -- Consistency
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.9,    -- Firm
+							at0.10,    -- Intermediate
+							at0.11]    -- Soft
+						}
+					}
+				}
+			}
+			ELEMENT[at0.12] occurrences matches {0..1} matches {    -- Surface description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.13] occurrences matches {0..1} matches {    -- Mobility
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.14] occurrences matches {0..1} matches {    -- Tenderness
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.15] occurrences matches {0..1} matches {    -- Thickness
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.16,    -- Thick
+							at0.17,    -- Thin
+							at0.18,    -- Paper-thin
+							at0.19]    -- Oedematous
+						}
+					}
+				}
+			}
+			ELEMENT[at0.20] occurrences matches {0..1} matches {    -- Effacement
+				value matches {
+					DV_PROPORTION matches {
+						numerator matches {|0.0..100.0|}
+						type matches {2}
+					}
+				}
+			}
+			ELEMENT[at0.21] occurrences matches {0..1} matches {    -- Cervical length
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"cm">
+								magnitude = <|0.0..10.0|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.22] occurrences matches {0..1} matches {    -- Application to presenting part
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.24,    -- Loose
+							at0.25]    -- Tight
+						}
+					}
+				}
+			}
+			ELEMENT[at0.23] occurrences matches {0..1} matches {    -- Anterior lip presence
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.26,    -- Present
+							at0.27]    -- Absent
+						}
+					}
+				}
+			}
+			ELEMENT[at0.28] occurrences matches {0..1} matches {    -- External os dilation
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"cm">
+								magnitude = <|0.0..10.0|>
+							>
+						>
+					>
+				}
+			}
+			allow_archetype CLUSTER[at0004] occurrences matches {0..*} matches {    -- Examination findings
+				include
+					archetype_id/value matches {/.*/}
+			}
+			ELEMENT[at0.29] occurrences matches {0..1} matches {    -- Internal os dilation
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"cm">
+								magnitude = <|0.0..10.0|>
+							>
+						>
+					>
+				}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Multimedia representation
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Clinical interpretation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0008] occurrences matches {0..*} matches {    -- Examination not done
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0001"] = <
+					text = <"System or structure examined">
+					description = <"Identification of the examined body system or anatomical structure.">
+					comment = <"Coding of the system or structure examined with a terminology is preferred, where possible.">
+				>
+				["at0003"] = <
+					text = <"Clinical description">
+					description = <"Narrative description of the overall findings observed during the physical examination.">
+				>
+				["at0004"] = <
+					text = <"Examination findings">
+					description = <"Structured details about the physical examination findings.">
+				>
+				["at0005"] = <
+					text = <"Multimedia representation">
+					description = <"Digital image, video or diagram representing the physical examination findings.">
+				>
+				["at0006"] = <
+					text = <"Clinical interpretation">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of the physical examination findings.">
+					comment = <"For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the physical examination findings, not captured in other fields.">
+				>
+				["at0008"] = <
+					text = <"Examination not done">
+					description = <"Details to explicitly record that this examination was not performed.">
+				>
+				["at0011"] = <
+					text = <"Structured body site">
+					description = <"A structured description of the area of the body under examination.">
+					comment = <"If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.">
+				>
+				["at0012"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant.">
+				>
+				["at0000.1"] = <
+					text = <"Palpation of the cervix">
+					description = <"Findings obtained by manual palpation of the cervix.">
+				>
+				["at0001.1"] = <
+					text = <"System or structure examined">
+					description = <"Identification of the examined body system or anatomical structure.">
+					comment = <"Coding of the system or structure examined with a terminology is preferred, where possible.">
+				>
+				["at0.1"] = <
+					text = <"Cervix">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"Relative position">
+					description = <"Actual cervical position in relation to the expected, central anatomical position.">
+				>
+				["at0.3"] = <
+					text = <"Anterior">
+					description = <"The cervix is pointing anteriorly, towards the pubis.">
+				>
+				["at0.4"] = <
+					text = <"Normal">
+					description = <"The cervix is located centrally, in the typical anatomical position.">
+				>
+				["at0.5"] = <
+					text = <"Posterior">
+					description = <"The cervix is pointing posteriorly, towards the sacrum.">
+				>
+				["at0.6"] = <
+					text = <"Left">
+					description = <"The cervix is pointing towards the left side of the pelvis.">
+				>
+				["at0.7"] = <
+					text = <"Right">
+					description = <"The cervix is pointing towards the right side of the pelvis.">
+				>
+				["at0.8"] = <
+					text = <"Consistency">
+					description = <"The firmness of the cervix.">
+				>
+				["at0.9"] = <
+					text = <"Firm">
+					description = <"The cervix feels firm or hard.">
+				>
+				["at0.10"] = <
+					text = <"Intermediate">
+					description = <"The cervix feels neither firm nor soft.">
+				>
+				["at0.11"] = <
+					text = <"Soft">
+					description = <"The cervix feels soft or ripe.">
+				>
+				["at0.12"] = <
+					text = <"Surface description">
+					description = <"Narrative description about the surface of the cervix.">
+				>
+				["at0.13"] = <
+					text = <"Mobility">
+					description = <"Narrative description of the mobility of the cervix.">
+				>
+				["at0.14"] = <
+					text = <"Tenderness">
+					description = <"Narrative description about any tenderness associated  with the cervix, especially on movement.">
+				>
+				["at0.15"] = <
+					text = <"Thickness">
+					description = <"Relative distance from the internal os to the external surface of the cervix.">
+				>
+				["at0.16"] = <
+					text = <"Thick">
+					description = <"The cervix is thick.">
+				>
+				["at0.17"] = <
+					text = <"Thin">
+					description = <"The cervix is thin.">
+				>
+				["at0.18"] = <
+					text = <"Paper-thin">
+					description = <"The cervix is very thin.">
+				>
+				["at0.19"] = <
+					text = <"Oedematous">
+					description = <"The cervix is thickened and swollen.">
+				>
+				["at0.20"] = <
+					text = <"Effacement">
+					description = <"Estimation of the amount of cervical effacement, usually related to late pregnancy or labour.">
+				>
+				["at0.21"] = <
+					text = <"Cervical length">
+					description = <"Estimation of the length of the cervix during late pregnancy or labour.">
+				>
+				["at0.22"] = <
+					text = <"Application to presenting part">
+					description = <"Application of the cervix to the presenting part of the fetus during late pregnancy or labour.">
+				>
+				["at0.23"] = <
+					text = <"Anterior lip presence">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"Loose">
+					description = <"Cervix is not moulded to the fetal presenting part.">
+				>
+				["at0.25"] = <
+					text = <"Tight">
+					description = <"Cervix is closely moulded to the fetal presenting part.">
+				>
+				["at0.26"] = <
+					text = <"Present">
+					description = <"An anterior lip is present.">
+				>
+				["at0.27"] = <
+					text = <"Absent">
+					description = <"An anterior lip is not present.">
+				>
+				["at0.28"] = <
+					text = <"External os dilation">
+					description = <"The amount of dilation of the external opening of the cervix.">
+				>
+				["at0.29"] = <
+					text = <"Internal os dilation">
+					description = <"The amount of dilation of the internal opening of the cervix to the uterus.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0001"] = <
+					text = <"Undersøkt organsystem eller struktur">
+					description = <"Identifisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Det anbefales å kode organsystem eller den anatomiske strukturen med en terminologi dersom mulig.">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivelse">
+					description = <"Fritekstbeskrivelse av de overordnede funnene ved den fysiske undersøkelsen.">
+				>
+				["at0004"] = <
+					text = <"Spesifikke funn">
+					description = <"Ytterligere strukturerte detaljer om undersøkelsesfunnene.">
+				>
+				["at0005"] = <
+					text = <"Multimediarepresentasjon">
+					description = <"Digitale bilder, video eller diagram som representerer undersøkelsesfunnene.">
+				>
+				["at0006"] = <
+					text = <"Fortolkning">
+					description = <"Enkelt ord, setning, frase eller kort beskrivelse som representerer den kliniske betydning og viktigheten av funnene ved den fysiske undersøkelsen.">
+					comment = <"For eksempel \"Uten anmerkning\" eller \"Moderat inflammasjon\". Det anbefales å kode \"Fortolkning\" med en terminologi dersom mulig.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn ved undersøkelsen, som ikke dekkes av andre elementer.">
+				>
+				["at0008"] = <
+					text = <"Undersøkelse ikke utført">
+					description = <"Detaljer for å eksplisitt registrere at denne undersøkelsen ikke ble utført.">
+				>
+				["at0011"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Angivelse av en strukturert anatomisk lokalisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Hvis anatomisk lokalisasjon er entydig identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette SLOT'et ikke nødvendig å benytte.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av et enkelt fysisk sted enten på eller i menneskekroppen.">
+					comment = <"For eksempel undersøkelse av et spesifikt område på huden. Dersom den anatomiske lokaliseringen allerede er identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette dataelementet overflødig.">
+				>
+				["at0000.1"] = <
+					text = <"*Palpation of the cervix (en)">
+					description = <"*Findings obtained by manual palpation of the cervix. (en)">
+				>
+				["at0001.1"] = <
+					text = <"Undersøkt organsystem eller struktur">
+					description = <"Identifisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Det anbefales å kode organsystem eller den anatomiske strukturen med en terminologi dersom mulig.">
+				>
+				["at0.1"] = <
+					text = <"*Cervix (en)">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"*Relative position (en)">
+					description = <"*Actual cervical position in relation to the expected, central anatomical position. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Anterior (en)">
+					description = <"*The cervix is pointing anteriorly, towards the pubis. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Normal (en)">
+					description = <"*The cervix is located centrally, in the typical anatomical position. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Posterior (en)">
+					description = <"*The cervix is pointing posteriorly, towards the sacrum. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Left (en)">
+					description = <"*The cervix is pointing towards the left side of the pelvis. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Right (en)">
+					description = <"*The cervix is pointing towards the right side of the pelvis. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Consistency (en)">
+					description = <"*The firmness of the cervix. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Firm (en)">
+					description = <"*The cervix feels firm or hard. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The cervix feels neither firm nor soft. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Soft (en)">
+					description = <"*The cervix feels soft or ripe. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Surface description (en)">
+					description = <"*Narrative description about the surface of the cervix. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mobility (en)">
+					description = <"*Narrative description of the mobility of the cervix (en).">
+				>
+				["at0.14"] = <
+					text = <"*Tenderness (en)">
+					description = <"*Narrative description about any tenderness associated  with the cervix, especially on movement. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Thickness (en)">
+					description = <"*Relative distance from the internal os to the external surface of the cervix. (en)">
+				>
+				["at0.16"] = <
+					text = <"*Thick (en)">
+					description = <"*The cervix is thick. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Thin (en)">
+					description = <"*The cervix is thin. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Paper-thin (en)">
+					description = <"*The cervix is very thin. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Oedematous (en)">
+					description = <"*The cervix is thickened and swollen. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Effacement (en)">
+					description = <"*Estimation of the amount of cervical effacement, usually related to late pregnancy or labour. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Cervical length (en)">
+					description = <"*Estimation of the length of the cervix during late pregnancy or labour. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Application to presenting part (en)">
+					description = <"*Application of the cervix to the presenting part of the fetus during late pregnancy or labour. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Anterior lip presence (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Loose (en)">
+					description = <"*Cervix is not moulded to the fetal presenting part. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Tight (en)">
+					description = <"*Cervix is closely moulded to the fetal presenting part. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior lip is present. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior lip is not present. (en)">
+				>
+				["at0.28"] = <
+					text = <"*External os dilation (en)">
+					description = <"*The amount of dilation of the external opening of the cervix. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Internal os dilation (en)">
+					description = <"*The amount of dilation of the internal opening of the cervix to the uterus. (en)">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0001"] = <
+					text = <"Sistema ou estrutura examinada">
+					description = <"Identificação do sistema do corpo examinado ou da estrutura anatômica.">
+					comment = <"A codificação do sistema ou estrutura examinada com uma terminologia é preferível, sempre que possível.">
+				>
+				["at0003"] = <
+					text = <"Descrição clínica">
+					description = <"Descrição narrativa dos achados gerais observados durante o exame físico.">
+				>
+				["at0004"] = <
+					text = <"Resultados do exame">
+					description = <"Detalhes estruturados sobre os resultados do exame físico.">
+				>
+				["at0005"] = <
+					text = <"Representação multimídia">
+					description = <"Imagem digital, vídeo ou diagrama representando os achados do exame físico.">
+				>
+				["at0006"] = <
+					text = <"Interpretação clínica">
+					description = <"Palavra, frase ou breve descrição que represente o significado clínico e o significado dos resultados do exame físico.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0007"] = <
+					text = <"Comentário">
+					description = <"Narrativa adicional sobre os achados do exame físico, não capturados em outros campos.">
+				>
+				["at0008"] = <
+					text = <"Exame não realizado">
+					description = <"Detalhes para registrar explicitamente que esse exame não foi realizado.">
+				>
+				["at0011"] = <
+					text = <"Local do corpo estruturado">
+					description = <"Uma descrição estruturada da área do corpo em exame.">
+					comment = <"Se o local do corpo tiver sido totalmente identificado no elemento de dados 'Sistema ou estrutura examinada' ou 'Local do corpo', esse SLOT se tornará redundante.">
+				>
+				["at0012"] = <
+					text = <"Local do corpo">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0000.1"] = <
+					text = <"*Palpation of the cervix (en)">
+					description = <"*Findings obtained by manual palpation of the cervix. (en)">
+				>
+				["at0001.1"] = <
+					text = <"Sistema ou estrutura examinada">
+					description = <"Identificação do sistema do corpo examinado ou da estrutura anatômica.">
+					comment = <"A codificação do sistema ou estrutura examinada com uma terminologia é preferível, sempre que possível.">
+				>
+				["at0.1"] = <
+					text = <"*Cervix (en)">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"*Relative position (en)">
+					description = <"*Actual cervical position in relation to the expected, central anatomical position. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Anterior (en)">
+					description = <"*The cervix is pointing anteriorly, towards the pubis. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Normal (en)">
+					description = <"*The cervix is located centrally, in the typical anatomical position. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Posterior (en)">
+					description = <"*The cervix is pointing posteriorly, towards the sacrum. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Left (en)">
+					description = <"*The cervix is pointing towards the left side of the pelvis. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Right (en)">
+					description = <"*The cervix is pointing towards the right side of the pelvis. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Consistency (en)">
+					description = <"*The firmness of the cervix. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Firm (en)">
+					description = <"*The cervix feels firm or hard. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The cervix feels neither firm nor soft. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Soft (en)">
+					description = <"*The cervix feels soft or ripe. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Surface description (en)">
+					description = <"*Narrative description about the surface of the cervix. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mobility (en)">
+					description = <"*Narrative description of the mobility of the cervix (en).">
+				>
+				["at0.14"] = <
+					text = <"*Tenderness (en)">
+					description = <"*Narrative description about any tenderness associated  with the cervix, especially on movement. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Thickness (en)">
+					description = <"*Relative distance from the internal os to the external surface of the cervix. (en)">
+				>
+				["at0.16"] = <
+					text = <"*Thick (en)">
+					description = <"*The cervix is thick. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Thin (en)">
+					description = <"*The cervix is thin. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Paper-thin (en)">
+					description = <"*The cervix is very thin. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Oedematous (en)">
+					description = <"*The cervix is thickened and swollen. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Effacement (en)">
+					description = <"*Estimation of the amount of cervical effacement, usually related to late pregnancy or labour. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Cervical length (en)">
+					description = <"*Estimation of the length of the cervix during late pregnancy or labour. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Application to presenting part (en)">
+					description = <"*Application of the cervix to the presenting part of the fetus during late pregnancy or labour. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Anterior lip presence (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Loose (en)">
+					description = <"*Cervix is not moulded to the fetal presenting part. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Tight (en)">
+					description = <"*Cervix is closely moulded to the fetal presenting part. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior lip is present. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior lip is not present. (en)">
+				>
+				["at0.28"] = <
+					text = <"*External os dilation (en)">
+					description = <"*The amount of dilation of the external opening of the cervix. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Internal os dilation (en)">
+					description = <"*The amount of dilation of the internal opening of the cervix to the uterus. (en)">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0001"] = <
+					text = <"Untersuchtes System oder untersuchte Struktur">
+					description = <"Identifizierung des untersuchten Körpersystems oder der anatomischen Struktur.">
+					comment = <"Wenn möglich wird die Kodierung des untersuchten Systems oder der untersuchten Struktur mit einer Terminologie bevorzugt.">
+				>
+				["at0003"] = <
+					text = <"Klinische Beschreibung">
+					description = <"Beschreibung der bei der körperlichen Untersuchung beobachteten Gesamtbefunde.">
+				>
+				["at0004"] = <
+					text = <"Untersuchungsergebnisse">
+					description = <"Strukturierte Angaben zu den Ergebnissen der körperlichen Untersuchung.">
+				>
+				["at0005"] = <
+					text = <"Multimediale Darstellung">
+					description = <"Digitales Bild, Video oder Diagramm, das die Ergebnisse der körperlichen Untersuchung darstellt.">
+				>
+				["at0006"] = <
+					text = <"Klinische Interpretation">
+					description = <"Ein einzelnes Wort, eine Phrase oder eine kurze Beschreibung, die die klinische Bedeutung und Wichtigkeit der Untersuchungsergebnisse darstellt.">
+					comment = <"Zum Beispiel: „Ohne Befund“ oder „Mäßige Entzündung vorhanden“. Wenn möglich, wird die Codierung der „Klinischen Interpretation“ mit einer Terminologie bevorzugt.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzliche Beschreibung der Ergebnisse der körperlichen Untersuchung, die in anderen Bereichen nicht erfasst werden konnten.">
+				>
+				["at0008"] = <
+					text = <"Nicht durchgeführte Untersuchung">
+					description = <"Eine Aussage die ausdrücklich erfasst, dass die Untersuchung nicht durchgeführt wurde.">
+				>
+				["at0011"] = <
+					text = <"Strukturierte Körperstelle">
+					description = <"Eine strukturierte Beschreibung des zu untersuchenden Körperbereichs.">
+					comment = <"Wenn die Körperstelle im Datenelement \"Untersuchtes System oder untersuchte Struktur\" oder im Datenelement \"Körperstelle\" vollständig identifiziert wurde, wird die Verwendung dieses SLOT überflüssig.">
+				>
+				["at0012"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des untersuchten Körperbereichs.">
+					comment = <"Zum Beispiel die Untersuchung einer bestimmten Hautpartie. Wenn die Körperstelle im Datenelement „Untersuchtes System oder Struktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+				["at0000.1"] = <
+					text = <"*Palpation of the cervix (en)">
+					description = <"*Findings obtained by manual palpation of the cervix. (en)">
+				>
+				["at0001.1"] = <
+					text = <"Untersuchtes System oder untersuchte Struktur">
+					description = <"Identifizierung des untersuchten Körpersystems oder der anatomischen Struktur.">
+					comment = <"Wenn möglich wird die Kodierung des untersuchten Systems oder der untersuchten Struktur mit einer Terminologie bevorzugt.">
+				>
+				["at0.1"] = <
+					text = <"*Cervix (en)">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"*Relative position (en)">
+					description = <"*Actual cervical position in relation to the expected, central anatomical position. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Anterior (en)">
+					description = <"*The cervix is pointing anteriorly, towards the pubis. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Normal (en)">
+					description = <"*The cervix is located centrally, in the typical anatomical position. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Posterior (en)">
+					description = <"*The cervix is pointing posteriorly, towards the sacrum. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Left (en)">
+					description = <"*The cervix is pointing towards the left side of the pelvis. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Right (en)">
+					description = <"*The cervix is pointing towards the right side of the pelvis. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Consistency (en)">
+					description = <"*The firmness of the cervix. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Firm (en)">
+					description = <"*The cervix feels firm or hard. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The cervix feels neither firm nor soft. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Soft (en)">
+					description = <"*The cervix feels soft or ripe. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Surface description (en)">
+					description = <"*Narrative description about the surface of the cervix. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mobility (en)">
+					description = <"*Narrative description of the mobility of the cervix (en).">
+				>
+				["at0.14"] = <
+					text = <"*Tenderness (en)">
+					description = <"*Narrative description about any tenderness associated  with the cervix, especially on movement. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Thickness (en)">
+					description = <"*Relative distance from the internal os to the external surface of the cervix. (en)">
+				>
+				["at0.16"] = <
+					text = <"*Thick (en)">
+					description = <"*The cervix is thick. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Thin (en)">
+					description = <"*The cervix is thin. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Paper-thin (en)">
+					description = <"*The cervix is very thin. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Oedematous (en)">
+					description = <"*The cervix is thickened and swollen. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Effacement (en)">
+					description = <"*Estimation of the amount of cervical effacement, usually related to late pregnancy or labour. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Cervical length (en)">
+					description = <"*Estimation of the length of the cervix during late pregnancy or labour. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Application to presenting part (en)">
+					description = <"*Application of the cervix to the presenting part of the fetus during late pregnancy or labour. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Anterior lip presence (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Loose (en)">
+					description = <"*Cervix is not moulded to the fetal presenting part. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Tight (en)">
+					description = <"*Cervix is closely moulded to the fetal presenting part. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior lip is present. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior lip is not present. (en)">
+				>
+				["at0.28"] = <
+					text = <"*External os dilation (en)">
+					description = <"*The amount of dilation of the external opening of the cervix. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Internal os dilation (en)">
+					description = <"*The amount of dilation of the internal opening of the cervix to the uterus. (en)">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0001"] = <
+					text = <"System eller struktur som undersökts">
+					description = <"Identifiering av systemet eller strukturen som undersökts.">
+					comment = <"Om möjligt, koda systemet eller strukturen med hjälp av ett terminologisystem.">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivning">
+					description = <"En övergripande beskrivning av fynden från den fysiska undersökningen. ">
+				>
+				["at0004"] = <
+					text = <"Fynd vid undersökning">
+					description = <"Strukturerade detaljer om fynd vid den fysiska undersökningen.">
+				>
+				["at0005"] = <
+					text = <"Multimedia-representation">
+					description = <"Digital bild, video eller diagram som återger fynd från undersökningen.">
+				>
+				["at0006"] = <
+					text = <"Klinisk tolkning">
+					description = <"Ord, fras eller kort beskrivning av fyndens kliniska betydelse.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Kommentarer avseende undersökningsfynd som inte beskrivs i övriga fält.">
+				>
+				["at0008"] = <
+					text = <"Undersökning ej genomförd">
+					description = <"Detaljerad beskrivning om att undersökningen inte genomfördes.">
+				>
+				["at0011"] = <
+					text = <"Strukturerad anatomisk plats">
+					description = <"Strukturerad beskrivning av den anatomiska platsen som undersökts.">
+					comment = <"Om den anatomiska platsen kan identifieras helt via dataelementet \"System eller struktur som undersökts\" så blir denna del redundant.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk plats">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0000.1"] = <
+					text = <"*Palpation of the cervix (en)">
+					description = <"*Findings obtained by manual palpation of the cervix. (en)">
+				>
+				["at0001.1"] = <
+					text = <"System eller struktur som undersökts">
+					description = <"Identifiering av systemet eller strukturen som undersökts.">
+					comment = <"Om möjligt, koda systemet eller strukturen med hjälp av ett terminologisystem.">
+				>
+				["at0.1"] = <
+					text = <"*Cervix (en)">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"*Relative position (en)">
+					description = <"*Actual cervical position in relation to the expected, central anatomical position. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Anterior (en)">
+					description = <"*The cervix is pointing anteriorly, towards the pubis. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Normal (en)">
+					description = <"*The cervix is located centrally, in the typical anatomical position. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Posterior (en)">
+					description = <"*The cervix is pointing posteriorly, towards the sacrum. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Left (en)">
+					description = <"*The cervix is pointing towards the left side of the pelvis. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Right (en)">
+					description = <"*The cervix is pointing towards the right side of the pelvis. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Consistency (en)">
+					description = <"*The firmness of the cervix. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Firm (en)">
+					description = <"*The cervix feels firm or hard. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The cervix feels neither firm nor soft. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Soft (en)">
+					description = <"*The cervix feels soft or ripe. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Surface description (en)">
+					description = <"*Narrative description about the surface of the cervix. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mobility (en)">
+					description = <"*Narrative description of the mobility of the cervix (en).">
+				>
+				["at0.14"] = <
+					text = <"*Tenderness (en)">
+					description = <"*Narrative description about any tenderness associated  with the cervix, especially on movement. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Thickness (en)">
+					description = <"*Relative distance from the internal os to the external surface of the cervix. (en)">
+				>
+				["at0.16"] = <
+					text = <"*Thick (en)">
+					description = <"*The cervix is thick. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Thin (en)">
+					description = <"*The cervix is thin. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Paper-thin (en)">
+					description = <"*The cervix is very thin. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Oedematous (en)">
+					description = <"*The cervix is thickened and swollen. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Effacement (en)">
+					description = <"*Estimation of the amount of cervical effacement, usually related to late pregnancy or labour. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Cervical length (en)">
+					description = <"*Estimation of the length of the cervix during late pregnancy or labour. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Application to presenting part (en)">
+					description = <"*Application of the cervix to the presenting part of the fetus during late pregnancy or labour. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Anterior lip presence (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Loose (en)">
+					description = <"*Cervix is not moulded to the fetal presenting part. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Tight (en)">
+					description = <"*Cervix is closely moulded to the fetal presenting part. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior lip is present. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior lip is not present. (en)">
+				>
+				["at0.28"] = <
+					text = <"*External os dilation (en)">
+					description = <"*The amount of dilation of the external opening of the cervix. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Internal os dilation (en)">
+					description = <"*The amount of dilation of the internal opening of the cervix to the uterus. (en)">
+				>
+			>
+		>
+		["el"] = <
+			items = <
+				["at0001"] = <
+					text = <"Εξεταζόμενο σύστημα ή δομή">
+					description = <"Ταυτοποίηση του εξεταζόμενου συστήματος σώματος ή ανατομικής δομής.">
+					comment = <"Προτιμάται η κωδικοποίηση του συστήματος ή της δομής που εξετάζεται με ορολογία, όπου είναι δυνατόν.">
+				>
+				["at0003"] = <
+					text = <"Κλινική Περιγραφή">
+					description = <"Αφηγηματική περιγραφή των συνολικών ευρημάτων που παρατηρήθηκαν κατά τη διάρκεια της φυσικής εξέτασης.">
+				>
+				["at0004"] = <
+					text = <"Ευρήματα εξέτασης">
+					description = <"Δομημένες λεπτομέρειες σχετικά με τα ευρήματα της φυσικής εξέτασης.">
+				>
+				["at0005"] = <
+					text = <"Αναπαράσταση πολυμέσων">
+					description = <"Ψηφιακή εικόνα, βίντεο ή διάγραμμα που αναπαριστά τα ευρήματα της φυσικής εξέτασης.">
+				>
+				["at0006"] = <
+					text = <"Κλινική αξιολόγηση">
+					description = <"Μία λέξη, φράση ή σύντομη περιγραφή που αντιπροσωπεύει την κλινική σημασία και σημασία των ευρημάτων της φυσικής εξέτασης.">
+					comment = <"Για παράδειγμα: «Δεν ανιχνεύθηκε ανωμαλία» ή «Υπάρχει μέτρια φλεγμονή». Προτιμάται η κωδικοποίηση της «κλινικής ερμηνείας» με ορολογία, όπου είναι δυνατόν.">
+				>
+				["at0007"] = <
+					text = <"Σχόλιο">
+					description = <"Πρόσθετη αφήγηση σχετικά με τα ευρήματα της φυσικής εξέτασης, που δεν αποτυπώνεται σε άλλους τομείς.">
+				>
+				["at0008"] = <
+					text = <"Λόγος διακοπής εξέτασης">
+					description = <"Λεπτομέρειες για να καταγραφεί ρητά ότι αυτή η εξέταση δεν διενεργήθηκε.">
+				>
+				["at0011"] = <
+					text = <"ω">
+					description = <"περιγραφή της περιοχής του υπό εξέταση σώματος.">
+					comment = <"*If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.(en)">
+				>
+				["at0012"] = <
+					text = <"Περιοχή σώματος">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0000.1"] = <
+					text = <"*Palpation of the cervix (en)">
+					description = <"*Findings obtained by manual palpation of the cervix. (en)">
+				>
+				["at0001.1"] = <
+					text = <"Εξεταζόμενο σύστημα ή δομή">
+					description = <"Ταυτοποίηση του εξεταζόμενου συστήματος σώματος ή ανατομικής δομής.">
+					comment = <"Προτιμάται η κωδικοποίηση του συστήματος ή της δομής που εξετάζεται με ορολογία, όπου είναι δυνατόν.">
+				>
+				["at0.1"] = <
+					text = <"*Cervix (en)">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"*Relative position (en)">
+					description = <"*Actual cervical position in relation to the expected, central anatomical position. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Anterior (en)">
+					description = <"*The cervix is pointing anteriorly, towards the pubis. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Normal (en)">
+					description = <"*The cervix is located centrally, in the typical anatomical position. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Posterior (en)">
+					description = <"*The cervix is pointing posteriorly, towards the sacrum. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Left (en)">
+					description = <"*The cervix is pointing towards the left side of the pelvis. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Right (en)">
+					description = <"*The cervix is pointing towards the right side of the pelvis. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Consistency (en)">
+					description = <"*The firmness of the cervix. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Firm (en)">
+					description = <"*The cervix feels firm or hard. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The cervix feels neither firm nor soft. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Soft (en)">
+					description = <"*The cervix feels soft or ripe. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Surface description (en)">
+					description = <"*Narrative description about the surface of the cervix. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mobility (en)">
+					description = <"*Narrative description of the mobility of the cervix (en).">
+				>
+				["at0.14"] = <
+					text = <"*Tenderness (en)">
+					description = <"*Narrative description about any tenderness associated  with the cervix, especially on movement. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Thickness (en)">
+					description = <"*Relative distance from the internal os to the external surface of the cervix. (en)">
+				>
+				["at0.16"] = <
+					text = <"*Thick (en)">
+					description = <"*The cervix is thick. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Thin (en)">
+					description = <"*The cervix is thin. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Paper-thin (en)">
+					description = <"*The cervix is very thin. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Oedematous (en)">
+					description = <"*The cervix is thickened and swollen. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Effacement (en)">
+					description = <"*Estimation of the amount of cervical effacement, usually related to late pregnancy or labour. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Cervical length (en)">
+					description = <"*Estimation of the length of the cervix during late pregnancy or labour. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Application to presenting part (en)">
+					description = <"*Application of the cervix to the presenting part of the fetus during late pregnancy or labour. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Anterior lip presence (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Loose (en)">
+					description = <"*Cervix is not moulded to the fetal presenting part. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Tight (en)">
+					description = <"*Cervix is closely moulded to the fetal presenting part. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior lip is present. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior lip is not present. (en)">
+				>
+				["at0.28"] = <
+					text = <"*External os dilation (en)">
+					description = <"*The amount of dilation of the external opening of the cervix. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Internal os dilation (en)">
+					description = <"*The amount of dilation of the internal opening of the cervix to the uterus. (en)">
+				>
+			>
+		>
+		["es"] = <
+			items = <
+				["at0001"] = <
+					text = <"*System or structure examined(en)">
+					description = <"*Identification of the examined body system or anatomical structure.(en)">
+					comment = <"*Coding of the system or structure examined with a terminology is preferred, where possible.(en)">
+				>
+				["at0003"] = <
+					text = <"*Clinical description(en)">
+					description = <"*Narrative description of the overall findings observed during the physical examination.(en)">
+				>
+				["at0004"] = <
+					text = <"*Examination findings(en)">
+					description = <"*Structured details about the physical examination findings.(en)">
+				>
+				["at0005"] = <
+					text = <"*Multimedia representation(en)">
+					description = <"*Digital image, video or diagram representing the physical examination findings.(en)">
+				>
+				["at0006"] = <
+					text = <"*Clinical interpretation(en)">
+					description = <"*Single word, phrase or brief description that represents the clinical meaning and significance of the physical examination findings.(en)">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.(en)">
+				>
+				["at0007"] = <
+					text = <"*Comment(en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields.(en)">
+				>
+				["at0008"] = <
+					text = <"*Examination not done(en)">
+					description = <"*Details to explicitly record that this examination was not performed.(en)">
+				>
+				["at0011"] = <
+					text = <"*Structured body site(en)">
+					description = <"*A structured description of the area of the body under examination.(en)">
+					comment = <"*If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.(en)">
+				>
+				["at0012"] = <
+					text = <"*Body site(en)">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0000.1"] = <
+					text = <"*Palpation of the cervix (en)">
+					description = <"*Findings obtained by manual palpation of the cervix. (en)">
+				>
+				["at0001.1"] = <
+					text = <"*System or structure examined(en)">
+					description = <"*Identification of the examined body system or anatomical structure.(en)">
+					comment = <"*Coding of the system or structure examined with a terminology is preferred, where possible.(en)">
+				>
+				["at0.1"] = <
+					text = <"*Cervix (en)">
+					description = <"">
+				>
+				["at0.2"] = <
+					text = <"*Relative position (en)">
+					description = <"*Actual cervical position in relation to the expected, central anatomical position. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Anterior (en)">
+					description = <"*The cervix is pointing anteriorly, towards the pubis. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Normal (en)">
+					description = <"*The cervix is located centrally, in the typical anatomical position. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Posterior (en)">
+					description = <"*The cervix is pointing posteriorly, towards the sacrum. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Left (en)">
+					description = <"*The cervix is pointing towards the left side of the pelvis. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Right (en)">
+					description = <"*The cervix is pointing towards the right side of the pelvis. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Consistency (en)">
+					description = <"*The firmness of the cervix. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Firm (en)">
+					description = <"*The cervix feels firm or hard. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The cervix feels neither firm nor soft. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Soft (en)">
+					description = <"*The cervix feels soft or ripe. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Surface description (en)">
+					description = <"*Narrative description about the surface of the cervix. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mobility (en)">
+					description = <"*Narrative description of the mobility of the cervix (en).">
+				>
+				["at0.14"] = <
+					text = <"*Tenderness (en)">
+					description = <"*Narrative description about any tenderness associated  with the cervix, especially on movement. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Thickness (en)">
+					description = <"*Relative distance from the internal os to the external surface of the cervix. (en)">
+				>
+				["at0.16"] = <
+					text = <"*Thick (en)">
+					description = <"*The cervix is thick. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Thin (en)">
+					description = <"*The cervix is thin. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Paper-thin (en)">
+					description = <"*The cervix is very thin. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Oedematous (en)">
+					description = <"*The cervix is thickened and swollen. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Effacement (en)">
+					description = <"*Estimation of the amount of cervical effacement, usually related to late pregnancy or labour. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Cervical length (en)">
+					description = <"*Estimation of the length of the cervix during late pregnancy or labour. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Application to presenting part (en)">
+					description = <"*Application of the cervix to the presenting part of the fetus during late pregnancy or labour. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Anterior lip presence (en)">
+					description = <"">
+				>
+				["at0.24"] = <
+					text = <"*Loose (en)">
+					description = <"*Cervix is not moulded to the fetal presenting part. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Tight (en)">
+					description = <"*Cervix is closely moulded to the fetal presenting part. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior lip is present. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior lip is not present. (en)">
+				>
+				["at0.28"] = <
+					text = <"*External os dilation (en)">
+					description = <"*The amount of dilation of the external opening of the cervix. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Internal os dilation (en)">
+					description = <"*The amount of dilation of the internal opening of the cervix to the uterus. (en)">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0.1"] = <[SNOMED-CT::71252005]>
+			>
+		>
+	>

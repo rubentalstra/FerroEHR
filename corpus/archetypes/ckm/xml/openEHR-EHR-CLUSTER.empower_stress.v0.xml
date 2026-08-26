@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2012-12-03</original_author>
+    <original_author id="name">Ilias Lamprinos</original_author>
+    <original_author id="organisation">Intracom Telecom</original_author>
+    <original_author id="email">labil@intracom.gr</original_author>
+    <other_contributors>Hans Demski, Helmholtz Zentrum München GmbH, demski@helmholtz-muenchen.de</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Hans Demski, Helmholtz Zentrum München GmbH, demski@helmholtz-muenchen.de</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">706605CBDFA44C71BC332556F646D0FB</other_details>
+    <other_details id="build_uid">0618eb09-bd30-4abc-b4e2-2da95ddac9df</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>This archetype is used to facilitate recording of the perceived level of stress of a subject.&#xD;
+&#xD;
+Based on the data model developed within the EMPOWER project, www.empower-fp7,eu.</purpose>
+      <use>Self-assesment of the subject's level of stress, as an observation of daily living.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>85c135b8-e444-4036-8c29-7dce613f43f8</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.empower_stress.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0007</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0008</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0009</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Stress Level (EMPOWER)</items>
+        <items id="description">Stress level provides a description of the perceived stress level.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Stress</items>
+        <items id="description">Indicates the level of stress as perceived by the patient.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Peaceful</items>
+        <items id="description">Feeling peaceful.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Calm</items>
+        <items id="description">Feeling calm.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Worried</items>
+        <items id="description">Feeling worried.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Nervous</items>
+        <items id="description">Feeling nervous.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Stressful</items>
+        <items id="description">Feeling stressful.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="MTH">
+      <items code="at0000">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C1319127</code_string>
+        </value>
+      </items>
+      <items code="at0001">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C1319127</code_string>
+        </value>
+      </items>
+      <items code="at0005">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0516623</code_string>
+        </value>
+      </items>
+      <items code="at0006">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0522165</code_string>
+        </value>
+      </items>
+      <items code="at0007">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0850735</code_string>
+        </value>
+      </items>
+      <items code="at0008">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0849963</code_string>
+        </value>
+      </items>
+      <items code="at0009">
+        <value>
+          <terminology_id>
+            <value>MTH</value>
+          </terminology_id>
+          <code_string>C0231297</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

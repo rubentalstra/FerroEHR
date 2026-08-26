@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>sv</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2018-04-09</original_author>
+    <original_author id="name">Annika Terner</original_author>
+    <original_author id="organisation">Region Uppsala, Sweden</original_author>
+    <original_author id="email">annika.terner@regionuppsala.se</original_author>
+    <other_contributors>Carrick Gillespie</other_contributors>
+    <other_contributors>Erik Sundvall</other_contributors>
+    <other_contributors>Maryam Khavari</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references"></other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">4306EFA78626D61426117F1B2F5DAB10</other_details>
+    <other_details id="build_uid">b4bb81bb-4841-43a6-8919-5c0031ffe27c</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Avsedd för notering av viktad poängberäkning av fysisk aktivitet per vecka.&#xD;
+Avsedd för användningsfall där lagring eller överföring av det beräknade värdet uttryckligen krävs, exempelvis på grund av lokala eller nationella rapporterigskrav.&#xD;
+</purpose>
+      <keywords>fysisk aktivitet, levnadsvanor</keywords>
+      <use>Används till att notera den viktade poängen för en individs fysiska aktivitet under en vecka, exempelvis som en del i levnadsvanebedömning.&#xD;
+Beräkningen av viktad poäng är: antal minuter me dmycket aktivitet multiplicerat med två, plus antal minuter med medelmåttig aktivitet.</use>
+      <misuse>Bör ej användaas i system eller användningsfall där beräkningen kan automatiseras och genomföras vid behov istället för att beräknas och lagras i förväg.&#xD;
+Bör ej användas för att notera andta sorters beräkningar av fysisk aktivitet.&#xD;
+</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a weighted score of the individual's physical activity information within a single week.&#xD;
+Primarily intended for use cases where storage or transfer of the calculated value is explicitly requested, e.g. by local or national reporting requirements.</purpose>
+      <keywords>physical</keywords>
+      <keywords>activity</keywords>
+      <keywords>lifestyle</keywords>
+      <use>Use to record the calculated score of an individual's physical activity information within a single week, for example as part of a lifestyle factors evaluation. &#xD;
+The calculation of the weighted score is: the number of minutes of vigorous exercice multiplied by two, plus the number of minutes of  moderate exercice.</use>
+      <misuse>Not to be used in systems or use-cases  where the calculation can be automated upon request instead of being pre-calculated and explicitly stored.&#xD;
+Not to be used to record results of other physical activity calculations.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>en</code_string>
+    </language>
+    <author id="name">Carrick Gillespie</author>
+  </translations>
+  <uid>
+    <value>5a91fb75-4a7f-48cb-9487-4c2b21cdbddb</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.physical_activity_calculation.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0</lower>
+              </precision>
+              <units>min/wk</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Beräkning av fysisk aktivitet</items>
+        <items id="description">Viktad poängberäkning av fysisk aktivitet per vecka.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Viktad total fysisk aktivitet per vecka</items>
+        <items id="description">minuter fysisk träning  x 2 + minuter vardagsmotion</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Physical activity calculation</items>
+        <items id="description">Weighted score for weekly physical activity</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Weighted total physical activity minutes per week</items>
+        <items id="description">Minutes of vigorous exercice x 2 + minutes of moderate exercice</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

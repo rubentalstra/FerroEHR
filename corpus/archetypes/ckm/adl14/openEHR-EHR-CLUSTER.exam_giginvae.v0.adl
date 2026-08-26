@@ -1,0 +1,262 @@
+﻿archetype (adl_version=1.4; uid=94dd15fd-54ba-4c71-933d-5d8b2970ea11)
+	openEHR-EHR-CLUSTER.exam_giginvae.v0
+
+concept
+	[at0000]	-- Examination of giginvae
+language
+	original_language = <[ISO_639-1::ja]>
+description
+	original_author = <
+		["name"] = <"">
+	>
+	details = <
+		["ja"] = <
+			language = <[ISO_639-1::ja]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© Takahiro Nakahara
+Shinji Kobayashi
+© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"D7071044302B06DEE7D9240FB66102EE">
+		["build_uid"] = <"a51622a5-8395-4d38-9f73-69485d189a7b">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Examination of giginvae
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- No abnormality detected
+				value matches {
+					DV_BOOLEAN matches {
+						value matches {True, False}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype ELEMENT[at0003] occurrences matches {0..*} matches {	-- Examination findings
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype ELEMENT[at0004] occurrences matches {0..*} matches {	-- Multimedia representation
+				include
+					archetype_id/value matches {/openEHR-EHR-ELEMENT\.multimedia(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Clinical interpretation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype ELEMENT[at0007] occurrences matches {0..*} matches {	-- Examination not done
+				include
+					archetype_id/value matches {/openEHR-EHR-ELEMENT\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			CLUSTER[at0008] occurrences matches {0..1} matches {	-- Specific findings
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0009] occurrences matches {0..1} matches {	-- Bleeding
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..1} matches {	-- Extent
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0022, 	-- Limited
+									at0023]	-- Extended
+								}
+							}
+						}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {	-- Pocket depth
+						value matches {
+							C_DV_QUANTITY <
+							>
+						}
+					}
+					ELEMENT[at0012] occurrences matches {0..1} matches {	-- Swelling
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0013] occurrences matches {0..1} matches {	-- Pus discharge
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..1} matches {	-- Ulceration
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0015] occurrences matches {0..1} matches {	-- Number
+						value matches {
+							C_DV_QUANTITY <
+							>
+						}
+					}
+					ELEMENT[at0016] occurrences matches {0..1} matches {	-- Site
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype ELEMENT[at0017] occurrences matches {0..*} matches {	-- Anatomical location gingivae
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			allow_archetype ELEMENT[at0018] occurrences matches {0..*} matches {	-- Anatomical location gingivae
+				include
+					archetype_id/value matches {/.*/}
+			}
+			CLUSTER[at0019] occurrences matches {0..1} matches {	-- Wound of membrane
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0020] occurrences matches {0..1} matches {	-- Present
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0021] occurrences matches {0..1} matches {	-- Site
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0024] occurrences matches {0..1} matches {	-- Site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["ja"] = <
+			items = <
+				["at0000"] = <
+					text = <"Examination of giginvae">
+					description = <"unknown">
+				>
+				["at0001"] = <
+					text = <"No abnormality detected">
+					description = <"*">
+				>
+				["at0002"] = <
+					text = <"Clinical description">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Examination findings">
+					description = <"*">
+				>
+				["at0004"] = <
+					text = <"Multimedia representation">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Clinical interpretation">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Comment">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Examination not done">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"Specific findings">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Bleeding">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Extent">
+					description = <"*">
+				>
+				["at0011"] = <
+					text = <"Pocket depth">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Swelling">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Pus discharge">
+					description = <"*">
+				>
+				["at0014"] = <
+					text = <"Ulceration">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Number">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Site">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"Anatomical location gingivae">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Anatomical location gingivae">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"Wound of membrane">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Present">
+					description = <"*">
+				>
+				["at0021"] = <
+					text = <"Site">
+					description = <"*">
+				>
+				["at0022"] = <
+					text = <"Limited">
+					description = <"*">
+				>
+				["at0023"] = <
+					text = <"Extended">
+					description = <"*">
+				>
+				["at0024"] = <
+					text = <"Site">
+					description = <"*">
+				>
+			>
+		>
+	>

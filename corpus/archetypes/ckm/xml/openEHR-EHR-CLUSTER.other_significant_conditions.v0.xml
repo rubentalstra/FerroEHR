@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2021-11-19</original_author>
+    <original_author id="name">Mikkel Johan Gaup Grønmo</original_author>
+    <original_author id="organisation">Forvaltningssenter EPJ, Helse-Nord RHF</original_author>
+    <original_author id="email">mikkel.johan.gaup.gronmo@helse-nord.no</original_author>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">World Health Organization (2016). International statistical classification of diseases and related health problems, 10th revision, vol. 2, 5th edition. Geneva, World Health Organization. Page 203. Available from: https://icd.who.int/browse10/Content/statichtml/ICD10Volume2_en_2016.pdf&#xD;
+&#xD;
+NVSS - U.S Standard Certificate of Death. november 2003,[Internet] Available from: https://www.cdc.gov/nchs/data/dvs/DEATH11-03final-ACC.pdf.&#xD;
+&#xD;
+Hanzlick, Randy, og Randy Hanzlick. Cause of death and the death certificate: important information for physicians, coroners, medical examiners, and the public. College of American Pathologists, 2006. Available from: https://www.health.state.mn.us/people/vitalrecords/physician-me/docs/capcodbook.pdf.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">40F4A63F186177BEB5D8FE702482D7F0</other_details>
+    <other_details id="build_uid">98dff6d7-ae45-418b-8126-5bf68a455e72</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere årsaker som kan ha vært av signifikans for pasientens helsetilstand, dette i tillegg til indirekte årsaker og umiddelbar dødsårsak.</purpose>
+      <keywords>komorbiditet</keywords>
+      <keywords>sekundære tilstander</keywords>
+      <use>Brukes for å registrere årsaker som kan ha vært av signifikans for pasientens helsetilstand, dette i tillegg til indirekte årsaker og umiddelbar dødsårsak.&#xD;
+Denne arketypen er spesifikt designet for bruk i konteksten av en EVALUATION.cause_of_death arketypen registrering.&#xD;
+&#xD;
+Det anbefales på det sterkeste å benytte ICD-10 eller tilsvarende koding.</use>
+      <misuse>Skal ikke brukes for å registrere indirekte årsaker og umiddelbar dødsårsak, bruk i stedet EVALUATION.cause_of_death til dette.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record conditions that may been of significance with regards to the patients healthstatus, in addition to indirect causes and main cause of death.</purpose>
+      <keywords>comorbidity</keywords>
+      <keywords>secondary conditions</keywords>
+      <use>Use to record conditions that may be of significance in addition to indirect causes and main cause of death.&#xD;
+This archetype is specifically designed to be used within the context of EVALUATION.cause_of_death archetype.&#xD;
+&#xD;
+Coding with ICD-10 or similar terminology is highly recommended.</use>
+      <misuse>Not to be used to record indirect causes or main cause of death, use EVALUATION.cause_of_death instead.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Mikkel Johan Gaup Grønmo</author>
+    <author id="organisation">Forvaltningssenter EPJ, Helse Nord RHF</author>
+    <author id="email">mikkel.johan.gaup.gronmo@helse-nord.no</author>
+  </translations>
+  <uid>
+    <value>9e8ff3e4-47aa-47cf-8718-96eea2f66153</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.other_significant_conditions.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Other significant conditions</items>
+        <items id="description">Conditions that may have been of significance with regards to the patients healthstatus, in addition to indirect causes and main cause of death.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Significant condition</items>
+        <items id="description">Other significant conditions contributing to death.</items>
+        <items id="comment">Strongly suggested using terminologies like ICD-10 or Snomed-CT.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Andre medvirkende årsaker</items>
+        <items id="description">Tilstander som kan ha vært av signifikans for pasientens helsetilstand, dette i tillegg til indirekte årsaker og umiddelbar dødsårsak.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Medvirkende årsak</items>
+        <items id="description">Andre medvirkende årsaker bidragende til død.</items>
+        <items id="comment">Det anbefales på det sterkeste å benytte ICD-10 eller tilsvarende koding.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

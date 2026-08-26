@@ -1,0 +1,2030 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2013-06-10</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics, Australia</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Derived from: Alcohol Use Disorders Identification Test (AUDIT), Draft archetype [Internet]. Australian Digital Health Agency, ADHA Clinical Knowledge Manager. Authored: 2013 Jun 10. Available at: http://dcm.nehta.org.au/ckm#showArchetype_1013.1.1320_1 (discontinued).&#xD;
+&#xD;
+Babor T, Higgins-Biddle J, Saunders J, Monteiro M. The Alcohol Use Disorders Identification Test: Guidelines for Use in Primary Care, Second Edition [Internet]. Geneva: Department of Mental Health and Substance Dependence, World Health Organization. 2001 (Accessed 2013 Jun 10). Available at: http://whqlibdoc.who.int/hq/2001/WHO_MSD_MSB_01.6a.pdf.&#xD;
+&#xD;
+Alcohol Screen (AUDIT). Australian Government, Department of Veteran's Affairs. (Accessed 2013 Jun 11). Available at: http://www.health.nt.gov.au/library/scripts/objectifyMedia.aspx?file=pdf/63/68.pdf&#xD;
+&#xD;
+The AUDIT Alcohol Consumption Questions (Audit – C). Northern Territory Government, Department of Health &amp; Families. (Accessed 2013 Jun 10). Available from: http://www.health.nt.gov.au/library/scripts/objectifyMedia.aspx?file=pdf/64/44.pdf.&#xD;
+&#xD;
+Alcohol Use Disorders Identification Test. US Department of Venterans Affairs. (Accessed 2013 Jun 10). Available at: http://www.hepatitis.va.gov/provider/tools/audit-c.asp.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, Australia&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">0A33E7ECC0A1292CBD3902442EB201EA</other_details>
+    <other_details id="build_uid">9d1eeeba-18ad-4c93-a49d-5f662e2fe9e8</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Identifizierung von Personen mit gefährlichen und schädlichen Alkoholkonsum, Anzeichen für Alkoholabhängigkeit und schädlichen Folgen von Alkoholkonsum.</purpose>
+      <keywords>AUDIT</keywords>
+      <keywords>AUDIT-C</keywords>
+      <keywords>Alkohol</keywords>
+      <keywords>Rausch</keywords>
+      <use>Zur Darstellung der Ergebnisse des AUDIT-Screening-Tests (oder des AUDIT-C-Tests) als Mittel zur Identifizierung von Personen mit gefährlichen und schädlichen Alkoholkonsum, Anzeichen für Alkoholabhängigkeit und schädlichen Folgen von Alkoholkonsum. Der Test kann im Rahmen eines mündlichen Gesprächs oder in Form eines Selbsttests durchgeführt werden.&#xD;
+&#xD;
+Jede Frage des AUDIT-Tests wird als separates Datenelement erfasst. Aus praktischen Gründen wird in diesem Archetyp jedes Datenelement nicht als vollständige Frage, sondern als Zusammenfassung des Themas der Frage gekennzeichnet. Die vollständige Frage, auf die sich jedes Datenelement bezieht, wird in der "Beschreibung" für jedes Datenelement angegeben. Zum Beispiel: "Wie oft haben Sie im vergangenen Jahr mindestens 6 Getränke bei einer Gelegenheit getrunken?" wird als Datenelement "Rauschtrinken" dargestellt.&#xD;
+&#xD;
+Der AUDIT-C Test ist eine verkürzte Version des AUDIT-Tests und enthält lediglich die ersten drei Fragen zum Konsumverhalten.</use>
+      <misuse>Nicht zur Aufzeichnung eines Tagebuchs über den Alkoholkonsum zu verwenden - Verwenden Sie hierzu den Archetyp OBSERVATION.alcohol_use.&#xD;
+&#xD;
+Nicht zur Darstellung zusammenfassender Informationen über das typische Muster des Alkoholkonsums einer Person - Verwenden Sie hierzu den Archetyp EVALUATION.alcohol_consumption_summary.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To identify individuals with hazardous and harmful patterns of alcohol consumption, indicators of alcohol dependence and some consequences from harmful drinking.</purpose>
+      <keywords>AUDIT</keywords>
+      <keywords>AUDIT-C</keywords>
+      <keywords>alcohol</keywords>
+      <keywords>binge</keywords>
+      <use>Use to record the results of the AUDIT screening test (or the AUDIT-C subset) as a means to identify individuals with hazardous and harmful patterns of alcohol consumption, indicators of alcohol dependence and some consequences from harmful drinking. The test can be administered during an oral interview or as a self-reported questionnaire.&#xD;
+&#xD;
+Each of the questions in the AUDIT test will be recorded as a separate data element. For pragmatic reasons, in this archetype, each data element is not labelled as the full question, but as a summary of the question topic. The full question to which each data element refers is identified in the 'Description' for each data element. For example: "How often did you have six or more drinks on one occasion in the past year?" is represented as the 'Bingeing' data element.&#xD;
+&#xD;
+The AUDIT-C test is a shortened version of the full AUDIT test, using only the first three questions related to consumption.</use>
+      <misuse>Not to be used to record a diary of alcohol consumption - use OBSERVATION.alcohol_use.&#xD;
+&#xD;
+Not to be used to record an overview of the individual's pattern of alcohol consumption - use the EVALUATION.alcohol_consumption_summary for this purpose.</misuse>
+      <copyright>© Australian Digital Health Agency, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Identificar individuos con patrones peligrosos y perjudiciales de consumo de alcohol, indicadores de dependencia del alcohol y algunas consecuencias del consumo perjudicial.</purpose>
+      <keywords>AUDIT</keywords>
+      <keywords>AUDIT-C</keywords>
+      <keywords>alcohol</keywords>
+      <keywords>embriaguez</keywords>
+      <use>Se utiliza para registrar los resultados de la prueba de cribado AUDIT (o del subconjunto AUDIT-C) como medio para identificar a las personas con patrones peligrosos y perjudiciales de consumo de alcohol, indicadores de dependencia del alcohol y algunas consecuencias del consumo perjudicial. La prueba puede llevarse a cabo durante una entrevista oral o como cuestionario autoinformado.&#xD;
+&#xD;
+Cada una de las preguntas de la prueba AUDIT se registrará como un elemento de datos independiente. Por razones pragmáticas, en este arquetipo, cada elemento de datos no se etiqueta como la pregunta completa, sino como un resumen del tema de la pregunta. La pregunta completa a la que se refiere cada elemento de datos se identifica en la 'Descripción' de cada elemento de datos. Por ejemplo: "Durante el último año, ¿con qué frecuencia consumió seis o más copas en la misma ocasión?" se representa como el elemento de datos 'Consumo excesivo'.&#xD;
+&#xD;
+El test AUDIT-C es una versión reducida del test AUDIT completo, en la que sólo se utilizan las tres primeras preguntas relacionadas con el consumo.</use>
+      <misuse>No debe utilizarse para registrar un diario de consumo de alcohol: utilice OBSERVATION.alcohol_use.&#xD;
+&#xD;
+No debe utilizarse para registrar una visión general del patrón de consumo de alcohol del individuo; para ello, utilice EVALUATION.alcohol_consumption_summary.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Identificar individus amb patrons perillosos i perjudicials de consum d'alcohol, indicadors de dependència de l'alcohol i algunes conseqüències del consum perjudicial.</purpose>
+      <keywords>AUDIT</keywords>
+      <keywords>AUDIT-C</keywords>
+      <keywords>alcohol</keywords>
+      <keywords>embriaguesa</keywords>
+      <use>S'utilitza per registrar els resultats de la prova de cribratge AUDIT (o del subconjunt AUDIT-C) com a mitjà per identificar persones amb patrons perillosos i perjudicials de consum d'alcohol, indicadors de dependència de l'alcohol i algunes conseqüències del consum perjudicial. La prova es pot dur a terme durant una entrevista oral o com a qüestionari autoinformat.&#xD;
+&#xD;
+Cadascuna de les preguntes de la prova AUDIT es registrarà com un element de dades independent. Per raons pragmàtiques, en aquest arquetip, cada element de dades no s'etiqueta com a pregunta completa, sinó com un resum del tema de la pregunta. La pregunta completa a què es refereix cada element de dades s'identifica a la 'Descripció' de cada element de dades. Per exemple: "Durant el darrer any, amb quina freqüència va consumir sis o més copes en la mateixa ocasió?" es representa com a element de dades 'Consum excessiu'.&#xD;
+&#xD;
+El test AUDIT-C és una versió reduïda del test AUDIT complet, on només s'utilitzen les tres primeres preguntes relacionades amb el consum.</use>
+      <misuse>No s'ha d'utilitzar per registrar un diari de consum d'alcohol: utilitzeu OBSERVATION.alcohol_use.&#xD;
+&#xD;
+No s'ha d'utilitzar per registrar una visió general del patró de consum d'alcohol de l'individu; per fer-ho, utilitzeu EVALUATION.alcohol_consumption_summary.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Nina Schewe</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">schewe.nina@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Julio de Sosa</author>
+    <author id="organisation">Servei Català de la Salut</author>
+    <author id="email">juliodesosa@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Julio de Sosa</author>
+    <author id="organisation">Servei Català de la Salut</author>
+    <author id="email">juliodesosa@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>7b61ac07-40a1-421a-8b1e-d38e3cc190d2</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.alcohol_audit.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0005</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0006</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0007</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0008</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0009</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0010</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0012</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0014</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0015</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0016</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0023</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0024</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0025</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0026</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0027</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0028</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0030</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0031</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0032</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0029</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0030</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0031</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0032</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0022</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>40</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0033</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>12</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0035</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0036</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Alcohol Use Disorders Identification Test (AUDIT)</items>
+        <items id="description">Ten question screening test to identify harmful alcohol consumption.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any point in time</items>
+        <items id="description">Default, unspecified point in time event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Frequency of consumption</items>
+        <items id="description">How often did you have a drink containing alcohol in the past year?</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Never</items>
+        <items id="description">No drinking of alcohol in the past year.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Monthly or Less</items>
+        <items id="description">Drinking alcohol monthly or less frequently during the past year.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">2 to 4 Times a Month</items>
+        <items id="description">Drinking alcohol two to four times a month during the past year.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">2 to 3 Times a Week</items>
+        <items id="description">Drinking alcohol two to three times a week during the past year.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">4 or More Times a Week</items>
+        <items id="description">Drinking alcohol four or more times a week during the past year.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Typical consumption</items>
+        <items id="description">How many drinks did you have on a typical day when you were drinking in the past year?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">1 or 2</items>
+        <items id="description">One or two drinks of alcohol on a typical day in the past year.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">3 or 4</items>
+        <items id="description">Three or four drinks of alcohol on a typical day in the past year.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 or 6</items>
+        <items id="description">Five or six drinks of alcohol on a typical day in the past year.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">7 to 9</items>
+        <items id="description">Seven, eight or nine drinks of alcohol on a typical day in the past year.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">10 or More</items>
+        <items id="description">Ten or more drinks of alcohol on a typical day in the past year.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Binge drinking</items>
+        <items id="description">How often did you have six or more drinks on one occasion in the past year?</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Never</items>
+        <items id="description">Never, in the past year.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Less than Monthly</items>
+        <items id="description">Less than monthly, during the past year.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Monthly</items>
+        <items id="description">Monthly, during the past year.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Weekly</items>
+        <items id="description">Weekly, during the past year.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Daily or Almost Daily</items>
+        <items id="description">Daily, or almost daily, during the past year.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">AUDIT total score</items>
+        <items id="description">Total Score calculated from the 10 AUDIT questions.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Inability to stop</items>
+        <items id="description">How often during the last year have you found that you were not able to stop drinking once you had started?</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Failed expectations</items>
+        <items id="description">How often during the last year have you failed to do what was normally expected of you because of drinking?</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Morning drinking</items>
+        <items id="description">How often during the last year have you needed a first drink in the morning to get yourself going after a heavy drinking session?</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Guilt/remorse</items>
+        <items id="description">How often during the last year have you had a feeling of guilt or remorse after drinking?</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Loss of memory</items>
+        <items id="description">How often during the last year have you been unable to remember what happened the night before because of your drinking?</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Injuries</items>
+        <items id="description">Have you or someone else been injured because of your drinking?</items>
+      </items>
+      <items code="at0029">
+        <items id="text">External concern</items>
+        <items id="description">Has a relative, friend, doctor, or other health care worker been concerned about your drinking or suggested you cut down?</items>
+      </items>
+      <items code="at0030">
+        <items id="text">No</items>
+        <items id="description">No occurrence.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Yes, but not in the last year.</items>
+        <items id="description">Yes, this has occurred, but not in the last year.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Yes, during the last year.</items>
+        <items id="description">Yes this has occurred during the last year.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">AUDIT-C total score</items>
+        <items id="description">Total Score calculated from the first 3 questions only.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the screening test, not captured in other fields.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Alcohol Use Disorders Identification Test (AUDIT)</items>
+        <items id="description">Aus 10 Fragen bestehender Screening-Test zur Ermittlung von schädlichem Alkoholkonsum.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Jedes Ereignis</items>
+        <items id="description">Standard, nicht spezifizierter Zeitpunkt oder Intervallereignis, das explizit in einer Vorlage oder zur Laufzeit definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Häufigkeit des Konsums</items>
+        <items id="description">Wie oft haben Sie im letzten Jahr Alkohol getrunken?</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Nie</items>
+        <items id="description">Kein Alkoholkonsum im letzten Jahr.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">1 mal im Monat oder weniger</items>
+        <items id="description">Sie haben im vergangenen Jahr monatlich oder seltener Alkohol getrunken.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">2-4 mal pro Monat</items>
+        <items id="description">Sie haben im vergangenen Jahr 2-4 mal pro Monat Alkohol getrunken.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">2-3 mal pro Woche</items>
+        <items id="description">Sie haben im vergangenen Jahr 2-3 mal pro Woche Alkohol getrunken.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">4 mal oder öfter pro Woche</items>
+        <items id="description">Sie haben im vergangenen Jahr mindestens 4 mal pro Woche Alkohol getrunken.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Typischer Konsum</items>
+        <items id="description">Wie viel alkoholhaltige Getränke haben Sie im vergangenen Jahr an einem normalen Tag getrunken?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">1 oder 2</items>
+        <items id="description">1 oder 2 alkoholische Getränke an einem normalen Tag im vergangenen Jahr.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">3 oder 4</items>
+        <items id="description">3 oder 4 alkoholische Getränke an einem normalen Tag im vergangenen Jahr.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 oder 6</items>
+        <items id="description">5 oder 6 alkoholische Getränke an einem normalen Tag im vergangenen Jahr.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">7 bis 9</items>
+        <items id="description">7, 8 oder 9 alkoholische Getränke an einem normalen Tag im vergangenen Jahr.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">10 oder mehr</items>
+        <items id="description">Mindestens 10 alkoholische Getränke an einem normalen Tag im vergangenen Jahr.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Rauschtrinken</items>
+        <items id="description">Wie oft haben Sie im letzten Jahr bei einer Gelegenheit 6 oder mehr Gläser Alkohol getrunken?</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Nie</items>
+        <items id="description">Nie, im letzten Jahr.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Seltener als 1 mal pro Monat</items>
+        <items id="description">Während des letzten Jahres weniger als einmal im Monat.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">1 mal pro Monat</items>
+        <items id="description">Während des letzten Jahres 1 mal pro Monat.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">1 mal pro Woche</items>
+        <items id="description">Während des letzten Jahres 1 mal pro Woche.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Täglich oder fast täglich</items>
+        <items id="description">Im vergangenen Jahr täglich oder fast täglich.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">AUDIT Gesamtpunktzahl</items>
+        <items id="description">Gesamtpunktzahl, berechnet aus den 10 AUDIT-Fragen.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Unfähigkeit aufzuhören</items>
+        <items id="description">Wie oft haben Sie im letzten Jahr erlebt, dass Sie nicht mehr mit dem Trinken aufhören konnten, nachdem Sie einmal begonnen hatten?</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Gescheiterte Erwartungen</items>
+        <items id="description">Wie oft passierte es im letzten Jahr, dass Sie wegen des Trinkens Erwartungen, die man an Sie in der Familie, im Freundeskreis und im Berufsleben hat, nicht mehr erfüllen konnten?</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Morgendliches Trinken</items>
+        <items id="description">Wie oft brauchten Sie während des letzten Jahres am Morgen ein alkoholisches Getränk, um sich nach einem Abend mit viel Alkoholgenuss wieder fit zu fühlen?</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Schuldgefühle/Gewissensbisse</items>
+        <items id="description">Wie oft hatten Sie während des letzten Jahres wegen Ihrer Trinkgewohnheiten Schuldgefühle oder Gewissensbisse?</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Gedächtnisverlust</items>
+        <items id="description">Wie oft haben Sie sich während des letzten Jahres nicht mehr an den vorangegangenen Abend erinnern können, weil Sie getrunken hatten?</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Verletzungen</items>
+        <items id="description">Haben Sie sich oder eine andere Person unter Alkoholeinfluss schon einmal verletzt?</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Externe Sorge</items>
+        <items id="description">Hat ein Verwandter, Freund oder auch ein Arzt schon einmal Bedenken wegen Ihres Trinkverhaltens geäußert oder vorgeschlagen, dass Sie Ihren Alkoholkonsum einschränken?</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Nein</items>
+        <items id="description">Keine Vorkommnisse.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Ja, aber nicht im letzten Jahr.</items>
+        <items id="description">Ja, das ist vorgekommen, aber nicht im letzten Jahr.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Ja, während des letzten Jahres.</items>
+        <items id="description">Ja, das ist im letzten Jahr vorgekommen.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">AUDIT-C Gesamtpunktzahl</items>
+        <items id="description">Die Gesamtpunktzahl wird nur aus den ersten 3 Fragen berechnet.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Informationen über den Screening-Test, die nicht in anderen Feldern erfasst werden.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen oder CIMI-Modelle.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Cuestionario de Identificación de Trastornos relacionados con el consumo de Alcohol (AUDIT)</items>
+        <items id="description">Prueba de detección de diez preguntas para identificar el consumo perjudicial de alcohol.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">En cualquier momento</items>
+        <items id="description">Evento predeterminado, en un punto en el tiempo no especificado, que puede definirse de forma explícita en una plantilla o en tiempo de ejecución.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Frecuencia de consumo</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia ha consumido una bebida alcohólica?</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Nunca</items>
+        <items id="description">Sin consumo de alcohol en el último año.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Mensualmente o con menor frecuencia</items>
+        <items id="description">Consumo de alcohol de forma mensual o con menor frecuencia durante el último año.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">De 2 a 4 veces al mes</items>
+        <items id="description">Consumo de alcohol de dos a cuatro veces al mes durante el último año.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">De 2 a 3 veces por semana</items>
+        <items id="description">Consumo de alcohol dos o tres veces por semana durante el último año.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">4 o más veces a la semana</items>
+        <items id="description">Consumo de alcohol cuatro o más veces por semana durante el último año.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Consumo habitual</items>
+        <items id="description">Durante el último año, ¿cuántas copas ha consumido en un día de consumo normal?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">1 o 2</items>
+        <items id="description">Una o dos bebidas alcohólicas en un día normal durante el último año.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">3 o 4</items>
+        <items id="description">Tres o cuatro bebidas alcohólicas en un día normal durante el último año.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 o 6</items>
+        <items id="description">Cinco o seis bebidas alcohólicas en un día normal durante el último año.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">De 7 a 9</items>
+        <items id="description">Siete, ocho o nueve bebidas alcohólicas en un día normal durante el último año.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">10 o más</items>
+        <items id="description">Diez o más bebidas alcohólicas en un día normal durante el último año.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Consumo excesivo</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia consumió seis o más copas en la misma ocasión?</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Nunca</items>
+        <items id="description">En ningún momento, en el último año.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Menos de una vez al mes</items>
+        <items id="description">Menos de una vez al mes, durante el último año.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mensualmente</items>
+        <items id="description">Mensualmente, durante el último año.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Semanalmente</items>
+        <items id="description">Semanalmente, durante el último año.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Diario o casi diariamente</items>
+        <items id="description">Diario o casi diariamente, durante el último año.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Puntuación total AUDIT</items>
+        <items id="description">Puntuación total calculada a partir de las 10 preguntas del AUDIT.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Incapacidad para detenerse</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia ha sido incapaz de parar de beber una vez que había empezado?</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Expectativas fallidas</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia no pudo hacer lo que se esperaba de usted porque había bebido?</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Consumo matutino</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia ha necesitado beber a la mañana siguiente después de haber bebido en exceso el día anterior?</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Culpa/remordimiento</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia ha tenido remordimientos o sentimientos de culpa después de haber bebido?</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Pérdida de memoria</items>
+        <items id="description">Durante el último año, ¿con qué frecuencia no ha podido recordar lo que sucedió la noche anterior porque había estado bebiendo?</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Lesiones</items>
+        <items id="description">¿Usted o alguna otra persona ha resultado herida como consecuencia de su ingesta de alcohol?</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Preocupación externa</items>
+        <items id="description">¿Algún familiar, amigo, médico u otro profesional sanitario ha mostrado preocupación por su consumo de alcohol o le han sugerido que deje de beber?</items>
+      </items>
+      <items code="at0030">
+        <items id="text">No</items>
+        <items id="description">Ningún suceso.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Sí, pero no en el último año</items>
+        <items id="description">Sí, ha ocurrido, pero no en el último año.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Sí, en el último año</items>
+        <items id="description">Sí, ha ocurrido durante el último año.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Puntuación total AUDIT-C</items>
+        <items id="description">Puntuación total calculada sólo a partir de las 3 primeras preguntas.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Comentarios</items>
+        <items id="description">Información adicional sobre el cuestionario, no recogida en otros campos.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional necesaria para ampliar el modelo con contenido local o para alinearlo con otros modelos o formalismos de referencia.</items>
+        <items id="comment">Por ejemplo: requisitos locales de información; o metadatos adicionales para alinearse con FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Qüestionari d'identificació de trastorns relacionats amb el consum d'alcohol (AUDIT)</items>
+        <items id="description">Prova de detecció de deu preguntes per identificar el consum d'alcohol perjudicial.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">En qualsevol moment</items>
+        <items id="description">Esdeveniment predeterminat, en un punt en el temps no especificat, que es pot definir de manera explícita en una plantilla o en temps d'execució.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Freqüència de consum</items>
+        <items id="description">Durant el darrer any, amb quina freqüència ha consumit una beguda alcohòlica?</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Mai</items>
+        <items id="description">Sense consum d'alcohol al darrer any.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Mensualment o amb menor freqüència</items>
+        <items id="description">Consum d'alcohol de forma mensual o amb menys freqüència durant el darrer any.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">De 2 a 4 cops al mes</items>
+        <items id="description">Consum d'alcohol de dues a quatre vegades al mes durant el darrer any.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">De 2 a 3 cops per setmana</items>
+        <items id="description">Consum d'alcohol dues o tres vegades per setmana durant el darrer any.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">4 o més vegades a la setmana</items>
+        <items id="description">Consum d'alcohol quatre o més cops per setmana durant el darrer any.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Consum habitual</items>
+        <items id="description">Durant el darrer any, quantes copes ha consumit en un dia de consum normal?</items>
+      </items>
+      <items code="at0011">
+        <items id="text">1 o 2</items>
+        <items id="description">Una o dues begudes alcohòliques en un dia normal durant el darrer any.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">3 o 4</items>
+        <items id="description">Tres o quatre begudes alcohòliques en un dia normal durant el darrer any.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 o 6</items>
+        <items id="description">Cinc o sis begudes alcohòliques en un dia normal durant el darrer any.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">De 7 a 9</items>
+        <items id="description">Set, vuit o nou begudes alcohòliques en un dia normal durant el darrer any.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">10 o més</items>
+        <items id="description">Deu o més begudes alcohòliques en un dia normal durant el darrer any.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Consum excessiu</items>
+        <items id="description">Durant el darrer any, amb quina freqüència va consumir sis o més copes en la mateixa ocasió?</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Mai</items>
+        <items id="description">En cap moment, el darrer any.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Menys d'una vegada al mes</items>
+        <items id="description">Menys d'una vegada al mes, durant el darrer any.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mensualment</items>
+        <items id="description">Mensualment, durant el darrer any.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Setmanalment</items>
+        <items id="description">Setmanalment, durant el darrer any.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Diari o gairebé diàriament</items>
+        <items id="description">Diari o gairebé diàriament, durant el darrer any.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Puntuació total AUDIT</items>
+        <items id="description">Puntuació total calculada a partir de les 10 preguntes de l'AUDIT.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Incapacitat per aturar-se</items>
+        <items id="description">Durant el darrer any, amb quina freqüència ha estat incapaç de parar de beure una vegada que havia començat?</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Expectatives fallides</items>
+        <items id="description">Durant l'últim any, amb quina freqüència no podia fer el que s'esperava de vostè perquè havia begut?</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Consum matutí</items>
+        <items id="description">Durant l'últim any, amb quina freqüència ha necessitat beure l'endemà al matí després d'haver begut en excés el dia anterior?</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Culpa/remordiment</items>
+        <items id="description">Durant el darrer any, amb quina freqüència ha tingut remordiments o sentiments de culpa després d'haver begut?</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Pèrdua de memòria</items>
+        <items id="description">Durant l'últim any, amb quina freqüència no ha pogut recordar què va passar la nit anterior perquè havia estat bevent?</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Lesions</items>
+        <items id="description">Vostè o alguna altra persona ha resultat ferida com a conseqüència de la ingesta d'alcohol?</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Preocupació externa</items>
+        <items id="description">Algun familiar, amic, metge o altre professional sanitari ha mostrat preocupació pel consum d'alcohol o li han suggerit que deixi de beure?</items>
+      </items>
+      <items code="at0030">
+        <items id="text">No</items>
+        <items id="description">Cap succés.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Sí, però no a l'últim any</items>
+        <items id="description">Sí, ha passat, però no l'últim any.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Sí, el darrer any</items>
+        <items id="description">Sí, ha passat durant l'últim any.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Puntuació total AUDIT-C</items>
+        <items id="description">Puntuació total calculada només a partir de les 3 primeres preguntes.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Comentaris</items>
+        <items id="description">Informació addicional sobre el qüestionari, no recollida a altres camps.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Extensió</items>
+        <items id="description">Informació addicional necessària per ampliar el model amb contingut local o per alinear-lo amb altres models o formalismes de referència.</items>
+        <items id="comment">Per exemple: requisits d'informació locals; o metadades addicionals per alinear-se amb FHIR.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

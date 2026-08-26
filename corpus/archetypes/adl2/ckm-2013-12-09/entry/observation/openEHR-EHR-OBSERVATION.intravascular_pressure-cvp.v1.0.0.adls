@@ -1,0 +1,69 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.intravascular_pressure-cvp.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.intravascular_pressure.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"28/06/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record central venous pressure, normally via cannulation of the internal jugular vein.">
+			use = <"">
+			keywords = <"pressure", "intravascular", "cvp">
+			misuse = <"Not to be used for systemic blood pressure. Use 'observation.blood_pressure' for this.">
+		>
+	>
+	other_contributors = <"Ian McNicoll, Ocean Informatics, United Kingdom", ...>
+	references = <
+		["1"] = <"http://www.wwl.nhs.uk/library/foi/clin_pols/cvpprocedures.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"5762C17AA1DFA8C7EAA58148E1730121">
+	>
+
+definition
+	OBSERVATION[id1.1] occurrences matches {0..1} matches {	-- Central venous pressure
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] matches {
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id35] matches {
+										value matches {
+											DV_MULTIMEDIA[id45] matches {
+												media_type 
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Central venous pressure">
+				description = <"The central venous pressure (CVP) measures the filling pressure of the right ventricle normally performed by cannulation of the internal jugular vein.">
+			>
+		>
+	>

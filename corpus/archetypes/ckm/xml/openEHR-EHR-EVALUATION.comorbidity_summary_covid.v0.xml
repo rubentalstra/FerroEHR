@@ -1,0 +1,853 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-03-09</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">042D2EA0EB9CCF62A5E0BF602C6D002B</other_details>
+    <other_details id="build_uid">a32140db-3361-4a85-8cf4-bc2bbd5b640e</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>*unknown(en)</purpose>
+      <use />
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>__unknown__</purpose>
+      <use />
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>*unknown(en)</purpose>
+      <use />
+      <misuse />
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+    <author id="name">Paolo Anedda</author>
+    <author id="organisation">Inpeco</author>
+    <author id="email">paolo.anedda@inpeco.com</author>
+  </translations>
+  <uid>
+    <value>aed1fad5-6639-4a3c-9529-82187436c186</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.comorbidity_summary_covid.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0021</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0022</code_list>
+                    <code_list>at0023</code_list>
+                    <code_list>at0024</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0035</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0036</code_list>
+                    <code_list>at0037</code_list>
+                    <code_list>at0038</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0020</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>defining_code</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_CODE_PHRASE">
+                        <rm_type_name>CODE_PHRASE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <terminology_id>
+                          <value>local</value>
+                        </terminology_id>
+                        <code_list>at0025</code_list>
+                        <code_list>at0026</code_list>
+                        <code_list>at0027</code_list>
+                        <code_list>at0028</code_list>
+                        <code_list>at0029</code_list>
+                        <code_list>at0030</code_list>
+                        <code_list>at0031</code_list>
+                        <code_list>at0032</code_list>
+                        <code_list>at0033</code_list>
+                        <code_list>at0034</code_list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0004</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>defining_code</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_CODE_PHRASE">
+                        <rm_type_name>CODE_PHRASE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <terminology_id>
+                          <value>local</value>
+                        </terminology_id>
+                        <code_list>at0005</code_list>
+                        <code_list>at0006</code_list>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>1</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Condition summary</items>
+        <items id="description">Comorbidity summary_covid</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Extension</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Status</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Yes</items>
+        <items id="description">The patient has one or more underlying conditions.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">No</items>
+        <items id="description">The patient has no underlying conditions.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Condition</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Condition name</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Any underlying conditions?</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Yes</items>
+        <items id="description">The patient has underlying conditions.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">No</items>
+        <items id="description">The patient does not have underlying conditions.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Unknown</items>
+        <items id="description">It is not known if the patient has underlying conditions.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Pregnancy</items>
+        <items id="description">Pregnancy</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Post-partum (&lt;6 weeks)</items>
+        <items id="description">Post-partum (&lt;6 weeks)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Immunodeficiency including HIV</items>
+        <items id="description">Immunodeficiency including HIV</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Cardiovascular disease including hypertension</items>
+        <items id="description">Cardiovascular disease including hypertension</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Diabetes</items>
+        <items id="description">Diabetes</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Liver disease</items>
+        <items id="description">Liver disease</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Renal disease</items>
+        <items id="description">Renal disease</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Chronic neurological or neuromuscular disease</items>
+        <items id="description">Chronic neurological or neuromuscular disease</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Malignancy</items>
+        <items id="description">Malignancy</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Chronic lung disease</items>
+        <items id="description">Chronic lung disease</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Trimester if pregnant</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0036">
+        <items id="text">First</items>
+        <items id="description">First trimester</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Second</items>
+        <items id="description">Second trimester</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Third</items>
+        <items id="description">Third trimester</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">Tilan yhteenveto</items>
+        <items id="description">Liitännäissairauksien yhteenveto</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Status</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Kyllä</items>
+        <items id="description">Potilaalla on yksi tai useampi perussairaus</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Ei</items>
+        <items id="description">Potilaalla ei ole perussairauksia</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Terveydentila</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Perussairaus</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tiedossa olevat perussairaudet</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Kyllä</items>
+        <items id="description">*The patient has underlying conditions.(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Ei</items>
+        <items id="description">*The patient does not have underlying conditions.(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Tuntematon</items>
+        <items id="description">*It is not known if the patient has underlying conditions.(en)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Raskaus</items>
+        <items id="description">*Pregnancy(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Synnyttänyt ( &lt;6 viikkoa )</items>
+        <items id="description">*Post-partum (&lt;6 weeks)(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Autoimmuunisairaus mukaanlukien HIV</items>
+        <items id="description">*Immunodeficiency including HIV(en)</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Sydän- ja verisuonisairaudet, mukaan lukien verenpaine</items>
+        <items id="description">Sydän- ja verisuonisairaudet, mukaan lukien verenpaine</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Diabetes</items>
+        <items id="description">Diabetes</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Maksasairaudet</items>
+        <items id="description">Maksasairaudet</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Munuaissairaudet</items>
+        <items id="description">Munuaissairaudet</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Krooninen neurologinen tai neuromuskulaarinen sairaus</items>
+        <items id="description">Krooninen neurologinen tai neuromuskulaarinen sairaus (en)</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Pahanlaatuinen kasvainen</items>
+        <items id="description">Pahanlaatuinen kasvainen</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Krooninen keuhkosairaus</items>
+        <items id="description">Krooninen keuhkosairaus</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Raskauskolmannes jos raskaana</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Ensimmäinen</items>
+        <items id="description">Ensimmäinen raskauskolmannes</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Toinen</items>
+        <items id="description">Toinen raskauskolmannes</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Kolmas</items>
+        <items id="description">Kolmas raskauskolmannes</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">Riepilogo delle condizioni.</items>
+        <items id="description">Riepilogo della comorbidità covid.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Estensione</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Stato</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Si</items>
+        <items id="description">Il paziente ha una o più condizioni di base.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">No</items>
+        <items id="description">Il paziente non ha alcuna condizione di fondo.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Condizione</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Nome della condizione</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Qualche condizione di base?</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Si</items>
+        <items id="description">Il paziente ha delle condizioni di base.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">No</items>
+        <items id="description">Il paziente non ha condizioni di fondo.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Sconosciuto</items>
+        <items id="description">Non è noto se il paziente presenta condizioni di fondo.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Gravidanza</items>
+        <items id="description">Gravidanza</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Post-partum (&lt;6 settimane)</items>
+        <items id="description">Post-partum (&lt;6 settimane)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Immunodeficienza, compreso l'HIV</items>
+        <items id="description">Immunodeficienza, compreso l'HIV</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Malattie cardiovascolari, compresa l'ipertensione</items>
+        <items id="description">Malattie cardiovascolari, compresa l'ipertensione</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Diabete</items>
+        <items id="description">Diabete</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Malattia del fegato</items>
+        <items id="description">Malattia del fegato</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Malattia renale</items>
+        <items id="description">Malattia renale</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Malattia neurologica cronica o neuromuscolare</items>
+        <items id="description">Malattia neurologica cronica o neuromuscolare</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Malignità</items>
+        <items id="description">Malignità</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Malattia polmonare cronica</items>
+        <items id="description">Malattia polmonare cronica</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Trimestre se incinta</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Primo</items>
+        <items id="description">Primo trimestre</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Secondo</items>
+        <items id="description">Secondo trimestre</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Terzo</items>
+        <items id="description">Terzo trimestre</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

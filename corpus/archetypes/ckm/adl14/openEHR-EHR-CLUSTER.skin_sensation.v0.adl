@@ -1,0 +1,499 @@
+﻿archetype (adl_version=1.4; uid=542dfef2-3dcc-4fa8-b78d-6f87c679fdd8)
+	openEHR-EHR-CLUSTER.skin_sensation.v0
+
+concept
+	[at0000]	-- Skin sensation
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke">
+				["organisation"] = <"Nasjonal IKT HF">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2019-07-26">
+	>
+	details = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere en fritekstbeskrivelse og klinisk tolkning av observerte funn ved fysisk undersøkelse av et organsystem eller anatomisk struktur.">
+			use = <"Brukes til å registrere en fritekstbeskrivelse og klinisk tolkning av observerte funn ved fysisk undersøkelse av et spesifisert organsystem eller anatomisk struktur. Denne arketypen består kun av kjerneelementene av mønsteret for undersøkelser, og kan utvides ved hjelp av andre CLUSTER-arketyper eller brukes som grunnlag for undersøkelsesarketyper for spesifikke kroppssystemer eller anatomiske strukturer. 
+
+Eksempler på detaljer som kan beskrives ved hjelp av dette CLUSTER er inspeksjon, palpasjon, auskultasjon, perkusjon og bevegelser i kroppssystemer eller anatomiske strukturer. Undersøkelsen kan støttes av enkle hjelpemidler som stetoskop, otoskop eller reflekshammer. Også funn ved mer avanserte undersøkelser kan registreres her, som ved endoskopi. I de tilfellene vil informasjon om hvilket hjelpemiddel eller utstyr brukt bli registrert i OBSERVATION.exam, elementet \"Detaljer om medisinsk utstyr\", i ACTION.procedure \"Prosedyredetaljer\" eller tilsvarende i egnet ENTRY- eller ACTION-arketype.
+
+Arketypen er laget spesifikt for å brukes i \"Undersøkelsesdetaljer\"-SLOTet i arketypen OBSERVATION.exam, men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende.
+
+Denne arketypen kan benyttes for alle typer undersøkelser, alt fra enkle undersøkelser som undersøkelse av et hudområde, inspeksjon av ører og til artroskopi av et kne.
+
+Kan for eksempel nøstes i SLOTet \"Undersøkelsesdetaljer\" i arketypen OBSERVATION.exam (Norsk Funn ved fysisk undersøkelse) for å registrere ytterligere strukturerte funn ved fysiske undersøkelser.
+
+Arketypen CLUSTER.exclusion_exam kan nøstes i SLOTet \"Undersøkelse ikke utført\" der en har behov for å registrere informasjon om at en undersøkelse ikke ble utført.
+
+Brukes for å videreføre fritekstbeskrivelser av kliniske funn fra tidligere systemer inn i et arketypeformat, ved å bruke elementet \"Klinisk beskrivelse\".">
+			misuse = <"Skal ikke brukes til å ta opp frittstående klinisk observasjoner eller testresultater - bruk spesifikke OBSERVATION arketyper, for eksempel OBSERVATION.head_circumference eller OBSERVATION.glasgow_coma_scale.
+
+Skal ikke brukes til å ta opp anamnese - bruk da spesifikke OBSERVATION og CLUSTER arketyper. For eksempel OBSERVATION.story og CLUSTER.symptom_sign.">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results of skin sensation testing on an individual by the application of a stimulus.">
+			use = <"Use to record the results of skin sensation testing on an individual by the application of a stimulus.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-skin, CLUSTER.exam-cutaneous_nerve or CLUSTER.exam-nerve_root archetypes which provide the context for the structure or system that is being examined. This archetype can also be used within other ENTRY or CLUSTER archetypes that provide relevant system or structure context, where clinically appropriate.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element.">
+			misuse = <"Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"CF2DF78AED32A91FCA9D8763549F46BB">
+		["build_uid"] = <"56e5fa31-65fe-4747-960f-33457e10b480">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Skin sensation
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] matches {    -- System or structure examined
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0013,    -- Skin
+							at0034,    -- Dermatome
+							at0035]    -- Nerve
+						}
+					}
+				}
+			}
+			ELEMENT[at0012] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0011] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- No abnormality detected
+				value matches {
+					DV_BOOLEAN matches {
+						value matches {true}
+					}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {    -- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0014] occurrences matches {0..1} matches {    -- Light touch
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0015,    -- Normal (++)
+							at0016,    -- Diminished (+)
+							at0017]    -- Absent (-)
+						}
+					}
+				}
+			}
+			ELEMENT[at0018] occurrences matches {0..1} matches {    -- Vibration
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0019,    -- Normal (++)
+							at0020,    -- Diminished (+)
+							at0021]    -- Absent (-)
+						}
+					}
+				}
+			}
+			ELEMENT[at0022] occurrences matches {0..1} matches {    -- Pain
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0023,    -- Normal (++)
+							at0024,    -- Diminished (+)
+							at0025]    -- Absent (-)
+						}
+					}
+				}
+			}
+			ELEMENT[at0026] occurrences matches {0..1} matches {    -- Temperature
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0027,    -- Normal (++)
+							at0028,    -- Diminished (+)
+							at0029]    -- Absent (-)
+						}
+					}
+				}
+			}
+			ELEMENT[at0030] occurrences matches {0..1} matches {    -- Touch localisation
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0031,    -- Normal (++)
+							at0032,    -- Diminished (+)
+							at0033]    -- Absent (-)
+						}
+					}
+				}
+			}
+			allow_archetype CLUSTER[at0004] occurrences matches {0..*} matches {    -- Examination findings
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Multimedia representation
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v0/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Clinical interpretation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0008] occurrences matches {0..*} matches {    -- Examination not done
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Skin sensation">
+					description = <"A physical feeling or perception resulting from a stimulus or comes into contact with the skin.">
+				>
+				["at0001"] = <
+					text = <"System or structure examined">
+					description = <"Identification of the examined body system or anatomical structure.">
+					comment = <"Coding of the system or structure examined with a terminology is preferred, where possible.">
+				>
+				["at0002"] = <
+					text = <"No abnormality detected">
+					description = <"Statement that no abnormality was detected (NAD) on physical examination.">
+					comment = <"Record as True if no abnormality was detected on examination. Specific statements about the examination can be included in the 'Clinical Interpretation' data element. If 'No abnormality detected' is selected, then recording of other examination data elements becomes redundant, with the exception of only the 'Clinical interpretation' data element, which may be useful if a normal statement is desired for recording, for example 'Normal examination'.">
+				>
+				["at0003"] = <
+					text = <"Clinical description">
+					description = <"Narrative description of the overall findings observed during the skin sensation examination.">
+				>
+				["at0004"] = <
+					text = <"Examination findings">
+					description = <"Structured details about the physical examination findings.">
+				>
+				["at0005"] = <
+					text = <"Multimedia representation">
+					description = <"Digital image, video or diagram representing the physical examination findings.">
+				>
+				["at0006"] = <
+					text = <"Clinical interpretation">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of the sensation findings.">
+					comment = <"Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the physical examination findings, not captured in other fields.">
+				>
+				["at0008"] = <
+					text = <"Examination not done">
+					description = <"Details to explicitly record that this examination was not performed.">
+				>
+				["at0013"] = <
+					text = <"Skin">
+					description = <"The sensation of the skin was examined.">
+				>
+				["at0014"] = <
+					text = <"Light touch">
+					description = <"Findings observed during testing of light touch.">
+				>
+				["at0015"] = <
+					text = <"Normal (++)">
+					description = <"The response to light touch is normal.">
+				>
+				["at0016"] = <
+					text = <"Diminished (+)">
+					description = <"The response to light touch is reduced.">
+				>
+				["at0017"] = <
+					text = <"Absent (-)">
+					description = <"The response to light touch is absent.">
+				>
+				["at0018"] = <
+					text = <"Vibration">
+					description = <"Findings observed during testing of vibration.">
+				>
+				["at0019"] = <
+					text = <"Normal (++)">
+					description = <"The response to vibration is normal.">
+				>
+				["at0020"] = <
+					text = <"Diminished (+)">
+					description = <"The response to vibration is reduced.">
+				>
+				["at0021"] = <
+					text = <"Absent (-)">
+					description = <"The response to vibration is absent.">
+				>
+				["at0022"] = <
+					text = <"Pain">
+					description = <"Findings observed during testing of pain.">
+				>
+				["at0011"] = <
+					text = <"Structured body site">
+					description = <"A structured description of the area of the body, nerve or dermatome under examination.">
+					comment = <"If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.">
+				>
+				["at0012"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body, nerve or dermatome under examination.">
+					comment = <"If the body site has been fully identified in the parent archetype in which this archetype is nested, this data element becomes redundant.">
+				>
+				["at0023"] = <
+					text = <"Normal (++)">
+					description = <"The response to pain is normal.">
+				>
+				["at0024"] = <
+					text = <"Diminished (+)">
+					description = <"The response to pain is reduced.">
+				>
+				["at0025"] = <
+					text = <"Absent (-)">
+					description = <"The response to pain is absent.">
+				>
+				["at0026"] = <
+					text = <"Temperature">
+					description = <"Findings observed during testing of temperature.">
+				>
+				["at0027"] = <
+					text = <"Normal (++)">
+					description = <"The response to temperature is normal.">
+				>
+				["at0028"] = <
+					text = <"Diminished (+)">
+					description = <"The response to temperature is reduced.">
+				>
+				["at0029"] = <
+					text = <"Absent (-)">
+					description = <"The response to temperature is absent.">
+				>
+				["at0030"] = <
+					text = <"Touch localisation">
+					description = <"Findings observed during testing of touch localisation.">
+				>
+				["at0031"] = <
+					text = <"Normal (++)">
+					description = <"The response to touch localisation is normal.">
+				>
+				["at0032"] = <
+					text = <"Diminished (+)">
+					description = <"The response to touch localisation is reduced.">
+				>
+				["at0033"] = <
+					text = <"Absent (-)">
+					description = <"The response to touch localisation is absent.">
+				>
+				["at0034"] = <
+					text = <"Dermatome">
+					description = <"The sensation related an identified dermatome was examined.">
+				>
+				["at0035"] = <
+					text = <"Nerve">
+					description = <"The sensation related to an identified nerve was examined.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000"] = <
+					text = <"*Skin sensation (en)">
+					description = <"Funn ved fysisk undersøkelse av et organsystem eller anatomisk struktur.">
+				>
+				["at0001"] = <
+					text = <"Undersøkt organsystem eller struktur">
+					description = <"Identifisering av det undersøkte organsystemet eller anatomiske strukturen.">
+					comment = <"*Coding of the system or structure examined with a terminology is preferred, where possible. (en)">
+				>
+				["at0002"] = <
+					text = <"Uten anmerkning">
+					description = <"Utsagn om at ingen avvik var oppdaget ved undersøkelsen (U.a.).">
+					comment = <"*Record as True if no abnormality was detected on examination. Specific statements about the examination can be included in the 'Clinical Interpretation' data element. If 'No abnormality detected' is selected, then recording of other examination data elements becomes redundant, with the exception of only the 'Clinical interpretation' data element, which may be useful if a normal statement is desired for recording, for example 'Normal examination'. (en)">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivelse">
+					description = <"*Narrative description of the overall findings observed during the skin sensation examination. (en)">
+				>
+				["at0004"] = <
+					text = <"Spesifikke funn">
+					description = <"Ytterligere strukturerte detaljer om undersøkelsesfunnene.">
+				>
+				["at0005"] = <
+					text = <"Multimediarepresentasjon">
+					description = <"Digitale bilder, video eller diagram som representerer undersøkelsesfunnene.">
+				>
+				["at0011"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"*A structured description of the area of the body, nerve or dermatome under examination. (en)">
+					comment = <"Hvis anatomisk lokalisasjon er entydig identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette SLOTet ikke nødvendig å benytte.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"*Identification of the area of the body, nerve or dermatome under examination. (en)">
+					comment = <"*If the body site has been fully identified in the parent archetype in which this archetype is nested, this data element becomes redundant. (en)">
+				>
+				["at0006"] = <
+					text = <"Fortolkning">
+					description = <"*Single word, phrase or brief description that represents the clinical meaning and significance of the sensation findings. (en)">
+					comment = <"Koding med terminologi foretrekkes når mulig. For eksempel \"normal undersøkelse\" eller \"tympanisk membran perforasjon\".">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn ved undersøkelsen, som ikke dekkes av andre elementer.">
+				>
+				["at0008"] = <
+					text = <"Undersøkelse ikke utført">
+					description = <"Detaljer for å eksplisitt registrere at denne undersøkelsen ikke ble utført.">
+				>
+				["at0013"] = <
+					text = <"*Skin (en)">
+					description = <"*The sensation of the skin was examined. (en)">
+				>
+				["at0014"] = <
+					text = <"*Light touch (en)">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"*Normal (++) (en)">
+					description = <"*The response to light touch is normal. (en)">
+				>
+				["at0016"] = <
+					text = <"*Diminished (+) (en)">
+					description = <"*The response to light touch is reduced. (en)">
+				>
+				["at0017"] = <
+					text = <"*Absent (-) (en)">
+					description = <"*The response to light touch is absent. (en)">
+				>
+				["at0018"] = <
+					text = <"*Vibration (en)">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"*Normal (++) (en)">
+					description = <"*The response to vibration is normal. (en)">
+				>
+				["at0020"] = <
+					text = <"*Diminished (+) (en)">
+					description = <"*The response to vibration is reduced. (en)">
+				>
+				["at0021"] = <
+					text = <"*Absent (-) (en)">
+					description = <"*The response to vibration is absent. (en)">
+				>
+				["at0022"] = <
+					text = <"*Pain (en)">
+					description = <"*">
+				>
+				["at0023"] = <
+					text = <"*Normal (++) (en)">
+					description = <"*The response to pain is normal. (en)">
+				>
+				["at0024"] = <
+					text = <"*Diminished (+) (en)">
+					description = <"*The response to pain is reduced. (en)">
+				>
+				["at0025"] = <
+					text = <"*Absent (-) (en)">
+					description = <"*The response to pain is absent. (en)">
+				>
+				["at0026"] = <
+					text = <"*Temperature (en)">
+					description = <"*">
+				>
+				["at0027"] = <
+					text = <"*Normal (++) (en)">
+					description = <"*The response to temperature is normal. (en)">
+				>
+				["at0028"] = <
+					text = <"*Diminished (+) (en)">
+					description = <"*The response to temperature is reduced. (en)">
+				>
+				["at0029"] = <
+					text = <"*Absent (-) (en)">
+					description = <"*The response to temperature is absent. (en)">
+				>
+				["at0030"] = <
+					text = <"*Touch localisation (en)">
+					description = <"*">
+				>
+				["at0031"] = <
+					text = <"*Normal (++) (en)">
+					description = <"*The response to touch localisation is normal. (en)">
+				>
+				["at0032"] = <
+					text = <"*Diminished (+) (en)">
+					description = <"*The response to touch localisation is reduced. (en)">
+				>
+				["at0033"] = <
+					text = <"*Absent (-) (en)">
+					description = <"*The response to touch localisation is absent. (en)">
+				>
+				["at0034"] = <
+					text = <"*Dermatome (en)">
+					description = <"*The sensation related an identified dermatome was examined. (en)">
+				>
+				["at0035"] = <
+					text = <"*Cutaneous nerve (en)">
+					description = <"*The sensation related to a cutaneous nerve was examined. (en)">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0000"] = <[SNOMED-CT::297971001]>
+				["at0013"] = <[SNOMED-CT::39937001]>
+				["at0034"] = <[SNOMED-CT::244023005]>
+				["at0035"] = <[SNOMED-CT::3057000]>
+			>
+		>
+	>

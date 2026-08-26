@@ -1,0 +1,235 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam-uterus.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.exam.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"08/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A cluster for recording findings on physical examination of the uterus.">
+			use = <"">
+			keywords = <"examination", "physical", "uterus", "pregnancy">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"8DC03436AB8E13BDA1F013485E53C77E">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Examination of the uterus
+		/items[id9.1]/items matches {
+			after [id10]
+			ELEMENT[id0.24] occurrences matches {0..1} matches {	-- Position
+				value matches {
+					DV_CODED_TEXT[id0.32] matches {
+						defining_code matches {[ac0.1]}		-- Position (synthesised)
+					}
+				}
+			}
+			CLUSTER[id0.1] occurrences matches {0..1} matches {	-- Size
+				items matches {
+					ELEMENT[id0.2] occurrences matches {0..1} matches {	-- Fundal height
+						value matches {
+							DV_QUANTITY[id0.33] matches {
+								property matches {[at0.28]}
+								magnitude matches {|0.0..100.0|}
+								precision matches {1}
+								units matches {"cm"}
+							}
+						}
+					}
+					allow_archetype CLUSTER[id0.31] occurrences matches {0..1} matches {	-- Size
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[id0.3] occurrences matches {0..1} matches {	-- Weeks of gestation
+						value matches {
+							DV_DURATION[id0.34] matches {
+								value matches {PW}
+							}
+						}
+					}
+					ELEMENT[id0.20] occurrences matches {0..1} matches {	-- Relative to anatomical markers
+						value matches {
+							DV_CODED_TEXT[id0.35] matches {
+								defining_code matches {[ac0.2]}		-- Relative to anatomical markers (synthesised)
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id0.4] occurrences matches {0..1} matches {	-- Assessment of liquor volume
+				value matches {
+					DV_ORDINAL[id0.36] matches {
+						[value, symbol] matches {
+							[{-3}, {[at0.5]}],
+							[{-2}, {[at0.6]}],
+							[{-1}, {[at0.7]}],
+							[{0}, {[at0.8]}],
+							[{1}, {[at0.9]}],
+							[{2}, {[at0.10]}],
+							[{3}, {[at0.11]}]
+						}
+					}
+				}
+			}
+			ELEMENT[id0.12] occurrences matches {0..1} matches {	-- Number of fetuses
+				value matches {
+					DV_COUNT[id0.37] matches {
+						magnitude matches {|>=0|}
+					}
+				}
+			}
+			CLUSTER[id0.18] occurrences matches {0..1} matches {	-- Fetus
+				items matches {
+					allow_archetype CLUSTER[id0.30] matches {	-- Fetal detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-fetus\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.1"] = <
+				text = <"Size">
+				description = <"Information about the size of the object for examination.">
+			>
+			["at0.10"] = <
+				text = <"Increased">
+				description = <"The amount of liquor is definitely increased.">
+			>
+			["at0.11"] = <
+				text = <"Markedly increased">
+				description = <"The amount of liquor is greatly increased compared to normal for gestation.">
+			>
+			["id0.12"] = <
+				text = <"Number of fetuses">
+				description = <"The number of foetuses that are in the uterus.">
+			>
+			["id0.18"] = <
+				text = <"Fetus">
+				description = <"Information about one or more foetuses.">
+			>
+			["id0.2"] = <
+				text = <"Fundal height">
+				description = <"The height of the uterine fundus measured from the symphysis pubis.">
+			>
+			["id0.20"] = <
+				text = <"Relative to anatomical markers">
+				description = <"Relative size of uterus related to anatomy of person.">
+			>
+			["at0.21"] = <
+				text = <"At symphisis pubis">
+				description = <"*">
+			>
+			["at0.22"] = <
+				text = <"At umbilicus">
+				description = <"*">
+			>
+			["at0.23"] = <
+				text = <"At xiphisternum">
+				description = <"*">
+			>
+			["id0.24"] = <
+				text = <"Position">
+				description = <"Position of uterus.">
+			>
+			["at0.26"] = <
+				text = <"Anteverted">
+				description = <"Uterine fundus is tipped forward.">
+			>
+			["at0.27"] = <
+				text = <"Retroverted">
+				description = <"Uterine fundus is tipped backward.">
+			>
+			["id0.3"] = <
+				text = <"Weeks of gestation">
+				description = <"The size in terms of weeks of pregnancy.">
+			>
+			["id0.30"] = <
+				text = <"Fetal detail">
+				description = <"Detailed information about one or more foetuses.">
+			>
+			["id0.31"] = <
+				text = <"Size">
+				description = <"Details of uterine size.">
+			>
+			["id0.4"] = <
+				text = <"Assessment of liquor volume">
+				description = <"The relative amount of liquor present in the uterus.">
+			>
+			["at0.5"] = <
+				text = <"Markedly reduced">
+				description = <"The amount of liquor is much less than expected.">
+			>
+			["at0.6"] = <
+				text = <"Reduced">
+				description = <"The amount of liquor is definitely reduced.">
+			>
+			["at0.7"] = <
+				text = <"Slightly reduced">
+				description = <"The amount of liquor is slightly reduced.">
+			>
+			["at0.8"] = <
+				text = <"Normal">
+				description = <"The amount of liquor is normal for gestation.">
+			>
+			["at0.9"] = <
+				text = <"Slightly increased">
+				description = <"The amount of liquor is slightly increased.">
+			>
+			["id1.1"] = <
+				text = <"Examination of the uterus">
+				description = <"For recording findings of the uterus including when pregnant.">
+			>
+			["id9.1"] = <
+				text = <"Findings">
+				description = <"Clinical findings.">
+			>
+			["at0.28"] = <
+				text = <"Length">
+				description = <"Length">
+			>
+			["ac0.1"] = <
+				text = <"Position (synthesised)">
+				description = <"Position of uterus. (synthesised)">
+			>
+			["ac0.2"] = <
+				text = <"Relative to anatomical markers (synthesised)">
+				description = <"Relative size of uterus related to anatomy of person. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.28"] = <http://openehr.org/id/122>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.26", "at0.27">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at0.21", "at0.22", "at0.23">
+		>
+	>

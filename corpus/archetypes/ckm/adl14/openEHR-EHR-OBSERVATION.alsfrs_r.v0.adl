@@ -1,0 +1,547 @@
+﻿archetype (adl_version=1.4; uid=d4c2b13c-126a-4a29-b339-92f2af3880dd)
+	openEHR-EHR-OBSERVATION.alsfrs_r.v0
+
+concept
+	[at0000]	-- Revised Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS-R)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Maryam Razavi">
+		["organisation"] = <"Cambio CDS">
+		["email"] = <"maryam.razavi@cambio.se">
+		["date"] = <"2021-01-15">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and the ALSFRS-R score.">
+			use = <"Use to record the results for each component parameter and the ALSFRS-R score.">
+			keywords = <"amyotrophic", "lateral", "sclerosis", "ALS", "respiratory">
+			misuse = <"">
+			copyright = <"© Cambio CDS, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"1. Cedarbaum JM, Stambler N, Malta E, Fuller C, Hilt D, Thurmond B, Nakanishi A. The ALSFRS-R: a revised ALS functional rating scale that incorporates assessments of respiratory function. BDNF ALS Study Group (Phase III). J Neurol Sci. 1999 Oct 31;169(1-2):13-21. doi: 10.1016/s0022-510x(99)00210-5. PMID: 10540002.
+2. Kaufmann P, Levy G, Thompson JL, Delbene ML, Battista V, Gordon PH, Rowland LP, Levin B, Mitsumoto H. The ALSFRSr predicts survival time in an ALS clinic population. Neurology. 2005 Jan 11;64(1):38-43. doi: 10.1212/01.WNL.0000148648.38313.64. PMID: 15642901.
+3. Kimura F, Fujimura C, Ishida S, Nakajima H, Furutama D, Uehara H, Shinoda K, Sugino M, Hanafusa T. Progression rate of ALSFRS-R at time of diagnosis predicts survival time in ALS. Neurology. 2006 Jan 24;66(2):265-7. doi: 10.1212/01.wnl.0000194316.91908.8a. PMID: 16434671.
+4. Cedarbaum JM, Stambler N. Performance of the Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) in multicenter clinical trials. J Neurol Sci. 1997 Oct;152 Suppl 1:S1-9. doi: 10.1016/s0022-510x(97)00237-2. PMID: 9419047.">
+		["current_contact"] = <"maryam.razavi@cambio.se">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"6252F7D6FB4ECFA25DAA824787B404AB">
+		["build_uid"] = <"b3a9b65e-329a-4a0d-9882-8cb6081d19e8">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Revised Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS-R)
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Speech
+										value matches {
+											0|[local::at0005], 	-- Loss of useful speech
+											1|[local::at0006], 	-- Speech combined with nonvocal communications
+											2|[local::at0007], 	-- Intelligible with repeating
+											3|[local::at0008], 	-- Detectable speech disturbance
+											4|[local::at0009]  	-- Normal
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- Salivation
+										value matches {
+											0|[local::at0011], 	-- Marked drooling; requires constant tissue or handkerchief
+											1|[local::at0012], 	-- Marked excess of saliva with some drooling
+											2|[local::at0013], 	-- Moderately excessive saliva; may have minimal drooling
+											3|[local::at0014], 	-- Slight but definite excess of saliva in mouth; may have nighttime drooling
+											4|[local::at0015]  	-- Normal
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {	-- Swallowing
+										value matches {
+											0|[local::at0017], 	-- Nothing by mouth; exclusively parenteral or enteral feeding
+											1|[local::at0018], 	-- Needs supplemental tube feedings
+											2|[local::at0019], 	-- Dietary consistency changes
+											3|[local::at0020], 	-- Early eating problems; occasional choking
+											4|[local::at0021]  	-- Normal eating habits
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {	-- Handwriting
+										value matches {
+											0|[local::at0023], 	-- Unable to grip pen
+											1|[local::at0024], 	-- Able to grip pen but unable to write
+											2|[local::at0025], 	-- Not all words are legible
+											3|[local::at0026], 	-- Slow or sloppy; all words are legible
+											4|[local::at0027]  	-- Normal
+										}
+									}
+									ELEMENT[at0028] occurrences matches {0..1} matches {	-- Patients with gastrostomy and >50% daily nutrition intake via G-tube
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0029, 	-- Yes
+													at0030]	-- No
+												}
+											}
+										}
+									}
+									ELEMENT[at0031] occurrences matches {0..1} matches {	-- Cutting food and handling utensils (patients with gastrostomy)
+										value matches {
+											0|[local::at0032], 	-- Unable to perform any aspect of task
+											1|[local::at0033], 	-- Provides minimal assistance to caregiver
+											2|[local::at0034], 	-- Some help needed with closures and fasteners
+											3|[local::at0035], 	-- Clumsy but able to perform all manipulations independently
+											4|[local::at0036]  	-- Normal
+										}
+									}
+									ELEMENT[at0081] occurrences matches {0..1} matches {	-- Cutting food and handling utensils (patients without gastrostomy)
+										value matches {
+											0|[local::at0082], 	-- Needs to be fed
+											1|[local::at0083], 	-- Food must be cut by someone but can still feed slowly
+											2|[local::at0084], 	-- Can cut most foods although clumsy and slow; some help needed
+											3|[local::at0085], 	-- Somewhat slow and clumsy but no help needed
+											4|[local::at0086]  	-- Normal
+										}
+									}
+									ELEMENT[at0037] occurrences matches {0..1} matches {	-- Dressing and hygiene
+										value matches {
+											0|[local::at0038], 	-- Total dependence
+											1|[local::at0039], 	-- Needs attendant for self-care
+											2|[local::at0040], 	-- Intermittent assistance or substitute methods
+											3|[local::at0041], 	-- Independent and complete self-care with effort or decreased efficiency
+											4|[local::at0042]  	-- Normal function
+										}
+									}
+									ELEMENT[at0043] occurrences matches {0..1} matches {	-- Turning in bed and adjusting bed clothes
+										value matches {
+											0|[local::at0044], 	-- Helpless
+											1|[local::at0045], 	-- Can initiate but not turn or adjust sheets alone
+											2|[local::at0046], 	-- Can turn alone or adjust sheets but with great difficulty
+											3|[local::at0047], 	-- Somewhat slow and clumsy but no help needed
+											4|[local::at0048]  	-- Normal
+										}
+									}
+									ELEMENT[at0049] occurrences matches {0..1} matches {	-- Walking
+										value matches {
+											0|[local::at0050], 	-- No purposeful leg movement
+											1|[local::at0051], 	-- Nonambulatory functional movement
+											2|[local::at0052], 	-- Walks with assistance
+											3|[local::at0053], 	-- Early ambulation difficulties
+											4|[local::at0054]  	-- Normal
+										}
+									}
+									ELEMENT[at0055] occurrences matches {0..1} matches {	-- Climbing stairs
+										value matches {
+											0|[local::at0056], 	-- Cannot do
+											1|[local::at0057], 	-- Needs assistance
+											2|[local::at0058], 	-- Mild unsteadiness or fatigue
+											3|[local::at0059], 	-- Slow
+											4|[local::at0060]  	-- Normal
+										}
+									}
+									ELEMENT[at0061] occurrences matches {0..1} matches {	-- Dyspnea
+										value matches {
+											0|[local::at0062], 	-- Significant difficulty, considering using mechanical respiratory support
+											1|[local::at0063], 	-- Occurs at rest, difficulty breathing when either sitting or lying
+											2|[local::at0064], 	-- Occurs with one or more of the following eating, bathing, dressing
+											3|[local::at0065], 	-- Occurs when walking
+											4|[local::at0066]  	-- None
+										}
+									}
+									ELEMENT[at0067] occurrences matches {0..1} matches {	-- Orthopnea
+										value matches {
+											0|[local::at0068], 	-- Unable to sleep
+											1|[local::at0069], 	-- Can only sleep sitting up
+											2|[local::at0070], 	-- Needs extra pillows in order to sleep (>2)
+											3|[local::at0071], 	-- Some difficulty sleeping at night due to shortness of breath; does not routinely use >2 pillows
+											4|[local::at0072]  	-- None
+										}
+									}
+									ELEMENT[at0073] occurrences matches {0..1} matches {	-- Respiratory insufficiency
+										value matches {
+											0|[local::at0074], 	-- Invasive mechanical ventilation by intubation or tracheostomy
+											1|[local::at0075], 	-- Continuous use of BiPAP during the night and day
+											2|[local::at0076], 	-- Continuous use of BiPAP during the night
+											3|[local::at0077], 	-- Intermittent use of BiPAP
+											4|[local::at0078]  	-- None
+										}
+									}
+									ELEMENT[at0079] occurrences matches {0..1} matches {	-- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..48|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Revised Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS-R)">
+					description = <"An assessment score used to stratify severity of amyotrophic lateral sclerosis (ALS), including respiratory function.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Speech">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Loss of useful speech">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Speech combined with nonvocal communications">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Intelligible with repeating">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"Detectable speech disturbance">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Salivation">
+					description = <"*">
+				>
+				["at0011"] = <
+					text = <"Marked drooling; requires constant tissue or handkerchief">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Marked excess of saliva with some drooling">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Moderately excessive saliva; may have minimal drooling">
+					description = <"*">
+				>
+				["at0014"] = <
+					text = <"Slight but definite excess of saliva in mouth; may have nighttime drooling">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Swallowing">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"Nothing by mouth; exclusively parenteral or enteral feeding">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Needs supplemental tube feedings">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"Dietary consistency changes">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Early eating problems; occasional choking">
+					description = <"*">
+				>
+				["at0021"] = <
+					text = <"Normal eating habits">
+					description = <"*">
+				>
+				["at0022"] = <
+					text = <"Handwriting">
+					description = <"*">
+				>
+				["at0023"] = <
+					text = <"Unable to grip pen">
+					description = <"*">
+				>
+				["at0024"] = <
+					text = <"Able to grip pen but unable to write">
+					description = <"*">
+				>
+				["at0025"] = <
+					text = <"Not all words are legible">
+					description = <"*">
+				>
+				["at0026"] = <
+					text = <"Slow or sloppy; all words are legible">
+					description = <"*">
+				>
+				["at0027"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0028"] = <
+					text = <"Patients with gastrostomy and >50% daily nutrition intake via G-tube">
+					description = <"*">
+				>
+				["at0029"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0030"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0031"] = <
+					text = <"Cutting food and handling utensils (patients with gastrostomy)">
+					description = <"*">
+				>
+				["at0032"] = <
+					text = <"Unable to perform any aspect of task">
+					description = <"*">
+				>
+				["at0033"] = <
+					text = <"Provides minimal assistance to caregiver">
+					description = <"*">
+				>
+				["at0034"] = <
+					text = <"Some help needed with closures and fasteners">
+					description = <"*">
+				>
+				["at0035"] = <
+					text = <"Clumsy but able to perform all manipulations independently">
+					description = <"*">
+				>
+				["at0036"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0037"] = <
+					text = <"Dressing and hygiene">
+					description = <"*">
+				>
+				["at0038"] = <
+					text = <"Total dependence">
+					description = <"*">
+				>
+				["at0039"] = <
+					text = <"Needs attendant for self-care">
+					description = <"*">
+				>
+				["at0040"] = <
+					text = <"Intermittent assistance or substitute methods">
+					description = <"*">
+				>
+				["at0041"] = <
+					text = <"Independent and complete self-care with effort or decreased efficiency">
+					description = <"*">
+				>
+				["at0042"] = <
+					text = <"Normal function">
+					description = <"*">
+				>
+				["at0043"] = <
+					text = <"Turning in bed and adjusting bed clothes">
+					description = <"*">
+				>
+				["at0044"] = <
+					text = <"Helpless">
+					description = <"*">
+				>
+				["at0045"] = <
+					text = <"Can initiate but not turn or adjust sheets alone">
+					description = <"*">
+				>
+				["at0046"] = <
+					text = <"Can turn alone or adjust sheets but with great difficulty">
+					description = <"*">
+				>
+				["at0047"] = <
+					text = <"Somewhat slow and clumsy but no help needed">
+					description = <"*">
+				>
+				["at0048"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0049"] = <
+					text = <"Walking">
+					description = <"*">
+				>
+				["at0050"] = <
+					text = <"No purposeful leg movement">
+					description = <"*">
+				>
+				["at0051"] = <
+					text = <"Nonambulatory functional movement">
+					description = <"*">
+				>
+				["at0052"] = <
+					text = <"Walks with assistance">
+					description = <"*">
+				>
+				["at0053"] = <
+					text = <"Early ambulation difficulties">
+					description = <"*">
+				>
+				["at0054"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0055"] = <
+					text = <"Climbing stairs">
+					description = <"*">
+				>
+				["at0056"] = <
+					text = <"Cannot do">
+					description = <"*">
+				>
+				["at0057"] = <
+					text = <"Needs assistance">
+					description = <"*">
+				>
+				["at0058"] = <
+					text = <"Mild unsteadiness or fatigue">
+					description = <"*">
+				>
+				["at0059"] = <
+					text = <"Slow">
+					description = <"*">
+				>
+				["at0060"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+				["at0061"] = <
+					text = <"Dyspnea">
+					description = <"*">
+				>
+				["at0062"] = <
+					text = <"Significant difficulty, considering using mechanical respiratory support">
+					description = <"*">
+				>
+				["at0063"] = <
+					text = <"Occurs at rest, difficulty breathing when either sitting or lying">
+					description = <"*">
+				>
+				["at0064"] = <
+					text = <"Occurs with one or more of the following eating, bathing, dressing">
+					description = <"*">
+				>
+				["at0065"] = <
+					text = <"Occurs when walking">
+					description = <"*">
+				>
+				["at0066"] = <
+					text = <"None">
+					description = <"*">
+				>
+				["at0067"] = <
+					text = <"Orthopnea">
+					description = <"*">
+				>
+				["at0068"] = <
+					text = <"Unable to sleep">
+					description = <"*">
+				>
+				["at0069"] = <
+					text = <"Can only sleep sitting up">
+					description = <"*">
+				>
+				["at0070"] = <
+					text = <"Needs extra pillows in order to sleep (>2)">
+					description = <"*">
+				>
+				["at0071"] = <
+					text = <"Some difficulty sleeping at night due to shortness of breath; does not routinely use >2 pillows">
+					description = <"*">
+				>
+				["at0072"] = <
+					text = <"None">
+					description = <"*">
+				>
+				["at0073"] = <
+					text = <"Respiratory insufficiency">
+					description = <"*">
+				>
+				["at0074"] = <
+					text = <"Invasive mechanical ventilation by intubation or tracheostomy">
+					description = <"*">
+				>
+				["at0075"] = <
+					text = <"Continuous use of BiPAP during the night and day">
+					description = <"*">
+				>
+				["at0076"] = <
+					text = <"Continuous use of BiPAP during the night">
+					description = <"*">
+				>
+				["at0077"] = <
+					text = <"Intermittent use of BiPAP">
+					description = <"*">
+				>
+				["at0078"] = <
+					text = <"None">
+					description = <"*">
+				>
+				["at0079"] = <
+					text = <"Total score">
+					description = <"*">
+				>
+				["at0081"] = <
+					text = <"Cutting food and handling utensils (patients without gastrostomy)">
+					description = <"*">
+				>
+				["at0082"] = <
+					text = <"Needs to be fed">
+					description = <"*">
+				>
+				["at0083"] = <
+					text = <"Food must be cut by someone but can still feed slowly">
+					description = <"*">
+				>
+				["at0084"] = <
+					text = <"Can cut most foods although clumsy and slow; some help needed">
+					description = <"*">
+				>
+				["at0085"] = <
+					text = <"Somewhat slow and clumsy but no help needed">
+					description = <"*">
+				>
+				["at0086"] = <
+					text = <"Normal">
+					description = <"*">
+				>
+			>
+		>
+	>

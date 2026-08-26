@@ -1,0 +1,316 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-ACTION.review.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2011-03-09">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of clinical activity regarding the performance of a formal clinical review of a subject's clinical situation, a specific aspect of their clinical care or a specified part of the health record.">
+			use = <"Use to record details of clinical activity regarding the performance of a formal clinical review of a subject's clinical situation, a specific aspect of their clinical care or a specified part of the health record. For example: recording activity around the performance of a formal Medicines Review; or a care coordinator reviewing progress of Care Plans; or a file review by a case worker.">
+			keywords = <"record", "review", "medication", "vaccination", "adverse reaction", "allergy", "medicine">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"D6E52ED907C796AABE429BFA416B894A">
+	>
+
+definition
+	ACTION[id1] matches {	-- Review
+		ism_transition matches {
+			ISM_TRANSITION[id4] matches {	-- Review Planned
+				current_state matches {
+					DV_CODED_TEXT[id21] matches {
+						defining_code matches {[at21]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id22] matches {
+						defining_code matches {[at4]}
+					}
+				}
+			}
+			ISM_TRANSITION[id11] matches {	-- Review Postponed
+				current_state matches {
+					DV_CODED_TEXT[id23] matches {
+						defining_code matches {[at22]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id24] matches {
+						defining_code matches {[at11]}
+					}
+				}
+			}
+			ISM_TRANSITION[id13] matches {	-- Review Cancelled
+				current_state matches {
+					DV_CODED_TEXT[id25] matches {
+						defining_code matches {[at23]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id26] matches {
+						defining_code matches {[at13]}
+					}
+				}
+			}
+			ISM_TRANSITION[id5] matches {	-- Review Scheduled
+				current_state matches {
+					DV_CODED_TEXT[id27] matches {
+						defining_code matches {[at24]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id28] matches {
+						defining_code matches {[at5]}
+					}
+				}
+			}
+			ISM_TRANSITION[id20] matches {	-- Review Re-scheduled
+				current_state matches {
+					DV_CODED_TEXT[id29] matches {
+						defining_code matches {[at24]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id30] matches {
+						defining_code matches {[at20]}
+					}
+				}
+			}
+			ISM_TRANSITION[id7] matches {	-- Review Performed
+				current_state matches {
+					DV_CODED_TEXT[id31] matches {
+						defining_code matches {[at25]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id32] matches {
+						defining_code matches {[at7]}
+					}
+				}
+			}
+			ISM_TRANSITION[id12] matches {	-- Review Suspended
+				current_state matches {
+					DV_CODED_TEXT[id33] matches {
+						defining_code matches {[at26]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id34] matches {
+						defining_code matches {[at12]}
+					}
+				}
+			}
+			ISM_TRANSITION[id14] matches {	-- Review Aborted
+				current_state matches {
+					DV_CODED_TEXT[id35] matches {
+						defining_code matches {[at27]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id36] matches {
+						defining_code matches {[at14]}
+					}
+				}
+			}
+			ISM_TRANSITION[id17] matches {	-- Review Completed
+				current_state matches {
+					DV_CODED_TEXT[id37] matches {
+						defining_code matches {[at28]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id38] matches {
+						defining_code matches {[at17]}
+					}
+				}
+			}
+		}
+		description matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Review Activity
+						value matches {
+							DV_TEXT[id39] 
+						}
+					}
+					ELEMENT[id16] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id40] 
+						}
+					}
+					ELEMENT[id15] occurrences matches {0..1} matches {	-- Reason
+						value matches {
+							DV_TEXT[id41] 
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id18] matches {
+				items matches {
+					ELEMENT[id19] occurrences matches {0..1} matches {	-- Start Date/Time
+						value matches {
+							DV_DATE_TIME[id42] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Review">
+				description = <"Clinical activity regarding the performance of a formal clinical review of a subject's clinical situation, a specific aspect of their clinical care or a specified part of the health record.">
+			>
+			["id3"] = <
+				text = <"Review Activity">
+				description = <"Identification of the item or activity that is being reviewed.">
+			>
+			["id4"] = <
+				text = <"Review Planned">
+				description = <"The review activity is planned.">
+			>
+			["id5"] = <
+				text = <"Review Scheduled">
+				description = <"The review activity has been scheduled.">
+			>
+			["id7"] = <
+				text = <"Review Performed">
+				description = <"The review activity has been performed.">
+			>
+			["id11"] = <
+				text = <"Review Postponed">
+				description = <"The review has been postponed.">
+			>
+			["id12"] = <
+				text = <"Review Suspended">
+				description = <"The review activity has been suspended.">
+			>
+			["id13"] = <
+				text = <"Review Cancelled">
+				description = <"The review activity has been cancelled.">
+			>
+			["id14"] = <
+				text = <"Review Aborted">
+				description = <"The review activity has been aborted.">
+			>
+			["id15"] = <
+				text = <"Reason">
+				description = <"Reason that the care pathway step for the identified Review Activity was carried out.">
+			>
+			["id16"] = <
+				text = <"Description">
+				description = <"Narrative description of the Review Activity relevant for the care pathway step.">
+			>
+			["id17"] = <
+				text = <"Review Completed">
+				description = <"The review activity has been completed.">
+			>
+			["id19"] = <
+				text = <"Start Date/Time">
+				description = <"The start date and/or time for the Review activity.">
+			>
+			["id20"] = <
+				text = <"Review Re-scheduled">
+				description = <"The review activity has been re-scheduled.">
+			>
+			["at4"] = <
+				text = <"Review Planned">
+				description = <"The review activity is planned.">
+			>
+			["at11"] = <
+				text = <"Review Postponed">
+				description = <"The review has been postponed.">
+			>
+			["at13"] = <
+				text = <"Review Cancelled">
+				description = <"The review activity has been cancelled.">
+			>
+			["at5"] = <
+				text = <"Review Scheduled">
+				description = <"The review activity has been scheduled.">
+			>
+			["at20"] = <
+				text = <"Review Re-scheduled">
+				description = <"The review activity has been re-scheduled.">
+			>
+			["at7"] = <
+				text = <"Review Performed">
+				description = <"The review activity has been performed.">
+			>
+			["at12"] = <
+				text = <"Review Suspended">
+				description = <"The review activity has been suspended.">
+			>
+			["at14"] = <
+				text = <"Review Aborted">
+				description = <"The review activity has been aborted.">
+			>
+			["at17"] = <
+				text = <"Review Completed">
+				description = <"The review activity has been completed.">
+			>
+			["at21"] = <
+				text = <"planned">
+				description = <"planned">
+			>
+			["at22"] = <
+				text = <"postponed">
+				description = <"postponed">
+			>
+			["at23"] = <
+				text = <"cancelled">
+				description = <"cancelled">
+			>
+			["at24"] = <
+				text = <"scheduled">
+				description = <"scheduled">
+			>
+			["at25"] = <
+				text = <"active">
+				description = <"active">
+			>
+			["at26"] = <
+				text = <"suspended">
+				description = <"suspended">
+			>
+			["at27"] = <
+				text = <"aborted">
+				description = <"aborted">
+			>
+			["at28"] = <
+				text = <"complete">
+				description = <"complete">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at21"] = <http://openehr.org/id/526>
+			["at22"] = <http://openehr.org/id/527>
+			["at23"] = <http://openehr.org/id/528>
+			["at24"] = <http://openehr.org/id/529>
+			["at25"] = <http://openehr.org/id/245>
+			["at26"] = <http://openehr.org/id/530>
+			["at27"] = <http://openehr.org/id/531>
+			["at28"] = <http://openehr.org/id/532>
+		>
+	>

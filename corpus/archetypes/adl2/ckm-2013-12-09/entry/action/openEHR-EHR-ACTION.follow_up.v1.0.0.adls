@@ -1,0 +1,667 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-ACTION.follow_up.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Leonardo Derjachadurian">
+				["organisation"] = <"Particular">
+			>
+			accreditation = <"Medical doctor, Internal Medicine specialist, Programmer Analist, Master in Data Mining">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics, Australia">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2012-08-06">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل تفاصيل حول فعل تم تنفيذه كجزء من المتابعة.">
+			use = <"">
+			misuse = <"">
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"Para registrar detalles acerca de una acción tomada como parte del seguimiento clínico.">
+			use = <"">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about an action taken as part of a follow up.">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"0B865193F1E6B2BD5FE6E91EC9380C2A">
+	>
+
+definition
+	ACTION[id1] matches {	-- Follow up action
+		ism_transition matches {
+			ISM_TRANSITION[id2] matches {	-- Planned
+				current_state matches {
+					DV_CODED_TEXT[id15] matches {
+						defining_code matches {[at15]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id16] matches {
+						defining_code matches {[at2]}
+					}
+				}
+			}
+			ISM_TRANSITION[id3] matches {	-- Postponed
+				current_state matches {
+					DV_CODED_TEXT[id17] matches {
+						defining_code matches {[at16]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id18] matches {
+						defining_code matches {[at3]}
+					}
+				}
+			}
+			ISM_TRANSITION[id8] matches {	-- Cancelled
+				current_state matches {
+					DV_CODED_TEXT[id19] matches {
+						defining_code matches {[at17]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id20] matches {
+						defining_code matches {[at8]}
+					}
+				}
+			}
+			ISM_TRANSITION[id4] matches {	-- Scheduled
+				current_state matches {
+					DV_CODED_TEXT[id21] matches {
+						defining_code matches {[at18]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id22] matches {
+						defining_code matches {[at4]}
+					}
+				}
+			}
+			ISM_TRANSITION[id5] matches {	-- Rescheduled
+				current_state matches {
+					DV_CODED_TEXT[id23] matches {
+						defining_code matches {[at18]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id24] matches {
+						defining_code matches {[at5]}
+					}
+				}
+			}
+			ISM_TRANSITION[id6] matches {	-- Attended
+				current_state matches {
+					DV_CODED_TEXT[id25] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id26] matches {
+						defining_code matches {[at6]}
+					}
+				}
+			}
+			ISM_TRANSITION[id9] matches {	-- Patient contacted
+				current_state matches {
+					DV_CODED_TEXT[id27] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id28] matches {
+						defining_code matches {[at9]}
+					}
+				}
+			}
+			ISM_TRANSITION[id10] matches {	-- Reviewed
+				current_state matches {
+					DV_CODED_TEXT[id29] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id30] matches {
+						defining_code matches {[at10]}
+					}
+				}
+			}
+			ISM_TRANSITION[id13] matches {	-- Did not attend
+				current_state matches {
+					DV_CODED_TEXT[id31] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id32] matches {
+						defining_code matches {[at13]}
+					}
+				}
+			}
+			ISM_TRANSITION[id14] matches {	-- Rescheduled
+				current_state matches {
+					DV_CODED_TEXT[id33] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id34] matches {
+						defining_code matches {[at14]}
+					}
+				}
+			}
+			ISM_TRANSITION[id7] matches {	-- Suspended
+				current_state matches {
+					DV_CODED_TEXT[id35] matches {
+						defining_code matches {[at20]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id36] matches {
+						defining_code matches {[at7]}
+					}
+				}
+			}
+			ISM_TRANSITION[id11] matches {	-- Ceased
+				current_state matches {
+					DV_CODED_TEXT[id37] matches {
+						defining_code matches {[at21]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id38] matches {
+						defining_code matches {[at11]}
+					}
+				}
+			}
+			ISM_TRANSITION[id12] matches {	-- Completed
+				current_state matches {
+					DV_CODED_TEXT[id39] matches {
+						defining_code matches {[at22]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id40] matches {
+						defining_code matches {[at12]}
+					}
+				}
+			}
+		}
+		description matches {
+			allow_archetype ITEM_TREE[id41] matches {
+				include
+					archetype_id/value matches {/openEHR-EHR-ITEM_TREE\.follow_up\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"فعل المتابعة">
+				description = <"فعل تم تنفيذه كجزء من المتابعة">
+			>
+			["id2"] = <
+				text = <"مخطَّط">
+				description = <"تم التخطيط للمتابعة">
+			>
+			["id3"] = <
+				text = <"تم التأجيل">
+				description = <"لا تزال المتابعة مطلوبة و لكنه يحتاج إلى تدخل/مداخلة">
+			>
+			["id4"] = <
+				text = <"تم تحديد الموعد">
+				description = <"تم تحديد موعد المتابعة">
+			>
+			["id5"] = <
+				text = <"تم إعادة تحديد الموعد">
+				description = <"تم إعادة تحديد الموعد">
+			>
+			["id6"] = <
+				text = <"تم الحضور">
+				description = <"حدثت زيارة المتابعة بالفعل">
+			>
+			["id7"] = <
+				text = <"تم التعليق/الإيقاف المؤقت">
+				description = <"لن يتم المزيد من المتابعة حتى يحدث التدخل/المداخلة">
+			>
+			["id8"] = <
+				text = <"تم الإلغاء">
+				description = <"لم تبدأ المتابعة و لكنها لم تعد مطلوبة">
+			>
+			["id9"] = <
+				text = <"تم تواصل المريض">
+				description = <"تم تواصل المريض فيما بتعلق بالمتابعة">
+			>
+			["id10"] = <
+				text = <"تمت المراجعة">
+				description = <"تم مراجعة المتابعة">
+			>
+			["id11"] = <
+				text = <"تم التوقف">
+				description = <"تم البدء بالمتابعة ثم تم إيقافها">
+			>
+			["id12"] = <
+				text = <"اكتمل">
+				description = <"تم اكتمال عملية المتابعة">
+			>
+			["id13"] = <
+				text = <"لم يتم الحضور">
+				description = <"لم يحضر المريض">
+			>
+			["id14"] = <
+				text = <"تمت إعادة تحديد الموعد">
+				description = <"تمت إعادة تحديد الموعد خلال متابعة نشطة">
+			>
+			["at2"] = <
+				text = <"مخطَّط">
+				description = <"تم التخطيط للمتابعة">
+			>
+			["at3"] = <
+				text = <"تم التأجيل">
+				description = <"لا تزال المتابعة مطلوبة و لكنه يحتاج إلى تدخل/مداخلة">
+			>
+			["at8"] = <
+				text = <"تم الإلغاء">
+				description = <"لم تبدأ المتابعة و لكنها لم تعد مطلوبة">
+			>
+			["at4"] = <
+				text = <"تم تحديد الموعد">
+				description = <"تم تحديد موعد المتابعة">
+			>
+			["at5"] = <
+				text = <"تم إعادة تحديد الموعد">
+				description = <"تم إعادة تحديد الموعد">
+			>
+			["at6"] = <
+				text = <"تم الحضور">
+				description = <"حدثت زيارة المتابعة بالفعل">
+			>
+			["at9"] = <
+				text = <"تم تواصل المريض">
+				description = <"تم تواصل المريض فيما بتعلق بالمتابعة">
+			>
+			["at10"] = <
+				text = <"تمت المراجعة">
+				description = <"تم مراجعة المتابعة">
+			>
+			["at13"] = <
+				text = <"لم يتم الحضور">
+				description = <"لم يحضر المريض">
+			>
+			["at14"] = <
+				text = <"تمت إعادة تحديد الموعد">
+				description = <"تمت إعادة تحديد الموعد خلال متابعة نشطة">
+			>
+			["at7"] = <
+				text = <"تم التعليق/الإيقاف المؤقت">
+				description = <"لن يتم المزيد من المتابعة حتى يحدث التدخل/المداخلة">
+			>
+			["at11"] = <
+				text = <"تم التوقف">
+				description = <"تم البدء بالمتابعة ثم تم إيقافها">
+			>
+			["at12"] = <
+				text = <"اكتمل">
+				description = <"تم اكتمال عملية المتابعة">
+			>
+			["at15"] = <
+				text = <"*initial (en)">
+				description = <"*initial (en)">
+			>
+			["at16"] = <
+				text = <"*postponed (en)">
+				description = <"*postponed (en)">
+			>
+			["at17"] = <
+				text = <"*cancelled (en)">
+				description = <"*cancelled (en)">
+			>
+			["at18"] = <
+				text = <"*scheduled (en)">
+				description = <"*scheduled (en)">
+			>
+			["at19"] = <
+				text = <"*active (en)">
+				description = <"*active (en)">
+			>
+			["at20"] = <
+				text = <"*suspended (en)">
+				description = <"*suspended (en)">
+			>
+			["at21"] = <
+				text = <"*aborted (en)">
+				description = <"*aborted (en)">
+			>
+			["at22"] = <
+				text = <"*complete (en)">
+				description = <"*complete (en)">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Follow up action">
+				description = <"An action taken as part of a follow up.">
+			>
+			["id2"] = <
+				text = <"Planned">
+				description = <"The follow up is planned.">
+			>
+			["id3"] = <
+				text = <"Postponed">
+				description = <"Follow up still required but requires intervention.">
+			>
+			["id4"] = <
+				text = <"Scheduled">
+				description = <"The follow up is scheduled.">
+			>
+			["id5"] = <
+				text = <"Rescheduled">
+				description = <"The follow up has been rescheduled.">
+			>
+			["id6"] = <
+				text = <"Attended">
+				description = <"A follow up visit has occurred.">
+			>
+			["id7"] = <
+				text = <"Suspended">
+				description = <"No further follow up until intervention.">
+			>
+			["id8"] = <
+				text = <"Cancelled">
+				description = <"Follow up has not begun and is no longer required.">
+			>
+			["id9"] = <
+				text = <"Patient contacted">
+				description = <"Patient has been contacted regarding follow-up.">
+			>
+			["id10"] = <
+				text = <"Reviewed">
+				description = <"Follow up has been reviewed.">
+			>
+			["id11"] = <
+				text = <"Ceased">
+				description = <"Follow up was commenced by has been ceased.">
+			>
+			["id12"] = <
+				text = <"Completed">
+				description = <"Follow up process has been completed.">
+			>
+			["id13"] = <
+				text = <"Did not attend">
+				description = <"The patient did not attend.">
+			>
+			["id14"] = <
+				text = <"Rescheduled">
+				description = <"An appointment has been resceduled during active follow up.">
+			>
+			["at2"] = <
+				text = <"Planned">
+				description = <"The follow up is planned.">
+			>
+			["at3"] = <
+				text = <"Postponed">
+				description = <"Follow up still required but requires intervention.">
+			>
+			["at8"] = <
+				text = <"Cancelled">
+				description = <"Follow up has not begun and is no longer required.">
+			>
+			["at4"] = <
+				text = <"Scheduled">
+				description = <"The follow up is scheduled.">
+			>
+			["at5"] = <
+				text = <"Rescheduled">
+				description = <"The follow up has been rescheduled.">
+			>
+			["at6"] = <
+				text = <"Attended">
+				description = <"A follow up visit has occurred.">
+			>
+			["at9"] = <
+				text = <"Patient contacted">
+				description = <"Patient has been contacted regarding follow-up.">
+			>
+			["at10"] = <
+				text = <"Reviewed">
+				description = <"Follow up has been reviewed.">
+			>
+			["at13"] = <
+				text = <"Did not attend">
+				description = <"The patient did not attend.">
+			>
+			["at14"] = <
+				text = <"Rescheduled">
+				description = <"An appointment has been resceduled during active follow up.">
+			>
+			["at7"] = <
+				text = <"Suspended">
+				description = <"No further follow up until intervention.">
+			>
+			["at11"] = <
+				text = <"Ceased">
+				description = <"Follow up was commenced by has been ceased.">
+			>
+			["at12"] = <
+				text = <"Completed">
+				description = <"Follow up process has been completed.">
+			>
+			["at15"] = <
+				text = <"initial">
+				description = <"initial">
+			>
+			["at16"] = <
+				text = <"postponed">
+				description = <"postponed">
+			>
+			["at17"] = <
+				text = <"cancelled">
+				description = <"cancelled">
+			>
+			["at18"] = <
+				text = <"scheduled">
+				description = <"scheduled">
+			>
+			["at19"] = <
+				text = <"active">
+				description = <"active">
+			>
+			["at20"] = <
+				text = <"suspended">
+				description = <"suspended">
+			>
+			["at21"] = <
+				text = <"aborted">
+				description = <"aborted">
+			>
+			["at22"] = <
+				text = <"complete">
+				description = <"complete">
+			>
+		>
+		["es-ar"] = <
+			["id1"] = <
+				text = <"Acción de seguimiento clínico">
+				description = <"Una acción realizada como parte de un seguimiento clínico">
+			>
+			["id2"] = <
+				text = <"Planeada">
+				description = <"El seguimiento clínico esta planeado">
+			>
+			["id3"] = <
+				text = <"Pospuesto">
+				description = <"El seguimiento clínico aún es requerido pero requiere intervención">
+			>
+			["id4"] = <
+				text = <"Programado">
+				description = <"El seguimiento clínico está programado">
+			>
+			["id5"] = <
+				text = <"Reprogramado">
+				description = <"El seguimiento clínico ha sido reprogramado">
+			>
+			["id6"] = <
+				text = <"Atendido">
+				description = <"Una visita de seguimiento clínico ha ocurrido">
+			>
+			["id7"] = <
+				text = <"Suspendido">
+				description = <"No se realizarán mas el seguimiento clínico">
+			>
+			["id8"] = <
+				text = <"Cancelado">
+				description = <"El seguimiento clínico no comenzó aún y ya no es requerido">
+			>
+			["id9"] = <
+				text = <"Paciente contactado">
+				description = <"El paciente ha sido contactado en relación al seguimiento clínico ">
+			>
+			["id10"] = <
+				text = <"Revisado">
+				description = <"El seguimiento clínico ha sido revisado">
+			>
+			["id11"] = <
+				text = <"Interrumpido">
+				description = <"El seguimiento clínico ha sido interrumpido">
+			>
+			["id12"] = <
+				text = <"Completado">
+				description = <"El seguimiento clínico ha sido completado">
+			>
+			["id13"] = <
+				text = <"No asistió">
+				description = <"El paciente no asistió">
+			>
+			["id14"] = <
+				text = <"Reprogramado">
+				description = <"Un turno ha sido reprogramado durante un seguimiento clínico activo">
+			>
+			["at2"] = <
+				text = <"Planeada">
+				description = <"El seguimiento clínico esta planeado">
+			>
+			["at3"] = <
+				text = <"Pospuesto">
+				description = <"El seguimiento clínico aún es requerido pero requiere intervención">
+			>
+			["at8"] = <
+				text = <"Cancelado">
+				description = <"El seguimiento clínico no comenzó aún y ya no es requerido">
+			>
+			["at4"] = <
+				text = <"Programado">
+				description = <"El seguimiento clínico está programado">
+			>
+			["at5"] = <
+				text = <"Reprogramado">
+				description = <"El seguimiento clínico ha sido reprogramado">
+			>
+			["at6"] = <
+				text = <"Atendido">
+				description = <"Una visita de seguimiento clínico ha ocurrido">
+			>
+			["at9"] = <
+				text = <"Paciente contactado">
+				description = <"El paciente ha sido contactado en relación al seguimiento clínico ">
+			>
+			["at10"] = <
+				text = <"Revisado">
+				description = <"El seguimiento clínico ha sido revisado">
+			>
+			["at13"] = <
+				text = <"No asistió">
+				description = <"El paciente no asistió">
+			>
+			["at14"] = <
+				text = <"Reprogramado">
+				description = <"Un turno ha sido reprogramado durante un seguimiento clínico activo">
+			>
+			["at7"] = <
+				text = <"Suspendido">
+				description = <"No se realizarán mas el seguimiento clínico">
+			>
+			["at11"] = <
+				text = <"Interrumpido">
+				description = <"El seguimiento clínico ha sido interrumpido">
+			>
+			["at12"] = <
+				text = <"Completado">
+				description = <"El seguimiento clínico ha sido completado">
+			>
+			["at15"] = <
+				text = <"*initial (en)">
+				description = <"*initial (en)">
+			>
+			["at16"] = <
+				text = <"*postponed (en)">
+				description = <"*postponed (en)">
+			>
+			["at17"] = <
+				text = <"*cancelled (en)">
+				description = <"*cancelled (en)">
+			>
+			["at18"] = <
+				text = <"*scheduled (en)">
+				description = <"*scheduled (en)">
+			>
+			["at19"] = <
+				text = <"*active (en)">
+				description = <"*active (en)">
+			>
+			["at20"] = <
+				text = <"*suspended (en)">
+				description = <"*suspended (en)">
+			>
+			["at21"] = <
+				text = <"*aborted (en)">
+				description = <"*aborted (en)">
+			>
+			["at22"] = <
+				text = <"*complete (en)">
+				description = <"*complete (en)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at15"] = <http://openehr.org/id/524>
+			["at16"] = <http://openehr.org/id/527>
+			["at17"] = <http://openehr.org/id/528>
+			["at18"] = <http://openehr.org/id/529>
+			["at19"] = <http://openehr.org/id/245>
+			["at20"] = <http://openehr.org/id/530>
+			["at21"] = <http://openehr.org/id/531>
+			["at22"] = <http://openehr.org/id/532>
+		>
+	>

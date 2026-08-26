@@ -1,0 +1,97 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-ADDRESS.address-provider.v1.0.0
+
+specialize
+	openEHR-DEMOGRAPHIC-ADDRESS.address.v1
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"22/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of data about a healthcare provider address, based on ISO standards. This address represents a geographic location which can be used in several ways: business address, postal address, etc.">
+			use = <"Used in demographic services to register data about a healthcare provider address.">
+			keywords = <"demographic service", "healthcare provider address", "geographic location">
+			misuse = <"This archetype can not used for email address, IP address, computer address, telephone, fax and pager. For these items use the electronic_communication archetype.">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação dos detalhes do endereço de um prestador de assistência à saúde. Este endereço representa uma localização geográfica que pode ser utilizada para diversos fins: consultório, endereço postal, etc.">
+			use = <"Usado em serviços demográficos para registrar os detalhes de um endereço de um prestador de assistência à saúde.">
+			keywords = <"serviço demográfico", "endereço de um prestador de assistência à saúde", "localização geográfica.">
+			misuse = <"Este arquétipo não deve ser usado para endereços de correio eletrônico, endereços IP, endereços de computador, telefone, fax e pager. Para estes itens, use o arquétipo electronic_communication.">
+		>
+	>
+	other_contributors = <"Sebastian Garde, Ocean Informatics, Germany (Editor)", "Omer Hotomaroglu, Turkey (Editor)", "Heather Leslie, Ocean Informatics, Australia (Editor)">
+	references = <
+		["1"] = <"ISO/DTS 27527:2007(E) - Provider Identification - Draft Technnical Specification - International Organization for Standardization">
+	>
+
+definition
+	ADDRESS[id1.1] matches {	-- Healthcare provider address
+		/details[id2]/items matches {
+			after [id12]
+			ELEMENT[id0.2] occurrences matches {0..1} matches {	-- Communication privacy
+				value matches {
+					DV_BOOLEAN[id0.4] 
+				}
+			}
+			ELEMENT[id0.3] matches {	-- Healthcare provider identifier
+				value matches {
+					DV_TEXT[id0.5] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.2"] = <
+				text = <"Communication privacy">
+				description = <"Indicates that this communication mechanism is not to be openly displayed, except to specific providers.">
+			>
+			["id0.3"] = <
+				text = <"Healthcare provider identifier">
+				description = <"Identifier of a healthcare provider who may access this communication mechanism.">
+			>
+			["id1.1"] = <
+				text = <"Healthcare provider address">
+				description = <"Healthcare provider address, based on ISO standards.">
+			>
+		>
+		["pt-br"] = <
+			["id0.2"] = <
+				text = <"Indicador de privacidade">
+				description = <"Indica quando um mecanismo de comunicação não é para ser exibido abertamente, exceto para organizações específicas.">
+			>
+			["id0.3"] = <
+				text = <"Identificador do prestador">
+				description = <"Identificador de um prestador que pode acessar este meio de comunicação.">
+			>
+			["id1.1"] = <
+				text = <"Endereço de um Prestador de Assistência à Saúde">
+				description = <"Endereço Postal de um Prestador de Assistência à Saúde.">
+			>
+		>
+	>

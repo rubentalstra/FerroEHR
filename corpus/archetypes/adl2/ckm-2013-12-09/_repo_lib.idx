@@ -1,0 +1,9 @@
+--
+-- Logical archetype library definition
+--
+--
+
+name = <"CKM 2013-12-09">
+short_name = <"CKM_2013">
+maintainer = <"openEHR">
+description = <"CKM snapshot 2013-12-09">

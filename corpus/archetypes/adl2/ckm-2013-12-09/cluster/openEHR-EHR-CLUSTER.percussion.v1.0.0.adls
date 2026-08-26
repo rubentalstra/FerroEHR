@@ -1,0 +1,211 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.percussion.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"6/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording findings related to examination by percussion.">
+			use = <"">
+			keywords = <"percussion", "resonant">
+			misuse = <"">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل الموجودات المتعلقة عند الفحص بالقرع">
+			use = <"">
+			keywords = <"القرع", "رنَّان">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"C875A0673DB70F75D60899389A45D45E">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Percussion
+		items matches {
+			CLUSTER[id2] occurrences matches {0..1} matches {	-- Normal statements
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Normal statement
+						value matches {
+							DV_TEXT[id13] 
+						}
+					}
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- Clinical description
+				value matches {
+					DV_TEXT[id14] 
+				}
+			}
+			CLUSTER[id5] matches {	-- Findings
+				items matches {
+					ELEMENT[id6] occurrences matches {0..1} matches {	-- Percussion note
+						value matches {
+							DV_CODED_TEXT[id15] matches {
+								defining_code matches {[ac1]}		-- Percussion note (synthesised)
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id11] matches {	-- Localised percussion
+				items matches {
+					ELEMENT[id12] matches {	-- Region or site
+						value matches {
+							DV_CODED_TEXT[id16] matches {
+								defining_code 
+							}
+						}
+					}
+					use_node ELEMENT[id17] /items[id5]/items[id6]	-- /items[Findings]/items[Percussion note]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Percussion">
+				description = <"Cluster for recording findings on percussion.">
+			>
+			["id2"] = <
+				text = <"Normal statements">
+				description = <"Grouping of normal statements.">
+			>
+			["id3"] = <
+				text = <"Normal statement">
+				description = <"A statement about normal findings on percussion.">
+			>
+			["id4"] = <
+				text = <"Clinical description">
+				description = <"Decription of the clinical findings.">
+			>
+			["id5"] = <
+				text = <"Findings">
+				description = <"Findings on percussion.">
+			>
+			["id6"] = <
+				text = <"Percussion note">
+				description = <"The character of the percussion note.">
+			>
+			["at7"] = <
+				text = <"Dull">
+				description = <"The percussion note is dull.">
+			>
+			["at8"] = <
+				text = <"Impaired resonance">
+				description = <"The resonance is reduced on percussion.">
+			>
+			["at9"] = <
+				text = <"Resonant">
+				description = <"The percussion note is resonant.">
+			>
+			["at10"] = <
+				text = <"Hyperresonant">
+				description = <"A tympanic percussion note.">
+			>
+			["id11"] = <
+				text = <"Localised percussion">
+				description = <"Percussion in a part or site.">
+			>
+			["id12"] = <
+				text = <"Region or site">
+				description = <"Name or description of the region or site.">
+			>
+			["id17"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Percussion note (synthesised)">
+				description = <"The character of the percussion note. (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"القرع">
+				description = <"عنقود لتسجيل الموجودات عند القرع">
+			>
+			["id2"] = <
+				text = <"البيانات الطبيعية">
+				description = <"تجميع البيانات الطبيعية">
+			>
+			["id3"] = <
+				text = <"البيان الطبيعي">
+				description = <"بيان حول الموجودات الطبيعية عند القرع">
+			>
+			["id4"] = <
+				text = <"الوصف السريري">
+				description = <"وصف الموجودات السريرية">
+			>
+			["id5"] = <
+				text = <"الموجودات">
+				description = <"الموجودات عند القرع">
+			>
+			["id6"] = <
+				text = <"ملحوظة لدى القرع">
+				description = <"صفة/خاصة الملحوظة لدى القرع">
+			>
+			["at7"] = <
+				text = <"أصم">
+				description = <"ملاحظة القرع صماء">
+			>
+			["at8"] = <
+				text = <"رنين معلول">
+				description = <"الرنين قليل/منخفض عند القرع">
+			>
+			["at9"] = <
+				text = <"رنان">
+				description = <"ملاحظة القرع رنانة">
+			>
+			["at10"] = <
+				text = <"رنين زائد">
+				description = <"ملاحظة قرع طبلي">
+			>
+			["id11"] = <
+				text = <"قرع موضعي">
+				description = <"القرع في جزء أو مكان">
+			>
+			["id12"] = <
+				text = <"المنطقة/المكان">
+				description = <"اسم أو وصف المنطقة أو المكان">
+			>
+			["id17"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["ac1"] = <
+				text = <"ملحوظة لدى القرع (synthesised)">
+				description = <"صفة/خاصة الملحوظة لدى القرع (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at7", "at8", "at9", "at10">
+		>
+	>

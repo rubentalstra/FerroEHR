@@ -1,0 +1,130 @@
+{
+  "_type": "EXTRACT",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "EHR Extract"
+  },
+  "archetype_node_id": "EXTRACT",
+  "system_id": {
+    "_type": "HIER_OBJECT_ID",
+    "value": "cnf.source.openehr.org"
+  },
+  "time_created": {
+    "_type": "DV_DATE_TIME",
+    "value": "2026-07-29T00:00:00Z"
+  },
+  "sequence_nr": 1,
+  "chapters": [
+    {
+      "_type": "EXTRACT_CHAPTER",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "openEHR content"
+      },
+      "archetype_node_id": "EXTRACT_CHAPTER",
+      "items": [
+        {
+          "_type": "OPENEHR_CONTENT_ITEM",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "FOLDER"
+          },
+          "archetype_node_id": "OPENEHR_CONTENT_ITEM",
+          "is_primary": true,
+          "item": {
+            "_type": "X_VERSIONED_FOLDER",
+            "uid": {
+              "_type": "HIER_OBJECT_ID",
+              "value": "c3f1a9d7-6b24-4e80-a55c-91d3f0e28b46"
+            },
+            "owner_id": {
+              "_type": "OBJECT_REF",
+              "namespace": "local",
+              "type": "EHR",
+              "id": {
+                "_type": "HIER_OBJECT_ID",
+                "value": "9d1e6a7c-2f04-4c1b-9a41-0d5c7f2b8e10"
+              }
+            },
+            "time_created": {
+              "_type": "DV_DATE_TIME",
+              "value": "2026-07-28T09:30:00Z"
+            },
+            "total_version_count": 1,
+            "extract_version_count": 1,
+            "versions": [
+              {
+                "_type": "ORIGINAL_VERSION",
+                "uid": {
+                  "_type": "OBJECT_VERSION_ID",
+                  "value": "c3f1a9d7-6b24-4e80-a55c-91d3f0e28b46::cnf.source.openehr.org::1"
+                },
+                "lifecycle_state": {
+                  "_type": "DV_CODED_TEXT",
+                  "value": "complete",
+                  "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": {
+                      "_type": "TERMINOLOGY_ID",
+                      "value": "openehr"
+                    },
+                    "code_string": "532"
+                  }
+                },
+                "contribution": {
+                  "_type": "OBJECT_REF",
+                  "namespace": "local",
+                  "type": "CONTRIBUTION",
+                  "id": {
+                    "_type": "HIER_OBJECT_ID",
+                    "value": "8a3d52f1-71c6-40ba-9e58-b204d7f96c13"
+                  }
+                },
+                "commit_audit": {
+                  "_type": "AUDIT_DETAILS",
+                  "system_id": "cnf.source.openehr.org",
+                  "time_committed": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2026-07-28T09:30:00Z"
+                  },
+                  "change_type": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "creation",
+                    "defining_code": {
+                      "_type": "CODE_PHRASE",
+                      "terminology_id": {
+                        "_type": "TERMINOLOGY_ID",
+                        "value": "openehr"
+                      },
+                      "code_string": "249"
+                    }
+                  },
+                  "description": {
+                    "_type": "DV_TEXT",
+                    "value": "EHR Extract source directory commit"
+                  },
+                  "committer": {
+                    "_type": "PARTY_IDENTIFIED",
+                    "name": "CNF extract source"
+                  }
+                },
+                "data": {
+                  "_type": "FOLDER",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "imported directory"
+                  },
+                  "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                  "uid": {
+                    "_type": "OBJECT_VERSION_ID",
+                    "value": "c3f1a9d7-6b24-4e80-a55c-91d3f0e28b46::cnf.source.openehr.org::1"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

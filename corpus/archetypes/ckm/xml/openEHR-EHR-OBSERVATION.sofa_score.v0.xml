@@ -1,0 +1,1528 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2017-03-07</original_author>
+    <original_author id="name">Siv Fauchald</original_author>
+    <original_author id="organisation">DIPS AS</original_author>
+    <original_author id="email">sfa@dips.no</original_author>
+    <other_contributors>Morten Aas, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Sarah Ballout, MHH-Hannover, Germany</other_contributors>
+    <other_contributors>Kristian Berg, Vestvågøy kommune - Fagutviklingsavdelingen, Norway</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Siv Fauchald, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, Helse-Nord, FSE, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Ludvigsen, St Olavs Hospital, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Stian Torleif Varpe, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marianne Warholm, Helse Vest IKT, Norway</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">Vincent, J. L., Moreno, R., Takala, J., Willatts, S., de Mendonça, A., Bruining, H., et al. (1996). The SOFA (Sepsis-related Organ Failure Assessment) score to describe organ dysfunction/failure. On behalf of the Working Group on Sepsis-Related Problems of the European Society of Intensive Care Medicine. (Vol. 22, pp. 707–710).&#xD;
+&#xD;
+Norsk Intensivregister (NIR) [Internet]. Bergen: Helse Bergen HF; 2017 [cited 26 february 2018] Available from: https://helse-bergen.no/norsk-intensivregister-nir/registrering-av-data-i-nir-kun-for-medlemmer</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">96CF01A004B30A00A69956021F95766E</other_details>
+    <other_details id="build_uid">97d78eda-e400-4355-a38e-46200be65965</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Repräsentation des SOFA-Score-Wertes, für die einzelnen Komponentenparameter und deren Gesamtwerte für den SOFA-Score.</purpose>
+      <keywords>Sepsis</keywords>
+      <keywords>Organversagen</keywords>
+      <keywords>Organ-Dysfunktion</keywords>
+      <keywords>septischer Schock</keywords>
+      <keywords>Infektion</keywords>
+      <use>Zur Repräsentation des SOFA-Score-Wertes, für die einzelnen Komponentenparameter und deren Gesamtwerte für den SOFA-Score.&#xD;
+&#xD;
+Der SOFA-Score wird in der Regel auf Intensivstationen und in Akutsituationen verwendet, kann aber bei allen Patienten eingesetzt werden, bei denen eine Organfunktionsstörung vermutet oder festgestellt wird, z. B. bei Sepsis-Patienten.&#xD;
+&#xD;
+Der SOFA-Score wird bei Erwachsenen über 16 Jahren verwendet.</use>
+      <misuse>Nicht zur Repräsentation aktueller Messungen für die einzelnen Komponenten zu verwenden. Verwenden Sie zu diesem Zweck spezielle OBSERVATION-Archetypen:&#xD;
+- OBSERVATION.pf_ratio;&#xD;
+- OBSERVATION.blut_druck;&#xD;
+- OBSERVATION.glasgow_coma_scale; und&#xD;
+- OBSERVATION.labor_test.&#xD;
+&#xD;
+Nicht zur Repräsentation des SOFA-Scores bei Kindern unter 16 Jahren.&#xD;
+&#xD;
+Nicht zur Repräsentation qSOFA (quick SOFA) zu verwenden. Verwenden Sie hierfür den Archetyp OBSERVATION.qsofa_score.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å gradere og følge utvikling av organdysfunksjon i seks vitale organsystem.</purpose>
+      <keywords>sepsis</keywords>
+      <keywords>organsvikt</keywords>
+      <keywords>organdysfunksjon</keywords>
+      <keywords>septisk sjokk</keywords>
+      <keywords>infeksjon</keywords>
+      <use>Brukes for å gradere og følge utvikling av organdysfunksjon i seks vitale organsystem og for å anslå mortalitet for pasienter med organdysfunksjon.&#xD;
+&#xD;
+SOFA-skår benyttes vanligvis i intensivavdelinger og i akuttmottak, men kan brukes på alle pasienter hvor man mistenker eller ønsker å følge utviklingen av organdysfunksjon, f.eks. hos pasienter med sepsis.&#xD;
+&#xD;
+SOFA-skår benyttes hos voksne (≥ 16 år).</use>
+      <misuse>Anvendes ikke for registrering av hver enkelt fysiologisk parameter eller klinisk observasjon. Bruk spesifikke OBSERVATION-arketyper for dette formål: &#xD;
+- OBSERVATION.Glascow_coma_scale,&#xD;
+- OBSERVATION.pao2_fio2_ratio,&#xD;
+- OBSERVATION.blood_pressure,&#xD;
+- OBSERVATION.laboratory_test.&#xD;
+&#xD;
+Anvendes ikke for registrering av SOFA-skår hos barn som er &lt; 16 år gamle.&#xD;
+&#xD;
+Anvendes ikke for registrering av qSOFA (quick SOFA) bruk arketypen OBSERVATION.qsofa_score for dette formålet.</misuse>
+      <copyright>© Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the results for each component parameter and their total sum for the SOFA score.</purpose>
+      <keywords>sepsis</keywords>
+      <keywords>organ failure</keywords>
+      <keywords>organ dysfunction</keywords>
+      <keywords>septic shock</keywords>
+      <keywords>infection</keywords>
+      <use>Use to record the results for each component parameter and their total sum for the SOFA score.&#xD;
+&#xD;
+SOFA score is usually used in intensive care units and in acute settings, but can be used in all patients where organ dysfunction is suspected or identified, for example in sepsis patients.&#xD;
+&#xD;
+SOFA score is used in adults over the age of 16.</use>
+      <misuse>Not to be used to record actual measurements for each component. Use specific OBSERVATION archetypes for this purpose:&#xD;
+- OBSERVATION.pf_ratio;&#xD;
+- OBSERVATION.blood_pressure;&#xD;
+- OBSERVATION.glasgow_coma_scale; and&#xD;
+- OBSERVATION.laboratory_test.&#xD;
+&#xD;
+Not to be used to record SOFA score in children younger than 16 years of age.&#xD;
+&#xD;
+Not to be used to record qSOFA (quick SOFA). Use the archetype OBSERVATION.qsofa_score for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout</author>
+    <author id="organisation">MHH-Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Vebjørn Arntzen</author>
+    <author id="organisation">Helse Vest IKT AS, Oslo University Hospital</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no, varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>c39f52e8-2aa9-45f7-bee9-ddb99678e43a</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.sofa_score.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0005</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0006</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0007</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0008</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0009</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0010</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0012</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0014</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0015</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0016</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0022</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0023</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0024</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0025</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0026</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0027</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0028</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0029</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0030</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0031</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0032</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0033</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0035</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0036</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0037</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0038</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0039</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0041</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>24</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>1</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0043</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0044</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">SOFA-skår</items>
+        <items id="description">Sequential organ failure assessment (SOFA) er et skåringssystem for å gradere og følge utvikling av organdysfunksjon i seks vitale organsystem. Tidligere betegnet som "Sepsis related organ failure assessment".</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Respirasjon</items>
+        <items id="description">Forholdet mellom partialtrykket av oksygen (PaO₂) og fraksjonen av innåndet oksygen (FiO₂) er en indikator for en eventuell dysfunksjon i respirasjonssystemet.</items>
+        <items id="comment">I noen land eller myndighetsområder blir PaO₂/FiO₂ ratio målt i kPa.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">PaO₂/FiO₂ ≥ 53,3 kPa</items>
+        <items id="description">Partialtrykket av oksygen i arterielt eller kapillært blod målt i kPa dividert med fraksjonen av innåndet oksygen er større enn eller lik 53,3 kPa.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">PaO₂/FiO₂ 40,0 - 53,2 kPa</items>
+        <items id="description">Partialtrykket av oksygen i arterielt eller kapillært blod målt i kPa dividert med fraksjonen av innåndet oksygen er fra 40,0 til 53,2 kPa.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">PaO₂/FiO₂ &lt; 40,0 kPa</items>
+        <items id="description">Partialtrykket av oksygen i arterielt eller kapillært blod målt i kPa dividert med fraksjonen av innåndet oksygen er lavere enn 40,0 kPa.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">PaO₂/FiO₂ 13,3 - 26,5 kPa</items>
+        <items id="description">Med ventilasjonsstøtte er partialtrykket av oksygen i arterielt eller kapillært blod målt i kPa dividert med fraksjonen av innåndet oksygen fra 13,3 til 26,5 kPa.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">PaO₂/FiO₂ &lt; 13,3 kPa</items>
+        <items id="description">Med ventilasjonsstøtte er partialtrykket av oksygen i arterielt eller kapillært blod målt i kPa dividert med fraksjonen av innåndet oksygen mindre enn 13,3 kPa.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Sirkulasjon</items>
+        <items id="description">Middelarterietrykket (MAP), eller behov for vasopressor (VP), (dopamin (DA), adrenalin (A), noradrenalin (NA) eller dobutamin) indikerer en eventuell dysfunksjon i sirkulasjonssystemet.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">MAP ≥ 70 mmHg</items>
+        <items id="description">Middelarterietrykket (MAP) er større eller lik 70 mmHg.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">MAP &lt; 70 mmHg</items>
+        <items id="description">Middelarterietrykket (MAP) er mindre enn 70 mmHg.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">DA ≤ 5; Dobutamin</items>
+        <items id="description">Dosen av dopamin (DA) er mindre enn 5 µg/kg/minutt, eller enhver dose av Dobutamin.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">DA &gt; 5; NA/A ≤ 0,1</items>
+        <items id="description">Dosen av dopamin (DA) er større enn 5,0 µg/kg/minutt, eller dosen av noradrenalin (NA) er mindre eller lik 0.10 µg/kg/minutt eller dosen av adrenalin (A) er mindre enn eller lik 0,1 µg/kg/minutt.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">NA/A &gt; 0,1</items>
+        <items id="description">Dosen av noradrenalin (N) eller adrenalin (A) er større enn 0,1 µg/kg/minutt.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Sentralnervesystemet</items>
+        <items id="description">Glasgow Coma Scale (GCS) er indikator for eventuell dysfunksjon i sentralnervesystemet.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">GCS 15</items>
+        <items id="description">Glasgow Coma Scale er lik 15.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">GCS 13 - 14</items>
+        <items id="description">Glasgow Coma Scale er lik 13 eller 14.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">GCS 10 - 12</items>
+        <items id="description">Glasgow Coma Scale er fra 10 til 12.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">GCS 6 - 9</items>
+        <items id="description">Glasgow Coma Scale er fra 6 til 9.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">GCS &lt; 6</items>
+        <items id="description">Glasgow Coma Scale er mindre enn 6.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Nyrefunksjon</items>
+        <items id="description">Konsentrasjonen av kreatinin i μmol/l og døgnurin (DU) i ml/24t er indikator for eventuell dysfunksjon i nyrene.</items>
+        <items id="comment">I noen lokaliteter angis kreatininkonsentrasjonen i mg/dl.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kreatinin &lt; 110 µmol/l</items>
+        <items id="description">Konsentrasjonen av kreatinin er mindre enn 110 mikromol per liter.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Kreatinin 110 - 170 µmol/l</items>
+        <items id="description">Konsentrasjonen av kreatinin er mellom 110 - 170 mikromol per liter.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kreatinin 171 - 299 µmol/l</items>
+        <items id="description">Konsentrasjonen av kreatinin er mellom 171 - 299 mikromol per liter.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Kreatinin 300 - 440 µmol/l eller DU &lt; 500 ml/24t</items>
+        <items id="description">Konsentrasjonen av kreatinin er større enn 300 mikromol og mindre eller lik 440 mikromol per liter, eller døgnurin (DU) er mindre enn 500 og større enn 200 milliliter.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kreatinin &gt; 440 µmol/l eller DU &lt; 200 ml/24t</items>
+        <items id="description">Konsentrasjonen av kreatinin er større enn 440 mikromol per liter, eller døgnurin (DU) er mindre enn 200 ml.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Lever</items>
+        <items id="description">Konsentrasjonen av bilirubin i μmol/l er indikator for eventuell dysfunksjon i leveren.</items>
+        <items id="comment">I noen lokaliteter angis bilirubinkonsentrasjonen i mg/dl.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Bilirubin &lt; 20 µmol/l</items>
+        <items id="description">Konsentrasjonen av bilirubin er mindre enn 20 mikromol per liter.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Bilirubin 20-32 µmol/l</items>
+        <items id="description">Konsentrasjonen av bilirubin er mellom 20 og 32mikromol per liter.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Bilirubin 33-101 µmol/l</items>
+        <items id="description">Konsentrasjonen av bilirubin er mellom 33 og 101 mikromol per liter.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Bilirubin 102-204 µmol/l</items>
+        <items id="description">Konsentrasjonen av bilirubin er mellom 102 og 204 mikromol per liter.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Bilirubin &gt; 204 µmol/l</items>
+        <items id="description">Konsentrasjonen av bilirubin er større enn 204 mikromol per liter.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Koagulasjon</items>
+        <items id="description">Trombocytt-partikkelkonsentrasjon (TPK) er indikator for eventuelt dysfunksjon i koagulasjonssystemet.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">TPK ≥ 150 (x10³/µl)</items>
+        <items id="description">TPK er større enn 150 000 per mikroliter.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">TPK &lt; 150 (x10³/µl)</items>
+        <items id="description">TPK er mindre enn 150 000 og større enn eller lik 100 000 per mikroliter.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">TPK &lt; 100 (x10³/µl)</items>
+        <items id="description">TPK er mindre enn 100 000 og større enn eller lik 50 000 per mikroliter.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">TPK &lt; 50 (x10³/µl)</items>
+        <items id="description">TPK er mindre enn 50 000 og større eller lik 20 000 per mikroliter.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">TPK &lt; 20 (x10³/µl)</items>
+        <items id="description">TPK er mindre enn 20 000 per mikroliter.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Totalskår</items>
+        <items id="description">SOFA-skår er summen av skår for de enkelte parametrene.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">SOFA score</items>
+        <items id="description">A scoring system to grade and follow the development of organ dysfunction in six vital organ systems. Previously known as "Sepsis related Organ Failure Assessment".</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Respiration</items>
+        <items id="description">The ratio between the partial pressure of oxygen (PaO₂) and the fraction of inspired oxygen (FiO₂) is an indicator for a possible dysfunction of the respiratory system.</items>
+        <items id="comment">In some localities, the PaO₂/FiO₂ ratio is measured in kPa.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">PaO₂/FiO₂ ≥ 400 mmHg</items>
+        <items id="description">The partial pressure of oxygen in arterial or capillary blood measured in mmHg, divided by the fraction of inspired oxygen is greater than or equal to 400 mmHg. Equivalent to PaO₂/FiO₂ ≥ 53.3 kPa.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">PaO₂/FiO₂ 300-399 mmHg</items>
+        <items id="description">The partial pressure of oxygen in arterial or capillary blood measured in mmHg, divided by the fraction of inspired oxygen is between 300 and 399 mmHg. Equivalent to PaO₂/FiO₂ 40.0 - 53.2 kPa.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">PaO₂/FiO₂ &lt; 300 mmHg</items>
+        <items id="description">The partial pressure of oxygen in arterial or capillary blood measured in mmHg, divided by the fraction of inspired oxygen is lower than 300 mmHg. Equivalent to PaO₂/FiO₂ 40 kPa.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Mechanically ventilated and PaO₂/FiO₂ 100-199 mmHg</items>
+        <items id="description">On mechanical ventilation, the partial pressure of oxygen in arterial or capillary blood measured in mmHg, divided by the fraction of inspired oxygen is between 100 and 199 mmHg. Equivalent to PaO₂/FiO₂ 13.3 - 26.5 kPa.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Mechanically ventilated and PaO₂/FiO₂ &lt; 100 mmHg</items>
+        <items id="description">On mechanical ventilation, the partial pressure of oxygen in arterial or capillary blood measured in mmHg, divided by the fraction of inspired oxygen is less than 100 mmHg. Equivalent to PaO₂/FiO₂ &lt; 13.3 kPa.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Cardiovascular system</items>
+        <items id="description">The mean arterial pressure (MAP), or the need for vasopressors (VP), (dopamine (DA), adrenaline (A), noradrenaline (NA) or dobutamine) are indicators for a possible dysfunction of the cardiovascular system.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">MAP ≥ 70 mmHg</items>
+        <items id="description">The mean arterial pressure (MAP) is greater than or equal to 70 mmHg.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">MAP &lt; 70 mmHg</items>
+        <items id="description">The mean arterial pressure (MAP) is less than 70 mmHg.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">DA ≤ 5; Dobutamine</items>
+        <items id="description">The dopamine (DA) dosage is less than 5 µg/kg/minute, or any dosage of dobutamine.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">DA &gt; 5; NA/A ≤ 0.1</items>
+        <items id="description">The dosage of dopamine (DA) is greater than 5 µg/kg/minute, or the dosage of noradrenaline (NA) is less than or equal to 0.1 µg/kg/minute, or the dosage of adrenaline (A) is less than or equal to 0.1 µg/kg/minutt.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">NA/A &gt; 0.1</items>
+        <items id="description">The dosage of noradrenaline (N) or adrenaline (A) is greater than 0.1 µg/kg/minute.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Central nervous system</items>
+        <items id="description">The Glasgow Coma Scale (GCS) is an indicator for a possible dysfunction of the central nervous system.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">GCS 15</items>
+        <items id="description">Glasgow Coma Scale is 15.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">GCS 13 - 14</items>
+        <items id="description">Glasgow Coma Scale is 13 or 14.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">GCS 10 - 12</items>
+        <items id="description">Glasgow Coma Scale is 10, 11 or 12.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">GCS 6 - 9</items>
+        <items id="description">Glasgow Coma Scale is 6, 7, 8 or 9.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">GCS &lt; 6</items>
+        <items id="description">Glasgow Coma Scale is less than 6.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Renal function</items>
+        <items id="description">Creatinine concentration and 24 h urine output (UOP) are indicators for a possible dysfunction of the central nervous system.</items>
+        <items id="comment">In some localities, creatinine concentration is measured in μmol/L.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Creatinine &lt; 1.2 mg/dL</items>
+        <items id="description">The creatinine concentration is less than 1.2 mg/dL. Equivalent to creatinine &lt; 110 µmol/L.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Creatinine 1.2-1.9 mg/dL</items>
+        <items id="description">The creatinine concentration is between 1.2 and 1.9 mg/dL. Equivalent to creatinine 110 - 170 µmol/L.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Creatinine 2.0-3.4 mg/dL</items>
+        <items id="description">The creatinine concentration is between 2.0 and 3.4 mg/dL. Equivalent to creatinine 171 - 299 µmol/L.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Creatinine 3.5-4.9 mg/dL or UOP &lt; 500 mL/24h</items>
+        <items id="description">The creatinine concentration is between 3.5 and 4.9 mg/dL, or the urine output is between 500 and 200 mL/24h. Equivalent to creatinine 300 - 440 µmol/L or UOP &lt; 500 mL/24h.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Creatinine ≥ 5.0 mg/dL or UOP &lt; 200 mL/24h</items>
+        <items id="description">The creatinine concentration is greater than or equal to 5.0 mg/dL, or the urine output is less than 200 mL/24h. Equivalent to creatinine &gt; 440 µmol/L or UOP &lt; 200 mL/24h.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Liver function</items>
+        <items id="description">Bilirubin concentration is an indicator for a possible dysfunction of the central nervous system.</items>
+        <items id="comment">In some localities, bilirubin concentration is measured in μmol/L.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Bilirubin &lt; 1.2 mg/dL</items>
+        <items id="description">The bilirubin concentration is less than 1.2 mg/dL. Equivalent to bilirubin &lt; 20 µmol/L.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Bilirubin 1.2-1.9 mg/dL</items>
+        <items id="description">The bilirubin concentration is between 1.2 and 1.9 mg/dL. Equivalent to bilirubin 20-32 µmol/L.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Bilirubin 2.0-5.9 mg/dL</items>
+        <items id="description">The bilirubin concentration is between 2.0 and 5.9 mg/dL. Equivalent to bilirubin 33-101 µmol/L.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Bilirubin 6.0-11.9 mg/dL</items>
+        <items id="description">The bilirubin concentration is between 6.0 and 11.9 mg/dL. Equivalent to bilirubin 102-204 µmol/L.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Bilirubin ≥ 12.0 mg/dL</items>
+        <items id="description">The bilirubin concentration is greater than or equal to 12.0 mg/dL. Equivalent to bilirubin &gt; 204 µmol/L.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Blood clotting</items>
+        <items id="description">Platelets concentration is an indicator for a possible dysfunction of the blood clotting system.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Platelets ≥ 150 (x10³/µL)</items>
+        <items id="description">The platelet concentration is greater than or equal to 150,000 /µL.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Platelets &lt; 150 (x10³/µL)</items>
+        <items id="description">The platelet concentration is between 150,000 and 100,000 /µL.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Platelets &lt; 100 (x10³/µL)</items>
+        <items id="description">The platelet concentration is between 100,000 and 50,000 /µL.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Platelets &lt; 50 (x10³/µL)</items>
+        <items id="description">The platelet concentration is between 50,000 and 20,000 /µL.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Platelets &lt; 20 (x10³/µL)</items>
+        <items id="description">The platelet concentration is less than 20,000 /µL.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Total score</items>
+        <items id="description">The total sum of each component parameter for the SOFA score.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">SOFA score</items>
+        <items id="description">Ein Scoring-System zur Bewertung und Verfolgung der Entwicklung von Organdysfunktion in sechs lebenswichtigen Organsystemen. Zuvor bekannt als "Sepsis related Organ Failure Assessment".</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis zu einem Zeitpunkt</items>
+        <items id="description">Ein undefiniertes Zeitpunkt Ereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Respiration</items>
+        <items id="description">Das Verhältnis zwischen dem Sauerstoffpartialdruck (PaO₂) und der Fraktion des eingeatmeten Sauerstoffs (FiO₂) ist ein Indikator für eine mögliche Funktionsstörung des Atmungssystems.</items>
+        <items id="comment">Das Verhältnis PaO₂/FiO₂ wird an bestimmten Orten in kPa gemessen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">PaO₂/FiO₂ ≥ 400 mmHg</items>
+        <items id="description">Der Sauerstoffpartialdruck im arteriellen oder kapillaren Blut, gemessen in mmHg, dividiert durch den Anteil des eingeatmeten Sauerstoffs ist größer oder gleich 400 mmHg. Äquivalent zu PaO₂/FiO₂ ≥ 53 kPa.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">PaO₂/FiO₂ 300-399 mmHg</items>
+        <items id="description">Der Sauerstoffpartialdruck im arteriellen oder kapillaren Blut, gemessen in mmHg, geteilt durch den Anteil des eingeatmeten Sauerstoffs liegt zwischen 300 und 399 mmHg. Äquivalent zu PaO₂/FiO₂ 39,9 - 53 kPa.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">PaO₂/FiO₂ 200-299 mmHg</items>
+        <items id="description">Der Sauerstoffpartialdruck im arteriellen oder kapillaren Blut, gemessen in mmHg, geteilt durch den Anteil des eingeatmeten Sauerstoffs liegt zwischen 200 und 299 mmHg. Äquivalent zu PaO₂/FiO₂ 26,6 - 39,8 kPa.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Mechanisch belüftet und PaO₂/FiO₂ 100-199 mmHg</items>
+        <items id="description">Bei mechanischer Beatmung liegt der Sauerstoffpartialdruck im arteriellen oder kapillaren Blut, gemessen in mmHg, geteilt durch den Anteil des eingeatmeten Sauerstoffs zwischen 100 und 199 mmHg. Äquivalent zu PaO₂/FiO₂ 13,3 - 26,5 kPa.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Mechanisch belüftet und PaO₂/FiO₂ &lt; 100 mmHg</items>
+        <items id="description">Bei mechanischer Beatmung ist der Sauerstoffpartialdruck im arteriellen oder kapillaren Blut, gemessen in mmHg, geteilt durch die Fraktion des eingeatmeten Sauerstoffs kleiner als 100 mmHg. Äquivalent zu PaO₂/FiO₂ &lt; 13,3 kPa.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kardiovaskuläres System</items>
+        <items id="description">Der mittlere arterielle Druck (MAD) oder der Bedarf an Vasopressoren (VP), (Dopamin (DA), Adrenalin (A), Noradrenalin (NA) oder Dobutamin) sind Indikatoren für eine mögliche Dysfunktion des Herz-Kreislauf-Systems.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">MAD ≥ 70 mmHg</items>
+        <items id="description">Der mittlere arterielle Druck (MAD) ist größer als oder gleich 70 mmHg.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">MAD &lt; 70 mmHg</items>
+        <items id="description">Der mittlere arterielle Druck (MAD) ist kleiner als 70 mmHg.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">DA ≤ 5; Dobutamin</items>
+        <items id="description">Die Dopamin (DA)-Dosis beträgt weniger als 5 µg/kg/Minute bzw. beträgt eine beliebige Dosierung von Dobutamin.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">DA &gt; 5; NA/A ≤ 0,1</items>
+        <items id="description">Die Dosis von Dopamin (DA) ist größer als 5 µg/kg/Minute, oder die Dosis von Noradrenalin (NA) ist kleiner oder gleich 0,1 µg/kg/Minute und die Dosis von Adrenalin (A) ist kleiner oder gleich 0,1 µg/kg/Minute.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">NA/A &gt; 0,1</items>
+        <items id="description">Die Dosierung von Noradrenalin (N) oder Adrenalin (A) ist größer als 0,1 µg/kg/Minute.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Zentrales Nervensystem</items>
+        <items id="description">Die Glasgow Coma Scale (GCS) ist ein Indikator für eine mögliche Funktionsstörung des zentralen Nervensystems.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">GCS 15</items>
+        <items id="description">Glasgow-Koma-Skala ist 15.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">GCS 13 - 14</items>
+        <items id="description">Glasgow Koma Skala liegt bei 13 oder 14.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">GCS 10 - 12</items>
+        <items id="description">Glasgow Koma-Skala ist 10, 11 oder 12.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">GCS 6 - 9</items>
+        <items id="description">Glasgow Koma-Skala ist 6, 7, 8 oder 9.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">GCS &lt; 6</items>
+        <items id="description">Glasgow Koma Skala ist kleiner als 6.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Nierenfunktion</items>
+        <items id="description">Die Kreatininkonzentration und die 24-h-Urinausscheidung (UOP) sind Indikatoren für eine mögliche Funktionsstörung des zentralen Nervensystems.</items>
+        <items id="comment">An einigen Orten wird die Kreatinin-Konzentration in μmol/L gemessen.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kreatinin &lt; 1,2 mg/dL</items>
+        <items id="description">Die Kreatininkonzentration ist kleiner als 1,2 mg/dL. Äquivalent zu Kreatinin &lt; 110 µmol/L.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Kreatinin 1,2-1,9 mg/dL</items>
+        <items id="description">Die Kreatininkonzentration liegt zwischen 1,2 und 1,9 mg/dL. Entspricht einem Kreatinin von 110 - 170 µmol/L.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kreatinin 2,0-3,4 mg/dL</items>
+        <items id="description">Die Kreatininkonzentration liegt zwischen 2,0 und 3,4 mg/dL. Entspricht einem Kreatinin von 171 - 299 µmol/L.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Kreatinin 3,5-4,9 mg/dL oder UOP &lt; 500 mL/24h</items>
+        <items id="description">Die Kreatininkonzentration liegt zwischen 3,5 und 4,9 mg/dL, bzw. die Urinausscheidung liegt zwischen 500 und 200 mL/24h. Äquivalent zu Kreatinin 300 - 440 µmol/L oder UOP &lt; 500 mL/24h.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kreatinin ≥ 5,0 mg/dL oder UOP &lt; 200 mL/24h</items>
+        <items id="description">Die Kreatininkonzentration ist größer oder gleich 5,0 mg/dL, bzw. die Urinausscheidung ist kleiner als 200 mL/24h. Äquivalent zu Kreatinin &gt; 440 µmol/L oder UOP &lt; 200 mL/24h.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Leberfunktion</items>
+        <items id="description">Die Bilirubin-Konzentration ist ein Indikator für eine mögliche Funktionsstörung des zentralen Nervensystems.</items>
+        <items id="comment">In manchen Orten wird die Bilirubin-Konzentration in μmol/L gemessen.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Bilirubin &lt; 1,2 mg/dL</items>
+        <items id="description">Die Bilirubin-Konzentration ist kleiner als 1,2 mg/dL. Äquivalent zu Bilirubin &lt; 20 µmol/L.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Bilirubin 1,2-1,9 mg/dL</items>
+        <items id="description">Die Bilirubin-Konzentration liegt zwischen 1,2 und 1,9 mg/dL. Äquivalent zu Bilirubin 20-32 µmol/L.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Bilirubin 2,0-5,9 mg/dL</items>
+        <items id="description">Die Bilirubin-Konzentration liegt zwischen 2,0 und 5,9 mg/dL. Äquivalent zu Bilirubin 33-101 µmol/L.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Bilirubin 6,0-11,9 mg/dL</items>
+        <items id="description">Die Bilirubin-Konzentration liegt zwischen 6,0 und 11,9 mg/dL. Entspricht einem Bilirubin von 102-204 µmol/L.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Bilirubin ≥ 12,0 mg/dL</items>
+        <items id="description">Die Bilirubin-Konzentration ist größer als oder gleich 12,0 mg/dL. Äquivalent zu Bilirubin &gt; 204 µmol/L.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Blutgerinnung</items>
+        <items id="description">Die Thrombozytenkonzentration ist ein Indikator für eine mögliche Funktionsstörung des Blutgerinnungssystems.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Thrombozyten ≥ 150 (x10³/µL)</items>
+        <items id="description">Die Thrombozytenkonzentration ist größer als oder gleich 150.000 /µL.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Thrombozyten &lt; 150 (x10³/µL)</items>
+        <items id="description">Die Thrombozytenkonzentration liegt zwischen 150.000 und 100.000 /µL.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Thrombozyten &lt; 100 (x10³/µL)</items>
+        <items id="description">Die Thrombozytenkonzentration liegt zwischen 100.000 und 50.000 /µL.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Thrombozyten &lt; 50 (x10³/µL)</items>
+        <items id="description">Die Thrombozytenkonzentration liegt zwischen 50.000 und 20.000 /µL.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Thrombozyten &lt; 20 (x10³/µL)</items>
+        <items id="description">Die Thrombozytenkonzentration ist kleiner als 20.000 /µL.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Gesamtergebnis</items>
+        <items id="description">Die Gesamtanzahl der einzelnen Komponentenparameter für den SOFA-Score.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen oder CIMI-Modelle.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

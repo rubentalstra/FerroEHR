@@ -1,0 +1,297 @@
+﻿archetype (adl_version=1.4; uid=7415727a-362b-41ad-8c6b-a1c294b31148)
+	openEHR-EHR-CLUSTER.lab_microscopy_culture.v0
+
+concept
+	[at0000]	-- Microbiology culture findings
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2024-08-09">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record findings observed from culturing a specimen to detect and identify microorganisms.">
+			use = <"Use to record findings observed from culturing a specimen to detect and identify microorganisms, including bacteria, viruses and fungi.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation, Ministry of Health and Wellness Jamaica">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Nicola Ewen, SERHA/Ministry of Health and Wellness, Jamaica", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Yohann White, Ministry of Health and Wellness, Jamaica">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"2587477720E092BABE88278936596802">
+		["build_uid"] = <"597b1cb9-3323-467c-af08-eb0175cc21e1">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Microbiology culture findings
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0018] occurrences matches {0..1} matches {    -- Overall growth
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0019,    -- Growth
+							at0020]    -- No growth
+						}
+					}
+				}
+			}
+			ELEMENT[at0001] occurrences matches {0..1} matches {    -- Findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0002] occurrences matches {0..*} matches {    -- Per microorganism
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0003] matches {    -- Microorganism name
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0021] occurrences matches {0..1} matches {    -- Growth
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0022,    -- Detected
+									at0023,    -- Not detected
+									at0024]    -- Indeterminate
+								}
+							}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {    -- Qualitative result
+						value matches {
+							DV_TEXT matches {*}
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0005,    -- No growth
+									at0006,    -- Light growth
+									at0007,    -- Moderate growth
+									at0008]    -- Heavy growth
+								}
+							}
+							0.0|[local::at0030],
+							1.0|[local::at0031],
+							2.0|[local::at0032],
+							3.0|[local::at0033]
+						}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {    -- Quantitative result
+						value matches {
+							C_DV_QUANTITY <
+								
+								list = <
+									["1"] = <
+										units = <"{cfu}/mL">
+									>
+									["2"] = <
+										units = <"{cfu}/g">
+									>
+									["3"] = <
+										units = <"{cells}/mL">
+									>
+									["4"] = <
+										units = <"%">
+									>
+									["5"] = <
+										units = <"{pfu}/mL">
+									>
+								>
+							>
+						}
+					}
+					CLUSTER[at0009] occurrences matches {0..*} matches {    -- Susceptibility test
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0010] matches {    -- Antimicrobial agent
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0011] occurrences matches {0..1} matches {    -- Minimum inhibitory concentration (MIC)
+								value matches {
+									C_DV_QUANTITY <
+										
+										list = <
+											["1"] = <
+												units = <"mg/L">
+											>
+											["2"] = <
+												units = <"ug/mL">
+											>
+										>
+									>
+								}
+							}
+							ELEMENT[at0012] occurrences matches {0..1} matches {    -- Interpretation
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0013,    -- Sensitive (S)
+											at0014,    -- Intermediate (I)
+											at0015]    -- Resistant (R)
+										}
+									}
+								}
+							}
+						}
+					}
+					ELEMENT[at0016] occurrences matches {0..1} matches {    -- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0017] occurrences matches {0..1} matches {    -- Overall comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Microbiology culture findings">
+					description = <"Findings observed from culturing a specimen to detect and identify the growth of microorganisms.">
+				>
+				["at0001"] = <
+					text = <"Findings">
+					description = <"Narrative description of the findings on microbiological culture.">
+				>
+				["at0002"] = <
+					text = <"Per microorganism">
+					description = <"Details about specific culture findings for each identified organism.">
+				>
+				["at0003"] = <
+					text = <"Microorganism name">
+					description = <"Name of the microorganism cultured.">
+					comment = <"For example: name of a bacteria, virus or fungus.">
+				>
+				["at0004"] = <
+					text = <"Qualitative result">
+					description = <"Qualitative assessment of the amount of the identified microorganism grown on culture.">
+				>
+				["at0005"] = <
+					text = <"No growth">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Light growth">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Moderate growth">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Heavy growth">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Susceptibility test">
+					description = <"Details about the ability of the microorganism to grow in the presence of an antimicrobial agent.">
+				>
+				["at0010"] = <
+					text = <"Antimicrobial agent">
+					description = <"The name of the antimicrobial substance being tested.">
+					comment = <"For example: the name of an antibiotic, antiviral or antifungal.">
+				>
+				["at0011"] = <
+					text = <"Minimum inhibitory concentration (MIC)">
+					description = <"The lowest concentration of an antimicrobial agent  required to inhibit visible growth.">
+				>
+				["at0012"] = <
+					text = <"Interpretation">
+					description = <"Interpretation of the MIC value as a category.">
+				>
+				["at0013"] = <
+					text = <"Sensitive (S)">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Intermediate (I)">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Resistant (R)">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the culture findings for the identified microorganism, not captured in other fields.">
+				>
+				["at0017"] = <
+					text = <"Overall comment">
+					description = <"Additional narrative about the overall culture findings, not captured in other fields.">
+				>
+				["at0018"] = <
+					text = <"Overall growth">
+					description = <"Statement about the presence or absence of any microbial growth on culture.">
+				>
+				["at0019"] = <
+					text = <"Growth">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"No growth">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Growth">
+					description = <"Observation about the presence or absence of growth of the identified organism on culture.">
+				>
+				["at0022"] = <
+					text = <"Detected">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"Not detected">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"Quantitative result">
+					description = <"Quantitative assessment of the amount of the identified microorganism grown on culture.">
+				>
+				["at0030"] = <
+					text = <"-">
+					description = <"">
+				>
+				["at0031"] = <
+					text = <"+">
+					description = <"">
+				>
+				["at0032"] = <
+					text = <"++">
+					description = <"">
+				>
+				["at0033"] = <
+					text = <"+++">
+					description = <"">
+				>
+			>
+		>
+	>

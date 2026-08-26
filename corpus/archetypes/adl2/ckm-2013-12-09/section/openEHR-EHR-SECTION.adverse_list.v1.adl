@@ -1,0 +1,103 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-SECTION.adverse_list.v1
+
+concept
+	[at0000]	-- Adverse Reaction List
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			author = <
+				["name"] = <"Art Latyp Латыпов Артур Шамилевич">
+				["organisation"] = <"RusBITech РусБИТех, Москва">
+				["email"] = <"alatypov@asteis.net">
+			>
+			accreditation = <"hmm">
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2010-03-07">
+	>
+	details = <
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			purpose = <"Показать возможный дизайн представления списка побочных реакций ">
+			use = <"Используется для поддержки представления записи утверждений об известных неблагоприятных реакциях, а также для записи утверждений об отсутствии неблагоприятных реакций - как общих, так и специфических (на конкретное вещество).
+
+Наличие известных неблагоприятных реакций может быть представлено в виде записей.
+
+Утверждения об отсутствии неблагоприятных реакций, как общих, так и специфических, могут указывать только на состояние объекта в тот момент, когда данная информация была записана - то есть, они основаны на событиях. Поэтому нецелесообразно записывать отсутствие неблагоприятной реакции как постоянный признак, так как появление реакции на любой препарат может перечеркнуть любые предшествующие утверждения об отсутствии осложнений. В клинической практике это ответ на вопрос, случались ли у пациента побочные реакции на любые медикаменты или субстанции ранее.
+
+Возможно указывать в шаблоне оба утверждения, как о наличии определенных неблагоприятных реакций, так и об отсутствии определенных проблем (например, пациент  имел неблагоприятную реакцию на тетрациклин, но никогда не имел реакции на пенициллин). Тем не менее, в большинстве случаев используются либо специфические утверждения о присутствии определенных неблагоприятных реакций (напр. пациент имел реакции на тетрациклин и лейкопластырь), либо общие утверждения о отсутствии известных проблем, (напр. известных неблагоприятных реакций не отмечалось), но не оба сразу. 
+
+Поскольку в ограничения слота включены архетипы СУЖДЕНИЕ.побочная_реакция [ EVALUATION.adverse] и СУЖДЕНИЕ.отсутствие_побочных_реакций [EVALUATION.exclusion-adverse] со своими спецификациями, то другие архетипы явно не указываются. Это означает, что при необходимости сюда могут быть включены и другие архетипы, например, если вы хотите включить краткий обзор (эпикриз), то в слот можно вставить и использовать архетип СУЖДЕНИЕ.эпикриз [EVALUATION.clinical_synopsis]    ">
+			keywords = <"список", "реакция", "побочная", "известная", "исключение", "осложнение", "неблагоприятная">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To demonstrate a design pattern for representation of an Adverse Reaction List.">
+			use = <"Use to support the representation of statements about known adverse reactions that have been recorded PLUS to make positive statements about the absence of adverse reactions - either general statements of absence or specific statements of absence of an adverse reaction to a specific substance.
+
+The existence of known adverse reactions can be persisted in records.
+
+Statements about the absence of adverse reactions, either general or specific, can only indicate the state of the subject at the time that the information was actually recorded - that is, they are event based. It is not sensible to persist the recording of a positive absence of an adverse reaction as an adverse reaction that occurs on administration of any substance may render any or all previous positive statements of absence obsolete. In clinical practice this is synonymous with asking a patient if they have a reaction to any medications or substances prior to any and every administration of a medication or substance.
+
+It is possible to represent both positive statements about identified adverse reactions alongside specific positive statements about the absence of identified problems/diagnoses in a template (eg patient has had an adverse reaction to tetracycline but never had a reaction to penicillin. However in most use cases either specific statements about the presence of identified adverse reactions (eg patient has had reactions to tetracycline and sticking plaster) or general statements about the positive absence of any known problems/diagnoses will be represented (eg No known adverse reactions), but not both. 
+
+While EVALUATION.adverse and EVALUATION.exclusion-adverse archetypes and their specialisations have been explicitly included in the slot constraints, other archetypes have not been explicitly excluded. This means that any other archetypes can also be included here, if needed - for example, where structured data is not available or there is a need to provide a synopis, the EVALUATION.clinical_synopsis can be inserted and used.">
+			keywords = <"adverse", "reaction", "exclusion", "absence", "known", "list">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"Initial">
+	other_contributors = <"Ian McNicoll, Ocean Informatics", "Heath Frankel, Ocean Informatics">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"144A5A5C4BBBB881891ABF650F443DD2">
+	>
+
+definition
+	SECTION[at0000] matches {	-- Adverse Reaction List
+		items cardinality matches {1..*; unordered} matches {
+			allow_archetype EVALUATION[at0001] occurrences matches {0..*} matches {	-- Adverse reactions inclusions/exclusions
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.exclusion-adverse_reaction(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-EVALUATION\.adverse_reaction(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Adverse Reaction List">
+					description = <"Suggested design pattern for including an Adverse Reaction List in a template.">
+				>
+				["at0001"] = <
+					text = <"Adverse reactions inclusions/exclusions">
+					description = <"Slot constrained to specifically include archetypes representing known adverse reactions and exclusion of adverse reactions.">
+				>
+			>
+		>
+		["ru"] = <
+			items = <
+				["at0000"] = <
+					text = <"Список побочных реакций">
+					description = <"дизайн списка побочных реакций для включения в шаблоны">
+				>
+				["at0001"] = <
+					text = <"наличие/отсутвие побочных реакций">
+					description = <"Слот, содержащий ограничения на включение архетипов, описывающих наличие или отсутствие побочных реакий">
+				>
+			>
+		>
+	>

@@ -1,0 +1,1142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2014-07-11</original_author>
+    <original_author id="name">Micaela Thierley</original_author>
+    <original_author id="organisation">Helse Bergen</original_author>
+    <original_author id="email">micaela.thierley@helse-bergen.no</original_author>
+    <other_contributors>Tomas Alme, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University Hospital, Bergen, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Kari Beate Engseth, Finnmarkssykehuset HF + Klinikk Kirkenes, Norway</other_contributors>
+    <other_contributors>Einar Fosse, UNN HF, Norwegian Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Eli Taranger Ljønes, Bodø kommune, Norway</other_contributors>
+    <other_contributors>Heidi Minne, Haraldsplass Diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Hugo Nilssen, UNN HF K3K/Tromsø, Norway</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Laila Storesund, Haraldsplass diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Kari Sygnestveit, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Arne Løberg Sæter, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Bergen/Haraldsplass sykehus, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">Screening for Nutritional Deficiency in the Hospital: Nutritional Risk Screening (NRS 2002) from Kondrup J et al., Clinical Nutrition 2003; 22: 415-421, Recommended by the European Society for Clinical Nutrition and Metabolism (ESPEN) http://www.uniklinik-duesseldorf.de/fileadmin/Datenpool/einrichtungen/klinik_fuer_gastroenterologie_hepatologie_und_infektiologie_id6/Darmzentrum/Formulare_polnisch/ernhrungnrs_schuetz_2002_sept_2006_en.pdf&#xD;
+&#xD;
+Kondrup J, Rasmussen HH, Hamberg O, Stanga Z, ad hoc ESPEN working group: Nutritional risk screening (NRS 2002): a new method based on an analysis of controlled clinical trials. Clinical Nutrition (2003) 22(3): 321-336.&#xD;
+&#xD;
+Kondrup J, Allison SP, Elia M, Vellas B, Plauth M. ESPEN guidelines for nutritional screening 2002. Clinical Nutrition (2003) 22(4) 415-21.&#xD;
+&#xD;
+Thoresen og Wøien (2014), Screening for ernæringsmessig risiko (Nutritional Risk screening NRS 2002). http://arketyper.no/ckm/document?cid=1078.51.49</other_details>
+    <other_details id="current_contact">Micaela Thierley, Helse Bergen, micaela.thierley@helse-bergen.no</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">1BF56ACE03BF868D21F84011F3C442A0</other_details>
+    <other_details id="build_uid">2c467180-00f1-4c45-bc19-7adedc254ff6</other_details>
+    <other_details id="revision">1.1.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>Verktøy for screening av ernæringsmessig risiko. Det finnes flere modeller for NRS, i dette tilfellet brukes oversettelsen gjort av Lene Thoresen og Hilde Wøien i 2014 og korrigert av Jens Kondrup.&#xD;
+Versjonen anbefalt av det norske Helsedirektoratet inneholder andre grenseverdier for tidsintervaller i scoringen.&#xD;
+&#xD;
+Ernæringsmessig risiko er definert ved nåværende ernæringsstatus og risiko for svekket ernæringsstatus, på grunn av økt ernæringsbehov forårsaket av stressmetabolisme i den kliniske situasjonen.</purpose>
+      <keywords>ernæring</keywords>
+      <keywords>NRS</keywords>
+      <keywords>NRS2002</keywords>
+      <keywords>feilernæring</keywords>
+      <keywords>underernæring</keywords>
+      <keywords>vekttap</keywords>
+      <keywords>vekt</keywords>
+      <keywords>KMI</keywords>
+      <keywords>BMI</keywords>
+      <keywords>ernæringsmessig risiko</keywords>
+      <use>Brukes for voksne personer.&#xD;
+De første 4 spørsmålene er en innledende screening.&#xD;
+Dersom svaret er "Ja" på noen av de innledende spørsmålene, gjennomføres hovedscreeningen.&#xD;
+Dersom svaret er ”Nei” på alle de innledende spørsmålene skal pasienten rescreenes ukentlig. Dersom pasienten f.eks skal gjennomgå en planlagt stor operasjon, skal en forebyggende ernæringsplan overveies for å unngå den forventede ernæringsrisiko.&#xD;
+&#xD;
+Dersom total skår er ≥3 er pasienten i ernæringsmessig risiko og en ernæringsplan skal iverksettes. Dersom total skår er &lt;3 skal pasienten rescreenes ukentlig. Hvis pasienten f.eks skal gjennomgå omfattende kirurgi skal en forebyggende ernæringsplan overveies for å unngå den forventede ernæringsrisiko.</use>
+      <misuse>Brukes ikke til barn under 18 år.</misuse>
+      <copyright>© Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>NRS is a tool used for screening the patients nutritional status. There are several NRS models, in this case a translation from 2014 made by Lene Thoresen and Hilde Wøie and corrected by Jens Kondrup is used. The version recommended by the Norwegian Directorate of Health has other time interval values ​​in the scores.&#xD;
+Nutritional risk is defined by combining current nutritional status and the risk of impaired nutritional status due to increased need for nutrition, caused by stress metabolism in the clinical situation.</purpose>
+      <keywords>nutrition</keywords>
+      <keywords>Nutritional risk screening</keywords>
+      <keywords>NRS</keywords>
+      <keywords>NRS 2002</keywords>
+      <keywords>malnutrition</keywords>
+      <keywords>undernourishment</keywords>
+      <keywords>weight loss</keywords>
+      <keywords>weight</keywords>
+      <keywords>BMI</keywords>
+      <keywords>nutritional risk</keywords>
+      <use>To be used for adults only. &#xD;
+The first 4 questions are used as a initial screening.&#xD;
+The main screening is only done if any of the questions in the initial screening are answered YES&#xD;
+If all the questions in the initial screening is answered "NO" the patient needs a weekly re screening. &#xD;
+If a patient, e.g will undergo a planned major surgery, a preventive nutritional plan needs to be considered to avoid expected nutritional risks.&#xD;
+&#xD;
+Is the total score ≥3 the patient has a nutritional risk, and a nutritional plan needs to be effectuated. If the total score is &lt;3 the patient needs weekly re screening. If the patient e.g will undergo major surgery a preventive nutrition plan have to be considered to avoid the expected nutritional risk.</use>
+      <misuse>Not to be used in children under the age of 18 years old.</misuse>
+      <copyright>© Nasjonal IKT HF</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Gro-Hilde Ulriksen</author>
+    <author id="organisation">Nasjonal senter for ehelseforskning/Forvaltningssenter EPJ Helse Nord</author>
+  </translations>
+  <uid>
+    <value>f14991ee-4c09-430c-829e-dc8eaa628d56</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.nutritional_risk_screening.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0031</node_id>
+                    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                      <rm_attribute_name>items</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0004</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0033</code_list>
+                                <code_list>at0034</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0005</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0035</code_list>
+                                <code_list>at0036</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0006</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0037</code_list>
+                                <code_list>at0038</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0007</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0039</code_list>
+                                <code_list>at0040</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                      </children>
+                      <cardinality>
+                        <is_ordered>false</is_ordered>
+                        <is_unique>false</is_unique>
+                        <interval>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>1</lower>
+                        </interval>
+                      </cardinality>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0032</node_id>
+                    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                      <rm_attribute_name>items</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0016</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_DV_ORDINAL">
+                            <rm_type_name>DV_ORDINAL</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <list>
+                              <value>0</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0018</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>1</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0019</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>2</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0020</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>3</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0021</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0017</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_DV_ORDINAL">
+                            <rm_type_name>DV_ORDINAL</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <list>
+                              <value>0</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0022</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>1</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0023</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>2</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0024</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>3</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0025</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0027</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_DV_ORDINAL">
+                            <rm_type_name>DV_ORDINAL</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <list>
+                              <value>0</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0028</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                            <list>
+                              <value>1</value>
+                              <symbol>
+                                <value />
+                                <defining_code>
+                                  <terminology_id>
+                                    <value>local</value>
+                                  </terminology_id>
+                                  <code_string>at0029</code_string>
+                                </defining_code>
+                              </symbol>
+                            </list>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>7</upper>
+                        </occurrences>
+                        <node_id>at0030</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_COUNT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <cardinality>
+                        <is_ordered>false</is_ordered>
+                        <is_unique>false</is_unique>
+                        <interval>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>1</lower>
+                        </interval>
+                      </cardinality>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0041</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Nutritional Risk Screening (NRS 2002)</items>
+        <items id="description">Screening for malnutrition using the tool NRS 2002.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Unspecified event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @(nb).</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Is the body mass index &lt;20.5 kg/m²?</items>
+        <items id="description">Is the patients body mass index below 20.5 kg/m²?</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Has the patient lost weight in the previous 3 months?</items>
+        <items id="description">Weightloss during the last 3 months?</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Was nutritional intake reduced in the previous week?</items>
+        <items id="description">Reduced nutritional intake in the previous week?</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Is the patient very ill? (e.g. in intensive care)?</items>
+        <items id="description">Do the patient have an increased stress metabolism related to relevant disease (trauma, intensive care patient).</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Nutritional status</items>
+        <items id="description">Nutritional status (≈ degree of weakening).</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Illness severity</items>
+        <items id="description">Severity of disease (≈ increased needs).</items>
+        <items id="comment">Indicates that a study directly underpins dividing the disease severity in mild, moderate and severe disease for patients with a certain diagnosis.&#xD;
+#Indicates the the diagnosis is based on the prototypes below: &#xD;
+&#xD;
+Score=1: a patient with chronic illness admitted to the hospital with complications. The patient is weakened but ambulatory. The protein requirement is substantially increased, this is manageable with food and/or nutritional supplements. &#xD;
+&#xD;
+Score=2: a patient at bed rest due to illness e.g. after major abdominal surgery. The protein requirement is significantly increased, this is manageable, however it is often necessary to use tube feeding and/or intravenous nutrition. &#xD;
+&#xD;
+Score=3: an intensive care patient needing ventilation support etc. The protein requirement is increased and is not manageable even with tube feeding and/or intravenous nutrition. There is a risk of significantly inhibiting the degeneration of proteins and nitrogen loss.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">None</items>
+        <items id="description">Normal nutritional status.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mild</items>
+        <items id="description">Weight loss &gt; 5% over the last 3 months or nutritional intake &lt;50–75% of required nutritional intake in the previous week.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Moderate</items>
+        <items id="description">Weight loss &gt;5% within 2 months or BMI 18.5–20.5 kg/m² and reduced general condition (GC) or nutritional intake 25–50% of required nutritional intake in the previous week.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Severe</items>
+        <items id="description">Weight loss &gt;5 % within a month (&gt;15% over the last 3 months) or BMI &lt;18.5&#xD;
+kg/m² and reduced general condition or nutritional intake 0–25% of required nutritional intake in the previous week.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">None</items>
+        <items id="description">Normal nutritional requirements.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Mild</items>
+        <items id="description">For example: Femoral neck fracture, chronic disease especially if complications are present: liver cirrhosis*, chronic obstructive lung disease*, chronic hemodialysis#, diabetes#, cancer#. Patients that have a disease that causes a mildly reduced general condition status.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Moderate</items>
+        <items id="description">For example: Major abdominal surgery*, stroke*, severe pneumonia, hematologic cancers.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Severe</items>
+        <items id="description">For example: Head injury*, bone marrow transplantation*,&#xD;
+patients in intensive care (APACHE-II &gt;10).</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Is the patients age ≥ 70?</items>
+        <items id="description">Is the patients age 70 or more.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">No</items>
+        <items id="description">The patient is younger than 70 years.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Yes</items>
+        <items id="description">The patient is 70 years or old.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Total score (age adjusted)</items>
+        <items id="description">The total score is a combination of nutritional status, disease severity and age.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Initial screening</items>
+        <items id="description">The main screening is done if any of the questions in the inital iscreening is answered "YES".</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Main screening</items>
+        <items id="description">The main screening is performed only if any of the questions in the initial screening is answered "YES".</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Yes</items>
+        <items id="description">The patients body mass index is below 20.5 kg/m².</items>
+      </items>
+      <items code="at0034">
+        <items id="text">No</items>
+        <items id="description">The patients body mass index is equal or above 20.5 kg/m².</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Yes</items>
+        <items id="description">The patient has lost weight during the last 3 months.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">No</items>
+        <items id="description">The patient did not lose weight during the last 3 months.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Yes</items>
+        <items id="description">The patient had reduced nutritional intake in the previous week.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">No</items>
+        <items id="description">Reduced nutritional intake in the previous week?</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Yes</items>
+        <items id="description">The patient is very ill (e.g. in intensive care).</items>
+      </items>
+      <items code="at0040">
+        <items id="text">No</items>
+        <items id="description">The patient is not very ill.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the assessment of the Nutritional Risk Screening, not captured in the structured elements.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">NRS 2002</items>
+        <items id="description">Verktøyet Nutritional Risk Screening (NRS) 2002 for screening for ernæringsmessig risiko.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @(nb).</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Er BMI &lt; 20,5?</items>
+        <items id="description">Er pasientens BMI under 20,5?</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Har pasienten tapt vekt i løpet av de 3 siste månedene?</items>
+        <items id="description">Vekttap de siste 3 månedene?</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Har pasienten hatt redusert næringsinntak i den siste uken?</items>
+        <items id="description">Redusert næringsinntak siste uken?</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Er pasienten alvorlig / kritisk syk?</items>
+        <items id="description">Har pasienten en økt stressmetabolisme i forbindelse med aktuell sykdom (traume, intensivpasient).</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Ernæringsstatus</items>
+        <items id="description">Ernæringsstatus (≈ grad av svekkelse).</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Sykdommens alvorlighetsgrad</items>
+        <items id="description">Sykdommens alvorlighetsgrad (≈ økt&#xD;
+behov).</items>
+        <items id="comment">* indikerer at en studie direkte underbygger inndelingen av sykdommens alvorlighetsgrad i mild, moderat og alvorlig sykdom til pasienter med den diagnosen.&#xD;
+&#xD;
+# indikerer at diagnosen er basert på prototypene gitt nedenfor:&#xD;
+&#xD;
+Skår=1: en pasient med kronisk sykdom innlagt på sykehus på grunn av komplikasjoner. Pasienten er avkreftet, men er oppegående. Proteinbehovet er økt, men kan dekkes med mat og/eller næringstilskudd i de fleste tilfeller.&#xD;
+&#xD;
+Skår=2: en pasient som er sengeliggende på grunn av sykdom, f.eks etter stor abdominal kirurgi. Proteinbehov er vesentlig økt, men kan dekkes, selv om sondeernæring og/eller intravenøs ernæringstilførsel er nødvendig i mange tilfeller.&#xD;
+&#xD;
+Skår=3: en intensivpasient med behov for respiratorstøtte etc. Proteinbehovet er økt og kan ikke dekkes, selv med sondeernæring og/eller intravenøs ernæringstilførsel. Nedbrytning av proteiner og&#xD;
+nitrogentap kan bli betydelig hemmet.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Fraværende</items>
+        <items id="description">Normal ernæringsstatus.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mild</items>
+        <items id="description">Vekttap &gt; 5 % i løpet av 3 måneder, eller matinntak 50-75 % av normalt behov i siste uke.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Moderat</items>
+        <items id="description">Vekttap &gt; 5 % i løpet av 2 måneder, eller BMI 18.5-20.5 + nedsatt almenntilstand, eller matinntak 25-50 % av normalt behov i siste uke.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Alvorlig</items>
+        <items id="description">Vekttap &gt; 5 % i løpet av 1 måned (&gt;15 % siste 3 måneder), eller BMI&lt;18.5 + nedsatt almenntilstand, eller matinntak 0-25 % av normalt behov siste uke.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Fraværende</items>
+        <items id="description">Normale ernæringsbehov.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Mild</items>
+        <items id="description">Lårhalsbrudd*, kronisk syke pasienter* spesielt de med akutte komplikasjoner, levercirrose*, KOLS*, kronisk hemodialyse#, diabetes#, kreftsykdommer#.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Moderat</items>
+        <items id="description">Omfattende abdominal kirurgi*, slag*, alvorlig lungebetennelse#, maligne blodsykdommer#.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Alvorlig</items>
+        <items id="description">Hodeskade*, benmargstransplantasjon*, intensivpasienter (APACHE skår&gt;10).</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Er pasientens alder ≥ 70 år?</items>
+        <items id="description">Er pasienten 70 år eller eldre?</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Nei</items>
+        <items id="description">Pasienten er yngre enn 70 år.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Ja</items>
+        <items id="description">Pasienten er 70 år eller eldre.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Total score</items>
+        <items id="description">Summen av score fra ernæringsstatus, sykdommens alvorlighetsgrad og alder.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Innledende screening</items>
+        <items id="description">Dersom svaret er "Ja" på noen av de innledende spørsmålene, gjennomføres hovedscreeningen.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Hovedscreening</items>
+        <items id="description">Den avsluttende screeningen gjennomføres kun dersom det svares "Ja" på noen av spørsmålene i den innledende screeningen.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Ja</items>
+        <items id="description">Pasientens BMI er under 20,5.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Nei</items>
+        <items id="description">Pasientens BMI er over eller lik 20,5.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Ja</items>
+        <items id="description">Pasienten har tapt vekt i løpet av de 3 siste månedene.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Nei</items>
+        <items id="description">Pasienten har ikke tapt vekt i løpet av de 3 siste månedene.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Ja</items>
+        <items id="description">Pasienten har hatt redusert næringsinntak i den siste uken.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Nei</items>
+        <items id="description">Pasienten har ikke hatt redusert næringsinntak i den siste uken.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Ja</items>
+        <items id="description">Pasienten er alvorlig/kritisk syk.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Nei</items>
+        <items id="description">Pasienten er ikke alvorlig/kritisk syk.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Kommentar</items>
+        <items id="description">Fritekstkommentar om bruk av NRS 2002 som ikke fanges opp i de strukturerte elementene.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

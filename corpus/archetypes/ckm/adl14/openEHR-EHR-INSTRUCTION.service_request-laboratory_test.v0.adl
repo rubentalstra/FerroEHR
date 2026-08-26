@@ -1,0 +1,1762 @@
+﻿archetype (adl_version=1.4; uid=9d0f49c7-f910-41cc-9627-640f152566ed)
+	openEHR-EHR-INSTRUCTION.service_request-laboratory_test.v0
+specialise
+	openEHR-EHR-INSTRUCTION.service_request.v1
+
+concept
+	[at0000.1]	-- Laboratory test request
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Alina Rehberg, Natalia Strauch">
+				["organisation"] = <"Medizinische Hochschule Hannover">
+				["email"] = <"rehberg.alina@mh-hannover.de, Strauch.Natalia@mh-hannover.de">
+			>
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Sofia Janstad">
+				["organisation"] = <"SLL">
+				["email"] = <"sofia.lang-janstad@sll.se">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke, Marit Alice Venheim">
+				["organisation"] = <"Nasjonal IKT HF, Norway, Helse Vest IKT">
+				["email"] = <"marit.alice.venheim@helse-vest-ikt.no">
+			>
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Vladimir Pizzo">
+				["organisation"] = <"Clínica Parente Pizzo">
+				["email"] = <"vrppizzo@gmail.com">
+			>
+		>
+		["it"] = <
+			language = <[ISO_639-1::it]>
+			author = <
+				["name"] = <"Francesca Frexia">
+				["organisation"] = <"CRS4 - Center for advanced studies, research and development in Sardinia, Pula (Cagliari), Italy">
+				["email"] = <"francesca.frexia@crs4.it">
+			>
+		>
+		["nl"] = <
+			language = <[ISO_639-1::nl]>
+			author = <
+				["name"] = <"Mattijs Kuhlmann, Joost Holslag">
+				["organisation"] = <"Nedap">
+				["email"] = <"mattijs.kuhlmann@nedap.com, joost.holslag@nedap.com">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Dr Heather Leslie">
+		["organisation"] = <"Atomica Informatics, Australia">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2024-04-04">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"*To record a request for a laboratory test service. (en)">
+			use = <"*Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education. (en)">
+			keywords = <"Anfrage", "Bestellung", "Dienst", "Bereitstellung", "Empfehlung", "Überweisung">
+			misuse = <"*Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose. (en)">
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"*To record a request for a laboratory test service. (en)">
+			use = <"*Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education. (en)">
+			keywords = <"remiss", "förfrågan", "beställning", "tjänst", "tillhandahålla", "patientremittering">
+			misuse = <"*Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose. (en)">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"*To record a request for a laboratory test service. (en)">
+			use = <"*Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education. (en)">
+			keywords = <"rekvisisjon", "bestilling", "foreskriving", "tjeneste", "tjenesteyter", "rekvirere", "bestille", "anmodning", "forespørre", "forespørsel", "anmode", "tilsyn">
+			misuse = <"*Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose. (en)">
+			copyright = <"© openEHR Foundation, Nasjonal IKT HF">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"*To record a request for a laboratory test service. (en)">
+			use = <"*Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education. (en)">
+			keywords = <"solicitação", "requisição", "ordem", "pedido", "serviço", "referência", "encaminhamento">
+			misuse = <"*Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose. (en)">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a request for a laboratory test service.">
+			use = <"Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education.">
+			keywords = <"request", "order", "service", "provide", "referral">
+			misuse = <"Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose.">
+			copyright = <"© openEHR Foundation, Nasjonal IKT HF">
+		>
+		["it"] = <
+			language = <[ISO_639-1::it]>
+			purpose = <"*To record a request for a laboratory test service. (en)">
+			use = <"*Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education. (en)">
+			keywords = <"richiesta, ordine, servizio, fornire, indirizzamento", ...>
+			misuse = <"*Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose. (en)">
+		>
+		["nl"] = <
+			language = <[ISO_639-1::nl]>
+			purpose = <"*To record a request for a laboratory test service. (en)">
+			use = <"*Use to record a request for a laboratory test service.
+
+The archetype has been designed to represent a request for one or more laboratory test services, in one of two ways:
+- If multiple services need to be requested but the information recorded in the 'protocol' (for example 'Receiver') is the same - use a separate 'Activity' instance within this archetype for each request. The user interface in the clinical system may be able to support duplication of request details such as 'Fasting status', 'Clinical Indication', 'Reason for request', and 'Service due') where these are identical for each activity.
+- If multiple services need to be requested and the information recorded in the 'protocol' (for example 'Receiver') is different - use a separate instance of this archetype for each request.
+
+The 'Service due' data element supports common use cases for stipulating the simple timing for delivery of the request/s on a single occasion. For situations with more complicated timing requirements or a series of services, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.
+
+Implementation examples:
+- Consider a clinician managing an elderly patient with Type 2 Diabetes ordering 'HbA1c' and a fasting 'Glucose' - the 'Service name' will carry both 'Haemoglobin A1C' and 'Glucose'; the 'Clinical indication' may be 'Type 2 Diabetes'; the 'Reason for request' may be 'Monitor glucose control' and 'Fasting status' will be 'Fasting'.
+- Consider a clinician managing a patient with chest pain - the 'Service name' will carry 'Urea', 'Electrolytes', 'Creatinine', 'GFR estimated (eGFR)', 'Glucose', 'Liver function tests', 'Troponin I', 'Troponin T', and 'Full blood count'; 'Clinical indication' will be 'Chest pain'; the 'Reason for request may be 'Exclude AMI'; and the 'Clinical context' may be '4 hours of atypical left-sided chest pain and associated nausea'.
+- Consider a clinician ordering a recurring blood test, such as an INR. The complex timing for this requires the use of the CLUSTER.service_direction and associated CLUSTER.timing_nondaily archetype nested within the 'Complex timing' SLOT to clearly define the frequency and timing for each sequence in a series of tests, such as 'daily for one week, weekly for 4 weeks, monthly for 6 months'.
+
+In many situations, it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education. (en)">
+			keywords = <"verzoek", "opdracht", "dienst", "voorschrift", "verwijzing">
+			misuse = <"*Not to be used to record details about the activities that document how an order or request has been carried out - use an ACTION archetype for this purpose. For example ACTION.service archetype or a more purpose-specific archetype from the ACTION class for this purpose.
+
+Not to be used to record a Laboratory test result - use the OBSERVATION.laboratory_test_result for this purpose. (en)">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Fatima Almeida, Critical SW, Portugal", "Tomas Alme, DIPS ASA, Norway", "Vebjørn Arntzen, Oslo University Hospital, Norway", "Koray Atalag, University of Auckland, New Zealand", "Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)", "Lars Bitsch-Larsen, Haukeland University hospital, Norway", "Anita Bjørnnes, Helse Bergen, Norway", "Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway", "Einar Fosse, UNN HF, Norwegian Centre for Integrated Care and Telemedicine, Norway", "Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom", "Heather Grain, Llewelyn Grain Informatics, Australia", "Knut Harboe, Stavanger Universitetssjukehus, Norway", "Sam Heard, Ocean Informatics, Australia", "Ingrid Heitmann, Oslo universitetssykehus HF, Norway", "Andreas Hering, Helse Bergen HF, Haukeland universitetssjukehus, Norway", "Anca Heyd, DIPS ASA, Norway", "Hilde Hollås, DIPS AS, Norway", "Evelyn Hovenga, EJSH Consulting, Australia", "Lars Ivar Mehlum, Helse Bergen HF, Norway", "Lars Morgan Karlsen, DIPS ASA, Norway", "Shinji Kobayashi, Kyoto University, Japan", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Hallvard Lærum, Direktoratet for e-helse, Norway", "Rose Mari Eikås, Helse Bergen, Norway", "Ole Martin Sand, DIPS ASA, Norway", "Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)", "Bjørn Næss, DIPS ASA, Norway", "Andrej Orel, Marand d.o.o., Slovenia", "Anne Pauline Anderssen, Helse Nord RHF, Norway", "Pablo Pazos, CaboLabs.com Health Informatics, Uruguay", "Rune Pedersen, Universitetssykehuset i Nord Norge, Norway", "Jussara Rotzsch, Hospital Alemão Oswaldo Cruz, Brazil", "Line Silsand, Universitetssykehuset i Nord-Norge, Norway", "Norwegian Review Summary, Nasjonal IKT HF, Norway", "Line Sæle, Nasjonal IKT HF, Norway", "Nyree Taylor, Ocean Informatics, Australia", "John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)", "Richard Townley-O'Neill, Australian Digital Health Agency, Australia", "Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Anecdotal evidence provided by existing laboratory test request forms.">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"4DD919538C02E62364AB6EFF08F0D009">
+		["build_uid"] = <"0f03531b-dff1-4203-b1e2-4de2cec6df8b">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	INSTRUCTION[at0000.1] matches {    -- Laboratory test request
+		activities cardinality matches {0..*; unordered} matches {
+			ACTIVITY[at0001] occurrences matches {1..*} matches {    -- Current Activity
+				description matches {
+					ITEM_TREE[at0009] matches {    -- Tree
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0121] matches {    -- Service name
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0.1] occurrences matches {0..1} matches {    -- Fasting status
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0.2,    -- Fasting
+											at0.3]    -- Non-fasting
+										}
+									}
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0148] occurrences matches {0..1} matches {    -- Service type
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0135] occurrences matches {0..1} matches {    -- Description
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0152] occurrences matches {0..*} matches {    -- Clinical indication
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0154] occurrences matches {0..1} matches {    -- Clinical context
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0062] occurrences matches {0..*} matches {    -- Reason for request
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0064] occurrences matches {0..1} matches {    -- Reason description
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0065] occurrences matches {0..*} matches {    -- Intent
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0153] occurrences matches {0..*} matches {    -- Order detail
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0068] occurrences matches {0..1} matches {    -- Urgency
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0136,    -- Emergency
+											at0137,    -- Urgent
+											at0138]    -- Routine
+										}
+									}
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0040] occurrences matches {0..1} matches {    -- Service due
+								value matches {
+									DV_DATE_TIME matches {*}
+									DV_TEXT matches {*}
+									DV_INTERVAL<DV_DATE_TIME> matches {*}
+								}
+							}
+							allow_archetype CLUSTER[at0151] occurrences matches {0..*} matches {    -- Complex timing
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.service_direction(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.timing_daily(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.timing_nondaily(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[at0.4] occurrences matches {0..*} matches {    -- Requested specimen
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[at0.5] occurrences matches {0..*} matches {    -- Collected specimen
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[at0132] occurrences matches {0..*} matches {    -- Specific details
+								include
+									archetype_id/value matches {/.*/}
+							}
+							allow_archetype CLUSTER[at0149] occurrences matches {0..*} matches {    -- Supporting information
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							ELEMENT[at0076] occurrences matches {0..1} matches {    -- Supplementary information
+								value matches {
+									DV_BOOLEAN matches {
+										value matches {true}
+									}
+								}
+							}
+							ELEMENT[at0078] occurrences matches {0..1} matches {    -- Information description
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							allow_archetype CLUSTER[at0116] occurrences matches {0..*} matches {    -- Patient requirements
+								include
+									archetype_id/value matches {/.*/}
+							}
+							ELEMENT[at0150] occurrences matches {0..1} matches {    -- Comment
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0008] matches {    -- Tree
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0010] occurrences matches {0..1} matches {    -- Requester order identifier
+						value matches {
+							DV_TEXT matches {*}
+							DV_IDENTIFIER matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0141] occurrences matches {0..1} matches {    -- Requester
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {    -- Receiver order identifier
+						value matches {
+							DV_TEXT matches {*}
+							DV_IDENTIFIER matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0142] occurrences matches {0..1} matches {    -- Receiver
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[at0127] occurrences matches {0..1} matches {    -- Request status
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0128] occurrences matches {0..*} matches {    -- Distribution list
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					allow_archetype CLUSTER[at0155] occurrences matches {0..*} matches {    -- Urgent contact
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[at0158] occurrences matches {0..1} matches {    -- Eligibility guidance
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0156] occurrences matches {0..1} matches {    -- Billing guidance
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0157] occurrences matches {0..*} matches {    -- Responsible payer
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					allow_archetype CLUSTER[at0112] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Laboratory test request">
+					description = <"An order or instruction for a laboratory test service.">
+				>
+				["at0.1"] = <
+					text = <"Fasting status">
+					description = <"Request requirement for the patient to be fasted at the time of specimen collection.">
+				>
+				["at0.2"] = <
+					text = <"Fasting">
+					description = <"The test should be carried out on a fasted individual.">
+				>
+				["at0.3"] = <
+					text = <"Non-fasting">
+					description = <"The test should be carried out on a non-fasted individual.">
+				>
+				["at0.4"] = <
+					text = <"Requested specimen">
+					description = <"Details about specific specimen and collection conditions required as part of this laboratory request.">
+				>
+				["at0.5"] = <
+					text = <"Collected specimen">
+					description = <"Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request.">
+				>
+				["at0000"] = <
+					text = <"Service request">
+					description = <"Request for a health-related service or activity to be delivered by a clinician, organisation or agency.">
+				>
+				["at0001"] = <
+					text = <"Current Activity">
+					description = <"Current Activity.">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Requester order identifier">
+					description = <"The local identifier assigned by the requesting clinical system.">
+					comment = <"Usually equivalent to the HL7 Placer Order Identifier.">
+				>
+				["at0011"] = <
+					text = <"Receiver order identifier">
+					description = <"The local identifier assigned to the request by the clinician or organisation receiving the request for service.">
+					comment = <"Usually equivalent to the HL7 Filler Order Identifier.">
+				>
+				["at0040"] = <
+					text = <"Service due">
+					description = <"The date/time or description about timing for provision of the requested service/s.">
+					comment = <"This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant.">
+				>
+				["at0062"] = <
+					text = <"Reason for request">
+					description = <"The specific problem needing attention or the clinical question that requires investigation.">
+					comment = <"Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required.">
+				>
+				["at0064"] = <
+					text = <"Reason description">
+					description = <"Narrative description about the issue or clinical query that needs resolution.">
+				>
+				["at0065"] = <
+					text = <"Intent">
+					description = <"Description of the intended outcome of the request.">
+					comment = <"Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required.">
+				>
+				["at0068"] = <
+					text = <"Urgency">
+					description = <"Urgency of the request for service.">
+					comment = <"Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT.">
+				>
+				["at0076"] = <
+					text = <"Supplementary information">
+					description = <"Supplementary information will be following request.">
+					comment = <"Record as TRUE if additional information has been identified and will be forwarded when available. For example: pending test results.">
+				>
+				["at0078"] = <
+					text = <"Information description">
+					description = <"Description of the supplementary information.">
+				>
+				["at0112"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0116"] = <
+					text = <"Patient requirements">
+					description = <"Language, transport or other personal requirements to support the patient's attendance or participation in provision of the service.">
+				>
+				["at0121"] = <
+					text = <"Service name">
+					description = <"The name of the service/s requested.">
+					comment = <"Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required.">
+				>
+				["at0127"] = <
+					text = <"Request status">
+					description = <"The status of the request for service as indicated by the requester.">
+					comment = <"Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible.">
+				>
+				["at0128"] = <
+					text = <"Distribution list">
+					description = <"Details of additional clinicians, organisations or agencies who require copies of any communication.">
+				>
+				["at0132"] = <
+					text = <"Specific details">
+					description = <"Additional detail about the service requested.">
+				>
+				["at0135"] = <
+					text = <"Description">
+					description = <"Narrative description about the service requested.">
+					comment = <"This data point should be used to describe the named service in more detail, including how it should be delivered, patient concerns and issues that might be encountered in delivering the service.">
+				>
+				["at0136"] = <
+					text = <"Emergency">
+					description = <"The request requires immediate attention.">
+				>
+				["at0137"] = <
+					text = <"Urgent">
+					description = <"The request requires prioritised attention.">
+				>
+				["at0138"] = <
+					text = <"Routine">
+					description = <"The request does not require prioritised scheduling.">
+				>
+				["at0141"] = <
+					text = <"Requester">
+					description = <"Details about the clinician or organisation requesting the service.">
+				>
+				["at0142"] = <
+					text = <"Receiver">
+					description = <"Details about the clinician or organisation receiving the request for service.">
+				>
+				["at0148"] = <
+					text = <"Service type">
+					description = <"Category of service requested.">
+					comment = <"Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code.">
+				>
+				["at0149"] = <
+					text = <"Supporting information">
+					description = <"Digital document, image, video or diagram supplied as additional information to support or inform the request.">
+				>
+				["at0150"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the service request not captured in other fields.">
+				>
+				["at0151"] = <
+					text = <"Complex timing">
+					description = <"Details about a complex service request requiring a sequence of timings.">
+					comment = <"For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant.">
+				>
+				["at0152"] = <
+					text = <"Clinical indication">
+					description = <"The symptom, sign or diagnosis that necessitates the requested service.">
+					comment = <"Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required.">
+				>
+				["at0153"] = <
+					text = <"Order detail">
+					description = <"Additional details and instructions about how the services are to be delivered.">
+					comment = <"Coding of the 'Order detail' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required.">
+				>
+				["at0154"] = <
+					text = <"Clinical context">
+					description = <"Narrative information about the individual and their situation, providing relevant context for the request.">
+				>
+				["at0155"] = <
+					text = <"Urgent contact">
+					description = <"Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request.">
+					comment = <"For example: if the outcome of the request requires an urgent or emergency response by the requester.">
+				>
+				["at0156"] = <
+					text = <"Billing guidance">
+					description = <"A recommendation from the requester to the receiver about the method of payment for the service.">
+					comment = <"For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'. ">
+				>
+				["at0157"] = <
+					text = <"Responsible payer">
+					description = <"Details about the individual or organisation who will assume responsibility for payment of the service.">
+					comment = <"This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme.">
+				>
+				["at0158"] = <
+					text = <"Eligibility guidance">
+					description = <"Advice from the requester to the receiver about the individual's eligibility for the requested service.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Laboratory test request (en)">
+					description = <"*An order or instruction for a laboratory test service. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Fasting status (en)">
+					description = <"*Request requirement for the patient to be fasted at the time of specimen collection. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Fasting (en)">
+					description = <"*The test should be carried out on a fasted individual. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Non-fasting (en)">
+					description = <"*The test should be carried out on a non-fasted individual. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Requested specimen (en)">
+					description = <"*Details about specific specimen and collection conditions required as part of this laboratory request. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Collected specimen (en)">
+					description = <"*Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request. (en)">
+				>
+				["at0000"] = <
+					text = <"Helsetjenesteforespørsel">
+					description = <"Forespørsel om utførelse av en helsetjeneste, til annet helsepersonell eller andre organisasjoner.">
+				>
+				["at0001"] = <
+					text = <"Forespørsel">
+					description = <"Beskrivelse av tjenesten som forespørres.">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Rekvisisjonsidentifikator">
+					description = <"Den lokale identifikatoren tilordnet av systemet til den som forespør tjenesten.">
+					comment = <"Som regel tilsvarende HL7 Placer Order Identifier.">
+				>
+				["at0011"] = <
+					text = <"Mottakers rekvisisjonsidentifikator">
+					description = <"Rekvisisjonens identifikator, tilordnet av den som mottar forespørselen.">
+					comment = <"Som regel tilsvarende HL7 Filler Order Identifier.">
+				>
+				["at0040"] = <
+					text = <"*Service due (en)">
+					description = <"*The date/time or description about timing for provision of the requested service/s. (en)">
+					comment = <"*This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant. (en)">
+				>
+				["at0062"] = <
+					text = <"Årsak for forespørsel">
+					description = <"*The specific problem needing attention or the clinical question that requires investigation. (en)">
+					comment = <"*Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0064"] = <
+					text = <"Årsaksbeskrivelse">
+					description = <"*Narrative description about the issue or clinical query that needs resolution.  (en)">
+				>
+				["at0065"] = <
+					text = <"Hensikt">
+					description = <"*Description of the intended outcome of the request. (en)">
+					comment = <"*Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0068"] = <
+					text = <"Hastegrad">
+					description = <"Hastegrad for utførelse av tjenesten.">
+					comment = <"*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT. (en)">
+				>
+				["at0076"] = <
+					text = <"Supplerende informasjon">
+					description = <"Supplerende informasjon vil ettersendes forespørselen.">
+					comment = <"Registrer som SANN dersom ytterligere informasjon er identifisert, og vil bli ettersendt når den er tilgjengelig. For eksempel: ufullstendige prøvesvar.">
+				>
+				["at0078"] = <
+					text = <"Informasjonsbeskrivelse">
+					description = <"Beskrivelse av den supplerende informasjonen.">
+				>
+				["at0112"] = <
+					text = <"Tilleggsinformasjon">
+					description = <"*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)">
+					comment = <"*For example: local information requirements; or additional metadata to align with FHIR. (en)">
+				>
+				["at0116"] = <
+					text = <"Pasientens behov">
+					description = <"Språk, transport eller andre personlige behov som er nødvendige for å sikre pasientens oppmøte eller deltakelse i utførelsen av den forespurte tjenesten.">
+				>
+				["at0121"] = <
+					text = <"Tjenestenavn">
+					description = <"*The name of the service/s requested. (en)">
+					comment = <"*Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required. (en)">
+				>
+				["at0127"] = <
+					text = <"Rekvisisjonsstatus">
+					description = <"Status for forespørselen oppgitt av rekvirenten.">
+					comment = <"*Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible. (en)">
+				>
+				["at0128"] = <
+					text = <"Svarmottakere">
+					description = <"En liste over personer eller organisasjoner som bør motta svar på forespørselen.">
+				>
+				["at0132"] = <
+					text = <"Spesifikke detaljer">
+					description = <"Ytterligere detaljer om den forespurte tjenesten.">
+				>
+				["at0135"] = <
+					text = <"Beskrivelse">
+					description = <"Fritekstbeskrivelse av tjenesten som forespørres.">
+					comment = <"Dette dataelementet kan brukes til å beskrive den aktuelle tjenesten i mer detalj, for eksempel hvordan den skal utføres, pasientens egne ønsker, eller problemer man kan støte på under utførelsen.">
+				>
+				["at0136"] = <
+					text = <"Akutt">
+					description = <"Forespørselen krever øyeblikkelig oppmerksomhet.">
+				>
+				["at0137"] = <
+					text = <"Haster">
+					description = <"Forespørselen krever prioritert oppmerksomhet.">
+				>
+				["at0138"] = <
+					text = <"Rutine">
+					description = <"Forespørslene krever ikke prioritert oppmerksomhet.">
+				>
+				["at0141"] = <
+					text = <"Rekvirent">
+					description = <"Detaljer om helsepersonellet eller organisasjonen som har forespurt tjenesten.">
+				>
+				["at0142"] = <
+					text = <"Mottaker">
+					description = <"Detaljer om helsepersonellet eller organisasjonen som mottar tjenesteforespørselen.">
+				>
+				["at0148"] = <
+					text = <"*Service type (en)">
+					description = <"Kategorisering av den forespurte tjenesten.">
+					comment = <"*Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code. (en)">
+				>
+				["at0149"] = <
+					text = <"Understøttende informasjon">
+					description = <"Digitalt dokument, bilde, video eller diagram som supplerende informasjon for å understøtte forespørselen.">
+				>
+				["at0150"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om tjenesteforespørselen, som ikke er dekket av andre elementer.">
+				>
+				["at0151"] = <
+					text = <"Kompeks timing">
+					description = <"Detaljer om en kompleks tjenesteforespørsel som trenger komplekse timingangivelser.">
+					comment = <"*For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant. (en)">
+				>
+				["at0152"] = <
+					text = <"Klinisk indikasjon">
+					description = <"*The symptom, sign or diagnosis that necessitates the requested service. (en)">
+					comment = <"*Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0153"] = <
+					text = <"Ordredetaljer">
+					description = <"Tilleggsbeskrivelse og instrukser om hvordan tjenesten skal utføres.">
+					comment = <"Koding av ordredetaljer med et kodeverk er ønskelig, dersom tilgjengelig. Dette dataelementet tillater flere forekomster.">
+				>
+				["at0154"] = <
+					text = <"*Clinical context (en)">
+					description = <"*Narrative information about the individual and their situation, providing relevant context for the request. (en)">
+				>
+				["at0155"] = <
+					text = <"*Urgent contact (en)">
+					description = <"*Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request. (en)">
+					comment = <"*For example: if the outcome of the request requires an urgent or emergency response by the requester. (en)">
+				>
+				["at0156"] = <
+					text = <"*Billing guidance (en)">
+					description = <"*A recommendation from the requester to the receiver about the method of payment for the service. (en)">
+					comment = <"*For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'.  (en)">
+				>
+				["at0157"] = <
+					text = <"*Responsible payer (en)">
+					description = <"*Details about the individual or organisation who will assume responsibility for payment of the service. (en)">
+					comment = <"*This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme. (en)">
+				>
+				["at0158"] = <
+					text = <"*Eligibility guidance (en)">
+					description = <"*Advice from the requester to the receiver about the individual's eligibility for the requested service. (en)">
+				>
+			>
+		>
+		["it"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Laboratory test request (en)">
+					description = <"*An order or instruction for a laboratory test service. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Fasting status (en)">
+					description = <"*Request requirement for the patient to be fasted at the time of specimen collection. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Fasting (en)">
+					description = <"*The test should be carried out on a fasted individual. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Non-fasting (en)">
+					description = <"*The test should be carried out on a non-fasted individual. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Requested specimen (en)">
+					description = <"*Details about specific specimen and collection conditions required as part of this laboratory request. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Collected specimen (en)">
+					description = <"*Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request. (en)">
+				>
+				["at0000"] = <
+					text = <"Richiesta di un servizio.">
+					description = <"Richiesta di un servizio o di un'attività sanitaria da parte di un clinico, di un'organizzazione o di un'agenzia.">
+				>
+				["at0001"] = <
+					text = <"Attività corrente">
+					description = <"Attività corrente.">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Identificativo dell'ordine per il richiedente">
+					description = <"L'identificativo locale assegnato dal sistema clinico richiedente.">
+					comment = <"Di solito equivalente a HL7 Placer Order Identifier.">
+				>
+				["at0011"] = <
+					text = <"Identificativo dell'ordine per il ricevente">
+					description = <"L'identificativo locale assegnato alla richiesta dal clinico o dall'organizzazione che riceve la richiesta per il servizio.">
+					comment = <"Di solito equivalente a  HL7 Filler Order Identifier.">
+				>
+				["at0040"] = <
+					text = <"*Service due (en)">
+					description = <"*The date/time or description about timing for provision of the requested service/s. (en)">
+					comment = <"*This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant. (en)">
+				>
+				["at0062"] = <
+					text = <"Motivo della richiesta">
+					description = <"*The specific problem needing attention or the clinical question that requires investigation. (en)">
+					comment = <"*Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0064"] = <
+					text = <"Descrizione del motivo">
+					description = <"*Narrative description about the issue or clinical query that needs resolution.  (en)">
+				>
+				["at0065"] = <
+					text = <"Intento">
+					description = <"*Description of the intended outcome of the request. (en)">
+					comment = <"*Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0068"] = <
+					text = <"Urgenza">
+					description = <"Urgenza per la richiesta di servizio">
+					comment = <"*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT. (en)">
+				>
+				["at0076"] = <
+					text = <"Informazioni supplementari">
+					description = <"Indicazione sul fatto che informazioni supplementari saranno fornite su richiesta.">
+					comment = <"Registrare come VERO se sono state identificate informazioni aggiuntive che saranno trasmesse quando disponibili. Ad esempio: in attesa dei risultati del test.">
+				>
+				["at0078"] = <
+					text = <"Descrizione delle informazioni">
+					description = <"Descrizione delle informazioni supplementari.">
+				>
+				["at0112"] = <
+					text = <"Estensione">
+					description = <"*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)">
+					comment = <"*For example: local information requirements; or additional metadata to align with FHIR. (en)">
+				>
+				["at0116"] = <
+					text = <"Requisiti per il paziente">
+					description = <"Lingua, trasporto o altre esigenze personali per sostenere la presenza o la partecipazione del paziente alla fornitura del servizio.">
+				>
+				["at0121"] = <
+					text = <"Nome del servizio">
+					description = <"*The name of the service/s requested. (en)">
+					comment = <"*Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required. (en)">
+				>
+				["at0127"] = <
+					text = <"Stato della richiesta">
+					description = <"Lo stato della richiesta di servizio come indicato dal richiedente.">
+					comment = <"*Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible. (en)">
+				>
+				["at0128"] = <
+					text = <"Lista di distribuzione">
+					description = <"Dettagli di altri medici, organizzazioni o agenzie che richiedono copie di qualsiasi comunicazione.">
+				>
+				["at0132"] = <
+					text = <"Dettagli specifici">
+					description = <"Ulteriori dettagli sul servizio richiesto.">
+				>
+				["at0135"] = <
+					text = <"Descrizione">
+					description = <"Descrizione narrativa del servizio richiesto.">
+					comment = <"Questo dato puntuale dovrebbe essere utilizzato per descrivere il servizio in questione in modo più dettagliato, comprese le modalità di erogazione, le preoccupazioni dei pazienti e i problemi che si potrebbero incontrare nell'erogazione del servizio.">
+				>
+				["at0136"] = <
+					text = <"Emergenza">
+					description = <"La richiesta richiede un'attenzione immediata.">
+				>
+				["at0137"] = <
+					text = <"Urgente">
+					description = <"La richiesta richiede un'attenzione prioritaria. ">
+				>
+				["at0138"] = <
+					text = <"Routine">
+					description = <"La richiesta non richiede una programmazione con priorità.">
+				>
+				["at0141"] = <
+					text = <"Richiedente">
+					description = <"Dettagli sul clinico o sull'organizzazione che richiede il servizio.">
+				>
+				["at0142"] = <
+					text = <"Ricevente">
+					description = <"Dettagli sul clinico o sull'organizzazione che riceve la richiesta di servizio.">
+				>
+				["at0148"] = <
+					text = <"*Service type (en)">
+					description = <"Categoria di servizio richiesto.">
+					comment = <"*Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code. (en)">
+				>
+				["at0149"] = <
+					text = <"Informazione di supporto">
+					description = <"Documento digitale, immagine, video o diagramma forniti come informazioni aggiuntive per supportare o motivare la richiesta.">
+				>
+				["at0150"] = <
+					text = <"Commento">
+					description = <"Narrativa aggiuntiva sulla richiesta di servizio non acquisita in altri campi.">
+				>
+				["at0151"] = <
+					text = <"Tempistica complessa">
+					description = <"Dettagli su una richiesta di servizio complessa che richiede una sequenza di temporizzazioni.">
+					comment = <"*For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant. (en)">
+				>
+				["at0152"] = <
+					text = <"Indicazione clinica">
+					description = <"*The symptom, sign or diagnosis that necessitates the requested service. (en)">
+					comment = <"*Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0153"] = <
+					text = <"*Order detail (en)">
+					description = <"*Additional details and instructions about how the services are to be delivered. (en)">
+					comment = <"*Coding of the 'Order detail' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0154"] = <
+					text = <"*Clinical context (en)">
+					description = <"*Narrative information about the individual and their situation, providing relevant context for the request. (en)">
+				>
+				["at0155"] = <
+					text = <"*Urgent contact (en)">
+					description = <"*Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request. (en)">
+					comment = <"*For example: if the outcome of the request requires an urgent or emergency response by the requester. (en)">
+				>
+				["at0156"] = <
+					text = <"*Billing guidance (en)">
+					description = <"*A recommendation from the requester to the receiver about the method of payment for the service. (en)">
+					comment = <"*For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'.  (en)">
+				>
+				["at0157"] = <
+					text = <"*Responsible payer (en)">
+					description = <"*Details about the individual or organisation who will assume responsibility for payment of the service. (en)">
+					comment = <"*This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme. (en)">
+				>
+				["at0158"] = <
+					text = <"*Eligibility guidance (en)">
+					description = <"*Advice from the requester to the receiver about the individual's eligibility for the requested service. (en)">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Laboratory test request (en)">
+					description = <"*An order or instruction for a laboratory test service. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Fasting status (en)">
+					description = <"*Request requirement for the patient to be fasted at the time of specimen collection. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Fasting (en)">
+					description = <"*The test should be carried out on a fasted individual. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Non-fasting (en)">
+					description = <"*The test should be carried out on a non-fasted individual. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Requested specimen (en)">
+					description = <"*Details about specific specimen and collection conditions required as part of this laboratory request. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Collected specimen (en)">
+					description = <"*Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request. (en)">
+				>
+				["at0000"] = <
+					text = <"Dienstleistung">
+					description = <"Antrag auf eine gesundheitsbezogene Dienstleistung oder Aktivität, die von einem Kliniker, einer Klinik oder einer Einrichtung erbracht werden soll.">
+				>
+				["at0001"] = <
+					text = <"Aktuelle Aktivität">
+					description = <"Aktuelle Aktivität">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Auftrags-ID des anfordernden/einsendenden Systems">
+					description = <"Lokale Auftrags-ID des anfordernden/einsendenden Systems.">
+					comment = <"Üblicherweise äquivalent zur \"HL7 Placer Order Identifier\".">
+				>
+				["at0011"] = <
+					text = <"Auftrags-ID (Empfänger)">
+					description = <"Lokale Auftrags-ID, die der Anforderung durch den Kliniker oder die Organisation, die die Leistungsanforderung erhält, zugewiesen wurde.">
+					comment = <"Entspricht in der Regel HL7 Filler Order Identifier.">
+				>
+				["at0040"] = <
+					text = <"*Service due (en)">
+					description = <"*The date/time or description about timing for provision of the requested service/s. (en)">
+					comment = <"*This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant. (en)">
+				>
+				["at0062"] = <
+					text = <"Grund für die Anforderung">
+					description = <"*The specific problem needing attention or the clinical question that requires investigation. (en)">
+					comment = <"*Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0064"] = <
+					text = <"Beschreibung des Grundes">
+					description = <"*Narrative description about the issue or clinical query that needs resolution.  (en)">
+				>
+				["at0065"] = <
+					text = <"Intention">
+					description = <"*Description of the intended outcome of the request. (en)">
+					comment = <"*Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0068"] = <
+					text = <"Dringlichkeit">
+					description = <"Dringlichkeit der Anforderung der Dienstleistung.">
+					comment = <"*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT. (en)">
+				>
+				["at0076"] = <
+					text = <"Ergänzende Informationen">
+					description = <"Ergänzende Informationen werden auf Anfrage zur Verfügung gestellt.">
+					comment = <"Dokumentieren Sie TRUE, wenn Ergänzende Informationen identifiziert wurden und weitergeleitet werden, wenn sie verfügbar sind. Zum Beispiel: ausstehende Testergebnisse.">
+				>
+				["at0078"] = <
+					text = <"Beschreibung der Informationen">
+					description = <"Beschreibung der Zusatzinformationen.">
+				>
+				["at0112"] = <
+					text = <"Erweiterung">
+					description = <"*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)">
+					comment = <"*For example: local information requirements; or additional metadata to align with FHIR. (en)">
+				>
+				["at0116"] = <
+					text = <"Anforderungen an Patienten">
+					description = <"Sprach-, Transport- oder andere persönliche Anforderungen, um die Beteiligung oder Teilnahme des Patienten an der Erbringung der Dienstleistung zu unterstützen.">
+				>
+				["at0121"] = <
+					text = <"Name der Dienstleistung">
+					description = <"*The name of the service/s requested. (en)">
+					comment = <"*Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required. (en)">
+				>
+				["at0127"] = <
+					text = <"Status der Anfrage">
+					description = <"Der Status des Zustellungsantrags, wie vom Antragsteller angegeben.">
+					comment = <"*Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible. (en)">
+				>
+				["at0128"] = <
+					text = <"Verteilerliste">
+					description = <"Details über weitere Kliniker, Organisationen oder Einrichtungen, die Kopien aller Mitteilungen benötigen.">
+				>
+				["at0132"] = <
+					text = <"Spezifische Details">
+					description = <"Zusätzliche Details über die angeforderte Dienstleistung.">
+				>
+				["at0135"] = <
+					text = <"Beschreibung">
+					description = <"Narrative Beschreibung der gewünschten Dienstleistung.">
+					comment = <"Dieser Datenpunkt sollte verwendet werden, um die genannte Dienstleistung näher zu beschreiben, einschließlich der Art und Weise, wie sie erbracht werden sollte, der Bedenken der Patienten und der Probleme, die bei der Erbringung der Dienstleistung auftreten könnten.">
+				>
+				["at0136"] = <
+					text = <"Notfall">
+					description = <"Die Anforderung erfordert sofortige Behandlung.">
+				>
+				["at0137"] = <
+					text = <"Dringend">
+					description = <"Die Anforderung erfordert eine prioritäre Behandlung.">
+				>
+				["at0138"] = <
+					text = <"Routine">
+					description = <"Die Anforderung erfordert keine priorisierte Planung.">
+				>
+				["at0141"] = <
+					text = <"Einsender">
+					description = <"Details über den Kliniker oder die Abteilung, die die Dienstleistung anfordert.">
+				>
+				["at0142"] = <
+					text = <"Empfänger">
+					description = <"Details über den Kliniker oder die Abteilung, die die Dienstleistung erhält.">
+				>
+				["at0148"] = <
+					text = <"*Service type (en)">
+					description = <"Kategorie der beantragten Dienstleistung.">
+					comment = <"*Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code. (en)">
+				>
+				["at0149"] = <
+					text = <"Unterstützende Informationen">
+					description = <"Digitales Dokument, Bild, Video oder Diagramm als zusätzliche Information zur Unterstützung oder Information der Anforderung.">
+				>
+				["at0150"] = <
+					text = <"Kommentar">
+					description = <"Weitere Informationen über die Dienstanforderung, welche bisher nicht in den anderen Feldern erfasst wurden.">
+				>
+				["at0151"] = <
+					text = <"Komplexe Zeitplanung">
+					description = <"Einzelheiten über eine komplexe Dienstanforderung, die eine Abfolge von Zeitangaben erfordert.">
+					comment = <"*For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant. (en)">
+				>
+				["at0152"] = <
+					text = <"Klinische Indikation">
+					description = <"*The symptom, sign or diagnosis that necessitates the requested service. (en)">
+					comment = <"*Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0153"] = <
+					text = <"Auftragsdetail">
+					description = <"Zusätzliche Details und Anweisungen darüber, wie die Dienstleistungen zu erbringen sind.">
+					comment = <"Eine Codierung des Auftragsdetails mit einer Terminologie wird nach Möglichkeit bevorzugt. Dieses Datenelement darf mehrfach vorkommen.">
+				>
+				["at0154"] = <
+					text = <"*Clinical context (en)">
+					description = <"*Narrative information about the individual and their situation, providing relevant context for the request. (en)">
+				>
+				["at0155"] = <
+					text = <"*Urgent contact (en)">
+					description = <"*Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request. (en)">
+					comment = <"*For example: if the outcome of the request requires an urgent or emergency response by the requester. (en)">
+				>
+				["at0156"] = <
+					text = <"*Billing guidance (en)">
+					description = <"*A recommendation from the requester to the receiver about the method of payment for the service. (en)">
+					comment = <"*For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'.  (en)">
+				>
+				["at0157"] = <
+					text = <"*Responsible payer (en)">
+					description = <"*Details about the individual or organisation who will assume responsibility for payment of the service. (en)">
+					comment = <"*This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme. (en)">
+				>
+				["at0158"] = <
+					text = <"*Eligibility guidance (en)">
+					description = <"*Advice from the requester to the receiver about the individual's eligibility for the requested service. (en)">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Laboratory test request (en)">
+					description = <"*An order or instruction for a laboratory test service. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Fasting status (en)">
+					description = <"*Request requirement for the patient to be fasted at the time of specimen collection. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Fasting (en)">
+					description = <"*The test should be carried out on a fasted individual. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Non-fasting (en)">
+					description = <"*The test should be carried out on a non-fasted individual. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Requested specimen (en)">
+					description = <"*Details about specific specimen and collection conditions required as part of this laboratory request. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Collected specimen (en)">
+					description = <"*Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request. (en)">
+				>
+				["at0000"] = <
+					text = <"Förfrågan om hälso-och sjukvårdsrelaterad tjänst">
+					description = <"Förfrågan om en hälso- och sjukvårdsrelaterad tjänst eller aktivitet som behöver genomföras av en kliniker, organisation eller myndighet.">
+				>
+				["at0001"] = <
+					text = <"Nuvarande aktivitet">
+					description = <"Nuvarande aktivitet">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Beställar ID">
+					description = <"Den lokala identifieraren som tilldelats av det begärande kliniska systemet.">
+					comment = <"Vanligtvis motsvarande HL7 Placer Order Identifier.">
+				>
+				["at0011"] = <
+					text = <"Mottagar ID">
+					description = <"Den lokala identifieraren (ID) som tilldelats begäran, av läkaren eller organisationen som tar emot begäran om service.">
+					comment = <"Vanligen motsvarande HL7 Filler Order Identifier">
+				>
+				["at0040"] = <
+					text = <"*Service due (en)">
+					description = <"*The date/time or description about timing for provision of the requested service/s. (en)">
+					comment = <"*This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant. (en)">
+				>
+				["at0062"] = <
+					text = <"Anledning till förfrågan">
+					description = <"*The specific problem needing attention or the clinical question that requires investigation. (en)">
+					comment = <"*Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0064"] = <
+					text = <"Beskrivning av anledning">
+					description = <"*Narrative description about the issue or clinical query that needs resolution.  (en)">
+				>
+				["at0065"] = <
+					text = <"Avsikt">
+					description = <"*Description of the intended outcome of the request. (en)">
+					comment = <"*Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0068"] = <
+					text = <"Brådskandegrad">
+					description = <"Brådskandegrad för tjänsten.">
+					comment = <"*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT. (en)">
+				>
+				["at0076"] = <
+					text = <"Kompletterande infromation">
+					description = <"Kompletterande information kommer efter begäran.">
+					comment = <"Ange som SANT om ytterligare information har identifierats och kommer att vidarebefordras när den är tillgänglig. Till exempel: väntande testresultat.">
+				>
+				["at0078"] = <
+					text = <"Beskrivning av information">
+					description = <"Beskrivning av kompletterande information.">
+				>
+				["at0112"] = <
+					text = <"Tilläggsinformation">
+					description = <"*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)">
+					comment = <"*For example: local information requirements; or additional metadata to align with FHIR. (en)">
+				>
+				["at0116"] = <
+					text = <"Patientens behov">
+					description = <"Språk, transport eller andra personliga krav för att stödja patientens närvaro eller deltagande vid tillhandahållandet av tjänsten.">
+				>
+				["at0121"] = <
+					text = <"Namn på tjänst">
+					description = <"*The name of the service/s requested. (en)">
+					comment = <"*Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required. (en)">
+				>
+				["at0127"] = <
+					text = <"Status på förfrågan">
+					description = <"Status på begäran om tjänsten, angiven av den som frågar om tjänsten.">
+					comment = <"*Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible. (en)">
+				>
+				["at0128"] = <
+					text = <"Svarsmottagare">
+					description = <"Detaljer om ytterligare kliniker, organisationer eller byråer som bör motta kopior av svar på förfrågan.">
+				>
+				["at0132"] = <
+					text = <"Specifika detaljer">
+					description = <"Ytterligare detaljer om den begärda tjänsten.">
+				>
+				["at0135"] = <
+					text = <"Beskrivning">
+					description = <"Detaljerad beskrivning av den efterfrågade tjänsten.">
+					comment = <"Detta dataelement ska användas för att beskriva namnet på tjänsten i mer detalj, inkluderat hur den ska genomföras, patientens funderingar och problem som kan uppstå vid leverans av tjänsten.">
+				>
+				["at0136"] = <
+					text = <"Akut">
+					description = <"Denna förfrågan kräver omedelbar uppmärksamhet.">
+				>
+				["at0137"] = <
+					text = <"Brådskande">
+					description = <"Denna förfrågan kräver prioriterad uppmärksamhet.">
+				>
+				["at0138"] = <
+					text = <"Rutin">
+					description = <"Denna förfrågan kräver inte prioriterad schemaläggning.">
+				>
+				["at0141"] = <
+					text = <"Förfrågare">
+					description = <"Detaljer om den kliniker eller organisation som efterfrågar tjänsten.">
+				>
+				["at0142"] = <
+					text = <"Mottagare">
+					description = <"Detaljer om klinikern eller organisationen som får begäran om service.">
+				>
+				["at0148"] = <
+					text = <"*Service type (en)">
+					description = <"Kategori på typ av efterfrågad tjänst">
+					comment = <"*Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code. (en)">
+				>
+				["at0149"] = <
+					text = <"Stödjande information">
+					description = <"Digitalt dokument, bild, video eller diagram som tillhandahålls som ytterligare information för att stödja begäran om tjänst.">
+				>
+				["at0150"] = <
+					text = <"Kommentar">
+					description = <"Ytterligare beskrivning om tjänsteförfrågan, som inte fångats i andra fält.">
+				>
+				["at0151"] = <
+					text = <"Komplex tidsangivelse">
+					description = <"Detaljer om en komplex tjänsteförfrågan som kräver en sekvens av tidpunkter.">
+					comment = <"*For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant. (en)">
+				>
+				["at0152"] = <
+					text = <"Klinisk indikation">
+					description = <"*The symptom, sign or diagnosis that necessitates the requested service. (en)">
+					comment = <"*Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0153"] = <
+					text = <"*Order detail (en)">
+					description = <"*Additional details and instructions about how the services are to be delivered. (en)">
+					comment = <"*Coding of the 'Order detail' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0154"] = <
+					text = <"*Clinical context (en)">
+					description = <"*Narrative information about the individual and their situation, providing relevant context for the request. (en)">
+				>
+				["at0155"] = <
+					text = <"*Urgent contact (en)">
+					description = <"*Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request. (en)">
+					comment = <"*For example: if the outcome of the request requires an urgent or emergency response by the requester. (en)">
+				>
+				["at0156"] = <
+					text = <"*Billing guidance (en)">
+					description = <"*A recommendation from the requester to the receiver about the method of payment for the service. (en)">
+					comment = <"*For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'.  (en)">
+				>
+				["at0157"] = <
+					text = <"*Responsible payer (en)">
+					description = <"*Details about the individual or organisation who will assume responsibility for payment of the service. (en)">
+					comment = <"*This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme. (en)">
+				>
+				["at0158"] = <
+					text = <"*Eligibility guidance (en)">
+					description = <"*Advice from the requester to the receiver about the individual's eligibility for the requested service. (en)">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Laboratory test request (en)">
+					description = <"*An order or instruction for a laboratory test service. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Fasting status (en)">
+					description = <"*Request requirement for the patient to be fasted at the time of specimen collection. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Fasting (en)">
+					description = <"*The test should be carried out on a fasted individual. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Non-fasting (en)">
+					description = <"*The test should be carried out on a non-fasted individual. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Requested specimen (en)">
+					description = <"*Details about specific specimen and collection conditions required as part of this laboratory request. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Collected specimen (en)">
+					description = <"*Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request. (en)">
+				>
+				["at0000"] = <
+					text = <"Solicitação de serviço">
+					description = <"Solicitação de um serviço ou atividade relacionada à saúde a ser prestado por um médico, organização ou agência.">
+				>
+				["at0001"] = <
+					text = <"Atividade atual">
+					description = <"Atividade atual.">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Identificador do solicitante do pedido">
+					description = <"O identificador local atribuído pelo sistema clínico solicitante.">
+					comment = <"Normalmente equivalente ao identificador do local de pedido do HL7 (HL7 Place Order Identifier).">
+				>
+				["at0011"] = <
+					text = <"Identificador do receptor do pedido">
+					description = <"O identificador local atribuído à solicitação pelo clínico ou organização que recebe a solicitação de serviço.">
+					comment = <"Normalmente equivalente ao identificador do preenchedor do pedido do HL7 (HL7 Filler Order Identifier).">
+				>
+				["at0040"] = <
+					text = <"*Service due (en)">
+					description = <"*The date/time or description about timing for provision of the requested service/s. (en)">
+					comment = <"*This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant. (en)">
+				>
+				["at0062"] = <
+					text = <"Motivo da solicitação">
+					description = <"*The specific problem needing attention or the clinical question that requires investigation. (en)">
+					comment = <"*Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0064"] = <
+					text = <"Descrição do motivo">
+					description = <"*Narrative description about the issue or clinical query that needs resolution.  (en)">
+				>
+				["at0065"] = <
+					text = <"Intenção">
+					description = <"*Description of the intended outcome of the request. (en)">
+					comment = <"*Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0068"] = <
+					text = <"Urgência">
+					description = <"Urgência da solicitação do serviço.">
+					comment = <"*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT. (en)">
+				>
+				["at0076"] = <
+					text = <"Informação suplementar">
+					description = <"Informações suplementares serão fornecidas após a solicitação.">
+					comment = <"Registre como VERDADEIRO se informações adicionais forem identificadas e serão encaminhadas quando disponíveis. Por exemplo: resultados de teste pendentes.">
+				>
+				["at0078"] = <
+					text = <"DEscrição da informação">
+					description = <"Descrição da informação suplementar.">
+				>
+				["at0112"] = <
+					text = <"Extensão">
+					description = <"*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)">
+					comment = <"*For example: local information requirements; or additional metadata to align with FHIR. (en)">
+				>
+				["at0116"] = <
+					text = <"Necessidades do paciente">
+					description = <"Idioma, transporte ou outras necessidades pessoais para apoiar o atendimento ou participação do paciente na prestação do serviço.">
+				>
+				["at0121"] = <
+					text = <"Nome do serviço">
+					description = <"*The name of the service/s requested. (en)">
+					comment = <"*Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required. (en)">
+				>
+				["at0127"] = <
+					text = <"sttus da solicitação">
+					description = <"O status da solicitação de serviço conforme indicado pelo solicitante.">
+					comment = <"*Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible. (en)">
+				>
+				["at0128"] = <
+					text = <"Lista de distribuição">
+					description = <"Detalhes de clínicos, organizações ou agências adicionais que requeiram cópias de qualquer comunicação.">
+				>
+				["at0132"] = <
+					text = <"Detalhes específicos">
+					description = <"Detalhe adicional sobre o serviço solicitado.">
+				>
+				["at0135"] = <
+					text = <"Descrição">
+					description = <"Descrição narrtaiva sobre o serviço solicitado.">
+					comment = <"Esta entrada de dados deve ser usada para descrever o serviço nomeado em mais detalhes, incluindo como ele deve ser prestado, preocupações do paciente e problemas que podem ser encontrados na prestação do serviço.">
+				>
+				["at0136"] = <
+					text = <"Emergência">
+					description = <"A solicitação requer atenção imediata.">
+				>
+				["at0137"] = <
+					text = <"Urgente">
+					description = <"A solicitação requer atenção priorizada.">
+				>
+				["at0138"] = <
+					text = <"Rotina">
+					description = <"A solicitação não requer agendamento priorizado.">
+				>
+				["at0141"] = <
+					text = <"Solicitante">
+					description = <"Detalhes sobre o clínico ou organização que está solicitando o serviço.">
+				>
+				["at0142"] = <
+					text = <"Receptor">
+					description = <"Detalhes sobre o clínico ou organização que recebe a solicitação de serviço.">
+				>
+				["at0148"] = <
+					text = <"*Service type (en)">
+					description = <"Categoria do serviço solicitado.">
+					comment = <"*Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code. (en)">
+				>
+				["at0149"] = <
+					text = <"Informação de apoio">
+					description = <"Documento digital, imagem, vídeo ou diagrama fornecido como informação adicional para apoiar ou informar a solicitação.">
+				>
+				["at0150"] = <
+					text = <"Comentário">
+					description = <"Narrativa adicional sobre a solicitação de serviço não capturada em outros campos.">
+				>
+				["at0151"] = <
+					text = <"Agendamento complexo">
+					description = <"Detalhes sobre uma solicitação de serviço complexa que requeira sequências de datas, horas ou intervalos.">
+					comment = <"*For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant. (en)">
+				>
+				["at0152"] = <
+					text = <"Indicação clínica">
+					description = <"*The symptom, sign or diagnosis that necessitates the requested service. (en)">
+					comment = <"*Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0153"] = <
+					text = <"*Order detail (en)">
+					description = <"*Additional details and instructions about how the services are to be delivered. (en)">
+					comment = <"*Coding of the 'Order detail' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0154"] = <
+					text = <"*Clinical context (en)">
+					description = <"*Narrative information about the individual and their situation, providing relevant context for the request. (en)">
+				>
+				["at0155"] = <
+					text = <"*Urgent contact (en)">
+					description = <"*Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request. (en)">
+					comment = <"*For example: if the outcome of the request requires an urgent or emergency response by the requester. (en)">
+				>
+				["at0156"] = <
+					text = <"*Billing guidance (en)">
+					description = <"*A recommendation from the requester to the receiver about the method of payment for the service. (en)">
+					comment = <"*For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'.  (en)">
+				>
+				["at0157"] = <
+					text = <"*Responsible payer (en)">
+					description = <"*Details about the individual or organisation who will assume responsibility for payment of the service. (en)">
+					comment = <"*This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme. (en)">
+				>
+				["at0158"] = <
+					text = <"*Eligibility guidance (en)">
+					description = <"*Advice from the requester to the receiver about the individual's eligibility for the requested service. (en)">
+				>
+			>
+		>
+		["nl"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Laboratory test request (en)">
+					description = <"*An order or instruction for a laboratory test service. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Fasting status (en)">
+					description = <"*Request requirement for the patient to be fasted at the time of specimen collection. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Fasting (en)">
+					description = <"*The test should be carried out on a fasted individual. (en)">
+				>
+				["at0.3"] = <
+					text = <"*Non-fasting (en)">
+					description = <"*The test should be carried out on a non-fasted individual. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Requested specimen (en)">
+					description = <"*Details about specific specimen and collection conditions required as part of this laboratory request. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Collected specimen (en)">
+					description = <"*Details about a specimen that has been collected either by the requester or self-collected by the patient, and submitted for analysis as part of this laboratory request. (en)">
+				>
+				["at0000"] = <
+					text = <"Serviceverzoek">
+					description = <"Verzoek om een gezondheidsgerelateerde dienst of activiteit te leveren door een arts, organisatie of instantie.">
+				>
+				["at0001"] = <
+					text = <"Huidige Activity">
+					description = <"Huidige Activity">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Identificatie verzoeksaanvrager">
+					description = <"De lokale identificatie die is toegewezen door het aanvragende klinische systeem.">
+					comment = <"Meestal gelijk aan de HL7 Placer Order Identifier.">
+				>
+				["at0011"] = <
+					text = <"Identificatie verzoek ontvanger">
+					description = <"De lokale identificatie die aan het verzoek is toegewezen door de zorgverlener of organisatie die het verzoek voor service ontvangt.">
+					comment = <"Meestal gelijk aan de HL7 Filler Order Identifier.">
+				>
+				["at0040"] = <
+					text = <"*Service due (en)">
+					description = <"*The date/time or description about timing for provision of the requested service/s. (en)">
+					comment = <"*This data element allows for recording of the timing for the service/s, either as a date and time, an interval of date and time, or a text descriptor. In practice, clinicians will often think in terms of ordering services as relative or approximate timing, for example: 'next available', or  in '3 months'. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant. (en)">
+				>
+				["at0062"] = <
+					text = <"Reden voor aanvraag">
+					description = <"*The specific problem needing attention or the clinical question that requires investigation. (en)">
+					comment = <"*Coding of the 'Reason for request' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0064"] = <
+					text = <"Omschrijving van de reden">
+					description = <"*Narrative description about the issue or clinical query that needs resolution.  (en)">
+				>
+				["at0065"] = <
+					text = <"Bedoeling">
+					description = <"*Description of the intended outcome of the request. (en)">
+					comment = <"*Coding of the 'Intent' with an external terminology is recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0068"] = <
+					text = <"Urgentie">
+					description = <"Urgentie van het verzoek om service.">
+					comment = <"*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. More precise timing requirements should be specified using the 'Service due' data element or the CLUSTER.service_direction archetype within the 'Complex timing' SLOT. (en)">
+				>
+				["at0076"] = <
+					text = <"Aanvullende informatie">
+					description = <"Aanvullende informatie volgt op dit verzoek.">
+					comment = <"Noteer als TRUE als aanvullende informatie is geïdentificeerd en wordt doorgestuurd wanneer deze beschikbaar is. Bijvoorbeeld: in afwachting van testresultaten.">
+				>
+				["at0078"] = <
+					text = <"Informatiebeschrijving">
+					description = <"Beschrijving van de aanvullende informatie.">
+				>
+				["at0112"] = <
+					text = <"Uitbreiding">
+					description = <"*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)">
+					comment = <"*For example: local information requirements; or additional metadata to align with FHIR. (en)">
+				>
+				["at0116"] = <
+					text = <"Vereisten voor patiënt">
+					description = <"Taal, vervoer of andere persoonlijke vereisten ter ondersteuning van de aanwezigheid of deelname van de patiënt aan de dienstverlening.">
+				>
+				["at0121"] = <
+					text = <"Servicenaam">
+					description = <"*The name of the service/s requested. (en)">
+					comment = <"*Coding of the 'Service name' with an external terminology is strongly recommended, if available. This data element allows multiple occurrences to enable the user to record a multiple services as part of a single request, if required. (en)">
+				>
+				["at0127"] = <
+					text = <"Status van verzoek">
+					description = <"De status van het serviceverzoek zoals aangegeven door de aanvrager.">
+					comment = <"*Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible. (en)">
+				>
+				["at0128"] = <
+					text = <"Distributielijst">
+					description = <"Details van aanvullende clinici, organisaties of instanties die kopieën van communicatie nodig hebben.">
+				>
+				["at0132"] = <
+					text = <"Specifieke details">
+					description = <"Aanvullende details over de gevraagde service.">
+				>
+				["at0135"] = <
+					text = <"Omschrijving">
+					description = <"Narratieve beschrijving van de gevraagde dienst.">
+					comment = <"Dit gegevenspunt moet worden gebruikt om de genoemde service in meer detail te beschrijven, inclusief hoe deze moet worden geleverd, de zorgen van de patiënt en problemen die kunnen optreden bij het leveren van de service.">
+				>
+				["at0136"] = <
+					text = <"Acuut">
+					description = <"Het verzoek vereist onmiddellijke aandacht.">
+				>
+				["at0137"] = <
+					text = <"Urgent">
+					description = <"Het verzoek vereist geprioriteerde aandacht.">
+				>
+				["at0138"] = <
+					text = <"Routine">
+					description = <"Het verzoek vereist geen planning met prioriteit.">
+				>
+				["at0141"] = <
+					text = <"Aanvrager">
+					description = <"Details over de zorgverlener of organisatie die de service aanvraagt.">
+				>
+				["at0142"] = <
+					text = <"Ontvanger">
+					description = <"Details over de arts of organisatie die het serviceverzoek ontvangt.">
+				>
+				["at0148"] = <
+					text = <"*Service type (en)">
+					description = <"Categorie van de gevraagde service.">
+					comment = <"*Coding of the 'Service type' with an external terminology is desirable, if available. If the 'Service name' was coded, it is possible for this data point to be derived from the code. (en)">
+				>
+				["at0149"] = <
+					text = <"Ondersteunende informatie">
+					description = <"Digital document, image, video or diagram supplied as additional information to support or inform the request.">
+				>
+				["at0150"] = <
+					text = <"Opmerking">
+					description = <"Aanvullende opmerking over het serviceverzoek dat niet in andere velden is vastgelegd.">
+				>
+				["at0151"] = <
+					text = <"Complexe timing">
+					description = <"Details over een complexe serviceaanvraag die een reeks timings vereist.">
+					comment = <"*For example: 'hourly vital signs observations for 4 hours, then 4 hourly for 20 hours' or 'every third Wednesday for 3 visits' or 'Day 14-16 of the menstrual cycle'. If complex timing or sequences of timings are required using the CLUSTER.service_direction archetype in this SLOT, the 'Service due' data element becomes redundant. (en)">
+				>
+				["at0152"] = <
+					text = <"Klinische indicatie">
+					description = <"*The symptom, sign or diagnosis that necessitates the requested service. (en)">
+					comment = <"*Coding of the 'Clinical indication' with an external terminology is recommended, if available.  This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0153"] = <
+					text = <"*Order detail (en)">
+					description = <"*Additional details and instructions about how the services are to be delivered. (en)">
+					comment = <"*Coding of the 'Order detail' with an external terminology is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)">
+				>
+				["at0154"] = <
+					text = <"*Clinical context (en)">
+					description = <"*Narrative information about the individual and their situation, providing relevant context for the request. (en)">
+				>
+				["at0155"] = <
+					text = <"*Urgent contact (en)">
+					description = <"*Details about the designated contact person or organisation and preferred mode of contact for urgent or emergency notifications related to this request. (en)">
+					comment = <"*For example: if the outcome of the request requires an urgent or emergency response by the requester. (en)">
+				>
+				["at0156"] = <
+					text = <"*Billing guidance (en)">
+					description = <"*A recommendation from the requester to the receiver about the method of payment for the service. (en)">
+					comment = <"*For example: 'Private'; 'Government insurance scheme'; or 'Private insurance'.  (en)">
+				>
+				["at0157"] = <
+					text = <"*Responsible payer (en)">
+					description = <"*Details about the individual or organisation who will assume responsibility for payment of the service. (en)">
+					comment = <"*This data element will only be used if a known payer has been identified. For example: an individual, such as a parent on behalf of a child; or an organisation such as a workplace or government insurance scheme. (en)">
+				>
+				["at0158"] = <
+					text = <"*Eligibility guidance (en)">
+					description = <"*Advice from the requester to the receiver about the individual's eligibility for the requested service. (en)">
+				>
+			>
+		>
+	>

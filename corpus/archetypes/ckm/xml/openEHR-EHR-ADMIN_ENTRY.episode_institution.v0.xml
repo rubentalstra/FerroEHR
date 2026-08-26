@@ -1,0 +1,1885 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-03-14</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">71A668DE9FA7D8F303D4DEE8D5EAA28D</other_details>
+    <other_details id="build_uid">40714ef5-9c55-4145-bf44-22e2d11c2444</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Erfassung administrativer Details über den Zeitraum einer Patientenversorgung, zwischen einer formellen oder statistischen Aufnahme und einer formellen oder statistischen Entlassung, welche nur durch eine Versorgungsform der Gesundheitseinrichtung charakterisiert ist.&#xD;
+</purpose>
+      <keywords>Institutionsaufenthalt, Aufenthalt, Krankenhausaufenthalt, Institutioneller Aufenthalt</keywords>
+      <use>Wird verwendet zur Erfassung administrativer Details über den Zeitraum einer Patientenversorgung, zwischen einer formellen oder statistischen Aufnahme und einer formellen oder statistischen Entlassung, welche nur durch eine Versorgungsform der Gesundheitseinrichtung charakterisiert ist.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere administrative detaljer om en periode med pasientbehandling, som starter når en helseinstitusjon eller tjeneste tar medisinsk og/eller juridisk ansvar for pasienten, og som avsluttes ved en formell eller statistisk utskriving. Denne perioden er definert av kun én type helsehjelp fra helseinstitusjonen/tjenesten.</purpose>
+      <keywords>Innleggelse, utskrivelse, besøk, opphold</keywords>
+      <use>Brukes for å registrere administrative detaljer om en periode med pasientbehandling, som starter når en helseinstitusjon eller tjeneste tar medisinsk og/eller juridisk ansvar for pasienten, og som avsluttes ved en formell eller statistisk utskriving. Denne perioden er definert av kun én type helsehjelp fra helseinstitusjonen/tjenesten.&#xD;
+&#xD;
+Innen konteksten av denne arketypen tolkes "utskrivelse" bredt, og inkluderer situasjoner som avhengig av lokalt regelverk ikke vanligvis regnes som utskrivelser, for eksempel dødsfall i institusjonen, eller nyfødte som sendes hjem.</use>
+      <misuse>Brukes ikke for å registrere enkeltmøter med en pasient der institusjonen ikke tar formelt medisinsk og/eller juridisk ansvar for pasienten, som for eksempel ved polikliniske konsultasjoner. Ved tidspunktet da denne arketypen ble opprettet var det ikke avklart hvilken arketype som bør benyttes for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere en planlagt innleggelse til en helseinstitusjon eller tjenestene. Ved tidspunktet da denne arketypen ble opprettet var det ikke avklart hvilken arketype som bør benyttes for dette formålet.&#xD;
+</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record administrative details about a period of admitted patient care between a formal or statistical admission and a discharge, characterised by only one type of care from a healthcare institution or service.</purpose>
+      <keywords>Admission, discharge, separation, visit, stay, hospitalization</keywords>
+      <use>To record administrative details about a period of admitted patient care, beginning when a healthcare institution or service assumes medical and/or legal responsibility for the patient, and ending at formal or statistical discharge. This period is defined by a single type of care provided by the institution/service.&#xD;
+&#xD;
+Within the context of this archetype, discharge is interpreted broadly, and includes situations that, depending on local rules, may not be considered a discharge, such as death in the institution, or newborns released from care.</use>
+      <misuse>Not to be used for a single meeting with a patient where the institution does not take formal medical and/or legal responsibility of the patient, such as outpatient visits. At the time of authoring it is not yet determined which archetype should be used for this purpose.&#xD;
+&#xD;
+Not to be used for a planned admission to a healthcare institution or service. At the time of authoring it is not yet determined which archetype should be used for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>Registrare i dettagli amministrativi di un periodo di cura del paziente ricoverato tra un ricovero formale o statistico e una separazione formale o statistica, caratterizzata da un solo tipo di cura da un'istituzione sanitaria.</purpose>
+      <use>Utilizzare per registrare i dettagli amministrativi relativi a un periodo di cura del paziente ricoverato tra un ricovero formale o statistico e una separazione formale o statistica, caratterizzata da un solo tipo di cura di un'istituzione sanitaria.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Registrar dades administratives sobre un període d’atenció als pacients ingressats entre un ingrés formal o estadístic i una alta formal o estadística, caracteritzats només per un tipus d’atenció d’un centre sanitari.</purpose>
+      <use>Utilitzar per a registrar dades administratives sobre un període d’atenció als pacients ingressats entre un ingrés formal o estadístic i una alta formal o estadística, caracteritzats només per un tipus d’atenció d’un centre sanitari.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar datos administrativos sobre un periodo de atención a los pacientes ingresados entre un ingreso formal o estadístico y una alta formal o estadística, caracterizados únicamente por un tipo de atención en una institución sanitaria.</purpose>
+      <use>Utilizar para registrar datos administrativos sobre un periodo de atención a los pacientes ingresados entre un ingreso formal o estadístico, y una alta formal o estadística, caracterizado únicamente por un tipo de atención en una institución sanitaria.</use>
+      <misuse />
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Pascal Biermann</author>
+    <author id="organisation">Carl von Ossietzky Universität Oldenburg</author>
+    <author id="email">pascal.biermann@uni-oldenburg.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Mikkel Johan Gaup Grønmo, Vebjørn Arntzen, Martin Milde</author>
+    <author id="organisation">Helse Vest IKT AS, Helse Nord IKT, Oslo University Hospital</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no, mikkel.johan.gaup.gronmo@hnikt.no, varntzen@ous-hf.no, martin.milde@helse-vest-ikt.no</author>
+    <accreditation>Nasjonal IKT</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+    <other_details id="other_contributors">Tradcera</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>8be783ed-7a69-4f43-8816-978891a472df</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-ADMIN_ENTRY.episode_institution.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>ADMIN_ENTRY</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0014</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0008</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0028</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0027</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0016</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0026</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0021</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0015</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.person(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0018</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0019</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0025</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0017</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0022</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0023</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0024</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0020</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>1</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.address(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0011</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Admission</items>
+        <items id="description">Administrative details about a period of admitted patient care between a formal or statistical admission and a discharge, characterised by only one type of care from a healthcare institution or service.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Discharge date</items>
+        <items id="description">The date or date-time of the formal or statistical end of the admission.</items>
+        <items id="comment">For example: transfer of care to home or another institution; or date of death.&#xD;
+Formal recording of the date of death should use CLUSTER.death_details.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Destination category</items>
+        <items id="description">The type of residence where the individual resided following discharge.</items>
+        <items id="comment">For example: home; hospital; nursing home; or rehabilitation hospital.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Admission date</items>
+        <items id="description">The date or the date-time of the formal or statistical admission to the institution or service.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Outcome</items>
+        <items id="description">Outcome for the individual following discharge.</items>
+        <items id="comment">For example: recovered/not recovered/death.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Source category</items>
+        <items id="description">The type of residence where the individual resided prior to admission.</items>
+        <items id="comment">For example: hospital, community, or nursing home. 'Admission source' should be coded with a terminology, where possible.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Reason for admission</items>
+        <items id="description">The reason why the individual was admitted to an institution or service.</items>
+        <items id="comment">For example: respite; rehabilitation; or infection isolation.&#xD;
+Diagnosies should be recorded using the EVAL.problem_diagnosis archetype plus the nested CLUSTER.problem_qualifier, if necessary.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Admission category</items>
+        <items id="description">The type of admission.</items>
+        <items id="comment">For example: day surgery; elective surgery or emergency department. </items>
+      </items>
+      <items code="at0010">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the admission, not captured in other fields.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Additional details</items>
+        <items id="description">Additional structured details about the admission.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Destination</items>
+        <items id="description">The organisation or address for the individual after the admission.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Source</items>
+        <items id="description">The organisation or address for the individual prior to the admission.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Admission ID</items>
+        <items id="description">An identifier for the admission.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Attending clinicians</items>
+        <items id="description">Details about the consultant and attending clinicians responsible for care.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Medical record number</items>
+        <items id="description">Identification of the medical record number.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Location</items>
+        <items id="description">An organisation, physical address or structured address describing where the individual was located while admitted.</items>
+        <items id="comment">For example: 2nd floor, Moorhouse wing, Turnbull building, General Hospital.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Physical location</items>
+        <items id="description">The physical location of the individual within the institution or service.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Location onset</items>
+        <items id="description">The date the individual was moved to the internal location.</items>
+        <items id="comment">For example, the date moved to a new ward or bed.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Location end</items>
+        <items id="description">The date the individual was moved from the internal location.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Attending unit</items>
+        <items id="description">The clinical service unit assigned for care of the individual.</items>
+        <items id="comment">For example: Orthopaedic A unit.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Ward</items>
+        <items id="description">The name of the ward within the institution or service where the individual was located.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Room</items>
+        <items id="description">The name of the room within the institution or service where the individual was located.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Bed</items>
+        <items id="description">The name of the bed within the institution or service where the individual was located.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Location category</items>
+        <items id="description">The type of location.</items>
+        <items id="comment">For example: Intensive care unit; high dependency unit.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Health insurance category</items>
+        <items id="description">The type of health insurance applicable.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Referring clinician</items>
+        <items id="description">Details about the clinicians responsible for referring the individual from the Source.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Referral ID</items>
+        <items id="description">Identifier of the referral.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Innleggelse</items>
+        <items id="description">Administrative detaljer om oppholdet mellom en formell eller statistisk innleggelse og formell eller statistisk utskrivelse, karakterisert ved at det utføres kun én type helsehjelp fra en helseinstitusjon eller -tjeneste.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Utskrivelsesdato</items>
+        <items id="description">Dato eller dato/tid for den formelle eller statistiske utskrivelsen fra institusjonen eller tjenesten.</items>
+        <items id="comment">For eksempel: overført til pleiehjem eller annen institusjon, eller dødsdato.&#xD;
+En formell dødsdato bør registreres i CLUSTER.death_details.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Utskrevet til</items>
+        <items id="description">Typen bolig hvor individet bodde på etter utskrivelse.</items>
+        <items id="comment">For eksempel hjemme, sykehus, sykehjem eller rehabiliteringshjem.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Innleggelsesdato</items>
+        <items id="description">Dato eller dato/tid for den formelle eller statistiske innleggelsen i institusjonen eller tjenesten.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Utfall</items>
+        <items id="description">Utfall for individet etter utskrivelse.</items>
+        <items id="comment">For eksempel bedring/ingen bedring/død.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Innlagt fra kategori</items>
+        <items id="description">Type bosted individet bodde på før innleggelsen.</items>
+        <items id="comment">For eksempel sykehus, ordinær bolig eller sykehjem. "Innlagt fra" bør kodes med en terminologi der det er mulig.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Innleggelsesårsak</items>
+        <items id="description">Årsaken til at individet ble innlagt ved en institusjon eller tjeneste.</items>
+        <items id="comment">For eksempel avlastning, rehabilitering, eller isolering som følge av infeksjon.&#xD;
+Diagnoser bør registreres ved bruk av EVALUATION.problem_diagnosis-arketypen, og eventuelt med CLUSTER.problem_qualifier ved behov.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Innleggelseskategori</items>
+        <items id="description">Kategorien av innleggelse.</items>
+        <items id="comment">For eksempel dagkirurgi, elektiv kirurgi eller øyeblikkelig hjelp.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om innleggelsen som ikke fanges opp i andre felt.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterlige strukturerte detaljer om innleggelsen.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Destinasjon</items>
+        <items id="description">Organisasjon eller adressen for individet etter innleggelsen.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Innlagt fra</items>
+        <items id="description">Organisasjonen eller adressen til individet fra før innleggelsen.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Innleggelses-ID</items>
+        <items id="description">En identifikator for innleggelsen.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Ansvarlige klinikere</items>
+        <items id="description">Detaljer om klinikerne som er ansvarlige for behandlingen.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Journalnummer</items>
+        <items id="description">En identifikator som unikt identifiserer individets pasientjournal.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Lokasjon</items>
+        <items id="description">En organisasjon, fysisk adresse eller strukturert adresse som beskriver hvor individet befant seg under innleggelsen.</items>
+        <items id="comment">For eksempel 2. etg, Glassblokkene, Sykehuset.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Fysisk lokasjon</items>
+        <items id="description">Den fysiske lokasjonen av individet i institusjonen eller tjenesten.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Lokasjon start</items>
+        <items id="description">Dato for når individet ble overført til den interne lokasjonen.</items>
+        <items id="comment">For eksempel datoen da individet ble flyttet til en ny sengepost eller seng.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Lokasjon slutt</items>
+        <items id="description">Dato for når individet ble flyttet fra den interne lokasjonen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Ansvarlig enhet</items>
+        <items id="description">Klinisk enhet som er ansvarlig for behandlingen av individet.</items>
+        <items id="comment">For eksempel "Ortopedisk sengepost A".</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Sengepost</items>
+        <items id="description">Navnet på sengeposten eller avdelingen innenfor institusjonen eller tjenesten hvor individet oppholdt seg.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Rom</items>
+        <items id="description">Navnet på rommet innenfor institusjonen eller tjenesten hvor individet oppholdt seg.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Seng</items>
+        <items id="description">Navn på sengen innenfor institusjonen eller tjenesten der individet oppholdt seg.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Lokasjonskategori</items>
+        <items id="description">Typen lokasjon.</items>
+        <items id="comment">For eksempel intensiv eller akuttpost.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Helseforsikringskategori</items>
+        <items id="description">Type helseforsikring/utgiftsdekning som gjelder for individet.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Henviser</items>
+        <items id="description">Detaljer om ansvarlig kliniker som har henvist individet.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Henvisnings ID</items>
+        <items id="description">En identifikator for en henvisning.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">episode_institution</items>
+        <items id="description">Dettagli amministrativi su un periodo di cura del paziente ricoverato tra un ricovero formale o statistico e una separazione formale o statistica, caratterizzata da un solo tipo di cura da un'istituzione sanitaria. </items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Data di dimissione</items>
+        <items id="description">*The date and/or time of the formal or statistical end of the admission to the institution. (en)</items>
+        <items id="comment">*For example: transfer of care to home or another institution; or date of death.&#xD;
+Formal recording of the date of death should use CLUSTER.death_details. (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Categoria destinazione</items>
+        <items id="description">*The type of residence where the individual resided after the episode of care. (en)</items>
+        <items id="comment">Ad esempio: casa, ospedale, casa di cura o ospedale di riabilitazione. </items>
+      </items>
+      <items code="at0004">
+        <items id="text">Data di ingresso</items>
+        <items id="description">*The date and/or time of the formal or statistical admission to the institution. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Esito</items>
+        <items id="description">*Outcome for the individual at the end of the episode of care. (en)</items>
+        <items id="comment">Per esempio: recuperato/non recuperato/morte.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Source category (en)</items>
+        <items id="description">*The category of residence where the individual resided prior to admission. (en)</items>
+        <items id="comment">*For example: hospital, community, or nursing home. 'Admission source' should be coded with a terminology, where possible. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Reason for admission (en)</items>
+        <items id="description">*The reason why the individual was admitted for an episode of care. (en)</items>
+        <items id="comment">*For example: respite; rehabilitation; or infection isolation.&#xD;
+Diagnosies should be recorded using the EVAL.problem_diagnosis archetype plus the nested CLUSTER.problem_qualifier, if necessary. (en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Admission category (en)</items>
+        <items id="description">*The type of admission. (en)</items>
+        <items id="comment">*For example: day surgery; elective surgery or em.  (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Comment (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Additional details (en)</items>
+        <items id="description"></items>
+        <items id="comment">*For example:  (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Destination (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Source (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">*Episode ID (en)</items>
+        <items id="description">*An identifier for the episode of care. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*Attending clinicians (en)</items>
+        <items id="description">*The details about the consultant and attending clinicians responsible for care during the episode. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Medical record number (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Location (en)</items>
+        <items id="description">*An organisation, physical address or structured address describing where the individual was located during the episode of care. (en)</items>
+        <items id="comment">*For example: 2nd floor, Moorhouse wing, Turnbull building, General Hospital. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Physical location (en)</items>
+        <items id="description">*The physical location of the individual within the institution during the episode of care. (en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Location onset (en)</items>
+        <items id="description">*The date the individual was moved to the institution internal location. (en)</items>
+        <items id="comment">*For example, the date moved to a new ward or bed. (en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Location end (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Attending unit (en)</items>
+        <items id="description">*The clinical service unit assigned for care of the individual. (en)</items>
+        <items id="comment">*For example: Orthopaedic A unit. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Ward (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Room (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Bed (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Location category (en)</items>
+        <items id="description">*The type of location (en)</items>
+        <items id="comment">*For example: Intensive care unit; high dependency unit. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Health insurance category (en)</items>
+        <items id="description">*The type of health insurance applicable for the episode. (en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Referring clinician (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0028">
+        <items id="text">*DV_IDENTIFIER (en)</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">episode_institution</items>
+        <items id="description">Zur Erfassung administrativer Details über den Zeitraum einer Patientenversorgung, zwischen einer formellen oder statistischen Aufnahme und einer formellen oder statistischen Entlassung, welche nur durch eine Versorgungsform der Gesundheitseinrichtung charakterisiert ist.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Entlassungsdatum</items>
+        <items id="description">Das Datum und/oder die Uhrzeit der formellen oder statistischen institutionellen Entlassung.</items>
+        <items id="comment">Zum Beispiel: Überführung in häusliche Pflege oder eine andere Institution, Todeszeitpunkt. Für die Dokumentation des Todeszeitpunkts sollte CLUSTER.death_details genutzt werden.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Kategorie des Zielortes der Entlassung</items>
+        <items id="description">Die Art der Unterkunft, in welche die Person entlassen wurde.</items>
+        <items id="comment">Zum Beispiel: nach Hause, Krankenhaus, Pflegeheim, Rehabilitierungszentrum.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Aufnahmedatum</items>
+        <items id="description">Das Datum und/oder Uhrzeit der formellen oder statistischen institutionellen Aufnahme.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Outcome</items>
+        <items id="description">Outcome des Aufenthaltes zum Zeitpunkt der Entlassung.</items>
+        <items id="comment">Zum Beispiel: genesen/nicht genesen/tot</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Zuweiserkategorie</items>
+        <items id="description">Der Typ der zuweisenden Einheit vor der Aufnahme.</items>
+        <items id="comment">Zum Beispiel: Krankenhaus, gemeinschaftliche Wohneinrichtung, Pflegeheim. Wenn möglich sollte die Zuweiserkategorie mittels einer Terminologie kodiert werden.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Aufnahmegrund</items>
+        <items id="description">Der Anlass, aus dem die Person zur Versorgung aufgenommen wurde.</items>
+        <items id="comment">Zum Beispiel: Kurzzeitpflege, Rehabilitation, Isolierung aufgrund einer Infektion. Bei Bedarf sollten Diagnosen per EVAL.problem_diagnosis und dem verschachteltem CLUSTER.problem_qualifier Archetyp dokumentiert werden.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Aufnahmekategorie</items>
+        <items id="description">Die Art der Aufnahme.</items>
+        <items id="comment">Zum Beispiel: ambulante Operation, elektive Operation oder Notfall</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kommentar</items>
+        <items id="description">Weitere Informationen zum Aufenthalt, soweit noch nicht in anderen Feldern erfasst.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Zusätzliche strukturierte Details über den Aufenthalt in der Institution.</items>
+        <items id="comment">Zum Beispiel:</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Zielort der Entlassung</items>
+        <items id="description">Die Organisation oder Adresse, an welche die Person entlassen wurde.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Zuweiser</items>
+        <items id="description">Die Organisation oder Adresse der Person vor der Aufnahme.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Versorgungsfall ID</items>
+        <items id="description">Eine Kennung zur Identifizierung des Versorgungsfalles.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Behandelnde Mediziner</items>
+        <items id="description">Angaben zu den Beratenden und zu den behandelnden Mediziner*innen während des Aufenthaltes.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Nummer der Krankenakte</items>
+        <items id="description">Identifizierende Nummer der Krankenakte.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Standort</items>
+        <items id="description">Eine Organisation, physische Adresse oder strukturierte Adresse, welche den Standort des Aufenthaltes beschreibt.</items>
+        <items id="comment">Zum Beispiel: 2. Etage, Haus I, Städtisches Krankenhaus</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Standort</items>
+        <items id="description">Der physische Standort der Person innerhalb der Institution während des Aufenthaltes.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Aufnahme am Standort</items>
+        <items id="description">Das Datum, an dem die Person an einen anderen Standort innerhalb der Institution verlegt wurde.</items>
+        <items id="comment">Zum Beispiel: Das Datum einer Stations- oder Bettenverlegung.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Standortentlassung</items>
+        <items id="description">Das Datum der Entlassung von dem institutionsinternen Standort.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Behandelnde Organisationseinheit</items>
+        <items id="description">Die für die Behandlung verantwortliche Organisationseinheit.</items>
+        <items id="comment">Zum Beispiel: Orthopädie</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Station</items>
+        <items id="description">Der Name der Station innerhalb der Institution, auf der sich die Person befand.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Zimmer</items>
+        <items id="description">Der Name des Zimmers innerhalb der Institution, in dem sich die Person befand.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Bett</items>
+        <items id="description">Die Bezeichnung des Bettes innerhalb der Institution, welches der Person zugewiesen war.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Standortkategorie</items>
+        <items id="description">Die Art des Standortes.</items>
+        <items id="comment">Zum Beispiel: Intensivstation, Intermediate Care Unit</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Krankenversicherungskategorie</items>
+        <items id="description">Anzuwendender Krankenversicherungstyp für diesen Aufenthalt.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Überweisender Mediziner</items>
+        <items id="description">Details zu den Mediziner*innen, die für die Überweisung der Person aus dem Zuweiser verantwortlich sind.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*DV_IDENTIFIER (en)</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">episode_institution</items>
+        <items id="description">Dades administratives sobre un període d’atenció als pacients ingressats entre un ingrés formal o estadístic i una alta formal o estadística, caracteritzats només per un tipus d’atenció d’un centre sanitari.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Data de l’alta</items>
+        <items id="description">La data/hora del final de l’ingrés formal o estadístic al centre.</items>
+        <items id="comment">Per exemple: transferir l’atenció a casa o a altre centre; o data de defunció.&#xD;
+L’enregistrament formal de la data de defunció haurà d’utilitzar CLUSTER.death_details.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Categoría de destinació</items>
+        <items id="description">El tipus de residència on residí el pacient després de l’episodi d’atenció.</items>
+        <items id="comment">Per exemple: casa; hospital; residència d’ancians; o hospital de rehabilitació.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Data d’ingrés</items>
+        <items id="description">La data o hora de l’ingrés formal o estadístic al centre.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Resultat</items>
+        <items id="description">Resultat per al pacient al final de l’episodi d’atenció.</items>
+        <items id="comment">Per exemple: recobrat/no recobrat/mort.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Categoria d’origen</items>
+        <items id="description">El tipus de residència on residia el pacient abans de l’ingrés.</items>
+        <items id="comment">Per exemple: hospital, comunitat o residència d’ancians. Es recomana programar «Categoria d’origen» amb una terminologia, sempre que sigui possible.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Raó de l’ingrés</items>
+        <items id="description">Raó per la qual s'ingressà al pacient per a un episodi d’atenció.</items>
+        <items id="comment">Per exemple: respir; rehabilitació; o aïllament per infecció.&#xD;
+Es recomana registrar els diagnòstics utilitzant l’arquetip EVAL.problem_diagnosis conjuntament amb el CLUSTER.problem_qualifier situat, si fos necessari.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Categoria d’ingrés</items>
+        <items id="description">El tipus d’ingrés.</items>
+        <items id="comment">Per exemple: cirurgia ambulatòria; cirurgia programada o medicina d’urgències.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Observacions</items>
+        <items id="description">Informació addicional sobre l'episodi, no recollida en altres caselles.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Dades addicionals</items>
+        <items id="description">Dades estructurades addicionals sobre l’episodi d’atenció dins d’un centre.</items>
+        <items id="comment">Per exemple:</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Destinació</items>
+        <items id="description">L’organisme o adreça on està destinat el pacient després de l’ingrés.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Origen</items>
+        <items id="description">L’organisme o adreça on està destinat el pacient abans de l’ingrés.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Identificació de l’episodi</items>
+        <items id="description">Un identificador per a l’episodi d’atenció.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Metges responsables</items>
+        <items id="description">Dades sobre l’especialista i els metges responsables encarregats de l’atenció durant l’episodi.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Nombre de la història clínica</items>
+        <items id="description">Identificació del nombre de la història clínica.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Ubicació</items>
+        <items id="description">Un organisme, adreça física o adreça estructurada que descrigui el lloc on el pacient estava ubicat durant l’episodi d’atenció.</items>
+        <items id="comment">Per exemple: 2n pis de l’ala Moorhouse de l’edifici Turnbull de l’Hospital General.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Ubicació física</items>
+        <items id="description">La ubicació física del pacient dins del centre durant l’episodi d’atenció.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Arribada a la ubicació</items>
+        <items id="description">La data en què el pacient es va traslladar a la ubicació interna del centre.</items>
+        <items id="comment">Per exemple: la data en què es traslladà a un nou pavelló o llit.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Final d'ubicació</items>
+        <items id="description">La data en què el pacient es va traslladar fora de la ubicació interna del centre.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Unitat responsable</items>
+        <items id="description">La unitat de serveis clínics assignada per atendre al pacient.</items>
+        <items id="comment">Per exemple: Unitat ortopèdica A.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Pavelló</items>
+        <items id="description">El nom del Pavelló dins del centre on es va ubicar al pacient.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Sala</items>
+        <items id="description">El nom de la Sala dins del centre on es va ubicar al pacient.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Llit</items>
+        <items id="description">El nom del Llit dins del centre on es va ubicar al pacient.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Categoria d'ubicació</items>
+        <items id="description">El tipus d'ubicació.</items>
+        <items id="comment">Per exemple: unitat de cures intensives; unitat d’alta dependència.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Categoria d’assegurança de salut</items>
+        <items id="description">El tipus d’assegurança de salut que es pot aplicar a l’episodi.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Metge del trasllat</items>
+        <items id="description">Dades sobre els metges encarregats de traslladar el pacient des de l’Origen.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*DV_IDENTIFIER (en)</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">episode_institution</items>
+        <items id="description">Detalles administrativos sobre un periodo de atención a los pacientes ingresados entre un ingreso formal o estadístico y una alta formal o estadística, caracterizados únicamente por un tipo de atención en una institución sanitaria.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Fecha de alta</items>
+        <items id="description">La fecha y/u hora del final del ingreso formal o estadístico de la institución.</items>
+        <items id="comment">Por ejemplo: traslado de episodio de atención a hogar u otra institución; o fecha de defunción. &#xD;
+El registro formal de la fecha de defunción tendrá que utilizar el CLUSTER.death_details.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Categoría de destino</items>
+        <items id="description">El tipo de residencia donde residirá el individuo después del episodio de atención.</items>
+        <items id="comment">Por ejemplo: casa, hospital, residencia u hospital de rehabilitación.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fecha de ingreso</items>
+        <items id="description">La fecha u hora del ingreso formal o estadístico en la institución.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Resultado</items>
+        <items id="description">Resultado para el individuo al final del episodio de atención.</items>
+        <items id="comment">Por ejemplo: recuperado/no recuperado/fallecido.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Categoría de origen</items>
+        <items id="description">El tipo de residencia donde residía el individuo antes del ingreso.</items>
+        <items id="comment">Por ejemplo: hospital, comunidad, o residencia. Se recomienda codificar "Categoría de origen" cuando sea posible con una terminología.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Razón del ingreso</items>
+        <items id="description">Razón por la cual el individuo es ingresado para un episodio de atención.</items>
+        <items id="comment">Por ejemplo: descanso; rehabilitación; o aislamiento por infección.&#xD;
+Se recomienda registrar los diagnósticos utilizando el arquetipo EVALUATION.problem_diagnosis conjuntamente con el CLUSTER.problem_qualifier, si fuera necesario.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Categoría de ingreso</items>
+        <items id="description">El tipo de ingreso.</items>
+        <items id="comment">Por ejemplo: cirugía ambulatoria; cirugía electiva o medicina de urgencias.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Comentario</items>
+        <items id="description">Información adicional sobre el episodio no recogida en otros campos.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Detalles adicionales</items>
+        <items id="description">Detalles adicionales estructurados sobre el episodio de atención dentro de una institución.</items>
+        <items id="comment">Por ejemplo:</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Destinación</items>
+        <items id="description">La organización o dirección del individuo después del ingreso.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Origen</items>
+        <items id="description">El organismo o dirección donde está destinado el paciente antes del ingreso.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Identificación del episodio</items>
+        <items id="description">Un identificador para el episodio de atención.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Médicos responsables</items>
+        <items id="description">Detalles sobre el especialista y los médicos responsables encargados de la atención durante el episodio.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Número de la historia clínica</items>
+        <items id="description">Identificación del número de la historia clínica.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Ubicación</items>
+        <items id="description">Un organismo, dirección física o dirección estructurada describiendo el lugar donde el individuo estaba ubicado durante el episodio de salud.</items>
+        <items id="comment">Por ejemplo: 2a planta, ala "Moorhouse", Edificio "Turnbull" del Hospital General.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Ubicación física</items>
+        <items id="description">La ubicación física del paciente dentro de la institución durante el episodio de atención.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Llegada a la ubicación</items>
+        <items id="description">La fecha en que el individuo se trasladó a la ubicación interna de la institución.</items>
+        <items id="comment">Por ejemplo, la fecha en que se trasladó a un nuevo pabellón o cama.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Final de la ubicación</items>
+        <items id="description">La fecha en que el paciente se trasladó fuera de la ubicación interna de la institución.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Unidad responsable</items>
+        <items id="description">La unidad de servicios clínicos asignada para atender al paciente.</items>
+        <items id="comment">Por ejemplo: Unidad ortopédica A.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Pabellón</items>
+        <items id="description">El nombre del pabellón dentro de la institución donde el individuo está ubicado.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Habitación</items>
+        <items id="description">El nombre de la Habitación dentro de la institución donde el individuo está ubicado.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Cama</items>
+        <items id="description">El nombre de la cama de la institución donde el individuo está ubicado.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Categoría de ubicación</items>
+        <items id="description">El tipo de ubicación.</items>
+        <items id="comment">Por ejemplo: unidad de cuidados intensivos; unidad de alta dependencia.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Categoría de la aseguradora de salud</items>
+        <items id="description">El tipo de aseguradora de salud que se puede aplicar al episodio.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Médico de traslado</items>
+        <items id="description">Detalles sobre los médicos responsables de trasladar al paciente desde el origen.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*DV_IDENTIFIER (en)</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

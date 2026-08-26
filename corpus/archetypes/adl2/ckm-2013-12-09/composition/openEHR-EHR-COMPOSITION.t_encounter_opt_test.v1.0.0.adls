@@ -1,0 +1,44 @@
+template (adl_version=2.0.6; rm_release=1.0.0)
+	openEHR-EHR-COMPOSITION.t_encounter_opt_test.v1.0.0
+
+specialize
+	openEHR-EHR-COMPOSITION.encounter.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openehr.org>">
+		["organisation"] = <"OpenEHR Foundation <http://www.openehr.org>">
+	>
+	copyright = <"Copyright (c) 2016 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"???">
+		>
+	>
+
+definition
+	COMPOSITION[id1.1] 	matches {
+		content matches {
+			use_archetype OBSERVATION [id0.1,openEHR-EHR-OBSERVATION.apgar.v1]
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Test OPT2">
+				description = <"-">
+			>
+			["id0.1"] = <
+				text = <"Apgar result">
+				description = <"-">
+			>
+		>
+	>

@@ -1,0 +1,236 @@
+﻿archetype (adl_version=1.4; uid=a888ebed-95ad-3959-93d0-014aa34b6089)
+	openEHR-EHR-OBSERVATION.easi_score.v0
+
+concept
+	[at0000]	-- EASI score
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"HANDIHealth,UK">
+		["email"] = <"ian@handihealth.org">
+		["date"] = <"2015-02-18">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of the Atopic dermatitis EASI score.">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Dmitri Wall, Irish Skin Foundation", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"7761D1DE43F2CD199FE62C495058E750">
+		["build_uid"] = <"1715593a-6121-400e-b007-1472650c21aa">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- EASI score
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									CLUSTER[at0004] occurrences matches {0..*} matches {    -- Body area
+										name matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0005,    -- Head and neck
+													at0006,    -- Upper limbs
+													at0007,    -- Trunk
+													at0008]    -- Lower limbs
+												}
+											}
+										}
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0009] occurrences matches {0..*} matches {    -- Severity index
+												name matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0010,    -- Redness
+															at0011,    -- Thickness
+															at0012,    -- Crusting
+															at0013]    -- Lichenification
+														}
+													}
+												}
+												value matches {
+													0|[local::at0014],
+													1|[local::at0015],
+													2|[local::at0016],
+													3|[local::at0017]
+												}
+											}
+											ELEMENT[at0018] occurrences matches {0..1} matches {    -- Affected area
+												value matches {
+													0|[local::at0019],
+													1|[local::at0020],
+													2|[local::at0021],
+													3|[local::at0022],
+													4|[local::at0023],
+													5|[local::at0024]
+												}
+											}
+										}
+									}
+									ELEMENT[at0025] occurrences matches {0..1} matches {    -- Total EASI score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..72|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0026] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0027] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"EASI score">
+					description = <"Atopic dermatitis EASI score.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Body area">
+					description = <"The part of the body being assessed.">
+				>
+				["at0005"] = <
+					text = <"Head and neck">
+					description = <"Head and neck skin area.">
+				>
+				["at0006"] = <
+					text = <"Upper limbs">
+					description = <"Upper limb skin area.">
+				>
+				["at0007"] = <
+					text = <"Trunk">
+					description = <"The trunk skin area.">
+				>
+				["at0008"] = <
+					text = <"Lower limbs">
+					description = <"Lower limbs skin area.">
+				>
+				["at0009"] = <
+					text = <"Severity index">
+					description = <"The level of severity of the symptom for a representative part of the body area.">
+				>
+				["at0010"] = <
+					text = <"Redness">
+					description = <"The extent of redness.">
+				>
+				["at0011"] = <
+					text = <"Thickness">
+					description = <"The thickness of the lesion.">
+				>
+				["at0012"] = <
+					text = <"Crusting">
+					description = <"The extent of crusting.">
+				>
+				["at0013"] = <
+					text = <"Lichenification">
+					description = <"The extent of lichenification.">
+				>
+				["at0014"] = <
+					text = <"Absent">
+					description = <"The symptom is absent.">
+				>
+				["at0015"] = <
+					text = <"Mild">
+					description = <"The symptom is mild.">
+				>
+				["at0016"] = <
+					text = <"Moderate">
+					description = <"The symptom is moderate.">
+				>
+				["at0017"] = <
+					text = <"Severe">
+					description = <"The symptom is severe.">
+				>
+				["at0018"] = <
+					text = <"Affected area">
+					description = <"The extent of the area affected.">
+				>
+				["at0019"] = <
+					text = <"1% to 9%">
+					description = <"1% to 9% of the body area is affected.">
+				>
+				["at0020"] = <
+					text = <"10% to 29%">
+					description = <"10% to 29% of the body area is affected.">
+				>
+				["at0021"] = <
+					text = <"30% to 49%">
+					description = <"30% to 49% of the body area is affected.">
+				>
+				["at0022"] = <
+					text = <"50% to 69%">
+					description = <"50% to 69% of the body area is affected.">
+				>
+				["at0023"] = <
+					text = <"70% to 89%">
+					description = <"70% to 89% of the body area is affected.">
+				>
+				["at0024"] = <
+					text = <"90% to 100%">
+					description = <"90% to 100% of the body area is affected.">
+				>
+				["at0025"] = <
+					text = <"Total EASI score">
+					description = <"The total EASI score.">
+				>
+				["at0026"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0027"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+	>

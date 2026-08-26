@@ -1,0 +1,196 @@
+﻿archetype (adl_version=1.4; uid=f010cca0-3786-4407-a43f-34babe7ff819)
+	openEHR-EHR-OBSERVATION.ejection_fraction-left_ventricle.v0
+specialise
+	openEHR-EHR-OBSERVATION.ejection_fraction.v0
+
+concept
+	[at0000.1]	-- Left ventricular ejection fraction
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2021-01-29">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the calculated ejection fraction from the left ventricle of the heart.">
+			use = <"Use to record the calculated ejection fraction from the left ventricle of the heart.
+
+The volume measurements will be recorded in other archetypes, specific for the purpose.
+
+Measurements of ejection fraction for the same chamber, but by different modalities, are not interchangeable.">
+			keywords = <"ejection", "fraction", "ef">
+			misuse = <"Not to be used to record the ejection fraction for any anatomical site other than the left ventricle - use the parent archetype OBSERVATION.ejection_fraction for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"9156AFCB08A57CD7B468425E2D1B0644">
+		["build_uid"] = <"5820d94c-27eb-4e72-a565-52ca350ae265">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000.1] matches {    -- Left ventricular ejection fraction
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004.1] occurrences matches {0..1} matches {    -- Chamber
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::at0.1]    -- Left ventricle
+												}
+											}
+										}
+									}
+									ELEMENT[at0005] occurrences matches {0..1} matches {    -- Specific site
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0006] matches {    -- Ejection fraction
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::507]>
+												list = <
+													["1"] = <
+														units = <"%">
+														magnitude = <|0.0..100.0|>
+													>
+												>
+											>
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0007] matches {    -- Item tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0008] occurrences matches {0..1} matches {    -- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0009] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0010] occurrences matches {0..1} matches {    -- Modality
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {    -- Equation
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0012] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Left ventricular ejection fraction">
+					description = <"The volumetric fraction of fluid ejected from the left ventricle with each heartbeat.">
+				>
+				["at0004.1"] = <
+					text = <"Chamber">
+					description = <"The organ or part of organ where the volumes were measured.">
+					comment = <"For example: atrium; left ventricle; gall bladder; leg vein">
+				>
+				["at0.1"] = <
+					text = <"Left ventricle">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"Ejection fraction">
+					description = <"The calculation of the volumetric fraction of fluid volume ejected from a chamber when it contracts.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0006"] = <
+					text = <"Ejection fraction">
+					description = <"The calculated volumetric fraction based on volume measurements taken from the identified chamber or specific site.">
+				>
+				["at0004"] = <
+					text = <"Chamber">
+					description = <"The organ or part of organ where the volumes were measured.">
+					comment = <"For example: atrium; left ventricle; gall bladder; leg vein">
+				>
+				["at0009"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0011"] = <
+					text = <"Equation">
+					description = <"The equation used to calculate the ejection fraction.">
+				>
+				["at0012"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0007"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0008"] = <
+					text = <"Confounding factors">
+					description = <"Issues or factors that may impact on the calculation of ejection fraction, not captured in other fields.">
+				>
+				["at0010"] = <
+					text = <"Modality">
+					description = <"The modality used to measure the ejection fraction volumes.">
+					comment = <"For example: echocardiography; MRI; or nuclear medicine scan. Measurements by different modalities are usually not interchangeable.">
+				>
+				["at0005"] = <
+					text = <"Specific site">
+					description = <"Specific anatomical location of volume measurements when identification of the 'Chamber' is not sufficient.">
+					comment = <"For example: identification of specific leg veins.">
+				>
+			>
+		>
+	>

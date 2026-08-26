@@ -1,0 +1,503 @@
+﻿archetype (adl_version=1.4; uid=ee5543da-6015-4107-bb40-30cb63ff0c31)
+	openEHR-EHR-OBSERVATION.g8_screening_tool.v0
+
+concept
+	[at0000]	-- G-8 screening tool
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Vebjørn Arntzen">
+				["organisation"] = <"Oslo University Hospital, Norway">
+				["email"] = <"varntzen@ous-hf.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Vebjørn Arntzen">
+		["organisation"] = <"Oslo University Hospital, Norway">
+		["email"] = <"varntzen@ous-hf.no">
+		["date"] = <"2025-08-18">
+	>
+	details = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere skrøpelighetskriterier i eldre kreftpasienter for å være i stand til å identifisere de som kan ha nytte av en grundig geriatrisk vurdering (Comprehensive Geriatric Assessment - CGA).">
+			use = <"Bruk for å registrere skrøpelighetskriterier i eldre kreftpasienter for å være i stand til å identifisere de som kan ha nytte av en grundig geriatrisk vurdering (Comprehensive Geriatric Assessment - CGA).">
+			keywords = <"skrøpelighet", "kreft", "geriatrisk", "onkologi", "G8">
+			misuse = <"Skal ikke brukes for å registrere utsagn eller funn om individets helsestatus utenom skåringsverktøyet G-8 screening tool. Bruk andre passende arketyper for dette formålet.">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record frailty criteria in older cancer patients to be able to identify who would benefit from comprehensive geriatric assessment (CGA).">
+			use = <"Use to record frailty criteria in older cancer patients to be able to identify who would benefit from comprehensive geriatric assessment (CGA).">
+			keywords = <"frailty, cancer, geriatric, oncology, G8", ...>
+			misuse = <"Not to be used to record statements of, or findings on the individual's health status outside of the G-8 screening tool. Use other appropriate archetypes for this purpose.">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation, openEHR Norway">
+		["references"] = <"Bellera, C. A., Rainfray, M., Mathoulin-Pélissier, S., Mertens, C., Delva, F., Fonck, M., & Soubeyran, P. L. (2012). Screening older cancer patients: first evaluation of the G-8 geriatric screening tool. Annals of Oncology, 23(8), 2166–2172. https://doi.org/10.1093/annonc/mdr587
+
+G-8 questionnaire Ptt Id: Date Emne Mulig svar (score). (n.d.). Retrieved August 22, 2025, from https://www.legeforeningen.no/contentassets/4fc9531884464f869deece6ac386caaf/g8-questionnaire-med-score-no.pdf">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"C5284CCAB6F83647790FE4BC69EAA644">
+		["build_uid"] = <"12e71261-30aa-43b0-99f5-83e7543f3f1a">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- G-8 screening tool
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Has food intake declined over the past 3 months due to loss of appetite, digestive problems, chewing, or swallowing difficulties?
+										value matches {
+											0.0|[local::at0038],
+											1.0|[local::at0039],
+											2.0|[local::at0040]
+										}
+									}
+									ELEMENT[at0008] occurrences matches {0..1} matches {    -- Weight loss during the last 3 months?
+										value matches {
+											0.0|[local::at0009],
+											1.0|[local::at0010],
+											2.0|[local::at0011],
+											3.0|[local::at0012]
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {    -- Mobility?
+										value matches {
+											0.0|[local::at0014],
+											1.0|[local::at0015],
+											2.0|[local::at0016]
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {    -- Neuropsychological problems?
+										value matches {
+											0.0|[local::at0018],
+											1.0|[local::at0019],
+											2.0|[local::at0020]
+										}
+									}
+									ELEMENT[at0021] occurrences matches {0..1} matches {    -- Body mass index (BMI)?
+										value matches {
+											0.0|[local::at0022],
+											1.0|[local::at0023],
+											2.0|[local::at0024],
+											3.0|[local::at0025]
+										}
+									}
+									ELEMENT[at0026] occurrences matches {0..1} matches {    -- Takes more than three prescription drugs per day?
+										value matches {
+											0.0|[local::at0027],
+											1.0|[local::at0028]
+										}
+									}
+									ELEMENT[at0029] occurrences matches {0..1} matches {    -- In comparison with other people of the same age, how does the patient consider his/her health status?
+										value matches {
+											0.0|[local::at0045],
+											0.5|[local::at0046],
+											1.0|[local::at0047],
+											2.0|[local::at0048]
+										}
+									}
+									ELEMENT[at0031] occurrences matches {0..1} matches {    -- Age
+										value matches {
+											0.0|[local::at0032],
+											1.0|[local::at0033],
+											2.0|[local::at0034]
+										}
+									}
+									ELEMENT[at0035] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::380]>
+												list = <
+													["1"] = <
+														units = <"1">
+														magnitude = <|0.0..17.0|>
+														precision = <|1|>
+													>
+												>
+											>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0049] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0051] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"G-8 screening tool">
+					description = <"An assessment tool designed to identify elderly cancer patients who would benefit from comprehensive geriatric assessment (CGA).">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Has food intake declined over the past 3
+months due to loss of appetite, digestive problems, chewing, or swallowing difficulties?">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Weight loss during the last 3
+months?">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"weight loss >3
+kg">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"does not know">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"weight loss between 1 and 3
+kg">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"no weight loss">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Mobility?">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"bed or chair bound">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"able to get out of bed/chair but does not go out">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"goes out">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Neuropsychological problems?">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"severe dementia or depression">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"mild dementia">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"no psychological problems">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Body mass index (BMI)?">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"BMI <19 kg/m²">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"BMI 19 to <21 kg/m²">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"BMI 21 to <23 kg/m²">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"BMI ≥23 kg/m²">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"Takes more than three prescription drugs per day?">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"yes">
+					description = <"">
+				>
+				["at0028"] = <
+					text = <"no">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"In comparison with other people of the same age, how does the patient consider his/her health status?">
+					description = <"">
+				>
+				["at0031"] = <
+					text = <"Age">
+					description = <"The individuals age at time of screening.">
+				>
+				["at0032"] = <
+					text = <">85">
+					description = <"">
+				>
+				["at0033"] = <
+					text = <"80-85">
+					description = <"">
+				>
+				["at0034"] = <
+					text = <"<80">
+					description = <"">
+				>
+				["at0035"] = <
+					text = <"Total score">
+					description = <"The total sum of each component parameter for the G8 screening tool.">
+				>
+				["at0038"] = <
+					text = <"severe decrease in food intake">
+					description = <"">
+				>
+				["at0039"] = <
+					text = <"moderate decrease in food intake">
+					description = <"">
+				>
+				["at0040"] = <
+					text = <"no decrease in food intake">
+					description = <"">
+				>
+				["at0045"] = <
+					text = <"not as good">
+					description = <"">
+				>
+				["at0046"] = <
+					text = <"does not know">
+					description = <"">
+				>
+				["at0047"] = <
+					text = <"as good">
+					description = <"">
+				>
+				["at0048"] = <
+					text = <"better">
+					description = <"">
+				>
+				["at0049"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0051"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000"] = <
+					text = <"G-8 screening tool">
+					description = <"Et vurderingsverktøy som er utviklet for å identifisere eldre kreftpasienter som kan ha nytte av en grundig geriatrisk vurdering (Comprehensive Geriatric Assessment - CGA).">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Uspesifisert hendelse">
+					description = <"Standard uspesifisert tidspunkt- eller intervallhendelse som kan defineres mer eksplisitt i et templat eller i en applikasjon.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Er matinntaket redusert de siste 3 måneder pga manglende appetitt, fordøyelsesproblemer, tyggevansker eller svelgvansker?">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Vekttap de siste 3 måneder?">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"vekttap > 3 kg">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"vet ikke">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"vektttap mellom 1 og 3 kg">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"intet vekttap">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Mobilitet?">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"ligger til sengs eller sitter i stol">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"kan komme ut av seng/stol, men går ikke ut">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"går ut">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Neuropsykologiske problemer?">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"alvorlig demens eller depresjon">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"mild demens">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"ingen psykologiske problemer">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"BMI?">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"BMI <19 kg/m²">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"BMI 19 to <21 kg/m²">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"BMI 21 to <23 kg/m²">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"BMI ≥23 kg/m²">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"Bruker mer enn tre reseptbelagte medisiner om dagen?">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"ja">
+					description = <"">
+				>
+				["at0028"] = <
+					text = <"nei">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"Hvordan vurderer patienten sin helse sammenlignet med andre mennesker på samme alder?">
+					description = <"">
+				>
+				["at0031"] = <
+					text = <"Alder">
+					description = <"Individets alder ved skåringstidspunktet.">
+				>
+				["at0032"] = <
+					text = <">85">
+					description = <"">
+				>
+				["at0033"] = <
+					text = <"80-85">
+					description = <"">
+				>
+				["at0034"] = <
+					text = <"<80">
+					description = <"">
+				>
+				["at0035"] = <
+					text = <"Totalskår">
+					description = <"Summen av poeng for hver enkelt parameter i skåringsverktøyet G8.">
+				>
+				["at0038"] = <
+					text = <"alvorlig reduksjon i matinntak">
+					description = <"">
+				>
+				["at0039"] = <
+					text = <"moderat reduksjon i matinntak">
+					description = <"">
+				>
+				["at0040"] = <
+					text = <"ingen reduksjon i matinntak">
+					description = <"">
+				>
+				["at0045"] = <
+					text = <"ikke så god">
+					description = <"">
+				>
+				["at0046"] = <
+					text = <"vet ikke">
+					description = <"">
+				>
+				["at0047"] = <
+					text = <"like god">
+					description = <"">
+				>
+				["at0048"] = <
+					text = <"bedre">
+					description = <"">
+				>
+				["at0049"] = <
+					text = <"*Item tree (en)">
+					description = <"@ internal @">
+				>
+				["at0051"] = <
+					text = <"Tilleggsinformasjon">
+					description = <"Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.">
+					comment = <"For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.">
+				>
+			>
+		>
+	>

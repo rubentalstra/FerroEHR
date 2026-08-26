@@ -1,0 +1,153 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.nyha_heart_failure_score.v1
+
+concept
+	[at0000]	-- NYHA Heart failure classification
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2012-04-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Records a functional classification of heart failure related symptoms, as defined by the New York Heart Association.">
+			use = <"Use to record a classification of heart failure releated symptoms, as defined by the New York Heart Association.">
+			keywords = <"heart", "failure", "cardiac", "breathlessness", "fatigue">
+			misuse = <"Should not be used to record a classifiaction or assessment of symptoms outside the context of heart failure.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"American Heart Association (1994) AHA medical/scientific statement: 1994 revisions to classification of functional capacity and objective assessment of patients with diseases of the heart. Circulation 90:644–645.">
+		["MD5-CAM-1.0.1"] = <"0CDDD45A3ADB04D1FB3BAD9282D975B5">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- NYHA Heart failure classification
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Heart failure classification
+										value matches {
+											1|[local::at0005], 	-- Class I
+											2|[local::at0006], 	-- Class II
+											3|[local::at0007], 	-- Class III
+											4|[local::at0008]  	-- Class IV
+										}
+										null_flavour existence matches {0..1} matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[openehr::
+													253, 
+													271, 
+													272, 
+													273]
+												}
+											}
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0010] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0011] occurrences matches {0..*} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"Snomed", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"NYHA Heart failure classification">
+					description = <"A classification of heart failure related symptoms defined by the New York Heart Association.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Any event.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Heart failure classification">
+					description = <"The functional classification of heart failure based on patient symptoms.">
+				>
+				["at0005"] = <
+					text = <"Class I">
+					description = <"No limitation of physical activity. Ordinary physical activity does not cause undue fatigue, palpitation, or dyspnoea.">
+				>
+				["at0006"] = <
+					text = <"Class II">
+					description = <"Slight limitation of physical activity. Comfortable at rest, but ordinary physical activity results in fatigue, palpitation, or dyspnoea.">
+				>
+				["at0007"] = <
+					text = <"Class III">
+					description = <"Marked limitation of physical activity. Comfortable at rest, but less than ordinary activity results in fatigue, palpitation, or dyspnoea.">
+				>
+				["at0008"] = <
+					text = <"Class IV">
+					description = <"Unable to carry on any physical activity without discomfort. Symptoms at rest. If any physical activity is undertaken, discomfort is increased.">
+				>
+				["at0009"] = <
+					text = <"Comment">
+					description = <"Additional comment about the NYHA heart failure classification result.">
+				>
+				["at0010"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0011"] = <
+					text = <"Confounding factors">
+					description = <"Record any issues or factors that may impact on the classification of heart failure symptoms.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["Snomed"] = <
+			items = <
+				["at0000"] = <[Snomed::420816009]>
+				["at0004"] = <[Snomed(1107Intl)::420816009]>
+				["at0005"] = <[Snomed::420300004]>
+				["at0006"] = <[Snomed::421704003]>
+				["at0007"] = <[Snomed::420913000]>
+				["at0008"] = <[Snomed::421704003]>
+			>
+		>
+	>

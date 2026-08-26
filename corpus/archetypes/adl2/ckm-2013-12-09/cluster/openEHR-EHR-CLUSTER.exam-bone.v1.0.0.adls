@@ -1,0 +1,127 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam-bone.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.exam.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics, Australia">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"10/07/2010">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A generic cluster for recording findings on physical examination.">
+			use = <"">
+			keywords = <"examination", "physical">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"26781AEE7BA5912E491AB8ECF26A8D3C">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Examination of bone
+		/items matches {
+			before [id5]
+			ELEMENT[id0.9] occurrences matches {0..1} matches {	-- Name of bone
+				value matches {
+					DV_CODED_TEXT[id0.16] matches {
+						defining_code 
+					}
+				}
+			}
+			ELEMENT[id3.1] 	-- Clinical description
+		}
+		/items[id9]/items matches {
+			before [id10]
+			CLUSTER[id0.12] matches {	-- Abnormal findings
+				items matches {
+					ELEMENT[id0.14] occurrences matches {0..1} matches {	-- Location
+						value matches {
+							DV_TEXT[id0.17] 
+						}
+					}
+					ELEMENT[id0.15] occurrences matches {0..1} matches {	-- Clinical description
+						value matches {
+							DV_CODED_TEXT[id0.18] matches {
+								defining_code 
+							}
+						}
+					}
+					ELEMENT[id0.11] occurrences matches {0..1} matches {	-- Breach of bone integrity
+						value matches {
+							DV_BOOLEAN[id0.19] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id0.13] occurrences matches {0..1} matches {	-- Angulation present
+						value matches {
+							DV_BOOLEAN[id0.20] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id0.10] occurrences matches {0..1} matches {	-- Crepitus present
+						value matches {
+							DV_BOOLEAN[id0.21] matches {
+								value matches {True}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.10"] = <
+				text = <"Crepitus present">
+				description = <"Presence of bone crepitus.">
+			>
+			["id0.11"] = <
+				text = <"Breach of bone integrity">
+				description = <"Presence of fracture or displacement of bone on palpation.">
+			>
+			["id0.12"] = <
+				text = <"Abnormal findings">
+				description = <"Details of any abnormal findings.">
+			>
+			["id0.13"] = <
+				text = <"Angulation present">
+				description = <"Presence of angulation in bone.">
+			>
+			["id0.14"] = <
+				text = <"Location">
+				description = <"Location of abnormality.">
+			>
+			["id0.15"] = <
+				text = <"Clinical description">
+				description = <"Description of abnormal local bony findings.">
+			>
+			["id0.9"] = <
+				text = <"Name of bone">
+				description = <"Name of bone under examination.">
+			>
+			["id1.1"] = <
+				text = <"Examination of bone">
+				description = <"Record clinical findings on physical examination of a bone.">
+			>
+			["id3.1"] = <
+				text = <"Clinical description">
+				description = <"Textural description of the bone being examined.">
+			>
+		>
+	>

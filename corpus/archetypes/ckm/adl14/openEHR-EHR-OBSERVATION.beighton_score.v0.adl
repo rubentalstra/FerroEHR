@@ -1,0 +1,301 @@
+﻿archetype (adl_version=1.4; uid=d927b25c-6074-48f2-90cb-76cad5437682)
+	openEHR-EHR-OBSERVATION.beighton_score.v0
+
+concept
+	[at0000]	-- Beighton hypermobility score
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Hildegard Franke">
+		["organisation"] = <"freshEHR Clinical Informatics Ltd.">
+		["email"] = <"hildi@freshehr.com">
+		["date"] = <"2016-10-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the details of the Beighton hypermobility score for quantifying joint laxity and hypermobility.">
+			use = <"To be used to record a the Beighton hypermobility score as one of the criteria in diagnosing benign joint hypermobility syndrome.">
+			keywords = <"beighton", "hypermobility", "joint laxity", "BHJS">
+			misuse = <"">
+			copyright = <"© Clinical Models UK">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"UK Clinical Models">
+		["current_contact"] = <"Hildegard Franke, freshEHR Clinical Informatics Ltd.<hildi@freshehr.com>">
+		["original_namespace"] = <"uk.org.clinicalmodels">
+		["original_publisher"] = <"UK Clinical Models">
+		["custodian_namespace"] = <"uk.org.clinicalmodels">
+		["MD5-CAM-1.0.1"] = <"285F96E506C9C4349CCE148658119238">
+		["build_uid"] = <"47bf82cf-256d-4958-96b2-f95ace7660e7">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Beighton hypermobility score
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {	-- Point in time
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Left little finger
+										value matches {
+											0|[local::at0005], 	-- Less than or equal to 90 degrees
+											1|[local::at0006]  	-- Beyond 90 degrees
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {	-- Right little finger
+										value matches {
+											0|[local::at0008], 	-- Less than or equal to 90 degrees
+											1|[local::at0009]  	-- Beyond 90 degrees
+										}
+									}
+									ELEMENT[at0014] occurrences matches {0..1} matches {	-- Left thumb
+										value matches {
+											0|[local::at0015], 	-- No passive dorsiflexion to flexor
+											1|[local::at0016]  	-- Passive dorsiflexion to flexor
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {	-- Right thumb
+										value matches {
+											0|[local::at0018], 	-- No passive dorsiflexion to flexor
+											1|[local::at0019]  	-- Passive dorsiflexion to flexor
+										}
+									}
+									ELEMENT[at0020] occurrences matches {0..1} matches {	-- Left elbow
+										value matches {
+											0|[local::at0021], 	-- Less than or equal to 10 degrees
+											1|[local::at0022]  	-- Beyond 10 degrees
+										}
+									}
+									ELEMENT[at0023] occurrences matches {0..1} matches {	-- Right elbow
+										value matches {
+											0|[local::at0024], 	-- Less than or equal to 10 degrees
+											1|[local::at0025]  	-- Beyond 10 degrees
+										}
+									}
+									ELEMENT[at0026] occurrences matches {0..1} matches {	-- Left knee
+										value matches {
+											0|[local::at0027], 	-- Less than or equal to 10 degrees
+											1|[local::at0028]  	-- Beyond 10 degrees
+										}
+									}
+									ELEMENT[at0029] occurrences matches {0..1} matches {	-- Right knee
+										value matches {
+											0|[local::at0033], 	-- Less than or equal to 10 degrees
+											1|[local::at0034]  	-- Beyond 10 degrees
+										}
+									}
+									ELEMENT[at0030] occurrences matches {0..1} matches {	-- Trunk
+										value matches {
+											0|[local::at0031], 	-- Not resting flat
+											1|[local::at0032]  	-- Resting flat
+										}
+									}
+									ELEMENT[at0035] occurrences matches {0..1} matches {	-- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..9|}
+											}
+										}
+									}
+									ELEMENT[at0036] occurrences matches {0..1} matches {	-- Clinical interpretation
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0010] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0011] occurrences matches {0..*} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0012] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0013] occurrences matches {0..*} matches {	-- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Beighton hypermobility score">
+					description = <"The Beighton hypermobility score for quantifying joint laxity and hypermobility.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Point in time">
+					description = <"A specific date and/or time which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Left little finger">
+					description = <"Assessment of passive dorsiflexion in the left little (fifth) finger.">
+				>
+				["at0005"] = <
+					text = <"Less than or equal to 90 degrees">
+					description = <"Passive dorsiflexion in the left little finger is less than or equal to 90 degrees.">
+				>
+				["at0006"] = <
+					text = <"Beyond 90 degrees">
+					description = <"Passive dorsiflexion in the left little finger is beyond 90 degrees.">
+				>
+				["at0007"] = <
+					text = <"Right little finger">
+					description = <"Assessment of passive dorsiflexion in the right little (fifth) finger.">
+				>
+				["at0008"] = <
+					text = <"Less than or equal to 90 degrees">
+					description = <"Passive dorsiflexion in the right little finger is less than or equal to 90 degrees.">
+				>
+				["at0009"] = <
+					text = <"Beyond 90 degrees">
+					description = <"Passive dorsiflexion in the right little finger is beyond 90 degrees.">
+				>
+				["at0010"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0011"] = <
+					text = <"Confounding factors">
+					description = <"Narrative record of any issues or factors that may have contributed to the Beighton score.">
+				>
+				["at0012"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0013"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local context or to align with other reference models/formalisms.">
+					comment = <"e.g. Local hospital departmental infomation or additional metadata to align with HL7 or CDISC equivalents.">
+				>
+				["at0014"] = <
+					text = <"Left thumb">
+					description = <"Assessment of passive dorsiflexion of the left thumb.">
+				>
+				["at0015"] = <
+					text = <"No passive dorsiflexion to flexor">
+					description = <"Passive dorsiflexion in left thumb is not observed to be to the flexor aspect of the forearm.">
+				>
+				["at0016"] = <
+					text = <"Passive dorsiflexion to flexor">
+					description = <"Passive dorsiflexion in left thumb is observed to be to the flexor aspect of the forearm.">
+				>
+				["at0017"] = <
+					text = <"Right thumb">
+					description = <"Assessment of passive dorsiflexion of the right thumb.">
+				>
+				["at0018"] = <
+					text = <"No passive dorsiflexion to flexor">
+					description = <"Passive dorsiflexion in right thumb is not observed to be to the flexor aspect of the forearm.">
+				>
+				["at0019"] = <
+					text = <"Passive dorsiflexion to flexor">
+					description = <"Passive dorsiflexion in right thumb is observed to be to the flexor aspect of the forearm.">
+				>
+				["at0020"] = <
+					text = <"Left elbow">
+					description = <"Assessment of hyperextension in left elbow.">
+				>
+				["at0021"] = <
+					text = <"Less than or equal to 10 degrees">
+					description = <"Hyperextension in left elbow is observed to be less than or equal to 10 degrees.">
+				>
+				["at0022"] = <
+					text = <"Beyond 10 degrees">
+					description = <"Hyperextension in left elbow is observed to be beyond 10 degrees.">
+				>
+				["at0023"] = <
+					text = <"Right elbow">
+					description = <"Assessment of hyperextension in right elbow.">
+				>
+				["at0024"] = <
+					text = <"Less than or equal to 10 degrees">
+					description = <"Hyperextension in right elbow is observed to be less than or equal to 10 degrees.">
+				>
+				["at0025"] = <
+					text = <"Beyond 10 degrees">
+					description = <"Hyperextension in right elbow is observed to be beyond 10 degrees.">
+				>
+				["at0026"] = <
+					text = <"Left knee">
+					description = <"Assessment of hyperextension in left knee.">
+				>
+				["at0027"] = <
+					text = <"Less than or equal to 10 degrees">
+					description = <"Hyperextension in left knee is observed to be less than or equal to 10 degrees.">
+				>
+				["at0028"] = <
+					text = <"Beyond 10 degrees">
+					description = <"Hyperextension in left knee is observed to be beyond 10 degrees.">
+				>
+				["at0029"] = <
+					text = <"Right knee">
+					description = <"Assessment of hyperextension in right knee.">
+				>
+				["at0030"] = <
+					text = <"Trunk">
+					description = <"Assessment of forward flexion of trunk with knees fully extended.">
+				>
+				["at0031"] = <
+					text = <"Not resting flat">
+					description = <"Palms and hands are observed to not rest flat on the floor.">
+				>
+				["at0032"] = <
+					text = <"Resting flat">
+					description = <"Palms and hands are observed to rest flat on the floor.">
+				>
+				["at0033"] = <
+					text = <"Less than or equal to 10 degrees">
+					description = <"Hyperextension in right knee is observed to be less than or equal to 10 degrees.">
+				>
+				["at0034"] = <
+					text = <"Beyond 10 degrees">
+					description = <"Hyperextension in left knee is observed to be beyond 10 degrees.">
+				>
+				["at0035"] = <
+					text = <"Total score">
+					description = <"Total score of all 9 elements of Beighton test.">
+				>
+				["at0036"] = <
+					text = <"Clinical interpretation">
+					description = <"Narrative interpretation of assessment.">
+				>
+			>
+		>
+	>

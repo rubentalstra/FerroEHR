@@ -1,0 +1,235 @@
+﻿archetype (adl_version=1.4; uid=e52933e8-52c0-4ccc-94e1-be07c218c87c)
+	openEHR-EHR-ADMIN_ENTRY.covid__outcomes.v0
+
+concept
+	[at0000]	-- COVID outcomes
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["fi"] = <
+			language = <[ISO_639-1::fi]>
+			author = <
+			>
+		>
+		["it"] = <
+			language = <[ISO_639-1::it]>
+			author = <
+				["name"] = <"Alessandro Sulis">
+				["organisation"] = <"CRS4 - Center for advanced studies, research and development in Sardinia, Pula (Cagliari), Italy">
+				["email"] = <"alessandro.sulis@crs4.it">
+			>
+		>
+	>
+description
+	original_author = <
+		["date"] = <"2020-03-10">
+	>
+	details = <
+		["fi"] = <
+			language = <[ISO_639-1::fi]>
+			purpose = <"*unknown(en)">
+			use = <"">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["it"] = <
+			language = <[ISO_639-1::it]>
+			purpose = <"*unknown(en)">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"FBF0E6D079EC77AAF1F60A67C354CFA9">
+		["build_uid"] = <"79977c30-bfaf-4fae-92f4-38df477336a3">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	ADMIN_ENTRY[at0000] matches {    -- COVID outcomes
+		data matches {
+			ITEM_TREE[at0001] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {    -- Health outcome
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0003,    -- Recovered/healthy
+									at0004,    -- Not recovered
+									at0005,    -- Death
+									at0006]    -- Unknown
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0007] occurrences matches {0..1} matches {    -- Date of release or death
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {    -- Total number of contacts
+						value matches {
+							DV_COUNT matches {*}
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::at0009]    -- Unknown
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"COVID outcomes">
+					description = <"COVID_ outcomes">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Health outcome">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Recovered/healthy">
+					description = <"Recovered/healthy">
+				>
+				["at0004"] = <
+					text = <"Not recovered">
+					description = <"Not recovered">
+				>
+				["at0005"] = <
+					text = <"Death">
+					description = <"Death">
+				>
+				["at0006"] = <
+					text = <"Unknown">
+					description = <"Unknown">
+				>
+				["at0007"] = <
+					text = <"Date of release or death">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"Total number of contacts">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Unknown">
+					description = <"Unknown">
+				>
+			>
+		>
+		["fi"] = <
+			items = <
+				["at0000"] = <
+					text = <"*COVID vaikutukset">
+					description = <"*COVID_ outcomes(en)">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Tervesvaikutus">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Parantunut / terve">
+					description = <"Parantunut / terve">
+				>
+				["at0004"] = <
+					text = <"Ei parantunut">
+					description = <"Ei parantunut">
+				>
+				["at0005"] = <
+					text = <"Menehtynyt">
+					description = <"Menehtynyt">
+				>
+				["at0006"] = <
+					text = <"Ei tietoa">
+					description = <"Ei tietoa">
+				>
+				["at0007"] = <
+					text = <"Uloskirjauksen tai menehtymisen ajankohta">
+					description = <"Uloskirjauksen tai menehtymisen ajankohta">
+				>
+				["at0008"] = <
+					text = <"Kontaktien kokonaismäärä">
+					description = <"Kontaktien määrä">
+				>
+				["at0009"] = <
+					text = <"Ei tiedossa">
+					description = <"Ei tiedossa">
+				>
+			>
+		>
+		["it"] = <
+			items = <
+				["at0000"] = <
+					text = <"Esito clinico COVID">
+					description = <"Esito clinico COVID">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Stato di salute">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Ristabilito/Sano">
+					description = <"Ristabilito/Sano ">
+				>
+				["at0004"] = <
+					text = <"Non ristabilito">
+					description = <"Non ristabilito">
+				>
+				["at0005"] = <
+					text = <"Morte">
+					description = <"Morte">
+				>
+				["at0006"] = <
+					text = <"Sconosciuto">
+					description = <"Sconosciuto">
+				>
+				["at0007"] = <
+					text = <"Data di dimissione o morte">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"Numero totale di accessi">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Sconosciuto">
+					description = <"Sconosciuto">
+				>
+			>
+		>
+	>

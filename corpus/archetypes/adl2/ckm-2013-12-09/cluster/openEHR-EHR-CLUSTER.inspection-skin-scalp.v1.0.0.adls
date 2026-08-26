@@ -1,0 +1,92 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.inspection-skin-scalp.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.inspection-skin.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"10/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the findings on inspection of the skin">
+			use = <"For use with the exam clusters for recording findings on inspection">
+			keywords = <"inspect", "visual", "skin">
+			misuse = <"Should only be used in the exam observation">
+		>
+	>
+
+definition
+	CLUSTER[id1.1.1] matches {	-- Inspection of scalp
+		/items matches {
+			before [id51]
+			CLUSTER[id0.0.62] occurrences matches {0..1} matches {	-- Hair
+				items matches {
+					ELEMENT[id0.0.64] occurrences matches {0..1} matches {	-- Clinical Description
+						value matches {
+							DV_CODED_TEXT[id0.0.66] matches {
+								defining_code 
+							}
+						}
+					}
+					ELEMENT[id0.0.65] occurrences matches {0..1} matches {	-- Colour
+						value matches {
+							DV_TEXT[id0.0.67] 
+						}
+					}
+					ELEMENT[id0.0.61] occurrences matches {0..1} matches {	-- Distribution of hair
+						value matches {
+							DV_TEXT[id0.0.68] 
+						}
+					}
+					ELEMENT[id0.0.63] occurrences matches {0..1} matches {	-- Thickness of hair
+						value matches {
+							DV_CODED_TEXT[id0.0.69] matches {
+								defining_code 
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.0.61"] = <
+				text = <"Distribution of hair">
+				description = <"Pattern or distribution of hair">
+			>
+			["id0.0.62"] = <
+				text = <"Hair">
+				description = <"*">
+			>
+			["id0.0.63"] = <
+				text = <"Thickness of hair">
+				description = <"*">
+			>
+			["id0.0.64"] = <
+				text = <"Clinical Description">
+				description = <"*">
+			>
+			["id0.0.65"] = <
+				text = <"Colour">
+				description = <"Natural colour of hair">
+			>
+			["id1.1.1"] = <
+				text = <"Inspection of scalp">
+				description = <"The findings on inspection of the scalp">
+			>
+		>
+	>

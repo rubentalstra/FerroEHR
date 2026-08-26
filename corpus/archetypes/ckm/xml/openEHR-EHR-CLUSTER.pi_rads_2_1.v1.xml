@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-03-01</original_author>
+    <original_author id="name">Bjørn Næss</original_author>
+    <original_author id="organisation">DIPS AS</original_author>
+    <original_author id="email">bna@dips.no</original_author>
+    <other_contributors>Andreas Abildgaard, OUS, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ivar Berge, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Christian Chevalley, ADOC, Thailand</other_contributors>
+    <other_contributors>Giovanni Delussu, crs4, Italy</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Helse Nord IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Alfred Honore, Haukeland, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>June Marie Nepstad Knappskog, Helse Nord IKT AS, Norway (openEHR Editor), Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Anjali Kulkarni, Karkinos, India</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Brad Littleton, Big Picture Medical, Australia</other_contributors>
+    <other_contributors>Ruth Lochan, Akademiska Sjukhuset Uppsala, Sweden</other_contributors>
+    <other_contributors>Martine Louise Nalum, DIPS AS, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Olha Nikolaieva, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Terje Nordberg, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Terje Sagmyr, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">American College of Radiology. PI-RADS. Retrieved from https://www.acr.org/Clinical-Resources/Reporting-and-Data-Systems/PI-RADS.&#xD;
+&#xD;
+Turkbey, B., Rosenkrantz, A. B., Haider, M. A., Padhani, A. R., Villeirs, G., Macura, K. J., Tempany, C. M., Choyke, P. L., Cornud, F., Margolis, D. J., Thoeny, H. C., Verma, S., Barentsz, J., &amp; Weinreb, J. C. (2019). Prostate Imaging Reporting and Data System Version 2.1: 2019 Update of Prostate Imaging Reporting and Data System Version 2. European Urology, 76(3), 340-351. https://doi.org/https://doi.org/10.1016/j.eururo.2019.02.033</other_details>
+    <other_details id="current_contact">June Marie Knappskog, june.marie.nepstad.knappskog@hnikt.no</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">F7C3E69EDC60D342645BC49DFAAC78FF</other_details>
+    <other_details id="build_uid">7697efcf-e12a-48aa-a199-e54db66af860</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere PI-RADS v2.1 klassifiseringen.</purpose>
+      <keywords>PI-RADS, prostatakreft, bilde-rapportering, mpMRI, standardisert, vurderingskategorier, lesjoner, klinisk signifikant, radiolog, urolog, MR prostata</keywords>
+      <use>Brukes for å registrere PI-RADS v2.1 klassifiseringen.&#xD;
+&#xD;
+Denne arketypen er designet for å være nøstet inn i en relevant CLUSTER-arketype, der én instans av denne arketypen brukes til å registrere PI-RADS klassifiseringen for hvert unormalt område identifisert i prostata.&#xD;
+&#xD;
+Per dags dato finnes det ingen validert norsk oversettelse av verktøyet. Man har derfor i arketypen valgt å beholde orginalspråk for dataelementene. Om det på et tidspunkt etableres en validert norsk oversettelse, vil arketypen oppdateres med denne.</use>
+      <misuse>Brukes ikke til å registrere noen versjon av PI-RADS-klassifiseringen annet enn versjon 2.1. For slike formål, bruk arketypene som er designet for hver spesifik versjon av PI-RADS.</misuse>
+      <copyright>© Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the PI-RADS v2.1 classification.</purpose>
+      <keywords>PI-RADS, prostate cancer, imaging-reporting, mpMRI, standarized, assessment categories, lesions, clinically significant, radiologists, urologists, MR prostate</keywords>
+      <use>Use to record the PI-RADS v2.1 classification.&#xD;
+&#xD;
+This archetype is designed to be nested within a relevant CLUSTER archetype, using one instance of this archetype to record the PI-RADS classification for each abnormal area identified in the prostate.</use>
+      <misuse>Not to be used to record any version of the PI-RADS classification other than version 2.1. For these purposes, use archetypes designed for each specific version of PI-RADS.</misuse>
+      <copyright>© Nasjonal IKT HF</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">June Marie Knappskog, June Marie Nepstad Knappskog</author>
+    <author id="organisation">Helse Nord IKT AS, Norway (Nasjonal IKT redaktør), Helse Nord IKT AS, Norway (openEHR Editor)</author>
+    <author id="email">june.marie.nepstad.knappskog@hnikt.no</author>
+  </translations>
+  <uid>
+    <value>4fddf2c7-88ee-46d7-ae4f-a16cf752c591</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.pi_rads_2_1.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">PI-RADS v2.1</items>
+        <items id="description">En klassifisering av et unormalt område identifisert ved mpMRI (multi-parametrisk magnetisk resonansavbildning) av prostata.&#xD;
+</items>
+        <items id="comment">PI-RADS - Prostate Imaging Reporting and Data System.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">PI-RADS</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0002">
+        <items id="text">Very low</items>
+        <items id="description">Clinically significant cancer is highly unlikely to be present.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Low</items>
+        <items id="description">Clinically significant cancer is unlikely to be present.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Intermediate</items>
+        <items id="description">The presence of clinically significant cancer is equivocal.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">High</items>
+        <items id="description">Clinically significant cancer is likely to be present.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Very high</items>
+        <items id="description">Clinically significant cancer is highly likely to be present.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">PI-RADS v2.1</items>
+        <items id="description">A classification of an abnormal area identified on mpMRI (multi-parametric magnetic resonance imaging) examination of the prostate.</items>
+        <items id="comment">PI-RADS - Prostate Imaging Reporting and Data System.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">PI-RADS</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0002">
+        <items id="text">Very low</items>
+        <items id="description">Clinically significant cancer is highly unlikely to be present.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Low</items>
+        <items id="description">Clinically significant cancer is unlikely to be present.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Intermediate</items>
+        <items id="description">The presence of clinically significant cancer is equivocal.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">High</items>
+        <items id="description">Clinically significant cancer is likely to be present.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Very high</items>
+        <items id="description">Clinically significant cancer is highly likely to be present.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

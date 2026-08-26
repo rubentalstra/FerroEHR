@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2019-02-01</original_author>
+    <original_author id="name">Gideon Giacomelli</original_author>
+    <original_author id="organisation">Charité Berlin, Germany</original_author>
+    <original_author id="email">gideon.giacomelli@charite.de</original_author>
+    <other_contributors>Gyri Aasland Gradek, Haukeland University Hospital, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Dag Erik Undlien, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Camilla F. Skjelbred, Telemark HF Hospital, Norway</other_contributors>
+    <other_contributors>Toril Fagerheim, University Hospital of North Norway, Norway</other_contributors>
+    <other_contributors>Francesca Frexia, CRS4, Italy</other_contributors>
+    <other_contributors>Sjur Gjerald, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Gunnar Houge, Haukeland University Hospital, Norway</other_contributors>
+    <other_contributors>Christina Jaeger-Schmidt, Heidelberg University Hospital, Germany</other_contributors>
+    <other_contributors>Florian Kaercher, Charité Berlin, Germany</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Cecilia Mascia, CRS4, Italy (openEHR Editor)</other_contributors>
+    <other_contributors>Simon Schumacher, HiGHmed, Germany</other_contributors>
+    <other_contributors>Asbjørg Stray-Pedersen, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Health Systems, Australia</other_contributors>
+    <other_contributors>Aurelie Tomczak, Uniklinikum Heidelberg, Germany</other_contributors>
+    <other_contributors>Paolo Uva, CRS4, Italy</other_contributors>
+    <other_contributors>Gianluigi Zanetti, CRS4, Italy</other_contributors>
+    <other_contributors>Rune Østern, St Olavs Hospital, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">den Dunnen JT, Dalgleish R, Maglott DR, Hart RK, Greenblatt MS, McGowan-Jordan J, Roux AF, Smith T, Antonarakis SE, Taschner PE. HGVS Recommendations for the Description of Sequence Variants: 2016 Update. Hum Mutat. 2016 Jun;37(6):564-9. doi: 10.1002/humu.22981. Epub 2016 Mar 25. PubMed PMID: 26931183.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">811AEF4A98143C4B70BA9CD97316F80F</other_details>
+    <other_details id="build_uid">aa20f6e1-9456-4bfc-b836-f3ef4238e780</other_details>
+    <other_details id="revision">1.1.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Informationen zu der in einer Sequenz beobachteten "Copy number variant" menschlicher DNA.</purpose>
+      <keywords>Copy number</keywords>
+      <keywords>Variation</keywords>
+      <keywords>genetisch</keywords>
+      <keywords>Genom</keywords>
+      <keywords>genomisch</keywords>
+      <keywords>Variante</keywords>
+      <keywords>DNA</keywords>
+      <keywords>Chromosom</keywords>
+      <keywords>Mutation</keywords>
+      <keywords>Nukleotid</keywords>
+      <use>Verwenden Sie diesen Archetyp, um die Details zu einer "Copy number variant" menschlicher DNA darzustellen, die in einer genomischen Sequenz beobachtet wurden.&#xD;
+&#xD;
+Dieser Archetyp wurde speziell für die Verwendung im SLOT "Structured variant" innerhalb des Archetyps CLUSTER.genomic_variant_result entwickelt, kann aber auch in anderen ENTRY- oder CLUSTER-Archetypen verwendet werden, sofern dies klinisch angemessen ist.&#xD;
+&#xD;
+Alle Definitionen und Beispiele in diesem Archetyp entsprechen der Nomenklatur der HGVS.</use>
+      <misuse>Nicht zur Darstellung von Informationen über Varianten nicht-menschlicher DNA oder jeglicher Art von RNA oder Protein.&#xD;
+&#xD;
+Nicht zur Darstellung von Informationen über Tandem-Wiederholungen verwenden. Verwenden Sie zu diesem Zweck den Archetyp CLUSTER.genomic_repeated_sequence_variant.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om en kopitallvariant (CNV) i humant DNA, funnet i en genomisk sekvens.</purpose>
+      <keywords>kopitall</keywords>
+      <keywords>variasjon</keywords>
+      <keywords>genetikk</keywords>
+      <keywords>genom</keywords>
+      <keywords>mutasjon</keywords>
+      <keywords>nukleotide</keywords>
+      <keywords>CNV</keywords>
+      <keywords>kopitallsavvik</keywords>
+      <keywords>Copy Number</keywords>
+      <keywords>DNA</keywords>
+      <keywords>kromosom</keywords>
+      <use>Brukes til å registrere detaljene om en kopitallsvariant (CNV) i humant DNA, funnet i en genomisk sekvens.&#xD;
+&#xD;
+Denne arketypen har blitt laget for å brukes i SLOT'et "'Strukturert variantbeskrivelse'" i arketypen CLUSTER.genomic_variant_result. Den kan også brukes i andre ENTRY- eller CLUSTER-arketyper der det er klinisk hensiktsmessig.&#xD;
+&#xD;
+Alle definisjoner og eksempler i denne arketypen følger HGVS-nomenklaturen.</use>
+      <misuse>Skal ikke brukes til å registrere informasjon om varianter av ikke-humant DNA, eller noen form for RNA eller protein.&#xD;
+&#xD;
+Skal ikke brukes til å registrere informasjon om tandem-repeterte sekvenser, bruk arketypen CLUSTER.repeated_sequence_variant til dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the details about a copy number variant of human DNA, observed in a genomic sequence.</purpose>
+      <keywords>copy number</keywords>
+      <keywords>variation</keywords>
+      <keywords>genetic</keywords>
+      <keywords>genomic</keywords>
+      <keywords>variant</keywords>
+      <keywords>DNA</keywords>
+      <keywords>chromosome</keywords>
+      <keywords>mutation</keywords>
+      <keywords>nucleotide</keywords>
+      <use>Use to record the details about a copy number variant of human DNA, observed in a genomic sequence.&#xD;
+&#xD;
+This archetype has been specifically designed to be used in the 'Structured variant' SLOT within the CLUSTER.genomic_variant_result archetype, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.&#xD;
+&#xD;
+All definitions and examples in this archetype follow the HGVS nomenclature.</use>
+      <misuse>Not to be used to record information about variants of non-human DNA, or any kind of RNA or protein.&#xD;
+&#xD;
+Not to be used to record information about tandem repeats. Use the CLUSTER.genomic_repeated_sequence_variant archetype for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Aurelie Tomczak, Natalia Strauch</author>
+    <author id="organisation">Institute of Pathology, University Hospital Heidelberg, Germany; Medizinische Hochschule Hannover</author>
+    <author id="email">au.tomczak@yahoo.com, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Liv Laugen</author>
+    <author id="organisation">​Oslo University Hospital, Norway</author>
+    <author id="email">liv.laugen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>69e173a1-6963-4313-a500-669da9fc11b4</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.genomic_copy_number_variant.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_COUNT&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_INTERVAL&lt;DV_COUNT&gt;</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>380</code_string>
+            </property>
+            <list>
+              <units>1</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.reference_sequence(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.reference_sequence(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Genomic copy number variant</items>
+        <items id="description">A human genetic sequence change where, compared to a genomic reference sequence, a DNA segment, usually larger than 1 kilobase (kb), was deleted or duplicated.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Start</items>
+        <items id="description">Position or range of possible positions of the first nucleotide of the CNV.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">End</items>
+        <items id="description">Position or range of possible positions of the last nucleotide of the CNV.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Total copy number</items>
+        <items id="description">Number of appearance of the allele.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Reference sequence</items>
+        <items id="description">The sequence file used as a reference to describe this variant.</items>
+        <items id="comment">Should be a specific chromosome most of the time.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Copy number change type</items>
+        <items id="description">Type of sequence alteration.</items>
+        <items id="comment">Different types of impact, such as low-level amplification or whole gene deletion, should be recorded using the 'Functional impact' Cluster within the CLUSTER.genomic_variant_result archetype.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Gain</items>
+        <items id="description">A sequence alteration whereby the copy number of a given region is greater than the reference sequence.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Loss</items>
+        <items id="description">A sequence alteration whereby the copy number of a given region is less than the reference sequence.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Genetisk variant - kopitall</items>
+        <items id="description">En endring av gensekvensen til et menneske hvor et DNA-segment, vanligvis større enn 1 kilobaser (kb), blir slettet eller duplisert, sammenliknet med referansesekvensen. Også kalt CNV. Engelsk: copy number.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Start</items>
+        <items id="description">Startposisjon eller området til mulige posisjoner til det første nukleotidet av kopitallvarianten (CNV).</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Slutt</items>
+        <items id="description">Sluttposisjonen eller området til mulige posisjoner til det siste nukleotidet av kopitallvarianten (CNV).</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Totalt kopitall</items>
+        <items id="description">Antall ganger allelet forekommer (antall kopier).</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Referansesekvens</items>
+        <items id="description">Sekvensfilen som har blitt brukt som en referanse for å beskrive varianten.</items>
+        <items id="comment">Vanligvis vil dette være et spesifikt kromosom.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Kopitall endringstype</items>
+        <items id="description">Type sekvensendring.</items>
+        <items id="comment">Ulike typer betydning (impact), for eksempel lav-nivå forsterkning eller sletting av hele genet, skal registreres ved hjelp av Clusteret "Funksjonell betydning" i arketypen genomic_variant_result (Genetisk variant resultat).</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tillegg</items>
+        <items id="description">En sekvensendring der kopitallet til en gitt region er større enn referansesekvensen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tap</items>
+        <items id="description">En sekvensendring der kopitallet til en gitt region er mindre enn referansesekvensen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Genomic copy number variant</items>
+        <items id="description">Eine menschliche genetische Sequenzänderung, bei der im Vergleich zu einer genomischen Referenzsequenz ein DNA-Segment, das normalerweise größer als 1 Kilobase (kb) ist, gelöscht oder dupliziert wurde.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Start</items>
+        <items id="description">Position or range of possible positions of the first nucleotide of the CNV.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">End</items>
+        <items id="description">Position or range of possible positions of the last nucleotide of the CNV.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Total copy number</items>
+        <items id="description">Number of appearance of the allele.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Reference sequence</items>
+        <items id="description">The sequence file used as a reference to describe this variant.</items>
+        <items id="comment">Should be a specific chromosome most of the time.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Copy number change type</items>
+        <items id="description">Type of sequence alteration.</items>
+        <items id="comment">Different type of impact, such as low-level amplification or whole gene deletion, should be recorded using the Reported impact Cluster within the CLUSTER.genomic_variant_result archetype.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Gain</items>
+        <items id="description">A sequence alteration whereby the copy number of a given region is greater than the reference sequence.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Loss</items>
+        <items id="description">A sequence alteration whereby the copy number of a given region is less than the reference sequence.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+
