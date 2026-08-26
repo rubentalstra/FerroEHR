@@ -22,6 +22,7 @@ use libfuzzer_sys::fuzz_target;
 use std::str::FromStr;
 
 use openehr_base::prelude::{ArchetypeId, HierObjectId, ObjectVersionId, VersionTreeId};
+use openehr_base::v1_3::base_types::identification::lexical::composite_ids_equal;
 
 fuzz_target!(|data: &[u8]| {
     // Identifiers arrive as text; non-UTF-8 is rejected by the HTTP layer long
@@ -40,14 +41,19 @@ fuzz_target!(|data: &[u8]| {
         let _ = ovid.creating_system_id_str();
         let _ = ovid.is_branch();
 
-        // The composite's own contract, checked rather than assumed: a value
-        // reassembled from the three parts this reader just produced must equal
-        // it. A reader that mis-slices one of the two separator kinds can still
-        // return Ok, and only a recomposition catches that.
-        assert_eq!(
-            ObjectVersionId::compose(&object_id, &system, &tree),
-            ovid,
-            "an OBJECT_VERSION_ID recomposed from its own parts must equal itself"
+        // A value reassembled from the parts this reader produced must
+        // IDENTIFY the same thing — a mis-slice moves a `::` boundary, which
+        // no case fold hides. BASE master05 §Composite Identifiers and Case
+        // makes the comparison case-insensitive; the typed `Uid` door renders
+        // a UUID part lowercase, so byte equality refused a legal spelling of
+        // the same identifier (#2746).
+        let recomposed = ObjectVersionId::compose(&object_id, &system, &tree);
+        assert!(
+            composite_ids_equal(recomposed.value(), ovid.value()),
+            "an OBJECT_VERSION_ID recomposed from its own parts must identify \
+             itself (master05 case-insensitive comparison): {} vs {}",
+            recomposed.value(),
+            ovid.value()
         );
     }
 

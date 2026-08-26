@@ -247,6 +247,27 @@ mod tests {
     /// The verbatim accessor preserves case where the typed one normalises it
     /// (BASE master05 §"Composite Identifiers and Case", case-preserving half).
     #[test]
+    fn uppercase_uuid_recomposes_to_the_same_identifier() {
+        let original = "8849182c-82ad-40A8-a07f-48ead4180515::ferroehr.example.org::1.2.3";
+        let o = ObjectVersionId::new(original).expect("a legal OBJECT_VERSION_ID");
+        assert_eq!(o.value(), original, "storage is case-preserving");
+        let recomposed = ObjectVersionId::compose(
+            &o.object_id(),
+            &o.creating_system_id(),
+            &o.version_tree_id(),
+        );
+        assert_eq!(
+            recomposed.value(),
+            "8849182c-82ad-40a8-a07f-48ead4180515::ferroehr.example.org::1.2.3",
+            "the typed Uid door renders the UUID part in RFC 4122 lowercase"
+        );
+        assert!(
+            super::super::lexical::composite_ids_equal(recomposed.value(), o.value()),
+            "the two spellings identify the same thing (master05 case-insensitive)"
+        );
+    }
+
+    #[test]
     fn creating_system_id_str_is_verbatim() {
         let o = ovid("1.2.840::openEHR.org::1");
         assert_eq!(o.creating_system_id_str(), "openEHR.org");
