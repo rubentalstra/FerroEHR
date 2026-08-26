@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.6-rc1] - 2026-08-26
+
 ### Added
 
 - A weekly report of container manifests in the registry that nothing can reach
@@ -7592,7 +7594,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc1...HEAD
+[4.0.6-rc1]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...v4.0.6-rc1
 [4.0.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.4...v4.0.5
 [4.0.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...v4.0.4
 [4.0.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...v4.0.3

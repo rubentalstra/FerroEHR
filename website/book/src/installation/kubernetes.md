@@ -40,7 +40,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
   --version 6.0.21 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
-  --set image.tag=4.0.5
+  --set image.tag=4.0.6-rc1
 ```
 
 > [!IMPORTANT]
@@ -69,7 +69,7 @@ against.
 | | Selects | Pin with | Line |
 |---|---|---|---|
 | Chart version | templates, values schema, defaults | `--version 6.0.21` | SemVer over the chart's own contract |
-| Image tag | the server binary | `--set image.tag=4.0.5` (or `image.digest`) | the application's SemVer line |
+| Image tag | the server binary | `--set image.tag=4.0.6-rc1` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
 never `latest`. Pin the two deliberately: the `config` tree is passed through to
@@ -734,7 +734,7 @@ The check that closes that gap runs the image against your rendered
 configuration:
 
 ```shell
-FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:4.0.5 \
+FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:4.0.6-rc1 \
   deploy/helm/ci/boot-check.sh my-values.yaml
 ```
 
