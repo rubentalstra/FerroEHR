@@ -1,0 +1,27 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://ferroehr.eu/vex/distroless-libssl",
+  "author": "FerroEHR project",
+  "role": "vendor",
+  "timestamp": "2026-08-26T00:00:00Z",
+  "version": 1,
+  "tooling": "hand-authored; see security/vex/README.md",
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-2026-14456"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/ferroehr"
+        },
+        {
+          "@id": "pkg:oci/ferroehr-admin-ui"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The finding is in libssl3t64, shipped by the gcr.io/distroless/cc-debian13 base filesystem of both images. Nothing in the shipped binaries links or loads it: the entire TLS stack is rustls over aws-lc (reqwest, sqlx, axum-server, jsonwebtoken), Cargo.lock contains no openssl-sys, and the only openssl-named crate is openssl-probe, a pure-Rust certificate-path prober with no libssl linkage. The library is unreferenced bytes from the base image. Debian's fixed package (3.5.7-1~deb13u2) is released but distroless has not rebuilt with it yet, so no rebuild of these images can pick it up; this statement is removed the moment a distroless rebuild carries the fix (the base-image watcher and the weekly published-image scan both resurface the state). Tracked in #2747."
+    }
+  ]
+}
