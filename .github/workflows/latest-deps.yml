@@ -31,9 +31,13 @@ on:
   workflow_dispatch:
 
 # A scheduled probe: only the newest run is interesting, so cancel freely.
+# cancel-in-progress stays FALSE like the other watchers (#2797): schedule and
+# workflow_dispatch both resolve to the default branch's ref, so a manual
+# dispatch with `true` would silently cancel a running scheduled probe
+# mid-45-minute build instead of queuing behind it.
 concurrency:
   group: latest-deps-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions: {}
 
