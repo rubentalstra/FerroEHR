@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 # openEHR CNF 2.0 conformance pipeline — the acceptance instrument.
 #
-# Drives the CNF reference runner (tools/cnf-runner) end to end: bring up the
-# SUT's compose stack on FRESH volumes (the exclusive-server ground), execute
-# the committed catalogue, compute the verdicts through the pure pipeline,
-# and write the per-SUT artefact set under $CONF_OUT/<sut-name>/:
+# Drives Veredictum, the independent conformance instrument, end to end at the
+# pin scripts/lib/veredictum.sh records: bring up the SUT's compose stack on
+# FRESH volumes (the exclusive-server ground), execute the instrument's
+# catalogue, compute the verdicts through the pure pipeline, and write the
+# per-SUT artefact set under $CONF_OUT/<sut-name>/:
 #
 #   results.json               the party results (§8.10 schema)
 #   run-exceptions.json        the interpreter-coverage exception register
@@ -65,8 +66,11 @@ SUT="${CONF_SUT:-ferroehr}"
 SUT_NAME="${CONF_SUT_NAME:-$SUT}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${CONF_OUT:-$REPO_ROOT/docs/conformance}/$SUT_NAME"
-ROOT="$REPO_ROOT/tools/cnf-runner/artifacts"
-PARTY="$REPO_ROOT/tools/cnf-runner/party/$SUT_NAME"
+# The catalogue travels with the instrument; the party set is a claim about a
+# SUT and stays here (docs/conformance/party/<sut>/).
+# shellcheck source=scripts/lib/veredictum.sh
+source "$REPO_ROOT/scripts/lib/veredictum.sh"
+PARTY="$REPO_ROOT/docs/conformance/party/$SUT_NAME"
 IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
 STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
@@ -235,8 +239,9 @@ if [[ -z "${CONF_NO_COMPOSE:-}" ]] && [[ "$SUT" != "byo" ]]; then
   fi
 fi
 
-echo "==> Building the CNF runner"
-(cd "$REPO_ROOT" && cargo build -q -p cnf-runner)
+echo "==> Resolving the pinned instrument (veredictum $VEREDICTUM_VERSION)"
+VEREDICTUM="$(veredictum_bin)"
+ROOT="$(veredictum_artifacts)"
 
 mkdir -p "$OUT"
 
@@ -248,7 +253,7 @@ run_args=(run --root "$ROOT" --ixit "$IXIT" --out "$OUT"
 # Exit 1 = failing cases (data for the verdict pipeline, not a pipeline
 # abort); only 2 (runner defect) stops the run.
 run_rc=0
-"$REPO_ROOT/target/debug/cnf-runner" "${run_args[@]}" || run_rc=$?
+"$VEREDICTUM" "${run_args[@]}" || run_rc=$?
 if [[ "$run_rc" -ge 2 ]]; then
   echo "conformance: runner defect (exit $run_rc)" >&2
   exit "$run_rc"
@@ -282,7 +287,7 @@ if [[ -n "${CONF_PERF_CLASS:-}" ]]; then
   perf_args=(perf --root "$ROOT" --ixit "$IXIT" --results "$OUT/results.json"
              --class "$CONF_PERF_CLASS" --hours "${CONF_PERF_HOURS:-1}")
   perf_rc=0
-  "$REPO_ROOT/target/debug/cnf-runner" "${perf_args[@]}" || perf_rc=$?
+  "$VEREDICTUM" "${perf_args[@]}" || perf_rc=$?
   if [[ "$perf_rc" -ge 2 ]]; then
     echo "conformance: perf run defect (exit $perf_rc)" >&2
     exit "$perf_rc"
@@ -294,7 +299,7 @@ fi
 # is no second derivation here to contradict them.
 echo "==> Computing the verdicts + badges (pure pipeline)"
 verdict_rc=0
-"$REPO_ROOT/target/debug/cnf-runner" verdicts \
+"$VEREDICTUM" verdicts \
   --statement "$STATEMENT" --results "$OUT/results.json" \
   --root "$ROOT" --out "$OUT" || verdict_rc=$?
 if [[ "$verdict_rc" -ge 2 ]]; then

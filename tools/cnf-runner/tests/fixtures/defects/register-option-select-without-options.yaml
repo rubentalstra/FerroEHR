@@ -1,5 +1,0 @@
-AMB-4:
-  ambiguity: "seeded defect: option_select without option tags"
-  source: "CNF platform_test_schedule master04"
-  handling: "h"
-  disposition: option_select

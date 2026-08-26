@@ -201,17 +201,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
-name = "annotate-snippets"
-version = "0.12.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f211a51805bc641f3ad5b7664c77d2547af685cc33b4cd8d31964027a46f13f1"
-dependencies = [
- "anstyle",
- "memchr",
- "unicode-width 0.2.2",
-]
-
-[[package]]
 name = "anstream"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1411,33 +1400,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cnf-runner"
-version = "4.0.6-rc2"
-dependencies = [
- "assert_fs",
- "base64 0.23.1",
- "clap",
- "hdrhistogram",
- "jiff",
- "jsonschema",
- "jsonwebtoken",
- "pgp",
- "quick-xml",
- "rand 0.8.7",
- "regex",
- "reqwest 0.13.4",
- "semver",
- "serde",
- "serde-saphyr",
- "serde_jcs",
- "serde_json",
- "sha2 0.11.0",
- "thiserror 2.0.20",
- "urlencoding",
- "uuid",
-]
-
-[[package]]
 name = "codee"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2533,15 +2495,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "encoding_rs_io"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cc3c5651fb62ab8aa3103998dade57efdd028544bd300516baa31840c252a83"
-dependencies = [
- "encoding_rs",
-]
-
-[[package]]
 name = "enum-ordinalize"
 version = "4.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3405,16 +3358,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "granit-parser"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c60388b03522b86e24b6b45952255279936b08a871775156fc89c94e792d21d8"
-dependencies = [
- "arraydeque",
- "smallvec",
-]
-
-[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3516,20 +3459,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "824e001ac4f3012dd16a264bec811403a67ca9deb6c102fc5049b32c4574b35f"
 dependencies = [
  "hashbrown 0.16.1",
-]
-
-[[package]]
-name = "hdrhistogram"
-version = "7.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f49d1053f4708f0af3cf9fc5bffc7e68a914a3c45becb231c80068c9c3f78bea"
-dependencies = [
- "base64 0.22.1",
- "byteorder",
- "crossbeam-channel",
- "flate2",
- "nom 8.0.0",
- "num-traits",
 ]
 
 [[package]]
@@ -5163,12 +5092,6 @@ dependencies = [
  "cfg_aliases",
  "libc",
 ]
-
-[[package]]
-name = "nohash-hasher"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nom"
@@ -7658,23 +7581,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde-saphyr"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af2c6921c8ce48fb1b052b457619d008834039d80325992ed3bc55bbe6c155ad"
-dependencies = [
- "annotate-snippets",
- "base64 0.23.1",
- "encoding_rs_io",
- "granit-parser",
- "nohash-hasher",
- "num-traits",
- "serde_core",
- "smallvec",
- "zmij",
-]
-
-[[package]]
 name = "serde-untagged"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7979,12 +7885,6 @@ dependencies = [
  "sha1 0.10.7",
  "zeroize",
 ]
-
-[[package]]
-name = "sha1_smol"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbfa15b3dddfee50a0fff136974b3e1bde555604ba463834a7eb7deb6417705d"
 
 [[package]]
 name = "sha2"
@@ -9796,7 +9696,6 @@ dependencies = [
  "js-sys",
  "rand 0.10.2",
  "serde_core",
- "sha1_smol",
  "wasm-bindgen",
 ]
 

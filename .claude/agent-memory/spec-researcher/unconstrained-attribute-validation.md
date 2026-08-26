@@ -35,7 +35,7 @@ Nothing in the spec text above authorizes rejecting content under an
 unconstrained RM-mandatory attribute (e.g. ACTION.description).
 
 The validate_open behaviour is exercised by the committed CNF catalogue
-(`tools/cnf-runner/artifacts`), which is where the expectation lives.
+(Veredictum's `artifacts`), which is where the expectation lives.
 
 No CNF case found for committing a *server-generated example* composition
 (grep empty); master15:38 is the only instance-generation guidance.

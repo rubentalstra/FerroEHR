@@ -38,7 +38,7 @@ const RESOURCE_CODES: &[&str] = &[
 #[test]
 fn vendored_opt_corpora_pass_the_resource_meta_checks() {
     let corpora = [
-        "../../tools/cnf-runner/artifacts/corpus/templates",
+        "../../corpus/templates",
         "../../crates/openehr-its/tests/fixtures/sdk",
     ];
     let mut swept = 0usize;
@@ -83,7 +83,7 @@ fn vendored_opt_corpora_pass_the_resource_meta_checks() {
 /// (a lenient server, or one refusing under a different rule, fails here).
 #[test]
 fn ch8_refusal_fixtures_refuse_with_their_invariant() {
-    let dir = "../../tools/cnf-runner/artifacts/corpus/fixtures/opt/invalid";
+    let dir = "../../corpus/fixtures/opt/invalid";
     let expect = [
         (
             "description_empty_lifecycle_state.opt",

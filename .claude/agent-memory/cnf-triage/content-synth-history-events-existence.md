@@ -8,7 +8,7 @@ metadata:
 Confirmed 2026-07-24 (branch feat/cnf-catalogue-audit). The 4 red
 CONT-HIST-events_card_{any,opt}-summary_ex_{mand,opt} rows (all row 3 =
 summary present, events_count 0, expected accepted) are a RUNNER machinery
-defect in `tools/cnf-runner/src/exec/content_synth.rs`.
+defect in Veredictum's `src/exec/content_synth.rs`.
 
 `observation_history` (L427) and `history_events_cardinality_summary` (L553)
 hardcode the `events` C_MULTIPLE_ATTRIBUTE **existence** to `(1,1)`, unlike

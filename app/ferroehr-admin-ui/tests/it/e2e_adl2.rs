@@ -30,7 +30,7 @@
 //! artefact resource.
 //!
 //! Fixtures are the repository's own authored ADL2 corpus
-//! (`tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt`), read repo-relative
+//! (`corpus/fixtures/adl2/opt`), read repo-relative
 //! so the `WebDriver` file-upload `send_keys` receives a real host path. Every
 //! scene is SEED-AND-CLEAN: it uploads what it needs (upload-if-absent, so a
 //! stack a sibling scene already filled is never re-POSTed into a `409`) and
@@ -114,7 +114,7 @@ async fn remove_adl2_artefacts(hrids: &[&str]) {
 fn fixture_adl2_path(relative: &str) -> String {
     let dir = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/"
+        "/../../corpus/fixtures/adl2/opt/"
     );
     std::fs::canonicalize(format!("{dir}{relative}"))
         .expect("the ADL2 corpus fixture exists")

@@ -945,7 +945,7 @@ fn folder_vectors() -> Vec<Vector> {
             v1: Expect::Invalid {
                 needle: "}details'",
                 adjudication: "FOLDER.details is an RM 1.1.0 addition; this is the shape \
-                               tools/cnf-runner/artifacts/corpus/fixtures/directory/v2.xml carries",
+                               corpus/fixtures/directory/v2.xml carries",
             },
             v2: Expect::Uncompilable,
         },

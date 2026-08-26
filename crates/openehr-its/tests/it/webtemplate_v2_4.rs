@@ -10,7 +10,7 @@
 //! WebTemplate model + shared shaping the ADL 1.4 front end uses — the
 //! dialect-neutral seam of `ITS-REST simplified_formats master04 §"Web Template
 //! Metadata"`. The corpus lives in the sibling `openehr-adl` crate
-//! (`tests/corpus/adl2-reference`); `openehr-adl` is a dev-only dependency here
+//! (`corpus/adl2-reference`); `openehr-adl` is a dev-only dependency here
 //! (the production `v2_4` front end takes an already-created OPT as input).
 
 #![allow(

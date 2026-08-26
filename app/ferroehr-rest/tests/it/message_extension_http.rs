@@ -15,7 +15,7 @@
 //! the wire shape is our own design/extension. What is asserted here is exactly
 //! what the CNF extension bindings drive: the `message-extract` and
 //! `message-tdd` families in
-//! `tools/cnf-runner/artifacts/vocab/wire_surface.yaml`, over the same corpus
+//! Veredictum's `artifacts/vocab/wire_surface.yaml`, over the same corpus
 //! fixtures the CNF cases carry.
 #![expect(
     clippy::expect_used,
@@ -46,7 +46,7 @@ const ABSENT: &str = "00000000-0000-0000-0000-000000000000";
 /// send, so a green case here and a green case there mean the same thing.
 fn corpus(name: &str) -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/fixtures/messaging")
+        .join("../../corpus/fixtures/messaging")
         .join(name);
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
 }
@@ -56,7 +56,7 @@ fn corpus(name: &str) -> String {
 /// `requires.templates`.
 fn corpus_template(source: &str) -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus")
+        .join("../../corpus")
         .join(source);
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
 }

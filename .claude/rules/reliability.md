@@ -300,14 +300,12 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   BY THE BMM; a forced `_ =>` arm would turn a modelled fact into a silent
   fallthrough and defeat the exhaustiveness checking that makes a spec-model
   change a compile error. 1672 sites, and the rejection is on merit, not cost.
-- **C-PERMISSIVE — MIT for the project's own code, with ONE carve-out**
-  (owner decision 2026-07-31; coverage corrected 2026-08-04, issue #1883;
-  carve-out 2026-08-26, issue #2787): the project's own code is MIT-licensed
-  EXCEPT `tools/cnf-runner` — the conformance instrument is **Apache-2.0**
-  (its §4 license/NOTICE retention makes attribution travel with every copy
-  and derivative, its §3 grants the patent license; the standalone tool has
-  its own audience and `tools/cnf-runner/NOTICE` carries the credit).
-  Vendored third-party material keeps its upstream
+- **C-PERMISSIVE — MIT for the project's own code** (owner decision
+  2026-07-31; coverage corrected 2026-08-04, issue #1883): the project's own
+  code is MIT-licensed throughout. The Apache-2.0 carve-out that covered the
+  conformance instrument (#2787) left with it — the instrument is now the
+  separate Veredictum project, Apache-2.0 under its own root, pinned here by
+  `scripts/lib/veredictum.sh` (#2811). Vendored third-party material keeps its upstream
   terms — Apache-2.0 for the openEHR machine-readable artifacts and the
   vendored test corpora (`LICENSE-APACHE-2.0`), CC-BY-SA 3.0 for the openEHR
   spec docs text (`LICENSE-CC-BY-SA-3.0`), and BOTH CC-BY-SA **4.0** and

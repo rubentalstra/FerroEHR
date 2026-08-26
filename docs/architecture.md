@@ -241,10 +241,8 @@ slim builds compile them out with loud boot refusals for enabled-but-unbuilt
 integrations), and `ferroehr-admin-ui` (the Leptos SSR admin
 console — its own binary/OCI image, consuming the CDR strictly over
 ITS-REST); **`tools/*`** holds the dev/verification
-tooling that is *not* part of the shipped application (`cnf-runner` — the
-CNF 2.0 conformance runner incl. the measured-performance and step-load
-stress/probe instruments; nothing consumes `cnf-runner` as a library),
-`testkit` — the shared test-database harness, and
+tooling that is *not* part of the shipped application
+(`testkit` — the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
@@ -291,7 +289,6 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
 | `ferroehr-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ferroehr` | application |
 | `ferroehr-ext` | Optional integrations behind additive features (`fhir`, `events`, `multimedia`): FHIR mapping/reverse/feeder-audit cores, the AMQP events transport, the content-addressed multimedia store | application |
-| `cnf-runner` | CNF 2.0 conformance runner + the measured-performance, step-load stress, and AQL-probe instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
 ## Build state
@@ -308,17 +305,19 @@ design. The build record is the closed issues + PR descriptions.
 
 - **Fidelity gates** (spec/serialization): canonical JSON read + lossless
   round-trip + ITS-JSON schema validation; XML round-trips.
-- **Conformance pipeline** (`scripts/conformance.sh`): the CNF 2.0 reference
-  runner (`tools/cnf-runner`) over the committed machine-readable catalogue
-  (Docker-composed SUT on fresh volumes) — the acceptance instrument;
+- **Conformance pipeline** (`scripts/conformance.sh`):
+  [Veredictum](https://github.com/rubentalstra/Veredictum), the independent
+  CNF 2.0 reference runner, over its committed machine-readable catalogue
+  (Docker-composed SUT on fresh volumes) — the acceptance instrument, pinned
+  in `scripts/lib/veredictum.sh`;
   results → pure-function verdicts → report/statement/certificate + badges,
   all under `docs/conformance/<sut>/` (the baseline lives ONLY in those
   committed artifacts).
-- **Measured performance** (the same runner): `cnf-runner perf` earns the
+- **Measured performance** (the same instrument): `veredictum perf` earns the
   volumetric deployment classes (POC/S/L/R) by open-loop,
   coordinated-omission-free sustained runs (normative hour, extendable
   2–12 h — never shorter) whose re-checkable HDR-V2 records land in
-  `results.json` `measurements`, environment-bound; `cnf-runner stress` is
+  `results.json` `measurements`, environment-bound; `veredictum stress` is
   the separate step-load exploration instrument (maximum sustainable
   throughput, `stress.json`, never a conformance record). Published SVGs +
   summaries regenerate FROM the committed artifacts

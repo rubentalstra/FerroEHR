@@ -1,8 +1,0 @@
-# Seeded defect: an empty wire-surface register. Removing the authored,
-# spec-cited exception ledger makes every uncovered SM operation / binding
-# branch a surface-coverage finding again — proving the ledger is load-bearing
-# and coverage can only ratchet up (issue #271; .claude/rules/testing.md §CNF
-# coverage: silence is not coverage).
-sm_operations: []
-branches: []
-elements: []

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 # The MEASUREMENT posture overlay — composed on top of docker/sut-ferroehr.yml
-# only for the measured-performance (`cnf-runner perf`) and step-load
-# (`cnf-runner stress`) lanes, which scripts/conformance.sh selects when
+# only for the measured-performance (`veredictum perf`) and step-load
+# (`veredictum stress`) lanes, which scripts/conformance.sh selects when
 # CONF_PERF_CLASS or CONF_STRESS is set.
 #
 # Why an overlay rather than an environment default: a measurement's posture is

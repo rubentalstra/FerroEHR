@@ -36,7 +36,7 @@ use serde_json::{Value, json};
 
 fn base_opt() -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates/dt_identifier_c_string.opt");
+        .join("../../corpus/templates/dt_identifier_c_string.opt");
     std::fs::read_to_string(path).expect("read base OPT")
 }
 

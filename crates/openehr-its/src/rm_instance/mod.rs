@@ -669,7 +669,7 @@ mod tests {
     fn measure_ips_validation_walk_cost() {
         let path = concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../tools/cnf-runner/artifacts/corpus/templates/ckm/international-patient-summary.example.json"
+            "/../../corpus/templates/ckm/international-patient-summary.example.json"
         );
         let comp: Value =
             serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
@@ -715,10 +715,7 @@ mod tests {
     #[test]
     #[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
     fn measure_ips_validation_full_cost() {
-        let dir = concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../tools/cnf-runner/artifacts/corpus/templates/ckm"
-        );
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../../corpus/templates/ckm");
         let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
             .expect("read IPS OPT");
         let opt = crate::opt14::from_xml(&opt_xml).expect("parse IPS OPT");

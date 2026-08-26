@@ -48,7 +48,8 @@ applies to every crate — generated and hand-written alike.
 
 ## Oracles and the acceptance instrument
 
-- **The acceptance instrument is the CNF 2.0 runner** (`tools/cnf-runner`,
+- **The acceptance instrument is Veredictum, the CNF 2.0 runner** (an
+  independent project, pinned in `scripts/lib/veredictum.sh` and driven by
   `scripts/conformance.sh`) — the data-driven interpreter over the committed
   machine-readable catalogue, with pure-function verdicts. Issue-close runs
   must show **zero drift** vs the committed baseline
@@ -146,7 +147,7 @@ Never park tests for crate X under crate Y's `tests/` directory.
 ## CNF coverage (breadth is a mandate, not just pass rate)
 
 A green pipeline over a thin catalogue proves almost nothing — the real
-acceptance bar is COVERAGE. The CNF catalogue (`tools/cnf-runner/artifacts`)
+acceptance bar is COVERAGE. The CNF catalogue (Veredictum's `artifacts`)
 must exercise EVERYTHING the spec defines on the wire: every SM operation,
 every status-code branch (200/201/204/400/404/409/412/422/…), every
 required/conditional header (`ETag`, `Location`, `Last-Modified`, `Prefer`,

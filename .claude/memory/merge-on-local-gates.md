@@ -10,7 +10,7 @@ metadata:
 
 Owner ruling 2026-07-26 (during the #373 fix wave): when the full local gate
 battery has passed (fmt + scoped clippy zero warnings + nextest green on the
-touched crates + `cnf-runner validate` zero findings), MERGE the PR
+touched crates), MERGE the PR
 immediately — do not sit on a CI watcher. Waiting for CI on already-locally-
 green work wastes wave throughput.
 

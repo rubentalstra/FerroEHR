@@ -48,10 +48,10 @@ cannot hide. The full workload story lives in
 CONF_PERF_CLASS=POC bash scripts/conformance.sh
 
 # the step-load stress ladder (fresh compose + seed, then the climb)
-cnf-runner stress --root <catalogue-root> --ixit <ixit.json> --out <stress.json>
+veredictum stress --root <catalogue-root> --ixit <ixit.json> --out <stress.json>
 
 # the AQL optimization probe
-cnf-runner aql-probe --root <catalogue-root> --ixit <ixit.json> --out <aql-probe.json>
+veredictum aql-probe --root <catalogue-root> --ixit <ixit.json> --out <aql-probe.json>
 ```
 
 Every instrument seeds a freshly composed, empty server through the public API and

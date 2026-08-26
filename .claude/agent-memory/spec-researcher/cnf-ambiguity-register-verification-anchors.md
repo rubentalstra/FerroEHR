@@ -5,14 +5,14 @@ metadata:
   type: reference
 ---
 
-# Re-adjudicating `tools/cnf-runner/artifacts/registers/ambiguities.yaml`
+# Re-adjudicating Veredictum's `artifacts/registers/ambiguities.yaml`
 
 Navigation only — the vendored spec text stays the oracle for every claim.
 The register is a MAPPING keyed `AMB-<n>:` (not a YAML list) — a list-shaped
 extractor returns zero entries.
 
 ## Where the register's own vocabulary is defined (in-repo authority)
-- `tools/cnf-runner/src/vocab.rs` `enum Disposition` (~L264-281) — the SIX
+- Veredictum's `src/vocab.rs` `enum Disposition` (~L264-281) — the SIX
   variants with their doc comments. These are the definitions the artifacts are
   authored against and they are BROADER than prose paraphrases:
   `FixedHandling` = "Handling encoded directly in bindings/cases";
@@ -25,7 +25,7 @@ extractor returns zero entries.
   report_only|editorial REQUIRE `upstream_issue` — fixed_handling does NOT,
   ~L76 option_select needs >= 2 options). `fixed_handling` vs `editorial`
   changes NO gating.
-- Schema: `tools/cnf-runner/schemas/ambiguity-register.schema.json`.
+- Schema: Veredictum's `schemas/ambiguity-register.schema.json`.
 
 ## The citation gap to remember
 The `spec-ref` gate (`validate.rs::check_spec_refs`, `check_corpus_spec_refs`,
@@ -36,16 +36,16 @@ attributions and quote drift inside register entries accumulate unchecked;
 always re-read the cited file rather than trusting the entry.
 
 ## Blast radius / carriers
-- Referencing artifacts: `grep -rln "AMB-<n>\b" tools/cnf-runner/artifacts --include="*.yaml"`
+- Referencing artifacts: `grep -rln "AMB-<n>\b" "$VD/artifacts" --include="*.yaml"` (`$VD` = the pinned Veredictum checkout)
   (cases under `artifacts/schedule/**`, bindings under `artifacts/bindings/its-rest/**`,
   `artifacts/vocab/wire_surface.yaml`, `artifacts/vocab/outcomes.yaml`,
   `artifacts/corpus/MANIFEST.yaml`).
-- `option_select` carriers = `tools/cnf-runner/party/<party>/statement.json`
+- `option_select` carriers = `docs/conformance/party/<party>/statement.json`
   `options` (+ `served_extensions` for extension families). A disposition with no
   field in that file has no declaration channel — check before trusting
   "statement-declared".
 - Per-entry implementation hooks worth knowing: the AMB-42 realizability gate is
-  `tools/cnf-runner/src/exec/content_synth.rs::unrealizable_row`; served extension
+  Veredictum's `src/exec/content_synth.rs::unrealizable_row`; served extension
   route families are `artifacts/vocab/wire_surface.yaml` `served_extensions:`.
 - Upstream reports: `gh issue view <n>` — confirmed reports are CLOSED by design
   (terminal state, owner ruling 2026-08-21) with labels `upstream-report` +
@@ -111,7 +111,7 @@ always re-read the cited file rather than trusting the entry.
   status code other than a 2xx or 412") is the rule that decides 404-vs-412
   whenever a REQUIRED `If-Match` meets a nonexistent resource. The full
   worked analysis is already written into
-  `tools/cnf-runner/artifacts/schedule/directory/I_EHR_DIRECTORY.update_directory-empty_ehr.yaml`
+  Veredictum's `artifacts/schedule/directory/I_EHR_DIRECTORY.update_directory-empty_ehr.yaml`
   — read that case before re-deriving it.
 
 ## Per-family wire anchors (verified 2026-08-21)
@@ -236,10 +236,10 @@ always re-read the cited file rather than trusting the entry.
   L2202 + §DV_EHR_URI L2228 link `RM/Release-1.0.4/...` while the other 41
   "See RM specification" links use `RM/latest/...`.
 - **`served_extensions` = 20 families** (each `never_gates: true`), not 14 —
-  `python3 -c "import yaml;print(len(yaml.safe_load(open('tools/cnf-runner/artifacts/vocab/wire_surface.yaml'))['served_extensions']))"`.
+  a `yaml.safe_load` over the checkout's `artifacts/vocab/wire_surface.yaml`, counting `served_extensions`.
 - **`NON_SM_REST_OPERATIONS` = 29 ops across FIVE pseudo-interfaces**
   (`I_ITS_REST_SYSTEM` 1, **`I_ITS_REST_SMART.discovery` 1**, `ITEM_TAGS` 23,
-  `REVISION_HISTORY` 3, `VERSIONED_PARTY` 1) — `tools/cnf-runner/src/validate.rs`.
+  `REVISION_HISTORY` 3, `VERSIONED_PARTY` 1) — Veredictum's `src/validate.rs`.
 - **SM does contain the string "tag"** (3 unrelated hits: `stored_query_execute_spec.adoc:25`
   + `adhoc_query_execute_spec.adoc:26` "tagged String values", `defined_term.adoc:24`
   "language-region tag", plus `etag=` in `docs/openehr_block_diagram.xml`). The TRUE

@@ -50,7 +50,7 @@ re-walk it.
   422, but a missing mandatory attribute must not be fabricated.
 - **`PARTICIPATION.time` (0..1 DV_INTERVAL<DV_DATE_TIME>) has ZERO instances**
   anywhere (scripted over every JSON under `crates/openehr-its/tests/vendor`,
-  `tools/cnf-runner/artifacts/corpus`, `app/ferroehr/tests`: 212 PARTICIPATION
+  `corpus`, `app/ferroehr/tests`: 212 PARTICIPATION
   nodes, key set always exactly `function/mode/performer`), and is not
   expressible through FLAT (`ctx.rs resolve_participations` builds no `time`).
   Contrast: `other_participations` IS covered in canonical JSON

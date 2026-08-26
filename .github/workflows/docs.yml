@@ -37,7 +37,7 @@ permissions: {}
 jobs:
   # ── Change detection (pull requests only) ───────────────────────────────────
   # The site build renders the conformance assets, regenerates the derived
-  # party documents (which compiles `cnf-runner`), lints the book and
+  # party documents (which installs the pinned `veredictum`), lints the book and
   # link-checks the assembled tree — 30 minutes of work that a pull request
   # touching none of its inputs has no reason to pay (#2777).
   #
@@ -87,13 +87,13 @@ jobs:
           changed=$(git diff --name-only "$PR_BASE" "$PR_HEAD")
           echo "Changed files:"; echo "$changed"
           # The site's sources, plus every INPUT the build's own gates read:
-          # the committed conformance artifacts and the party statements +
-          # catalogue that `scripts/render/conformance-docs.sh` regenerates
-          # from (`cnf-runner verdicts`, so the runner's own source counts),
-          # the render/assemble scripts, the stale-numbers gate's script, and
-          # the job's own recipe — this workflow and the toolchain action —
-          # so a change to what the job DOES exercises the job it changes.
-          if echo "$changed" | grep -qE '^(website/|docs/conformance/|scripts/(render|site)/|scripts/checks/(docs-claims|conformance-numbers)\.sh$|tools/cnf-runner/|\.github/workflows/docs\.yml$|\.github/actions/docs-toolchain/)'; then
+          # the committed conformance artifacts and party statements that
+          # `scripts/render/conformance-docs.sh` regenerates from, the pin that
+          # decides WHICH instrument and catalogue it regenerates them with, the
+          # render/assemble scripts, the stale-numbers gate's script, and the
+          # job's own recipe — this workflow and the toolchain action — so a
+          # change to what the job DOES exercises the job it changes.
+          if echo "$changed" | grep -qE '^(website/|docs/conformance/|scripts/(render|site)/|scripts/lib/veredictum\.sh$|scripts/checks/(docs-claims|conformance-numbers)\.sh$|\.github/workflows/docs\.yml$|\.github/actions/docs-toolchain/)'; then
             echo "docs=true" >> "$GITHUB_OUTPUT"
           else
             echo "No site-relevant paths touched — the docs build will be skipped."

@@ -28,7 +28,7 @@
 #     `crates/openehr-adl/tests/corpus/PROVENANCE.md` (that file stays the
 #     record; this script is how the tree is reproduced).
 #
-#   Reference/CKM_2013_12_09/  -> tools/cnf-runner/artifacts/corpus/archetypes/adl2
+#   Reference/CKM_2013_12_09/  -> corpus/archetypes/adl2
 #     A CKM export carrying BOTH dialects of the same archetypes side by side
 #     (`*.adl` = 1.4, `*.adls` = ADL 2). The PAIRING is the point: it is
 #     upstream's own 1.4/2 correspondence for real clinical archetypes, so it
@@ -53,7 +53,7 @@ REPO="openEHR/adl-archetypes"
 PIN="${ADL2_PIN:-093c77ea003742b9540e3dd377d615e2b26f2996}"
 
 ADL2_REFERENCE_DEST="crates/openehr-adl/tests/corpus/adl2-reference"
-CKM_PAIRS_DEST="tools/cnf-runner/artifacts/corpus/archetypes/adl2"
+CKM_PAIRS_DEST="corpus/archetypes/adl2"
 
 CHECK=0
 [[ "${1:-}" == "--check" ]] && CHECK=1

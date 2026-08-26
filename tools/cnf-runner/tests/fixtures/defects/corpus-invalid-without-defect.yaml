@@ -1,5 +1,0 @@
-cnf.defect.invalid_without_defect:
-  source: fixtures/nope.json
-  format: canonical-json
-  validity: { verdict: invalid }
-  provenance: "seeded defect"

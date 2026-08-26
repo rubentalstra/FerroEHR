@@ -11,7 +11,9 @@ statement, the certificate, and the cross-server comparison matrix.
 
 ## What is measured
 
-Conformance is checked by the **CNF 2.0 reference runner**, a data-driven
+Conformance is checked by **[Veredictum](https://github.com/rubentalstra/Veredictum)**,
+an independent CNF 2.0 reference runner developed as its own project and
+consumed here at a pinned version. It is a data-driven
 interpreter over a committed, machine-readable catalogue authored from the openEHR
 Conformance framework itself: protocol-neutral case cores anchored on the official
 platform test schedule (case ids follow the schedule's own naming, e.g.
@@ -87,9 +89,10 @@ aggregates optional capabilities under the Profiles book's "any passes" rule.
 
 ## Any server can be assessed
 
-The runner is deliberately not tied to FerroEHR. It assesses **any openEHR CDR
-reachable over HTTP** and emits the same artefact set for each system under test,
-into its own directory:
+The runner is deliberately not tied to FerroEHR — it is a separate project with
+its own release line, so the instrument and the system it judges do not share a
+build. It assesses **any openEHR CDR reachable over HTTP** and emits the same
+artefact set for each system under test, into its own directory:
 
 - **FerroEHR** (the default): the composed stack built from the current sources.
   This is the project's own gate: the committed artefacts are regenerated and

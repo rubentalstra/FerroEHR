@@ -1,11 +1,11 @@
 ---
 name: runner-driver-gaps
-description: Confirmed cnf-runner driver gaps that surface as red rows the SUT passed correctly
+description: Confirmed instrument driver gaps that surface as red rows the SUT passed correctly
 metadata:
   type: project
 ---
 
-Three confirmed runner-machinery gaps in `tools/cnf-runner/src` (2026-07-22
+Three confirmed runner-machinery gaps in Veredictum's `src` (2026-07-22
 baseline). In all, the SUT was spec-correct; the runner misdrove/miscompared.
 
 1. **No option-gating at drive time.** `run.rs` main loop (`for case in
@@ -37,6 +37,6 @@ baseline). In all, the SUT was spec-correct; the runner misdrove/miscompared.
    in the ctx_defaults ignore/normalization (exec assertions/compare path).
 
 **How to apply:** all three are runner defects, NOT app defects — the fix is in
-tools/cnf-runner/src, never app code or the catalogue expectation. Verify the
+Veredictum's src, never app code or the catalogue expectation. Verify the
 gap still exists (grep the cited symbols) before re-attributing; an implementer
 may have added the mechanism.

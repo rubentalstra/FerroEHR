@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-`tools/cnf-runner/src/exec/headers.rs::resolve_placeholders` (#1865, commit
+Veredictum's `src/exec/headers.rs::resolve_placeholders` (#1865, commit
 907a22a87) refuses any `pattern:` placeholder that is neither a case variable nor
 one of its TWO structural tokens (`<n>`, `<system_id>`), and books the refusal as
 a law-(b) conformance FAILURE.
@@ -25,7 +25,7 @@ a law-(b) conformance FAILURE.
   version uid as the `{versioned_object_uid}` PATH argument (spec-legal —
   `operations/composition_get.yaml` `uid_based_id`) resolves the ETag matcher to
   a doubled tail and fails a correct ETag.
-- `cnf-runner validate` reports **0 findings** on the same tree: the parse-time
+- `veredictum validate` reports **0 findings** on the same tree: the parse-time
   probe (`model/binding.rs:226,354`) only compiles the pattern with placeholders
   wildcarded, never checks resolvability. The class is run-time-only.
 

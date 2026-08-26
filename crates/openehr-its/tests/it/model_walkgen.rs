@@ -379,7 +379,7 @@ fn mandatory_container_lower_bound_is_enforced() {
 fn cluster_no_items_fixture_is_refused() {
     let text = std::fs::read_to_string(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tools/cnf-runner/artifacts/corpus/fixtures/composition/lab_result.cluster_no_items.json"),
+            .join("../../corpus/fixtures/composition/lab_result.cluster_no_items.json"),
     )
     .expect("fixture exists");
     let doc: Value = serde_json::from_str(&text).expect("fixture parses");

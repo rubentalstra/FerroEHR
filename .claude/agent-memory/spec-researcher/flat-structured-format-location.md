@@ -118,7 +118,7 @@ semantics, so mapping bugs pass. Also `flat.rs`/`structured.rs` (corpus round-tr
 `webtemplate.rs`, `tdd.rs`. Corpora: `tests/fixtures/better` (64 Better web-template-tests
 OPTs), `tests/fixtures/sdk` (21), `tests/vendor/openehr_sdk/composition/canonical_json`.
 
-CNF: 58 cases in `tools/cnf-runner/artifacts/schedule/simplified_formats/` (SF-*).
+CNF: 58 cases in Veredictum's `artifacts/schedule/simplified_formats/` (SF-*).
 Register entries touching Simplified: AMB-39 (deprecated `.schema+json`, option_select),
 AMB-57 (contribution READ side), AMB-58 (our wt+json extension), AMB-61 (legacy
 nc.flat/tds2, option_select), AMB-128 (party canonical-only), AMB-134 (contribution

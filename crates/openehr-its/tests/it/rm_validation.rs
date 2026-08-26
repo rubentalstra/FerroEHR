@@ -421,7 +421,7 @@ fn corpus_files() -> Vec<std::path::PathBuf> {
     // The benchmark CKM examples exercise the exact hot commit shapes.
     roots.push(std::path::PathBuf::from(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/cnf-runner/artifacts/corpus/templates/ckm"
+        "/../../corpus/templates/ckm"
     )));
     let mut files = Vec::new();
     while let Some(dir) = roots.pop() {
@@ -573,7 +573,7 @@ fn corpus_equivalence_mutated_nodes() {
 fn ips_nodes_ride_the_fast_path() {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/cnf-runner/artifacts/corpus/templates/ckm/international-patient-summary.example.json"
+        "/../../corpus/templates/ckm/international-patient-summary.example.json"
     );
     let doc: Value =
         serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
