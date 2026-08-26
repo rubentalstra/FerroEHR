@@ -1,7 +1,7 @@
 {
   "product": {
     "name": "FerroEHR",
-    "version": "4.0.5",
+    "version": "4.0.6-rc1",
     "vendor": "Ruben Talstra",
     "identifier": "urn:rubentalstra:ferroehr"
   },
