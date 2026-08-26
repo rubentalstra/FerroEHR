@@ -86,6 +86,8 @@ jobs:
       - name: Wait for the sandbox to serve again
         env:
           HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+          # Only compared against the served version string, never executed.
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           set -euo pipefail
           if [ -z "$HOOK_URL" ]; then
@@ -96,18 +98,31 @@ jobs:
           # image, minutes at most) and swaps the deployment; poll until the
           # API answers. Serverless cold boots re-run the migrations, so the
           # first 200 proves the new deployment is live AND migrated.
+          # A bare 200 is NOT proof of the new deployment — the OLD one
+          # answers 200 too (measured: the 4.0.4 dispatch went green while
+          # the sandbox still served 4.0.3). A release-triggered run knows
+          # the version the tag names and waits for exactly it; other runs
+          # log what is served.
+          expected=""
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ] && [ -n "${HEAD_BRANCH}" ]; then
+            expected="${HEAD_BRANCH#v}"
+          fi
           deadline=$(( $(date +%s) + 1200 ))
           sleep 60
-          until code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' \
-              https://sandbox.ferroehr.eu/ferroehr/rest/status); [ "$code" = "200" ]; do
+          while :; do
+            body=$(curl -sS -m 30 https://sandbox.ferroehr.eu/ferroehr/rest/status || true)
+            served=$(printf '%s' "$body" | sed -nE 's/.*"server_version":"([^"]+)".*/\1/p')
+            if [ -n "$served" ] && { [ -z "$expected" ] || [ "$served" = "$expected" ]; }; then
+              echo "sandbox is serving version ${served}"
+              break
+            fi
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::the sandbox did not serve within 20 minutes of the deploy ping." >&2
+              echo "::error::the sandbox serves '${served:-nothing}' (expected '${expected:-any}') 20 minutes after the deploy ping." >&2
               exit 1
             fi
-            echo "status answered ${code:-nothing}; waiting"
+            echo "sandbox serves '${served:-nothing}'; waiting for '${expected:-any}'"
             sleep 20
           done
-          echo "sandbox is serving"
 
   reseed:
     name: reseed after deploy
