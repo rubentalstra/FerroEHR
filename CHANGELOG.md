@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [4.0.5] - 2026-08-26
 
+### Changed
+
+- Refusing a supplied `EHR_STATUS` without `archetype_details` (a 422 the
+  Reference Model requires — `EHR_STATUS` is always an archetype root) now
+  names the remedy in the error message, and the API book documents both
+  create-EHR branches: the content of the server-minted default, and the
+  RM-completeness a supplied status must have.
+
 ### Fixed
 
 - AQL parsing no longer leaks memory. The parser's internal recursive
