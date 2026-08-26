@@ -46,7 +46,7 @@ only), so `is_archetype_root xor archetype_details = Void` reads as
 `X xor not X` under the reference-object-model derivation. The adjudication
 lives as a `// NOTE:` at `crates/openehr-its/src/flat/validation/mod.rs:750`
 and leans partly on stalled CNF data sets — not in
-`tools/cnf-runner/artifacts/registers/ambiguities.yaml`.
+Veredictum's `artifacts/registers/ambiguities.yaml`.
 
 **Conformant, verified (do not re-check):** all six generated shapes match the
 tables (`common/archetyped/*.rs`); XML emits the XSD sequence order for

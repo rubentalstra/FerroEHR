@@ -7,7 +7,7 @@ metadata:
 
 SUPERSEDED (verified on the wire 2026-07-23). The 2026-07-22 defect (the
 `cnf.opt.vitals` alias resolving to `minimal_action.en.v1`, an ACTION template)
-has been fixed. `tools/cnf-runner/artifacts/corpus/templates/vitals.opt` now
+has been fixed. `corpus/templates/vitals.opt` now
 carries `<template_id><value>cnf.vitals</value></template_id>` and IS a
 `openEHR-EHR-OBSERVATION.body_temperature.v1` carrier with a DV_QUANTITY
 temperature leaf (units Cel) and a `_normal_range` REFERENCE_RANGE. The SF flat

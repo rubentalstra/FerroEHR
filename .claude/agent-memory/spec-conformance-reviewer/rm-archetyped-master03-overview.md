@@ -30,7 +30,7 @@ declares only 5 attributes (no change_type) and `…feeder_audit_details.adoc`
 likewise. Terminology group "audit change type" has 252 `synthesis`
 (TERM `SupportTerminology/master04-representation.adoc:78`) but it is only
 reachable from AUDIT_DETAILS.change_type. Unrepresentable → no ambiguity-register
-entry exists (`tools/cnf-runner/artifacts/registers/ambiguities.yaml` has no
+entry exists (Veredictum's `artifacts/registers/ambiguities.yaml` has no
 FEEDER_AUDIT change_type entry).
 
 **Already-adjudicated, do NOT re-report:** the uid-copy form (RM says copy the

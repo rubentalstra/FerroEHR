@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-`assertions::equivalent` (`tools/cnf-runner/src/exec/assertions.rs:307`) ends in
+`assertions::equivalent` (Veredictum's `src/exec/assertions.rs:307`) ends in
 `resultset::cells_equal`, whose object rule requires **equal key sets**
 (`resultset.rs:47`, `x.len() == y.len()`). A canonical-XML commit is decoded
 through the RM (`negotiate::rm_value` → `from_canonical_xml` →

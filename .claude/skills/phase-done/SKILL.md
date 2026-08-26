@@ -73,9 +73,8 @@ does not decide the work is done on your behalf.
    delete-on-implementation lifecycle; `docs/plans/README.md`) — unless
    another still-open issue consumes the same plan file; then note that on
    the issue instead. Exceptions that are NEVER deleted:
-   `docs/plans/WORKLIST.md` (the tracker pointer stub), `docs/plans/README.md`
-   (the lifecycle guide), and `docs/conformance/cnf-design.md` (the
-   permanent CNF 2.0 design record, owner ruling 2026-07-22).
+   `docs/plans/WORKLIST.md` (the tracker pointer stub) and
+   `docs/plans/README.md` (the lifecycle guide).
 8. **Roadmap-board check** (`.claude/rules/project-board.md`): `Done` is set
    by the built-in workflow when the merge closes the issue — never by hand.
    After the merge, `scripts/gh/project.sh show <n>` should say `Done`; if

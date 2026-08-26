@@ -19,16 +19,11 @@ is stated as *FerroEHR contributors*, identically in `LICENSE`, in `REUSE.toml`,
 and in every first-party file header; a CI gate compares the three so they
 cannot drift apart.
 
-The one exception is the conformance instrument, `tools/cnf-runner` — the
-CNF 2.0 runner, its machine-readable catalogue, schemas, and party
-artifacts — which is licensed under
-[Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/Apache-2.0.txt).
-It is an independent tool with its own audience, and Apache-2.0's section 4
-requires every copy and derivative to carry the license and the
-[`NOTICE`](https://github.com/rubentalstra/FerroEHR/blob/develop/tools/cnf-runner/NOTICE)
-attribution, while section 3 grants an explicit patent license. The vendored
-test corpora inside it keep their upstream terms exactly as the table below
-states.
+The conformance instrument is no longer part of this repository. It is
+[Veredictum](https://github.com/rubentalstra/Veredictum), an independent
+project under Apache-2.0, and the conformance pipeline here consumes it at a
+pinned version. The vendored test corpora this repository still carries keep
+their upstream terms exactly as the table below states.
 
 Five of the published spec crates that **embed** openEHR-derived material
 (`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its`)

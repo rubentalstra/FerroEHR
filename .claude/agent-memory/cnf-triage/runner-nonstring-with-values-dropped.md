@@ -15,7 +15,7 @@ re-reading the function.
 
 Historical description follows.
 
-`HttpDriver::merge_with_vars` (`tools/cnf-runner/src/exec/driver.rs`) promotes a
+`HttpDriver::merge_with_vars` (Veredictum's `src/exec/driver.rs`) promotes a
 step's `with:` entries into the template VarStore **only when the JSON value is a
 `Value::String`**. A numeric/bool `with:` value (e.g. `url_fetch: 4`) is therefore
 unbound when `build_url`/`build_headers` render `"${url_fetch?}"`; the ref is

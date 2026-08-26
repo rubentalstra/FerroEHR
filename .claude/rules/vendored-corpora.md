@@ -1,5 +1,5 @@
 ---
-paths: ["scripts/vendor/*.sh", "tools/cnf-runner/artifacts/corpus/**", "crates/openehr-adl/tests/corpus/**"]
+paths: ["scripts/vendor/*.sh", "corpus/**", "crates/openehr-adl/tests/corpus/**"]
 ---
 
 # Vendoring external corpora (CKM, ADL libraries, upstream test material)
@@ -16,9 +16,9 @@ commit the result.
 | corpus | script | destination |
 |---|---|---|
 | openEHR spec text + CNF schedule | `scripts/vendor/spec-docs.sh` | `docs/specs/openehr/` |
-| CKM templates (OPT 1.4) — curated journey pack + full library | `scripts/vendor/ckm-templates.sh` | `tools/cnf-runner/artifacts/corpus/templates/ckm/{,full/}` |
-| CKM archetypes (**ADL 1.4**) | `scripts/vendor/ckm-archetypes.sh` | `tools/cnf-runner/artifacts/corpus/archetypes/ckm/adl14/` |
-| ADL **2** archetypes + their 1.4 twins | `scripts/vendor/adl2-archetypes.sh` | `crates/openehr-adl/tests/corpus/adl2-reference/`, `tools/cnf-runner/artifacts/corpus/archetypes/adl2/` |
+| CKM templates (OPT 1.4) — curated journey pack + full library | `scripts/vendor/ckm-templates.sh` | `corpus/templates/ckm/{,full/}` |
+| CKM archetypes (**ADL 1.4**) | `scripts/vendor/ckm-archetypes.sh` | `corpus/archetypes/ckm/adl14/` |
+| ADL **2** archetypes + their 1.4 twins | `scripts/vendor/adl2-archetypes.sh` | `crates/openehr-adl/tests/corpus/adl2-reference/`, `corpus/archetypes/adl2/` |
 | CKM example skeletons (generated once vs a composed SUT) | `scripts/generate-ckm-examples.sh` | `…/templates/ckm/*.example.json` |
 
 ## The openEHR CKM REST API — facts, verified 2026-08-01
@@ -50,8 +50,8 @@ guess.
   a **UUID** there, so template file names are slugs derived from the display
   name; those slugs are NOT stable across a display-name change, which is why
   the curated journey pack keeps a hand-pinned slug per cid (a contract read
-  by `corpus/MANIFEST.yaml`, the journey definitions and
-  `generate-ckm-examples.sh` — never rename or drop one).
+  by the conformance instrument's corpus manifest and journey definitions and
+  by `generate-ckm-examples.sh` — never rename or drop one).
 
 ## ADL 1.4 vs ADL 2.4 — where each dialect comes from
 
@@ -72,7 +72,9 @@ negotiable:
   `Reference/CKM_2013_12_09` tree carries `*.adl`/`*.adls` **pairs** of the
   same archetypes — that pairing is the independent conversion reference.
 - The `openehr-adl` ADL 2 regression library
-  (`tests/corpus/adl2-reference/`) is vendored from the same pinned commit;
+  (`crates/openehr-adl/tests/corpus/adl2-reference/` — the crate's OWN corpus,
+  a different tree from the shared `corpus/`) is vendored from the same
+  pinned commit;
   `scripts/vendor/adl2-archetypes.sh --check` proves the script still
   reproduces the committed tree byte-for-byte. Its provenance record stays
   `crates/openehr-adl/tests/corpus/PROVENANCE.md`.
@@ -89,12 +91,13 @@ Vendoring is half a change. The standing owner rule (`.claude/rules/testing.md`
   invalid artefacts (e.g. CKM cid `1013.26.61`, whose OPT carries an
   `assumed_value` outside its constrained code list — AM 1.4
   `Assumed_value_valid`). A file our conformant reader rejects is either a
-  spec-cited expected-rejection entry in the owning gate, or an
-  `artifacts/registers/ambiguities.yaml` entry — never a quiet exclusion and
+  spec-cited expected-rejection entry in the owning gate, or an entry in the
+  conformance instrument's ambiguity register — never a quiet exclusion and
   never a weakened gate. The valid/invalid twins rule holds (testing.md).
-- Per-file `MANIFEST.yaml` entries carry verdict + defect for catalogue
-  fixtures; bulk breadth packs record their inventory + adjudications in the
-  pack's `PROVENANCE.md` and are driven by a directory-walking gate.
+- The per-file verdict/defect manifest for catalogue fixtures lives with the
+  instrument (Veredictum's `artifacts/corpus/MANIFEST.yaml`); the bulk breadth
+  packs here record their inventory + adjudications in the pack's own
+  `PROVENANCE.md` and are driven by a directory-walking gate.
 - Size honesty: these packs are large (the full CKM template pack is ~100 MB
   of XML; the archetype packs ~25 MB). That is acceptable for text that git
   compresses well, but a pack is only worth its weight if a gate reads it.

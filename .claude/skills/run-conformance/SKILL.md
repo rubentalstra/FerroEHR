@@ -12,7 +12,7 @@ argument-hint: "[case-id-filter | --sut byo --base-url <url>]"
 
 # /run-conformance
 
-Runs the **CNF 2.0 pipeline** (`tools/cnf-runner`) via
+Runs the **CNF 2.0 pipeline** (Veredictum) via
 `scripts/conformance.sh` — compose up --build on FRESH volumes (the
 exclusive-server ground) → the committed catalogue → pure-function verdicts
 → artefacts under `docs/conformance/<sut>/` (our server:
@@ -24,8 +24,8 @@ exclusive-server ground) → the committed catalogue → pure-function verdicts
 (`.claude/rules/cnf-triage.md`).** The vendored openEHR spec
 (`docs/specs/openehr/`) is the ONLY oracle and is ALWAYS right. The three
 things WE built — the **application** (`app/*` + `crates/openehr-*`), the
-**runner** (`tools/cnf-runner/src`), the **catalogue**
-(`tools/cnf-runner/artifacts`) — are ALL suspects, none privileged. A red row
+**runner** (Veredictum's `src`), the **catalogue**
+(Veredictum's `artifacts`) — are ALL suspects, none privileged. A red row
 means exactly one of the three is wrong, and WHICH one is decided by reading
 the spec, never assumed. **The application is NOT presumed correct because "we
 wrote it carefully to the spec" — it is the single most common real culprit,
@@ -41,7 +41,7 @@ FORBIDDEN:
 
 - The catalogue is **authored from the CNF 2.0 framework** (official
   schedule case ids; spec-text-only expectations; ambiguities through the
-  typed register — `tools/cnf-runner/CLAUDE.md`). The upstream Robot suites
+  typed register — Veredictum's own `CLAUDE.md`). The upstream Robot suites
   are reference text; their official DATA fixtures live in the corpus as
   provenance-stamped re-adjudications.
 - **Never weaken a case to pass.** A failing case against our server is a
@@ -71,11 +71,12 @@ FORBIDDEN:
    extended sustained hold; every run seeds the freshly composed server
    from empty — there is no seed reuse). The step-load STRESS ladder is a
    separate, non-conformance instrument:
-   `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts
-   --ixit <party>/ixit.json --out docs/conformance/<sut>/stress.json
-   [--corpus-class POC]` — it writes stress.json only, never
+   `veredictum stress --root "$(veredictum_artifacts)"
+   --ixit docs/conformance/party/<sut>/ixit.json
+   --out docs/conformance/<sut>/stress.json [--corpus-class POC]` (source
+   `scripts/lib/veredictum.sh` first) — it writes stress.json only, never
    results.json. The full canonical CLI table lives in
-   `tools/cnf-runner/CLAUDE.md`.
+   Veredictum's own `CLAUDE.md`.
 3. **Compare against the committed baseline**
    (`docs/conformance/ferroehr/results.json` + `verdicts.json`): the only
    permitted delta is newly-green cases — **zero drift**. Report:
@@ -101,8 +102,8 @@ FORBIDDEN:
       - **Catalogue defect** (catalogue-expected ≠ spec, regardless of what the
         SUT did) → fix the artifact WITH a new spec-cited source.
       - **Runner defect** (SUT spec-correct but mis-driven/mis-classified) →
-        fix the `tools/cnf-runner/src` module.
-      - **Spec silence/ambiguity** → an
+        fix the module in VEREDICTUM, release, bump the pin here.
+      - **Spec silence/ambiguity** → a Veredictum
         `artifacts/registers/ambiguities.yaml` entry with a typed disposition.
    Never adjust an expectation to match observed behaviour; never change app
    code without a reproduced exchange; never assume the app is the correct one.

@@ -66,7 +66,7 @@ Distributed]).
   pins it.
 - **Zero end-to-end coverage of `800|inactive|` / `801|abandoned|`**, of any
   branch version id, and of any illegal-transition refusal — neither in
-  `tools/cnf-runner/artifacts/schedule/` nor in the crate test suites.
+  Veredictum's `artifacts/schedule/` nor in the crate test suites.
 - **`other_input_version_uids` accepted on the CONTRIBUTION wire**
   (`contribution.rs:377`) though `UpdateVersion.yaml` declares no such
   property. AMB-89 registers the IMPORT gap only, not the MERGE write path.

@@ -13,14 +13,14 @@ strings are TRUNCATED in the committed file (…), so reproduce on the wire for
 the full diff. `run-exceptions.json` = the not_applicable/unrealized list only.
 `verdicts.json` = computed capability/profile roll-up.
 
-- Case cores: `tools/cnf-runner/artifacts/schedule/<family>/<CASE>.yaml`
+- Case cores: Veredictum's `artifacts/schedule/<family>/<CASE>.yaml`
   (SM operation + outcome kinds + spec_refs + often a self-documenting TODO
   naming the real defect).
-- Operation bindings (wire realization): `tools/cnf-runner/artifacts/bindings/its-rest/<SM.op>.yaml`.
-- Corpus: `tools/cnf-runner/artifacts/corpus/MANIFEST.yaml` maps data-set
+- Operation bindings (wire realization): Veredictum's `artifacts/bindings/its-rest/<SM.op>.yaml`.
+- Corpus: `corpus/MANIFEST.yaml` maps data-set
   aliases (`cnf.*`) → fixture files + `template_id`; fixtures under
   `corpus/fixtures/**`, templates under `corpus/templates/**`.
-- Party/statement: `tools/cnf-runner/party/ferroehr/{statement.json,ixit.json}`
+- Party/statement: `docs/conformance/party/ferroehr/{statement.json,ixit.json}`
   — `statement.options` holds the selected `option_select` branches.
 - Spec oracle: `docs/specs/openehr/` (index in its README). SF cases →
   `ITS-REST/docs/simplified_formats/master0{2,4,5,6}-*.adoc`. ADL14 →

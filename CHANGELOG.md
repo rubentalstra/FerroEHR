@@ -15,6 +15,40 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The conformance instrument is no longer built from this repository. It is
+  [Veredictum](https://github.com/rubentalstra/Veredictum), an independent
+  Apache-2.0 project with its own release line, and the pipeline consumes it at
+  a version pinned in one place (`scripts/lib/veredictum.sh`): the runner comes
+  from crates.io (`cargo install veredictum --version <pin> --locked`) and the
+  catalogue with its vendored specification oracle comes from a cached checkout
+  of the matching tag. `scripts/conformance.sh` and the render scripts take the
+  same arguments as before and produce the same artifacts, so the committed
+  conformance record and every published chart, badge and document derived from
+  it are unchanged. An instrument built separately from the system it judges can
+  no longer be adjusted to suit that system.
+- The party set — each SUT's `ixit.json` and its party statement, plus the
+  static test issuer the SMART conformance posture trusts — moved to
+  `docs/conformance/party/<sut>/`, beside the record it belongs to. A vendor
+  running the pipeline against their own deployment points `CONF_IXIT` and
+  `CONF_STATEMENT` at their own files exactly as before.
+- The vendored clinical-model and fixture corpus this repository's own test
+  suites read moved to `corpus/` at the repository root. It carries what FerroEHR's gates
+  exercise — the CKM ADL 1.4 and AM XML archetype packs, the CKM operational
+  template library, the fixture bodies and the version-signing test key. The
+  catalogue-side records (the per-file corpus manifest, the generated-set recipe
+  contracts and the synthesized-template generator) stayed with the instrument.
+
+### Removed
+
+- `docs/conformance/coverage-report.md` and the CI step that regenerated it.
+  The report describes the catalogue's coverage of the openEHR wire surface, so
+  it is a claim about the instrument and is now published by Veredictum, which
+  is the only repository that can regenerate it.
+- The CNF 2.0 design record left with the instrument; it is `ARCHITECTURE.md` at
+  the root of the Veredictum repository.
+
 ## [4.0.6-rc2] - 2026-08-26
 
 ### Added

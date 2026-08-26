@@ -53,15 +53,15 @@ Recurring session-workflow traps (all hit 2026-07-13/14):
    a light composed stack BEFORE burning a seeded run (the pack preflight
    gate now covers payload validity at seeding).
 
-5. **`pkill -f conformance.sh` does NOT kill the cnf-runner child** (hit
-   2026-07-24, cost two tainted measured runs): the orphaned `cnf-runner
+5. **`pkill -f conformance.sh` does NOT kill the instrument child** (hit
+   2026-07-24, cost two tainted measured runs): the orphaned `veredictum
    perf` keeps firing its arrival schedule for its full window (70+ min)
    at the SUT ports — and a relaunched run reuses the same compose
    project/ports, so the orphan's request stream and writes contaminate
    the NEW run's seed + measured window, and it writes its garbage
    measurement into the same `--results` path. Aborting a measured run
-   means: `pkill -9 -f cnf-runner` AND `pkill -9 -f conformance.sh`, then
-   `pgrep -fl 'conformance.sh|cnf-runner'` must be EMPTY, then explicit
+   means: `pkill -9 -f veredictum` AND `pkill -9 -f conformance.sh`, then
+   `pgrep -fl 'conformance.sh|veredictum'` must be EMPTY, then explicit
    `docker compose -p <project> down -v`, then `git restore` the
    artifact dir — verify all four before relaunching.
 

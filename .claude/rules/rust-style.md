@@ -5,8 +5,8 @@ paths: ["crates/**/*.rs", "app/**/*.rs", "tools/**/*.rs"]
 # Rust style — idiomatic application code
 
 Applies to hand-written `.rs`: the application (`ferroehr`, `ferroehr-rest`,
-`ferroehr-server`, `ferroehr-admin-ui`), the tools (`cnf-runner`,
-`testkit`, `openehr-codegen`), the hand-written spec
+`ferroehr-server`, `ferroehr-admin-ui`), the tools (`testkit`,
+`openehr-codegen`), the hand-written spec
 crates (`openehr-its`, `openehr-term`, `openehr-query`, the
 tooling crates), and `*_impl.rs` behaviour files. **The application is modern idiomatic Rust of our own design, built on the
 generated `openehr-*` crates**. The openEHR specifications are

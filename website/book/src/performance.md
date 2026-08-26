@@ -226,7 +226,7 @@ mandatory: a measurement without the deployment described is not a
 measurement), the `results.json` to merge into, and the class:
 
 ```bash
-cnf-runner perf --root <catalogue-root> --ixit <ixit.json> \
+veredictum perf --root <catalogue-root> --ixit <ixit.json> \
                 --results <results.json> --class POC --hours 8
 ```
 
@@ -244,7 +244,7 @@ the latency budget (the same idea TPC benchmarks report as maximum qualified
 throughput).
 
 ```bash
-cnf-runner stress --root <catalogue-root> --ixit <ixit.json> \
+veredictum stress --root <catalogue-root> --ixit <ixit.json> \
                   --out <stress.json> --corpus-class POC
 ```
 
@@ -275,7 +275,7 @@ for the optimization loop: it earns nothing and never touches the conformance
 record.
 
 ```bash
-cnf-runner aql-probe --root <catalogue-root> --ixit <ixit.json> \
+veredictum aql-probe --root <catalogue-root> --ixit <ixit.json> \
                      --out <aql-probe.json>
 ```
 

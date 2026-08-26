@@ -104,7 +104,7 @@ don't duplicate.
   `_resources/suite_settings.robot` (L52), and `_resources/variables/` +
   most of `libraries/` are absent from the vendored tree.
 
-## Our catalogue state (tools/cnf-runner/artifacts)
+## Our catalogue state (Veredictum's artifacts)
 `schedule/admin/` has 18 cases across 9 SM ops (2 each); only
 `physical_ehr_delete-{delete_existing,delete_non_existing}` have a realized
 `bindings/its-rest/I_ADMIN_SERVICE.physical_ehr_delete.yaml`
