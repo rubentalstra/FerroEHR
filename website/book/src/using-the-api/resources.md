@@ -40,6 +40,17 @@ subject and flags at creation. Returns **201 Created** with the new EHR id in
 the full `EHR`; otherwise it is empty. Supplying an `EHR_STATUS` whose subject
 already has an EHR returns **409 Conflict**.
 
+With no body the server mints the spec's default `EHR_STATUS`
+(`is_queryable: true`, `is_modifiable: true`, a `PARTY_SELF` subject, and an
+`archetype_details` block naming `openEHR-EHR-EHR_STATUS.generic.v1`). A
+supplied `EHR_STATUS` must be a complete, RM-valid instance: `EHR_STATUS` is
+always an archetype root, so `archetype_details` (with its `archetype_id`) is
+mandatory, and a body without it is refused with **422** naming the violated
+invariant. Some servers accept such a partial status and fill the gap
+silently; FerroEHR validates the supplied resource exactly as the Reference
+Model defines it, so either send the complete status or omit the body and let
+the server mint the default.
+
 To create with a specific id, use `PUT /ehr/{ehr_id}` (also 201; 409 if that id
 is already used).
 
