@@ -35,10 +35,12 @@
 #     number, date or version in it would open a new issue every run) and put
 #     the varying detail in the body.
 #   * `--dedup-key K` (repeatable) — the key is a token that must appear in the
-#     title: a match is an issue whose title contains EVERY key,
-#     case-insensitively. This is what the spec watchers need, where the Jira
-#     key or the component-plus-version pair identifies the work and the rest of
-#     the title is free text.
+#     title: a match is an issue whose title contains EVERY key as a whole
+#     WORD (regex word boundaries, case-insensitive — #2796: RM/AM/SM occur
+#     inside "the ARM build" and "transform", so substring containment could
+#     dedup a genuine release against an unrelated issue). This is what the
+#     spec watchers need, where the Jira key or the component-plus-version
+#     pair identifies the work and the rest of the title is free text.
 #
 # BODY BY FILE ONLY. Watcher bodies carry remote content — upstream release
 # notes, scanner output, third-party server messages — which must never be
@@ -124,9 +126,16 @@ find_existing() {
     printf '%s' "$json" | jq -r --arg t "$title" \
       'map(select(.title == $t)) | .[0].number // empty'
   else
+    # Word-boundary containment, not substring (#2796): the short component
+    # tokens RM/AM/SM occur inside ordinary words ("the ARM build",
+    # "transform"), so a plain contains() could dedup a genuine notification
+    # against an unrelated issue. Each key is regex-escaped, then must match
+    # between word boundaries, case-insensitively.
     printf '%s' "$json" | jq -r --args \
-      'map(select((.title | ascii_downcase) as $t
-                  | all($ARGS.positional[]; . as $k | $t | contains($k | ascii_downcase))))
+      'map(select(.title as $t
+                  | all($ARGS.positional[];
+                        gsub("(?<c>[.\\\\+*?()|\\[\\]{}^$-])"; "\\" + .c) as $rx
+                        | $t | test("\\b" + $rx + "\\b"; "i"))))
        | .[0].number // empty' -- "${dedup_keys[@]}"
   fi
 }
