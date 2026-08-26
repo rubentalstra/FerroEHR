@@ -29,10 +29,68 @@ on:
 permissions: {}
 
 jobs:
+  # ── Change detection (pull requests only) ───────────────────────────────────
+  # The scan below carries a 90-minute instrumented test suite against a real
+  # PostgreSQL, because coverage rides this lane. A pull request that changes
+  # no scanned code has nothing for it to measure (#2777).
+  #
+  # In-workflow, never a workflow-level `paths:` filter — the same required-check
+  # reasoning `ci.yml` and `docs.yml` record. A develop push is NEVER gated:
+  # coverage and the New Code baseline are wanted on every merge.
+  changes:
+    name: change detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        # Context reaches the shell through env, never `${{ }}`-inline.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "$EVENT_NAME is not a pull request — scanning unconditionally."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse --verify --quiet "$PR_BASE" >/dev/null; then
+            echo "Base $PR_BASE unavailable — treating as a code change."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$PR_BASE" "$PR_HEAD")
+          echo "Changed files:"; echo "$changed"
+          # The scanned trees, the manifests that decide what they resolve
+          # against, the two files that decide what the analyzer's own Clippy
+          # run reports (the pinned toolchain and its configuration), the
+          # properties file that decides the scan SCOPE, and this workflow
+          # itself — a change to the lane's own recipe exercises the lane it
+          # changes.
+          if echo "$changed" | grep -qE '^(app/|crates/|tools/|Cargo\.(toml|lock)$|rust-toolchain\.toml$|clippy\.toml$|sonar-project\.properties$|\.github/workflows/sonar\.yml$)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No scanned code touched — the analysis will be skipped."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   scan:
     name: analyze
+    needs: changes
     # PR analysis authenticates with SONAR_TOKEN, which fork PRs cannot read.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    # A develop push always scans; a pull request scans only when it touched
+    # scanned code (#2777).
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.code == 'true')
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     permissions:

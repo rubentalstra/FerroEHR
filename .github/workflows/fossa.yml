@@ -31,7 +31,11 @@ name: FOSSA
 
 on:
   push:
-    branches: [develop, main]
+    # develop is the default branch and the trunk every release is cut from.
+    # `main` exists but nothing merges into it, so a `main` trigger analysed a
+    # branch no work reaches and filed its revisions under a name the dashboard
+    # never shows (#2777).
+    branches: [develop]
   pull_request:
   workflow_dispatch:
 

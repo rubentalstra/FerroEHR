@@ -15,7 +15,9 @@ name: Docs
 on:
   push:
     branches: [develop]     # redeploy dev docs + landing
-  pull_request:             # PR: build + lint + link-check ONLY (no deploy)
+  pull_request:             # PR: build + lint + link-check ONLY (no deploy),
+                            # and only when a site input changed (the `changes`
+                            # gate below)
   workflow_dispatch:
 
 # The pinned toolchain lives in .github/actions/docs-toolchain (#2775) — it was
@@ -33,8 +35,75 @@ concurrency:
 permissions: {}
 
 jobs:
-  # ── Build + verify (always; no deploy) ──────────────────────────────────────
+  # ── Change detection (pull requests only) ───────────────────────────────────
+  # The site build renders the conformance assets, regenerates the derived
+  # party documents (which compiles `cnf-runner`), lints the book and
+  # link-checks the assembled tree — 30 minutes of work that a pull request
+  # touching none of its inputs has no reason to pay (#2777).
+  #
+  # It is an IN-WORKFLOW gate, not a workflow-level `paths:` filter, for the
+  # documented reason `ci.yml` uses the same shape: a workflow skipped by path
+  # filtering leaves its checks in a pending state forever if one is ever
+  # required, whereas a job skipped by `if:` reports as skipped and satisfies
+  # branch protection
+  # (https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks).
+  #
+  # Any non-pull-request event answers `true` unconditionally: a develop push
+  # deploys the site and a manual dispatch is an explicit request to rebuild
+  # it, so neither is ever gated on a delta.
+  changes:
+    name: change detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        # Context reaches the shell through env, never `${{ }}`-inline (the
+        # template-injection rule; `ci.yml`'s filter is the pattern).
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "$EVENT_NAME is not a pull request — building the site unconditionally."
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse --verify --quiet "$PR_BASE" >/dev/null; then
+            echo "Base $PR_BASE unavailable — treating as a docs change."
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$PR_BASE" "$PR_HEAD")
+          echo "Changed files:"; echo "$changed"
+          # The site's sources, plus every INPUT the build's own gates read:
+          # the committed conformance artifacts and the party statements +
+          # catalogue that `scripts/render/conformance-docs.sh` regenerates
+          # from (`cnf-runner verdicts`, so the runner's own source counts),
+          # the render/assemble scripts, the stale-numbers gate's script, and
+          # the job's own recipe — this workflow and the toolchain action —
+          # so a change to what the job DOES exercises the job it changes.
+          if echo "$changed" | grep -qE '^(website/|docs/conformance/|scripts/(render|site)/|scripts/checks/(docs-claims|conformance-numbers)\.sh$|tools/cnf-runner/|\.github/workflows/docs\.yml$|\.github/actions/docs-toolchain/)'; then
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No site-relevant paths touched — the docs build will be skipped."
+            echo "docs=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Build + verify (no deploy) ──────────────────────────────────────────────
   build:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
