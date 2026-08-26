@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The ambiguity register (`registers/ambiguities.yaml`) — every entry a
 //! real, verified spec divergence or silence with the normative handling a

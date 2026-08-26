@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The IXIT (`ixit.json`) — the SUT topology the runner drives: one or more
 //! named instances (base URL + auth + overrides) plus the environment block.

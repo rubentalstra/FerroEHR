@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! Serde helpers: ordered maps as `Vec<(K, V)>` (authored key order is part
 //! of an artifact's meaning — flow `with:` payload order, capture order —

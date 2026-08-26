@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! Per-row OPT synthesis for the *structural* content families, plus the
 //! single dispatch entry the driver calls for every synthesized content row.
