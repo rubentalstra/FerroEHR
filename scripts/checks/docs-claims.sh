@@ -328,14 +328,16 @@ for f in $files website/landing/index.html; do
       || report "$f" "pins ghcr image tag \`$v\`; the workspace version is $app_version"
   done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-admin-ui|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" | sed 's/.*://' | sort -u)
 done
-# The from-source page: a Rust version literal must be the toolchain channel or
-# the MSRV ("Rust 1.96.1" shipped against a 1.97.1 toolchain — #2348).
+# The from-source page: a Rust version literal must be the toolchain channel
+# (with or without its patch) or the EXACT declared MSRV ("Rust 1.96.1"
+# shipped against a 1.97.1 toolchain — #2348; the MSRV arm then accepted the
+# same phantom patch because "1.96.*" matched it — #2805).
 RUST_PAGE="$BOOK/installation/from-source.md"
 if in_files "$RUST_PAGE"; then
   channel=$(awk -F'"' '/^channel/{print $2; exit}' rust-toolchain.toml)
   msrv=$(awk -F'"' '/^rust-version/{print $2; exit}' Cargo.toml)
   while read -r v; do
-    case "$v" in "$channel"|"${channel%.*}"|"$msrv"|"$msrv".*) continue ;; *) ;; esac
+    case "$v" in "$channel"|"${channel%.*}"|"$msrv") continue ;; *) ;; esac
     report "$RUST_PAGE" "names Rust \`$v\`, which is neither the toolchain channel ($channel) nor the MSRV ($msrv)"
   done < <(grep -ohE '1\.[0-9]{2}(\.[0-9]+)?' "$RUST_PAGE" | sort -u)
 fi
