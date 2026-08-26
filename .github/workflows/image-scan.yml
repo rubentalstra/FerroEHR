@@ -27,12 +27,21 @@
 # they do not bind in the build-time lane — measured 2026-08-06: the `pkg:oci/…`
 # products match a PUBLISHED reference (by tag and by digest), and the build lane
 # scans `ferroehr-postgres` under a local tag, which is what fails to match.
+#
+# RUN COLOUR (the watcher family's uniform rule, #2778). The run is RED only when
+# the PROBE fails — an image that cannot be resolved or pulled, a trivy crash,
+# output jq cannot read. A FINDING files or updates the tracking issue and the
+# run stays GREEN: THE ISSUE IS THE ALERT. Until #2778 this lane also exited
+# non-zero on a finding, which made the red Monday run the signal; a red
+# scheduled run is invisible to anyone not watching the Actions tab, and the
+# issue (created or commented, `bug`/`P1`) reaches the tracker instead.
 name: Published image scan
 
 on:
   schedule:
-    # Mondays 07:13 UTC — off the hour, and clear of the other scheduled lanes
-    # (codeql 05:23, latest-deps 05:17, scorecard 05:37, spec watchers 06:17/06:47).
+    # Mondays 07:13 UTC — off the hour (GitHub delays on-the-hour runs under
+    # load) and in a slot of its own; read the estate's slots with
+    # `grep -rE '^ +- cron:' .github/workflows/`.
     - cron: "13 7 * * 1"
   workflow_dispatch:
     inputs:
@@ -137,24 +146,16 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      # A finding does TWO things, because either alone fails quietly. A red
-      # scheduled run is invisible to anyone not looking at the Actions tab, and
-      # an issue with no failing check can be closed without the finding being
-      # addressed. So: one tracking issue (updated by comment on later runs, never
-      # duplicated — the same dedup-by-searching-the-board approach as the spec
-      # watchers) AND a non-zero exit.
-      - name: File or update the tracking issue
+      # An issue with no failing check can be closed without the finding being
+      # addressed, so the issue says what the remedy is and the remediation law
+      # (.claude/rules/image-security.md) says who may VEX instead of fixing.
+      - name: Write the tracking-issue body
         if: steps.scan.outputs.total != '0' && !inputs.report_only
         env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
           TOTAL: ${{ steps.scan.outputs.total }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          title="security(images): published images carry fixable HIGH/CRITICAL findings"
-          existing=$(gh issue list --repo "$REPO" --state open --search "in:title \"$title\"" \
-                       --json number --jq '.[0].number // empty')
           {
             printf 'A scheduled scan of the PUBLISHED images found **%s** fixable HIGH/CRITICAL findings.\n\n' "$TOTAL"
             printf '| image | platform | digest | findings |\n|---|---|---|---|\n'
@@ -165,18 +166,11 @@ jobs:
             printf ' genuinely unreachable in our usage belongs in `security/vex/` with its'
             printf ' argument, per `security/vex/README.md`.\n'
           } > body.md
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --repo "$REPO" --body-file body.md
-            echo "commented on #$existing"
-          else
-            gh issue create --repo "$REPO" --title "$title" \
-              --label bug --label P1 --body-file body.md
-          fi
 
-      - name: Fail when the published images carry fixable findings
-        if: steps.scan.outputs.total != '0'
-        env:
-          TOTAL: ${{ steps.scan.outputs.total }}
-        run: |
-          echo "::error::${TOTAL} fixable HIGH/CRITICAL findings in the published images — see the run summary and the tracking issue."
-          exit 1
+      - name: File or update the tracking issue
+        if: steps.scan.outputs.total != '0' && !inputs.report_only
+        uses: ./.github/actions/file-watcher-issue
+        with:
+          title: "security(images): published images carry fixable HIGH/CRITICAL findings"
+          body-file: body.md
+          labels: bug,P1

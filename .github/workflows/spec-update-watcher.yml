@@ -8,9 +8,14 @@
 # Twice weekly it polls the public openEHR Jira for newly COMPLETED SPEC*
 # changes and diffs the upstream amendment records against the vendored spec
 # mirror, opening ONE `spec-update` issue per change for conformance-impact
-# triage. Dedup/watermark is the issue board itself (search --state all by
-# the Jira key in the title) — no state file. A transport/shape failure is a
-# RED run; only a successful poll matching nothing is green-with-zero.
+# triage. Filing goes through the watcher family's one engine
+# (.github/actions/file-watcher-issue/file-issue.sh, #2778), called from the
+# script because this lane files N issues per run; dedup/watermark is the issue
+# board itself (--state all, by the Jira key in the title) — no state file.
+#
+# RUN COLOUR (the family's uniform rule, #2778): a transport or shape failure is
+# a RED run — the probe could not answer. A change FOUND files work and the run
+# stays GREEN, as does a successful poll matching nothing.
 #
 # NOTE: GitHub disables scheduled workflows after 60 days without repo
 # activity — a non-issue for an active repo, re-enable from the Actions tab

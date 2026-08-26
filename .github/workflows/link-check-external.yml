@@ -17,6 +17,12 @@
 #
 # A check nobody reads is not a check, so a genuine failure here opens an
 # issue rather than writing to a log that closes with the run.
+#
+# RUN COLOUR (the watcher family's uniform rule, #2778). An unreachable link is a
+# FINDING: it files or updates the report issue through
+# .github/actions/file-watcher-issue and the run stays GREEN. The run goes RED
+# only when the PROBE fails — lychee exiting non-zero without producing a summary
+# at all, which is a broken invocation rather than an answer about any host.
 name: External links
 
 on:
@@ -69,26 +75,39 @@ jobs:
       # on this run, so a slow host gets the benefit of the doubt rather than
       # producing a false report. 429 is accepted outright — being rate-limited
       # is evidence the host is UP, which is the only thing being measured.
+      # A non-zero lychee exit is a FINDING when it came with a summary, and a
+      # PROBE FAILURE when it did not: the summary is the answer, and without one
+      # there is nothing to report about any host. The exit codes themselves are
+      # deliberately not read — the artifact is the evidence.
       - name: Check external links
         id: lychee
-        continue-on-error: true
         run: |
+          set -uo pipefail
+          status=0
           lychee --no-progress --max-retries 5 --retry-wait-time 10 --timeout 45 \
             --accept '200..=299,429' --exclude-loopback \
             --root-dir "$PWD/_site" \
             --exclude '^https://ferroehr\.eu' \
             --output summary.md --format markdown \
-            './_site/**/*.html'
+            './_site/**/*.html' || status=$?
+          finding=0
+          if [ "$status" -ne 0 ]; then
+            if [ -s summary.md ]; then
+              finding=1
+            else
+              echo "::error::lychee exited ${status} without writing a summary — the probe itself failed"
+              exit 1
+            fi
+          fi
+          echo "finding=${finding}" >> "$GITHUB_OUTPUT"
 
-      # Report through the environment, never interpolated into the shell:
-      # every line of that summary is remote content (URLs and server messages
-      # from third-party hosts) and must not be parsed as script.
-      - name: Open or update the report issue
-        if: steps.lychee.outcome == 'failure'
+      # Report through a file, never interpolated into the shell: every line of
+      # that summary is remote content (URLs and server messages from
+      # third-party hosts) and must not be parsed as script.
+      - name: Write the report-issue body
+        if: steps.lychee.outputs.finding == '1'
         env:
-          GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TITLE: "docs: external links are failing the scheduled reachability check"
         run: |
           set -euo pipefail
           {
@@ -100,13 +119,13 @@ jobs:
             cat summary.md
           } > body.md
 
-          existing=$(gh issue list --state open --search "$TITLE in:title" \
-                       --json number --jq '.[0].number // empty')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body-file body.md
-          else
-            gh issue create --title "$TITLE" --label documentation --label P3 --body-file body.md
-          fi
+      - name: Open or update the report issue
+        if: steps.lychee.outputs.finding == '1'
+        uses: ./.github/actions/file-watcher-issue
+        with:
+          title: "docs: external links are failing the scheduled reachability check"
+          body-file: body.md
+          labels: documentation,P3
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()

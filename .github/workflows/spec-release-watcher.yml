@@ -5,7 +5,12 @@
 # spec-update-watcher.yml: that workflow tracks individual completed spec
 # changes; this one guarantees a component RELEASE is never missed (the
 # ITS-REST 1.1.0 release was discovered by hand — never again). Mechanism
-# notes live in scripts/watch/spec-release.sh.
+# notes live in scripts/watch/spec-release.sh, which files through the watcher
+# family's one engine (.github/actions/file-watcher-issue/file-issue.sh, #2778).
+#
+# RUN COLOUR (the family's uniform rule, #2778): a tags-API transport failure or
+# an unexpected shape is a RED run — the probe could not answer. A release FOUND
+# files work and the run stays GREEN.
 name: Spec-release watcher
 
 on:
