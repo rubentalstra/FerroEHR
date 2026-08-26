@@ -1161,6 +1161,25 @@ jobs:
           echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
           sudo install -m 0755 /tmp/yq /usr/local/bin/yq
           yq --version
+      # The README drift check needs helm-docs, and validate.sh's self-skip when
+      # it is absent is how the v4.0.5 README shipped a release stale through a
+      # green lane (#2806) — so the tool is installed here (pinned in
+      # deploy/helm/.tool-versions beside helm, checksum-verified like yq) and
+      # validate.sh now FAILS in CI instead of skipping when it is missing.
+      - name: Install the pinned helm-docs
+        env:
+          VERSION_FILE: deploy/helm/.tool-versions
+          HELM_DOCS_SHA256: a8cf72ada34fad93285ba2a452b38bdc5bd52cc9a571236244ec31022928d6cc
+        run: |
+          set -euo pipefail
+          version="$(awk '$1 == "helm-docs" { print $2 }' "$VERSION_FILE")"
+          [ -n "$version" ] || { echo "::error::no helm-docs line in $VERSION_FILE"; exit 1; }
+          curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors -o /tmp/helm-docs.tar.gz \
+            "https://github.com/norwoodj/helm-docs/releases/download/v${version}/helm-docs_${version}_Linux_x86_64.tar.gz"
+          echo "${HELM_DOCS_SHA256}  /tmp/helm-docs.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/helm-docs.tar.gz -C /tmp helm-docs
+          sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
+          helm-docs --version
       # No --update: the goldens in the tree must already match this render.
       - name: Chart validation + golden renders
         run: bash deploy/helm/validate.sh

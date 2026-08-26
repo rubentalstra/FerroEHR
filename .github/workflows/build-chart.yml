@@ -408,23 +408,6 @@ jobs:
       # A keyless cosign SIGNATURE over the pushed digest. Distinct from the
       # attestation below and not redundant with it: the attestation answers
       # "built from this source, this way", the signature answers "signed by this
-      # workflow" — and the signature is the artifact a Helm consumer's tooling
-      # and Artifact Hub's listing actually look for.
-      #
-      # `--new-bundle-format=false` is a DECISION, not inertia. cosign 3 defaults
-      # to the protobuf bundle attached as an OCI 1.1 referring artifact, and
-      # GHCR implements no referrers API at all — measured against the published
-      # chart, `GET /v2/rubentalstra/charts/ferroehr/referrers/<digest>` answers
-      # `404 MANIFEST_UNKNOWN`, so a referring artifact reaches the registry only
-      # through the OCI fallback TAG (`sha256-<hex>`), which on this repository is
-      # the very index the attestation step below already writes. Two writers to
-      # one index is a way to lose the attestation, for no gain: Artifact Hub
-      # checks the classic `sha256-<hex>.sig` tag FIRST (tag-based discovery in
-      # `HasCosignSignature`, `internal/oci/oci.go`), and a plain tag needs no
-      # registry capability whatever. Revisit when GHCR serves referrers.
-      # A keyless cosign SIGNATURE over the pushed digest. Distinct from the
-      # attestation below and not redundant with it: the attestation answers
-      # "built from this source, this way", the signature answers "signed by this
       # workflow" — and the signature is what a Helm consumer's tooling and
       # Artifact Hub's listing actually look for.
       #

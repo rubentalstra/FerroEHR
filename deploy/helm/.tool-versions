@@ -12,3 +12,9 @@
 # `deploy/helm/validate.sh --update` in the SAME change, which is how it moved
 # to 4.2.3 (the current release) during the chart rewrite.
 helm 4.2.3
+# The chart README generator (#2806). Pinned for the same reason as helm: the
+# README drift check byte-compares generated output, and helm-docs's rendering
+# is only byte-stable within a release. CI installs exactly this version
+# (checksum-verified in the helm-golden job); validate.sh FAILS in CI when it
+# is absent, because the self-skip is how the v4.0.5 README shipped stale.
+helm-docs 1.14.2
