@@ -285,8 +285,6 @@ serde_path_to_error = "0.1"
 quick-xml = { version = "0.41.0", features = ["serialize"] }   # verify latest 0.3x
 roxmltree = "0.21"                   # read-only XML DOM — XSD reader for the XML codegen
 serde_norway = "0.9"                 # maintained serde_yaml fork — parse vendored OAS YAML for the REST codegen
-serde-saphyr = "1.0.0-rc.1"          # pure-Rust YAML 1.2 front-end (no RUSTSEC; alias-expansion Budget) — the CNF 2.0 schedule authoring surface (tools/cnf-runner)
-semver = "1.0.28"                    # Cargo/semver requirement syntax for the CNF case `applies` spec-version ranges
 base64 = "0.23"
 # Typed FHIR R4B resource model (fhir-sdk's model half) — the typed surface of
 # the FHIR integration extension (`app/ferroehr-ext`, `fhir` feature): the ATNA
@@ -433,7 +431,6 @@ testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["postgres", "rabbitmq"] }   # verify latest
 criterion = { version = "0.8.2", features = ["html_reports"] }
 divan = "0.1"
-hdrhistogram = "7.5.4"               # coordinated-omission-corrected latency (tools/benchmark)
 sysinfo = "0.39.5"                   # CPU/RSS sampling for the benchmark harness
 
 # Cargo plugins used in CI (installed, not dependencies):

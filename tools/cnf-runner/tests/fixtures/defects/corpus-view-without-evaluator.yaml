@@ -1,8 +1,0 @@
-cnf.defect.dead_view:
-  source: fixtures/nope.json
-  format: canonical-json
-  validity: { verdict: valid }
-  provenance: "seeded defect fixture — a declared view with no registered evaluator (#971)"
-  views:
-    no_such_evaluator:
-      select: "a view the resolver cannot answer"

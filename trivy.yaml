@@ -43,7 +43,7 @@ scan:
     - tools/openehr-codegen/vendor
     - crates/openehr-lang/vendor
     - crates/openehr-adl/tests/corpus
-    - tools/cnf-runner/artifacts/corpus
+    - corpus
     - target
 
 # The adjudicated-exception file. Each entry there carries its reason; see its

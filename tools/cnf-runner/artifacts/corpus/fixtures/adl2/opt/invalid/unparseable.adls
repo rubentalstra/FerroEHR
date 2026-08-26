@@ -1,7 +1,0 @@
-operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
-    openEHR-EHR-COMPOSITION.cnf_unparseable.v1.0.0
-
-definition
-    COMPOSITION[id1] matches {{{  -- unterminated / malformed cADL block: ADL2 syntax error
-        content existence matches {0..
-    !!! not adl2 !!!

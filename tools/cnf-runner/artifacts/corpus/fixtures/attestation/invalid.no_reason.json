@@ -1,9 +1,0 @@
-{
-    "_type": "UPDATE_ATTESTATION",
-    "committer": {
-        "_type": "PARTY_IDENTIFIED",
-        "name": "Dr Senior Reviewer"
-    },
-    "is_pending": false,
-    "proof": "-----BEGIN PGP SIGNATURE-----\nCNF-ATTESTATION-PROOF-WITNESSED\n-----END PGP SIGNATURE-----\n"
-}

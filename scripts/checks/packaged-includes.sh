@@ -4,7 +4,7 @@
 # A packaged source file may only embed a file the PACKAGE carries.
 #
 # `include_str!`/`include_bytes!` resolve against the source file's directory,
-# so a path reaching out of the crate (`../../tests/corpus/…`,
+# so a path reaching out of the crate (`../../corpus/…`,
 # `../../../../../openehr-its/tests/vendor/…`) compiles perfectly in this
 # workspace and fails with "couldn't read file" for anyone who unpacks the
 # published `.crate` and runs `cargo test` — the source is there, the fixture

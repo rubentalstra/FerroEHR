@@ -57,5 +57,5 @@ app/ferroehr/migrations/** linguist-detectable=false
 # Vendored upstream corpora are byte-verbatim (the vendored-corpora rule):
 # no EOL normalization — upstream CKM exports carry CRLF and must round-trip
 # bit-identical through clone/checkout.
-tools/cnf-runner/artifacts/corpus/archetypes/** -text
-tools/cnf-runner/artifacts/corpus/templates/ckm/full/** -text
+corpus/archetypes/** -text
+corpus/templates/ckm/full/** -text

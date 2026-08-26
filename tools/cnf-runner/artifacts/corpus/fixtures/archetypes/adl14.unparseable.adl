@@ -1,7 +1,0 @@
-archetype (adl_version=1.4)
-	openEHR-EHR-INSTRUCTION.medication.v1
-
-concept
-	[at0000]	-- Medication order
-definition
-	INSTRUCTION[at0000  -- unterminated node id: not parseable ADL 1.4

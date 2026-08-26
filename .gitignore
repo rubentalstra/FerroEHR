@@ -15,9 +15,9 @@
 !.env.example
 *.pem
 # The committed CNF SMART-lane TEST key is the one deliberate exception —
-# a static test-only issuer key (tools/cnf-runner/party/smart/README.md),
+# a static test-only issuer key (docs/conformance/party/smart/README.md),
 # never production material.
-!tools/cnf-runner/party/smart/cnf-smart-test.key.pem
+!docs/conformance/party/smart/cnf-smart-test.key.pem
 *.key
 
 # Editor / OS

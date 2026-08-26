@@ -47,11 +47,6 @@ readonly MIT_HEADER="$PROJECT_COPYRIGHT
 readonly DUAL_HEADER="$PROJECT_COPYRIGHT
 $OPENEHR_COPYRIGHT
 // SPDX-License-Identifier: MIT AND Apache-2.0"
-# The conformance instrument is Apache-2.0 (owner decision 2026-08-26, #2787):
-# REUSE.toml declares the tree, tools/cnf-runner/NOTICE carries the credit.
-readonly APACHE_HEADER="$PROJECT_COPYRIGHT
-// SPDX-License-Identifier: Apache-2.0"
-
 # The six crates whose manifests and REUSE.toml declare `MIT AND Apache-2.0`.
 readonly -a DUAL_CRATES=(
   openehr-am
@@ -92,13 +87,6 @@ licensing_crate() {
 }
 
 expected_header() {
-  case "$1" in
-  tools/cnf-runner/*)
-    printf '%s' "$APACHE_HEADER"
-    return
-    ;;
-  *) ;;
-  esac
   local krate
   krate=$(licensing_crate "$1")
   for dual in "${DUAL_CRATES[@]}"; do

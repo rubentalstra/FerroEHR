@@ -48,14 +48,7 @@ cd "$(dirname "$0")/../.." || exit 1
 # cause and stringifies only for the message — so the count excludes it.
 #
 # `tools/*` is NOT swept, and that is an adjudication rather than an omission —
-# both trees fall under the shapes #2034 itself names as legitimate:
-#
-#   tools/cnf-runner        its `Result<_, String>` IS the recorded observation.
-#                           A driver error is surfaced as an inconclusive row in
-#                           results.json naming what went wrong; the runner never
-#                           branches on the error TYPE, it reports the message.
-#                           Typing them would redesign the result model to say
-#                           the same thing.
+# the tree falls under the shapes #2034 itself names as legitimate:
 #   tools/openehr-codegen   every site is in testsupport.rs — test code, which
 #                           #2034 exempts outright.
 #

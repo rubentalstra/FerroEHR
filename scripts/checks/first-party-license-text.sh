@@ -40,7 +40,7 @@ readonly -a EXCLUDED=(
   ':(exclude)crates/openehr-its/tests/fixtures/**'
   ':(exclude)crates/openehr-lang/tests/vendor/**'
   ':(exclude)crates/openehr-term/tests/**'
-  ':(exclude)tools/cnf-runner/artifacts/corpus/**'
+  ':(exclude)corpus/**'
 )
 
 # Files that legitimately NAME these licences without granting them: the licence
