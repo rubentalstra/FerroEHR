@@ -1,20 +1,50 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 
-# .github/workflows/release.yml
+# .github/workflows/release.yml — THE release pipeline (#2776).
 #
-# Releases are changelog-driven (Keep a Changelog 1.1.0, CHANGELOG.md):
-#   1. A `vX.Y.Z` tag push publishes a GitHub Release whose notes are the
-#      matching `## [X.Y.Z]` section — the job FAILS if CHANGELOG.md has no
-#      such section, so a release can never ship without its changelog.
-#   2. The binary matrix runs in the SAME workflow run (needs:
-#      publish-release) and attaches per-arch server tarballs. It must NOT
-#      hang off a `release: published` trigger: releases published with
-#      GITHUB_TOKEN deliberately do not fire workflow events (GitHub's
-#      anti-recursion rule), which is exactly the bug that left v3.0.0
-#      asset-less on first cut.
-#   3. `workflow_dispatch` with a tag input re-runs the pipeline for an
-#      existing tag (e.g. to backfill assets).
+# ONE workflow owns the `v*` tag, and every ordering in it is a `needs` edge.
+# No job here polls another workflow's runs or jobs: `needs` is the only
+# primitive that carries a guarantee (a concurrency group has no queue-order
+# guarantee, and a `workflow_run` conclusion is run-level, so an advisory
+# scanner in the same run can suppress an unrelated consumer). Three
+# consecutive cuts failed on three different faces of that one defect —
+# v4.0.3 (an advisory scan suppressed the sandbox deploy), v4.0.4 (a single
+# TLS timeout inside a poll loop failed the chart lane), v4.0.5 (the poll
+# waited on a job that finishes BEFORE the tag it pulls exists — `manifest
+# unknown`, run 32951186365).
+#
+# The graph:
+#
+#   plan ─┬─ github-release ── build-binaries ─── finalize-release
+#         ├─ binary ─────────── app-image ──┐
+#         ├─ admin-ui-binary ── admin-ui-image ─┼─ scan-and-tag ─┬─ chart
+#         ├─ postgres-image ────────────────┘                    └─ sandbox
+#         ├─ docs-freeze
+#         └─ (smoke, admin-ui-smoke hang off their image)
+#   announce ── needs everything, if: always()
+#
+# `plan` re-runs the ENTIRE release-fact guard tier against the tagged commit
+# before anything is built or published. That closes a structural hole rather
+# than a slip: those guards ran on pull requests and develop pushes only, and
+# GitHub cancels a PENDING run in a concurrency group when a newer one queues
+# regardless of `cancel-in-progress` (workflow-syntax docs §concurrency), which
+# is exactly how the v4.0.5 release commit's develop CI run — the whole guard
+# tier — was cancelled and never reported.
+#
+# RE-RUNNING is the recovery for every partial failure, and each leg is
+# idempotent by construction: images push by digest and are re-tagged, the
+# GitHub release updates its draft until it is published, docs-freeze is a
+# green no-op on an already-cut version, the sandbox hook ping is naturally
+# repeatable. The ONE leg that is not is the chart: a published chart version
+# is immutable, so a failure after `helm push` means the fix ships as the next
+# chart version (that lane says so at the point of failure).
+#
+# `workflow_dispatch` re-runs the pipeline for an existing tag, and must be
+# dispatched AT the tag (`gh workflow run Release --ref vX.Y.Z -f tag=vX.Y.Z`).
+# `plan` refuses anything else: the reusable image, chart and docs legs resolve
+# the event's own ref, so a dispatch from develop would build develop's tree and
+# label it with the tag's version.
 name: Release
 
 on:
@@ -23,7 +53,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing vX.Y.Z tag to (re)publish and build assets for"
+        description: "Existing vX.Y.Z tag to (re)publish — dispatch this workflow AT that tag"
         required: true
         type: string
 
@@ -37,14 +67,21 @@ concurrency:
 permissions: {}
 
 jobs:
-  publish-release:
+  # ── plan: every release fact, verified before anything is built ─────────────
+  # Minutes, and it publishes nothing. A red plan costs seconds and leaves the
+  # registry, the release list, the chart repository and the site untouched.
+  plan:
+    name: plan
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write # create or update the GitHub release
+      contents: read
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      version: ${{ steps.tag.outputs.version }}
       sha: ${{ steps.rev.outputs.sha }}
+      is-release: ${{ steps.kind.outputs.is-release }}
+      is-prerelease: ${{ steps.kind.outputs.is-prerelease }}
     steps:
       - id: tag
         name: Resolve the release tag
@@ -58,6 +95,10 @@ jobs:
           set -euo pipefail
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             tag="$INPUT_TAG"
+            if [ "${GITHUB_REF}" != "refs/tags/${tag}" ]; then
+              echo "::error::this workflow was dispatched at '${GITHUB_REF}', not at refs/tags/${tag}. The image, chart and docs legs resolve the event's own ref, so a dispatch from a branch would publish that branch's tree under ${tag}. Run: gh workflow run Release --ref ${tag} -f tag=${tag}" >&2
+              exit 1
+            fi
           else
             tag="${GITHUB_REF_NAME}"
           fi
@@ -65,49 +106,165 @@ jobs:
             echo "::error::'$tag' is not a vX.Y.Z tag" >&2
             exit 1
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          {
+            echo "tag=$tag"
+            echo "version=${tag#v}"
+          } >> "$GITHUB_OUTPUT"
+      # github.sha is the commit the event ref pointed at, fixed for the whole
+      # run: the tag-mismatch refusal above guarantees it IS the tag's commit
+      # on a dispatch too. Checking it out (rather than the input-derived tag
+      # string) keeps workflow_dispatch input out of every checkout, which is
+      # also what the CodeQL actions taint model verifies (#2790).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ steps.tag.outputs.tag }}
-      # Pin the rest of the pipeline to the commit this job actually read. The
-      # tag is the only handle a dispatch gives us, but it stays movable, so
-      # build-binaries checks out this SHA rather than resolving the tag again.
+          ref: ${{ github.sha }}
       - id: rev
-        name: Resolve the tag to its commit
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        name: Record the pinned commit
+        run: echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      # The tag comes from the step above (a dispatch names it, a push carries
+      # it), never from the ref alone. THE prerelease rule, one definition.
+      - id: kind
+        uses: ./.github/actions/release-kind
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+
+      - name: Verify the tag matches the workspace version
+        run: |
+          set -euo pipefail
+          manifest=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          if [ "$manifest" != "$VERSION" ]; then
+            echo "::error::Tag $TAG does not match workspace version $manifest in Cargo.toml." >&2
+            exit 1
+          fi
+          echo "workspace version $manifest matches $TAG"
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
+
+      - name: Changelog structure (no duplicate subsections, canonical types)
+        run: bash scripts/checks/changelog-structure.sh
+
+      # The release NOTES are produced here, not at publish time: the section
+      # existing and being non-empty is a release fact like any other, and the
+      # extraction that proves it may as well hand the result on. The artifact
+      # is what github-release attaches.
       - name: Extract the changelog section for this tag
         run: |
           set -euo pipefail
-          version="${TAG#v}"
-          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no section for $version — releases are changelog-driven (Keep a Changelog). Add '## [$version] - YYYY-MM-DD' first." >&2
+          if ! grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section for $VERSION — releases are changelog-driven (Keep a Changelog). Add '## [$VERSION] - YYYY-MM-DD' first." >&2
             exit 1
           fi
           # Everything between "## [<version>]" and the next "## [" heading.
-          awk -v ver="$version" '
+          awk -v ver="$VERSION" '
             $0 ~ "^## \\[" ver "\\]" {found=1; next}
             found && /^## \[/ {exit}
             found {print}
           ' CHANGELOG.md > release-notes.md
           if ! grep -q '[^[:space:]]' release-notes.md; then
-            echo "::error::The [$version] changelog section is empty." >&2
+            echo "::error::The [$VERSION] changelog section is empty." >&2
             exit 1
           fi
-          echo "Release notes for $version:"; cat release-notes.md
+          echo "Release notes for $VERSION:"; cat release-notes.md
         env:
-          TAG: ${{ steps.tag.outputs.tag }}
-      - name: Verify the tag matches the workspace version
+          VERSION: ${{ steps.tag.outputs.version }}
+
+      # The hand-edited pin sites, every one of them, at the commit being
+      # released. Each of these guards exists because its site shipped stale
+      # once; they ran on pull requests only, so a cut whose develop CI run was
+      # cancelled re-verified nothing.
+      - name: appVersion and the artifacthub.io image tags match the workspace version
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
-          version="${TAG#v}"
-          manifest=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
-          if [ "$manifest" != "$version" ]; then
-            echo "::error::Tag $TAG does not match workspace version $manifest in Cargo.toml." >&2
+          app=$(sed -nE 's/^appVersion: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml)
+          if [ -z "$app" ]; then
+            echo "::error::could not read appVersion from deploy/helm/ferroehr/Chart.yaml." >&2
             exit 1
           fi
+          if [ "$app" != "$VERSION" ]; then
+            echo "::error::Chart.yaml appVersion ($app) != released version ($VERSION) — the release cut bumps appVersion with the workspace version, or a plain 'helm install' deploys the previous release." >&2
+            exit 1
+          fi
+          bad=$(grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' deploy/helm/ferroehr/Chart.yaml | grep -v ":${VERSION}\$" || true)
+          if [ -n "$bad" ]; then
+            echo "::error::artifacthub.io/images tags do not match the released version ($VERSION):" >&2
+            echo "$bad" >&2
+            exit 1
+          fi
+          echo "appVersion and every artifacthub.io/images tag are at $VERSION — OK."
+
+      - name: The ferroehr party statement's product version matches the workspace
+        run: bash scripts/checks/statement-version.sh
+
+      - name: CITATION.cff version matches the workspace version
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          cff_ver=$(sed -nE 's/^version:[[:space:]]*"?([^"]+)"?[[:space:]]*$/\1/p' CITATION.cff)
+          if [ "$cff_ver" != "$VERSION" ]; then
+            echo "::error::CITATION.cff version ($cff_ver) != released version ($VERSION) — the release cut bumps CITATION.cff version and date-released together." >&2
+            exit 1
+          fi
+          echo "CITATION.cff version $cff_ver matches the released version."
+
+      # `.zenodo.json` is GENERATED from CITATION.cff, because Zenodo ignores
+      # CITATION.cff entirely whenever a .zenodo.json is present
+      # (https://help.zenodo.org/docs/github/describe-software/zenodo-json/).
+      # The deposit's FILES freeze at publication, so a drifted copy is archived
+      # under a DOI nobody can correct — this is the last moment it can be seen.
+      - name: .zenodo.json is in sync with CITATION.cff
+        run: bash scripts/render/zenodo-json.sh --check
+
+      - name: docker-compose.yml and Dockerfile.vercel image tags match the version
+        run: bash scripts/checks/compose-image-tags.sh
+
+      - name: Documented keys resolve in their source
+        run: bash scripts/checks/docs-claims.sh --all
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes
+          path: release-notes.md
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Plan
         env:
           TAG: ${{ steps.tag.outputs.tag }}
+          SHA: ${{ steps.rev.outputs.sha }}
+          IS_RELEASE: ${{ steps.kind.outputs.is-release }}
+          IS_PRERELEASE: ${{ steps.kind.outputs.is-prerelease }}
+        run: |
+          {
+            printf '## Release plan\n\n| | |\n|---|---|\n'
+            printf '| tag | `%s` |\n' "$TAG"
+            printf '| commit | `%s` |\n' "$SHA"
+            printf '| release | `%s` |\n' "$IS_RELEASE"
+            printf '| pre-release | `%s` |\n' "$IS_PRERELEASE"
+            printf '\nEvery release fact verified at this commit. Nothing published yet.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ── The GitHub release, created as a DRAFT ──────────────────────────────────
+  github-release:
+    name: github release (draft)
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create or update the GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-notes
 
       # An SPDX SBOM of the REPOSITORY, generated from the release commit.
       #
@@ -119,7 +276,7 @@ jobs:
       #     cargo dependency GRAPH with direct-versus-transitive edges and purls,
       #     which is what a vulnerability tool consumes;
       #   * the SPDX SBOM BuildKit attaches to each container image index
-      #     (containers.yml) describes the image's OS layer;
+      #     (build-image.yml) describes the image's OS layer;
       #   * this one is the ATTRIBUTION document for the source tree — the
       #     licence-obligation view a legal or procurement reviewer of a
       #     four-licence redistribution asks for.
@@ -137,7 +294,8 @@ jobs:
           tool: syft@1.50.0
       - name: Generate the repository SPDX SBOM
         env:
-          TAG: ${{ steps.tag.outputs.tag }}
+          TAG: ${{ needs.plan.outputs.tag }}
+          VERSION: ${{ needs.plan.outputs.version }}
         run: |
           set -euo pipefail
           # `dir:.` catalogues the checked-out release commit, so the document
@@ -150,7 +308,7 @@ jobs:
           # by name, and one called "." is indistinguishable from any other
           # directory scan.
           syft scan "dir:." \
-            --source-name ferroehr --source-version "${TAG#v}" \
+            --source-name ferroehr --source-version "$VERSION" \
             --output "spdx-json=ferroehr-${TAG}.spdx.json"
           # Refuse to attach a document that is not SPDX, or that does not
           # identify itself — either one ships a file that looks like an SBOM
@@ -169,13 +327,6 @@ jobs:
           [ "$count" -gt 0 ] || { echo "::error::the SPDX SBOM lists no packages"; exit 1; }
           echo "SPDX ${version}, ${count} packages"
 
-      # The tag comes from the step above (a dispatch names it, a push carries
-      # it), never from the ref alone.
-      - id: kind
-        uses: ./.github/actions/release-kind
-        with:
-          tag: ${{ steps.tag.outputs.tag }}
-
       # Created as a DRAFT, and finalized only after every asset is attached.
       #
       # Release immutability is enabled on this repository: once a release is
@@ -189,8 +340,8 @@ jobs:
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           draft: true
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ needs.plan.outputs.tag }}
+          name: ${{ needs.plan.outputs.tag }}
           body_path: release-notes.md
           # The quickstart compose files ride along as release assets: the base
           # file pulls the images this tag published, and the two standalone
@@ -200,15 +351,16 @@ jobs:
             docker-compose.yml
             docker-compose.keycloak.yml
             docker-compose.observability.yml
-            ferroehr-${{ steps.tag.outputs.tag }}.spdx.json
+            ferroehr-${{ needs.plan.outputs.tag }}.spdx.json
           # Releases publish as OFFICIAL releases (owner sign-off
           # 2026-07-31, superseding the 2026-07-11 always-prerelease rule);
           # only an explicitly suffixed tag (v3.16.0-rc1, ...) is a
-          # pre-release. The rule itself lives in the composite above.
-          prerelease: ${{ steps.kind.outputs.is-prerelease }}
+          # pre-release. The rule itself lives in .github/actions/release-kind,
+          # which `plan` ran.
+          prerelease: ${{ needs.plan.outputs.is-prerelease }}
 
-  # Native runner per arch (no cross toolchain, no QEMU) — same strategy as
-  # .github/workflows/containers.yml, which handles the GHCR images on tags.
+  # Native runner per arch (no cross toolchain, no QEMU) — same strategy as the
+  # image lanes below.
   #
   # This job is a CALL AND NOTHING ELSE, deliberately. SLSA Build L3 requires the
   # signing material to be out of reach of user-defined build steps
@@ -224,7 +376,8 @@ jobs:
   # steps at all, which is what makes that regression unrepresentable rather than
   # merely discouraged.
   build-binaries:
-    needs: publish-release
+    name: binaries
+    needs: [plan, github-release]
     strategy:
       fail-fast: false
       matrix:
@@ -241,36 +394,34 @@ jobs:
       attestations: write # store them against this repository
     uses: ./.github/workflows/release-build.yml
     with:
-      tag: ${{ needs.publish-release.outputs.tag }}
-      sha: ${{ needs.publish-release.outputs.sha }}
+      tag: ${{ needs.plan.outputs.tag }}
+      sha: ${{ github.sha }}
       target: ${{ matrix.target }}
       runner: ${{ matrix.runner }}
 
   # The moment the release becomes immutable, so it happens LAST and only when
-  # every asset is in place. `needs` both jobs rather than just the matrix: a
+  # every asset is in place. `needs` the matrix rather than just the draft: a
   # draft with no binaries must never be flipped to published, and a failed
   # matrix leaves the draft visible for inspection instead of shipping a
   # release nobody can add to afterwards.
   finalize-release:
-    needs: [publish-release, build-binaries]
+    name: github release (publish)
+    needs: [plan, build-binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      # Refuse to publish a release whose assets are missing. After this step
-      # the set is frozen for good, so this is the last moment the check is
+      # Refuse to publish a release whose assets are missing. After the publish
+      # step the set is frozen for good, so this is the last moment the check is
       # worth anything.
       - name: Every expected asset is attached before the release is frozen
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.publish-release.outputs.tag }}
+          TAG: ${{ needs.plan.outputs.tag }}
         run: |
           set -euo pipefail
-          assets="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+          assets="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
           echo "$assets"
           # Every suffix release-build.yml uploads per architecture. The SBOM
           # document and its attestation bundle are checked too: a release
@@ -312,5 +463,686 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.publish-release.outputs.tag }}
-        run: gh release edit "$TAG" --draft=false
+          TAG: ${{ needs.plan.outputs.tag }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+
+  # ── Compile the server binary natively per arch (no QEMU, no in-Docker cargo) ─
+  # A release builds every image unconditionally: there is no change filter
+  # here, so a cut can never miss one.
+  binary:
+    name: image binary (${{ matrix.platform }})
+    needs: plan
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: amd64
+            runner: ubuntu-26.04
+          - platform: arm64
+            runner: ubuntu-26.04-arm
+    # Debian 13 (trixie) container so the produced binary targets glibc 2.41,
+    # matching gcr.io/distroless/cc-debian13 exactly. The tag must equal the
+    # rust-toolchain.toml channel — verified below, never assumed.
+    # Digest-pinned, not tag-pinned: a tag is mutable, so a re-run of an
+    # already-reviewed commit could build against different bytes. The index
+    # digest (not a per-platform one) so both runner architectures resolve.
+    container: rust:1.97.1-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+
+      - name: Verify toolchain pins (container + Dockerfile == rust-toolchain.toml)
+        shell: bash
+        run: |
+          set -euo pipefail
+          channel=$(grep -E '^channel' rust-toolchain.toml | sed -E 's/.*"(.*)".*/\1/')
+          have=$(rustc --version | awk '{print $2}')
+          arg=$(grep -E '^ARG RUST_VERSION=' docker/Dockerfile | head -1 | cut -d= -f2)
+          echo "rust-toolchain=$channel  container-rustc=$have  Dockerfile ARG=$arg"
+          if [ "$channel" != "$have" ]; then
+            echo "::error::Job container rustc ($have) != rust-toolchain.toml ($channel). Bump the container: tag in release.yml and containers.yml."
+            exit 1
+          fi
+          if [ "$channel" != "$arg" ]; then
+            echo "::error::docker/Dockerfile RUST_VERSION ($arg) != rust-toolchain.toml ($channel)."
+            exit 1
+          fi
+
+      # This lane publishes images, so a restored cache is release input — kept
+      # only because no untrusted run can write these keys: neither this
+      # workflow nor containers.yml (which writes them) has a `pull_request`
+      # trigger at all, and a cache created on a child branch is unreadable
+      # from the default branch anyway
+      # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
+      # — "Workflow runs cannot restore caches created for child branches or
+      # sibling branches"). The binary lane that carries no such property
+      # (release-build.yml) builds cold instead.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with: # zizmor: ignore[cache-poisoning]
+          shared-key: containers-${{ matrix.platform }}
+          save-if: "false"
+
+      - name: Build (release, native)
+        # The binary is produced by the ferroehr-server package (bin name
+        # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
+        # platform LIBRARY and yields no binary to strip.
+        # build.rs stamps the REVISION value into /management/info; passing the
+        # release commit here (an env, never interpolated into a shell) makes the
+        # provenance explicit and does not depend on git being present in the
+        # slim job container (it is not). Empty/absent degrades to `unknown`.
+        env:
+          REVISION: ${{ github.sha }}
+        run: cargo build --release --locked -p ferroehr-server
+
+      - name: Strip
+        run: strip target/release/ferroehr
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ferroehr-${{ matrix.platform }}
+          path: target/release/ferroehr
+          if-no-files-found: error
+          retention-days: 1
+
+  # ── Package + push the multi-arch app image (COPY-only; seconds) ────────────
+  app-image:
+    name: app image
+    needs: binary
+    permissions:
+      contents: read
+      packages: write # push the image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
+    # The build + its attestation live in the reusable build-image.yml — the
+    # SLSA Build L3 construction (#2140): this caller passes data-only inputs
+    # and cannot add steps beside the signing. Labels mirror the Dockerfile's;
+    # scripts/checks/image-labels.sh fails if the two ever disagree.
+    #
+    # `defer-tags` pushes BY DIGEST: the tags are applied by scan-and-tag once
+    # the vulnerability gate passes, so a HIGH finding can never already be
+    # `latest` by the time the lane turns red (#2747).
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr
+      defer-tags: true
+      dockerfile: docker/Dockerfile
+      target: runtime-prebuilt
+      binary-artifact-prefix: ferroehr
+      labels: |
+        org.opencontainers.image.title=FerroEHR
+        org.opencontainers.image.description=Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)
+        org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+        org.opencontainers.image.url=https://ferroehr.eu/
+        org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+        org.opencontainers.image.vendor=FerroEHR
+        org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+        org.opencontainers.image.licenses=MIT
+        org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
+        org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
+
+  # ── Admin console: server binary per arch + the arch-independent site ───────
+  # The WASM/JS/CSS site bundle is architecture-independent, so cargo-leptos
+  # runs ONCE (amd64: bin + site); the arm64 job builds only the ssr binary
+  # with plain cargo. Same glibc rationale as the app binary job.
+  admin-ui-binary:
+    name: admin-ui binary (${{ matrix.platform }})
+    needs: plan
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: amd64
+            runner: ubuntu-26.04
+          - platform: arm64
+            runner: ubuntu-26.04-arm
+    # Digest-pinned, not tag-pinned: a tag is mutable, so a re-run of an
+    # already-reviewed commit could build against different bytes. The index
+    # digest (not a per-platform one) so both runner architectures resolve.
+    container: rust:1.97.1-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+
+      - name: Verify toolchain pin (container == rust-toolchain.toml)
+        shell: bash
+        run: |
+          set -euo pipefail
+          channel=$(grep -E '^channel' rust-toolchain.toml | sed -E 's/.*"(.*)".*/\1/')
+          have=$(rustc --version | awk '{print $2}')
+          if [ "$channel" != "$have" ]; then
+            echo "::error::Job container rustc ($have) != rust-toolchain.toml ($channel)."
+            exit 1
+          fi
+
+      # Same publishing-lane reasoning as the app binary job above.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with: # zizmor: ignore[cache-poisoning]
+          shared-key: containers-admin-ui-${{ matrix.platform }}
+          save-if: "false"
+
+      - name: Build the ssr server binary (release, native)
+        # LEPTOS_OUTPUT_NAME must be in the COMPILER's environment: leptos's
+        # HydrationScripts reads it via option_env! and appends `_bg` to the
+        # wasm file name it renders when absent (leptos-0.8 hydration/mod.rs),
+        # while cargo-leptos names the shipped file `<output>.wasm` — a binary
+        # built without it 404s its own wasm and never hydrates (found live on
+        # the published 3.20.0 image, #2164). cargo-leptos exports it for the
+        # from-source Dockerfile path; this plain cargo build must match.
+        env:
+          LEPTOS_OUTPUT_NAME: ferroehr-admin-ui
+        run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-admin-ui
+
+      - name: Strip
+        run: strip target/release/ferroehr-admin-ui
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ferroehr-admin-ui-${{ matrix.platform }}
+          path: target/release/ferroehr-admin-ui
+          if-no-files-found: error
+          retention-days: 1
+
+      # The site bundle (wasm32 + Tailwind CSS + JS glue) — built once, on
+      # amd64 only; it is byte-identical regardless of the server arch.
+      # NEVER `cargo install cargo-leptos` here: it unconditionally builds
+      # OpenSSL from vendored C source (its cargo-generate dependency pins
+      # `vendored-openssl`), which needs perl/make and failed inside the slim
+      # image. Prebuilt release binaries keep the pipeline Rust-toolchain-only
+      # — the same taiki-e path the ci.yml ui-e2e job uses.
+      - name: Install curl for the tool downloads (amd64 only)
+        if: matrix.platform == 'amd64'
+        run: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+
+      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+        if: matrix.platform == 'amd64'
+        with:
+          tool: cargo-leptos@0.3.7,wasm-bindgen@0.2.126
+
+      - name: Build the site bundle (amd64 only)
+        if: matrix.platform == 'amd64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source scripts/gh/retry-net.sh
+          rustup target add wasm32-unknown-unknown
+          retry_read \
+            https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64 \
+            -o /usr/local/bin/tailwindcss
+          chmod +x /usr/local/bin/tailwindcss
+          cd app/ferroehr-admin-ui
+          LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build --release
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: matrix.platform == 'amd64'
+        with:
+          name: ferroehr-admin-ui-site
+          path: target/site
+          if-no-files-found: error
+          retention-days: 1
+
+  # ── Package + push the multi-arch admin-console image (COPY-only) ───────────
+  admin-ui-image:
+    name: admin-ui image
+    needs: admin-ui-binary
+    permissions:
+      contents: read
+      packages: write # push the image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
+    # The reusable SLSA Build L3 lane; see the app image above.
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+      defer-tags: true
+      dockerfile: docker/admin-ui/Dockerfile
+      target: runtime-prebuilt
+      binary-artifact-prefix: ferroehr-admin-ui
+      site-artifact: ferroehr-admin-ui-site
+      labels: |
+        org.opencontainers.image.title=FerroEHR admin console
+        org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
+        org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+        org.opencontainers.image.url=https://ferroehr.eu/
+        org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+        org.opencontainers.image.vendor=FerroEHR
+        org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+        org.opencontainers.image.licenses=MIT
+        org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
+        org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
+
+  # ── PostgreSQL image (multi-arch) ───────────────────────────────────────────
+  # One RUN layer (the Debian security upgrade, #2408) on top of postgres:18.6,
+  # so the non-native platform needs QEMU — the reusable lane sets it up.
+  postgres-image:
+    name: postgres image
+    needs: plan
+    permissions:
+      contents: read
+      packages: write # push the image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
+    # The reusable SLSA Build L3 lane. QEMU: the one RUN layer (the Debian
+    # security upgrade, #2408) executes on the non-native platform.
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
+      defer-tags: true
+      dockerfile: docker/postgres/Dockerfile
+      context: docker/postgres
+      qemu: true
+      version-build-args: false
+      labels: |
+        org.opencontainers.image.title=FerroEHR PostgreSQL
+        org.opencontainers.image.description=PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr
+        org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+        org.opencontainers.image.url=https://ferroehr.eu/
+        org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+        org.opencontainers.image.vendor=FerroEHR
+        org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+        org.opencontainers.image.licenses=MIT AND PostgreSQL
+        org.opencontainers.image.base.name=postgres:18.6
+        org.opencontainers.image.base.digest=sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
+
+  # ── The gate that makes the pushed digests referencable ─────────────────────
+  # The same reusable pair containers.yml uses, so the develop lane and the
+  # release lane cannot drift on a security gate. Its completion is what every
+  # consumer of a PUBLISHED image tag hangs off: the chart pulls the appVersion
+  # image, the sandbox tracks `:latest`, and both exist by construction here.
+  scan-and-tag:
+    name: scan + tag
+    needs: [app-image, admin-ui-image, postgres-image]
+    permissions:
+      contents: read
+      packages: write # pull the pushed digests, then tag them
+    uses: ./.github/workflows/scan-and-tag.yml
+    with:
+      app-image: ghcr.io/${{ github.repository_owner }}/ferroehr
+      app-digest: ${{ needs.app-image.outputs.digest }}
+      app-tags: ${{ needs.app-image.outputs.tags }}
+      admin-ui-image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+      admin-ui-digest: ${{ needs.admin-ui-image.outputs.digest }}
+      admin-ui-tags: ${{ needs.admin-ui-image.outputs.tags }}
+      postgres-image: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
+      postgres-digest: ${{ needs.postgres-image.outputs.digest }}
+      postgres-tags: ${{ needs.postgres-image.outputs.tags }}
+
+  # The pushed CONSOLE artifact is assembled from two jobs (the per-arch ssr
+  # binary + the once-built site bundle), so its one novel failure class is
+  # ASSEMBLY: a binary and a site tree that disagree. The from-source e2e
+  # battery (ci.yml) never sees the assembled artifact — which is exactly how
+  # a console whose pages 404 their own wasm published green (issue #2550,
+  # found live on the 3.20.0 image during #2164). This smoke drives the very
+  # image this run pushed: every asset the served page references must exist
+  # in the artifact that serves it.
+  admin-ui-smoke:
+    name: admin-ui asset-chain smoke (amd64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read # pull the image this run just pushed
+    needs: admin-ui-image
+    env:
+      ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull pushed console image (by digest)
+        env:
+          DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+        run: |
+          docker pull "${ADMIN_UI_IMAGE}@${DIGEST}"
+          docker tag  "${ADMIN_UI_IMAGE}@${DIGEST}" ferroehr-admin-ui:smoke
+
+      - name: Serve and verify the asset chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A dummy CDR base URL: the login page renders without a CDR.
+          docker run -d --rm --name adminui-smoke -p 127.0.0.1:3000:3000 \
+            -e FERROEHR_ADMIN__CDR__BASE_URL=http://127.0.0.1:9 \
+            ferroehr-admin-ui:smoke
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:3000/login && break
+            sleep 1
+            [ "$i" = 30 ] && { echo "console never served /login"; docker logs adminui-smoke; exit 1; }
+          done
+          html=$(curl -sf http://127.0.0.1:3000/login)
+          # Every /pkg/ asset the page references (script srcs, stylesheet and
+          # preload hrefs — the wasm preload among them) must exist in the
+          # artifact serving the page.
+          assets=$(printf '%s' "$html" | grep -oE '(href|src)="/pkg/[^"]+"' | sed -E 's/^(href|src)="//; s/"$//' | sort -u)
+          [ -n "$assets" ] || { echo "the served page references no /pkg/ assets — the shell changed shape; update this smoke"; exit 1; }
+          echo "$assets"
+          fail=0
+          while IFS= read -r a; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000$a")
+            echo "$a -> $code"
+            [ "$code" = "200" ] || fail=1
+          done <<< "$assets"
+          docker stop adminui-smoke >/dev/null
+          [ "$fail" = 0 ] || { echo "the pushed console image references assets it does not ship (#2550)"; exit 1; }
+
+  # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
+  smoke:
+    name: compose smoke (amd64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read # pull the image this run just pushed
+    needs: [plan, app-image]
+    env:
+      APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull pushed app image (by digest)
+        env:
+          DIGEST: ${{ needs.app-image.outputs.digest }}
+        run: |
+          docker pull "${APP_IMAGE}@${DIGEST}"
+          docker tag  "${APP_IMAGE}@${DIGEST}" ferroehr:smoke
+
+      - name: Build postgres image (amd64; COPY-only, seconds)
+        run: docker build -t ferroehr-postgres:smoke docker/postgres
+
+      - name: Smoke test
+        shell: bash
+        env:
+          FERROEHR_IMAGE: ferroehr:smoke
+          FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:smoke
+        run: bash docker/smoke-test.sh
+
+  # ── The Helm chart ──────────────────────────────────────────────────────────
+  # `needs: scan-and-tag` is the whole fix for the defect class this pipeline
+  # was built around: the chart is judged against the appVersion image, and
+  # that image is PULLABLE by construction when this job starts. The 60-minute
+  # poll loop, its coupling to another workflow's job name, and its three
+  # distinct failure modes across v4.0.3–v4.0.5 are gone.
+  chart:
+    name: chart
+    needs: [plan, scan-and-tag]
+    permissions:
+      contents: read
+      packages: write # push the chart + the artifacthub.io tag to GHCR
+      id-token: write # Sigstore, for the keyless attestation
+      attestations: write # store it against this repository
+    # Shared with publish-chart.yml's dispatch lane: a published chart version
+    # is immutable only because that lane refuses to overwrite one, and two
+    # concurrent runs must never race that check.
+    concurrency:
+      group: publish-chart
+      cancel-in-progress: false
+    uses: ./.github/workflows/build-chart.yml
+    with:
+      release-tag: ${{ needs.plan.outputs.tag }}
+      sha: ${{ github.sha }}
+
+  # ── The hosted sandbox ──────────────────────────────────────────────────────
+  # Keyed on apply-tags, never on a run conclusion: the sandbox image is
+  # `FROM ghcr.io/rubentalstra/ferroehr:latest`, which scan-and-tag has just
+  # moved, and an advisory scanner elsewhere in this run can no longer suppress
+  # the deploy (v4.0.3). A prerelease moves no `:latest`, so there is nothing
+  # to deploy — hence the release-only condition.
+  #
+  # The expected version arrives as an INPUT. It used to be parsed out of a
+  # `workflow_run` payload's `head_branch`, which is why that trigger existed
+  # at all.
+  sandbox:
+    name: sandbox
+    needs: [plan, scan-and-tag]
+    if: needs.plan.outputs.is-release == 'true'
+    permissions:
+      contents: read
+    # The deploy hook is a repository secret and the reseed's database URL an
+    # environment secret; a called workflow sees only what the caller passes,
+    # and an environment secret cannot be passed explicitly because the caller
+    # cannot read it. `inherit` reproduces exactly the secret visibility this
+    # workflow had when the tag triggered it directly.
+    secrets: inherit # zizmor: ignore[secrets-inherit]
+    uses: ./.github/workflows/sandbox-deploy.yml
+    with:
+      expected-version: ${{ needs.plan.outputs.version }}
+
+  # ── Freeze /docs/vX.Y.Z/ ────────────────────────────────────────────────────
+  # Moved out of docs.yml (#2776), which had no prerelease guard: an `-rc1` tag
+  # re-pointed `/docs/latest/` while the image lane correctly refused to move
+  # `:latest`. It needs `plan` only — it publishes documentation, not images.
+  #
+  # cut-version.sh is IDEMPOTENT: an already-cut version prints what it found
+  # and exits 0, so re-running the pipeline after a mid-run failure can never
+  # wedge here (it used to exit 1 and no re-run could ever succeed).
+  docs-freeze:
+    name: docs freeze
+    needs: plan
+    if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # push to docs-dist
+      actions: write # dispatch the site rebuild after a real cut
+    steps:
+      # The ONE checkout that keeps its credential: cut-version.sh commits and
+      # pushes the frozen render to the docs-dist branch, which needs the token
+      # in .git/config.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true # zizmor: ignore[artipacked]
+          fetch-depth: 0
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+      # This job renders the book and pushes it; it lints and link-checks
+      # nothing, so neither link-check tool is installed.
+      - uses: ./.github/actions/docs-toolchain
+        with:
+          lint: "false"
+          link-check: "false"
+      - id: cut
+        name: Build frozen vX.Y.Z + push to docs-dist
+        env:
+          TAG: ${{ needs.plan.outputs.tag }}
+        # site-url, rsync into docs-dist, update versions.json, commit+push.
+        # The script reports `cut=true|false` on $GITHUB_OUTPUT.
+        run: bash scripts/site/cut-version.sh "$TAG"
+      # The frozen tree lives on docs-dist and the deployed site assembles from
+      # it, so the site has to be rebuilt for the new version to appear. A
+      # `workflow_dispatch` fired with GITHUB_TOKEN is the documented exception
+      # to the anti-recursion rule — the one event type it does create runs for
+      # (docs.github.com/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+      - name: Rebuild and deploy the site
+        if: steps.cut.outputs.cut == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run docs.yml
+
+  # ── announce: the one summary a human reads ─────────────────────────────────
+  # Asserts every leg landed — a skipped leg is accepted only where a skip is
+  # the correct outcome — and on any failure names the exact recovery instead of
+  # leaving it tribal.
+  announce:
+    name: announce
+    if: always()
+    needs:
+      - plan
+      - github-release
+      - build-binaries
+      - finalize-release
+      - binary
+      - app-image
+      - admin-ui-binary
+      - admin-ui-image
+      - postgres-image
+      - scan-and-tag
+      - smoke
+      - admin-ui-smoke
+      - chart
+      - sandbox
+      - docs-freeze
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+
+      # `crates/*` publishes on its own SemVer line through a manual dispatch
+      # (publish-crates.yml), so a cycle that changed packaged crate content
+      # needs a second, human-initiated release. That was silent until now.
+      - id: crates
+        name: Did this cycle change packaged crate content
+        env:
+          TAG: ${{ needs.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          previous="$(git describe --tags --abbrev=0 --match 'v*' "${TAG}^" 2>/dev/null || true)"
+          if [ -z "$previous" ]; then
+            echo "no previous tag reachable from ${TAG} — not comparing"
+            echo "changed=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$previous" "$TAG" -- crates/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+
+      - name: Assert every leg landed, and say what published where
+        env:
+          TAG: ${{ needs.plan.outputs.tag }}
+          VERSION: ${{ needs.plan.outputs.version }}
+          IS_RELEASE: ${{ needs.plan.outputs.is-release }}
+          APP_DIGEST: ${{ needs.app-image.outputs.digest }}
+          ADMIN_UI_DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+          POSTGRES_DIGEST: ${{ needs.postgres-image.outputs.digest }}
+          CRATES_CHANGED: ${{ steps.crates.outputs.changed }}
+          CRATES_PREVIOUS: ${{ steps.crates.outputs.previous }}
+          R_PLAN: ${{ needs.plan.result }}
+          R_GITHUB_RELEASE: ${{ needs.github-release.result }}
+          R_BUILD_BINARIES: ${{ needs.build-binaries.result }}
+          R_FINALIZE: ${{ needs.finalize-release.result }}
+          R_BINARY: ${{ needs.binary.result }}
+          R_APP_IMAGE: ${{ needs.app-image.result }}
+          R_ADMIN_UI_BINARY: ${{ needs.admin-ui-binary.result }}
+          R_ADMIN_UI_IMAGE: ${{ needs.admin-ui-image.result }}
+          R_POSTGRES_IMAGE: ${{ needs.postgres-image.result }}
+          R_SCAN_AND_TAG: ${{ needs.scan-and-tag.result }}
+          R_SMOKE: ${{ needs.smoke.result }}
+          R_ADMIN_UI_SMOKE: ${{ needs.admin-ui-smoke.result }}
+          R_CHART: ${{ needs.chart.result }}
+          R_SANDBOX: ${{ needs.sandbox.result }}
+          R_DOCS_FREEZE: ${{ needs.docs-freeze.result }}
+        run: |
+          set -uo pipefail
+          fail=0
+          rows=""
+          # A leg is either successful, or skipped where the skip is correct: on
+          # a prerelease the sandbox and the docs freeze do not run, because a
+          # prerelease moves neither `:latest` nor /docs/latest/.
+          check() {
+            local leg="$1" result="$2" skip_ok="${3:-no}"
+            if [ "$result" = "success" ]; then
+              rows="${rows}| ${leg} | ok |"$'\n'
+              return
+            fi
+            if [ "$skip_ok" = "prerelease" ] && [ "$result" = "skipped" ] && [ "$IS_RELEASE" != "true" ]; then
+              rows="${rows}| ${leg} | skipped — pre-release |"$'\n'
+              return
+            fi
+            rows="${rows}| ${leg} | **${result}** |"$'\n'
+            fail=1
+          }
+          check "plan" "$R_PLAN"
+          check "github release (draft)" "$R_GITHUB_RELEASE"
+          check "binaries" "$R_BUILD_BINARIES"
+          check "github release (published)" "$R_FINALIZE"
+          check "image binaries" "$R_BINARY"
+          check "app image" "$R_APP_IMAGE"
+          check "admin-ui binaries" "$R_ADMIN_UI_BINARY"
+          check "admin-ui image" "$R_ADMIN_UI_IMAGE"
+          check "postgres image" "$R_POSTGRES_IMAGE"
+          check "scan + tag" "$R_SCAN_AND_TAG"
+          check "compose smoke" "$R_SMOKE"
+          check "admin-ui smoke" "$R_ADMIN_UI_SMOKE"
+          check "chart" "$R_CHART"
+          check "sandbox" "$R_SANDBOX" prerelease
+          check "docs freeze" "$R_DOCS_FREEZE" prerelease
+
+          chart_version="$(sed -nE 's/^version: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml | head -1)"
+          repo_url="https://github.com/${GITHUB_REPOSITORY}"
+          {
+            printf '## %s\n\n' "$TAG"
+            printf '| leg | outcome |\n|---|---|\n%s\n' "$rows"
+            printf '### What published where\n\n| | |\n|---|---|\n'
+            printf '| release | %s/releases/tag/%s |\n' "$repo_url" "$TAG"
+            printf '| app image | `ghcr.io/%s/ferroehr:%s` `@%s` |\n' \
+              "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${APP_DIGEST:-not pushed}"
+            printf '| admin-ui image | `ghcr.io/%s/ferroehr-admin-ui:%s` `@%s` |\n' \
+              "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${ADMIN_UI_DIGEST:-not pushed}"
+            printf '| postgres image | `ghcr.io/%s/ferroehr-postgres:%s` `@%s` |\n' \
+              "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${POSTGRES_DIGEST:-not pushed}"
+            printf '| `:latest` moved | %s |\n' "$([ "$IS_RELEASE" = "true" ] && echo yes || echo 'no — pre-release')"
+            printf '| chart | `oci://ghcr.io/%s/charts/ferroehr` version `%s` |\n' \
+              "$GITHUB_REPOSITORY_OWNER" "${chart_version:-unknown}"
+            printf '| sandbox | %s |\n' \
+              "$([ "$R_SANDBOX" = "success" ] && echo "serving ${VERSION}" || echo "$R_SANDBOX")"
+            printf '| docs | %s |\n' \
+              "$([ "$R_DOCS_FREEZE" = "success" ] && echo "/docs/${TAG}/ frozen, /docs/latest/ -> ${TAG}" || echo "$R_DOCS_FREEZE")"
+            printf '\n'
+            if [ "$CRATES_CHANGED" = "true" ]; then
+              printf '> [!IMPORTANT]\n'
+              printf '> `crates/*` packaged content changed since `%s`. The openehr-* crates publish\n' "$CRATES_PREVIOUS"
+              printf '> on their own SemVer line through a MANUAL dispatch: run publish-crates.yml\n'
+              printf '> (dry run first, then `publish: true`). This pipeline does not do it.\n\n'
+            fi
+            if [ "$fail" != 0 ]; then
+              printf '### Recovery\n\n'
+              printf 'Re-run this pipeline for `%s`. Every leg is idempotent, so a re-run\n' "$TAG"
+              printf 'finishes what the failed run started, with two exceptions:\n\n'
+              # `printf '%s\n' '<line>'` for every line that STARTS with `-`: as
+              # a format string it would be read as an option and the step dies
+              # with "printf: - : invalid option" (caught by running this step's
+              # body against simulated results before it ever saw a release).
+              printf '%s\n' \
+                '- **plan failed**: nothing was published at all. Fix the pin it named and cut' \
+                '  the next patch version; a tag is never re-pointed.' \
+                '- **chart failed AFTER the push**: that chart version is public and immutable.' \
+                '  Do NOT re-run the leg — bump `Chart.yaml` version and publish the next one' \
+                '  from publish-chart.yml (dispatch with `publish: true`). That lane says the' \
+                '  same thing at the point of failure.' \
+                ''
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$rows"
+          [ "$fail" = 0 ] || { echo "::error::the release pipeline for ${TAG} did not land every leg — see the run summary for the recovery"; exit 1; }

@@ -4,12 +4,17 @@
 # .github/workflows/docs.yml — build + deploy the documentation website.
 # Rust-only toolchain, vendored static assets, no Node/Python build step for
 # the site render.
+#
+# The per-release `/docs/vX.Y.Z/` FREEZE is not here: it is a leg of the release
+# pipeline (release.yml, #2776), which owns the `v*` tag end to end and can
+# therefore guard the cut on the release being a real release rather than a
+# pre-release. That leg dispatches this workflow once it has pushed a new frozen
+# version, which is what redeploys the site with it.
 name: Docs
 
 on:
   push:
     branches: [develop]     # redeploy dev docs + landing
-    tags: ["v*"]            # cut a frozen version, then redeploy
   pull_request:             # PR: build + lint + link-check ONLY (no deploy)
   workflow_dispatch:
 
@@ -108,41 +113,13 @@ jobs:
           name: site
           path: _site
 
-  # ── Cut a frozen version on a v* tag (push to docs-dist; never rebuilt) ─────
-  version-cut:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: write        # push to docs-dist
-    steps:
-      # The ONE checkout that keeps its credential: cut-version.sh commits and
-      # pushes the frozen render to the docs-dist branch, which needs the token
-      # in .git/config. Job-scoped to contents: write and nothing else.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: true # zizmor: ignore[artipacked]
-          fetch-depth: 0
-      # This job renders the book and pushes it; it lints and link-checks
-      # nothing, so neither link-check tool is installed.
-      - uses: ./.github/actions/docs-toolchain
-        with:
-          lint: "false"
-          link-check: "false"
-      - name: Build frozen vX.Y.Z + push to docs-dist
-        run: bash scripts/site/cut-version.sh "${GITHUB_REF_NAME}"   # site-url, rsync into docs-dist, update versions.json, commit+push
-
-  # ── Deploy the full site (develop push, tag, or manual) ─────────────────────
+  # ── Deploy the full site (develop push or manual dispatch) ──────────────────
   deploy:
-    needs: [build, version-cut]
-    # Deploy on any non-PR event. version-cut only runs on tags, so accept it
-    # either succeeding (tag) or being skipped (develop / manual dispatch).
-    if: >-
-      ${{ !cancelled()
-        && needs.build.result == 'success'
-        && (needs.version-cut.result == 'success' || needs.version-cut.result == 'skipped')
-        && github.event_name != 'pull_request' }}
+    needs: build
+    # Deploy on any non-PR event. The release pipeline's docs-freeze leg
+    # dispatches this workflow after it pushes a frozen version, so a release
+    # reaches the site through this same job.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:

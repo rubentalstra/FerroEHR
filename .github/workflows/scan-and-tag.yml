@@ -1,0 +1,215 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# The image vulnerability gate and the tag application, as a REUSABLE
+# workflow (#2776).
+#
+# Both halves used to live in containers.yml, which was also the tag-triggered
+# image lane. The release pipeline (release.yml) needs the identical two jobs in
+# the identical order, and a second copy of a security gate is a second thing to
+# keep in step — so the pair moved here and both callers consume it:
+#
+#   * containers.yml — develop pushes and manual dispatches
+#   * release.yml    — the `v*` release pipeline
+#
+# The ORDER is the whole point (#2747): the builds push by digest
+# (build-image.yml `defer-tags`), this workflow scans that digest, and only a
+# passing scan makes it referencable. The v4.0.4 cut is why — tagged images went
+# live first and the scan failed second, so a HIGH finding was already `latest`
+# by the time the lane turned red.
+#
+# A caller passes each image's name, pushed digest and computed tag list. An
+# image whose build SKIPPED or FAILED arrives with an EMPTY digest (an
+# unsuccessful job produces no outputs), which is how the per-image steps below
+# know to sit out — the same information the `needs.<job>.result` conditions
+# carried when both jobs lived in the caller.
+name: Scan and tag images (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      app-image:
+        description: The app image name (ghcr.io/…) — the one image this gate exists to scan.
+        required: true
+        type: string
+      app-digest:
+        description: The app image's pushed index digest.
+        required: true
+        type: string
+      app-tags:
+        description: The newline-separated tag list to apply to the app digest.
+        required: true
+        type: string
+      admin-ui-image:
+        description: The admin-console image name.
+        required: false
+        type: string
+        default: ""
+      admin-ui-digest:
+        description: The admin-console image's pushed digest, empty when its build did not succeed.
+        required: false
+        type: string
+        default: ""
+      admin-ui-tags:
+        description: The newline-separated tag list to apply to the admin-console digest.
+        required: false
+        type: string
+        default: ""
+      postgres-image:
+        description: The postgres image name.
+        required: false
+        type: string
+        default: ""
+      postgres-digest:
+        description: The postgres image's pushed digest, empty when its build did not run.
+        required: false
+        type: string
+        default: ""
+      postgres-tags:
+        description: The newline-separated tag list to apply to the postgres digest.
+        required: false
+        type: string
+        default: ""
+
+permissions: {}
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  image-scan:
+    name: image vulnerability scan
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read # pull the image the caller just pushed
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The published index is dual-arch and trivy reads ONE variant per
+      # invocation (`--platform`, default linux/amd64), so each variant is
+      # scanned explicitly (#2412) — the app image by its pushed digest, the
+      # postgres image from per-arch local builds (QEMU for the non-native
+      # one; its Dockerfile runs the Debian security upgrade, #2408).
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/amd64
+        with:
+          scan-type: image
+          image-ref: ${{ inputs.app-image }}@${{ inputs.app-digest }}
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/arm64
+        with:
+          scan-type: image
+          image-ref: ${{ inputs.app-image }}@${{ inputs.app-digest }}
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+      # `ferroehr-postgres` is the one image whose OS package set we do not
+      # control — it is built on the upstream `postgres` image — so it is the
+      # image this gate exists for. Built locally here because the caller's
+      # postgres-image job only runs when its inputs change.
+      - name: Build the postgres image for scanning (both platforms)
+        run: |
+          docker buildx build --platform linux/amd64 --load \
+            -t ferroehr-postgres:scan-amd64 docker/postgres
+          docker buildx build --platform linux/arm64 --load \
+            -t ferroehr-postgres:scan-arm64 docker/postgres
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ferroehr-postgres:scan-amd64
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ferroehr-postgres:scan-arm64
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+  # Tags exist only AFTER the vulnerability scan passes (#2747): the builds
+  # push by digest (defer-tags), and this job makes them referencable.
+  # `imagetools create` over a single source re-tags the SAME digest, so the
+  # attestations bound to it stay valid.
+  apply-tags:
+    name: apply image tags (after the scan gate)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      packages: write # tag the digests the caller pushed
+    needs: image-scan
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag the app image
+        env:
+          IMAGE: ${{ inputs.app-image }}
+          DIGEST: ${{ inputs.app-digest }}
+          TAGS: ${{ inputs.app-tags }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(-t "$t"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"
+
+      # An empty digest is the caller saying "that build did not succeed", so
+      # there is nothing to tag; the postgres image legitimately skips on most
+      # pushes (it builds on docker/postgres changes and on a release).
+      - name: Tag the admin-ui image
+        if: inputs.admin-ui-digest != ''
+        env:
+          IMAGE: ${{ inputs.admin-ui-image }}
+          DIGEST: ${{ inputs.admin-ui-digest }}
+          TAGS: ${{ inputs.admin-ui-tags }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(-t "$t"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"
+
+      - name: Tag the postgres image
+        if: inputs.postgres-digest != ''
+        env:
+          IMAGE: ${{ inputs.postgres-image }}
+          DIGEST: ${{ inputs.postgres-digest }}
+          TAGS: ${{ inputs.postgres-tags }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(-t "$t"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"

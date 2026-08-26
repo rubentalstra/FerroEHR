@@ -8,8 +8,18 @@
 #
 # Builds the book once with site-url=/docs/vX.Y.Z/, rsyncs it into a
 # docs-dist worktree under docs/vX.Y.Z/, prepends the version to versions.json,
-# re-points the `latest` alias, then commits + pushes docs-dist. Refuses if the
-# version already exists (frozen trees are never rebuilt).
+# re-points the `latest` alias, then commits + pushes docs-dist.
+#
+# IDEMPOTENT (#2776): a version that is ALREADY frozen is reported and the
+# script exits 0 without touching it — frozen trees are never rebuilt, and that
+# is a no-op, not an error. It used to exit 1, which meant a release pipeline
+# re-run after any later failure could never go green again; the recovery for
+# every other leg is "re-run the pipeline", and this leg has to survive that.
+#
+# In a workflow the outcome is reported on $GITHUB_OUTPUT as `cut=true|false`
+# (docs.github.com/actions/reference/workflows-and-actions/workflow-commands),
+# so the caller knows whether a site rebuild is needed. Nothing is written when
+# the variable is unset, which is every local run.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ROOT="$PWD"
@@ -29,6 +39,13 @@ fi
 WT="$ROOT/docs-dist"
 log() { printf '\033[1;33m[cut-version]\033[0m %s\n' "$*"; }
 
+# Report to the workflow, when there is one, whether a cut actually happened.
+report() {
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    echo "cut=$1" >> "$GITHUB_OUTPUT"
+  fi
+}
+
 # 1. Check out (or create) the docs-dist orphan branch as a worktree.
 git worktree remove --force "$WT" >/dev/null 2>&1 || true
 git fetch origin docs-dist >/dev/null 2>&1 || true
@@ -44,16 +61,22 @@ else
   printf '%s\n' '{ "latest": null, "versions": [] }' > "$WT/versions.json"
 fi
 
-# 2. Guard: never rebuild an existing frozen version.
-# An unreadable or absent manifest is NOT an existing version — the guard must
-# fire only on a version that is genuinely already frozen, so a malformed file
-# fails open here and is replaced below rather than blocking the cut forever.
+# 2. Already frozen? Then there is nothing to do, and that is success.
+# An unreadable or absent manifest is NOT an existing version — this must
+# recognise only a version that is genuinely already frozen, so a malformed file
+# is treated as absent here and replaced below rather than blocking the cut
+# forever.
 if [[ -d "$WT/docs/$VER" ]] \
   || jq -e --arg ver "$VER" 'any(.versions[]?; .id == $ver)' \
        "$WT/versions.json" >/dev/null 2>&1
 then
-  echo "::error::version $VER already exists in docs-dist — frozen versions are never rebuilt." >&2
-  exit 1
+  log "version $VER is already frozen in docs-dist — nothing to do (frozen trees are never rebuilt)"
+  if [[ -d "$WT/docs/$VER" ]]; then
+    log "  tree:     docs/$VER/ ($(find "$WT/docs/$VER" -type f | wc -l | tr -d ' ') files)"
+  fi
+  log "  manifest: latest -> $(jq -r '.latest // "none"' "$WT/versions.json" 2>/dev/null || echo unreadable)"
+  report false
+  exit 0
 fi
 
 # 3. Build the frozen book once, straight into docs-dist/docs/vX.Y.Z/.
@@ -105,4 +128,5 @@ else
   git -C "$WT" push origin docs-dist
 fi
 
+report true
 log "done — /docs/$VER/ frozen; latest -> $VER"

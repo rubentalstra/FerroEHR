@@ -6,7 +6,7 @@
 #
 # THIS FILE IS NOT SERVED FROM THIS REPOSITORY. The chart is published as an OCI
 # artifact and an OCI repository has no `index.yaml`, so there is nowhere to put
-# this as a committed sibling: `.github/workflows/publish-chart.yml` pushes it to
+# this as a committed sibling: `.github/workflows/build-chart.yml` pushes it to
 # the registry as a special `artifacthub.io` tag with ORAS, on every publish.
 # Committing it and stopping there — which is what Artifact Hub's HTTP
 # instructions lead to — produces a file nothing reads, an unowned listing, and

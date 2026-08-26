@@ -3,11 +3,22 @@
 
 # The chart package + publish, as a REUSABLE workflow — the SLSA Build
 # Level 3 lane for the Helm chart (the mirror of release-build.yml and
-# build-image.yml; #2140). The caller (publish-chart.yml) carries only
-# triggers and passes the one data input below — it cannot add steps
-# beside the packaging and the signing, which is the whole property
+# build-image.yml; #2140). A caller carries only triggers and passes the
+# data inputs below — it cannot add steps beside the packaging and the
+# signing, which is the whole property
 # (https://slsa.dev/spec/v1.2/build-requirements §Provenance is
-# Unforgeable; GitHub's reusable-workflow construction). A consumer pins:
+# Unforgeable; GitHub's reusable-workflow construction).
+#
+# TWO callers, and `release-tag` is what tells them apart (#2776):
+#   * release.yml — the release pipeline's `chart` leg, `needs: scan-and-tag`,
+#     so the appVersion image this chart is judged against is PULLABLE by
+#     construction. It passes the released tag and the pipeline's pinned SHA.
+#   * publish-chart.yml — a manual dispatch for a chart-only fix between
+#     releases (dry run by default). It passes no tag, so this lane takes its
+#     between-releases decisions: judge against an image built from the tree,
+#     and report rather than refuse an already-published version on a dry run.
+#
+# A consumer pins:
 #
 #   gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr@<digest> \
 #     -R rubentalstra/FerroEHR \
@@ -22,6 +33,23 @@ on:
         required: false
         type: boolean
         default: false
+      release-tag:
+        description: >-
+          The `vX.Y.Z` tag being released, when this call is the release
+          pipeline's chart leg. Non-empty means: appVersion MUST equal it, the
+          chart is judged against the appVersion image, and the push happens.
+          Empty means a between-releases dispatch.
+        required: false
+        type: string
+        default: ""
+      sha:
+        description: >-
+          The commit to check out. Empty (a dispatch) takes the event's own ref;
+          the release pipeline passes the SHA it pinned in `plan`, so every leg
+          of a release reads one commit even if the tag moves.
+        required: false
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -37,22 +65,21 @@ jobs:
   build:
     name: package + publish
     runs-on: ubuntu-latest
-    # A tag run spends most of its wall clock WAITING for containers.yml to
-    # publish the image the acceptance step judges the chart against (see that
-    # step). containers.yml's own `binary` job allows 60 minutes for a cold
-    # per-arch compile, so anything shorter here would time out on the image
-    # lane rather than on this one's work.
-    timeout-minutes: 75
+    # This lane's own work only: it no longer waits for another workflow to
+    # publish the image the acceptance step judges against (that ordering is a
+    # `needs` edge in the release pipeline now), so the 75 minutes sized for
+    # someone else's cold compile are gone.
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write # push the chart + the artifacthub.io tag to GHCR
       id-token: write # Sigstore, for the keyless attestation
       attestations: write # store it against this repository
-      actions: read # read containers.yml's run status for this tag
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.sha || github.ref }}
 
       # The same helm the golden renders are pinned to, from the same file. The
       # read-and-install pair lives in the composite (#2775), which is also where
@@ -79,13 +106,15 @@ jobs:
           echo "app=$app" >> "$GITHUB_OUTPUT"
           echo "chart version $version, appVersion $app"
 
-      # A tag push must publish the chart version the tree carries, and the
+      # A release must publish the chart version the tree carries, and the
       # release cut moves `appVersion` to the released application version, so
       # they have to agree. A mismatch means the release PR forgot one of them.
-      - name: On a tag, appVersion must be the tag being released
-        if: startsWith(github.ref, 'refs/tags/v')
+      # (`plan` checks the same fact against Cargo.toml before anything is
+      # built; this is the check at the point of use.)
+      - name: On a release, appVersion must be the tag being released
+        if: inputs.release-tag != ''
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.release-tag }}
           APP: ${{ steps.chart.outputs.app }}
         run: |
           set -euo pipefail
@@ -105,7 +134,11 @@ jobs:
           YQ_SHA256: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/yq             "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          # An idempotent read, retried inside curl (scripts/gh/retry-net.sh):
+          # a publishing lane must not die on one transient download.
+          source scripts/gh/retry-net.sh
+          retry_read "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
+            -o /tmp/yq
           echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
           sudo install -m 0755 /tmp/yq /usr/local/bin/yq
           yq --version
@@ -122,25 +155,40 @@ jobs:
       # except the registry will happily overwrite it, so the refusal has to live
       # here. `helm show chart` exits 0 when the version resolves and 1 when it
       # does not (verified against a local registry).
+      #
+      # It is a REFUSAL only on a path that actually pushes. On a dry run it
+      # reports and continues: the tree's chart version is already published for
+      # the whole cycle after a release, so the unconditional refusal made a dry
+      # run impossible exactly when it is most useful — validating a change to
+      # this lane without publishing anything (measured on run 32960523630,
+      # where the guard fired before the dry-run branch was ever reached).
       - name: Refuse to overwrite an already-published chart version
         env:
           VERSION: ${{ steps.chart.outputs.version }}
+          PUBLISHES: ${{ inputs.release-tag != '' || inputs.publish }}
         run: |
           set -euo pipefail
-          if helm show chart "oci://${CHART_REF}" --version "$VERSION" >/dev/null 2>&1; then
-            echo "::error::chart version $VERSION is already published at ${CHART_REF} — a published version is immutable; bump Chart.yaml version."
-            exit 1
+          if ! helm show chart "oci://${CHART_REF}" --version "$VERSION" >/dev/null 2>&1; then
+            echo "chart version $VERSION is unpublished — proceeding."
+            exit 0
           fi
-          echo "chart version $VERSION is unpublished — proceeding."
+          if [ "$PUBLISHES" != "true" ]; then
+            echo "::notice::chart version $VERSION is already published at ${CHART_REF}; a real publish would be refused. This is a dry run, so it continues."
+            exit 0
+          fi
+          echo "::error::chart version $VERSION is already published at ${CHART_REF} — a published version is immutable; bump Chart.yaml version."
+          exit 1
 
       # WHICH image the chart is judged against is a per-trigger decision,
       # because `appVersion` and the chart's `config` defaults move on
       # different clocks (#2144).
       #
-      # On a tag, `appVersion` IS the version being released (the guard above
-      # refuses the run otherwise), so the image a `helm install` of this chart
-      # will actually pull is the one this cut publishes — judging against it
-      # is exactly right, and it is the only judgement that gates a push.
+      # On a release, `appVersion` IS the version being released (the guard
+      # above refuses the run otherwise), so the image a `helm install` of this
+      # chart will actually pull is the one this cut publishes — judging against
+      # it is exactly right, and it is the only judgement that gates a push.
+      # That image exists BY CONSTRUCTION: this lane is a `needs: scan-and-tag`
+      # job of the release pipeline, so the tags were applied before it started.
       #
       # Between releases `appVersion` is still the LAST release, while
       # values.yaml and the server's configuration vocabulary advance together
@@ -157,13 +205,13 @@ jobs:
         id: judge
         env:
           APP: ${{ steps.chart.outputs.app }}
-          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          IS_RELEASE: ${{ inputs.release-tag != '' }}
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [ "$IS_TAG" = "true" ]; then
+          if [ "$IS_RELEASE" = "true" ]; then
             image="${APP_IMAGE}:${APP}"
-            why="the appVersion image — on a tag that is the release being cut"
+            why="the appVersion image — this is the release being cut"
           else
             candidate="${APP_IMAGE}:sha-${SHA:0:7}"
             if docker manifest inspect "$candidate" >/dev/null 2>&1; then
@@ -177,69 +225,6 @@ jobs:
           echo "image=$image" >> "$GITHUB_OUTPUT"
           echo "why=$why" >> "$GITHUB_OUTPUT"
           echo "judging the chart against ${image} — ${why}"
-
-      # A `v*` tag starts containers.yml and this workflow at the same instant,
-      # and the tag the acceptance step pulls is the one that run is still
-      # pushing (#2149). The dependency is made explicit here, against the
-      # other run's `app image / build` JOB (the reusable build-image.yml renders the composite name) rather than against the registry: a failed
-      # or skipped image lane then fails this one immediately with its URL,
-      # instead of polling for a tag that will never appear.
-      #
-      # A shared workflow-level `concurrency` group cannot express this: a
-      # concurrency group has no queue-order guarantee, so the chart lane could
-      # take the group and then wait for a build queued behind itself.
-      - name: Wait for the image lane to publish this tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          REF_NAME: ${{ github.ref_name }}
-          HEAD_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          deadline=$(( $(date +%s) + 3600 ))
-          # The same commit is also pushed to develop, so the run is selected by
-          # tag (a tag push reports the tag as `head_branch`), not by SHA alone.
-          run_id=""
-          until [ -n "$run_id" ]; do
-            run_id=$(gh api \
-              "/repos/${REPO}/actions/workflows/containers.yml/runs?head_sha=${HEAD_SHA}&per_page=100" \
-              --jq '[.workflow_runs[] | select(.head_branch == env.REF_NAME)] | sort_by(.run_number) | last | .id // empty')
-            [ -n "$run_id" ] && break
-            if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::no containers.yml run exists for tag ${REF_NAME} — the image this chart deploys is never going to be published. Re-run containers.yml for the tag, then re-run this workflow."
-              exit 1
-            fi
-            echo "waiting for the containers.yml run for ${REF_NAME} to appear"
-            sleep 15
-          done
-          url="https://github.com/${REPO}/actions/runs/${run_id}"
-          while :; do
-            line=$(gh api "/repos/${REPO}/actions/runs/${run_id}/jobs?per_page=100" \
-              --jq '[.jobs[] | select(.name == "app image / build")] | map("\(.status) \(.conclusion // "")") | first // ""')
-            status=""; conclusion=""
-            read -r status conclusion <<<"$line" || true
-            # The coupling is a job NAME, so a rename in containers.yml would
-            # otherwise present as a silent hour-long wait.
-            if [ -z "$status" ] && [ "$(gh api "/repos/${REPO}/actions/runs/${run_id}" --jq .status)" = "completed" ]; then
-              echo "::error::the containers.yml run for ${REF_NAME} finished with no job named 'app image / build' (${url}) — the job was renamed or removed; this wait names it explicitly and must be updated with it."
-              exit 1
-            fi
-            if [ "$status" = "completed" ]; then
-              if [ "$conclusion" != "success" ]; then
-                echo "::error::containers.yml 'app image / build' concluded '${conclusion}' for ${REF_NAME} — the image this chart deploys was not published, so the acceptance check below has nothing correct to judge against. ${url}"
-                exit 1
-              fi
-              echo "the image lane published ${REF_NAME} (${url})"
-              break
-            fi
-            if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::containers.yml 'app image / build' is still '${status:-not started}' after 60 minutes (${url}) — this run waited on the image lane and it has not finished. Nothing is wrong with the chart; re-run this workflow once that run completes."
-              exit 1
-            fi
-            echo "containers.yml 'app image' is ${status:-not started} — waiting (${url})"
-            sleep 20
-          done
 
       # The check that catches the failure nobody could see from a rendered
       # manifest: `helm install` with no `image.tag` pins `appVersion`, and the
@@ -281,19 +266,35 @@ jobs:
       # there is one changelog rather than two (#2107). Injected at package time
       # rather than committed: they are facts about a release, and a committed
       # copy would be stale from the next merge onwards.
+      # THE prerelease rule, one definition (#2775/#2776): any `-` suffix. This
+      # lane used to spell it as `*-rc*|*-alpha*|*-beta*`, which is NARROWER —
+      # a `v4.1.0-pre.1` tag published a pre-release GitHub Release and moved no
+      # `:latest`, while its chart was annotated as a normal release. The
+      # owner's 2026-07-31 sign-off is the any-dash rule, so the narrow list was
+      # the defect; an exotic suffix now annotates as a pre-release too.
+      - id: kind
+        if: inputs.release-tag != ''
+        uses: ./.github/actions/release-kind
+        with:
+          tag: ${{ inputs.release-tag }}
+
+      # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
+      # there is one changelog rather than two (#2107). Injected at package time
+      # rather than committed: they are facts about a release, and a committed
+      # copy would be stale from the next merge onwards.
       - name: Inject the release's Artifact Hub annotations
         env:
           APP: ${{ steps.chart.outputs.app }}
-          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
-          TAG: ${{ github.ref_name }}
+          IS_RELEASE_CUT: ${{ inputs.release-tag != '' }}
+          IS_PRERELEASE: ${{ steps.kind.outputs.is-prerelease }}
         run: |
           set -euo pipefail
-          # A tag publishes that release's section. A dispatch between releases
-          # publishes what is currently unreleased — and when Unreleased is
-          # EMPTY (the recover-a-failed-tag-publish case, twice live: 6.0.13
-          # and 6.0.14), it falls back to the appVersion's own released
-          # section, which is what the chart being recovered actually ships.
-          if [ "$IS_TAG" = "true" ]; then
+          # A release publishes that release's section. A dispatch between
+          # releases publishes what is currently unreleased — and when
+          # Unreleased is EMPTY (the recover-a-failed-tag-publish case, twice
+          # live: 6.0.13 and 6.0.14), it falls back to the appVersion's own
+          # released section, which is what the chart being recovered ships.
+          if [ "$IS_RELEASE_CUT" = "true" ]; then
             section="$APP"
           elif awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{exit} f && (/^- /||/^### /){found=1} END{exit !found}' CHANGELOG.md; then
             section="Unreleased"
@@ -302,15 +303,9 @@ jobs:
             section="$APP"
           fi
           bash deploy/helm/artifacthub-changes.sh "$section" --inject
-          # An `-rc` tag is a chart pre-release, matching release.yml's own rule.
-          # The prerelease rule — one definition: .github/actions/release-kind.
-          # This suffix list is NARROWER than that definition (it accepts three
-          # suffixes, not any `-`), so collapsing the two is a behaviour
-          # decision, not a refactor.
-          case "$TAG" in
-            *-rc*|*-alpha*|*-beta*)
-              printf '  artifacthub.io/prerelease: "true"\n' >> "$CHART_DIR/Chart.yaml" ;;
-          esac
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            printf '  artifacthub.io/prerelease: "true"\n' >> "$CHART_DIR/Chart.yaml"
+          fi
           echo "--- annotations as packaged ---"
           sed -n '/^annotations:/,$p' "$CHART_DIR/Chart.yaml"
 
@@ -325,7 +320,7 @@ jobs:
           echo "path=dist/ferroehr-${VERSION}.tgz" >> "$GITHUB_OUTPUT"
 
       - name: Dry run — everything but the push
-        if: github.event_name == 'workflow_dispatch' && !inputs.publish
+        if: inputs.release-tag == '' && !inputs.publish
         env:
           PACKAGE: ${{ steps.package.outputs.path }}
         run: |
@@ -334,7 +329,7 @@ jobs:
 
       - name: Push the chart
         id: push
-        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+        if: inputs.release-tag != '' || inputs.publish
         env:
           PACKAGE: ${{ steps.package.outputs.path }}
         run: |
