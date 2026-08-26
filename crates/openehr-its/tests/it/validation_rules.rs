@@ -1639,10 +1639,7 @@ fn count_type_nodes(v: &Value) -> usize {
 #[test]
 #[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
 fn measure_ips_validation_full_cost() {
-    let dir = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/cnf-runner/artifacts/corpus/templates/ckm"
-    );
+    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../../corpus/templates/ckm");
     let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
         .expect("read IPS OPT");
     let opt = openehr_its::opt14::from_xml(&opt_xml).expect("parse IPS OPT");

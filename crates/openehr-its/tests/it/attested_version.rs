@@ -36,8 +36,7 @@ use openehr_rm::v1_2::composition::composition::Composition;
 
 /// The CNF corpus directory holding the committed vector pair.
 fn corpus_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/fixtures/attestation")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/fixtures/attestation")
 }
 
 /// The committed canonical-JSON vector, decoded into the generated RM type.

@@ -49,7 +49,7 @@ const SNOMED: &str = "http://snomed.info/sct";
 /// only difference between the two.
 fn corpus_opt() -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates/dt_coded_text_constraint_ref.opt");
+        .join("../../corpus/templates/dt_coded_text_constraint_ref.opt");
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
 }
 
@@ -179,8 +179,7 @@ fn an_absent_coded_value_raises_no_check() {
 /// must fail here rather than as a puzzling conformance row.
 #[test]
 fn the_committed_bound_corpus_templates_carry_their_bindings() {
-    let corpus = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates");
+    let corpus = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates");
     let expected = [
         (
             "dt_coded_text_binding_sct.opt",

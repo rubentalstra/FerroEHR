@@ -85,7 +85,7 @@ async fn seed_opt_fixture(cdr: &str, user: &str, pass: &str) {
 async fn seed_adl2_fixture(cdr: &str, user: &str, pass: &str) {
     let source = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/versioned.v1_0_0.adls"
+        "/../../corpus/fixtures/adl2/opt/versioned.v1_0_0.adls"
     ))
     .expect("the ADL2 corpus fixture exists");
     let status = reqwest::Client::new()

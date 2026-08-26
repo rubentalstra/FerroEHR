@@ -1297,12 +1297,8 @@ async fn adl2_template_with_filler_projects_the_filled_web_template() {
             dump(c, d + 1, out);
         }
     }
-    const ARCH: &str = include_str!(
-        "../../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/archetype/cnf_count_a.adls"
-    );
-    const TMPL: &str = include_str!(
-        "../../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/flat_parity_a.adls"
-    );
+    const ARCH: &str = include_str!("../../../../corpus/fixtures/adl2/archetype/cnf_count_a.adls");
+    const TMPL: &str = include_str!("../../../../corpus/fixtures/adl2/opt/flat_parity_a.adls");
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 

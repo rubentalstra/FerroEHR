@@ -9,7 +9,7 @@
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! Breadth gate over the FULL vendored openEHR CKM template library
-//! (`tools/cnf-runner/artifacts/corpus/templates/ckm/full/`, vendored by
+//! (`corpus/templates/ckm/full/`, vendored by
 //! `scripts/vendor/ckm-templates.sh`): every OPT the public CKM publishes
 //! must parse into the generated `opt14::types::OperationalTemplate`, build a
 //! WebTemplate, and generate RM-shape-valid examples at every detail level.
@@ -53,8 +53,7 @@ const STRUCTURES: [&str; 5] = [
 ];
 
 fn pack_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates/ckm/full")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates/ckm/full")
 }
 
 fn opt_files(dir: &Path) -> Vec<PathBuf> {

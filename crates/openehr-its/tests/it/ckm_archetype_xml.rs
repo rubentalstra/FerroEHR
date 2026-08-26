@@ -8,7 +8,7 @@
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! Breadth gate over the AM 1.4 **archetype XML** twin of the CKM archetype
-//! pack (`tools/cnf-runner/artifacts/corpus/archetypes/ckm/xml/`, vendored by
+//! pack (`corpus/archetypes/ckm/xml/`, vendored by
 //! `scripts/vendor/ckm-archetypes.sh --with-xml`).
 //!
 //! Two serializations of the same 944 archetypes are vendored: CKM's ADL 1.4
@@ -70,8 +70,7 @@ const ADJUDICATED: &[(&str, &str)] = &[
 ];
 
 fn pack_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/archetypes/ckm/xml")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/archetypes/ckm/xml")
 }
 
 fn xml_files(dir: &Path) -> Vec<PathBuf> {

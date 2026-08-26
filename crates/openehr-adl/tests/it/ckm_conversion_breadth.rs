@@ -51,8 +51,7 @@ use openehr_adl::print::print;
 const ADJUDICATED: &[(&str, &str)] = &[];
 
 fn packs() -> Vec<(&'static str, PathBuf)> {
-    let root =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/cnf-runner/artifacts/corpus");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus");
     vec![
         ("CKM ADL 1.4", root.join("archetypes/ckm/adl14")),
         (

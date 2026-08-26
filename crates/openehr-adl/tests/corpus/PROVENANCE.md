@@ -79,8 +79,9 @@
   block, in both orders (§Mixed Structures: a block is "a series of possible
   constraints on objects" and "at any given node, all three types can
   co-exist"). Both forms were refused until the real-world CKM archetype packs
-  (`tools/cnf-runner/artifacts/corpus/archetypes/`) surfaced them; this fixture
-  is the durable regression net, independent of those vendored packs.
+  (the shared corpus at the repository root, `tests/corpus/archetypes/`)
+  surfaced them; this fixture is the durable regression net, independent of
+  those vendored packs.
 - **Operators the chapter NAMES but no grammar DEFINES** get refusal fixtures of
   their own: the negated-matches family (`~matches`/`~is_in`/`∉`, §Keywords L47
   + L95-98) and the regex-match operators (`=~`/`!~`, §Regular Expression
