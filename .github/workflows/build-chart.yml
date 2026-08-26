@@ -36,9 +36,10 @@ on:
       release-tag:
         description: >-
           The `vX.Y.Z` tag being released, when this call is the release
-          pipeline's chart leg. Non-empty means: appVersion MUST equal it, the
-          chart is judged against the appVersion image, and the push happens.
-          Empty means a between-releases dispatch.
+          pipeline's chart leg. Non-empty means: the package is given THIS
+          version as its appVersion and image annotations, it is judged against
+          that version's image, and the push happens. Empty means a
+          between-releases dispatch, which packages the committed default.
         required: false
         type: string
         default: ""
@@ -95,33 +96,50 @@ jobs:
       # No build cache is restored anywhere in this lane (#2011): everything it
       # publishes is built from this checkout and nothing else.
 
+      # TWO app versions, and the difference is the whole of #2779.
+      #
+      # `app` is what Chart.yaml COMMITS: the default image tag for a chart
+      # packaged outside a release, which may legitimately lag the newest
+      # release now that a cut no longer hand-edits it (scripts/checks/
+      # chart-appversion.sh is what still holds it to a released version).
+      #
+      # `effective` is what this package will CARRY. On a release it is the tag
+      # being released, injected below — `helm package --app-version` for the
+      # field and deploy/helm/release-facts.sh for the annotation's tags,
+      # the same treatment `artifacthub.io/changes` already gets and for the same
+      # reason: they are facts about a release, and a committed copy is stale
+      # from the next merge onwards. On a dispatch it is the committed value,
+      # because a chart-only republish between releases must not invent a version
+      # nobody released.
       - name: Read the chart's own versions
         id: chart
+        env:
+          RELEASE_TAG: ${{ inputs.release-tag }}
         run: |
           set -euo pipefail
           version=$(helm show chart "$CHART_DIR" | sed -nE 's/^version: *"?([^"]+)"?/\1/p')
           app=$(helm show chart "$CHART_DIR" | sed -nE 's/^appVersion: *"?([^"]+)"?/\1/p')
           [ -n "$version" ] && [ -n "$app" ] || { echo "::error::could not read version/appVersion from $CHART_DIR/Chart.yaml"; exit 1; }
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "app=$app" >> "$GITHUB_OUTPUT"
-          echo "chart version $version, appVersion $app"
-
-      # A release must publish the chart version the tree carries, and the
-      # release cut moves `appVersion` to the released application version, so
-      # they have to agree. A mismatch means the release PR forgot one of them.
-      # (`plan` checks the same fact against Cargo.toml before anything is
-      # built; this is the check at the point of use.)
-      - name: On a release, appVersion must be the tag being released
-        if: inputs.release-tag != ''
-        env:
-          TAG: ${{ inputs.release-tag }}
-          APP: ${{ steps.chart.outputs.app }}
-        run: |
-          set -euo pipefail
-          if [ "${TAG#v}" != "$APP" ]; then
-            echo "::error::tag $TAG does not match Chart.yaml appVersion $APP — the release cut bumps appVersion with the workspace version."
-            exit 1
+          if [ -n "$RELEASE_TAG" ]; then
+            effective="${RELEASE_TAG#v}"
+            why="the released version, injected at package time"
+          else
+            effective="$app"
+            why="the committed default (a between-releases dispatch invents no version)"
           fi
+          {
+            echo "version=$version"
+            echo "app=$app"
+            echo "effective=$effective"
+          } >> "$GITHUB_OUTPUT"
+          echo "chart version $version; committed appVersion $app; packaging appVersion $effective — $why"
+
+      # The committed release facts still have to be internally coherent, and
+      # `plan` runs this same script at the tagged commit before anything is
+      # built. It no longer asserts equality with the workspace version: that
+      # assertion is what forced the hand edit this lane now performs.
+      - name: The committed chart release facts are coherent
+        run: bash scripts/checks/chart-appversion.sh
 
       # The chart gates read the rendered YAML structurally (yq -o=json | jq),
       # because a grep over a manifest passes as soon as ONE container carries a
@@ -180,17 +198,18 @@ jobs:
           exit 1
 
       # WHICH image the chart is judged against is a per-trigger decision,
-      # because `appVersion` and the chart's `config` defaults move on
-      # different clocks (#2144).
+      # because the packaged appVersion and the chart's `config` defaults move on
+      # different clocks (#2144). It is the PACKAGING appVersion that decides —
+      # `steps.chart.outputs.effective`, not the committed one (#2779).
       #
-      # On a release, `appVersion` IS the version being released (the guard
-      # above refuses the run otherwise), so the image a `helm install` of this
-      # chart will actually pull is the one this cut publishes — judging against
-      # it is exactly right, and it is the only judgement that gates a push.
-      # That image exists BY CONSTRUCTION: this lane is a `needs: scan-and-tag`
-      # job of the release pipeline, so the tags were applied before it started.
+      # On a release that is the version being released, so the image a `helm
+      # install` of the published chart will actually pull is the one this cut
+      # publishes — judging against it is exactly right, and it is the only
+      # judgement that gates a push. That image exists BY CONSTRUCTION: this lane
+      # is a `needs: scan-and-tag` job of the release pipeline, so the tags were
+      # applied before it started.
       #
-      # Between releases `appVersion` is still the LAST release, while
+      # Between releases the packaged appVersion is a past release, while
       # values.yaml and the server's configuration vocabulary advance together
       # in-tree. Judging a mid-cycle dry run against it therefore fails from
       # the first commit that adds a configuration key until the release PR —
@@ -204,7 +223,7 @@ jobs:
       - name: Select the image the chart is judged against
         id: judge
         env:
-          APP: ${{ steps.chart.outputs.app }}
+          APP: ${{ steps.chart.outputs.effective }}
           IS_RELEASE: ${{ inputs.release-tag != '' }}
           SHA: ${{ github.sha }}
         run: |
@@ -262,10 +281,6 @@ jobs:
             exit 1
           fi
 
-      # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
-      # there is one changelog rather than two (#2107). Injected at package time
-      # rather than committed: they are facts about a release, and a committed
-      # copy would be stale from the next merge onwards.
       # THE prerelease rule, one definition (#2775/#2776): any `-` suffix. This
       # lane used to spell it as `*-rc*|*-alpha*|*-beta*`, which is NARROWER —
       # a `v4.1.0-pre.1` tag published a pre-release GitHub Release and moved no
@@ -278,13 +293,25 @@ jobs:
         with:
           tag: ${{ inputs.release-tag }}
 
-      # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
-      # there is one changelog rather than two (#2107). Injected at package time
-      # rather than committed: they are facts about a release, and a committed
-      # copy would be stale from the next merge onwards.
+      # Everything about this package that is a fact about A RELEASE rather than
+      # about the chart, injected here rather than committed — the argument
+      # `artifacthub.io/changes` has carried since #2107, now applied to the two
+      # sites that were still hand-edited at every cut (#2779):
+      #
+      #   * `artifacthub.io/changes` (+ containsSecurityUpdates) from CHANGELOG.md,
+      #     so there is one changelog rather than two;
+      #   * `artifacthub.io/prerelease` for an `-rc`-style tag;
+      #   * the `artifacthub.io/images` TAGS, which `helm package --app-version`
+      #     does not touch — it sets the appVersion field and nothing else, so
+      #     without this the listing would advertise the previous release's
+      #     images beside a correct appVersion.
+      #
+      # It runs AFTER `deploy/helm/validate.sh` on purpose: the golden renders
+      # are byte-compared against the COMMITTED chart, and a rewritten Chart.yaml
+      # would read as chart drift.
       - name: Inject the release's Artifact Hub annotations
         env:
-          APP: ${{ steps.chart.outputs.app }}
+          APP: ${{ steps.chart.outputs.effective }}
           IS_RELEASE_CUT: ${{ inputs.release-tag != '' }}
           IS_PRERELEASE: ${{ steps.kind.outputs.is-prerelease }}
         run: |
@@ -292,8 +319,8 @@ jobs:
           # A release publishes that release's section. A dispatch between
           # releases publishes what is currently unreleased — and when
           # Unreleased is EMPTY (the recover-a-failed-tag-publish case, twice
-          # live: 6.0.13 and 6.0.14), it falls back to the appVersion's own
-          # released section, which is what the chart being recovered ships.
+          # live: 6.0.13 and 6.0.14), it falls back to the packaged appVersion's
+          # own released section, which is what the chart being recovered ships.
           if [ "$IS_RELEASE_CUT" = "true" ]; then
             section="$APP"
           elif awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{exit} f && (/^- /||/^### /){found=1} END{exit !found}' CHANGELOG.md; then
@@ -303,21 +330,60 @@ jobs:
             section="$APP"
           fi
           bash deploy/helm/artifacthub-changes.sh "$section" --inject
+          bash deploy/helm/release-facts.sh "$APP"
           if [ "$IS_PRERELEASE" = "true" ]; then
             printf '  artifacthub.io/prerelease: "true"\n' >> "$CHART_DIR/Chart.yaml"
           fi
           echo "--- annotations as packaged ---"
           sed -n '/^annotations:/,$p' "$CHART_DIR/Chart.yaml"
 
+      # `--app-version` is passed unconditionally, because `effective` already IS
+      # the committed value on a dispatch — one code path, and the flag is helm's
+      # own documented way to set a package's appVersion without editing the
+      # source chart.
       - name: Package
         id: package
         env:
           VERSION: ${{ steps.chart.outputs.version }}
+          APP: ${{ steps.chart.outputs.effective }}
         run: |
           set -euo pipefail
-          helm package "$CHART_DIR" --destination dist
+          helm package "$CHART_DIR" --app-version "$APP" --destination dist
           ls -l dist
           echo "path=dist/ferroehr-${VERSION}.tgz" >> "$GITHUB_OUTPUT"
+
+      # The injection is READ BACK from the packaged tarball, not assumed. Every
+      # other publishing assertion in this lane is a read-back for the same
+      # reason: a silent miss here publishes a listing that advertises the
+      # previous release's images, and Artifact Hub would show it for a whole
+      # cycle before anyone noticed.
+      - name: The package carries the appVersion and image tags it should
+        env:
+          PACKAGE: ${{ steps.package.outputs.path }}
+          APP: ${{ steps.chart.outputs.effective }}
+        run: |
+          set -euo pipefail
+          packaged=$(helm show chart "$PACKAGE" | sed -nE 's/^appVersion: *"?([^"]+)"?/\1/p')
+          if [ "$packaged" != "$APP" ]; then
+            echo "::error::${PACKAGE} carries appVersion ${packaged}, expected ${APP} — 'helm package --app-version' did not take."
+            exit 1
+          fi
+          wrong=$(helm show chart "$PACKAGE" | grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' | grep -v ":${APP}\$" || true)
+          if [ -n "$wrong" ]; then
+            echo "::error::${PACKAGE} advertises artifacthub.io/images tags that are not ${APP}:"
+            echo "$wrong"
+            exit 1
+          fi
+          # The README travels inside the package and is what Artifact Hub
+          # renders as the front page, so its install example has to name the
+          # same version the chart carries.
+          readme=$(tar -xzOf "$PACKAGE" ferroehr/README.md)
+          if ! printf '%s' "$readme" | grep -qF -- "--set image.tag=${APP}"; then
+            echo "::error::the README inside ${PACKAGE} does not teach 'image.tag=${APP}' — the packaged front page would advertise a different version from the chart."
+            printf '%s' "$readme" | grep -nE 'AppVersion|image\.tag=' || true
+            exit 1
+          fi
+          echo "packaged appVersion ${packaged}; every artifacthub.io/images tag and the packaged README at ${APP}"
 
       - name: Dry run — everything but the push
         if: inputs.release-tag == '' && !inputs.publish
@@ -545,7 +611,8 @@ jobs:
         if: always()
         env:
           VERSION: ${{ steps.chart.outputs.version }}
-          APP: ${{ steps.chart.outputs.app }}
+          APP: ${{ steps.chart.outputs.effective }}
+          COMMITTED_APP: ${{ steps.chart.outputs.app }}
           DIGEST: ${{ steps.push.outputs.digest }}
           SIGNATURE: ${{ steps.verify.outputs.sig }}
           JUDGED: ${{ steps.judge.outputs.image }}
@@ -555,7 +622,8 @@ jobs:
             printf '## Chart publish\n\n'
             printf '| | |\n|---|---|\n'
             printf '| chart version | `%s` |\n' "$VERSION"
-            printf '| appVersion | `%s` |\n' "$APP"
+            printf '| appVersion (packaged) | `%s` |\n' "$APP"
+            printf '| appVersion (committed default) | `%s` |\n' "$COMMITTED_APP"
             printf '| judged against | `%s` (%s) |\n' "${JUDGED:-not selected}" "${WHY:-—}"
             printf '| repository | `%s` |\n' "$CHART_REF"
             printf '| digest | `%s` |\n' "${DIGEST:-not pushed}"

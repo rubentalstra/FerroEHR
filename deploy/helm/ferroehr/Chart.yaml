@@ -19,13 +19,29 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 6.0.20
-# The default container image tag (overridable via image.tag), and the released
-# application version — kept equal to the workspace version by the
-# `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
-# previous image. It is NOT a promise that this tag accepts the chart's current
-# `config` defaults: values track development between releases, so the publish
-# lane re-checks the pairing against the image itself.
+version: 6.0.21
+# The DEFAULT container image tag (overridable via image.tag) — no longer a
+# per-release fact (#2779).
+#
+# A published chart's appVersion is injected at package time, from the tag being
+# released: `helm package --app-version ${TAG#v}`, beside the rewrite of the
+# `artifacthub.io/images` tags below and the `artifacthub.io/changes` injection
+# that has worked this way since #2107. The argument is the same for all three —
+# they are facts about a release, and a committed copy is stale from the next
+# merge onwards. So a release cut edits none of them, and the published chart is
+# correct whatever this line says.
+#
+# What this line therefore IS: the default for a chart packaged OUTSIDE a release
+# (the between-releases `publish-chart.yml` dispatch) and for anyone running
+# `helm template` or `helm install` against this directory. It names the most
+# recent release it was refreshed at and may lag; what it may NOT do is name a
+# version this project never released, which is what
+# scripts/checks/chart-appversion.sh holds it to (CHANGELOG.md is the authority).
+#
+# It is NOT a promise that this tag accepts the chart's current `config`
+# defaults: values track development between releases, so the publish lane
+# re-checks the pairing against an image, and the `chart-boot` CI job replays it
+# against the image built from the tree.
 appVersion: "4.0.5"
 
 # A COMPATIBILITY floor, and a real one: 1.36 is the release where the newest
@@ -86,11 +102,13 @@ icon: https://ferroehr.eu/assets/logo-mark-dark.svg
 # ─────────────────────────────────────────────────────────────────────────────
 # Artifact Hub display metadata (https://artifacthub.io/docs/topics/annotations/helm/).
 #
-# Two annotations are NOT here because they are per-release facts that would go
+# Three annotations are NOT here because they are per-release facts that would go
 # stale the moment they were committed; the publish lane injects them at package
 # time from CHANGELOG.md and the tag (deploy/helm/artifacthub-changes.sh):
 # `artifacthub.io/changes` and `artifacthub.io/containsSecurityUpdates`, plus
-# `artifacthub.io/prerelease` for an `-rc` tag.
+# `artifacthub.io/prerelease` for an `-rc` tag. Committing any of the three is
+# refused by scripts/checks/chart-appversion.sh: two declarations of one key make
+# the packaged metadata depend on YAML key-collision behaviour.
 #
 # Deliberately absent, so a later reader does not wonder:
 #   operator, operatorCapabilities — this is not an operator.
@@ -122,11 +140,13 @@ annotations:
   artifacthub.io/maintainers: |
     - name: Ruben Talstra
       email: me@rubentalstra.nl
-  # All three published images, so the hub's security report covers what the
-  # PROJECT ships. Only `ferroehr` is deployed by this chart — there is no
-  # in-chart PostgreSQL, and the admin console is its own deployment — so the
-  # other two are listed as product images rather than chart contents. Every tag
-  # here must equal `appVersion`; the `chart-appversion` CI guard checks it.
+  # Every tag here must equal `appVersion` (scripts/checks/chart-appversion.sh
+  # checks it), and the publish lane REWRITES them to the released version at
+  # package time — deploy/helm/release-facts.sh, because
+  # `helm package --app-version` sets the appVersion field and does not touch
+  # annotations (#2779). So these committed tags are the between-releases
+  # default, like appVersion itself, and never what a published listing shows.
+  #
   # ONLY images this chart actually deploys. Artifact Hub scans every entry here
   # and attributes the findings to this package, so listing an image the chart
   # never installs reports us for software no user runs. `ferroehr-postgres` was
