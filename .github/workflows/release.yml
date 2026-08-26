@@ -186,6 +186,23 @@ jobs:
       - name: The committed chart release facts are coherent
         run: bash scripts/checks/chart-appversion.sh
 
+      # Every release publishes a DIFFERENT packaged chart (appVersion, image
+      # tags and changes are injected at package time, #2779), so every release
+      # needs its own chart version — and since the injection, no diff-guard
+      # forces the bump. Refusing here costs seconds; the chart leg refusing
+      # after the images published costs a red release (v4.0.6-rc3, #2818).
+      - uses: ./.github/actions/helm-pinned
+      - name: The chart version is not already published
+        env:
+          CHART_REF: ghcr.io/${{ github.repository_owner }}/charts/ferroehr
+        run: |
+          ver=$(awk '$1 == "version:" {print $2; exit}' deploy/helm/ferroehr/Chart.yaml)
+          if helm show chart "oci://${CHART_REF}" --version "$ver" >/dev/null 2>&1; then
+            echo "::error::chart version ${ver} is already published at ${CHART_REF} — every release ships a distinct packaged chart (injected release facts), so bump deploy/helm/ferroehr/Chart.yaml version in the release PR." >&2
+            exit 1
+          fi
+          echo "chart ${ver} is unpublished — the chart leg can ship it"
+
       - name: The ferroehr party statement's product version matches the workspace
         run: bash scripts/checks/statement-version.sh
 
