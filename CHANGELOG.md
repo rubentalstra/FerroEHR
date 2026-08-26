@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.6-rc3] - 2026-08-26
+
 ### Changed
 
 - The conformance instrument is no longer built from this repository. It is
@@ -7628,7 +7630,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc2...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc3...HEAD
+[4.0.6-rc3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc2...v4.0.6-rc3
 [4.0.6-rc2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...v4.0.6-rc2
 [4.0.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.4...v4.0.5
 [4.0.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...v4.0.4
