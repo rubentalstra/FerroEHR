@@ -110,17 +110,18 @@ jobs:
             echo "tag=$tag"
             echo "version=${tag#v}"
           } >> "$GITHUB_OUTPUT"
+      # github.sha is the commit the event ref pointed at, fixed for the whole
+      # run: the tag-mismatch refusal above guarantees it IS the tag's commit
+      # on a dispatch too. Checking it out (rather than the input-derived tag
+      # string) keeps workflow_dispatch input out of every checkout, which is
+      # also what the CodeQL actions taint model verifies (#2790).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ steps.tag.outputs.tag }}
-      # Pin the rest of the pipeline to the commit this job actually read. The
-      # tag is the only handle a dispatch gives us, but it stays movable, so the
-      # jobs that can take a ref check out this SHA rather than resolving the
-      # tag again.
+          ref: ${{ github.sha }}
       - id: rev
-        name: Resolve the tag to its commit
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        name: Record the pinned commit
+        run: echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       # The tag comes from the step above (a dispatch names it, a push carries
       # it), never from the ref alone. THE prerelease rule, one definition.
@@ -260,7 +261,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.sha }}
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-notes
@@ -394,7 +395,7 @@ jobs:
     uses: ./.github/workflows/release-build.yml
     with:
       tag: ${{ needs.plan.outputs.tag }}
-      sha: ${{ needs.plan.outputs.sha }}
+      sha: ${{ github.sha }}
       target: ${{ matrix.target }}
       runner: ${{ matrix.runner }}
 
@@ -494,7 +495,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.sha }}
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
 
       - name: Verify toolchain pins (container + Dockerfile == rust-toolchain.toml)
         shell: bash
@@ -536,7 +537,7 @@ jobs:
         # provenance explicit and does not depend on git being present in the
         # slim job container (it is not). Empty/absent degrades to `unknown`.
         env:
-          REVISION: ${{ needs.plan.outputs.sha }}
+          REVISION: ${{ github.sha }}
         run: cargo build --release --locked -p ferroehr-server
 
       - name: Strip
@@ -612,7 +613,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.sha }}
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
 
       - name: Verify toolchain pin (container == rust-toolchain.toml)
         shell: bash
@@ -853,7 +854,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.sha }}
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
 
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
@@ -901,7 +902,7 @@ jobs:
     uses: ./.github/workflows/build-chart.yml
     with:
       release-tag: ${{ needs.plan.outputs.tag }}
-      sha: ${{ needs.plan.outputs.sha }}
+      sha: ${{ github.sha }}
 
   # ── The hosted sandbox ──────────────────────────────────────────────────────
   # Keyed on apply-tags, never on a run conclusion: the sandbox image is
@@ -954,7 +955,7 @@ jobs:
         with:
           persist-credentials: true # zizmor: ignore[artipacked]
           fetch-depth: 0
-          ref: ${{ needs.plan.outputs.sha }}
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
       # This job renders the book and pushes it; it lints and link-checks
       # nothing, so neither link-check tool is installed.
       - uses: ./.github/actions/docs-toolchain
@@ -1013,7 +1014,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ needs.plan.outputs.sha }}
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
 
       # `crates/*` publishes on its own SemVer line through a manual dispatch
       # (publish-crates.yml), so a cycle that changed packaged crate content
