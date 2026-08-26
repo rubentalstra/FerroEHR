@@ -24,7 +24,7 @@ use crate::ast::{
     SortOrder, StandardPredicate, StatFunc, Terminal, TerminologyFunction, Top, TopDirection,
     ValueListItem, VersionPredicate, WhereExpr,
 };
-use crate::lexer::{SpannedTokens, Token};
+use crate::lexer::{CompOp, SpannedTokens, Token};
 use chumsky::prelude::*;
 
 // The chumsky extra-parameter alias. `chumsky::extra::Err` stays fully
@@ -365,6 +365,15 @@ fn path_parsers<'a>() -> (
     (identified, predicate, standard)
 }
 
+/// What followed the shared `objectPath` prefix of the two `objectPath`-leading
+/// `nodePredicate` alternatives, so the prefix is parsed once.
+enum NodePathTail {
+    /// `MATCHES CONTAINED_REGEX` — the raw `{/regex/}` token text.
+    Regex(String),
+    /// `COMPARISON_OPERATOR pathPredicateOperand`.
+    Compare(CompOp, PathPredicateOperand),
+}
+
 /// The `pathPredicate` and `standardPredicate` parsers over a given
 /// `objectPath` parser — the non-recursive half of the path grammar
 /// ([`path_parsers`] wires the recursion).
@@ -387,7 +396,7 @@ fn predicate_parsers<'a>(
     let standard = object
         .clone()
         .then(comparison)
-        .then(predicate_operand)
+        .then(predicate_operand.clone())
         .map(|((path, op), operand)| StandardPredicate { path, op, operand });
 
     // archetypePredicate : ARCHETYPE_HRID | PARAMETER
@@ -415,18 +424,32 @@ fn predicate_parsers<'a>(
     let node_archetype = select! { Token::ArchetypeHrid(s) => s }
         .then(just(Token::Comma).ignore_then(name_constraint).or_not())
         .map(|(hrid, name)| NodePredicate::Archetype { hrid, name });
-    let node_matches_regex = object
+    // `AqlParser.g4` `nodePredicate`: its two `objectPath`-leading alternatives
+    // (`… COMPARISON_OPERATOR pathPredicateOperand`, `… MATCHES
+    // CONTAINED_REGEX`) are told apart by the token AFTER that shared prefix,
+    // so the prefix is parsed ONCE and the tail dispatches on it. Retrying each
+    // alternative from the top re-parses the prefix — and a `pathPart` inside
+    // it may carry another `pathPredicate`, so the doubling compounds per
+    // bracket nesting level.
+    let node_path_tail = just(Token::Matches)
+        .ignore_then(select! { Token::ContainedRegex(s) => s })
+        .map(NodePathTail::Regex)
+        .or(comparison
+            .then(predicate_operand)
+            .map(|(op, operand)| NodePathTail::Compare(op, operand)));
+    let node_path = object
         .clone()
-        .then_ignore(just(Token::Matches))
-        .then(select! { Token::ContainedRegex(s) => s })
-        .map(|(path, regex)| NodePredicate::MatchesRegex { path, regex });
+        .then(node_path_tail)
+        .map(|(path, tail)| match tail {
+            NodePathTail::Regex(regex) => NodePredicate::MatchesRegex { path, regex },
+            NodePathTail::Compare(op, operand) => {
+                NodePredicate::Standard(Box::new(StandardPredicate { path, op, operand }))
+            }
+        });
     let node_atom = node_code
         .or(node_archetype)
         .or(parameter().map(NodePredicate::Parameter))
-        .or(node_matches_regex)
-        .or(standard
-            .clone()
-            .map(|s| NodePredicate::Standard(Box::new(s))));
+        .or(node_path);
     let node_and = node_atom.clone().foldl(
         just(Token::And).ignore_then(node_atom.clone()).repeated(),
         |l, r| NodePredicate::And(Box::new(l), Box::new(r)),
@@ -980,7 +1003,7 @@ mod tests {
                 ..
             } => {
                 assert_eq!(variable.as_deref(), Some("v"));
-                assert_eq!(s.op, crate::lexer::CompOp::Gt);
+                assert_eq!(s.op, CompOp::Gt);
             }
             other => panic!("expected VERSION standard predicate, got {other:?}"),
         }
@@ -1101,7 +1124,7 @@ mod tests {
                         ..
                     },
                 ..
-            } => assert_eq!(s.op, crate::lexer::CompOp::Eq),
+            } => assert_eq!(s.op, CompOp::Eq),
             other => panic!("expected PathPredicate::Standard, got {other:?}"),
         }
     }
