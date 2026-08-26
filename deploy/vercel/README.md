@@ -14,7 +14,7 @@ and the only place that POST happens is `.github/workflows/sandbox-deploy.yml`:
 1. **A release publishes.** The Containers pipeline builds and pushes
    `ghcr.io/rubentalstra/ferroehr:X.Y.Z` and moves `:latest` (release tags
    only, never prereleases). When that pipeline SUCCEEDS for a release tag,
-   `sandbox-deploy.yml` fires (`workflow_run`), pings the hook, and Vercel
+   `sandbox-deploy.yml` runs (called by the release pipeline after the scanned tags apply), pings the hook, and Vercel
    builds `Dockerfile.vercel` — `FROM ghcr.io/rubentalstra/ferroehr:latest`,
    a pull + retag measured in seconds. The image provably exists before the
    ping, so no ordering race exists to guard against.

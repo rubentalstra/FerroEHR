@@ -10,10 +10,15 @@
 # exists, so no skip-until-exists guard and no image race can occur.
 #
 # Triggers:
-#   - workflow_run on the Containers pipeline: a successful RELEASE (v*, no
-#     prerelease suffix) image publish redeploys the sandbox. The sandbox
-#     image is `FROM ghcr.io/rubentalstra/ferroehr:latest`, which the image
-#     lane moves on exactly those tags, so nothing is hand-bumped at a cut.
+#   - workflow_call from the release pipeline (release.yml), keyed on the job
+#     that APPLIES the image tags — not on a workflow's run conclusion (#2776).
+#     The sandbox image is `FROM ghcr.io/rubentalstra/ferroehr:latest`, which
+#     that job moves on a release tag, so nothing is hand-bumped at a cut. It
+#     used to be a `workflow_run` on Containers filtered by
+#     `conclusion == success`, and that conclusion covered advisory jobs with
+#     no edge to the images: at v4.0.3 a tree scan finding suppressed a
+#     perfectly good deploy. The caller passes `expected-version`, which the
+#     verified wait below used to parse out of the run payload's `head_branch`.
 #   - push to develop touching the sandbox posture (Dockerfile.vercel,
 #     vercel.json, deploy/vercel/**): a config change redeploys the same
 #     release image with the new posture.
@@ -29,19 +34,34 @@
 # After a successful deploy the reseed runs (the reusable half of
 # sandbox-reseed.yml): the nightly wipe stays the janitor, and a release
 # that edits the baseline migration heals immediately instead of at the
-# next midnight. A failure here is a sandbox failure in a sandbox-named
-# workflow — it can never redden CI, Containers, or a release lane.
+# next midnight. A failure here is reported as a sandbox failure: it can
+# never redden CI or Containers, and when the release pipeline calls this
+# workflow it reddens that pipeline's `announce` leg — which names the
+# recovery — rather than anything the release already published.
 
 name: Sandbox deploy
 
 on:
-  # The dangerous-triggers concern is fork/PR content running privileged;
-  # Containers triggers only on develop pushes and v* tags of THIS repo
-  # (never on pull requests), and this workflow checks nothing out, runs no
-  # repository code, and holds no permissions (permissions: {}).
-  workflow_run: # zizmor: ignore[dangerous-triggers]
-    workflows: [Containers]
-    types: [completed]
+  workflow_call:
+    inputs:
+      expected-version:
+        description: >-
+          The version string the sandbox must serve before the deploy counts as
+          done (`X.Y.Z`, no `v`). Empty means "log whatever is served" — which
+          is what a posture push or a manual redeploy wants, since neither
+          changes the image.
+        required: false
+        type: string
+        default: ""
+      reseed:
+        description: >-
+          Wipe and reseed after the deploy. Declared for the CALL path too, and
+          not only on the dispatch below, because `inputs` carries whichever
+          trigger's inputs fired: without it a release dispatched by hand (an
+          event_name of `workflow_dispatch`) would silently skip the reseed.
+        required: false
+        type: boolean
+        default: true
   push:
     branches: [develop]
     paths:
@@ -64,18 +84,11 @@ concurrency:
 jobs:
   deploy:
     name: ping the deploy hook and verify
-    # Upstream only (forks have neither the hook nor the Neon environment);
-    # for workflow_run, only a SUCCESSFUL Containers run for a release tag
-    # (head_branch carries the tag name on tag-triggered runs; a prerelease
-    # suffix is skipped — `latest` does not move for those either).
-    # The prerelease rule — one definition: .github/actions/release-kind. It is
-    # spelled inline here because a job-level `if:` cannot read a step output.
-    if: >-
-      github.repository == 'rubentalstra/FerroEHR' &&
-      (github.event_name != 'workflow_run' ||
-       (github.event.workflow_run.conclusion == 'success' &&
-        startsWith(github.event.workflow_run.head_branch, 'v') &&
-        !contains(github.event.workflow_run.head_branch, '-')))
+    # Upstream only (forks have neither the hook nor the Neon environment).
+    # The prerelease question is settled by the CALLER now: the release pipeline
+    # runs this leg only for a real release, because a pre-release moves no
+    # `:latest` and so changes nothing to deploy.
+    if: github.repository == 'rubentalstra/FerroEHR'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions: {}
@@ -96,7 +109,7 @@ jobs:
         env:
           HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
           # Only compared against the served version string, never executed.
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EXPECTED: ${{ inputs.expected-version }}
         run: |
           set -euo pipefail
           if [ -z "$HOOK_URL" ]; then
@@ -109,13 +122,10 @@ jobs:
           # first 200 proves the new deployment is live AND migrated.
           # A bare 200 is NOT proof of the new deployment — the OLD one
           # answers 200 too (measured: the 4.0.4 dispatch went green while
-          # the sandbox still served 4.0.3). A release-triggered run knows
-          # the version the tag names and waits for exactly it; other runs
-          # log what is served.
-          expected=""
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ] && [ -n "${HEAD_BRANCH}" ]; then
-            expected="${HEAD_BRANCH#v}"
-          fi
+          # the sandbox still served 4.0.3). A release run is told the version
+          # the tag names and waits for exactly it; other runs log what is
+          # served.
+          expected="${EXPECTED:-}"
           deadline=$(( $(date +%s) + 1200 ))
           sleep 60
           while :; do

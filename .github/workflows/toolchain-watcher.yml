@@ -197,10 +197,11 @@ jobs:
 
           # 3. The workflow `container:` images and the cache keys that carry
           #    the toolchain version. A blanket replace of the exact old
-          #    version inside these two files is deliberate: it also catches
+          #    version inside these files is deliberate: it also catches
           #    cache keys added since this lane was written, which a list of
-          #    known line numbers would silently miss.
-          for f in .github/workflows/ci.yml .github/workflows/containers.yml; do
+          #    known line numbers would silently miss. release.yml joined the
+          #    list when the release pipeline took over the image lanes (#2776).
+          for f in .github/workflows/ci.yml .github/workflows/containers.yml .github/workflows/release.yml; do
             sed -i -E "s|(rust:[^@[:space:]]*@)sha256:[0-9a-f]{64}|\1${NEW_DIGEST}|g" "$f"
             sed -i -E "s|${old_re}|${NEW_VERSION}|g" "$f"
           done
@@ -238,7 +239,8 @@ jobs:
           # rather than opening a PR that looks complete.
           residual=$(grep -Fn "$OLD_VERSION" \
             rust-toolchain.toml docker/Dockerfile docker/admin-ui/Dockerfile \
-            .github/workflows/ci.yml .github/workflows/containers.yml || true)
+            .github/workflows/ci.yml .github/workflows/containers.yml \
+            .github/workflows/release.yml || true)
           if [ -n "$residual" ]; then
             echo "$residual"
             echo "::error::A pin still names $OLD_VERSION after the rewrite. A new pin site appeared that this lane does not know about — add it above."
@@ -250,7 +252,8 @@ jobs:
           # a pin site added later is covered without editing this check.
           pinned=$(grep -nE 'rust:[^@[:space:]]*@sha256:[0-9a-f]{64}' \
             docker/Dockerfile docker/admin-ui/Dockerfile \
-            .github/workflows/ci.yml .github/workflows/containers.yml || true)
+            .github/workflows/ci.yml .github/workflows/containers.yml \
+            .github/workflows/release.yml || true)
           stale=$(printf '%s\n' "$pinned" | grep -v '^$' | grep -Fv "$NEW_DIGEST" || true)
           if [ -n "$stale" ]; then
             echo "$stale"
@@ -376,7 +379,7 @@ jobs:
               echo
               echo "## This bump is INCOMPLETE"
               echo
-              echo "No \`TOOLCHAIN_BUMP_TOKEN\` secret is configured, so this commit could not include \`.github/workflows/ci.yml\` or \`.github/workflows/containers.yml\`: the workflow token has no \`workflows\` permission and the ref update is refused. Their \`container:\` pins and cache keys still name \`${OLD_VERSION}\` and must be moved by hand to \`rust:${NEW_VERSION}-${VARIANT}@${NEW_DIGEST}\` before this merges — the toolchain-pin check in both files fails until they are."
+              echo "No \`TOOLCHAIN_BUMP_TOKEN\` secret is configured, so this commit could not include the workflow files (\`ci.yml\`, \`containers.yml\`, \`release.yml\`): the workflow token has no \`workflows\` permission and the ref update is refused. Their \`container:\` pins and cache keys still name \`${OLD_VERSION}\` and must be moved by hand to \`rust:${NEW_VERSION}-${VARIANT}@${NEW_DIGEST}\` before this merges — their own toolchain-pin checks fail until they are."
               echo
               echo "Checks also do not start by themselves on a PR opened with the workflow token. Close and reopen this PR to raise them."
             fi

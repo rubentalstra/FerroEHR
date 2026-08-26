@@ -1,5 +1,5 @@
 ---
-paths: ["website/**", "scripts/site/build.sh", "scripts/site/cut-version.sh", ".github/workflows/docs.yml"]
+paths: ["website/**", "scripts/site/build.sh", "scripts/site/cut-version.sh", ".github/workflows/docs.yml", ".github/workflows/release.yml"]
 ---
 
 # The documentation website (`website/**`)
@@ -21,8 +21,8 @@ authority for layout, look & feel, and content.
 - `website/book/` — the mdBook (served at `/docs/dev/`, frozen per release at
   `/docs/vX.Y.Z/`, newest release copied to `/docs/latest/`).
 - Frozen versions live on the `docs-dist` orphan branch (generate once,
-  never rebuilt); `scripts/site/cut-version.sh vX.Y.Z` cuts one (CI does this on
-  every `v*` tag).
+  never rebuilt); `scripts/site/cut-version.sh vX.Y.Z` cuts one (the release
+  pipeline's docs-freeze leg does this on every non-prerelease `v*` tag).
 
 ## The same-PR docs rule (mirror of the changelog rule)
 
@@ -103,7 +103,7 @@ running their own server reads their own surface.
 
 ## Toolchain
 
-Pinned in `docs.yml` `env` (mdBook, mdbook-mermaid, mdbook-toc, mdbook-lint,
+Pinned in `.github/actions/docs-toolchain` (mdBook, mdbook-mermaid, mdbook-toc, mdbook-lint,
 lychee). Bump only after live-verifying the new version.
 
 ## Local preview

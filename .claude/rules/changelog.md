@@ -54,7 +54,9 @@ optional:
   `version` if any packaged chart content changed in the cycle
   (`chart-version-guard`). The two are INDEPENDENT SemVer lines and stay so.
   Regenerate the golden renders (`deploy/helm/validate.sh --update`).
-- **The chart publishes on the tag** (`publish-chart.yml`): it refuses to
+- **The chart publishes as the release pipeline's `chart` leg** (`build-chart.yml`,
+  called by `release.yml` after the scanned tags apply; `publish-chart.yml` is
+  the dispatch-only dry-run/recovery lane between releases): it refuses to
   overwrite a published chart version, checks that the `appVersion` image
   accepts the chart's rendered defaults, injects that release's
   `artifacthub.io/changes` from this changelog, pushes to
@@ -73,7 +75,7 @@ optional:
   version**, never a retag.
 
   Do not confuse this with the chart lane one section above: a **GHCR OCI tag
-  is still mutable**, which is exactly why `publish-chart.yml` refuses to
+  is still mutable**, which is exactly why `build-chart.yml` refuses to
   overwrite a published chart version. GitHub releases are immutable by the
   platform; container tags are immutable only because our lane enforces it.
 
