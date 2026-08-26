@@ -19,6 +19,13 @@
 #     release image with the new posture.
 #   - workflow_dispatch: a manual redeploy (reseed skippable).
 #
+# Provisioning (owner action, once): create a Deploy Hook on the Vercel
+# project (Settings → Git → Deploy Hooks, branch `develop`) and store its
+# URL with `gh secret set SANDBOX_DEPLOY_HOOK_URL`. An empty secret is a
+# hard failure here, never a skip: the job already runs only on the
+# upstream repo, so a missing hook is always a misconfiguration, and a
+# green run must mean a deploy actually happened (#2755).
+#
 # After a successful deploy the reseed runs (the reusable half of
 # sandbox-reseed.yml): the nightly wipe stays the janitor, and a release
 # that edits the baseline migration heals immediately instead of at the
@@ -77,8 +84,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$HOOK_URL" ]; then
-            echo "SANDBOX_DEPLOY_HOOK_URL is not configured; nothing to deploy." >&2
-            exit 0
+            echo "::error::SANDBOX_DEPLOY_HOOK_URL is empty — create the Deploy Hook on the Vercel project (Settings → Git → Deploy Hooks, branch develop) and run: gh secret set SANDBOX_DEPLOY_HOOK_URL" >&2
+            exit 1
           fi
           curl -fsS -X POST "$HOOK_URL" -o /dev/null
           echo "sandbox deploy triggered"
@@ -91,8 +98,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$HOOK_URL" ]; then
-            echo "no hook configured; skipping the wait." >&2
-            exit 0
+            echo "::error::SANDBOX_DEPLOY_HOOK_URL is empty — nothing was deployed, so there is nothing to wait for." >&2
+            exit 1
           fi
           # Vercel builds the container (a pull + retag of the published
           # image, minutes at most) and swaps the deployment; poll until the
