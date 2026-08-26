@@ -260,6 +260,7 @@ jobs:
     uses: ./.github/workflows/build-image.yml
     with:
       image: ghcr.io/rubentalstra/ferroehr
+      defer-tags: true
       dockerfile: docker/Dockerfile
       target: runtime-prebuilt
       binary-artifact-prefix: ferroehr
@@ -395,6 +396,7 @@ jobs:
     uses: ./.github/workflows/build-image.yml
     with:
       image: ghcr.io/rubentalstra/ferroehr-admin-ui
+      defer-tags: true
       dockerfile: docker/admin-ui/Dockerfile
       target: runtime-prebuilt
       binary-artifact-prefix: ferroehr-admin-ui
@@ -431,6 +433,7 @@ jobs:
     uses: ./.github/workflows/build-image.yml
     with:
       image: ghcr.io/rubentalstra/ferroehr-postgres
+      defer-tags: true
       dockerfile: docker/postgres/Dockerfile
       context: docker/postgres
       qemu: true
@@ -529,6 +532,67 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           trivy-config: trivy.yaml
+
+  # Tags exist only AFTER the vulnerability scan passes (#2747): the builds
+  # push by digest (defer-tags), and this job makes them referencable. The
+  # v4.0.4 cut is why the order is load-bearing — tagged images went live
+  # first and the scan failed second, so a HIGH finding was already `latest`
+  # by the time the lane turned red. `imagetools create` over a single source
+  # re-tags the SAME digest, so the attestations bound to it stay valid.
+  apply-tags:
+    name: apply image tags (after the scan gate)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      packages: write # tag the digests this run pushed
+    needs: [app-image, admin-ui-image, postgres-image, image-scan]
+    # postgres-image legitimately skips on most pushes (it builds on
+    # docker/postgres changes and tags), so this runs whenever the SCAN
+    # passed and tags each image whose build actually ran.
+    if: >-
+      !cancelled() && needs.image-scan.result == 'success' &&
+      needs.app-image.result == 'success'
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag the app image
+        env:
+          IMAGE: ${{ env.APP_IMAGE }}
+          DIGEST: ${{ needs.app-image.outputs.digest }}
+          TAGS: ${{ needs.app-image.outputs.tags }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(-t "$t"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"
+
+      - name: Tag the admin-ui image
+        if: needs.admin-ui-image.result == 'success'
+        env:
+          IMAGE: ${{ env.ADMIN_UI_IMAGE }}
+          DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+          TAGS: ${{ needs.admin-ui-image.outputs.tags }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(-t "$t"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"
+
+      - name: Tag the postgres image
+        if: needs.postgres-image.result == 'success'
+        env:
+          IMAGE: ${{ env.POSTGRES_IMAGE }}
+          DIGEST: ${{ needs.postgres-image.outputs.digest }}
+          TAGS: ${{ needs.postgres-image.outputs.tags }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(-t "$t"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"
 
   # The pushed CONSOLE artifact is assembled from two jobs (the per-arch ssr
   # binary + the once-built site bundle), so its one novel failure class is
