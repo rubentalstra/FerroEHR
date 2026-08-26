@@ -21,8 +21,7 @@ optional:
   `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`, re-add an empty
   `[Unreleased]`, update the link references at the bottom, bump the
   workspace `version` in the root `Cargo.toml` (+ `Cargo.lock` via a
-  `cargo check`, + Helm `appVersion`, golden renders via
-  `deploy/helm/validate.sh --update`, + `CITATION.cff` `version` and
+  `cargo check`, + `CITATION.cff` `version` and
   `date-released` (the `citation-guard` CI job enforces the version match),
   then re-render `.zenodo.json` (`bash scripts/render/zenodo-json.sh`, checked
   by the same job), + the ferroehr party statement's product version
@@ -39,21 +38,35 @@ optional:
   `sandbox-deploy.yml` redeploys + reseeds it automatically after the tag's
   Containers run — `deploy/vercel/README.md`), + the book's pinned versions — `website/book/src/installation/
   kubernetes.md` pins the chart `--version` and `image.tag`, and
-  `website/book/src/verifying-releases.md` pins the release tag in its
-  examples; `docs-claims` catches the chart/image pins, learned at the
-  v4.0.0 cut which shipped them stale), merge the release PR, then tag
+  `website/book/src/verifying-releases.md` pins the release tag and the image
+  tags in its examples; `docs-claims` catches all of them, the chart/image pins
+  since the v4.0.0 cut shipped them stale and the verifying-releases asset names
+  and substitution note since v4.0.5 froze two stale attestation examples into
+  `/docs/v4.0.5/` (#2779)), merge the release PR, then tag
   `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
   Release from the matching changelog section and **fails if the section or
   version match is missing**. Releases publish as OFFICIAL
   releases — `prerelease` is true only for an explicitly suffixed tag
   (`vX.Y.Z-rc1`, ...) — owner sign-off 2026-07-31.
-- **The Helm chart, in the SAME release PR:** bump
-  `deploy/helm/ferroehr/Chart.yaml` `appVersion` to the release version (the
-  `chart-appversion-guard` CI job enforces it, and so do the
-  `artifacthub.io/images` tags in the same file), and bump the chart's own
-  `version` if any packaged chart content changed in the cycle
-  (`chart-version-guard`). The two are INDEPENDENT SemVer lines and stay so.
-  Regenerate the golden renders (`deploy/helm/validate.sh --update`).
+- **The Helm chart, in the SAME release PR:** bump the chart's own `version` if
+  any packaged chart content changed in the cycle (`chart-version-guard`), and
+  regenerate whatever that change moved — the golden renders
+  (`deploy/helm/validate.sh --update`) and the generated chart README
+  (`helm-docs --chart-search-root deploy/helm/ferroehr --template-files
+  README.md.gotmpl`). The chart version and `appVersion` are INDEPENDENT SemVer
+  lines and stay so.
+
+  **`appVersion` is NOT a cut step any more (#2779), and neither are the
+  `artifacthub.io/images` tags.** The publish lane injects both from the tag
+  (`helm package --app-version ${TAG#v}` plus
+  `deploy/helm/release-facts.sh`), the same way it has injected
+  `artifacthub.io/changes` since #2107 and for the same reason: they are facts
+  about a release, and a committed copy is stale from the next merge onwards.
+  What stays committed is a between-releases DEFAULT, held only to being a real
+  released version whose image annotations and generated README agree with it —
+  `scripts/checks/chart-appversion.sh`, run by the `chart-appversion` CI job and
+  again by the release pipeline's `plan` at the tagged commit. Refreshing that
+  default is ordinary maintenance, not a release step.
 - **The chart publishes as the release pipeline's `chart` leg** (`build-chart.yml`,
   called by `release.yml` after the scanned tags apply; `publish-chart.yml` is
   the dispatch-only dry-run/recovery lane between releases): it refuses to

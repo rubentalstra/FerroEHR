@@ -15,14 +15,47 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- A weekly report of container manifests in the registry that nothing can reach
+  any more, the residue of a publish that pushed an image by digest and then
+  failed before its tags were applied. It files one tracking issue listing the
+  digests and the command that removes each. Deletion stays manual: a
+  miscomputed reachability would destroy published signatures and attestations.
+
 ### Changed
 
+- A published Helm chart now takes its `appVersion` and its
+  `artifacthub.io/images` tags from the release being cut, injected when the
+  chart is packaged, instead of from values edited into `Chart.yaml` beforehand.
+  What the published chart says does not change; it can no longer say the
+  previous release. The committed values are the default for a chart packaged
+  between releases and for `helm template` against a checkout, and they may lag.
 - The conformance instrument (`tools/cnf-runner` — the CNF 2.0 runner, its
   machine-readable catalogue, schemas, and party artifacts) is now licensed
   under Apache-2.0 instead of MIT: attribution travels with every copy and
   derivative (license + NOTICE retention), and the license carries an
   explicit patent grant. The rest of the project stays MIT; the vendored
   test corpora keep their upstream terms unchanged.
+
+### Fixed
+
+- The chart's generated `README.md`, the page Artifact Hub renders, was a
+  release behind: it advertised chart 6.0.19 and image tag 4.0.4 while the chart
+  was 6.0.20 with an appVersion of 4.0.5. It is regenerated, and a guard now
+  refuses a README that disagrees with the chart it ships in.
+- Two `gh attestation verify` examples in *Verifying releases* still pinned
+  image tag 4.0.4 at the v4.0.5 cut, and that page was then frozen into the
+  4.0.5 documentation. The docs guard now checks release-asset filenames and the
+  substitute-this-tag note on that page, and it reads the workspace version
+  rather than the chart's `appVersion`.
+- Three checks in the documentation-claims guard could never fire: they tested
+  membership of a newline-separated file list against a space-delimited pattern,
+  so the quoted-wire-evidence check and the Rust-version check on the
+  from-source page had never run once.
+- The documentation-claims guard now recognises an `image.tag=X.Y.Z` pin on a
+  chart page. That spelling is the defect the check was written for, and it was
+  the one spelling the pattern did not match.
 
 ## [4.0.5] - 2026-08-26
 

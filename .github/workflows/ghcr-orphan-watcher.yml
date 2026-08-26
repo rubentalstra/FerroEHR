@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/workflows/ghcr-orphan-watcher.yml
+#
+# Weekly inventory of GHCR manifests NOTHING can reach any more (#2779).
+#
+# Every image in this estate is pushed by digest and tagged in a separate later
+# job (scan-and-tag.yml, so a scanner's verdict comes before a tag moves). A run
+# that dies between the two leaves a manifest in the registry that no tag and no
+# index points at, and nothing prunes it: GHCR keeps it forever, it counts
+# against the package's storage, and it fills the version list that makes the
+# real ones hard to see.
+#
+# THIS WATCHER ONLY REPORTS. Deletion is manual, by design, and the issue it
+# files carries the exact `gh api -X DELETE` command per digest. The reason is
+# that reachability here is computed, not read: a multi-arch image is a tagged
+# index whose per-architecture manifests are untagged, buildkit adds untagged
+# attestation manifests to that same index, and — because GHCR serves no
+# referrers API — every cosign signature and SLSA provenance reaches the
+# registry through the OCI fallback TAG `sha256-<hex>`, whose children are
+# untagged again. Measured over the three packages: 1801 untagged manifests, of
+# which 1706 are reachable. An automated prune that got one media type wrong
+# would destroy the published attestations of releases this project publishes as
+# IMMUTABLE, and the damage would stay invisible until a consumer's
+# `gh attestation verify` returned a 404. A human reviewing 95 digests is the
+# cheaper side of that trade.
+#
+# RUN COLOUR (the watcher family's uniform rule, #2778): finding orphans files
+# or updates ONE tracking issue and the run stays GREEN. The run goes RED only
+# when the PROBE cannot answer — the packages API refusing, a tagged manifest
+# the registry will not serve, an answer jq cannot read — because an unmeasured
+# absence must never present as "nothing to clean".
+name: GHCR orphan watcher
+
+on:
+  schedule:
+    # Mondays 08:43 UTC — off the hour (GitHub delays on-the-hour runs under
+    # load) and in a slot of its own, 30 minutes after the base-image watcher's
+    # 08:13. Read the estate's slots with
+    # `grep -rE '^ +- cron:' .github/workflows/`.
+    - cron: "43 8 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ghcr-orphan-watcher
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  watch:
+    name: unreachable GHCR manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read # list the three container packages' versions
+      issues: write # file/update the one tracking issue below
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The probe. `GH_TOKEN` needs `read:packages` over the OWNER's packages,
+      # which the repository's own installation token may not carry — the
+      # packages here are user-scoped, not repository-scoped. So an optional
+      # `GHCR_PACKAGES_TOKEN` secret takes precedence when it exists, and a
+      # refusal is reported as a probe failure naming that remedy rather than as
+      # "no orphans found".
+      - name: Enumerate unreachable manifests
+        id: probe
+        env:
+          GH_TOKEN: ${{ secrets.GHCR_PACKAGES_TOKEN || github.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          if ! bash scripts/watch/ghcr-orphans.sh --owner "$OWNER" --out body.md > summary.txt 2> probe.log; then
+            cat probe.log >&2
+            {
+              printf '## The GHCR orphan probe could not answer\n\n'
+              printf 'Nothing was reported, deliberately: an unmeasured absence must not\n'
+              printf 'present as a clean registry.\n\n```\n'
+              tail -40 probe.log
+              printf '```\n\nIf the failure is the packages API refusing to list, the token lacks\n'
+              printf '`read:packages` over the packages of the owner account — add a\n'
+              printf '`GHCR_PACKAGES_TOKEN` repository secret holding a PAT with that scope.\n'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          orphans=$(sed -nE 's/^orphans=([0-9]+)$/\1/p' probe.log | tail -1)
+          [ -n "$orphans" ] || { echo "::error::the probe printed no orphan count"; exit 1; }
+          echo "orphans=$orphans" >> "$GITHUB_OUTPUT"
+          cat body.md >> "$GITHUB_STEP_SUMMARY"
+
+      # An issue body is capped at 65536 characters and this list grows with
+      # every failed run, so the tail is dropped rather than the whole filing
+      # being refused by the API.
+      - name: Trim the body to what an issue accepts
+        if: steps.probe.outputs.orphans != '0'
+        run: |
+          set -euo pipefail
+          if [ "$(wc -c < body.md)" -gt 60000 ]; then
+            head -c 59000 body.md > trimmed.md
+            printf '\n\n_Truncated: the full list is in the run summary of this workflow._\n' >> trimmed.md
+            mv trimmed.md body.md
+          fi
+
+      # `on-existing: update` rather than the family's default comment: the body
+      # IS the current inventory, so a weekly comment would stack near-identical
+      # lists and the newest one would be the hardest to find.
+      - name: File or update the tracking issue
+        if: steps.probe.outputs.orphans != '0'
+        uses: ./.github/actions/file-watcher-issue
+        with:
+          title: "chore(images): unreachable GHCR manifests are accumulating"
+          body-file: body.md
+          labels: chore,P3
+          on-existing: update

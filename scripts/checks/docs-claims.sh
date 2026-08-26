@@ -140,6 +140,21 @@ report() {
 
 files=$(collect "$@")
 
+# Membership of the file list, for the sections that check ONE named page.
+#
+# It needs a helper because the obvious spelling does not work: `$files` is
+# NEWLINE-separated, so `case " $files " in *" $page "*)` asks for a match
+# delimited by spaces and can never find one. Three sections were written that
+# way and were silently inert — the quoted-wire-evidence check on comparison.md
+# and the Rust-version check on from-source.md never ran once, proven by
+# mutating both pages and watching the guard report OK (#2779). Space-normalise
+# the list once and test against that.
+# shellcheck disable=SC2086 # deliberate re-splitting: the newlines become spaces
+files_spaced=" $(echo $files) "
+in_files() {
+  case "$files_spaced" in *" $1 "*) return 0 ;; *) return 1 ;; esac
+}
+
 # ── 1. configuration keys ────────────────────────────────────────────────────
 for f in $files; do
   [[ -f "$f" ]] || continue
@@ -262,11 +277,22 @@ done
 
 # ── 3. chart/app version literals (chart pages only) ────────────────────────
 # Both went stale on the published site (`--version 5.0.1` against a 6.x chart,
-# `image.tag=3.17.3` against a 3.17.5 appVersion — #2348). Chart.yaml is the
-# machine authority for both, so a literal that disagrees with it fails here.
+# `image.tag=3.17.3` against a 3.17.5 appVersion — #2348), so a literal that
+# disagrees with its authority fails here.
+#
+# TWO authorities, not one (#2779). The CHART version is Chart.yaml's own
+# `version` — the chart's independent SemVer line, still committed and still
+# hand-bumped. The APPLICATION version is the WORKSPACE version in Cargo.toml,
+# no longer Chart.yaml's `appVersion`: the publish lane now injects the released
+# version into the packaged chart (`helm package --app-version`), so the
+# committed appVersion is a between-releases default that may legitimately lag,
+# while a book page teaches the tag an operator can actually pull from the
+# newest release — which is the workspace version.
 CHART_YAML=deploy/helm/ferroehr/Chart.yaml
 chart_version=$(awk '$1=="version:"{print $2; exit}' "$CHART_YAML")
-app_version=$(awk '$1=="appVersion:"{gsub(/"/,""); print $2; exit}' "$CHART_YAML")
+app_version=$(sed -nE 's/^version = "(.*)"$/\1/p' Cargo.toml | head -1)
+[[ -n "$chart_version" && -n "$app_version" ]] \
+  || { echo "docs-claims: could not read the chart version ($CHART_YAML) or the workspace version (Cargo.toml)" >&2; exit 1; }
 for f in $files; do
   case " $CHART_PAGES " in *" $f "*) ;; *) continue ;; esac
   [[ -f "$f" ]] || continue
@@ -275,11 +301,17 @@ for f in $files; do
     [[ "$v" = "$chart_version" ]] \
       || report "$f" "pins chart \`--version $v\`; Chart.yaml says $chart_version"
   done < <(grep -ohE '\-\-version +[0-9]+\.[0-9]+\.[0-9]+' "$f" | awk '{print $2}' | sort -u)
+  # `image.tag=<ver>` is in the pattern deliberately (#2779). The motivating
+  # defect this section records is "`image.tag=3.17.3` against a 3.17.5
+  # appVersion", and the pattern did not match that spelling at all — only a
+  # fully-spelled `…/ferroehr:<ver>` reference. Mutating the kubernetes page's
+  # `--set image.tag=` pin was reported as OK.
   while read -r v; do
     [[ -n "$v" ]] || continue
     [[ "$v" = "$app_version" ]] \
-      || report "$f" "pins image tag \`$v\`; Chart.yaml appVersion is $app_version"
-  done < <(grep -ohE 'ferroehr(-admin-ui)?:[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
+      || report "$f" "pins image tag \`$v\`; the workspace version is $app_version"
+  done < <(grep -ohE '(ferroehr(-admin-ui)?:|image\.tag=)[0-9]+\.[0-9]+\.[0-9]+' "$f" \
+    | sed -E 's/^.*[:=]//' | sort -u)
 done
 # Every page (and the landing): a fully-spelled ghcr image reference must carry
 # the current appVersion, and never a `v` prefix — the publish lane tags
@@ -293,20 +325,20 @@ for f in $files website/landing/index.html; do
   while read -r v; do
     [[ -n "$v" ]] || continue
     [[ "$v" = "$app_version" ]] \
-      || report "$f" "pins ghcr image tag \`$v\`; Chart.yaml appVersion is $app_version"
+      || report "$f" "pins ghcr image tag \`$v\`; the workspace version is $app_version"
   done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-admin-ui|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+' "$f" | sed 's/.*://' | sort -u)
 done
 # The from-source page: a Rust version literal must be the toolchain channel or
 # the MSRV ("Rust 1.96.1" shipped against a 1.97.1 toolchain — #2348).
 RUST_PAGE="$BOOK/installation/from-source.md"
-case " $files " in *" $RUST_PAGE "*)
+if in_files "$RUST_PAGE"; then
   channel=$(awk -F'"' '/^channel/{print $2; exit}' rust-toolchain.toml)
   msrv=$(awk -F'"' '/^rust-version/{print $2; exit}' Cargo.toml)
   while read -r v; do
     case "$v" in "$channel"|"${channel%.*}"|"$msrv"|"$msrv".*) continue ;; *) ;; esac
     report "$RUST_PAGE" "names Rust \`$v\`, which is neither the toolchain channel ($channel) nor the MSRV ($msrv)"
   done < <(grep -ohE '1\.[0-9]{2}(\.[0-9]+)?' "$RUST_PAGE" | sort -u)
-;; *) ;; esac
+fi
 
 # ── 3b. quoted wire evidence on the comparison page ─────────────────────────
 # Five fabricated response-body quotes shipped on the published comparison page
@@ -314,14 +346,14 @@ case " $files " in *" $RUST_PAGE "*)
 # double-quoted string on that page presents itself as captured wire evidence,
 # so it must occur verbatim in one of the committed results records.
 COMPARISON_PAGE="$BOOK/comparison.md"
-case " $files " in *" $COMPARISON_PAGE "*)
+if in_files "$COMPARISON_PAGE"; then
   while read -r quote; do
     [[ -n "$quote" ]] || continue
     inner=${quote#\`\"}; inner=${inner%\"\`}
     grep -qF "$inner" docs/conformance/ehrbase/results.json docs/conformance/ferroehr/results.json 2>/dev/null \
       || report "$COMPARISON_PAGE" "quotes \`\"$inner\"\` as wire evidence, but no committed results record contains it"
   done < <(grep -ohE '`"[^"`]{4,}"`' "$COMPARISON_PAGE" | sort -u)
-;; *) ;; esac
+fi
 
 # ── 3c. banned phrases with a recorded refutation ────────────────────────────
 # "static binary" shipped on four pages, the landing and the README while the
@@ -338,6 +370,48 @@ while read -r f; do
     && report "$f" "claims a static binary — the binary is dynamically linked (distroless/cc); say 'self-contained'"
 done < <(grep -rilE 'static(ally linked)? binary' --include='*.md' "$BOOK" website/landing README.md 2>/dev/null; \
          grep -lFi 'static binary' website/landing/index.html 2>/dev/null)
+
+# ── 3d. the release-verification page's copy-paste literals ─────────────────
+# `verifying-releases.md` is a procedure an operator pastes, so a version
+# literal in it is a claim about the CURRENT release rather than prose. The
+# v4.0.5 cut updated the substitution note and left both
+# `gh attestation verify …/ferroehr:4.0.4` examples behind; the docs freeze then
+# published them, and the fix could only ever land in a later version's site
+# (#2779). The bare image-tag half was already covered by the every-page ghcr
+# rule in section 3 — and it DID report on the release PR, which was merged
+# anyway — so what is added here is the half with no authority at all: the
+# release-ASSET filename shape, plus two independent nets under the
+# substitute-this-tag note.
+#
+# Historical prose on this page is deliberately NOT checked. "From v4.0.1 on,
+# the shipped binary embeds…" and "Images and the chart reach L3 from the first
+# publish after v4.0.1" are correct BECAUSE they name an older release, so a
+# blanket rule over every `vX.Y.Z` literal would report three true sentences.
+# The currency claim lives in the asset names, the substitution note and the
+# commands — and nowhere else on the page.
+VERIFY_PAGE="$BOOK/verifying-releases.md"
+if in_files "$VERIFY_PAGE"; then
+  # A release asset is named after the git TAG, so its version carries the `v`.
+  while read -r v; do
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$app_version" ]] \
+      || report "$VERIFY_PAGE" "names the release asset \`ferroehr-v${v}…\`; the workspace version is $app_version"
+  done < <(grep -ohE 'ferroehr-v[0-9]+\.[0-9]+\.[0-9]+' "$VERIFY_PAGE" | sed 's/^ferroehr-v//' | sort -u)
+  # The substitution note. Its sentence wraps, so the page is line-joined first.
+  while read -r v; do
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$app_version" ]] \
+      || report "$VERIFY_PAGE" "tells the reader to substitute the tag \`v$v\`; the workspace version is $app_version"
+  done < <(tr '\n' ' ' < "$VERIFY_PAGE" \
+    | grep -ohE 'for example[[:space:]]+`v[0-9]+\.[0-9]+\.[0-9]+`' \
+    | sed -E 's/.*`v([0-9.]+)`.*/\1/' | sort -u)
+  # The wording-independent net, because the rule above is anchored on a phrase
+  # and a reword would silently disarm it: the released tag has to appear on the
+  # page SOMEWHERE. A cut that bumps Cargo.toml and forgets this page fails here
+  # whatever the sentence around the literal says.
+  grep -qF "v${app_version}" "$VERIFY_PAGE" \
+    || report "$VERIFY_PAGE" "never names the released tag \`v$app_version\` — its substitution examples still teach an older release"
+fi
 
 # ── 4. generated charts nothing embeds ───────────────────────────────────────
 # Whole-corpus by nature: a page deleting its figure is exactly the case to

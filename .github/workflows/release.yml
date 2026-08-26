@@ -175,27 +175,16 @@ jobs:
       # released. Each of these guards exists because its site shipped stale
       # once; they ran on pull requests only, so a cut whose develop CI run was
       # cancelled re-verified nothing.
-      - name: appVersion and the artifacthub.io image tags match the workspace version
-        env:
-          VERSION: ${{ steps.tag.outputs.version }}
-        run: |
-          set -euo pipefail
-          app=$(sed -nE 's/^appVersion: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml)
-          if [ -z "$app" ]; then
-            echo "::error::could not read appVersion from deploy/helm/ferroehr/Chart.yaml." >&2
-            exit 1
-          fi
-          if [ "$app" != "$VERSION" ]; then
-            echo "::error::Chart.yaml appVersion ($app) != released version ($VERSION) — the release cut bumps appVersion with the workspace version, or a plain 'helm install' deploys the previous release." >&2
-            exit 1
-          fi
-          bad=$(grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' deploy/helm/ferroehr/Chart.yaml | grep -v ":${VERSION}\$" || true)
-          if [ -n "$bad" ]; then
-            echo "::error::artifacthub.io/images tags do not match the released version ($VERSION):" >&2
-            echo "$bad" >&2
-            exit 1
-          fi
-          echo "appVersion and every artifacthub.io/images tag are at $VERSION — OK."
+      # NOT equality with the released version any more (#2779): the chart leg
+      # packages with `helm package --app-version ${TAG#v}` and rewrites the
+      # `artifacthub.io/images` tags at the same moment, so the PUBLISHED chart
+      # carries the released version whatever the tree says. What is still
+      # checked is what still has content — that the committed default names a
+      # version this project released, that the image annotation agrees with it,
+      # and that no injected annotation is committed. One script, so this and the
+      # `chart-appversion` CI job cannot drift apart (they were two copies).
+      - name: The committed chart release facts are coherent
+        run: bash scripts/checks/chart-appversion.sh
 
       - name: The ferroehr party statement's product version matches the workspace
         run: bash scripts/checks/statement-version.sh
