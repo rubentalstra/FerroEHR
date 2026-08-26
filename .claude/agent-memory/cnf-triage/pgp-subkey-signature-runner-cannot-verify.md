@@ -16,14 +16,14 @@ The chain, all read first-hand:
    (`:181-195`). Landed in **7a8a8c9a3** (2026-08-07) — AFTER the last green
    baseline; before it the primary key signed.
 2. The committed test certificate HAS one: `gpg --show-keys
-   tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc` →
+   corpus/keys/cnf-signing.sec.asc` →
    `sec [SCEAR] C87EEF94…` + `ssb [S] 376C44DE…`. The ixit's
    `instances.sut_pgp.signing.public_key` is byte-identical to the committed
    `.pub.asc`, i.e. the same certificate.
 3. **Pinned `pgp` 0.20.0, `src/composed/signed_key/public.rs:200-204`:**
    `impl VerifyingKey for SignedPublicKey { fn verify(..) { self.primary_key.verify(..) } }`
    — `public_subkeys` is never consulted.
-4. `tools/cnf-runner/src/exec/signature.rs:126` is
+4. Veredictum's `src/exec/signature.rs:126` is
    `sig.verify(&key, bytes).is_ok()` on the primary `SignedPublicKey` → `Ok(false)`.
 
 The app already has the correct shape:

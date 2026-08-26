@@ -663,8 +663,7 @@ async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
     // The CNF `SF-FLAT-adl2_commit` provisioning pair + FLAT body, read from
     // the committed catalogue corpus (golden vectors over hand-written
     // fixtures, `.claude/rules/testing.md` §Oracles).
-    let artifacts = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/fixtures");
+    let artifacts = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/fixtures");
     let archetype = std::fs::read_to_string(artifacts.join("adl2/archetype/cnf_count_a.adls"))
         .expect("CNF count archetype source");
     let opt2 = std::fs::read_to_string(artifacts.join("adl2/opt/flat_parity_a.adls"))

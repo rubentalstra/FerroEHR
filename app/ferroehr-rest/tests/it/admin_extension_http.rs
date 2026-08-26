@@ -12,7 +12,7 @@
 //! `i_admin_archive.adoc`, and the wire shape is our own design/extension. What
 //! is asserted here is exactly what the CNF extension bindings drive:
 //! `admin-activity-report` and `admin-archive` in
-//! `tools/cnf-runner/artifacts/vocab/wire_surface.yaml`.
+//! Veredictum's `artifacts/vocab/wire_surface.yaml`.
 #![expect(
     clippy::expect_used,
     clippy::indexing_slicing,

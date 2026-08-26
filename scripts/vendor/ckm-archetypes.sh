@@ -35,7 +35,7 @@
 set -Eeuo pipefail
 
 CKM="https://ckm.openehr.org/ckm/rest/v1"
-OUT="tools/cnf-runner/artifacts/corpus/archetypes/ckm"
+OUT="corpus/archetypes/ckm"
 JOBS="${CKM_JOBS:-4}"
 
 # ── re-entrant single fetch (the xargs worker; not a user-facing mode) ────

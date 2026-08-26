@@ -17,13 +17,13 @@ Two measurement-integrity traps hit on 2026-07-25 during the #261 ladder:
    (FERROEHR_CPUS/MEM overridable); production limits are Helm's concern.
    **Never run agents/builds concurrently with a measured stress/perf window.**
 2. Compose project-name changes rename containers: the ixit `containers`
-   blocks (tools/cnf-runner/party/*/ixit*.json) pin container names for
+   blocks (docs/conformance/party/*/ixit*.json) pin container names for
    pg_stat_statements attribution — a rename silently degrades attribution to
    "unavailable". Check them after any lane/project change.
 
 **Why:** measured records are environment-bound and honest-publication gated;
 a contaminated or env-shifted number would have been committed as a regression.
 
-**How to apply:** before any `cnf-runner stress|aql-probe|perf` run: idle box
+**How to apply:** before any `veredictum stress|aql-probe|perf` run: idle box
 (no agents, no builds), fresh volumes, ixit container names verified against
 `docker ps`. Related: [[owner-work-style]].

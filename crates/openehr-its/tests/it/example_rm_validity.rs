@@ -53,8 +53,7 @@ fn assert_elements_carry_data_values(node: &Value, path: &str, findings: &mut Ve
 /// instrument).
 #[test]
 fn ckm_pack_examples_are_rm_shape_valid() {
-    let pack = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates/ckm");
+    let pack = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates/ckm");
     let mut checked = 0;
     let mut findings: Vec<String> = Vec::new();
     for entry in std::fs::read_dir(&pack).expect("pack dir") {

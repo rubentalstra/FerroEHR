@@ -20,10 +20,16 @@ target/
 **/target/
 .git/
 
-# Vendored spec text + conformance corpus + generated site — not needed to
-# compile; large.
+# Vendored spec text + generated site — not needed to compile; large.
 docs/
 docs-dist/
+
+# The vendored test corpora (~250 MB of clinical models). The builder stage
+# compiles `-p ferroehr-server` only, so no test target — and nothing that
+# reads these — is a build input. The comment above used to claim `docs/`
+# covered the corpus; it never did.
+corpus/
+crates/openehr-adl/tests/corpus/
 
 # Agent worktrees (full duplicate build trees) and Node artifacts.
 .claude/worktrees/

@@ -1,9 +1,0 @@
-sm_operation: I_DEFINITION_ADL14.delete_opt
-its: its-rest
-unrealized:
-  reason: "seeded defect: both forms at once"
-  source: "s"
-  ambiguity: AMB-17
-request: { method: DELETE, path: /definition/template/adl1.4 }
-outcomes:
-  deleted: { status: 204 }

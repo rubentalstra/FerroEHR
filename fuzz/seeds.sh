@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
-# Populate fuzz/seeds/<target>/ from the corpora already committed in this
-# repository, as SYMLINKS — the archetype and template packs are ~100 MB, are
-# provenance-stamped where they live, and are never copied.
+# Populate fuzz/seeds/<target>/ from the corpora committed in this repository,
+# as SYMLINKS — the archetype and template packs are ~100 MB, are
+# provenance-stamped where they live, and are never copied. The one seeder that
+# reads outside the tree is the AQL catalogue-query extractor; it says so.
 #
 # Selection is size-bounded and deterministic (sorted, then capped): libFuzzer
 # derives its default input length from the largest seed and re-reads every seed
@@ -66,10 +67,10 @@ link_from() {
 }
 
 # The AQL seeds are the only ones that are not already files on disk. Two
-# sources, both committed: the official worked-example corpus, which lives inside
-# AsciiDoc `----` listing blocks in the vendored QUERY spec examples (the same
-# extraction the `openehr-query` corpus test performs), and the query text of the
-# CNF catalogue's own cases.
+# sources: the official worked-example corpus, which lives inside AsciiDoc
+# `----` listing blocks in the vendored QUERY spec examples (the same extraction
+# the `openehr-query` corpus test performs), and the query text of the CNF
+# catalogue's own cases, read from the pinned instrument.
 extract_aql_examples() {
   local dest="$seeds_root/aql_query"
   mkdir -p "$dest"
@@ -90,10 +91,23 @@ extract_aql_examples() {
   echo "  aql_query <- crates/openehr-query/vendor/examples ($written listing blocks)"
 }
 
+# The catalogue's query text lives with the instrument, not in this repository:
+# it is Veredictum's, obtained at the pin scripts/lib/veredictum.sh records. The
+# seeder therefore resolves an ABSOLUTE schedule path through that helper and
+# checks it itself — a missing catalogue fails loud here, the same way a renamed
+# corpus directory does in require_dir, rather than quietly producing a smaller
+# seed set than the last run.
 extract_aql_catalogue_queries() {
   local dest="$seeds_root/aql_query"
   mkdir -p "$dest"
-  require_dir "$schedule"
+  # shellcheck source=scripts/lib/veredictum.sh
+  source "$repo_root/scripts/lib/veredictum.sh"
+  local schedule
+  schedule="$(veredictum_artifacts)/schedule"
+  if [[ ! -d "$schedule" ]]; then
+    echo "seeds.sh: missing catalogue schedule: $schedule" >&2
+    exit 1
+  fi
   local written=0 query index=0
   while IFS= read -r query; do
     index=$((index + 1))
@@ -101,16 +115,14 @@ extract_aql_catalogue_queries() {
     written=$((written + 1))
   done < <(
     grep -rhE '^[[:space:]]*(q|query|aql):[[:space:]]*"' \
-      "$repo_root/$schedule" --include='*.yaml' |
+      "$schedule" --include='*.yaml' |
       sed -E 's/^[[:space:]]*(q|query|aql):[[:space:]]*"(.*)"[[:space:]]*$/\2/' |
       LC_ALL=C sort -u
   )
-  echo "  aql_query <- $schedule ($written catalogue queries)"
+  echo "  aql_query <- veredictum $VEREDICTUM_VERSION catalogue ($written queries)"
 }
 
-catalogue=tools/cnf-runner/artifacts
-corpus="$catalogue/corpus"
-schedule="$catalogue/schedule"
+corpus=corpus
 
 seed_canonical_json() {
   link_from canonical_json crates/openehr-its/tests/vendor 512k 400 '*.json'

@@ -81,7 +81,6 @@ crate = "rsa"
 aliases = ["CVE-2023-49092", "GHSA-c38w-74pg-36hr", "GHSA-4grx-2x9w-596c"]
 carriers = ["openidconnect", "pgp"]
 workspace_roots = [
-  "cnf-runner",
   "ferroehr",
   "ferroehr-admin-ui",
   "ferroehr-rest",

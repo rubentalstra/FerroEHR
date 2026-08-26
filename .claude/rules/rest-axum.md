@@ -54,7 +54,7 @@ sections (spec-adherence.md; `/spec-lookup`).
   STRUCTURED / Web-Template simplified formats are served through the standard
   openEHR endpoints via `openehr_its::flat`.)
 
-Behaviour is verified by the **CNF pipeline** (`tools/cnf-runner` — the CNF
+Behaviour is verified by the **CNF pipeline** (the pinned Veredictum instrument — the CNF
 schedule text is the oracle it derives from), never by mirroring another
 server. Every wire-visible change ends with a `scripts/conformance.sh` run
 showing zero drift vs the committed baseline. Build compiling + tested (`rust-style.md`); REST

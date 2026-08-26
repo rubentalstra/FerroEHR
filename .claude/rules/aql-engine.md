@@ -50,7 +50,7 @@ EHRbase behaviour. Conformance expectations derive from the CNF schedule
 (`docs/specs/openehr/CNF/docs/platform_test_schedule/master05-func_tc_definition_query.adoc`
 + `master11-func_tc_querying.adoc`; the upstream Robot suites are reference
 material only) and are **verified by the CNF QUERY chapter/AqlBasic capability**
-(`tools/cnf-runner`) — the accept/reject envelope, status codes, and result
+(Veredictum) — the accept/reject envelope, status codes, and result
 shapes. Use `/spec-lookup` and cite the section (spec-adherence.md).
 
 ## Boundary

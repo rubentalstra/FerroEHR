@@ -44,19 +44,6 @@ precedence = "closest"
 SPDX-FileCopyrightText = "FerroEHR contributors"
 SPDX-License-Identifier = "MIT"
 
-# ── The CNF runner: Apache-2.0 (owner decision 2026-08-26, #2787) ────────────
-# The conformance instrument — runner, catalogue, schemas, party artifacts —
-# is Apache-2.0: section 4's license/NOTICE retention makes attribution travel
-# with every copy, and section 3 grants the patent license. The vendored
-# corpora inside it keep their upstream terms via the override tables below
-# (the last matching table wins), and files carrying their own SPDX header
-# win over this table under `closest`.
-[[annotations]]
-path = "tools/cnf-runner/**"
-precedence = "closest"
-SPDX-FileCopyrightText = "FerroEHR contributors"
-SPDX-License-Identifier = "Apache-2.0"
-
 # ── The published spec crates: MIT AND Apache-2.0 ───────────────────────────
 # Their own manifests already declare `MIT AND Apache-2.0` and ship both texts
 # in the package, because the emitted Rust is this project's while the
@@ -175,7 +162,7 @@ SPDX-License-Identifier = "MPL-1.1"
 # metadata remains the authority for any individual file.
 [[annotations]]
 path = [
-  "tools/cnf-runner/artifacts/corpus/**",
+  "corpus/**",
   "crates/openehr-adl/tests/corpus/**",
 ]
 precedence = "override"

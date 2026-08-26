@@ -4,7 +4,7 @@
 
 //! Builder-capture tests for the leaf content constraints the `WebTemplate`
 //! validation walk enforces at commit time, exercised end-to-end from the
-//! vendored CNF content-constraint OPTs (`tools/cnf-runner/artifacts/corpus/
+//! vendored CNF content-constraint OPTs (`corpus/
 //! templates/`): parse the OPT (`openehr_its::opt14`) → build the `WebTemplate`
 //! → assert the leaf node carries the validation-only constraint the walk needs.
 //!
@@ -35,8 +35,7 @@ use openehr_its::flat::webtemplate::model::WebTemplateNode;
 use openehr_its::opt14;
 
 fn templates_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates")
 }
 
 fn build(opt_file: &str) -> WebTemplateNode {

@@ -81,7 +81,7 @@ paths:
     - ./crates/openehr-term/tests
     # CKM clinical models — CC-BY-SA 4.0 (LICENSE-CC-BY-SA-4.0), per-file
     # `licence` metadata.
-    - ./tools/cnf-runner/artifacts/corpus
+    - ./corpus
 
 # NO customLicenseSearch HERE, for two measured reasons (run 2026-08-12, CLI
 # 3.17.16). It uploaded nothing — `archiveAndLicenseUpload is not enabled in

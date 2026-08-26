@@ -49,7 +49,7 @@ generates from. Concretely, measured mechanically by the gate
   define.
 
 The full per-attribute adjudication is pinned in that gate and in
-`tools/cnf-runner/artifacts/registers/ambiguities.yaml` AMB-185. A served v1
+Veredictum's `artifacts/registers/ambiguities.yaml` AMB-185. A served v1
 document may therefore carry RM 1.2.0 members the v1 XSD predates; the codec
 does not trim the RM model to fit an older schema packaging.
 

@@ -4,8 +4,8 @@ description: >
   Read-only adjudicator for CNF conformance failures. Given failing/errored
   case ids (or a results.json / run artifact dir), it attributes each failure
   to exactly one suspect — the application (app/* / crates/openehr-* via
-  codegen), the runner machinery (tools/cnf-runner/src), or the catalogue
-  artifacts (tools/cnf-runner/artifacts) — by deriving the required behaviour
+  codegen), the runner machinery (Veredictum's `src`), or the catalogue
+  artifacts (Veredictum's `artifacts`) — by deriving the required behaviour
   first-hand from the vendored openEHR spec text, which is ALWAYS right and
   never a suspect. Use after every red CNF run, before touching any code.
 tools: Read, Grep, Glob, Bash
@@ -51,18 +51,24 @@ You never edit files — findings only.
      (`crates/openehr-*` — fixed via the `openehr-codegen` emitter +
      regeneration, never by hand-editing `// @generated` files).
    - **Runner machinery defect** — the SUT behaved correctly but
-     `tools/cnf-runner/src/**` misdrove or misjudged it: the HTTP driver,
+     Veredictum's `src/**` misdrove or misjudged it: the HTTP driver,
      requires-provisioning, the `${…}` resolver, outcome classification
      (status ties, unmapped responses), the RESULT_SET comparator, the
      verdict pipeline.
    - **Catalogue artifact defect** — the hand-authored machine-readable
      schedule is wrong versus the spec: a case core under
-     `tools/cnf-runner/artifacts/schedule/`, an operation binding under
+     Veredictum's `artifacts/schedule/`, an operation binding under
      `artifacts/bindings/`, corpus data, or a vocabulary entry.
 3. **Spec silence or genuine ambiguity is its own outcome**: it goes through
-   the ambiguity register (`tools/cnf-runner/artifacts/registers/
+   the ambiguity register (Veredictum's `artifacts/registers/
    ambiguities.yaml`) with a typed `disposition` — never a private
    resolution, never a guess presented as an attribution.
+4. **Two of the three bins live in another repository.** The instrument is the
+   independent Veredictum project, pinned in `scripts/lib/veredictum.sh` and
+   checked out by `veredictum_root`; read its `src/**` and `artifacts/**`
+   there. A runner-machinery or catalogue attribution is fixed in Veredictum
+   and reaches this repository as a pin bump — say so in the attribution, and
+   name the file in Veredictum, never a path in this tree.
 
 ## Method (per red row — no shortcuts)
 

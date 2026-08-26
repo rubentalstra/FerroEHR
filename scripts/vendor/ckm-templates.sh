@@ -12,8 +12,9 @@
 #   * the CURATED journey pack -> corpus/templates/ckm/<slug>.opt
 #     Hand-picked, all COMPOSITION-rooted, each mapped to a role in the
 #     measured-performance hospital-simulation journeys. The slugs are
-#     REFERENCED BY NAME from corpus/MANIFEST.yaml, the journey definitions
-#     and scripts/generate-ckm-examples.sh — never rename or drop one.
+#     REFERENCED BY NAME from the conformance instrument's corpus manifest and
+#     journey definitions, and from scripts/generate-ckm-examples.sh — never
+#     rename or drop one.
 #
 #   * the FULL library -> corpus/templates/ckm/full/<slug>.opt
 #     Every template CKM publishes (slug derived from the display name),
@@ -40,7 +41,7 @@
 set -Eeuo pipefail
 
 CKM="https://ckm.openehr.org/ckm/rest/v1"
-OUT="tools/cnf-runner/artifacts/corpus/templates/ckm"
+OUT="corpus/templates/ckm"
 FULL="$OUT/full"
 JOBS="${CKM_JOBS:-4}"
 
@@ -127,7 +128,8 @@ if [[ "$MODE" != full ]]; then
     echo "Example skeletons (\`*.example.json\`) are generated once against the"
     echo "composed SUT by \`scripts/generate-ckm-examples.sh\` and committed"
     echo "(byte-identical payload ground for every SUT; never fetched at run"
-    echo "time). Manifest entries: \`tools/cnf-runner/artifacts/corpus/MANIFEST.yaml\`."
+    echo "time). Manifest entries live with the conformance instrument"
+    echo "(Veredictum's \`artifacts/corpus/MANIFEST.yaml\`)."
     echo
     echo "The **curated journey pack** below is referenced by slug from the"
     echo "manifest, the journey definitions and the example generator — the"

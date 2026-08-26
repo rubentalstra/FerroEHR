@@ -225,7 +225,7 @@ possibly data migration".
   against the v2 ones. That is a bundle-content fact, not a second generation:
   no second model, crate module, or impl set exists. The sweep is pinned by
   `crates/openehr-its/tests/it/xml_xsd_validity.rs` and adjudicated in
-  `tools/cnf-runner/artifacts/registers/ambiguities.yaml` AMB-185.
+  the conformance instrument's `artifacts/registers/ambiguities.yaml` AMB-185.
   The CDR serves v2 by default (owner ruling 2026-08-03, issue #1666: the
   default a schema-validating client receives must actually validate this
   server's RM 1.2.0 output, and only the v2 bundle can — correctness over the

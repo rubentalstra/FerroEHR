@@ -10,16 +10,16 @@
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! Regression guard for the CNF-runner corpus vitals template
-//! (`tools/cnf-runner/artifacts/corpus/templates/vitals.opt`, corpus alias
+//! (`corpus/templates/vitals.opt`, corpus alias
 //! `cnf.opt.vitals`, `template_id` `cnf.vitals`).
 //!
 //! The Simplified-Formats (SF-*) CNF schedule cases commit FLAT/STRUCTURED
 //! instances against `cnf.opt.vitals` using
 //! `vitals/body_temperature:i/any_event:i/...` field identifiers, so the built
 //! `WebTemplate` MUST expose exactly those node ids. This test lives in
-//! `openehr_its::flat` (not `cnf-runner`, which stays a dependency-light deterministic
-//! crate) because the web-template builder + OPT 1.4 parser it exercises live
-//! here. Node ids follow ITS-REST `simplified_formats`
+//! `openehr_its::flat` — not the conformance instrument, which stays a
+//! dependency-light deterministic crate of its own — because the web-template
+//! builder + OPT 1.4 parser it exercises live here. Node ids follow ITS-REST `simplified_formats`
 //! `master04-basic_concepts.adoc` §"Node ID Generation Rules"; leaf suffixes
 //! follow `master05-rm_mapping.adoc` §`DV_QUANTITY` / §`DV_CODED_TEXT`; the open vs
 //! closed coded value-set distinction follows master04 §"Open Value-Sets and the
@@ -33,8 +33,7 @@ use openehr_its::flat::webtemplate::model::WebTemplateNode;
 use openehr_its::opt14;
 
 fn vitals_opt() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/templates/vitals.opt")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates/vitals.opt")
 }
 
 fn collect<'a>(node: &'a WebTemplateNode, out: &mut Vec<&'a WebTemplateNode>) {

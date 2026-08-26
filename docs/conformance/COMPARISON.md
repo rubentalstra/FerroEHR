@@ -2,9 +2,9 @@
 
 > **Measured, not asserted.** Every cell below is derived from the two
 > committed `results.json`/`verdicts.json` sets produced by the CNF 2.0
-> reference runner (`tools/cnf-runner`) executing the SAME committed
+> instrument (`veredictum`) executing the SAME committed
 > catalogue against each system, each with its own committed party statement
-> (`tools/cnf-runner/party/<sut>/`). Nothing here is hand-entered
+> (`docs/conformance/party/<sut>/`). Nothing here is hand-entered
 > (`scripts/render/comparison.sh`; CI: `scripts/checks/conformance-numbers.sh`).
 >
 > - A capability a party's statement does not claim reads **not claimed** and
@@ -27,7 +27,7 @@
 ## Methodology
 
 Both systems execute the **same committed CNF 2.0 catalogue** (1102 case-by-format
-executions) through the same reference runner (`tools/cnf-runner`), each on
+executions) through the same instrument (`veredictum`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (EHRbase declares no readonly principal), and the statement (the
 ICS) declares the claimed capabilities, spec versions, and ambiguity-register

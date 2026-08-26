@@ -37,11 +37,12 @@
 # ── The application ─────────────────────────────────────────────────────────
 /app/                               @rubentalstra
 
-# ── The conformance instrument ──────────────────────────────────────────────
-# The catalogue and the runner decide what "conformant" means for this
-# project, so a change here changes the acceptance bar itself.
-/tools/cnf-runner/                  @rubentalstra
+# ── The conformance record ──────────────────────────────────────────────────
+# The instrument itself is the separate Veredictum project, pinned in
+# scripts/lib/veredictum.sh; what lives here is the record it produces and the
+# party set that declares what this CDR claims, which is the acceptance bar.
 /docs/conformance/                  @rubentalstra
+/scripts/lib/veredictum.sh          @rubentalstra
 
 # ── Supply chain, CI and release ────────────────────────────────────────────
 # Everything that decides what gets built, signed and published.

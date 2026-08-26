@@ -14,7 +14,7 @@ set -Eeuo pipefail
 
 BASE="${SUT_BASE:-http://localhost:8080/ferroehr/rest/openehr/v1}"
 AUTH="${SUT_USER:-ferroehr-user}:${SUT_PASS:-SuperSecretPassword}"
-PACK="tools/cnf-runner/artifacts/corpus/templates/ckm"
+PACK="corpus/templates/ckm"
 
 command -v jq >/dev/null || { echo "::error::jq required" >&2; exit 1; }
 

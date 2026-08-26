@@ -227,7 +227,11 @@ jobs:
           code_relevant=$(echo "$changed" | grep -vE '^scripts/' || true)
           if echo "$changed" | grep -qE '^scripts/(checks/codegen-drift|ui-e2e)\.sh$'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
-          elif echo "$code_relevant" | grep -qE '^(app/|crates/|tools/|\.cargo/|\.config/|Cargo\.toml$|Cargo\.lock$|rust-toolchain\.toml$|rustfmt\.toml$|clippy\.toml$|deny\.toml$)' ; then
+          # `corpus/` is the shared vendored breadth corpus the crate and
+          # application suites read (it moved out of `tools/` with the
+          # conformance instrument, #2811) — a corpus change is a change to what
+          # the test job exercises, so it must not skip the cargo jobs.
+          elif echo "$code_relevant" | grep -qE '^(app/|crates/|tools/|corpus/|\.cargo/|\.config/|Cargo\.toml$|Cargo\.lock$|rust-toolchain\.toml$|rustfmt\.toml$|clippy\.toml$|deny\.toml$)' ; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "No build-relevant paths touched — cargo jobs will be skipped."
@@ -248,8 +252,10 @@ jobs:
           # The compose/local image target (docker/Dockerfile
           # `runtime-from-source`) is not built by ui-e2e, which packages
           # the shipped `runtime-prebuilt` target instead — so that target gets
-          # its own job, gated on the one file whose change can break it.
-          if echo "$changed" | grep -qE '^docker/Dockerfile$' ; then
+          # its own job, gated on the files whose change can break it: the
+          # Dockerfile and the build-context ignore list, which decides what the
+          # builder stage can even see.
+          if echo "$changed" | grep -qE '^(docker/Dockerfile|\.dockerignore)$' ; then
             echo "server_dockerfile=true" >> "$GITHUB_OUTPUT"
           else
             echo "server_dockerfile=false" >> "$GITHUB_OUTPUT"
@@ -1007,22 +1013,16 @@ jobs:
       - name: Regenerate and diff
         run: bash scripts/checks/codegen-drift.sh
 
-  # ── Build + tests against PostgreSQL 18.6 (+ the CNF artifact validation) ───
-  # The CNF coverage guard lives here: its
-  # `cargo nextest run -p cnf-runner` was a byte-for-byte subset of this job's
-  # `--workspace` nextest run (cnf-runner is a workspace member — its ECC
-  # catalogue guard, derivation-square guard, fixture-manifest and
-  # adjudication-register tests, and the wire/edition/model unit tests all run
-  # here), so the whole suite compiled and ran TWICE per push. Only the
-  # artifact `validate` step was unique, and it rides along at the end — the
-  # `cargo build` step below has already linked the cnf-runner binary, so the
-  # step is pure execution. The e2e CNF run stays where it was: the Docker
-  # compose stack (scripts/conformance.sh) at phase gates.
+  # ── Build + tests against PostgreSQL 18.6 ──────────────────────────────────
+  # The catalogue's own artifact validation is no longer here: the instrument is
+  # the separate Veredictum project (pinned in scripts/lib/veredictum.sh), and
+  # its catalogue is validated by its own CI. The e2e CNF run stays where it
+  # was: the Docker compose stack (scripts/conformance.sh) at phase gates.
   test:
     name: build & test (pg18)
     needs: changes
-    # The service container, its pinned image, the env the suite runs against
-    # and the trailing CNF `validate` step are all this file's recipe (#2373).
+    # The service container, its pinned image and the env the suite runs
+    # against are all this file's recipe (#2373).
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -1080,18 +1080,6 @@ jobs:
       # Doc tests moved to the rustdoc job: `cargo test --doc` is a third
       # feature configuration (default features) and compiled the whole
       # workspace again at the tail of THE critical-path job.
-      # The CNF artifact validation (catalogue/fixture/register gates over
-      # tools/cnf-runner/artifacts) — the binary is already linked by the
-      # build step above, so this is seconds of pure execution.
-      # `--write-report` refreshes the committed wire-surface coverage report
-      # in place; the diff gate below is what makes it a guard. The flag is
-      # off by default so a local `validate` never mutates the tree.
-      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr --write-report
-      # Coverage-report drift gate: the regenerated report must match the
-      # committed one. Without this the file rots silently — it is generated
-      # output that only ever refreshed when someone remembered (#1851).
-      - name: Coverage-report drift gate (regenerated report matches the committed artifact)
-        run: git diff --exit-code docs/conformance/coverage-report.md
 
   # ── The Helm chart's lint + golden renders (issue #2110) ────────────────────
   # deploy/helm/validate.sh is the only check in the repository that pins the

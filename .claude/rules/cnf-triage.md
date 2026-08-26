@@ -1,5 +1,5 @@
 ---
-paths: ["tools/cnf-runner/**", "docs/conformance/**", "scripts/conformance*"]
+paths: ["docs/conformance/**", "scripts/conformance*", "scripts/lib/veredictum.sh"]
 ---
 
 # CNF failure triage (the attribution law)
@@ -35,8 +35,17 @@ test suite that presumes our code and questions the tests.
 | Bin | What it means | Fix path |
 |---|---|---|
 | **Application** | The SUT violates the spec | `app/*`; for `crates/openehr-*` shapes: the `openehr-codegen` emitter + regeneration, never hand-edits or consumer workarounds |
-| **Runner machinery** | The SUT behaved correctly but `tools/cnf-runner/src/**` misdrove the case or misjudged the response (driver, provisioning, resolver, outcome classification, comparator, verdicts) | Fix the runner module; the affected rows were inconclusive, not SUT failures |
-| **Catalogue artifact** | The hand-authored schedule is wrong vs the spec (case core, operation binding, corpus, vocabulary) | Edit the artifact WITH a new spec-cited source for the corrected expectation |
+| **Runner machinery** | The SUT behaved correctly but Veredictum's `src/**` misdrove the case or misjudged the response (driver, provisioning, resolver, outcome classification, comparator, verdicts) | Fix the runner module IN VEREDICTUM, cut a release, bump the pin here; the affected rows were inconclusive, not SUT failures |
+| **Catalogue artifact** | The hand-authored schedule is wrong vs the spec (case core, operation binding, corpus, vocabulary) | Edit the artifact IN VEREDICTUM, WITH a new spec-cited source for the corrected expectation, then bump the pin here |
+
+Two of the three bins now live in another repository (the instrument is
+Veredictum, pinned in `scripts/lib/veredictum.sh`). The attribution work is
+unchanged — read the case core, the binding and the spec first-hand in the
+pinned checkout — but the FIX lands there and reaches this repository as a pin
+bump, re-proven by a full `scripts/conformance.sh` run against the committed
+baseline. A red row attributed away from the application never becomes a reason
+to leave the row red here: the FerroEHR issue carries a native `blocked-by`
+edge to the pin-bump work.
 
 ## The protocol (per red row)
 

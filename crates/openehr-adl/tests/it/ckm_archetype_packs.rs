@@ -6,10 +6,10 @@
 //! Two packs, two sources, because the two dialects are published in
 //! different places (`.claude/rules/vendored-corpora.md`):
 //!
-//! - `tools/cnf-runner/artifacts/corpus/archetypes/ckm/adl14/` — every
+//! - `corpus/archetypes/ckm/adl14/` — every
 //!   archetype the public openEHR CKM publishes, as **ADL 1.4**
 //!   (`scripts/vendor/ckm-archetypes.sh`). CKM publishes no ADL 2 export.
-//! - `tools/cnf-runner/artifacts/corpus/archetypes/adl2/ckm-2013-12-09/` —
+//! - `corpus/archetypes/adl2/ckm-2013-12-09/` —
 //!   upstream's own CKM export carrying `*.adls` (**ADL 2**) beside `*.adl`
 //!   (ADL 1.4) twins of the same archetypes, pinned by commit
 //!   (`scripts/vendor/adl2-archetypes.sh`).
@@ -94,7 +94,7 @@ const ADJUDICATED_PAIRS: &[Refusal] = &[
 ];
 
 fn artifacts_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/cnf-runner/artifacts/corpus/archetypes")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/archetypes")
 }
 
 /// Every file with `ext` under `dir`, recursively, sorted.

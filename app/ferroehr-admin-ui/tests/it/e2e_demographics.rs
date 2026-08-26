@@ -74,7 +74,7 @@ fn basic_credentials() -> (String, String) {
 /// identity's one ELEMENT value.
 ///
 /// The shape is the one the CDR's own demographic corpus fixture uses
-/// (`tools/cnf-runner/artifacts/corpus/fixtures/demographic/person.v1.json`):
+/// (`corpus/fixtures/demographic/person.v1.json`):
 /// the ARCHETYPED block `PARTY`'s `Is_archetype_root` invariant requires, a root
 /// `archetype_node_id` equal to the stringified `archetype_id`, and one
 /// `PARTY_IDENTITY`.

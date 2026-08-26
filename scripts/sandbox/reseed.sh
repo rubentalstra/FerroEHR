@@ -21,7 +21,7 @@ set -Eeuo pipefail
 BASE="${SANDBOX_BASE:-https://sandbox.ferroehr.eu}/ferroehr/rest/openehr/v1"
 AUTH="${SANDBOX_USER:-ferroehr}:${SANDBOX_PASS:-ferroehr}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-TPL_DIR="$ROOT_DIR/tools/cnf-runner/artifacts/corpus/templates/ckm"
+TPL_DIR="$ROOT_DIR/corpus/templates/ckm"
 
 # A small, stable slice of the curated CKM pack: recognizable clinical
 # content without inflating the free-tier storage. Each slug names an

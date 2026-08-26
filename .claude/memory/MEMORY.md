@@ -15,14 +15,14 @@
 - [Admin UI deprioritized](admin-ui-deprioritized.md) — server first; compose SUT stacks with explicit service names (`up -d --wait ferroehr`), never bare `up`
 - [Served OpenAPI is native](served-openapi-is-native.md) — `ferroehr-rest` serves ONLY its own utoipa-generated document; the vendored ITS-REST OAS is codegen input and a subordinate wire source, never imported/served; update `#[utoipa::path]` with any wire change
 - [Comments: less is more](comments-less-is-more.md) — RFC 505/1574 style with hard budgets: NOTE = citation + one sentence, TODO(#NNNN), essays live on the issue/PR
-- [CNF design record is permanent](cnf-strategy-doc-kept-permanently.md) — `docs/conformance/cnf-design.md` stays forever (§8.14 perf-class + journey model); study it before performance work
+- [CNF design record is permanent](cnf-strategy-doc-kept-permanently.md) — the CNF 2.0 design record lives permanently in Veredictum as its root `ARCHITECTURE.md` (§8.14 perf-class + journey model); read it there before performance work
 - [Measurement environment discipline](measurement-environment-discipline.md) — idle box + envelope-matched compose limits for measured runs; lane renames update the ixit containers blocks
 - [Verified commits hard rule](verified-commits-hard-rule.md) — every commit signed incl. CI: workflows create commits ONLY via the Git Data API, never local `git commit` + push
 - [Commit-subject attribution tokens](commit-subject-attribution-tokens.md) — the commit-msg hook deletes lines containing attribution literals; keep them out of commit/PR text
 - [Official CLI/tooling first](official-cli-tooling-first.md) — use the official CLI for tool-managed artifacts (sqlx-cli etc.); never hand-name or hand-roll
 - [Verify crate versions from live sources](verify-crate-versions-live.md) — never pin from training data; check crates.io/docs.rs first
 - [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
-- [Published crates cite specs only](published-crates-cite-specs-only.md) — openehr-* sources never reference AMB ids/cnf-runner; adjudications state decision + released ground in place
+- [Published crates cite specs only](published-crates-cite-specs-only.md) — openehr-* sources never reference AMB ids or instrument paths; adjudications state decision + released ground in place
 - [BMM v3 on hold](bmm3-on-hold.md) — record #1920; v3-only issues get on-hold + blocked-by #1920, never the worklist; tracker-state only, landed code stays
 - [Multi-gen refactor: no legacy carried](multi-generation-refactor-no-legacy.md) — residue found under #1936 is removed or filed as a sub-issue of #1936, never kept
 - [No worktrees — one checkout](no-worktrees-single-checkout.md) — every change in the main tree on the current branch; one worker at a time with explicit fences, never `isolation: worktree`

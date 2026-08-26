@@ -1,5 +1,0 @@
-sm_operation: I_EHR_SERVICE.create_ehr
-its: its-rest
-request: { method: POST, path: /ehr }
-outcomes:
-  succeeded: { status: 200 }

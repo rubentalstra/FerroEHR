@@ -86,13 +86,14 @@ on the documentation site.
 
 ## What makes it different
 
-- **Compliance you can verify.** The built-in CNF 2.0
-  conformance runner executes the complete machine-readable catalogue across
+- **Compliance you can verify.** An independent CNF 2.0
+  conformance instrument executes the complete machine-readable catalogue across
   the claimed wire formats and computes the openEHR profile verdicts as pure
   functions of the run records. The conformance badges above render straight
   from the committed run artifacts of real runs; none are hand-edited.
   Every badge on this page is computed by something that can disagree with
-  us: the conformance ones by the runner, the workflow ones by GitHub, and
+  us: the conformance ones by an instrument built as its own project, the
+  workflow ones by GitHub, and
   the security score by OpenSSF Scorecard, which grades this repository's
   supply chain (digest-pinned actions, minimal workflow token permissions,
   code scanning, signed releases) independently of anything we claim here.
@@ -385,9 +386,10 @@ flowchart TB
 
     subgraph tools ["tools/* — generation + verification (not shipped)"]
         codegen["openehr-codegen<br/>(BMM/XSD/OAS → Rust)"]
-        conf["cnf-runner<br/>(the CNF 2.0 conformance runner +<br/>measured-performance and stress instruments)"]
         testkit["testkit<br/>(shared PG18 harness)"]
     end
+
+    conf["Veredictum<br/>(the independent CNF 2.0 conformance instrument,<br/>pinned in scripts/lib/veredictum.sh)"]
 
     specs -- "openehr-codegen (deterministic, drift-checked in CI)" --> crates
     bin -- "wires" --> rest
@@ -444,8 +446,9 @@ CONF_PERF_CLASS=POC bash scripts/conformance.sh
 CONF_PERF_CLASS=POC CONF_PERF_HOURS=8 bash scripts/conformance.sh
 
 # the step-load stress instrument — exploration only, never a conformance record
-cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
-  --ixit tools/cnf-runner/party/ferroehr/ixit.json \
+source scripts/lib/veredictum.sh
+"$(veredictum_bin)" stress --root "$(veredictum_artifacts)" \
+  --ixit docs/conformance/party/ferroehr/ixit.json \
   --out docs/conformance/ferroehr/stress.json
 ```
 
@@ -513,9 +516,10 @@ committed reports exist — is the
 on the website and [`docs/conformance/COMPARISON.md`](docs/conformance/COMPARISON.md)
 in the repo, with each system's committed measurement records under
 [`docs/conformance/`](docs/conformance/). Reproduce either side with the
-built-in instruments: `bash scripts/conformance.sh` (`CONF_SUT=ehrbase`
-for EHRbase) and `cnf-runner stress` / `cnf-runner aql-probe`
-(`tools/cnf-runner/`).
+pinned instrument: `bash scripts/conformance.sh` (`CONF_SUT=ehrbase`
+for EHRbase) and `veredictum stress` / `veredictum aql-probe`
+([Veredictum](https://github.com/rubentalstra/Veredictum), pinned in
+`scripts/lib/veredictum.sh`).
 
 ## Deployment
 

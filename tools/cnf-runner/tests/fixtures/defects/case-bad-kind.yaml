@@ -1,7 +1,0 @@
-id: DEFECT-bad-kind
-kind: performance
-component: PERFORMANCE
-capabilities: []
-test_purpose: "seeded defect: performance case-core schema is a later artifact revision"
-description: "seeded defect"
-spec_refs: ["CNF platform_test_schedule master03 §overview"]

@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 # Regenerate the DERIVED party documents (verdicts.json, the three
 # CONFORMANCE_*.md renders, the shields.io badges) FROM the committed inputs —
-# the party statement, that party's committed results.json, and the catalogue —
-# via `cnf-runner verdicts`, the same pure pipeline scripts/conformance.sh runs
-# at the end of a campaign.
+# the party statement, that party's committed results.json, and the pinned
+# instrument's catalogue — via `veredictum verdicts`, the same pure pipeline
+# scripts/conformance.sh runs at the end of a campaign.
 #
 # Why it exists as its own lane: the published SVGs are regenerate-and-diff
 # guarded in CI while these documents were not, so a catalogue or statement
@@ -20,19 +20,24 @@
 #              a committed statement and committed results)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+# shellcheck source=scripts/lib/veredictum.sh
+source scripts/lib/veredictum.sh
 
 if [[ -n "${CONF_SUT:-}" ]]; then
   parties=("$CONF_SUT")
 else
   parties=()
-  for statement in tools/cnf-runner/party/*/statement.json; do
+  for statement in docs/conformance/party/*/statement.json; do
     party="$(basename "$(dirname "$statement")")"
     [[ -f "docs/conformance/$party/results.json" ]] && parties+=("$party")
   done
 fi
 
+VEREDICTUM="$(veredictum_bin)"
+ROOT="$(veredictum_artifacts)"
+
 for party in "${parties[@]}"; do
-  statement="tools/cnf-runner/party/$party/statement.json"
+  statement="docs/conformance/party/$party/statement.json"
   results="docs/conformance/$party/results.json"
   for f in "$statement" "$results"; do
     [[ -f "$f" ]] || {
@@ -41,9 +46,9 @@ for party in "${parties[@]}"; do
     }
   done
   echo "==> $party"
-  cargo run -q -p cnf-runner -- verdicts \
+  "$VEREDICTUM" verdicts \
     --statement "$statement" \
     --results "$results" \
-    --root tools/cnf-runner/artifacts \
+    --root "$ROOT" \
     --out "docs/conformance/$party"
 done

@@ -12,7 +12,6 @@
         ],
         "package": "rsa",
         "workspace_roots": [
-          "cnf-runner",
           "ferroehr",
           "ferroehr-admin-ui",
           "ferroehr-rest",

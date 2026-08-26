@@ -142,8 +142,8 @@ fn corpus_verdicts_agree_across_canonical_formats() {
 /// skipped.
 #[test]
 fn invalid_fixture_verdicts_agree_across_canonical_formats() {
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/cnf-runner/artifacts/corpus/fixtures/composition");
+    let dir =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/fixtures/composition");
     let mut agree = 0usize;
     let mut structural = 0usize;
     for entry in std::fs::read_dir(&dir).expect("catalogue fixture dir") {

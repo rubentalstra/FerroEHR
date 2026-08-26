@@ -1,4 +1,0 @@
-cnf.defect.no_provenance:
-  source: fixtures/nope.json
-  format: canonical-json
-  validity: { verdict: valid }
