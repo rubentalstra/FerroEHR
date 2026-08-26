@@ -111,11 +111,33 @@ fn a_parenthesised_contains_is_not_its_unparenthesised_twin() {
 /// The nightly fuzz artifact (#2746): this exact input exposed the
 /// `Recursive::declare` Rc cycle that leaked one parser graph per
 /// `parse_str` call. The leak property itself is guarded by the nightly
-/// LeakSanitizer lane over the committed seed
+/// `LeakSanitizer` lane over the committed seed
 /// (`fuzz/seeds/aql_query/leak_2746_simple_select.aql`); this pins the
 /// behavioural half — the restructured recursion parses and round-trips the
 /// same query.
 #[test]
 fn the_leak_artifact_query_still_parses_and_round_trips() {
     assert_round_trips("SELECT e/ehr_id/value FROM EHR e\n");
+}
+
+/// The second #2746 fuzz artifact: the parser DECODES string escapes into the
+/// AST, so a printer site emitting the decoded value verbatim re-decodes on
+/// reparse and drifts the AST. Every string-literal emission site now
+/// re-escapes; these cover the four sites (TERMINOLOGY arguments, LIKE,
+/// node-name constraints, primitive strings) with the characters that drift:
+/// backslashes, quotes, and the decoded control escapes.
+#[test]
+fn string_literals_with_escapes_round_trip_at_every_emission_site() {
+    for src in [
+        // TERMINOLOGY arguments (the artifact's shape).
+        r"SELECT TERMINOLOGY('e\\pand', 'open\'ehr', 'a\tb') FROM EHR e",
+        // LIKE operand.
+        r"SELECT c/uid/value FROM COMPOSITION c WHERE c/name/value LIKE 'O\'Neil\\%'",
+        // A primitive string comparison.
+        r"SELECT c/uid/value FROM COMPOSITION c WHERE c/name/value = 'a\\b\'c'",
+        // A node-name constraint inside a path predicate.
+        r"SELECT c/uid/value FROM COMPOSITION c CONTAINS OBSERVATION o[at0001, 'we\'ird\\name']",
+    ] {
+        assert_round_trips(src);
+    }
 }

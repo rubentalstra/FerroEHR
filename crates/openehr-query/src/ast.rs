@@ -557,7 +557,9 @@ impl fmt::Display for NodePredicate {
 impl fmt::Display for NodeNameConstraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NodeNameConstraint::String(s) => write!(f, "'{s}'"),
+            NodeNameConstraint::String(s) => {
+                write!(f, "'{}'", crate::printer::escape_string(s))
+            }
             NodeNameConstraint::Parameter(p) | NodeNameConstraint::Code(p) => f.write_str(p),
             NodeNameConstraint::TermCode(t) => f.write_str(t),
         }
@@ -577,7 +579,7 @@ impl fmt::Display for PathPredicateOperand {
 impl fmt::Display for Primitive {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Primitive::String(s) => write!(f, "'{s}'"),
+            Primitive::String(s) => write!(f, "'{}'", crate::printer::escape_string(s)),
             Primitive::Integer(i) => write!(f, "{i}"),
             Primitive::Real(r) => write!(f, "{r}"),
             Primitive::Boolean(b) => write!(f, "{b}"),
