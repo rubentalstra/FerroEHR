@@ -115,6 +115,17 @@ these same versions (exact commits in each component's `PROVENANCE.md` and in
 the script). It is the read/conformance oracle; codegen still consumes only
 `tools/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
 
+## Conformance instrument
+
+The acceptance instrument is [Veredictum](https://github.com/rubentalstra/Veredictum),
+an independent Apache-2.0 project (split from this repository, #2789/#2811).
+Its pin — the `veredictum` crates.io version the pipeline installs and the
+matching tag whose catalogue/spec data is checked out — lives in EXACTLY one
+place, `scripts/lib/veredictum.sh` (`VEREDICTUM_VERSION`); this file records
+no copy of it, per the never-copy-a-pin rule this file opens with. Bumping
+the instrument is a one-line change there plus a fresh
+`bash scripts/conformance.sh` acceptance run.
+
 ## Spec version policy (owner rulings 2026-07-20, superseded in part 2026-08-05)
 
 Grounded in the official openEHR release strategy
