@@ -76,7 +76,7 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
 
 ```json
 {
-  "subjectAlternativeName": "https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/heads/develop",
+  "subjectAlternativeName": "https://github.com/rubentalstra/FerroEHR/.github/workflows/build-image.yml@refs/heads/develop",
   "issuer": "https://token.actions.githubusercontent.com",
   "sourceRepositoryRef": "refs/heads/develop",
   "runnerEnvironment": "github-hosted"
@@ -89,8 +89,8 @@ identity:
 
 | Artifact | Signing workflow | SAN on a release build | SAN on a development build |
 |---|---|---|---|
-| the three images | `containers.yml` | `…/containers.yml@refs/tags/vX.Y.Z` | `…/containers.yml@refs/heads/develop` |
-| the chart | `publish-chart.yml` | `…/publish-chart.yml@refs/tags/vX.Y.Z` | `…/publish-chart.yml@refs/heads/develop` (a `workflow_dispatch` chart-only publish) |
+| the three images | `build-image.yml` — the reusable builder both callers use | `…/build-image.yml@refs/tags/vX.Y.Z` (the release pipeline) | `…/build-image.yml@refs/heads/develop` (via `containers.yml`) |
+| the chart | `build-chart.yml` — the reusable chart lane | `…/build-chart.yml@refs/tags/vX.Y.Z` (the release pipeline's chart leg) | `…/build-chart.yml@refs/heads/develop` (a `workflow_dispatch` chart-only publish) |
 | the release binaries | `release-build.yml` | `…/release-build.yml@refs/tags/vX.Y.Z` | *(none; the lane only runs on a tag)* |
 
 All three prefixed with `https://github.com/rubentalstra/FerroEHR/.github/workflows/`,
@@ -235,7 +235,7 @@ spec:
 per-pod one**: an admission controller sees pods and images, never the Helm
 artifact a human pulled. The chart's own commands are on the
 [Kubernetes page](kubernetes.md#verifying-what-you-installed); its identity is the
-`publish-chart.yml` row in the table above.
+`build-chart.yml` row in the table above.
 
 **Should the chart ship an admission policy? No, and the reason is structural:** an
 admission policy is cluster-scoped and governs workloads the chart knows nothing
@@ -252,7 +252,7 @@ it you are trusting that *some* workflow here signed the image:
 ```shell
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
   -R rubentalstra/FerroEHR \
-  --signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml
+  --signer-workflow rubentalstra/FerroEHR/.github/workflows/build-image.yml
 ```
 
 Substitute a `vX.Y.Z` tag for `develop` on a release; the signer workflow is the
