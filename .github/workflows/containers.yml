@@ -28,6 +28,13 @@ concurrency:
   group: containers-${{ github.ref }}
   cancel-in-progress: true
 
+# The three image names, derived from the repository owner — the same derivation
+# build-chart.yml and image-scan.yml use. Every STEP in this file reads them from
+# here; the three `uses: build-image.yml` lanes repeat the derivation inline
+# because the `env` context does not exist at job level, which is a documented
+# context restriction and not a choice
+# (https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability).
+# They used to repeat the OWNER as a literal instead (#2775).
 env:
   REGISTRY: ghcr.io
   APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
@@ -259,7 +266,7 @@ jobs:
     # scripts/checks/image-labels.sh fails if the two ever disagree.
     uses: ./.github/workflows/build-image.yml
     with:
-      image: ghcr.io/rubentalstra/ferroehr
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr
       defer-tags: true
       dockerfile: docker/Dockerfile
       target: runtime-prebuilt
@@ -395,7 +402,7 @@ jobs:
     # The reusable SLSA Build L3 lane; see the app image above.
     uses: ./.github/workflows/build-image.yml
     with:
-      image: ghcr.io/rubentalstra/ferroehr-admin-ui
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
       defer-tags: true
       dockerfile: docker/admin-ui/Dockerfile
       target: runtime-prebuilt
@@ -432,7 +439,7 @@ jobs:
     # security upgrade, #2408) executes on the non-native platform.
     uses: ./.github/workflows/build-image.yml
     with:
-      image: ghcr.io/rubentalstra/ferroehr-postgres
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
       defer-tags: true
       dockerfile: docker/postgres/Dockerfile
       context: docker/postgres

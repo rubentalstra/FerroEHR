@@ -66,13 +66,15 @@ dockerfile_label() {
 # The value declared in the workflow's `labels:` block for one lane. A lane is
 # one `uses: build-image.yml` call; it opens at its `image: ghcr.io/...<name>`
 # input (matched to end-of-line, so a name that prefixes another cannot open
-# the wrong lane) and closes at the next lane's.
+# the wrong lane) and closes at the next lane's. The owner is derived from
+# `github.repository_owner` in the workflow, so the lane opener is matched by
+# its trailing `/<name>` rather than by a hard-coded owner.
 workflow_label() {
-  awk -v lane="image: ghcr.io/rubentalstra/$1" -v key="org.opencontainers.image.$2=" '
+  awk -v lane="/$1" -v key="org.opencontainers.image.$2=" '
     /image: ghcr\.io\// {
       line = $0
       sub(/^[[:space:]]*/, "", line); sub(/[[:space:]]*$/, "", line)
-      inlane = (line == lane)
+      inlane = (substr(line, length(line) - length(lane) + 1) == lane)
     }
     inlane && index($0, key) {
       i = index($0, key) + length(key)
@@ -125,23 +127,32 @@ for entry in $IMAGES; do
   fi
 done
 
-# The CI service containers must run the exact base the postgres image is
-# built on — a drifted service pin tests against different bytes than the
-# image ships (found as a checklist item in #2408/#2410, enforced here since).
-CI_WORKFLOW=.github/workflows/ci.yml
+# Every service container must run the exact base the postgres image is built
+# on — a drifted service pin tests against different bytes than the image ships
+# (found as a checklist item in #2408/#2410, enforced here since).
+#
+# EVERY workflow is scanned, not a named list: the check was written against
+# ci.yml alone and sonar.yml's identical service pin — a second full instrumented
+# suite against the same database — was never covered (#2775). A list would have
+# to be extended by whoever adds the next service container, which is exactly the
+# person who does not know this guard exists.
 pg_from=$(grep -E '^FROM postgres:' docker/postgres/Dockerfile | awk '{print $2}' || true)
 if [[ -z "$pg_from" ]]; then
   report "image-labels: docker/postgres/Dockerfile has no 'FROM postgres:' pin"
 else
-  ci_pins=$(grep -Eo 'image: postgres:[^[:space:]]+' "$CI_WORKFLOW" | sed 's/^image: //' | sort -u || true)
-  if [[ -z "$ci_pins" ]]; then
-    report "image-labels: $CI_WORKFLOW declares no postgres service pins to check"
-  else
-    for pin in $ci_pins; do
+  found_any=0
+  for wf in .github/workflows/*.yml; do
+    pins=$(grep -Eo 'image: postgres:[^[:space:]]+' "$wf" | sed 's/^image: //' | sort -u || true)
+    [[ -n "$pins" ]] || continue
+    found_any=1
+    for pin in $pins; do
       [[ "$pin" = "$pg_from" ]] \
-        || report "image-labels: $CI_WORKFLOW pins service '$pin', but docker/postgres/Dockerfile FROM is '$pg_from'"
+        || report "image-labels: $wf pins service '$pin', but docker/postgres/Dockerfile FROM is '$pg_from'"
     done
-  fi
+  done
+  # A guard that finds nothing to check is not passing, it is vacuous.
+  [[ "$found_any" -eq 1 ]] \
+    || report "image-labels: no workflow declares a postgres service pin — this check verified nothing"
 fi
 
 # Annotations must reach the INDEX, which is the only place GHCR reads a package

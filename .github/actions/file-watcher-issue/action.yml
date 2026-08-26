@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/actions/file-watcher-issue — file one tracking issue, or comment on it.
+#
+# ONE engine for the watcher family (#2775): six workflows file an issue when
+# their probe finds something, today with three different dedup idioms. The
+# semantics here are the ones the image scan uses, which are the ones worth
+# keeping: dedup by an EXACT-title search over open issues, comment on the
+# existing issue rather than opening a second one, and never touch a closed
+# issue (a finding that returns after a close is new work, not a reopen).
+#
+# A dedup search matches the title EXACTLY (`in:title "<title>"`), so the title
+# is the dedup key — a title carrying a run number, a date, or a version would
+# open a new issue every run. Keep it constant and put the varying detail in the
+# body.
+#
+# The body arrives as a FILE, never as an argument: watcher bodies carry remote
+# content (upstream release notes, scanner output, server messages) that must
+# never be parsed as script or as a flag.
+#
+# Requires the repository to be checked out (a local action resolves against the
+# runner's workspace), and a token with `issues: write`.
+name: File or update a watcher issue
+description: Open one tracking issue for a watcher finding, or comment on the open one that already exists.
+
+inputs:
+  title:
+    description: The issue title — also the dedup key, so keep it constant across runs.
+    required: true
+  body-file:
+    description: Path to the markdown body (a file, so remote content is never an argument).
+    required: true
+  labels:
+    description: Comma-separated labels applied when the issue is CREATED (ignored on a comment).
+    required: false
+    default: ""
+  repo:
+    description: The repository to file in.
+    required: false
+    default: ${{ github.repository }}
+  token:
+    description: "A token with `issues: write`."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  issue:
+    description: The issue number that was created or commented on.
+    value: ${{ steps.file.outputs.issue }}
+  outcome:
+    description: '"created" or "commented".'
+    value: ${{ steps.file.outputs.outcome }}
+
+runs:
+  using: composite
+  steps:
+    - id: file
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repo }}
+        TITLE: ${{ inputs.title }}
+        BODY_FILE: ${{ inputs.body-file }}
+        LABELS: ${{ inputs.labels }}
+      run: |
+        set -euo pipefail
+        [ -s "$BODY_FILE" ] || { echo "::error::body file '$BODY_FILE' is missing or empty"; exit 1; }
+
+        existing="$(gh issue list --repo "$REPO" --state open --search "in:title \"$TITLE\"" \
+                      --json number --jq '.[0].number // empty')"
+        if [ -n "$existing" ]; then
+          gh issue comment "$existing" --repo "$REPO" --body-file "$BODY_FILE"
+          echo "commented on #${existing}"
+          {
+            echo "issue=$existing"
+            echo "outcome=commented"
+          } >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # One --label per name; an empty list creates an unlabelled issue.
+        label_args=()
+        if [ -n "$LABELS" ]; then
+          IFS=',' read -r -a names <<<"$LABELS"
+          for name in "${names[@]}"; do
+            name="${name#"${name%%[![:space:]]*}"}"
+            name="${name%"${name##*[![:space:]]}"}"
+            [ -n "$name" ] && label_args+=(--label "$name")
+          done
+        fi
+        url="$(gh issue create --repo "$REPO" --title "$TITLE" --body-file "$BODY_FILE" \
+                 "${label_args[@]+"${label_args[@]}"}")"
+        echo "filed ${url}"
+        {
+          echo "issue=${url##*/}"
+          echo "outcome=created"
+        } >> "$GITHUB_OUTPUT"
