@@ -10,6 +10,9 @@
 # on each run, so a handful of multi-megabyte templates would sink the execution
 # rate for no extra coverage.
 #
+# The one input that is not a corpus is fuzz/regressions/<target>/ — the tracked
+# artifacts of past findings, wired in after each target's wipe.
+#
 # Usage: fuzz/seeds.sh            (all targets)
 #        fuzz/seeds.sh <target>…  (named targets only)
 #
@@ -19,6 +22,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 seeds_root="$repo_root/fuzz/seeds"
+regressions_root="$repo_root/fuzz/regressions"
 
 # Every seed source must exist: a renamed corpus directory silently producing an
 # empty seed set is the failure mode this guards.
@@ -165,6 +169,29 @@ seed_identifiers() {
   echo "  identifiers: 7 written"
 }
 
+# Recorded finding artifacts: the exact inputs that reproduced a crash, leak or
+# timeout. They live in fuzz/regressions/<target>/, which is TRACKED — unlike
+# fuzz/seeds, which is generated and ignored — so every run re-checks every
+# finding this lane has ever had. The directory is optional per target, and it is
+# wired AFTER the wipe and the corpus links so a recorded artifact wins a name
+# clash rather than losing one.
+link_regressions() {
+  local target="$1"
+  local dir="$regressions_root/$target"
+  [[ -d "$dir" ]] || return 0
+
+  local dest="$seeds_root/$target"
+  mkdir -p "$dest"
+
+  local linked=0 path name
+  while IFS= read -r path; do
+    name="$(basename "$path")"
+    ln -sf "../../../fuzz/regressions/$target/$name" "$dest/$name"
+    linked=$((linked + 1))
+  done < <(find "$dir" -type f | LC_ALL=C sort)
+  echo "  $target <- fuzz/regressions/$target ($linked recorded artifacts)"
+}
+
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
   targets=(canonical_json canonical_xml aql_query simplified_formats adl2_source opt14_template identifiers)
@@ -181,5 +208,6 @@ for target in "${targets[@]}"; do
   mkdir -p "$repo_root/fuzz/corpus/$target"
   echo "$target:"
   "seed_$target"
+  link_regressions "$target"
   echo "  total: $(find "$seeds_root/$target" \( -type l -o -type f \) | wc -l | tr -d ' ') seeds"
 done
