@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The machine-readable capability→family→tier matrix
 //! (`vocab/capability_matrix.yaml`) — the Profiles book's capability×tier

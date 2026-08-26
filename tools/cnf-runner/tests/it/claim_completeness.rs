@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The claim-completeness battery (issue #622): the four gates that make a
 //! hollow certification claim unrepresentable are each proven by SEEDING the

@@ -7,7 +7,7 @@ summary for evaluators and deployers, not legal advice.
 
 <!-- toc -->
 
-## FerroEHR's own code — MIT
+## FerroEHR's own code — MIT, with one Apache-2.0 carve-out
 
 Everything written for this project (the server and application crates, the
 code generator and tooling, the admin console, and the hand-written
@@ -18,6 +18,17 @@ provided the copyright and permission notice are preserved. The copyright holder
 is stated as *FerroEHR contributors*, identically in `LICENSE`, in `REUSE.toml`,
 and in every first-party file header; a CI gate compares the three so they
 cannot drift apart.
+
+The one exception is the conformance instrument, `tools/cnf-runner` — the
+CNF 2.0 runner, its machine-readable catalogue, schemas, and party
+artifacts — which is licensed under
+[Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/Apache-2.0.txt).
+It is an independent tool with its own audience, and Apache-2.0's section 4
+requires every copy and derivative to carry the license and the
+[`NOTICE`](https://github.com/rubentalstra/FerroEHR/blob/develop/tools/cnf-runner/NOTICE)
+attribution, while section 3 grants an explicit patent license. The vendored
+test corpora inside it keep their upstream terms exactly as the table below
+states.
 
 Five of the published spec crates that **embed** openEHR-derived material
 (`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its`)

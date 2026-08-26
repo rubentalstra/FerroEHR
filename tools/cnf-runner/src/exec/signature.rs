@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! Version-signature verification for the SIG-VERSION cases — a portable,
 //! deterministic capability (the reference interpreter of a language-agnostic

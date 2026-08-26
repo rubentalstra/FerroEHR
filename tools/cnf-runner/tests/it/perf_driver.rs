@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! End-to-end exercise of the performance measurement machinery against a
 //! local stub SUT: the open-loop driver seeds the scale corpus + the

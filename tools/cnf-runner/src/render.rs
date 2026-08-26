@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! Deterministic Markdown renderers for the three published submission
 //! documents: the conformance report, the conformance statement (`SDoC`), and
