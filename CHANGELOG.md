@@ -15,7 +15,7 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-## [4.0.6-rc1] - 2026-08-26
+## [4.0.6-rc2] - 2026-08-26
 
 ### Added
 
@@ -7594,8 +7594,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc1...HEAD
-[4.0.6-rc1]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...v4.0.6-rc1
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc2...HEAD
+[4.0.6-rc2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...v4.0.6-rc2
 [4.0.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.4...v4.0.5
 [4.0.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...v4.0.4
 [4.0.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...v4.0.3
