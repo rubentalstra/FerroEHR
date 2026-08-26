@@ -15,6 +15,44 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.5] - 2026-08-26
+
+### Changed
+
+- Refusing a supplied `EHR_STATUS` without `archetype_details` (a 422 the
+  Reference Model requires — `EHR_STATUS` is always an archetype root) now
+  names the remedy in the error message, and the API book documents both
+  create-EHR branches: the content of the server-minted default, and the
+  RM-completeness a supplied status must have.
+
+### Fixed
+
+- AQL parsing no longer leaks memory. The parser's internal recursive
+  combinators formed reference cycles that outlived every parse, so each
+  parsed query grew the process permanently. Found by the fuzzing lane,
+  which now runs the AQL target under LeakSanitizer without findings.
+- Printing a parsed AQL query re-escapes its string literals (backslashes,
+  quotes, and the decoded control escapes). The parser decodes escape
+  sequences into the AST, and four printer sites emitted the decoded value
+  verbatim, so a printed query re-decoded them on the next parse and
+  drifted. A stored query now round-trips to the identical AST.
+- Refusing an invalid AQL query with nested `[` predicate openers took
+  exponential time (a 222-byte input parsed for seconds to minutes, doubling
+  per nesting level). The node-predicate grammar now parses its shared path
+  prefix once, so refusal time stays near-linear in input length.
+
+### Security
+
+- Container image tags (`:latest` and the version tags) now move only
+  after the vulnerability scan passes. The images are pushed by digest,
+  scanned, and tagged last, so a failing scan leaves every previously
+  published tag untouched (the v4.0.4 lane moved `:latest` before its scan
+  verdict).
+- CVE-2026-14456 (libssl in the distroless base image) is adjudicated not
+  affected: no FerroEHR binary links OpenSSL (rustls only). The finding is
+  suppressed by an id-scoped, expiring ignore plus a published OpenVEX
+  statement, pending a rebuilt upstream base.
+
 ## [4.0.4] - 2026-08-26
 
 ### Fixed
@@ -7512,7 +7550,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...HEAD
+[4.0.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.4...v4.0.5
 [4.0.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...v4.0.4
 [4.0.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...v4.0.3
 [4.0.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.1...v4.0.2
