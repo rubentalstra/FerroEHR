@@ -33,6 +33,9 @@
 name: Scorecard
 
 on:
+  # Re-score immediately when branch protection changes (the official template's
+  # trigger; the Branch-Protection check reads exactly that configuration).
+  branch_protection_rule:
   # Weekly, because most checks measure repository CONFIGURATION rather than a
   # commit: branch protection, code scanning, the update bot. A per-push run
   # would re-measure unchanged settings.
@@ -49,6 +52,9 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # publish_results works only from the default branch (the action refuses
+    # elsewhere); this keeps a stray off-branch dispatch from failing confusingly.
+    if: github.ref_name == github.event.repository.default_branch
     permissions:
       # Upload the SARIF into code scanning.
       security-events: write
