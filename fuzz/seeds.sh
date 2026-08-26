@@ -125,6 +125,9 @@ seed_canonical_xml() {
 
 seed_aql_query() {
   link_from aql_query "$corpus/fixtures/query" 64k 100 '*.aql'
+  # NOTE: the samples directory holds exactly one `.aql`,
+  # `191_where_parenthesis.aql`, and this glob is its only consumer — a
+  # realistic parenthesised-WHERE query kept for its seed shape.
   link_from aql_query app/ferroehr/tests/resources/service/samples 64k 200 '*.aql'
   extract_aql_examples
   extract_aql_catalogue_queries
