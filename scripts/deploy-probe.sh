@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 # The deployment-conformance harness (#2178).
 #
-# `cnf-runner` exists because "we believe the REST surface is conformant" was
-# not good enough — it had to be MEASURED, repeatably, by something that
-# outlives the person who ran it. This is the same instrument for the other
+# The conformance instrument exists because "we believe the REST surface is
+# conformant" was not good enough — it had to be MEASURED, repeatably, by
+# something that outlives the person who ran it. This is the same instrument for the other
 # half: "we believe the deployment works".
 #
 # The gap it covers is real and was expensive. A 4447-test suite was green

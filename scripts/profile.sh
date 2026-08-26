@@ -17,7 +17,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="docs/profiles/${STAMP}-L${L}-${SCALE}.md"
 mkdir -p docs/profiles
 
-# Pool/signing parity identical to the measurement instruments (cnf-runner).
+# Pool/signing parity identical to the measurement instruments (veredictum).
 export FERROEHR_DB__MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
 export FERROEHR_SIGNING__ENABLED=false
 
