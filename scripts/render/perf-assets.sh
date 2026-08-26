@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Render the published performance SVG assets FROM the committed measurement
 # records (docs/conformance/<sut>/results.json measurements block, plus the
-# stress report when one exists) via `cnf-runner perf-assets`. Deterministic
+# stress report when one exists) via `veredictum perf-assets`. Deterministic
 # by construction: the docs CI job re-runs this script and
 # `git diff --exit-code`s the output, so a hand-drawn or stale asset fails
 # the build (the same honesty rule as check-conformance-numbers.sh).
@@ -17,6 +17,8 @@
 #   $2  Markdown summary path override
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+# shellcheck source=scripts/lib/veredictum.sh
+source scripts/lib/veredictum.sh
 
 SUT="${CONF_SUT:-ferroehr}"
 if [[ "$SUT" = "ferroehr" ]]; then
@@ -30,12 +32,12 @@ RESULTS="docs/conformance/$SUT/results.json"
 STRESS="docs/conformance/$SUT/stress.json"
 
 args=(perf-assets
-  --root tools/cnf-runner/artifacts
+  --root "$(veredictum_artifacts)"
   --results "$RESULTS"
   --out "$OUT"
   --summary "$SUMMARY")
 # The latency-throughput stress curve renders only once a committed stress
-# report exists (cnf-runner stress — exploration, never a conformance record).
+# report exists (veredictum stress — exploration, never a conformance record).
 [[ -f "$STRESS" ]] && args+=(--stress "$STRESS")
 
-cargo run -q -p cnf-runner -- "${args[@]}"
+"$(veredictum_bin)" "${args[@]}"

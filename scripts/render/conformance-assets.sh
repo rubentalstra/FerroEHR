@@ -13,6 +13,8 @@
 #                                     (file stems suffixed -java)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+# shellcheck source=scripts/lib/veredictum.sh
+source scripts/lib/veredictum.sh
 
 SUT="${CONF_SUT:-ferroehr}"
 ART="docs/conformance/$SUT"
@@ -38,8 +40,8 @@ ehrbase)
   ;;
 esac
 
-cargo run -q -p cnf-runner -- conformance-assets \
-  --root tools/cnf-runner/artifacts \
+"$(veredictum_bin)" conformance-assets \
+  --root "$(veredictum_artifacts)" \
   --results "$ART/results.json" \
   --verdicts "$ART/verdicts.json" \
   --out "$OUT" \
