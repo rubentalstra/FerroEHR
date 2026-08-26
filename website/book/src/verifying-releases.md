@@ -175,7 +175,7 @@ carry a Sigstore-signed SLSA provenance attestation, plus the SPDX SBOM and
 provenance the builder writes onto the image index itself.
 
 ```bash
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.4 \
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.5 \
   -R rubentalstra/FerroEHR
 ```
 
@@ -199,7 +199,7 @@ tag once and verify the digest it resolved — otherwise the bytes verified and
 the bytes pulled can differ:
 
 ```bash
-digest=$(docker buildx imagetools inspect ghcr.io/rubentalstra/ferroehr:4.0.4 \
+digest=$(docker buildx imagetools inspect ghcr.io/rubentalstra/ferroehr:4.0.5 \
   | awk '/^Digest:/{print $2}')
 gh attestation verify "oci://ghcr.io/rubentalstra/ferroehr@${digest}" \
   -R rubentalstra/FerroEHR
