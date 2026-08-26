@@ -129,7 +129,7 @@ values_paths() {
 toml_paths "$TOML" > "$work/toml"
 values_paths "$VALUES" > "$work/values"
 # Env forms: the TOML path upper-cased with `__` between segments.
-sed 's/\./__/g' "$work/toml" | tr 'a-z' 'A-Z' | sed 's/^/FERROEHR__/' | sort -u > "$work/env"
+sed 's/\./__/g' "$work/toml" | tr '[:lower:]' '[:upper:]' | sed 's/^/FERROEHR__/' | sort -u > "$work/env"
 grep -vE '\.' "$work/values" > "$work/values_top"
 
 failures=0
@@ -149,8 +149,7 @@ files=$(collect "$@")
 # and the Rust-version check on from-source.md never ran once, proven by
 # mutating both pages and watching the guard report OK (#2779). Space-normalise
 # the list once and test against that.
-# shellcheck disable=SC2086 # deliberate re-splitting: the newlines become spaces
-files_spaced=" $(echo $files) "
+files_spaced=" ${files//$'\n'/ } "
 in_files() {
   case "$files_spaced" in *" $1 "*) return 0 ;; *) return 1 ;; esac
 }
@@ -225,6 +224,7 @@ done
 for f in $files; do
   case " $CHART_PAGES " in *" $f "*) ;; *) continue ;; esac
   [[ -f "$f" ]] || continue
+  # shellcheck disable=SC2016 # the ERE below matches literal markdown backticks
   while read -r path; do
     [[ -n "$path" ]] || continue
     first=${path%%.*}
@@ -349,6 +349,7 @@ fi
 # so it must occur verbatim in one of the committed results records.
 COMPARISON_PAGE="$BOOK/comparison.md"
 if in_files "$COMPARISON_PAGE"; then
+  # shellcheck disable=SC2016 # the ERE below matches literal markdown backticks
   while read -r quote; do
     [[ -n "$quote" ]] || continue
     inner=${quote#\`\"}; inner=${inner%\"\`}
@@ -400,6 +401,7 @@ if in_files "$VERIFY_PAGE"; then
       || report "$VERIFY_PAGE" "names the release asset \`ferroehr-v${v}…\`; the workspace version is $app_version"
   done < <(grep -ohE 'ferroehr-v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$VERIFY_PAGE" | sed 's/^ferroehr-v//' | sort -u)
   # The substitution note. Its sentence wraps, so the page is line-joined first.
+  # shellcheck disable=SC2016 # the ERE and sed below match literal markdown backticks
   while read -r v; do
     [[ -n "$v" ]] || continue
     [[ "$v" = "$app_version" ]] \

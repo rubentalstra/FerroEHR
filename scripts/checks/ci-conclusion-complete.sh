@@ -25,6 +25,7 @@ needs=$(yq -o=json '.jobs.conclusion.needs' "$WORKFLOW" | jq -r '.[]' | sort)
 if missing=$(comm -23 <(echo "$jobs") <(echo "$needs")) && [[ -n "$missing" ]]; then
   echo "error: CI jobs that do not gate the merge" >&2
   echo >&2
+  # shellcheck disable=SC2001 # bullets EVERY line of a multi-line list; ${//} has no ^ anchor
   echo "$missing" | sed 's/^/  - /' >&2
   echo >&2
   echo "Branch protection requires only the 'conclusion' check, so a job absent" >&2
@@ -37,6 +38,7 @@ fi
 # `conclusion` fail permanently on an unresolvable dependency.
 if stale=$(comm -13 <(echo "$jobs") <(echo "$needs")) && [[ -n "$stale" ]]; then
   echo "error: conclusion.needs names jobs that do not exist" >&2
+  # shellcheck disable=SC2001 # bullets EVERY line of a multi-line list; ${//} has no ^ anchor
   echo "$stale" | sed 's/^/  - /' >&2
   exit 1
 fi

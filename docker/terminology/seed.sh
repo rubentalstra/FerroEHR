@@ -94,12 +94,16 @@ verify() {
 # two shapes, and HAPI resolves them through different internal paths — a
 # ValueSet that answers one can still 404 the other (the "loinc" quirk below),
 # so a single sample proves nothing.
+# shellcheck disable=SC2016 # $validate-code and $expand are FHIR operation names, not shell expansions
 verify '$validate-code (sct-shaped member)' \
   "${FHIR_BASE}/ValueSet/\$validate-code?url=http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders&system=http://cnf.example.test/fhir/CodeSystem/sct-shaped&code=1000002"
+# shellcheck disable=SC2016 # $expand is a FHIR operation name, not a shell expansion
 verify '$expand (sct-shaped disorders)' \
   "${FHIR_BASE}/ValueSet/\$expand?url=http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders"
+# shellcheck disable=SC2016 # $validate-code is a FHIR operation name, not a shell expansion
 verify '$validate-code (lab-shaped member)' \
   "${FHIR_BASE}/ValueSet/\$validate-code?url=http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals&system=http://cnf.example.test/fhir/CodeSystem/lab-shaped&code=99991-1"
+# shellcheck disable=SC2016 # $expand is a FHIR operation name, not a shell expansion
 verify '$expand (lab-shaped vitals)' \
   "${FHIR_BASE}/ValueSet/\$expand?url=http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals"
 

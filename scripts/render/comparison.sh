@@ -64,8 +64,6 @@ run_date() {
 rs_date=$(run_date "$RS")
 eb_date=$(run_date "$EB")
 eb_version=$(jq -r '.sut.version // .sut.name' "$EB/results.json")
-rs_total=$(jq '(.cases // .outcomes) | length' "$RS/results.json")
-eb_total=$(jq '(.cases // .outcomes) | length' "$EB/results.json")
 
 # The shared per-case join: both runs execute the SAME committed catalogue,
 # keyed by case id + format. (A case one run records N/A — an unclaimed
@@ -76,7 +74,6 @@ shared=$(jq -n --slurpfile a "$RS/results.json" --slurpfile b "$EB/results.json"
   | [$b[0].outcomes[] | . as $o | ($rs["\(.case)|\(.format // "-")"]) as $mine
      | select($mine != null)
      | {key: "\(.case)|\(.format // "-")", theirs: .status, rs: $mine.status}]')
-shared_n=$(echo "$shared" | jq 'length')
 srow() { echo "$shared" | jq "[.[] | select(.$1 == \"$2\")] | length"; }
 
 # EHRbase failures grouped by schedule chapter (the case-id prefix), and the
