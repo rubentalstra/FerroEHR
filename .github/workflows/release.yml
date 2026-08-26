@@ -330,7 +330,9 @@ jobs:
         with:
           draft: true
           tag_name: ${{ needs.plan.outputs.tag }}
-          name: ${{ needs.plan.outputs.tag }}
+          # The release TITLE is the bare version (owner rule 2026-08-26): the
+          # repository already says whose release it is.
+          name: ${{ needs.plan.outputs.version }}
           body_path: release-notes.md
           # The quickstart compose files ride along as release assets: the base
           # file pulls the images this tag published, and the two standalone
