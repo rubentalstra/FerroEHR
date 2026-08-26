@@ -17,7 +17,7 @@ signer identity is one you can pin to a single hardened workflow.
 ## What a release publishes
 
 Substitute the release tag you downloaded for `<tag>` (for example
-`v4.0.4`) and the architecture for `<arch>` (`x86_64` or `aarch64`) throughout
+`v4.0.5`) and the architecture for `<arch>` (`x86_64` or `aarch64`) throughout
 this page. Linux is the only published target.
 
 | Asset | What it is |

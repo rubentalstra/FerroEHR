@@ -19,14 +19,14 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 6.0.19
+version: 6.0.20
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
 # previous image. It is NOT a promise that this tag accepts the chart's current
 # `config` defaults: values track development between releases, so the publish
 # lane re-checks the pairing against the image itself.
-appVersion: "4.0.4"
+appVersion: "4.0.5"
 
 # A COMPATIBILITY floor, and a real one: 1.36 is the release where the newest
 # field this chart renders became stable.
@@ -136,7 +136,7 @@ annotations:
   # scan while leaving the false claim in place, so it is deliberately not used.
   artifacthub.io/images: |
     - name: ferroehr
-      image: ghcr.io/rubentalstra/ferroehr:4.0.4
+      image: ghcr.io/rubentalstra/ferroehr:4.0.5
       platforms:
         - linux/amd64
         - linux/arm64
@@ -145,7 +145,7 @@ annotations:
     # visible to anyone considering it. See #2193: this chart cannot deploy it
     # yet, so today the entry advertises intent rather than chart behaviour.
     - name: ferroehr-admin-ui
-      image: ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.4
+      image: ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.5
       platforms:
         - linux/amd64
         - linux/arm64
