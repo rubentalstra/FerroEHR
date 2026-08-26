@@ -1956,8 +1956,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # No Python (#2791): this step replaced `pipx run cffconvert --validate`,
+      # which contradicted the no-Python hard rule (rust-style.md §No Python —
+      # the no-python guard now catches pipx/pip too). Same contract, different
+      # validator: cffconvert validates against the SAME schema file, vendored
+      # at .github/cff-schema/ (scripts/vendor/cff-schema.sh), and the pinned
+      # Rust jsonschema-cli validates the yq-converted document against it.
+      # yq is pinned + checksum-verified like the helm-golden job's copy.
+      - name: Install yq + the pinned jsonschema-cli
+        env:
+          YQ_VERSION: v4.53.3
+          YQ_SHA256: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
+          JSONSCHEMA_CLI_VERSION: 0.52.0
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors -o /tmp/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
+          cargo install jsonschema-cli --version "${JSONSCHEMA_CLI_VERSION}" --locked
       - name: Validate CITATION.cff (CFF 1.2.0 schema)
-        run: pipx run cffconvert --validate
+        run: |
+          set -euo pipefail
+          yq -o=json CITATION.cff > "${RUNNER_TEMP}/citation.json"
+          jsonschema-cli validate .github/cff-schema/schema.json -i "${RUNNER_TEMP}/citation.json"
       # The ferroehr party statement is the published conformance claim for
       # THE product this repo ships; its product version sat at 3.6.0 while
       # the record reached 3.20.0 with nothing failing (#2576). Same
