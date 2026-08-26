@@ -15,7 +15,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
 [![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
 [![GitHub Release](https://img.shields.io/github/release/rubentalstra/FerroEHR.svg?logo=github)](https://github.com/rubentalstra/FerroEHR/releases/latest)
-[![Total downloads](https://img.shields.io/github/downloads/rubentalstra/FerroEHR/total?logo=github)](https://github.com/rubentalstra/FerroEHR/releases)
+[![Image pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Frubentalstra%2FFerroEHR%2Fferroehr&query=downloadCount&label=image%20pulls&logo=github)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B63718%2FFerroEHR.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B63718%2FFerroEHR?ref=badge_shield&issueType=license)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B63718%2FFerroEHR.svg?type=shield&issueType=security)](https://app.fossa.com/projects/custom%2B63718%2FFerroEHR?ref=badge_shield&issueType=security)
 
