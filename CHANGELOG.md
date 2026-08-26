@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.4] - 2026-08-26
+
 ### Fixed
 
 - An unauthenticated request to a guarded admin-console URL now answers its
@@ -7511,6 +7513,7 @@ but has not yet run in production.
 
 
 [unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...HEAD
+[4.0.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.3...v4.0.4
 [4.0.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.2...v4.0.3
 [4.0.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.0...v4.0.1
