@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-08-22T10:26:47.042Z
+  modified: 2026-08-26T12:01:18.434Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
@@ -69,14 +69,16 @@ Recurring session-workflow traps (all hit 2026-07-13/14):
    (`no-changelog` on changelog-guard, `no-ui-visual-change` on
    ui-screenshot-guard) read `github.event.pull_request.labels` (frozen at
    trigger time), so adding the label then rerunning the failed job still
-   fails. Close + reopen the PR to mint a new event. Also (hit 2026-07-20):
+   fails. Since #2777 ci.yml listens for `labeled`/`unlabeled`, so applying
+   the label raises a fresh run by itself — wait for that run, never re-run
+   the stale one (close+reopen is obsolete). Also (hit 2026-07-20):
    a label a workflow references must actually EXIST in the repo —
    `no-ui-visual-change` didn't until it was first needed; `gh label
    create` fails loudly at apply time, the workflow never warns.
 
 **Why:** each cost a debugging loop mid-flow; the fixes are non-obvious.
 **How to apply:** overnight/long runs → detached+caffeinate+Monitor pattern;
-commit-message wording; close/reopen for late labels.
+commit-message wording. Late labels: since #2777 applying a label raises a fresh run itself (labeled/unlabeled types); never re-run the failed job (stale payload).
 
 6. **Merge PRs only behind a GREEN gate, in code** (hit 2026-07-26, broke
    develop's rustfmt): never chain `gh pr merge` unconditionally after a
@@ -147,3 +149,12 @@ commit-message wording; close/reopen for late labels.
    includes`, `comparison.sh` (COMPARISON.md), `perf-assets.sh`,
    `conformance-assets.sh` (+ `CONF_SUT=ehrbase`), `conformance-docs.sh`
    (report/certificate/badges). Run all six, commit whatever changed.
+
+9. **A release-cut's local guard runs are `--all`, and the version sweep greps
+   the BARE number too** (hit at the v4.0.5 cut, 2026-08-26: PR #2757's
+   post-merge docs-claims went red). Bare `bash scripts/checks/docs-claims.sh`
+   scopes to CHANGED files — on a clean tree it passes vacuously; CI runs
+   `--all`. And `verifying-releases.md` pins image tags as
+   `ghcr.io/...:X.Y.Z` (no `v` prefix), so a `vX\.Y\.Z`-shaped grep misses
+   them. At every cut: `grep -rn '<old-version>' website/book/src/` (bare
+   number), then `docs-claims.sh --all` before merging the release PR.

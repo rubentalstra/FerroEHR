@@ -464,8 +464,8 @@ jobs:
 
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
-  # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
-  # closes, then flips to --all.
+  # hand-written .rs files (the legacy essay sweep #1870 closed; the step runs
+  # --all).
   comment-style:
     name: comment-style
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
