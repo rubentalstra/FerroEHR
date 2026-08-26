@@ -438,7 +438,9 @@ pub(in crate::service) fn validate_root_locatable(
             ServiceError::content_invalid(
                 Violation::new(format!(
                     "is mandatory: {kind} is an archetype root (Is_archetype_root), \
-                     and a root without ARCHETYPED is invalid"
+                     and a root without ARCHETYPED is invalid; supply \
+                     archetype_details with its archetype_id (for a plain \
+                     status, openEHR-EHR-EHR_STATUS.generic.v1)"
                 ))
                 .with_path(format!("{kind}.archetype_details"))
                 .with_invariant("LOCATABLE.Archetyped_valid"),
