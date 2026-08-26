@@ -72,6 +72,7 @@ ignore_json="$(yq -p toml -o json '[.advisories.ignore[]]' "$GATE")"
 if bare="$(jq -r '.[] | select(type == "string" and startswith("RUSTSEC-"))' <<<"$ignore_json")" \
    && [[ -n "$bare" ]]; then
   echo "vex-generate: deny.toml ignores an advisory in the bare-string form:" >&2
+  # shellcheck disable=SC2001 # indents EVERY line of a multi-line list; ${//} has no ^ anchor
   sed 's/^/  /' <<<"$bare" >&2
   echo "Use { id = \"…\", reason = \"…\" } so the exception carries its reason" >&2
   echo "and this gate can require a published VEX justification for it." >&2
@@ -88,6 +89,7 @@ if unreasoned="$(jq -r '
       | select((.reason // "" | gsub("^\\s+|\\s+$"; "")) == "")
       | .id' <<<"$ignore_json")" && [[ -n "$unreasoned" ]]; then
   echo "vex-generate: deny.toml accepts an advisory with no reason:" >&2
+  # shellcheck disable=SC2001 # indents EVERY line of a multi-line list; ${//} has no ^ anchor
   sed 's/^/  /' <<<"$unreasoned" >&2
   echo "Every accepted advisory states why it does not apply and when to" >&2
   echo "re-check it — deny.toml's own header requires exceptions to be" >&2

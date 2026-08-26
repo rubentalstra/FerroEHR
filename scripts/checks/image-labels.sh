@@ -170,6 +170,7 @@ fi
 levels=$(grep -c 'DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest' "$BUILD_WORKFLOW" || true)
 [[ "$levels" -eq 1 ]] \
   || report "image-labels: expected the one reusable metadata step with DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest in $BUILD_WORKFLOW, found $levels"
+# shellcheck disable=SC2016 # ${{ … }} is the literal Actions expression being searched for
 annots=$(grep -c 'annotations: ${{ steps.meta.outputs.annotations }}' "$BUILD_WORKFLOW" || true)
 [[ "$annots" -eq 1 ]] \
   || report "image-labels: expected the one reusable build step passing the annotations output in $BUILD_WORKFLOW, found $annots"

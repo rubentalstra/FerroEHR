@@ -45,6 +45,7 @@ json="$(printf '%s\n' "$report" | grep '^{' || true)"
 if ! printf '%s\n' "$json" | jq -e 'select(.type == "summary")' >/dev/null 2>&1; then
   echo "error: the advisories check did not complete, so nothing was verified" >&2
   echo >&2
+  # shellcheck disable=SC2001 # indents EVERY line of a multi-line report; ${//} has no ^ anchor
   sed 's/^/  /' <<<"$report" >&2
   exit 1
 fi
@@ -57,6 +58,7 @@ resolved="$(printf '%s\n' "$json" | jq -r '
 
 if [[ -n "$resolved" ]]; then
   echo "error: deny.toml keeps an exception for an advisory the gate no longer raises:" >&2
+  # shellcheck disable=SC2001 # indents EVERY line of a multi-line list; ${//} has no ^ anchor
   sed 's/^/  /' <<<"$resolved" >&2
   echo >&2
   echo "No crate in the dependency graph matches these any more — the finding is" >&2

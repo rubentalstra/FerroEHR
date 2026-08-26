@@ -29,6 +29,7 @@ echo
 echo "=== tracker: open GitHub issues (gh issue view <n> --comments for the contract + discussion) ==="
 echo "--- pinned (current focus) ---"
 repo_nwo="$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null || true)"
+# shellcheck disable=SC2016 # $owner/$name are GraphQL variables, expanded by the server
 gh api graphql \
   -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { pinnedIssues(first: 3) { nodes { issue { number title } } } } }' \
   -f owner="${repo_nwo%%/*}" -f name="${repo_nwo##*/}" \
@@ -37,6 +38,7 @@ echo "--- open (child-of = sub-issue; {k/n} = sub-issue progress; BLOCKED-by = h
 # One batched GraphQL call yields each open issue's labels, milestone, parent,
 # sub-issue progress, and open blockers/blocks — so the tracker shows work
 # structure, not just a flat list. Falls back gracefully if gh/GraphQL fails.
+# shellcheck disable=SC2016 # $owner/$name are GraphQL variables and $labels/$b/$k are jq bindings
 gh api graphql \
   -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { issues(first: 100, states: OPEN, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { number title labels(first: 20) { nodes { name } } milestone { title } parent { number } subIssuesSummary { total completed } blockedBy(first: 30) { nodes { number state } } blocking(first: 30) { nodes { number state } } } } } }' \
   -f owner="${repo_nwo%%/*}" -f name="${repo_nwo##*/}" \

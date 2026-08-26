@@ -25,6 +25,7 @@ APP_DB="${PG_INIT_DB:-ferroehr}"
 
 # psql as the bootstrap superuser, ON_ERROR_STOP so a failure aborts init.
 psql_super() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" "$@"; }
+# shellcheck disable=SC2120 # forwards flags like its psql_super twin; today's one caller passes none
 psql_app() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_DB" "$@"; }
 
 echo "ferroehr init: creating role '${APP_USER}' and database '${APP_DB}'"
@@ -66,6 +67,7 @@ fi
 # 3) Schemas owned by the app role + superuser-installed extensions, in the
 #    app database. `ext` holds the openEHR helper functions and, by convention,
 #    the extensions; both schemas are on the app's search_path (ehr, ext, public).
+# shellcheck disable=SC2119 # the SQL arrives on stdin; the script's own $@ is not psql's
 psql_app <<SQL
 CREATE SCHEMA IF NOT EXISTS ehr AUTHORIZATION "${APP_USER}";
 CREATE SCHEMA IF NOT EXISTS ext AUTHORIZATION "${APP_USER}";

@@ -49,4 +49,5 @@ for opt in "$PACK"/*.opt; do
     || { echo "::error::$slug example is not a COMPOSITION" >&2; exit 1; }
 done
 
-echo "==> generated $(ls "$PACK"/*.example.json | wc -l | tr -d ' ') example skeletons"
+examples=("$PACK"/*.example.json)
+echo "==> generated ${#examples[@]} example skeletons"

@@ -101,9 +101,9 @@ probes_oidc() {
   hdrs="$(curl -s -o /dev/null -D - -X POST "$API/ehr")"
   assert_contains "$hdrs" "401" "an unauthenticated write must be refused"
   # Header names are case-insensitive on the wire, so fold before matching.
-  assert_contains "$(printf '%s' "$hdrs" | tr 'A-Z' 'a-z')" "www-authenticate" \
+  assert_contains "$(printf '%s' "$hdrs" | tr '[:upper:]' '[:lower:]')" "www-authenticate" \
     "a 401 without a challenge tells the client nothing about how to authenticate"
-  assert_contains "$(printf '%s' "$hdrs" | tr 'A-Z' 'a-z')" "bearer" \
+  assert_contains "$(printf '%s' "$hdrs" | tr '[:upper:]' '[:lower:]')" "bearer" \
     "with an issuer configured the challenge must advertise Bearer"
   probe_done
 
