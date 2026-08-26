@@ -209,6 +209,16 @@ precedence = "override"
 SPDX-FileCopyrightText = "KaTeX contributors"
 SPDX-License-Identifier = "MIT"
 
+# ── The Citation File Format 1.2.0 JSON Schema — CC-BY-4.0 ──────────────────
+# Vendored by scripts/vendor/cff-schema.sh (#2791) for the citation-guard CI
+# job's no-Python CFF validation; provenance in the tree's PROVENANCE.md. The
+# PROVENANCE.md itself is first-party and covered by the record block below.
+[[annotations]]
+path = [".github/cff-schema/schema.json", ".github/cff-schema/LICENSE"]
+precedence = "override"
+SPDX-FileCopyrightText = "The Citation File Format contributors"
+SPDX-License-Identifier = "CC-BY-4.0"
+
 # ── One vendored file whose NAME contains a newline character ───────────────
 # `docs/specs/openehr/CNF/.../I_EHR_COMPOSITION.get_composition_version-bad_ehr\n.robot`
 # is tracked with a literal U+000A inside its filename — an upstream defect in
@@ -232,6 +242,7 @@ path = [
   "crates/openehr-its/schemas/json/PROVENANCE.md",
   "crates/openehr-its/schemas/xml/PROVENANCE.md",
   "crates/openehr-term/assets/PROVENANCE.md",
+  ".github/cff-schema/PROVENANCE.md",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "FerroEHR contributors"
