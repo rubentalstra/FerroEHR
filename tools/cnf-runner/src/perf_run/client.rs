@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The blocking SUT clients for the measurement machinery: base URL + auth
 //! resolved once per ixit instance; one connection pool per client, shared

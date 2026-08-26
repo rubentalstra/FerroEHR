@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The pure assertion evaluators — verdict logic over canonical-JSON
 //! values, shared by the live driver and the transcript player so any two

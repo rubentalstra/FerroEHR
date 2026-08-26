@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 #![recursion_limit = "256"]
 //! CNF 2.0 reference runner — the typed schedule-artifact model, validator,

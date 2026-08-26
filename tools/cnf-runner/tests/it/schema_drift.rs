@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The committed schema set (`schemas/*.schema.json`) is the published norm;
 //! it must stay byte-identical to what the code emits (regenerate with
