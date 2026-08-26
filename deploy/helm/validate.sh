@@ -740,7 +740,16 @@ if command -v helm-docs >/dev/null 2>&1; then
     FAIL=1
   fi
 else
-  printf '%s\n' "helm-docs: not installed — skipping the chart README drift check"
+  # Locally a missing helm-docs is a note; in CI it is a FAILURE (#2806): the
+  # self-skip is how the v4.0.5 README shipped a release stale — the lane ran
+  # green with the one check that would have caught it silently absent.
+  if [[ "${CI:-}" == "true" ]]; then
+    red "helm-docs: not installed — CI must install the pinned helm-docs"
+    red "(deploy/helm/.tool-versions); a silent skip is how a stale README ships."
+    FAIL=1
+  else
+    printf '%s\n' "helm-docs: not installed — skipping the chart README drift check"
+  fi
 fi
 
 # ── What a green run above does NOT mean ─────────────────────────────────────
