@@ -245,10 +245,15 @@ What to reach for instead:
 | Anything with real data structures | Rust, in `tools/` |
 
 Enforcement (tier 4): `scripts/checks/no-python.sh`, per-PR via the
-`no-python` CI job. It fails on any `python`/`python3` invocation and on any
-`.py` file under `scripts/`, `.github/workflows/`, `.claude/hooks/`, `deploy/`
-and `docker/`; prose *about* not using Python is allowed, since several
-scripts carry exactly that comment. Mutation-proven in both directions.
+`no-python` CI job. It fails on any `python`/`python3`/`pipx`/`pip` invocation
+and on any `.py` file under `scripts/`, `.github/workflows/`,
+`.claude/hooks/`, `deploy/` and `docker/`; prose *about* not using Python is
+allowed, since several scripts carry exactly that comment. Mutation-proven in
+both directions. (`pipx`/`pip` joined the pattern in #2791: `pipx run
+cffconvert` validated CITATION.cff for months — Python with no `python` token
+to see. The validation is now the vendored CFF 1.2.0 schema +
+`yq -o=json` + the pinned Rust `jsonschema-cli`, same schema file cffconvert
+used, in the citation-guard job.)
 
 **There are no exemptions.** The last two were the Helm selector-immutability
 and restricted-profile gates, which parsed multi-document YAML; they are now
