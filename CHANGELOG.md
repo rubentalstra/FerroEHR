@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The conformance instrument (`tools/cnf-runner` — the CNF 2.0 runner, its
+  machine-readable catalogue, schemas, and party artifacts) is now licensed
+  under Apache-2.0 instead of MIT: attribution travels with every copy and
+  derivative (license + NOTICE retention), and the license carries an
+  explicit patent grant. The rest of the project stays MIT; the vendored
+  test corpora keep their upstream terms unchanged.
+
 ## [4.0.5] - 2026-08-26
 
 ### Changed

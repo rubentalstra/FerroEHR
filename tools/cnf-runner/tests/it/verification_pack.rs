@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The runner-verification pack, part 1 (verdict conformance): replaying
 //! the committed transcript reproduces every adjudicated verdict — and a

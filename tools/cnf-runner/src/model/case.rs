@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The case core — one file per case, protocol-neutral
 //! (CNF 2.0 artifact-set design; shapes extracted from

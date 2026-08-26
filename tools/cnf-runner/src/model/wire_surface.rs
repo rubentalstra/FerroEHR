@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 //! The wire-surface coverage register (`vocab/wire_surface.yaml`) — the
 //! authored, spec-cited record of the wire surface the CNF catalogue is
