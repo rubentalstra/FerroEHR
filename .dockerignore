@@ -31,6 +31,37 @@ docs-dist/
 corpus/
 crates/openehr-adl/tests/corpus/
 
+# The fuzz harnesses (#2813): their own NIGHTLY workspace, deliberately not a
+# root-workspace member, so `-p ferroehr-server` never parses or compiles them
+# — and fuzz/corpus alone is ~46 MB of seed inputs.
+fuzz/
+
+# The website sources + the locally generated site build output (#2813): pure
+# prose/HTML, no crate reads them (verified: no include_str!/build.rs path
+# reaches website/ or _site/).
+website/
+_site/
+
+# Codegen INPUTS and reference grammars (#2813): the generated code is
+# committed, the generator does not run in the image build, and every
+# include_str! under crates/ that reaches a vendor/ path sits in tests/ (the
+# openehr_sdk corpus in openehr-its/tests/it). openehr-lang's vendored .g4
+# grammar set is reference text for the hand-written lexer, not a compile
+# input (no build.rs, no include_str! names it).
+crates/*/vendor/
+tools/openehr-codegen/vendor/
+
+# The vendored XSD bundles (#2813): read by the xml_xsd_validity test at
+# RUNTIME, never by the lib compile. schemas/json/ STAYS — src/json.rs
+# include_str!s openehr_rm_1.1.0_all.json into the lib (it is even in the
+# crate's packaged `include` list).
+crates/openehr-its/schemas/xml/
+
+# Local terminology releases (#2813): the 681 MB SNOMED NL zip parked in the
+# repo root for #2236 dominated the context; no tracked zip exists and no
+# build input is an archive.
+*.zip
+
 # Agent worktrees (full duplicate build trees) and Node artifacts.
 .claude/worktrees/
 **/node_modules/
