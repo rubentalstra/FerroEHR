@@ -22,6 +22,12 @@ by the `crate-version-guard` CI job.
   `0.0.x` as its own compatibility set, so the internal `version =`
   requirements must move together): bump every crate's `version` AND every
   internal dependency requirement to the same new `0.0.x` in one edit sweep.
+- **`fuzz/Cargo.lock` follows the bump in the same PR.** `fuzz/` is its own
+  workspace (never a root member), so the root `Cargo.lock` refresh does not
+  reach it and its recorded path-dependency versions go stale silently — the
+  fuzz lane then builds against manifests its lock contradicts. Refresh with
+  `cargo update --manifest-path fuzz/Cargo.toml --workspace` and commit it;
+  the `crate-version-guard` job and the push hook both fail otherwise.
 - Escape hatch: the `no-crate-bump` PR label, ONLY when the diff provably
   does not alter packaged bytes (e.g. a comment-only change would still
   alter packaged bytes — that needs a bump; a `tests/`-only change does

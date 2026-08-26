@@ -199,6 +199,17 @@ precedence = "override"
 SPDX-FileCopyrightText = ["openEHR Foundation", "the respective archetype authors", "FerroEHR contributors"]
 SPDX-License-Identifier = "Apache-2.0 AND CC-BY-SA-3.0 AND CC-BY-SA-4.0 AND MIT"
 
+# ── Recorded fuzz regressions ───────────────────────────────────────────────
+# The inputs that reproduced a finding, tracked so every run re-checks them.
+# They are first-party: mutations this project's own harnesses produced, or
+# short literals written here. A header cannot go inside them — the bytes ARE
+# the input under test.
+[[annotations]]
+path = "fuzz/regressions/**"
+precedence = "override"
+SPDX-FileCopyrightText = "FerroEHR contributors"
+SPDX-License-Identifier = "MIT"
+
 # ── Self-hosted KaTeX assets — MIT ──────────────────────────────────────────
 # The documentation site pre-renders maths at build time and self-hosts the
 # stylesheet and fonts; provenance is in website/book/KATEX-PROVENANCE.md.
