@@ -109,12 +109,14 @@ printf '==> %s archetypes published by CKM\n' "$published"
 
 echo "==> fetching ADL 1.4 texts (jobs=$JOBS)"
 find "$ADL_DIR" -name '*.adl' -delete
+# shellcheck disable=SC2016 # $0/$1/$2 are the inner bash -c positionals, not this shell's
 xargs -P "$JOBS" -n 2 bash -c 'bash "$0" --fetch-one "$1" "$2" adl' "$0" \
   < "$WORK/jobs_adl.txt" | tee "$WORK/adl.log"
 
 if [[ $WITH_XML == 1 ]]; then
   echo "==> fetching AM 1.4 archetype XML (jobs=$JOBS)"
   find "$XML_DIR" -name '*.xml' -delete
+  # shellcheck disable=SC2016 # $0/$1/$2 are the inner bash -c positionals, not this shell's
   xargs -P "$JOBS" -n 2 bash -c 'bash "$0" --fetch-one "$1" "$2" xml' "$0" \
     < "$WORK/jobs_xml.txt" | tee "$WORK/xml.log"
 else

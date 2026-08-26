@@ -270,6 +270,24 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   CodeQL's `actions` language on every pull request. An accepted finding is an
   inline `# zizmor: ignore[rule]` carrying its reason, never a silent
   suppression.
+- **The shell programs are analysed like code too** (issue #2785). The two
+  tooling languages here are bash and Rust, and only the Rust half was ever
+  lint-gated. actionlint shellchecks the `run:` blocks EMBEDDED in workflows;
+  the scripts those blocks call — every CI guard, every vendor fetcher, every
+  deploy probe, the release machinery, the git hooks — were checked by nothing.
+  ShellCheck now runs at `--severity=style`, its lowest floor, so every finding
+  gates. A finding is FIXED, or it carries a per-line
+  `# shellcheck disable=SCnnnn` directive with its reason on the same line; a
+  blanket exclusion is refused, and no `.shellcheckrc` exists, because a file
+  that can turn a code off tree-wide eventually does. Discovery is derived
+  rather than listed: every tracked `*.sh`, plus every tracked extensionless
+  file whose first line is a shell shebang (which is what covers
+  `.githooks/commit-msg` and the next hook after it), minus the vendored trees
+  nobody here may edit. Enforcement (tier 4):
+  `scripts/checks/shellcheck-lane.sh`, run per-PR by the `shellcheck` CI job
+  against the pinned upstream release binary (`shellcheck@0.11.0` — never the
+  runner's distro package, whose version would drift under the adjudicated
+  directives at every runner-image refresh).
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 

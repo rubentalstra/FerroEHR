@@ -55,7 +55,8 @@ fi
 # inherited container layers, where nothing in this repository resolves the
 # finding). They still have to be well-formed OpenVEX, so a typo does not ship
 # as a document a consumer's parser rejects.
-for doc in security/vex/*.openvex.json; do
+docs=(security/vex/*.openvex.json)
+for doc in "${docs[@]}"; do
   jq -e '
     (has("@context") and has("@id") and has("author") and has("timestamp")
      and has("version") and (.statements | type == "array" and length > 0))
@@ -76,4 +77,4 @@ for doc in security/vex/*.openvex.json; do
   }
 done
 
-echo "ok: $(ls security/vex/*.openvex.json | wc -l | tr -d ' ') VEX documents well-formed; $OUT matches deny.toml"
+echo "ok: ${#docs[@]} VEX documents well-formed; $OUT matches deny.toml"

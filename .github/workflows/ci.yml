@@ -468,6 +468,39 @@ jobs:
       - name: Every CI job gates the merge
         run: bash scripts/checks/ci-conclusion-complete.sh
 
+  # The other half of the pair above. actionlint shellchecks the `run:` blocks
+  # EMBEDDED in workflows; the scripts those blocks call — every CI guard, every
+  # vendor fetcher, every deploy probe, the release machinery, the git hooks —
+  # had no static check at all until #2785. `--severity=style` is ShellCheck's
+  # lowest floor, so everything gates: a finding is fixed, or carries a per-line
+  # `# shellcheck disable=SCnnnn` directive with its reason. There is no
+  # .shellcheckrc, deliberately — nothing may turn a code off tree-wide.
+  #
+  # The lane is a committed script so local and CI run the identical check.
+  shellcheck:
+    name: shellcheck
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The upstream RELEASE binary, pinned by version — not the runner's distro
+      # package, which is whatever Ubuntu froze for that image and moves under us
+      # at every runner-image refresh. Every disable directive in this repository
+      # was adjudicated against 0.11.0's diagnostics, so the analyzer version is
+      # part of what the gate means. Fetched by the same SHA-pinned installer the
+      # zizmor job uses, which resolves
+      # github.com/koalaman/shellcheck/releases and verifies the checksum.
+      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+        with:
+          tool: shellcheck@0.11.0
+      - name: Every shell program is clean at severity=style
+        run: bash scripts/checks/shellcheck-lane.sh
+
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files (the legacy essay sweep #1870 closed; the step runs
@@ -1971,6 +2004,7 @@ jobs:
       - no-attribution
       - workflow-audit
       - workflow-lint
+      - shellcheck
       - comment-style
       - default-style
       - docs-claims

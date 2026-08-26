@@ -113,6 +113,7 @@ k8s_try_db_hosts() {
   # so the output is lost and reads like a database that never answered (the
   # same race that false-flagged P-K8S-UI-SERVE).
   local name="probe-hostcheck-$$-$RANDOM" out phase _i
+  # shellcheck disable=SC2016 # $h and $(ip route) belong to the busybox shell, not this one
   kubectl run "$name" --image=busybox:1.37 --restart=Never --command -- sh -c '
       for h in host.docker.internal gateway.docker.internal $(ip route | awk "/default/ {print \$3}"); do
         nc -w3 -z "$h" '"$K8S_DB_PORT"' && { echo "HOST=$h"; break; }

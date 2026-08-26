@@ -107,6 +107,9 @@ sync_tree "$WORK/src/Reference/CKM_2013_12_09" "$CKM_PAIRS_DEST/ckm-2013-12-09"
   adls_count=$(find "$root" -name '*.adls' -print | wc -l | tr -d ' ')
   paired_count=$(comm -12 <(hrids '*.adl') <(hrids '*.adls') | wc -l | tr -d ' ')
 
+  # This block writes a markdown document: every backtick inside the printf
+  # formats is markdown code quoting, so the formats stay single-quoted.
+  # shellcheck disable=SC2016
   {
     printf '# ADL 2 archetype pack (with ADL 1.4 twins) — provenance\n\n'
     printf 'Vendored verbatim from `https://github.com/%s`\n' "$REPO"

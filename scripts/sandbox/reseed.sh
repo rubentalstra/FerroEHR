@@ -64,7 +64,7 @@ echo "==> seeding $BASE"
 
 # The demo EHRs, shared across every template so each carries a mixed record.
 ehrs=()
-for e in $(seq 1 "$EHRS"); do
+for _e in $(seq 1 "$EHRS"); do
   ehr=""
   for attempt in $(seq 1 "$ATTEMPTS"); do
     ehr=$(curl -sS -m 60 -u "$AUTH" -X POST "$BASE/ehr" -H 'Prefer: return=minimal' \
@@ -99,7 +99,7 @@ for slug in "${TEMPLATES[@]}"; do
   esac
 
   for ehr in "${ehrs[@]}"; do
-    for c in $(seq 1 "$COMPOSITIONS_PER_EXAMPLE"); do
+    for _c in $(seq 1 "$COMPOSITIONS_PER_EXAMPLE"); do
       code=$(post_retry "composition $slug" "$BASE/ehr/$ehr/composition" \
         -H 'Content-Type: application/json' -H 'Prefer: return=minimal' \
         --data-binary @"$example")

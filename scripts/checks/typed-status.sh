@@ -68,6 +68,7 @@ files=$(collect "$@")
 for f in $files; do
   [[ -f "$f" ]] || continue
   # `.as_u16()` immediately compared, or a `.status()` compared to a literal.
+  # shellcheck disable=SC2016 # the backticks quote a Rust path in the message text
   while IFS=: read -r line body; do
     [[ -n "${line:-}" ]] || continue
     printf '%s:%s: numeric status comparison (%s) — compare the typed \n' \
@@ -88,6 +89,7 @@ for f in $files; do
   # Both are comparisons the `[=!]=` shapes above cannot see; the arm window is
   # scrutinee-anchored so openEHR's own 3-digit codes (249/523/…) matched under
   # non-status scrutinees stay out of scope.
+  # shellcheck disable=SC2016 # the backticks quote a Rust path in the message text
   while IFS=: read -r line body; do
     [[ -n "${line:-}" ]] || continue
     printf '%s:%s: numeric status comparison (%s) — compare the typed \n' \

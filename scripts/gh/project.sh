@@ -99,6 +99,7 @@ item_id_for_issue() {
   # item-list --limit 1000` costs enough GraphQL points that GitHub's
   # secondary rate limit rejects it once the board is large (measured
   # 2026-08-25 at ~2.6k items).
+  # shellcheck disable=SC2016 # $owner/$name/$number are GraphQL variables, bound by the -f flags
   gh api graphql \
     -f owner="${REPO%%/*}" -f name="${REPO##*/}" -F number="$1" \
     -f query='query($owner:String!,$name:String!,$number:Int!){
@@ -150,6 +151,7 @@ cmd_show() {
   resolve_project
   # The issue-side lookup, for the same rate-limit reason as item_id_for_issue.
   local status
+  # shellcheck disable=SC2016 # $owner/$name/$number are GraphQL variables, bound by the -f flags
   status="$(gh api graphql \
     -f owner="${REPO%%/*}" -f name="${REPO##*/}" -F number="$n" \
     -f query='query($owner:String!,$name:String!,$number:Int!){
