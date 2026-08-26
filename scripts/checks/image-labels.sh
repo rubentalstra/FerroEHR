@@ -25,6 +25,12 @@
 # three images (title comes from the repo NAME, so all three would claim to be
 # "FerroEHR"). Two declarations of one fact drift; this makes them fail instead.
 #
+# EVERY workflow that declares them is checked, not one: the develop lane
+# (containers.yml) and the release pipeline (release.yml) each carry the three
+# `uses: build-image.yml` calls with their labels (#2776), so a label corrected
+# in one of them alone would publish a differently-described image at a release
+# than on develop.
+#
 # Ownership, which is what the checks below encode:
 #   build-INDEPENDENT (title, description, url, documentation, source, vendor,
 #     authors, licenses, base.name, base.digest) — both places, identical values
@@ -36,7 +42,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-WORKFLOW=.github/workflows/containers.yml
+WORKFLOWS=".github/workflows/containers.yml
+.github/workflows/release.yml"
 # image name : Dockerfile. Each publishing lane is a `uses:` call of the
 # reusable build-image.yml, keyed by its full `image:` input ref matched to
 # end-of-line — `ferroehr` is a prefix of `ferroehr-admin-ui`, so a bare name
@@ -91,22 +98,24 @@ for entry in $IMAGES; do
 
   for key in $SHARED; do
     d=$(dockerfile_label "$dockerfile" "$key" || true)
-    w=$(workflow_label "$image" "$key" || true)
     if [[ -z "$d" ]]; then
       report "image-labels: $dockerfile declares no org.opencontainers.image.$key"
       continue
     fi
-    if [[ -z "$w" ]]; then
-      report "image-labels: $WORKFLOW declares no org.opencontainers.image.$key for $image"
-      continue
-    fi
-    # The Dockerfile substitutes ${VERSION}/${REVISION} from build args; the
-    # shared keys are all literals, so a plain comparison is right.
-    if [[ "$d" != "$w" ]]; then
-      report "image-labels: $image .$key disagrees —
+    for WORKFLOW in $WORKFLOWS; do
+      w=$(workflow_label "$image" "$key" || true)
+      if [[ -z "$w" ]]; then
+        report "image-labels: $WORKFLOW declares no org.opencontainers.image.$key for $image"
+        continue
+      fi
+      # The Dockerfile substitutes ${VERSION}/${REVISION} from build args; the
+      # shared keys are all literals, so a plain comparison is right.
+      if [[ "$d" != "$w" ]]; then
+        report "image-labels: $image .$key disagrees —
     $dockerfile: $d
     $WORKFLOW: $w"
-    fi
+      fi
+    done
   done
 
   # base.name/base.digest must match the runtime stage's actual FROM pin, or the
@@ -157,16 +166,18 @@ fi
 
 # Annotations must reach the INDEX, which is the only place GHCR reads a package
 # description from. The publishing mechanics live ONCE in the reusable
-# build-image.yml lane; containers.yml calls it once per image.
+# build-image.yml lane; each publishing workflow calls it once per image.
 levels=$(grep -c 'DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest' "$BUILD_WORKFLOW" || true)
 [[ "$levels" -eq 1 ]] \
   || report "image-labels: expected the one reusable metadata step with DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest in $BUILD_WORKFLOW, found $levels"
 annots=$(grep -c 'annotations: ${{ steps.meta.outputs.annotations }}' "$BUILD_WORKFLOW" || true)
 [[ "$annots" -eq 1 ]] \
   || report "image-labels: expected the one reusable build step passing the annotations output in $BUILD_WORKFLOW, found $annots"
-lanes=$(grep -c 'uses: ./.github/workflows/build-image.yml' "$WORKFLOW" || true)
-[[ "$lanes" -eq 3 ]] \
-  || report "image-labels: expected 3 publishing lanes calling build-image.yml in $WORKFLOW, found $lanes"
+for WORKFLOW in $WORKFLOWS; do
+  lanes=$(grep -c 'uses: ./.github/workflows/build-image.yml' "$WORKFLOW" || true)
+  [[ "$lanes" -eq 3 ]] \
+    || report "image-labels: expected 3 publishing lanes calling build-image.yml in $WORKFLOW, found $lanes"
+done
 
 # The one predefined key we deliberately leave unset, recorded rather than
 # silently skipped: `ref.name` is "name of the reference for a target", which the
