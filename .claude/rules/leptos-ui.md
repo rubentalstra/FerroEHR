@@ -301,10 +301,11 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   `scripts/ui-e2e.sh` with `UI_E2E_DOCS_SHOTS=1` and commit the PNGs) OR
   carry the **`no-ui-visual-change`** PR label — reserved for changes with
   zero visual effect (doc comments, server-side-only logic, test-only
-  edits). The label is read from the PR event payload, so adding it AFTER
-  the guard has failed needs a fresh event: close + reopen the PR (a
-  re-run of the failed job re-uses the stale payload — same gotcha as
-  `no-changelog` on the changelog-guard).
+  edits). The label is read from the PR event payload, so a RE-RUN of the
+  failed job re-uses the stale payload and stays red — but applying the
+  label now raises a fresh run by itself: `ci.yml` listens for the
+  `labeled`/`unlabeled` pull-request types (#2777), whose payload carries
+  the current label set. The old close-and-reopen dance is gone.
 
 ## 11. Islands (deferred option — do not use yet)
 
