@@ -127,8 +127,12 @@ EOF
   if [[ "$DRY_RUN" = "1" ]]; then
     sed 's/^/    │ /' "$tmp/body.md"
   else
-    # Ensure the per-release collection label exists (idempotent).
-    gh label create "$up_label" --description "Changes arriving with the upstream $comp Release-$latest" --color BFD4F2 2>/dev/null || true
+    # Ensure the per-release collection label exists. --force makes an existing
+    # label a success (it re-applies the deterministic description/colour), so
+    # a real failure — permissions, transport — fails the probe loudly HERE
+    # instead of surfacing later as a confusing `gh issue create` refusal of a
+    # label that never got made (#2797).
+    gh label create "$up_label" --force --description "Changes arriving with the upstream $comp Release-$latest" --color BFD4F2
   fi
   # `--on-existing skip` re-runs the dedup at filing time: a race that lands a
   # covering issue between the check above and here must not double-file, and
