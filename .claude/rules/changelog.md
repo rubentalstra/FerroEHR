@@ -70,7 +70,11 @@ optional:
   released version whose image annotations and generated README agree with it —
   `scripts/checks/chart-appversion.sh`, run by the `chart-appversion` CI job and
   again by the release pipeline's `plan` at the tagged commit. Refreshing that
-  default is ordinary maintenance, not a release step.
+  default is ordinary maintenance, not a release step — but bounded maintenance
+  (#2804): the guard also refuses a default more than ONE stable release behind
+  the newest changelog section (rc sections never qualify), so the release PR
+  that cuts X.Y.Z needn't touch it, and the next one fails until it is
+  refreshed.
 - **The chart publishes as the release pipeline's `chart` leg** (`build-chart.yml`,
   called by `release.yml` after the scanned tags apply; `publish-chart.yml` is
   the dispatch-only dry-run/recovery lane between releases): it refuses to
