@@ -46,6 +46,29 @@ listing blocks of the vendored QUERY spec examples (the same extraction the
 `openehr-query` corpus test performs), and the query text of the CNF catalogue's
 cases.
 
+## Recorded regressions
+
+`fuzz/seeds/` is generated output and is **gitignored**; `fuzz/regressions/` is
+the tracked half. Every input that reproduced a real crash, leak or timeout is
+committed under `fuzz/regressions/<target>/` and linked into that target's seed
+directory by `seeds.sh`, after the wipe — so a finding is re-checked by every
+run, forever, instead of living on one machine until the next `seeds.sh`.
+
+The corpus is not a substitute for a test: a fixed defect is also pinned by a
+regression test in the crate that owns the code
+(`.claude/rules/fuzzing.md`). Reproducing one artifact directly — name the
+FILE, which libFuzzer runs once and exits:
+
+```sh
+cargo +nightly fuzz run -s none aql_query \
+  fuzz/regressions/aql_query/timeout_2758_nested_predicates.aql
+```
+
+Never pass `fuzz/regressions/<target>/` as the first corpus argument: libFuzzer
+treats its first corpus directory as **writable** and fills it with generated
+inputs, which is exactly what this directory must not accumulate. The seed
+directory reaches it read-only, as the second corpus argument (below).
+
 ## Running
 
 `cargo-fuzz` needs a **nightly** toolchain, and `fuzz/` is therefore its own

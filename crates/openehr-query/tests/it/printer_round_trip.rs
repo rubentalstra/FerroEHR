@@ -111,8 +111,8 @@ fn a_parenthesised_contains_is_not_its_unparenthesised_twin() {
 /// The nightly fuzz artifact (#2746): this exact input exposed the
 /// `Recursive::declare` Rc cycle that leaked one parser graph per
 /// `parse_str` call. The leak property itself is guarded by the nightly
-/// `LeakSanitizer` lane over the committed seed
-/// (`fuzz/seeds/aql_query/leak_2746_simple_select.aql`); this pins the
+/// `LeakSanitizer` lane over the tracked artifact
+/// (`fuzz/regressions/aql_query/leak_2746_simple_select.aql`); this pins the
 /// behavioural half — the restructured recursion parses and round-trips the
 /// same query.
 #[test]
