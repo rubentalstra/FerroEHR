@@ -7,6 +7,7 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+mod backtracking;
 mod corpus;
 mod parse_errors;
 mod printer_round_trip;
