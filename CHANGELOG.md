@@ -28,6 +28,10 @@ workflow refuses a tag that has no matching section here.
   sequences into the AST, and four printer sites emitted the decoded value
   verbatim, so a printed query re-decoded them on the next parse and
   drifted. A stored query now round-trips to the identical AST.
+- Refusing an invalid AQL query with nested `[` predicate openers took
+  exponential time (a 222-byte input parsed for seconds to minutes, doubling
+  per nesting level). The node-predicate grammar now parses its shared path
+  prefix once, so refusal time stays near-linear in input length.
 
 ### Security
 
