@@ -48,8 +48,12 @@ optional:
   version match is missing**. Releases publish as OFFICIAL
   releases — `prerelease` is true only for an explicitly suffixed tag
   (`vX.Y.Z-rc1`, ...) — owner sign-off 2026-07-31.
-- **The Helm chart, in the SAME release PR:** bump the chart's own `version` if
-  any packaged chart content changed in the cycle (`chart-version-guard`), and
+- **The Helm chart, in the SAME release PR:** bump the chart's own `version` —
+  EVERY release, not only on chart diffs: since #2779 the packaged chart's
+  release facts (appVersion, image tags, changes) are injected at package
+  time, so every release ships a DISTINCT packaged chart, and an unbumped
+  version collides with refuse-overwrite at the tag (#2818 — the pipeline's
+  `plan` refuses that tag before anything builds). Then
   regenerate whatever that change moved — the golden renders
   (`deploy/helm/validate.sh --update`) and the generated chart README
   (`helm-docs --chart-search-root deploy/helm/ferroehr --template-files
