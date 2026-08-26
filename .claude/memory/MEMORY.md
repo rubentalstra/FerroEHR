@@ -33,3 +33,4 @@
 - [Rewrite fn docs on update](rewrite-fn-docs-on-update.md) — always fully rewrite a touched function's doc comment; include the /// block in old_string so docs never orphan
 - [UNLOGGED node rejected](unlogged-node-rejected.md) — owner ruling 2026-08-25: node stays LOGGED; never re-propose reduced-durability storage tiers (measured record on #2698)
 - [Public comments: one and short](public-comments-one-and-short.md) — external-facing threads get exactly ONE short plain comment; edit it rather than adding another
+- [No AI tells in prose](no-ai-tells-in-prose.md) — em dashes, not-X-but-Y, triads, buzzwords banned in all drafted prose

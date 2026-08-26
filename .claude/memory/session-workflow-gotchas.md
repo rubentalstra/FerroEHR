@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-08-26T12:01:18.434Z
+  modified: 2026-08-26T12:03:26.100Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
@@ -71,7 +71,12 @@ Recurring session-workflow traps (all hit 2026-07-13/14):
    trigger time), so adding the label then rerunning the failed job still
    fails. Since #2777 ci.yml listens for `labeled`/`unlabeled`, so applying
    the label raises a fresh run by itself — wait for that run, never re-run
-   the stale one (close+reopen is obsolete). Also (hit 2026-07-20):
+   the stale one (close+reopen is obsolete). Corollary (hit 2026-08-26):
+   `gh pr create --label X` fires opened+labeled in the same second — the
+   opened run gets CANCELLED and `gh pr checks` then shows its rows as
+   `fail` beside the live run's rows. Monitor the RUN ID
+   (`gh run list --branch <br>`), never the mixed pr-checks rows. Also
+   (hit 2026-07-20):
    a label a workflow references must actually EXIST in the repo —
    `no-ui-visual-change` didn't until it was first needed; `gh label
    create` fails loudly at apply time, the workflow never warns.
