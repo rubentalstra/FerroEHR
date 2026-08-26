@@ -19,17 +19,21 @@
 # CVE exposure surfaces through the image scans, and the rust image follows
 # the toolchain watcher's bumps.
 #
-# A finding files/updates ONE tracking issue (the image-scan.yml dedup
-# pattern); the run itself stays green — a newer base is actionable, not
-# broken. Remediation: the base-bump checklist in
+# RUN COLOUR (the watcher family's uniform rule, #2778). A finding files or
+# updates ONE tracking issue through .github/actions/file-watcher-issue and the
+# run stays GREEN — a newer base is actionable, not broken. The run goes RED only
+# when the PROBE fails: the Docker Hub tag API unreachable, the pinned tag
+# unresolvable, an answer jq cannot read. Remediation: the base-bump checklist in
 # .claude/rules/image-security.md.
 name: Base image watcher
 
 on:
   schedule:
-    # Mondays 07:43 UTC — off the hour, after the 07:13 published-image scan,
-    # clear of the other scheduled lanes (05:17/05:23/05:37/06:17/06:47).
-    - cron: "43 7 * * 1"
+    # Mondays 08:13 UTC — off the hour (GitHub delays on-the-hour runs under
+    # load) and in a slot of its own: it shared 07:43 with the toolchain watcher
+    # until #2778. Read the estate's slots with
+    # `grep -rE '^ +- cron:' .github/workflows/`.
+    - cron: "13 8 * * 1"
   workflow_dispatch: {}
 
 concurrency:
@@ -89,30 +93,21 @@ jobs:
           echo "stale=${stale:-0}" >> "$GITHUB_OUTPUT"
           cat details.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: File or update the tracking issue
+      - name: Write the tracking-issue body
         if: steps.check.outputs.stale == '1'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          title="chore(images): the pinned postgres base is stale — newer upstream bytes exist"
-          existing=$(gh issue list --repo "$REPO" --state open --search "in:title \"$title\"" \
-                       --json number --jq '.[0].number // empty')
-          cat > body.md <<'PREAMBLE'
-          The weekly base-image watcher found the digest-pinned postgres base behind upstream.
+          {
+            printf 'The weekly base-image watcher found the digest-pinned postgres base behind upstream.\n\n'
+            cat details.md
+            printf '\nRemedy: the base-bump pin-site checklist in `.claude/rules/image-security.md`,\n'
+            printf 'verified with `scripts/security/scan-images.sh --candidate` before merge.\n'
+          } > body.md
 
-          PREAMBLE
-          cat details.md >> body.md
-          cat >> body.md <<'REMEDY'
-
-          Remedy: the base-bump pin-site checklist in `.claude/rules/image-security.md`,
-          verified with `scripts/security/scan-images.sh --candidate` before merge.
-          REMEDY
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --repo "$REPO" --body-file body.md
-            echo "commented on #$existing"
-          else
-            gh issue create --repo "$REPO" --title "$title" \
-              --label chore --label P2 --body-file body.md
-          fi
+      - name: File or update the tracking issue
+        if: steps.check.outputs.stale == '1'
+        uses: ./.github/actions/file-watcher-issue
+        with:
+          title: "chore(images): the pinned postgres base is stale — newer upstream bytes exist"
+          body-file: body.md
+          labels: chore,P2
