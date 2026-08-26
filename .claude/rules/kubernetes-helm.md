@@ -195,6 +195,7 @@ evidence if it ran in an enforcing namespace — say which.
 | Golden render drift | CI compare against `deploy/helm/golden/` |
 | Chart version bump on packaged-content change | `chart-version-guard` |
 | The committed `appVersion` names a released version, and the image annotations + generated README agree with it | `chart-appversion-guard` → `scripts/checks/chart-appversion.sh` (mutation-proven). The PUBLISHED appVersion and image tags are INJECTED at package time, not guarded in the tree — #2779 |
+| The committed `appVersion` is FRESH: one of the two newest STABLE releases (an rc never qualifies) | the same guard, property 5 (#2804, mutation-proven). One-stable-behind is the deliberate slack that keeps #2779: the cutting release PR needn't refresh, the one after it fails until someone does — a deterministic guard, not a scheduled watcher |
 | Field-vs-`kubeVersion` availability | **review-enforced** — no tool knows which fields a manifest uses; §1 is the procedure |
 | Applied posture, admission, readiness gating, secret reads | `scripts/deploy-probe-k8s.sh` — observed on a live cluster, machine-readable record |
 | Live behaviour beyond those probes | **review-enforced** — the `/k8s-test` skill is the procedure; the PR quotes observations |

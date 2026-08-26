@@ -38,6 +38,19 @@
 #      behind (6.0.19/4.0.4 against a 6.0.20/4.0.5 chart) and only a local
 #      `deploy/helm/validate.sh` noticed, because the CI drift check skips
 #      itself when helm-docs is not installed on the runner.
+#   5. `appVersion` is FRESH: one of the two newest STABLE releases in
+#      CHANGELOG.md (#2804). With the cut no longer bumping it (#2779), nothing
+#      moved the committed default and the gap between it and the tree's
+#      advancing `config` defaults grew unboundedly, unseen by any lane
+#      (chart-boot overrides the image; the dispatch judge uses sha-/develop).
+#      "One stable behind" is the deliberate slack that keeps #2779's design:
+#      the release PR that cuts X.Y.Z does NOT have to refresh (that would
+#      re-impose the hand edit), but the one after it fails here until someone
+#      does — bounded lag, enforced by the guard tier that already runs,
+#      instead of a scheduled watcher filing issues. Stable sections only:
+#      an -rc default would hand production installs a pre-release image, so
+#      an rc never satisfies this arm even though property 1 accepts it as
+#      "released".
 #
 # What is deliberately NOT checked here any more: equality with the workspace
 # version. Asserting it would re-impose the hand edit this change removes.
@@ -73,6 +86,17 @@ if ! grep -qE "^## \[${app//./\\.}\]" "$CHANGELOG"; then
   report "$CHART appVersion is $app, which has no '## [$app]' section in $CHANGELOG — the committed appVersion is the default image tag for a chart packaged outside a release, so it must name a version that was actually published. (A release no longer needs to bump it: build-chart.yml injects the released version with 'helm package --app-version'.)"
 fi
 
+# 5. Fresh: one of the two newest stable releases (rc/pre-release sections are
+#    skipped — a suffixed default would hand production installs a pre-release).
+stable=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "$CHANGELOG" | head -2 | tr -d '[]# ')
+stable1=$(printf '%s\n' "$stable" | sed -n 1p)
+stable2=$(printf '%s\n' "$stable" | sed -n 2p)
+if [[ -z "$stable1" ]]; then
+  report "$CHANGELOG has no stable '## [X.Y.Z]' section to hold the appVersion against."
+elif [[ "$app" != "$stable1" && "$app" != "$stable2" ]]; then
+  report "$CHART appVersion is $app, but the two newest stable releases are ${stable1} and ${stable2:-—}. The committed default may lag the newest cut by at most one stable release (#2804) — refresh it (appVersion + the artifacthub.io/images tags + the generated README: helm-docs --chart-search-root deploy/helm/ferroehr --template-files README.md.gotmpl)."
+fi
+
 # 2. The image annotation agrees with it.
 bad=$(grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' "$CHART" | grep -v ":${app}\$" || true)
 if [[ -n "$bad" ]]; then
@@ -103,4 +127,4 @@ fi
 if [[ "$failures" -gt 0 ]]; then
   exit 1
 fi
-echo "chart-appversion: appVersion $app is a released version, the artifacthub.io/images tags and the generated README agree with it, and no injected annotation is committed — OK."
+echo "chart-appversion: appVersion $app is a stable release at most one behind the newest ($stable1), the artifacthub.io/images tags and the generated README agree with it, and no injected annotation is committed — OK."
