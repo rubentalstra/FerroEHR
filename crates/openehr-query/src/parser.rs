@@ -329,10 +329,51 @@ fn path_parsers<'a>() -> (
     impl Parser<'a, &'a [Token], PathPredicate, Err<'a>> + Clone,
     impl Parser<'a, &'a [Token], StandardPredicate, Err<'a>> + Clone,
 ) {
-    let mut identified = Recursive::declare();
-    let mut object = Recursive::declare();
-    let mut predicate = Recursive::declare();
+    // The only genuine recursion is objectPath → pathPart → pathPredicate →
+    // objectPath, expressed through `recursive`'s WEAK self-handle. The
+    // former three `Recursive::declare` handles owned each other through
+    // their definitions (object ⇄ predicate) — an Rc cycle chumsky never
+    // breaks, one leaked parser graph per `parse_str` call (#2746). The
+    // predicate family the caller receives is a second instance over the
+    // finished `object`, held OUTSIDE its definition, so it drops with the
+    // query parser.
+    let object = recursive(|object| {
+        let (predicate, _standard) = predicate_parsers(object);
+        // pathPart : IDENTIFIER pathPredicate?
+        let path_part = ident()
+            .then(predicate.or_not())
+            .map(|(name, predicate)| PathPart { name, predicate });
+        // objectPath : pathPart ('/' pathPart)*
+        path_part
+            .separated_by(just(Token::Slash))
+            .at_least(1)
+            .collect::<Vec<_>>()
+            .map(|parts| ObjectPath { parts })
+    });
+    let (predicate, standard) = predicate_parsers(object.clone());
 
+    // identifiedPath : IDENTIFIER pathPredicate? ('/' objectPath)?
+    let identified = ident()
+        .then(predicate.clone().or_not())
+        .then(just(Token::Slash).ignore_then(object).or_not())
+        .map(|((root, predicate), path)| IdentifiedPath {
+            root,
+            predicate,
+            path,
+        });
+
+    (identified, predicate, standard)
+}
+
+/// The `pathPredicate` and `standardPredicate` parsers over a given
+/// `objectPath` parser — the non-recursive half of the path grammar
+/// ([`path_parsers`] wires the recursion).
+fn predicate_parsers<'a>(
+    object: impl Parser<'a, &'a [Token], ObjectPath, Err<'a>> + Clone + 'a,
+) -> (
+    impl Parser<'a, &'a [Token], PathPredicate, Err<'a>> + Clone,
+    impl Parser<'a, &'a [Token], StandardPredicate, Err<'a>> + Clone,
+) {
     // pathPredicateOperand : primitive | objectPath | PARAMETER | ID_CODE | AT_CODE
     let code = select! { Token::IdCode(s) => s, Token::AtCode(s) => s };
     let predicate_operand = primitive()
@@ -404,44 +445,16 @@ fn path_parsers<'a>() -> (
     // comparison classifies as `PathPredicate::Standard`. We realise that split
     // by parsing the node boolean tree and lifting a *top-level* bare
     // `NodePredicate::Standard` back out; `archetype` wins for a plain HRID.
-    predicate.define(
-        archetype
-            .clone()
-            .map(PathPredicate::Archetype)
-            .or(node.map(|n| match n {
-                NodePredicate::Standard(s) => PathPredicate::Standard(s),
-                other => PathPredicate::Node(Box::new(other)),
-            }))
-            .delimited_by(just(Token::LeftBracket), just(Token::RightBracket)),
-    );
+    let predicate = archetype
+        .clone()
+        .map(PathPredicate::Archetype)
+        .or(node.map(|n| match n {
+            NodePredicate::Standard(s) => PathPredicate::Standard(s),
+            other => PathPredicate::Node(Box::new(other)),
+        }))
+        .delimited_by(just(Token::LeftBracket), just(Token::RightBracket));
 
-    // pathPart : IDENTIFIER pathPredicate?
-    let path_part = ident()
-        .then(predicate.clone().or_not())
-        .map(|(name, predicate)| PathPart { name, predicate });
-
-    // objectPath : pathPart ('/' pathPart)*
-    object.define(
-        path_part
-            .separated_by(just(Token::Slash))
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .map(|parts| ObjectPath { parts }),
-    );
-
-    // identifiedPath : IDENTIFIER pathPredicate? ('/' objectPath)?
-    identified.define(
-        ident()
-            .then(predicate.clone().or_not())
-            .then(just(Token::Slash).ignore_then(object.clone()).or_not())
-            .map(|((root, predicate), path)| IdentifiedPath {
-                root,
-                predicate,
-                path,
-            }),
-    );
-
-    (identified, predicate, standard)
+    (predicate, standard)
 }
 
 // ── functions & terminals ───────────────────────────────────────────────────
@@ -464,15 +477,10 @@ fn terminology_fn<'a>() -> impl Parser<'a, &'a [Token], TerminologyFunction, Err
         })
 }
 
-/// `functionCall` and `aggregateFunctionCall`, given the `identified_path` and
-/// `terminal` parsers.
-fn function_parsers<'a>(
-    identified: impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone + 'a,
+/// `functionCall`, given the `terminal` parser (its argument grammar).
+fn function_parser<'a>(
     terminal: impl Parser<'a, &'a [Token], Terminal, Err<'a>> + Clone + 'a,
-) -> (
-    impl Parser<'a, &'a [Token], FunctionCall, Err<'a>> + Clone,
-    impl Parser<'a, &'a [Token], AggregateCall, Err<'a>> + Clone,
-) {
+) -> impl Parser<'a, &'a [Token], FunctionCall, Err<'a>> + Clone {
     // functionCall : terminologyFunction | name '(' (terminal (',' terminal)*)? ')'
     // The STRING function `CONTAINS(expr, substring)` shares its name with the
     // containment keyword (QUERY master03 §Functions/String functions) — in
@@ -487,8 +495,15 @@ fn function_parsers<'a>(
                 .delimited_by(just(Token::LeftParen), just(Token::RightParen)),
         )
         .map(|(name, args)| FunctionCall::Named { name, args });
-    let function = terminology_fn().map(FunctionCall::Terminology).or(named);
+    terminology_fn().map(FunctionCall::Terminology).or(named)
+}
 
+/// `aggregateFunctionCall`, given the `identified_path` parser (aggregates
+/// take a path or `*`, never a `terminal` — which is what lets this builder
+/// live outside the `terminal` recursion, #2746).
+fn aggregate_parser<'a>(
+    identified: impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone + 'a,
+) -> impl Parser<'a, &'a [Token], AggregateCall, Err<'a>> + Clone {
     // aggregateFunctionCall
     let count = just(Token::Count).ignore_then(
         just(Token::Distinct)
@@ -517,7 +532,7 @@ fn function_parsers<'a>(
                 .delimited_by(just(Token::LeftParen), just(Token::RightParen)),
         )
         .map(|(func, path)| AggregateCall::Stat { func, path });
-    (function, count.or(stat))
+    count.or(stat)
 }
 
 // ── top-level query ──────────────────────────────────────────────────────────
@@ -534,16 +549,24 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     let (identified, predicate, standard) = path_parsers();
 
     // terminal : primitive | PARAMETER | identifiedPath | functionCall
-    // (functionCall needs terminal → declare terminal recursively.)
-    let mut terminal = Recursive::declare();
-    let (function, aggregate) = function_parsers(identified.clone(), terminal.clone());
-    terminal.define(
+    // (functionCall needs terminal → the self-reference goes through
+    // `recursive`'s WEAK handle. `Recursive::declare` hands out an OWNED
+    // handle, and embedding its clone in its own `define` is an Rc cycle
+    // chumsky never breaks — one leaked parser graph per `parse_str` call,
+    // found by the nightly LeakSanitizer lane, #2746.)
+    let terminal = recursive(|terminal| {
+        let function = function_parser(terminal);
         primitive()
             .map(Terminal::Primitive)
             .or(parameter().map(Terminal::Parameter))
-            .or(function.clone().map(Terminal::Function))
-            .or(identified.clone().map(Terminal::Path)),
-    );
+            .or(function.map(Terminal::Function))
+            .or(identified.clone().map(Terminal::Path))
+    });
+    // The column-level functionCall is its own instance: it holds an OWNED
+    // handle to `terminal`, which is cycle-free because it lives outside
+    // terminal's definition and drops with the query parser.
+    let function = function_parser(terminal.clone());
+    let aggregate = aggregate_parser(identified.clone());
 
     // ── SELECT ──
     // columnExpr : identifiedPath | primitive | aggregateFunctionCall | functionCall

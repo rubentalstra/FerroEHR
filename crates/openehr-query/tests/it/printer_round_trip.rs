@@ -107,3 +107,15 @@ fn a_parenthesised_contains_is_not_its_unparenthesised_twin() {
         "the CONTAINS operand is greedy, so these two sources must not parse alike"
     );
 }
+
+/// The nightly fuzz artifact (#2746): this exact input exposed the
+/// `Recursive::declare` Rc cycle that leaked one parser graph per
+/// `parse_str` call. The leak property itself is guarded by the nightly
+/// LeakSanitizer lane over the committed seed
+/// (`fuzz/seeds/aql_query/leak_2746_simple_select.aql`); this pins the
+/// behavioural half — the restructured recursion parses and round-trips the
+/// same query.
+#[test]
+fn the_leak_artifact_query_still_parses_and_round_trips() {
+    assert_round_trips("SELECT e/ehr_id/value FROM EHR e\n");
+}
