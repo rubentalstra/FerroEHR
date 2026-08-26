@@ -46,6 +46,15 @@ on:
         required: false
         type: string
         default: ""
+      defer-tags:
+        description: >-
+          Push by DIGEST only, applying no tags. The caller tags the digest
+          itself (docker buildx imagetools create) after its own gates pass,
+          using the computed list in the `tags` output — so a failed gate
+          leaves nothing referencable (#2747).
+        required: false
+        type: boolean
+        default: false
       qemu:
         description: Set up QEMU (needed when a RUN layer executes foreign-arch code).
         required: false
@@ -76,6 +85,11 @@ on:
       digest:
         description: The pushed image index digest.
         value: ${{ jobs.build.outputs.digest }}
+      tags:
+        description: >-
+          The newline-separated tag list the metadata step computed — what a
+          defer-tags caller applies once its gates pass.
+        value: ${{ jobs.build.outputs.tags }}
 
 permissions: {}
 
@@ -93,6 +107,7 @@ jobs:
       attestations: write # store them against this repository
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      tags: ${{ steps.meta.outputs.tags }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -175,6 +190,10 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
 
+      # With defer-tags the push is BY DIGEST (type=image,push-by-digest): the
+      # index lands in the registry untagged, and the caller applies the
+      # computed tags only after its gates pass. Attestations bind the digest,
+      # so they are identical either way.
       - name: Package and push
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
@@ -183,8 +202,11 @@ jobs:
           file: ${{ inputs.dockerfile }}
           target: ${{ inputs.target }}
           platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          push: ${{ !inputs.defer-tags }}
+          outputs: ${{ inputs.defer-tags && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', inputs.image) || '' }}
+          # Inverted ternary on purpose: the truthy arm must be the non-empty
+          # value (a falsy '' true-arm would fall through to the tags).
+          tags: ${{ !inputs.defer-tags && steps.meta.outputs.tags || '' }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
           build-args: ${{ steps.args.outputs.list }}
