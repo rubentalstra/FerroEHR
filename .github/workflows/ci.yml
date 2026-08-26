@@ -7,15 +7,55 @@ name: CI
 on:
   push:
     branches: [develop]
+  # The types are spelled out (#2777) because the implicit default is
+  # `[opened, synchronize, reopened]` only: applying an escape-hatch label
+  # (`no-changelog`, `no-chart-bump`, `no-crate-bump`, `no-ui-visual-change`)
+  # re-ran nothing, so the documented remedy was to close and reopen the pull
+  # request to manufacture a fresh event. Every guard reads its label from the
+  # event payload (`github.event.pull_request.labels`), which the
+  # labeled/unlabeled payload carries CURRENT, so the label now takes effect on
+  # the run it triggers.
+  #
+  # `labeled`/`unlabeled` fire once PER LABEL, so editing three labels queues
+  # three runs — the concurrency group below collapses them, because PR runs
+  # supersede within the pull request.
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  # Declared before any merge queue exists, because a queue reports its checks
+  # on this event alone: "you need to update the workflows to include the
+  # merge_group event as an additional trigger. Otherwise, status checks will
+  # not be triggered when you add a pull request to a merge queue"
+  # (https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#merge_group).
+  # Enabling a queue is then a repository-settings change, not a workflow one.
+  merge_group:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # PR runs supersede within their own pull request (`github.ref` is
+  # `refs/pull/N/merge`); every other event gets a group of its own COMMIT.
+  #
+  # Pending cancellation is not governed by `cancel-in-progress`: "By default,
+  # any existing pending job or workflow in the same concurrency group will be
+  # canceled and the new queued job or workflow will take its place"
+  # (https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency).
+  # With a per-ref group every develop push shared one group, so a push that
+  # queued behind a running one was cancelled by the next push and its guard
+  # tier never reported at all — which is what happened to the v4.0.5 release
+  # merge commit (run 32951162038). Keying non-PR runs by SHA gives each push
+  # and each merge-group entry a group of its own, so nothing can pend behind a
+  # sibling (#2777).
+  #
+  # `case(pred, value, default)` is the documented conditional-value function —
+  # "Evaluates predicates in order and returns the value corresponding to the
+  # first predicate that evaluates to true. If no predicate matches, it returns
+  # the last argument as the default value"
+  # (https://docs.github.com/en/actions/reference/workflows-and-actions/expressions)
+  # — used in preference to the `a && b || c` idiom, which the operator table
+  # does not define.
+  group: ci-${{ case(github.event_name == 'pull_request', github.ref, github.sha) }}
   # Cancel superseded PR runs, NEVER a develop run. The change filter below
   # compares only THIS push's delta, so a develop run cancelled mid-flight is
   # never re-evaluated by the next push if that push touches no code — a
   # defect can then land permanently with every job reported green-or-skipped.
-  # (https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # No permissions by default; every job grants itself the minimum it needs
@@ -41,6 +81,16 @@ env:
   CARGO_PROFILE_DEV_DEBUG: "0"
   CARGO_PROFILE_TEST_DEBUG: "0"
   # Every job here is REQUIRED — there is no advisory tier.
+  #
+  # Event gating (#2777), the rule behind every `if:` in this file that names
+  # an event: a job reading `pull_request` OR `merge_group` is a WHOLE-TREE
+  # check, and it must report inside a merge queue too, because a queue runs
+  # the required checks on the merge_group event alone. A job gated on
+  # `pull_request` ALONE reads pull-request context the merge_group payload
+  # does not carry — a `base..head` diff of the pull request, or one of the
+  # escape-hatch labels — and it has already gated that pull request before
+  # the queue ever builds a group. Everything else is ungated by event and
+  # runs on all three.
   #
   # Cache policy (the ruff/polars `save-if` idiom): only develop writes the
   # per-job rust-cache entries; PR branches restore develop's warm cache and
@@ -107,12 +157,21 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
           PUSH_BEFORE: ${{ github.event.before }}
           PUSH_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = "pull_request" ]; then
             base="$PR_BASE"; head="$PR_HEAD"
+          elif [ "$EVENT_NAME" = "merge_group" ]; then
+            # A merge group is checked out as the queue ref, whose head is
+            # `github.sha` ("GITHUB_SHA: SHA of the merge group" — the
+            # events-that-trigger-workflows reference), sitting on top of the
+            # base-branch tip the group was built from. The delta is therefore
+            # base_sha..github.sha. If that base does not resolve, the fallback
+            # below runs every job rather than gating nothing (#2777).
+            base="$QUEUE_BASE"; head="$PUSH_SHA"
           else
             base="$PUSH_BEFORE"; head="$PUSH_SHA"
           fi
@@ -284,6 +343,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
           PUSH_BEFORE: ${{ github.event.before }}
           PUSH_SHA: ${{ github.sha }}
         run: |
@@ -291,6 +351,14 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             range="$PR_BASE..$PR_HEAD"
             base="$PR_BASE"
+          elif [ "$EVENT_NAME" = "merge_group" ]; then
+            # The queued commits, resolved the same way the change filter does
+            # it (#2777). `github.event.before` is absent on this event, so
+            # falling through to the push branch would build the range
+            # `..<sha>` — which git reads as `HEAD..<sha>`, i.e. nothing — and
+            # this guard would pass vacuously on every queued pull request.
+            range="$QUEUE_BASE..$PUSH_SHA"
+            base="$QUEUE_BASE"
           else
             range="$PUSH_BEFORE..$PUSH_SHA"
             base="$PUSH_BEFORE"
@@ -396,11 +464,11 @@ jobs:
 
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
-  # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
-  # closes, then flips to --all.
+  # hand-written .rs files (the legacy essay sweep #1870 closed; the step runs
+  # --all).
   comment-style:
     name: comment-style
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -415,7 +483,7 @@ jobs:
 
   spec-citations:
     name: spec-citations
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -434,7 +502,7 @@ jobs:
   # so one apostrophe in a comment breaks the script.
   no-python:
     name: no-python
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -456,7 +524,7 @@ jobs:
   # migration or script travels with it (#2326).
   spdx-headers-text:
     name: spdx-headers-text
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -470,7 +538,7 @@ jobs:
 
   copyright-holder:
     name: copyright-holder
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -484,7 +552,7 @@ jobs:
 
   license-text:
     name: license-text
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -507,7 +575,7 @@ jobs:
   # forbidden here.
   licensing:
     name: licensing
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -571,7 +639,7 @@ jobs:
   # the reviewer both believe it did.
   compose-hardening:
     name: compose-hardening
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -590,7 +658,7 @@ jobs:
   # the #2034 sweep runs.
   error-source-chain:
     name: error-source-chain
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -613,7 +681,7 @@ jobs:
   # single-reader `const` check — that one counts readers tree-wide).
   default-style:
     name: default-style
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -646,7 +714,7 @@ jobs:
   # script's header and in `.claude/rules/docs-website.md`.
   docs-claims:
     name: docs-claims
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -676,7 +744,7 @@ jobs:
   # clean, and the one legitimate site is a named exemption in the script.
   sql-string-building:
     name: sql-string-building
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -691,7 +759,7 @@ jobs:
 
   error-hygiene:
     name: error-hygiene
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -758,7 +826,7 @@ jobs:
   # checked.
   vex:
     name: vex
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -1582,6 +1650,10 @@ jobs:
   # changes the console UI must re-capture the published book screenshots in
   # the same PR (freshness, not pixels — owner decision). Escape hatch: the
   # `no-ui-visual-change` label for BFF-only/comment/test changes.
+  #
+  # PULL-REQUEST ONLY, deliberately (#2777): both halves — the base..head diff
+  # and the label — are pull-request payload, and neither exists on a
+  # merge_group event. It has already gated this pull request by then.
   ui-screenshot-guard:
     name: ui-screenshot-guard
     if: github.event_name == 'pull_request'
@@ -1620,6 +1692,10 @@ jobs:
   # (.claude/rules/crates-publishing.md; local twin:
   # .claude/hooks/crate_version_bump_guard.sh). Escape hatch: the
   # `no-crate-bump` label for diffs that provably do not alter packaged bytes.
+  #
+  # PULL-REQUEST ONLY, deliberately (#2777): it compares the pull request's
+  # base and head trees and reads a pull-request label, neither of which a
+  # merge_group event carries. It has already gated this pull request by then.
   crate-version:
     name: crate-version-guard
     if: github.event_name == 'pull_request'
@@ -1696,6 +1772,10 @@ jobs:
   # Escape hatch: the `no-chart-bump` label, for a packaged diff that provably
   # cannot alter what a consumer gets. A comment in `values.yaml` does not
   # qualify: values.yaml ships.
+  #
+  # PULL-REQUEST ONLY, deliberately (#2777): same shape as crate-version — a
+  # base..head diff plus a label, neither carried by a merge_group event, and
+  # already gated on the pull request.
   chart-version:
     name: chart-version-guard
     if: github.event_name == 'pull_request'
@@ -1785,6 +1865,12 @@ jobs:
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
   # the same PR. Escape hatch: the `no-changelog` label for genuinely
   # invisible changes (internal refactors, CI, docs).
+  #
+  # PULL-REQUEST ONLY, deliberately (#2777): the entry requirement is a
+  # base..head diff plus a label, neither carried by a merge_group event, and
+  # already gated on the pull request. The structure half is a whole-file
+  # check, but it is not worth splitting into a second job for a queue that
+  # cannot change the file between the pull request and the merge.
   changelog:
     name: changelog-guard
     if: github.event_name == 'pull_request'
@@ -1898,8 +1984,11 @@ jobs:
   # ── The one-check aggregate gate (the rust-analyzer/ruff pattern) ───────────
   # A single job that needs everything and passes iff nothing failed — skipped
   # jobs count as satisfied, exactly like branch protection treats them. Point
-  # branch protection / a future merge queue at THIS check alone, so adding,
-  # renaming, or path-gating jobs never requires touching repository settings.
+  # branch protection at THIS check alone, so adding, renaming, or path-gating
+  # jobs never requires touching repository settings. It reports on the
+  # merge_group event too (#2777), so enabling a merge queue needs no change
+  # here either — the jobs that skip in a queue count as satisfied, exactly as
+  # the path-gated ones already do.
   conclusion:
     name: conclusion
     if: always()

@@ -381,7 +381,7 @@ jobs:
               echo
               echo "No \`TOOLCHAIN_BUMP_TOKEN\` secret is configured, so this commit could not include the workflow files (\`ci.yml\`, \`containers.yml\`, \`release.yml\`): the workflow token has no \`workflows\` permission and the ref update is refused. Their \`container:\` pins and cache keys still name \`${OLD_VERSION}\` and must be moved by hand to \`rust:${NEW_VERSION}-${VARIANT}@${NEW_DIGEST}\` before this merges — their own toolchain-pin checks fail until they are."
               echo
-              echo "Checks also do not start by themselves on a PR opened with the workflow token. Close and reopen this PR to raise them."
+              echo "Checks also do not start by themselves on a PR opened with the workflow token (a token-raised event starts no workflows — a DIFFERENT trap than the fixed late-label one). Close and reopen this PR to raise them."
             fi
           } > pr-body.md
 
