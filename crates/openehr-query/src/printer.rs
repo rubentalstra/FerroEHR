@@ -56,10 +56,13 @@ pub fn to_aql(query: &SelectQuery) -> String {
 
 /// Escapes a raw string for embedding in an AQL single-quoted literal.
 ///
-/// The escapes are backslash escapes per the AQL lexer: use this when
-/// CONSTRUCTING
-/// [`Primitive::String`](crate::ast::Primitive::String) from user input — the printer emits stored string
-/// content verbatim (parser round-trip keeps source escapes intact).
+/// The escapes are backslash escapes per the AQL lexer (`AqlLexer.g4`
+/// `ESCAPE_SEQ`). The parser DECODES escape sequences into the AST
+/// ([`Primitive::String`](crate::ast::Primitive::String) carries the decoded
+/// value), so every printer site that emits stored string content must pass
+/// it back through here — emitting the decoded bytes verbatim re-decodes
+/// them on reparse and drifts the AST (found by the fuzzer on a
+/// backslash-heavy `TERMINOLOGY` argument, #2746).
 #[must_use]
 pub fn escape_string(raw: &str) -> String {
     let mut out = String::with_capacity(raw.len());
@@ -67,6 +70,11 @@ pub fn escape_string(raw: &str) -> String {
         match c {
             '\\' => out.push_str("\\\\"),
             '\'' => out.push_str("\\'"),
+            '\t' => out.push_str("\\t"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\u{0008}' => out.push_str("\\b"),
+            '\u{000C}' => out.push_str("\\f"),
             other => out.push(other),
         }
     }
@@ -168,7 +176,9 @@ fn terminology(out: &mut String, t: &TerminologyFunction) {
     let _ = write!(
         out,
         "TERMINOLOGY('{}', '{}', '{}')",
-        t.operation, t.arg2, t.arg3
+        escape_string(&t.operation),
+        escape_string(&t.arg2),
+        escape_string(&t.arg3)
     );
 }
 
@@ -381,7 +391,7 @@ fn identified_expr(out: &mut String, expr: &IdentifiedExpr) {
             out.push_str(" LIKE ");
             match operand {
                 LikeOperand::String(s) => {
-                    let _ = write!(out, "'{s}'");
+                    let _ = write!(out, "'{}'", escape_string(s));
                 }
                 LikeOperand::Parameter(p) => out.push_str(p),
             }
