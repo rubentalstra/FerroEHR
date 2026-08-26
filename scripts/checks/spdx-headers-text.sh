@@ -51,7 +51,7 @@ readonly LICENSE='SPDX-License-Identifier: MIT'
 # Vendored and third-party trees: their licensing is recorded in each tree's
 # PROVENANCE.md and must not be overwritten by an assertion of ours. Kept in
 # step with .fossa.yml and scripts/checks/first-party-license-text.sh.
-readonly EXCLUDED='^(docs/specs|crates/[^/]+/vendor|crates/[^/]+/tests/vendor|crates/openehr-adl/tests/corpus|crates/openehr-its/tests/fixtures|crates/openehr-term/tests|crates/openehr-term/assets|crates/openehr-its/schemas|tools/openehr-codegen/vendor|tools/cnf-runner/artifacts|fuzz/seeds|LICENSES)/'
+readonly EXCLUDED='^(docs/specs|crates/[^/]+/vendor|crates/[^/]+/tests/vendor|crates/openehr-adl/tests/corpus|crates/openehr-its/tests/fixtures|crates/openehr-term/tests|crates/openehr-term/assets|crates/openehr-its/schemas|tools/openehr-codegen/vendor|tools/cnf-runner/artifacts|LICENSES)/'
 
 # The comment leader for a path's file type.
 comment_prefix() {
