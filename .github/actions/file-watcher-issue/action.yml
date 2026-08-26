@@ -3,21 +3,21 @@
 
 # .github/actions/file-watcher-issue — file one tracking issue, or comment on it.
 #
-# ONE engine for the watcher family (#2775): six workflows file an issue when
-# their probe finds something, today with three different dedup idioms. The
-# semantics here are the ones the image scan uses, which are the ones worth
-# keeping: dedup by an EXACT-title search over open issues, comment on the
-# existing issue rather than opening a second one, and never touch a closed
-# issue (a finding that returns after a close is new work, not a reopen).
+# The workflow-facing interface of the watcher family's filing engine (#2778).
+# All the behaviour lives in the sibling `file-issue.sh`, which the two probe
+# shells `scripts/watch/spec-{update,release}.sh` call directly because they file
+# N issues per run; that script's header carries the dedup match rule, the
+# body-by-file rule and the family's run-colour law. In short:
 #
-# A dedup search matches the title EXACTLY (`in:title "<title>"`), so the title
-# is the dedup key — a title carrying a run number, a date, or a version would
-# open a new issue every run. Keep it constant and put the varying detail in the
-# body.
-#
-# The body arrives as a FILE, never as an argument: watcher bodies carry remote
-# content (upstream release notes, scanner output, server messages) that must
-# never be parsed as script or as a flag.
+#   * dedup by an exact-title search over open issues, or by `dedup-key` tokens
+#     that must appear in the title (`state: all` searches closed issues too);
+#   * comment on the existing issue rather than opening a second one, and never
+#     touch a closed one — a finding that returns after a close is new work;
+#   * reaching this action is never a failure. A finding files or updates an
+#     issue and the run stays GREEN; the run goes RED only when the PROBE itself
+#     cannot answer, which fails in the probe step and never reaches here. The
+#     issue is the alert — a red scheduled run is invisible to anyone not
+#     watching the Actions tab.
 #
 # Requires the repository to be checked out (a local action resolves against the
 # runner's workspace), and a token with `issues: write`.
@@ -26,7 +26,7 @@ description: Open one tracking issue for a watcher finding, or comment on the op
 
 inputs:
   title:
-    description: The issue title — also the dedup key, so keep it constant across runs.
+    description: The issue title — also the dedup key unless `dedup-key` overrides it, so keep it constant across runs.
     required: true
   body-file:
     description: Path to the markdown body (a file, so remote content is never an argument).
@@ -35,6 +35,22 @@ inputs:
     description: Comma-separated labels applied when the issue is CREATED (ignored on a comment).
     required: false
     default: ""
+  dedup-key:
+    description: Match issues whose title CONTAINS this token instead of matching the title exactly.
+    required: false
+    default: ""
+  state:
+    description: Which issues the dedup search covers — `open` (the default) or `all`.
+    required: false
+    default: open
+  on-existing:
+    description: What an existing match gets — `comment` (the default), `update` (replace the body) or `skip`.
+    required: false
+    default: comment
+  dry-run:
+    description: Report what would be filed and write nothing.
+    required: false
+    default: "false"
   repo:
     description: The repository to file in.
     required: false
@@ -46,10 +62,10 @@ inputs:
 
 outputs:
   issue:
-    description: The issue number that was created or commented on.
+    description: The issue number that was created, commented on, updated or matched.
     value: ${{ steps.file.outputs.issue }}
   outcome:
-    description: '"created" or "commented".'
+    description: '"created", "commented" or "none" (a dry run) — plus "updated"/"skipped" when `on-existing` selects those.'
     value: ${{ steps.file.outputs.outcome }}
 
 runs:
@@ -63,36 +79,18 @@ runs:
         TITLE: ${{ inputs.title }}
         BODY_FILE: ${{ inputs.body-file }}
         LABELS: ${{ inputs.labels }}
+        DEDUP_KEY: ${{ inputs.dedup-key }}
+        STATE: ${{ inputs.state }}
+        ON_EXISTING: ${{ inputs.on-existing }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -euo pipefail
-        [ -s "$BODY_FILE" ] || { echo "::error::body file '$BODY_FILE' is missing or empty"; exit 1; }
-
-        existing="$(gh issue list --repo "$REPO" --state open --search "in:title \"$TITLE\"" \
-                      --json number --jq '.[0].number // empty')"
-        if [ -n "$existing" ]; then
-          gh issue comment "$existing" --repo "$REPO" --body-file "$BODY_FILE"
-          echo "commented on #${existing}"
-          {
-            echo "issue=$existing"
-            echo "outcome=commented"
-          } >> "$GITHUB_OUTPUT"
-          exit 0
+        args=(file --title "$TITLE" --body-file "$BODY_FILE" --repo "$REPO"
+              --state "$STATE" --on-existing "$ON_EXISTING" --labels "$LABELS")
+        if [ -n "$DEDUP_KEY" ]; then
+          args+=(--dedup-key "$DEDUP_KEY")
         fi
-
-        # One --label per name; an empty list creates an unlabelled issue.
-        label_args=()
-        if [ -n "$LABELS" ]; then
-          IFS=',' read -r -a names <<<"$LABELS"
-          for name in "${names[@]}"; do
-            name="${name#"${name%%[![:space:]]*}"}"
-            name="${name%"${name##*[![:space:]]}"}"
-            [ -n "$name" ] && label_args+=(--label "$name")
-          done
+        if [ "$DRY_RUN" = "true" ]; then
+          args+=(--dry-run)
         fi
-        url="$(gh issue create --repo "$REPO" --title "$TITLE" --body-file "$BODY_FILE" \
-                 "${label_args[@]+"${label_args[@]}"}")"
-        echo "filed ${url}"
-        {
-          echo "issue=${url##*/}"
-          echo "outcome=created"
-        } >> "$GITHUB_OUTPUT"
+        bash "$GITHUB_ACTION_PATH/file-issue.sh" "${args[@]}"

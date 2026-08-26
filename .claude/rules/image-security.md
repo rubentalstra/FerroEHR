@@ -25,8 +25,8 @@ detection lane existed but the remediation path was tribal.
 | Instrument | When | What it catches |
 |---|---|---|
 | the `scan-and-tag.yml` image-scan job (called by `containers.yml` and the release pipeline) | every image build | what was known at build time |
-| `image-scan.yml` | Mondays 07:13 UTC, on the PUBLISHED `:latest` refs | CVEs published after the release; files/updates ONE tracking issue and goes red |
-| `base-image-watcher.yml` | Mondays 07:43 UTC | a newer `postgres` patch tag on the pinned major, or the pinned tag re-pointed upstream (a same-version security respin); files/updates ONE tracking issue |
+| `image-scan.yml` | Mondays 07:13 UTC, on the PUBLISHED `:latest` refs | CVEs published after the release; files/updates ONE tracking issue — **the issue is the alert**, the run stays green (#2778) |
+| `base-image-watcher.yml` | Mondays 08:13 UTC | a newer `postgres` patch tag on the pinned major, or the pinned tag re-pointed upstream (a same-version security respin); files/updates ONE tracking issue |
 | `scripts/security/scan-images.sh` | on demand, locally | reruns the EXACT published-image scan (same `trivy.yaml`, `.trivyignore.yaml`, `security/vex/*.json`) against the published refs or a locally built candidate |
 
 All four read the same three config surfaces: `trivy.yaml` (severity floor +

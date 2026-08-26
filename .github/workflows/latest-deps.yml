@@ -11,11 +11,23 @@
 # (https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-latest-dependencies).
 # Check-only by design: DB-backed tests need the composed stack; a resolution
 # or compile break is the signal this job exists to catch.
+#
+# RUN COLOUR (the watcher family's uniform rule, #2778). A compile or resolution
+# break IS this lane's finding: it files or updates the tracking issue through
+# .github/actions/file-watcher-issue and the run stays GREEN. The run goes RED
+# only when the PROBE fails: the toolchain not installing, or `cargo update`
+# unable to resolve the registry at all, which says nothing about our code. Until
+# #2778 the finding reddened the run, and a repeat finding was dropped entirely —
+# the old filing step skipped an existing issue instead of commenting on it, so a
+# break that persisted for weeks was reported once and then never again.
 name: latest-deps
 
 on:
   schedule:
-    - cron: "17 5 * * 1" # Mondays 05:17 UTC
+    # Mondays 05:17 UTC — off the hour (GitHub delays on-the-hour runs under
+    # load) and in a slot of its own; read the estate's slots with
+    # `grep -rE '^ +- cron:' .github/workflows/`.
+    - cron: "17 5 * * 1"
   workflow_dispatch:
 
 # A scheduled probe: only the newest run is interesting, so cancel freely.
@@ -33,45 +45,57 @@ jobs:
     permissions:
       contents: read
       # A scheduled red is invisible unless someone happens to open the
-      # Actions tab — the failure step below files it on the tracker instead
-      # (the same visibility mechanism as the two spec watchers).
+      # Actions tab — the finding is filed on the tracker instead, which is
+      # what makes the green-on-finding rule safe here.
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      # Probe half: a registry it cannot resolve at all is a probe failure and
+      # reddens the run, because it says nothing about the workspace.
       - name: Update to the latest in-range dependency set
         run: cargo update
       - name: Check the workspace against it
+        id: check
         # The console is excluded from --all-features lanes (mutually
         # exclusive hydrate/ssr, compile_error!-guarded) and checked
         # per-feature instead — the same split as ci.yml.
+        #
+        # The exit status is CAPTURED, not propagated: a break here is the
+        # finding this lane exists to report, and the log is carried into the
+        # issue body so the first-line triage needs no run archaeology.
         run: |
-          cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features
-          cargo check -p ferroehr-admin-ui --all-targets --features ssr
-      - name: Open a tracker issue on failure (deduplicated)
-        if: failure()
+          set -uo pipefail
+          status=0
+          {
+            cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features &&
+              cargo check -p ferroehr-admin-ui --all-targets --features ssr
+          } 2>&1 | tee check.log || status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "cargo check exited ${status}"
+      - name: Write the tracking-issue body
+        if: steps.check.outputs.status != '0'
         env:
-          GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          title="latest-deps: workspace no longer builds against the newest in-range dependencies"
-          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq 'length')
-          if [ "$existing" -gt 0 ]; then
-            echo "Open issue already tracks this — not filing a duplicate."
-            exit 0
-          fi
-          body_file=$(mktemp)
-          cat > "$body_file" <<EOF
-          The scheduled latest-deps run failed: a newest-in-range dependency set no longer compiles (Cargo book: verifying latest dependencies).
-
-          Run: $RUN_URL
-
-          Triage: reproduce with \`cargo update && cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features\`, then either fix the incompatibility or pin the offending range with a dated comment.
-          EOF
-          gh issue create \
-            --title "$title" \
-            --label "bug" --label "P2" --label "ci" \
-            --body-file "$body_file"
+          {
+            printf 'The scheduled latest-deps run found that the newest in-range dependency set no'
+            printf ' longer compiles (Cargo book: verifying latest dependencies).\n\n'
+            printf 'Run: %s\n\n' "$RUN_URL"
+            printf 'Triage: reproduce with `cargo update && cargo check --workspace --exclude'
+            printf ' ferroehr-admin-ui --all-targets --all-features`, then either fix the'
+            printf ' incompatibility or pin the offending range with a dated comment.\n\n'
+            printf '<details><summary>Last 200 lines of the check log</summary>\n\n```\n'
+            tail -n 200 check.log
+            printf '```\n\n</details>\n'
+          } > body.md
+      - name: File or update the tracking issue
+        if: steps.check.outputs.status != '0'
+        uses: ./.github/actions/file-watcher-issue
+        with:
+          title: "latest-deps: workspace no longer builds against the newest in-range dependencies"
+          body-file: body.md
+          labels: bug,P2,ci

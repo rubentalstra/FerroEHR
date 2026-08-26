@@ -31,9 +31,15 @@
 # file, no repo variables. (C dedups by its stable per-component title, open
 # issues only — closed means caught-up, and a new delta reopens a fresh one.)
 #
+# Filing goes through the watcher family's one engine (#2778),
+# .github/actions/file-watcher-issue/file-issue.sh, which owns the single dedup
+# search idiom (an exact title for the rolling per-component issues of C, a key
+# that must appear in the title for A/B/D); this script keeps the probes.
+#
 # Failure honesty: any non-2xx (one bounded retry on 429), unexpected JSON
 # shape, or missing amendment path exits non-zero — the run goes RED. Only a
-# successful poll that genuinely matches nothing is green-with-zero.
+# successful poll that genuinely matches nothing is green-with-zero. A change
+# FOUND is a green run that files work, per the family's run-colour rule.
 #
 # Env: DRY_RUN=1 (report, create nothing) · WINDOW_DAYS (default 14 — the scheduled cadence; run manually with a wide window, e.g. 365, to catch any backlog: dedup + the vendored baseline make that safe) ·
 #      GH_TOKEN/GITHUB_TOKEN for gh. Requires curl, jq, gh.
@@ -43,6 +49,11 @@ cd "$(dirname "$0")/../.."
 JIRA="https://openehr.atlassian.net"
 WINDOW_DAYS="${WINDOW_DAYS:-14}"
 DRY_RUN="${DRY_RUN:-0}"
+FILE_ISSUE=".github/actions/file-watcher-issue/file-issue.sh"
+engine_dry=()
+if [[ "$DRY_RUN" = "1" ]]; then
+  engine_dry=(--dry-run)
+fi
 [[ "$WINDOW_DAYS" =~ ^[0-9]{1,4}$ ]] ||
   { echo "spec-update-watcher: WINDOW_DAYS must be a number of days, got '$WINDOW_DAYS'" >&2; exit 1; }
 # Field separator for the candidate rows: ASCII unit separator — non-whitespace,
@@ -295,8 +306,7 @@ while IFS='|' read -r comp repo ref sha; do
   head_sha=$(gh api "repos/openEHR/$repo/branches/$default" --jq '.commit.sha') ||
     { echo "spec-update-watcher: failed to read openEHR/$repo $default head" >&2; exit 1; }
   title="[spec-update] $comp spec repo is ahead of the vendored pin"
-  num=$(gh issue list --state open --search "\"$title\" in:title" --json number,title \
-        --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+  num=$("$FILE_ISSUE" find --title "$title")
   if [[ "$ahead" -gt 0 ]]; then
     count_line="**Commits ahead of the pin:** $ahead (pin \`${sha:0:9}\`, upstream $default @ \`${head_sha:0:9}\`)"
     cat > "$tmp/ahead-body.md" <<EOF
@@ -316,28 +326,24 @@ $count_line
 
 _Maintained automatically by the spec-update watcher: the count above updates in place as the delta grows, and the issue closes when a re-vendor catches the pin up._
 EOF
+    if [[ -n "$num" ]] && gh issue view "$num" --json body --jq '.body' | grep -qF "$count_line"; then
+      continue # unchanged since the last run
+    fi
+    labels="spec-update"
+    lbl=$(label_for_component "$comp" || true)
+    [[ -n "${lbl:-}" ]] && labels="$labels,$lbl"
+    if [[ "$DRY_RUN" = "1" ]] && [[ -z "$num" ]]; then
+      sed 's/^/    │ /' "$tmp/ahead-body.md"
+    fi
+    # One engine call covers both branches: create the rolling issue when it
+    # does not exist, replace its body in place when it does (the count updates
+    # as the delta grows).
+    "$FILE_ISSUE" file --title "$title" --body-file "$tmp/ahead-body.md" \
+      --labels "$labels" --on-existing update "${engine_dry[@]+"${engine_dry[@]}"}"
+    echo "  $comp is $ahead commit(s) ahead"
     if [[ -n "$num" ]]; then
-      if gh issue view "$num" --json body --jq '.body' | grep -qF "$count_line"; then
-        continue # unchanged since the last run
-      fi
-      if [[ "$DRY_RUN" = "1" ]]; then
-        echo "DRY-RUN would update #$num: $title ($ahead ahead)"
-      else
-        gh issue edit "$num" --body-file "$tmp/ahead-body.md" >/dev/null
-        echo "updated #$num: $comp now $ahead commit(s) ahead"
-      fi
       ahead_updated=$((ahead_updated + 1))
     else
-      label_args=(--label spec-update)
-      lbl=$(label_for_component "$comp" || true)
-      [[ -n "${lbl:-}" ]] && label_args+=(--label "$lbl")
-      if [[ "$DRY_RUN" = "1" ]]; then
-        echo "DRY-RUN would create: $title ($ahead ahead)  [${label_args[*]}]"
-        sed 's/^/    │ /' "$tmp/ahead-body.md"
-      else
-        gh issue create --title "$title" "${label_args[@]}" --body-file "$tmp/ahead-body.md" >/dev/null
-        echo "created: $title ($ahead ahead)"
-      fi
       ahead_created=$((ahead_created + 1))
     fi
   elif [[ -n "$num" ]]; then
@@ -365,17 +371,21 @@ amendment_keys=$(awk -F"$US" '$4 == "amendment" { print $1 }' "$CANDIDATES" | so
 created=0 skipped=0 unblocked=0
 while IFS="$US" read -r key component summary source resolved fixv comps status resolution itype jcreated fixv_plain descr; do
   [[ -n "$key" ]] || continue
-  match=$(gh issue list --state all --search "\"$key\" in:title" --json number,state,labels --jq '.[0] // empty')
-  if [[ -n "$match" ]]; then
+  num=$("$FILE_ISSUE" find --state all --dedup-key "$key")
+  if [[ -n "$num" ]]; then
     # AUTO-UNBLOCK: an amendment-diff hit means the key's normative text has
     # now LANDED upstream. If the board carries this key as an OPEN issue
     # labelled blocked-upstream (resolved in Jira before the text was
     # published), announce the landing and drop the label; every other
-    # existing-issue hit keeps the silent dedup skip.
-    if echo "$amendment_keys" | grep -qxF "$key" &&
+    # existing-issue hit keeps the silent dedup skip. The state and labels are
+    # read only on that path — the dedup itself needs the number alone.
+    match=""
+    if echo "$amendment_keys" | grep -qxF "$key"; then
+      match=$(gh issue view "$num" --json state,labels)
+    fi
+    if [[ -n "$match" ]] &&
       [[ "$(echo "$match" | jq -r '.state')" = "OPEN" ]] &&
       [[ "$(echo "$match" | jq -r '[.labels[].name] | any(. == "blocked-upstream")')" = "true" ]]; then
-      num=$(echo "$match" | jq -r '.number')
       if [[ "$DRY_RUN" = "1" ]]; then
         echo "DRY-RUN would unblock #$num ($key): $summary"
       else
@@ -392,10 +402,6 @@ while IFS="$US" read -r key component summary source resolved fixv comps status 
   # version live in the BODY and the spec:* label, never as title clutter).
   # Long Jira summaries (some embed whole URLs) are capped for readability;
   # dedup only needs the key, which always leads.
-  case "$fixv_plain" in
-    ""|"—") target="version unassigned" ;;
-    *) target="$fixv_plain" ;;
-  esac
   if [[ -n "$component" ]]; then
     pin=$(pin_for_component "$component")
   else
@@ -406,9 +412,9 @@ while IFS="$US" read -r key component summary source resolved fixv comps status 
     short_summary="${short_summary:0:87}..."
   fi
   title="[spec-update] $key — $short_summary"
-  label_args=(--label spec-update)
+  labels="spec-update"
   lbl=$([[ -n "$component" ]] && label_for_component "$component" || true)
-  [[ -n "${lbl:-}" ]] && label_args+=(--label "$lbl")
+  [[ -n "${lbl:-}" ]] && labels="$labels,$lbl"
 
   cat > "$tmp/body.md" <<EOF
 Upstream openEHR spec change completed — conformance-impact triage needed.
@@ -438,13 +444,18 @@ _Opened automatically by \`.github/workflows/spec-update-watcher.yml\`._
 EOF
 
   if [[ "$DRY_RUN" = "1" ]]; then
-    echo "DRY-RUN would create: $title  [${label_args[*]}]"
     sed 's/^/    │ /' "$tmp/body.md"
-  else
-    gh issue create --title "$title" "${label_args[@]}" --body-file "$tmp/body.md" >/dev/null
-    echo "created: $title"
   fi
-  created=$((created + 1))
+  # `--on-existing skip` re-runs the dedup at filing time: a race that lands a
+  # covering issue between the check above and here must not double-file, and
+  # the counters below follow the engine's reported outcome rather than assuming.
+  engine_out=$("$FILE_ISSUE" file --title "$title" --body-file "$tmp/body.md" --labels "$labels" \
+    --dedup-key "$key" --state all --on-existing skip "${engine_dry[@]+"${engine_dry[@]}"}")
+  printf '%s\n' "$engine_out"
+  case "${engine_out##*$'\n'}" in
+    *"file-issue: skipped"*) skipped=$((skipped + 1)) ;;
+    *) created=$((created + 1)) ;;
+  esac
 done < "$tmp/unique.tsv"
 
 echo "spec-update-watcher: done — $created new, $unblocked unblocked, $skipped already on the board (dedup by key)."

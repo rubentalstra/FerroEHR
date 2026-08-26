@@ -17,19 +17,30 @@
 # always-latest adoption umbrella.
 #
 # Backfill guard + watermark: a release is filed only when NEWER than the
-# pin (comparable pins), and the issue board is the dedup — the search
-# `"<COMP>" "<X.Y.Z>" in:title --state all` also matches hand-made adoption
-# umbrellas (e.g. #178 "Adopt ITS-REST 1.1.0 …"), so covered releases are
-# never re-filed. No state file.
+# pin (comparable pins), and the issue board is the dedup — the component and
+# the version must both appear in the title, over open AND closed issues, which
+# also matches hand-made adoption umbrellas (e.g. #178 "Adopt ITS-REST 1.1.0 …"),
+# so covered releases are never re-filed. No state file.
+#
+# Filing goes through the watcher family's one engine (#2778),
+# .github/actions/file-watcher-issue/file-issue.sh, which owns the single dedup
+# search idiom; this script keeps the probe — the tag poll, the version
+# comparison and the routing.
 #
 # Failure honesty: a tags-API transport failure or unexpected shape is a RED
-# run; an empty tag list on a never-tagged repo is a logged skip.
+# run; an empty tag list on a never-tagged repo is a logged skip. A release
+# FOUND is a green run that files work, per the family's run-colour rule.
 #
 # Env: DRY_RUN=1 (report, create nothing) · GH_TOKEN/GITHUB_TOKEN for gh.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 DRY_RUN="${DRY_RUN:-0}"
+FILE_ISSUE=".github/actions/file-watcher-issue/file-issue.sh"
+engine_dry=()
+if [[ "$DRY_RUN" = "1" ]]; then
+  engine_dry=(--dry-run)
+fi
 for bin in jq gh; do
   command -v "$bin" >/dev/null 2>&1 || { echo "spec-release-watcher: $bin is required" >&2; exit 1; }
 done
@@ -74,9 +85,9 @@ while IFS='|' read -r comp repo ref sha; do
   fi
   # Board dedup — matches [spec-release] issues AND hand-made adoption
   # umbrellas that already carry the component + version in the title.
-  covered=$(gh issue list --state all --search "\"$comp\" \"$latest\" in:title" --json number --jq 'length')
-  if [[ "$covered" -gt 0 ]]; then
-    echo "  $comp Release-$latest: already on the board — skipped"
+  covered=$("$FILE_ISSUE" find --state all --dedup-key "$comp" --dedup-key "$latest")
+  if [[ -n "$covered" ]]; then
+    echo "  $comp Release-$latest: already on the board (#$covered) — skipped"
     skipped=$((skipped + 1))
     continue
   fi
@@ -110,19 +121,26 @@ Upstream published a new **$comp** release: **Release-$latest**
 _Opened automatically by \`.github/workflows/spec-release-watcher.yml\`._
 EOF
   lbl=$(label_for_component "$comp")
-  label_args=(--label spec-update --label P1)
-  [[ -n "$lbl" ]] && label_args+=(--label "$lbl")
   up_label="upstream:${comp}-${latest}"
+  labels="spec-update,P1,$up_label"
+  [[ -n "$lbl" ]] && labels="$labels,$lbl"
   if [[ "$DRY_RUN" = "1" ]]; then
-    echo "DRY-RUN would create: $title  [${label_args[*]} --label $up_label]"
     sed 's/^/    │ /' "$tmp/body.md"
   else
     # Ensure the per-release collection label exists (idempotent).
     gh label create "$up_label" --description "Changes arriving with the upstream $comp Release-$latest" --color BFD4F2 2>/dev/null || true
-    gh issue create --title "$title" "${label_args[@]}" --label "$up_label" --body-file "$tmp/body.md" >/dev/null
-    echo "created: $title"
   fi
-  filed=$((filed + 1))
+  # `--on-existing skip` re-runs the dedup at filing time: a race that lands a
+  # covering issue between the check above and here must not double-file, and
+  # the counters below follow the engine's reported outcome rather than assuming.
+  engine_out=$("$FILE_ISSUE" file --title "$title" --body-file "$tmp/body.md" --labels "$labels" \
+    --dedup-key "$comp" --dedup-key "$latest" --state all --on-existing skip \
+    "${engine_dry[@]+"${engine_dry[@]}"}")
+  printf '%s\n' "$engine_out"
+  case "${engine_out##*$'\n'}" in
+    *"file-issue: skipped"*) skipped=$((skipped + 1)) ;;
+    *) filed=$((filed + 1)) ;;
+  esac
 done < <(grep -E '^  "[A-Z-]+\|' scripts/vendor/spec-docs.sh | tr -d '"' | sed 's/^  //')
 
 echo "spec-release-watcher: done — $filed new release(s) filed, $skipped already covered/current."

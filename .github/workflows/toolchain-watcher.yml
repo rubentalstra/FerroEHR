@@ -45,9 +45,12 @@ name: Toolchain watcher
 
 on:
   schedule:
-    # Mondays 07:43 UTC — off the hour, and clear of every other scheduled
-    # lane (fuzz 02:41, latest-deps 05:17, codeql 05:23, scorecard 05:37,
-    # spec watchers 06:17/06:47, image-scan 07:13).
+    # Mondays 07:43 UTC — off the hour (GitHub delays on-the-hour runs under
+    # load) and in a slot of its own. The enumeration that used to sit here
+    # claimed clearance while omitting the base-image watcher, which shared this
+    # exact slot until #2778 moved it to 08:13; a list of other lanes rots the
+    # moment one moves, so read the estate's slots with
+    # `grep -rE '^ +- cron:' .github/workflows/`.
     - cron: "43 7 * * 1"
   workflow_dispatch:
     inputs:
