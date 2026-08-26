@@ -69,6 +69,12 @@ job, `--all` over the whole book:
   verbatim into `ferroehr.toml`.
 - Every committed chart under a `*-assets/` directory is embedded by a page or
   by an mdBook `{{#include}}` source.
+- Every version literal that is a claim about the current release: a chart
+  `--version` against `Chart.yaml`'s own version, an `image.tag=`/`ghcr.io/…:`
+  tag against the WORKSPACE version (not the chart's `appVersion`, which is
+  injected at publish time and may lag in the tree — #2779), and on
+  `verifying-releases.md` the release-asset filenames and the
+  substitute-this-tag note.
 
 **Review-only, deliberately:**
 

@@ -193,7 +193,8 @@ evidence if it ran in an enforcing namespace — say which.
 | Secrets never env-borne as values | `validate.sh` `secret_leak_gate` |
 | `values.schema.json` accepts/rejects | `validate.sh` `schema_gate`, `fixture_gate` |
 | Golden render drift | CI compare against `deploy/helm/golden/` |
-| Chart/app version bumps | `chart-version-guard`, `chart-appversion-guard` |
+| Chart version bump on packaged-content change | `chart-version-guard` |
+| The committed `appVersion` names a released version, and the image annotations + generated README agree with it | `chart-appversion-guard` → `scripts/checks/chart-appversion.sh` (mutation-proven). The PUBLISHED appVersion and image tags are INJECTED at package time, not guarded in the tree — #2779 |
 | Field-vs-`kubeVersion` availability | **review-enforced** — no tool knows which fields a manifest uses; §1 is the procedure |
 | Applied posture, admission, readiness gating, secret reads | `scripts/deploy-probe-k8s.sh` — observed on a live cluster, machine-readable record |
 | Live behaviour beyond those probes | **review-enforced** — the `/k8s-test` skill is the procedure; the PR quotes observations |

@@ -1810,26 +1810,29 @@ jobs:
           fi
           echo "Chart version bumped $old -> $new — OK."
 
-  # appVersion guard (issue #2108): `appVersion` is the image tag a user gets from
-  # a plain `helm install`, so it must never lag the released application version.
-  # It is kept equal to the workspace version — the same shape as
-  # compose-image-tags.sh, and the same reason: both are "an artifact references
-  # the released version" checks that would otherwise depend on someone
-  # remembering a release-procedure step.
+  # appVersion guard (issue #2108, narrowed by #2779). It used to hold
+  # `appVersion` and the `artifacthub.io/images` tags equal to the WORKSPACE
+  # version, which made both of them per-release facts a human had to hand-edit
+  # at every cut. They are injected now: `build-chart.yml` packages with
+  # `helm package --app-version <released version>` and rewrites the annotation's
+  # tags in the same step, so the published chart is right by construction and a
+  # cut edits neither.
   #
-  # The `artifacthub.io/images` tags are checked with it, because those are what
-  # the Artifact Hub security report scans — a stale tag there means the listing
-  # reports vulnerabilities for an image nobody is running.
+  # What is left in the tree is a DEFAULT — for a chart-only dispatch between
+  # releases, and for anyone running `helm template`/`helm install` against this
+  # directory — and the properties that default still has to have are in
+  # scripts/checks/chart-appversion.sh, which `plan` runs against the tagged
+  # commit too. One script rather than two copies of one check.
   #
-  # What this guard does NOT catch, stated because it was measured rather than
-  # imagined: `appVersion` naming the right release does not mean that release's
+  # What no version guard catches, stated because it was measured rather than
+  # imagined: an appVersion naming a real release does not mean that release's
   # image ACCEPTS the chart's current `config` defaults. Values track development
   # between releases, so the rendered default configuration carries
   # `server.limits` and `db.statement_timeout_ms`, which 3.17.3 does not know — its
   # own `config check` refuses the file, and a plain `helm install` crash-loops.
-  # Only the published image can answer that, so the check lives in
-  # publish-chart.yml, which refuses to publish a chart that cannot deploy its own
-  # default image.
+  # Only an image can answer that: the `chart-boot` job below replays it against
+  # the tree-built image, and build-chart.yml refuses to publish a chart that
+  # cannot deploy the image it selects.
   chart-appversion:
     name: chart-appversion-guard
     runs-on: ubuntu-latest
@@ -1840,26 +1843,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: appVersion and the artifacthub.io image tags match the workspace version
-        run: |
-          set -euo pipefail
-          ws=$(sed -nE 's/^version = "(.*)"$/\1/p' Cargo.toml | head -1)
-          app=$(sed -nE 's/^appVersion: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml)
-          if [ -z "$ws" ] || [ -z "$app" ]; then
-            echo "::error::could not extract versions (workspace: '$ws', appVersion: '$app')." >&2
-            exit 1
-          fi
-          if [ "$app" != "$ws" ]; then
-            echo "::error::Chart.yaml appVersion ($app) != workspace version ($ws) — the release cut bumps appVersion with the workspace version (.claude/rules/changelog.md), or a plain 'helm install' deploys the previous release." >&2
-            exit 1
-          fi
-          bad=$(grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' deploy/helm/ferroehr/Chart.yaml | grep -v ":${ws}\$" || true)
-          if [ -n "$bad" ]; then
-            echo "::error::artifacthub.io/images tags do not match the workspace version ($ws):" >&2
-            echo "$bad" >&2
-            exit 1
-          fi
-          echo "appVersion and every artifacthub.io/images tag are at $ws — OK."
+      - name: The committed chart release facts are coherent
+        run: bash scripts/checks/chart-appversion.sh
 
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
