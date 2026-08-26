@@ -15,7 +15,6 @@ use openehr_query::ast::{
     SelectQuery, SortOrder, Terminal, ValueListItem, WhereExpr,
 };
 use openehr_query::lexer::CompOp;
-use openehr_query::printer::escape_string;
 
 use crate::builder::model::{
     BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, QueryShape,
@@ -257,7 +256,7 @@ fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
         CriterionKind::TextEquals { text } => compare_str(&at("value"), CompOp::Eq, text),
         CriterionKind::TextLike { pattern } => Ok(WhereExpr::Identified(IdentifiedExpr::Like {
             path: parse_path(COMP_VAR, &at("value"))?,
-            operand: openehr_query::ast::LikeOperand::String(escape_string(pattern)),
+            operand: openehr_query::ast::LikeOperand::String(pattern.clone()),
         })),
         CriterionKind::DateTimeRange { from, to } => {
             let mut parts = Vec::new();
@@ -330,7 +329,7 @@ fn coded_in(
         operand: MatchesOperand::ValueList(
             codes
                 .iter()
-                .map(|code| ValueListItem::Primitive(Primitive::String(escape_string(code))))
+                .map(|code| ValueListItem::Primitive(Primitive::String(code.clone())))
                 .collect(),
         ),
     });
@@ -352,7 +351,7 @@ fn compare_str(relative: &str, op: CompOp, value: &str) -> Result<WhereExpr, Bui
     Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
         lhs: CompareOperand::Path(parse_path(COMP_VAR, relative)?),
         op,
-        rhs: Terminal::Primitive(Primitive::String(escape_string(value))),
+        rhs: Terminal::Primitive(Primitive::String(value.to_owned())),
     }))
 }
 
