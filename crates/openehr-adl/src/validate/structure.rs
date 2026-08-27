@@ -480,107 +480,86 @@ impl StructureScan<'_> {
     }
 
     fn check_primitive_assumed(&mut self, path: &str, obj: &CObject) {
-        match obj {
-            CObject::CBoolean(b) => {
-                if let Some(av) = b.assumed_value
-                    && !b.constraint.as_ref().is_none_or(Vec::is_empty)
-                    && !b.constraint.as_ref().is_some_and(|c| c.contains(&av))
-                {
-                    self.vobav("boolean assumed value is not in the constraint", path);
-                }
-            }
-            CObject::CInteger(i) => {
-                // The generated model types the integer assumed value as `f64`;
-                // a valid integer assumed value is a whole number lying in some
-                // constraint interval.
-                if let Some(av) = i.assumed_value
-                    && !i.constraint.as_ref().is_none_or(Vec::is_empty)
-                {
-                    #[expect(
-                        clippy::as_conversions,
-                        clippy::cast_possible_truncation,
-                        reason = "guarded by fract()"
-                    )]
-                    let inside = av.fract() == 0.0
-                        && i.constraint.iter().flatten().any(|iv| iv.has(&(av as i32)));
-                    if !inside {
-                        self.vobav(
-                            "integer assumed value is not within any constraint interval",
-                            path,
-                        );
-                    }
-                }
-            }
-            CObject::CReal(r) => {
-                if let Some(av) = r.assumed_value
-                    && !r.constraint.as_ref().is_none_or(Vec::is_empty)
-                    && !r.constraint.iter().flatten().any(|iv| iv.has(&av))
-                {
-                    self.vobav(
-                        "real assumed value is not within any constraint interval",
-                        path,
-                    );
-                }
-            }
-            // The temporal primitives carry their assumed value + constraint as
-            // `Interval<Iso8601_*>`; `openehr-base` now provides ISO 8601 ordering
-            // (`PartialOrd`), so the same point-in-interval VOBAV test applies.
-            // Temporal values are only partially ordered (partial dates,
-            // timezone normalisation), so use `has_definite`: a violation is
-            // raised only when the assumed value is definitely outside EVERY
-            // interval; an incomparable (undecidable) pairing leaves containment
-            // unknown and never raises.
-            CObject::CDate(d) => {
-                if let Some(av) = &d.assumed_value
-                    && temporal_assumed_violates(d.constraint.as_deref().unwrap_or_default(), av)
-                {
-                    self.vobav(
-                        "date assumed value is not within any constraint interval",
-                        path,
-                    );
-                }
-            }
-            CObject::CTime(t) => {
-                if let Some(av) = &t.assumed_value
-                    && temporal_assumed_violates(t.constraint.as_deref().unwrap_or_default(), av)
-                {
-                    self.vobav(
-                        "time assumed value is not within any constraint interval",
-                        path,
-                    );
-                }
-            }
-            CObject::CDateTime(dt) => {
-                if let Some(av) = &dt.assumed_value
-                    && temporal_assumed_violates(dt.constraint.as_deref().unwrap_or_default(), av)
-                {
-                    self.vobav(
-                        "date/time assumed value is not within any constraint interval",
-                        path,
-                    );
-                }
-            }
-            CObject::CDuration(du) => {
-                if let Some(av) = &du.assumed_value
-                    && temporal_assumed_violates(du.constraint.as_deref().unwrap_or_default(), av)
-                {
-                    self.vobav(
-                        "duration assumed value is not within any constraint interval",
-                        path,
-                    );
-                }
-            }
-            CObject::CString(s) => {
-                if let Some(av) = &s.assumed_value
-                    && !s.constraint.as_ref().is_none_or(Vec::is_empty)
-                    && !s.constraint.iter().flatten().any(|c| c == av)
-                {
-                    self.vobav("string assumed value is not in the constraint list", path);
-                }
-            }
-            _ => {}
+        let violation = match obj {
+            CObject::CBoolean(b) => b
+                .assumed_value
+                .is_some_and(|av| {
+                    !b.constraint.as_ref().is_none_or(Vec::is_empty)
+                        && !b.constraint.as_ref().is_some_and(|c| c.contains(&av))
+                })
+                .then_some("boolean assumed value is not in the constraint"),
+            CObject::CInteger(i) => integer_assumed_violates(i)
+                .then_some("integer assumed value is not within any constraint interval"),
+            CObject::CReal(r) => r
+                .assumed_value
+                .is_some_and(|av| {
+                    !r.constraint.as_ref().is_none_or(Vec::is_empty)
+                        && !r.constraint.iter().flatten().any(|iv| iv.has(&av))
+                })
+                .then_some("real assumed value is not within any constraint interval"),
+            CObject::CDate(d) => d
+                .assumed_value
+                .as_ref()
+                .is_some_and(|av| {
+                    temporal_assumed_violates(d.constraint.as_deref().unwrap_or_default(), av)
+                })
+                .then_some("date assumed value is not within any constraint interval"),
+            CObject::CTime(t) => t
+                .assumed_value
+                .as_ref()
+                .is_some_and(|av| {
+                    temporal_assumed_violates(t.constraint.as_deref().unwrap_or_default(), av)
+                })
+                .then_some("time assumed value is not within any constraint interval"),
+            CObject::CDateTime(dt) => dt
+                .assumed_value
+                .as_ref()
+                .is_some_and(|av| {
+                    temporal_assumed_violates(dt.constraint.as_deref().unwrap_or_default(), av)
+                })
+                .then_some("date/time assumed value is not within any constraint interval"),
+            CObject::CDuration(du) => du
+                .assumed_value
+                .as_ref()
+                .is_some_and(|av| {
+                    temporal_assumed_violates(du.constraint.as_deref().unwrap_or_default(), av)
+                })
+                .then_some("duration assumed value is not within any constraint interval"),
+            CObject::CString(s) => s
+                .assumed_value
+                .as_ref()
+                .is_some_and(|av| {
+                    !s.constraint.as_ref().is_none_or(Vec::is_empty)
+                        && !s.constraint.iter().flatten().any(|c| c == av)
+                })
+                .then_some("string assumed value is not in the constraint list"),
+            _ => None,
+        };
+        if let Some(msg) = violation {
+            self.vobav(msg, path);
         }
     }
+}
+
+/// VOBAV for `C_INTEGER`: the generated model types the integer assumed value
+/// as `f64`, so a valid assumed value is a whole number lying in some
+/// constraint interval.
+fn integer_assumed_violates(
+    i: &openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger,
+) -> bool {
+    let Some(av) = i.assumed_value else {
+        return false;
+    };
+    if i.constraint.as_ref().is_none_or(Vec::is_empty) {
+        return false;
+    }
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_possible_truncation,
+        reason = "guarded by fract()"
+    )]
+    let inside = av.fract() == 0.0 && i.constraint.iter().flatten().any(|iv| iv.has(&(av as i32)));
+    !inside
 }
 
 /// VOBAV for an ordered temporal primitive: a non-empty constraint list is
