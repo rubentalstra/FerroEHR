@@ -150,41 +150,50 @@ pub fn completeness(key: &str) -> Result<Vec<Completeness>, Error> {
     let mut out = Vec::new();
     for g in &c.generations {
         for u in &g.units {
-            let used = u.model.used_as_type();
-            let mut planned = 0;
-            let mut skipped_mapped = 0;
-            let mut skipped_abstract_unused = 0;
-            let mut silently_dropped = Vec::new();
-            for (name, class) in &u.schema.classes {
-                match decide(&u.model, class, &used) {
-                    Emission::Skip => {
-                        if Model::is_mapped(name) {
-                            skipped_mapped += 1;
-                        } else if class.is_abstract
-                            && u.model.enum_variants(name).is_empty()
-                            && !used.contains(name)
-                        {
-                            skipped_abstract_unused += 1;
-                        } else {
-                            silently_dropped.push(name.clone());
-                        }
-                    }
-                    _ => planned += 1,
-                }
-            }
-            silently_dropped.sort();
-            out.push(Completeness {
-                key: key.to_string(),
-                file: u.spec.file.to_string(),
-                total: u.schema.classes.len(),
-                planned,
-                skipped_mapped,
-                skipped_abstract_unused,
-                silently_dropped,
-            });
+            let mut breakdown = unit_completeness(&u.model, &u.schema);
+            breakdown.key = key.to_string();
+            breakdown.file = u.spec.file.to_string();
+            out.push(breakdown);
         }
     }
     Ok(out)
+}
+
+/// The completeness breakdown of one BMM specification unit.
+///
+/// A skipped class is accounted for by WHY it is skipped: a mapped type, an
+/// abstract class with no variants that nothing references, or — the one that
+/// matters — a silent drop.
+fn unit_completeness(model: &Model, schema: &BmmSchema) -> Completeness {
+    let used = model.used_as_type();
+    let mut planned = 0;
+    let mut skipped_mapped = 0;
+    let mut skipped_abstract_unused = 0;
+    let mut silently_dropped = Vec::new();
+    for (name, class) in &schema.classes {
+        if !matches!(decide(model, class, &used), Emission::Skip) {
+            planned += 1;
+            continue;
+        }
+        if Model::is_mapped(name) {
+            skipped_mapped += 1;
+        } else if class.is_abstract && model.enum_variants(name).is_empty() && !used.contains(name)
+        {
+            skipped_abstract_unused += 1;
+        } else {
+            silently_dropped.push(name.clone());
+        }
+    }
+    silently_dropped.sort();
+    Completeness {
+        key: String::new(),
+        file: String::new(),
+        total: schema.classes.len(),
+        planned,
+        skipped_mapped,
+        skipped_abstract_unused,
+        silently_dropped,
+    }
 }
 
 /// One BMM-declared attribute that reaches no emitted Rust field — the
@@ -227,35 +236,15 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
     for g in &c.generations {
         for u in &g.units {
             let used = u.model.used_as_type();
-            // Emitted field names per class (flattened, back-references omitted —
-            // exactly what `render_struct_def` writes).
-            let fields = |class_name: &str| -> BTreeSet<String> {
-                u.model.get(class_name).map_or_else(BTreeSet::new, |cls| {
-                    u.model
-                        .flattened_props(cls)
-                        .iter()
-                        .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
-                        .map(|rp| rp.prop.name.clone())
-                        .collect()
-                })
-            };
             for (name, class) in &u.schema.classes {
-                let carriers: Vec<String> = match decide(&u.model, class, &used) {
-                    Emission::Struct | Emission::PolyEnum(_) => vec![name.clone()],
-                    Emission::Enum(variants) => variants,
-                    // A literal enumeration and a transparent newtype are scalars on
-                    // the wire and declare no attributes of their own; a mapped or
-                    // unused-abstract class emits nothing (the name-level
-                    // completeness check accounts for it).
-                    Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
-                };
+                let carriers = attribute_carriers(name, class, &u.model, &used);
                 for p in &class.properties {
                     if overrides::back_reference(name, &p.name).is_some() {
                         continue;
                     }
                     for carrier in &carriers {
                         checked += 1;
-                        if !fields(carrier).contains(&p.name) {
+                        if !emitted_field_names(&u.model, carrier).contains(&p.name) {
                             gaps.push(AttributeGap {
                                 file: u.spec.file.to_string(),
                                 class: name.clone(),
@@ -269,6 +258,39 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
         }
     }
     Ok((gaps, checked))
+}
+
+/// The emitted types that must carry a class's declared attributes.
+///
+/// A struct (or a polymorphic slot's `{Name}Data`) carries them itself; a
+/// closed subtype set carries them through each concrete variant. A literal
+/// enumeration and a transparent newtype are scalars on the wire and declare
+/// no attributes of their own; a mapped or unused-abstract class emits
+/// nothing, which the name-level completeness check accounts for.
+fn attribute_carriers(
+    name: &str,
+    class: &crate::load::bmm::BmmClass,
+    model: &Model,
+    used: &BTreeSet<String>,
+) -> Vec<String> {
+    match decide(model, class, used) {
+        Emission::Struct | Emission::PolyEnum(_) => vec![name.to_owned()],
+        Emission::Enum(variants) => variants,
+        Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
+    }
+}
+
+/// The emitted field names of a class — flattened, back-references omitted:
+/// exactly what `render_struct_def` writes.
+fn emitted_field_names(model: &Model, class_name: &str) -> BTreeSet<String> {
+    model.get(class_name).map_or_else(BTreeSet::new, |cls| {
+        model
+            .flattened_props(cls)
+            .iter()
+            .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
+            .map(|rp| rp.prop.name.clone())
+            .collect()
+    })
 }
 
 /// A file path or prelude identifier claimed by more than one BMM generation of
