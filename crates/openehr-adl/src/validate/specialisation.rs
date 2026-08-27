@@ -185,33 +185,15 @@ impl<'a> ParentScan<'a> {
         current_parent_rm: &str,
         base_path: &str,
     ) {
-        // Resolve the owning parent object: through the differential path if the
-        // attribute carries one, else the current parent object.
-        let (owner, owner_rm): (&'a CComplexObject, String) =
-            if let Some(diff) = attr.differential_path.as_deref() {
-                if let Some(o) = self.resolve_object(diff) {
-                    (o, complex_rm_type(o).to_owned())
-                } else {
-                    // VDIFP: a differential path must exist in the flat parent
-                    // (`master04.5` §`C_ATTRIBUTE`, VDIFP L139-140).
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vdifp,
-                        format!(
-                            "differential path {:?} does not resolve in the flat parent",
-                            full_attr_path(diff, &attr.rm_attribute_name)
-                        ),
-                        base_path,
-                    );
-                    return;
-                }
-            } else {
-                (current_parent, current_parent_rm.to_owned())
-            };
-
         let attr_path = match attr.differential_path.as_deref() {
             Some(diff) => full_attr_path(diff, &attr.rm_attribute_name),
             None => format!("{base_path}/{}", attr.rm_attribute_name),
+        };
+
+        let Some((owner, owner_rm)) =
+            self.resolve_owner(attr, current_parent, current_parent_rm, base_path)
+        else {
+            return;
         };
 
         let parent_attr = complex_attributes(owner)
@@ -219,24 +201,7 @@ impl<'a> ParentScan<'a> {
             .find(|a| a.rm_attribute_name == attr.rm_attribute_name);
 
         let Some(parent_attr) = parent_attr else {
-            if attr.differential_path.is_some() {
-                // A differential path whose leaf attribute is absent in the flat
-                // parent (VDIFP).
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Vdifp,
-                    format!(
-                        "attribute {:?} of differential path does not exist in the flat parent",
-                        attr.rm_attribute_name
-                    ),
-                    &attr_path,
-                );
-                return;
-            }
-            // A brand-new attribute (ADD): every child object is a new node.
-            for child in attr.children.iter().flatten() {
-                self.check_new_object(child, &attr_path);
-            }
+            self.check_absent_parent_attribute(attr, &attr_path);
             return;
         };
 
@@ -250,42 +215,119 @@ impl<'a> ParentScan<'a> {
         // VSONCO L359-379, evaluated at the owning attribute.
         self.check_collective_occurrences(attr, parent_attr, &owner_rm, &attr_path);
 
-        // Per child object: match a congruent parent node (or, for a primitive
-        // leaf with no node id, the parent attribute's same-type leaf), else a
-        // new node.
+        self.check_redefined_children(attr, parent_attr, &owner_rm, &attr_path);
+    }
+
+    /// Resolve the parent object a child attribute redefines within, together
+    /// with its reference-model type name.
+    ///
+    /// The owner is reached through the differential path when the attribute
+    /// carries one, else it is the current parent object. `None` records VDIFP
+    /// — a differential path must exist in the flat parent (`master04.5`
+    /// §`C_ATTRIBUTE`, VDIFP L139-140).
+    fn resolve_owner(
+        &mut self,
+        attr: &'a CAttribute,
+        current_parent: &'a CComplexObject,
+        current_parent_rm: &str,
+        base_path: &str,
+    ) -> Option<(&'a CComplexObject, String)> {
+        let Some(diff) = attr.differential_path.as_deref() else {
+            return Some((current_parent, current_parent_rm.to_owned()));
+        };
+        if let Some(o) = self.resolve_object(diff) {
+            return Some((o, complex_rm_type(o).to_owned()));
+        }
+        push_issue(
+            &mut self.issues,
+            ValidationCode::Vdifp,
+            format!(
+                "differential path {:?} does not resolve in the flat parent",
+                full_attr_path(diff, &attr.rm_attribute_name)
+            ),
+            base_path,
+        );
+        None
+    }
+
+    /// Check a child attribute the flat parent's owning object does not declare.
+    ///
+    /// A differential path whose leaf attribute is absent is VDIFP; otherwise
+    /// the attribute is a brand-new one (ADD), so every child object is a new
+    /// node.
+    fn check_absent_parent_attribute(&mut self, attr: &'a CAttribute, attr_path: &str) {
+        if attr.differential_path.is_some() {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vdifp,
+                format!(
+                    "attribute {:?} of differential path does not exist in the flat parent",
+                    attr.rm_attribute_name
+                ),
+                attr_path,
+            );
+            return;
+        }
         for child in attr.children.iter().flatten() {
-            let child_path = child_path(&attr_path, object_node_id(child));
+            self.check_new_object(child, attr_path);
+        }
+    }
+
+    /// Pair each child object of a redefined attribute with its flat-parent node.
+    ///
+    /// A child matches a congruent parent node — or, for a primitive leaf with
+    /// no node id, the parent attribute's same-type leaf; anything unmatched is
+    /// a newly added node.
+    fn check_redefined_children(
+        &mut self,
+        attr: &'a CAttribute,
+        parent_attr: &'a CAttribute,
+        owner_rm: &str,
+        attr_path: &str,
+    ) {
+        for child in attr.children.iter().flatten() {
+            let child_path = child_path(attr_path, object_node_id(child));
             if let Some(parent_obj) = find_congruent(parent_attr, child)
                 .or_else(|| pair_primitive_leaf(parent_attr, child))
             {
-                self.check_object_pair(child, parent_obj, attr, &owner_rm, &child_path);
+                self.check_object_pair(child, parent_obj, attr, owner_rm, &child_path);
             } else {
-                // VSONIF: a new object node added to a container attribute that
-                // already carries identified flattened siblings must itself be
-                // identified, so it is distinguishable from those siblings
-                // (`master04.5` §`C_OBJECT`, VSONIF L356-357).
-                //
-                // NOTE: master04.5 defers VSONIF's detailed rule to VACMI,
-                // which no vendored spec text defines; the decidable
-                // identification requirement is what this implements.
-                if object_node_id(child).is_empty()
-                    && !aom_type(child).is_primitive()
-                    && parent_attr
-                        .children
-                        .iter()
-                        .flatten()
-                        .any(|p| !object_node_id(p).is_empty())
-                {
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vsonif,
-                        "a new object node in a specialised container must be identified (its flattened siblings are)",
-                        &child_path,
-                    );
-                }
-                self.check_new_object(child, &child_path);
+                self.check_added_object(child, parent_attr, &child_path);
             }
         }
+    }
+
+    /// Check an object node the specialisation adds to a container attribute.
+    fn check_added_object(
+        &mut self,
+        child: &'a CObject,
+        parent_attr: &'a CAttribute,
+        child_path: &str,
+    ) {
+        // VSONIF: a new object node added to a container attribute that already
+        // carries identified flattened siblings must itself be identified, so it
+        // is distinguishable from those siblings (`master04.5` §`C_OBJECT`,
+        // VSONIF L356-357).
+        //
+        // NOTE: master04.5 defers VSONIF's detailed rule to VACMI, which no
+        // vendored spec text defines; the decidable identification requirement
+        // is what this implements.
+        if object_node_id(child).is_empty()
+            && !aom_type(child).is_primitive()
+            && parent_attr
+                .children
+                .iter()
+                .flatten()
+                .any(|p| !object_node_id(p).is_empty())
+        {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vsonif,
+                "a new object node in a specialised container must be identified (its flattened siblings are)",
+                child_path,
+            );
+        }
+        self.check_new_object(child, child_path);
     }
 
     /// The existence, cardinality and multiplicity conformance of a redefined

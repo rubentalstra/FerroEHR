@@ -184,6 +184,72 @@ fn instability_diagnostic(
 
 // ── round-trip gate ────────────────────────────────────────────────────────────
 
+/// The accumulated FLAT round-trip result over the paired fixture corpus.
+#[derive(Default)]
+struct RoundTripTally {
+    /// Compositions for which a web template of the same `template_id` exists.
+    paired: usize,
+    /// Pairs whose second FLAT rendering equals the first.
+    stable: usize,
+    /// Reverse (`from_flat`) outputs the canonical RM reader accepts.
+    valid_rm: usize,
+    /// Round-trip errors and instability diagnostics, one line each.
+    failures: Vec<String>,
+    /// Reverse outputs the canonical RM reader refused, one line each.
+    invalid_rm: Vec<String>,
+}
+
+/// Round-trips every composition that has a web template and tallies the
+/// outcomes.
+fn tally_round_trips(
+    comps: &[(String, String, Value)],
+    wts: &BTreeMap<String, WebTemplate>,
+) -> RoundTripTally {
+    let mut tally = RoundTripTally::default();
+    for (name, tid, comp) in comps {
+        let Some(wt) = wts.get(tid) else { continue };
+        tally.paired += 1;
+
+        let (rm1, instability) = match flat_round_trip(name, tid, comp, wt) {
+            Ok(pair) => pair,
+            Err(message) => {
+                tally.failures.push(message);
+                continue;
+            }
+        };
+        match instability {
+            Some(diagnostic) => tally.failures.push(diagnostic),
+            None => tally.stable += 1,
+        }
+
+        // The reverse output should be valid canonical RM. One that will not
+        // even serialize counts as neither valid nor invalid, which the
+        // paired-count assertion catches.
+        let Ok(serialized) = serde_json::to_string(&rm1) else {
+            continue;
+        };
+        match openehr_its::json::from_canonical_json::<openehr_rm::prelude::Composition>(
+            &serialized,
+        ) {
+            Ok(_) => tally.valid_rm += 1,
+            Err(e) => tally.invalid_rm.push(format!("{name}: {e}")),
+        }
+    }
+    tally
+}
+
+/// Prints a diagnostic block on stderr, headed by its count. A no-op when
+/// there is nothing to report.
+fn eprint_diagnostics(label: &str, lines: &[String]) {
+    if lines.is_empty() {
+        return;
+    }
+    eprintln!("{label} ({}):", lines.len());
+    for line in lines {
+        eprintln!("  {line}");
+    }
+}
+
 #[test]
 fn flat_roundtrip_stable() {
     let wts = web_templates();
@@ -191,55 +257,23 @@ fn flat_roundtrip_stable() {
     assert!(!wts.is_empty(), "no web templates built");
     assert!(!comps.is_empty(), "no canonical compositions found");
 
-    let mut paired = 0usize;
-    let mut stable = 0usize;
-    let mut valid_rm = 0usize;
-    let mut failures: Vec<String> = Vec::new();
-    let mut invalid_rm: Vec<String> = Vec::new();
-
-    for (name, tid, comp) in &comps {
-        let Some(wt) = wts.get(tid) else { continue };
-        paired += 1;
-
-        let (rm1, instability) = match flat_round_trip(name, tid, comp, wt) {
-            Ok(pair) => pair,
-            Err(message) => {
-                failures.push(message);
-                continue;
-            }
-        };
-        match instability {
-            Some(diagnostic) => failures.push(diagnostic),
-            None => stable += 1,
-        }
-
-        // The reverse output should be valid canonical RM.
-        if let Ok(s) = serde_json::to_string(&rm1) {
-            match openehr_its::json::from_canonical_json::<openehr_rm::prelude::Composition>(&s) {
-                Ok(_) => valid_rm += 1,
-                Err(e) => invalid_rm.push(format!("{name}: {e}")),
-            }
-        }
-    }
+    let tally = tally_round_trips(&comps, &wts);
+    let RoundTripTally {
+        paired,
+        stable,
+        valid_rm,
+        failures,
+        invalid_rm,
+    } = tally;
 
     eprintln!(
         "FLAT round-trip: {paired} paired (composition, OPT) | stable = {stable} | rm1 valid-RM = {valid_rm}"
     );
-    if !invalid_rm.is_empty() {
-        eprintln!(
-            "rm1 not deserialising as openehr-rm Composition ({}):",
-            invalid_rm.len()
-        );
-        for f in &invalid_rm {
-            eprintln!("  {f}");
-        }
-    }
-    if !failures.is_empty() {
-        eprintln!("non-stable / errors ({}):", failures.len());
-        for f in &failures {
-            eprintln!("  {f}");
-        }
-    }
+    eprint_diagnostics(
+        "rm1 not deserialising as openehr-rm Composition",
+        &invalid_rm,
+    );
+    eprint_diagnostics("non-stable / errors", &failures);
 
     assert!(paired >= 15, "expected ≥15 paired fixtures, got {paired}");
     assert!(

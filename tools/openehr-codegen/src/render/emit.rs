@@ -695,33 +695,9 @@ fn render_struct_def(
     local: &BTreeSet<String>,
     external: &External,
 ) -> String {
-    let gen_decl = if generics.is_empty() {
-        String::new()
-    } else {
-        format!("<{}>", generics.join(", "))
-    };
+    let gen_decl = generic_decl(generics);
     let mut b = String::new();
-    doc_block_or(
-        &mut b,
-        class.documentation.as_deref(),
-        "",
-        &synth_class_doc(&class.name),
-        &synth_class_summary(&class.name),
-    );
-    push_spec_alias(&mut b, &class.name, struct_ty, "");
-    // No serde/`_type` derive: canonical-JSON (de)serialization is provided by
-    // the emitted `ToJson`/`FromJson` impls in `openehr-its` (`emit-json`), not by
-    // a per-struct derive. The type is a plain data record.
-    //
-    // A class the construction map records as staying a plain record although a
-    // reader might expect a validating door carries that adjudication here, at
-    // the public fields it is about — silence over an unguarded identifier type
-    // is indistinguishable from an oversight.
-    if let Some(note) = construction::plain_record_note(&class.name) {
-        b.push_str(&format!("// NOTE: {note}\n"));
-    }
-    b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
-    b.push_str(&format!("pub struct {struct_ty}{gen_decl} {{\n"));
+    push_struct_prologue(&mut b, class, struct_ty, &gen_decl);
 
     // A class with a validating construction door (`plan::construction`) emits
     // its fields `pub(crate)` instead of `pub`: outside this crate the only way
@@ -755,11 +731,8 @@ fn render_struct_def(
             push_back_reference_note(&mut b, &p.name, citation);
             continue;
         }
-        if rp.owner != class.name && prev_owner != Some(rp.owner.as_str()) {
-            // Blank line before a new `// inherited:` group, but not as the very
-            // first line inside the braces (rustfmt strips a leading blank line).
-            let sep = if first { "" } else { "\n" };
-            b.push_str(&format!("{sep}    // inherited: {}\n", rp.owner));
+        if let Some(header) = inherited_group_header(rp, &class.name, prev_owner, first) {
+            b.push_str(&header);
         }
         prev_owner = Some(rp.owner.as_str());
         first = false;
@@ -799,6 +772,123 @@ fn render_struct_def(
         ));
     }
     b
+}
+
+/// The `<A, B>` generic-parameter declaration for a parameter-name list, empty
+/// when there are none.
+fn generic_decl(params: &[String]) -> String {
+    if params.is_empty() {
+        String::new()
+    } else {
+        format!("<{}>", params.join(", "))
+    }
+}
+
+/// The imports every enum variant's payload embeds.
+///
+/// For a variant threaded over the enum's own params (`IntervalEvent<T>`) that
+/// is just the variant type; for a bound-filled variant
+/// (`DvInterval<DvOrdered>`) it also includes the auto-filled bound arguments.
+/// This mirrors the payload decision, so a bound type the payload never names
+/// is not imported.
+fn variant_imports(
+    model: &Model,
+    variants: &[String],
+    enum_generics: &[String],
+    ty: &str,
+    index: &BTreeMap<String, Vec<String>>,
+    external: &External,
+) -> BTreeSet<String> {
+    let mut imports: BTreeSet<String> = BTreeSet::new();
+    for d in variants {
+        let mut roots = BTreeSet::new();
+        let d_generic = !model.used_generic_params(d).is_empty();
+        if d_generic && !enum_generics.is_empty() {
+            roots.insert(d.clone());
+        } else {
+            model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
+        }
+        for r in roots {
+            add_import(&mut imports, &r, ty, index, external);
+        }
+    }
+    imports
+}
+
+/// The imports the in-file `{Name}Data` struct needs for the class's own fields.
+///
+/// The enum's own type is never imported into its own file, and a spec neither
+/// the local ident index nor an external prelude places is skipped.
+fn data_struct_imports(
+    model: &Model,
+    class: &BmmClass,
+    data_generics: &[String],
+    data_subst: &BTreeMap<String, String>,
+    ty: &str,
+    index: &BTreeMap<String, Vec<String>>,
+    external: &External,
+) -> Vec<String> {
+    model
+        .referenced_specs(class, data_generics, data_subst)
+        .iter()
+        .filter_map(|spec| {
+            let ident = naming::type_name(spec);
+            if ident == ty {
+                return None;
+            }
+            if let Some(chain) = index.get(&ident) {
+                Some(format!("use crate::{}::{};", chain.join("::"), ident))
+            } else {
+                external
+                    .module_of(spec)
+                    .map(|path| format!("use {path}::{ident};"))
+            }
+        })
+        .collect()
+}
+
+/// Appends the struct's doc block, spec alias, construction note and the
+/// `derive` + opening `pub struct` lines.
+///
+/// No serde/`_type` derive is emitted: canonical-JSON (de)serialization is
+/// provided by the emitted `ToJson`/`FromJson` impls in `openehr-its`
+/// (`emit-json`), so the type is a plain data record.
+fn push_struct_prologue(b: &mut String, class: &BmmClass, struct_ty: &str, gen_decl: &str) {
+    doc_block_or(
+        b,
+        class.documentation.as_deref(),
+        "",
+        &synth_class_doc(&class.name),
+        &synth_class_summary(&class.name),
+    );
+    push_spec_alias(b, &class.name, struct_ty, "");
+    // A class the construction map records as staying a plain record although a
+    // reader might expect a validating door carries that adjudication here, at
+    // the public fields it is about — silence over an unguarded identifier type
+    // is indistinguishable from an oversight.
+    if let Some(note) = construction::plain_record_note(&class.name) {
+        b.push_str(&format!("// NOTE: {note}\n"));
+    }
+    b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
+    b.push_str(&format!("pub struct {struct_ty}{gen_decl} {{\n"));
+}
+
+/// The `// inherited: X` group header a property opens, if it starts a new
+/// inheritance group.
+///
+/// The header carries a blank line before it — but not as the very first line
+/// inside the braces, which rustfmt strips.
+fn inherited_group_header(
+    rp: &crate::analyze::ResolvedProp<'_>,
+    class_name: &str,
+    prev_owner: Option<&str>,
+    first: bool,
+) -> Option<String> {
+    if rp.owner == class_name || prev_owner == Some(rp.owner.as_str()) {
+        return None;
+    }
+    let sep = if first { "" } else { "\n" };
+    Some(format!("{sep}    // inherited: {}\n", rp.owner))
 }
 
 /// The NOTE emitted in place of an omitted back-reference field.
@@ -1222,11 +1312,7 @@ fn emit_enum(
         .into_iter()
         .map(|(n, _)| n)
         .collect();
-    let gen_decl = if enum_generics.is_empty() {
-        String::new()
-    } else {
-        format!("<{}>", enum_generics.join(", "))
-    };
+    let gen_decl = generic_decl(&enum_generics);
     let mut b = String::new();
 
     // Compute payloads first (so imports can be derived from what they touch).
@@ -1261,44 +1347,18 @@ fn emit_enum(
         ));
     }
 
-    // Imports: every emittable spec type each payload embeds. For a variant
-    // threaded over the enum's own params (`IntervalEvent<T>`) that is just the
-    // variant type; for a bound-filled variant (`DvInterval<DvOrdered>`) it also
-    // includes the auto-filled bound args. Mirror the payload decision so we do
-    // not import a bound type the payload never names.
-    let mut imports: BTreeSet<String> = BTreeSet::new();
-    for d in variants {
-        let mut roots = BTreeSet::new();
-        let d_generic = !model.used_generic_params(d).is_empty();
-        if d_generic && !enum_generics.is_empty() {
-            roots.insert(d.clone());
-        } else {
-            model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
-        }
-        for r in roots {
-            add_import(&mut imports, &r, &ty, index, external);
-        }
-    }
+    let mut imports = variant_imports(model, variants, &enum_generics, &ty, index, external);
     // The in-file `{Name}Data` struct pulls in imports for the class's own fields.
     if self_data {
-        imports.extend(
-            model
-                .referenced_specs(class, &data_generics, &data_subst)
-                .iter()
-                .filter_map(|spec| {
-                    let ident = naming::type_name(spec);
-                    if ident == ty {
-                        return None;
-                    }
-                    if let Some(chain) = index.get(&ident) {
-                        Some(format!("use crate::{}::{};", chain.join("::"), ident))
-                    } else {
-                        external
-                            .module_of(spec)
-                            .map(|path| format!("use {path}::{ident};"))
-                    }
-                }),
-        );
+        imports.extend(data_struct_imports(
+            model,
+            class,
+            &data_generics,
+            &data_subst,
+            &ty,
+            index,
+            external,
+        ));
     }
 
     // No serde: the canonical-JSON `_type` dispatch (abstract slots require
@@ -1549,29 +1609,39 @@ fn emit_enum_declaration(
 fn emit_enum_conversions(b: &mut String, ty: &str, is_int: bool, lits: &[EnumLit]) {
     b.push_str(&format!("impl {ty} {{\n"));
     if is_int {
-        b.push_str(
-            "    /// The `i32` wire value of this constant (the verbatim payload for\n    \
-             /// [`Self::Other`]).\n    #[must_use]\n    pub fn value(self) -> i32 {\n        match self {\n",
-        );
-        for lit in lits {
-            if let EnumLitWire::Int(v) = &lit.wire {
-                b.push_str(&format!("            Self::{} => {v},\n", lit.ident));
-            }
-        }
-        b.push_str("            Self::Other(__v) => __v,\n        }\n    }\n\n");
-        b.push_str(
-            "    /// This constant for an `i32` wire value, tolerating an unknown\n    \
-             /// value as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
-             pub fn from_value(__v: i32) -> Self {\n        match __v {\n",
-        );
-        for lit in lits {
-            if let EnumLitWire::Int(v) = &lit.wire {
-                b.push_str(&format!("            {v} => Self::{},\n", lit.ident));
-            }
-        }
-        b.push_str("            _ => Self::Other(__v),\n        }\n    }\n}\n\n");
-        return;
+        emit_int_wire_conversions(b, lits);
+    } else {
+        emit_str_wire_conversions(b, lits);
     }
+}
+
+/// The `i32`-valued enum's `value`/`from_value` pair, closing the `impl` block.
+fn emit_int_wire_conversions(b: &mut String, lits: &[EnumLit]) {
+    b.push_str(
+        "    /// The `i32` wire value of this constant (the verbatim payload for\n    \
+         /// [`Self::Other`]).\n    #[must_use]\n    pub fn value(self) -> i32 {\n        match self {\n",
+    );
+    for lit in lits {
+        if let EnumLitWire::Int(v) = &lit.wire {
+            b.push_str(&format!("            Self::{} => {v},\n", lit.ident));
+        }
+    }
+    b.push_str("            Self::Other(__v) => __v,\n        }\n    }\n\n");
+    b.push_str(
+        "    /// This constant for an `i32` wire value, tolerating an unknown\n    \
+         /// value as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
+         pub fn from_value(__v: i32) -> Self {\n        match __v {\n",
+    );
+    for lit in lits {
+        if let EnumLitWire::Int(v) = &lit.wire {
+            b.push_str(&format!("            {v} => Self::{},\n", lit.ident));
+        }
+    }
+    b.push_str("            _ => Self::Other(__v),\n        }\n    }\n}\n\n");
+}
+
+/// The string-valued enum's `as_str`/`from_wire` pair, closing the `impl` block.
+fn emit_str_wire_conversions(b: &mut String, lits: &[EnumLit]) {
     b.push_str(
         "    /// The wire string of this constant (the verbatim token for\n    \
          /// [`Self::Other`]).\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        match self {\n",

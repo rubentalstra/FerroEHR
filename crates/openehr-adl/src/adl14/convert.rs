@@ -29,6 +29,7 @@ use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
 use openehr_am::v2_4::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
@@ -828,18 +829,29 @@ fn convert_constraints_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>, own
         }
     }
     for tuple in d.attribute_tuples.iter_mut().flatten() {
-        for member in tuple.members.iter_mut().flatten() {
-            for child in member.children.iter_mut().flatten() {
-                convert_constraints_obj(child, cx, &node_text);
-            }
+        convert_constraints_tuple(tuple, cx, &node_text);
+    }
+}
+
+/// Converts the terminology codes inside one `C_ATTRIBUTE_TUPLE` in place.
+///
+/// Both halves of the tuple carry constraints: the tuple MEMBERS' child
+/// objects, and the tuple ROWS, whose primitive members hold the actual
+/// terminology codes (ordinal symbols and the like).
+fn convert_constraints_tuple(
+    tuple: &mut CAttributeTuple,
+    cx: &mut Converter<'_>,
+    owner_text: &str,
+) {
+    for member in tuple.members.iter_mut().flatten() {
+        for child in member.children.iter_mut().flatten() {
+            convert_constraints_obj(child, cx, owner_text);
         }
-        // Tuple ROWS carry the actual primitive constraints — convert their
-        // terminology codes (ordinal symbols etc.) like attribute ones.
-        for row in tuple.tuples.iter_mut().flatten() {
-            for m in &mut row.members {
-                if let CPrimitiveObject::CTerminologyCode(tc) = m {
-                    convert_terminology_code(tc, cx, &node_text);
-                }
+    }
+    for row in tuple.tuples.iter_mut().flatten() {
+        for m in &mut row.members {
+            if let CPrimitiveObject::CTerminologyCode(tc) = m {
+                convert_terminology_code(tc, cx, owner_text);
             }
         }
     }
