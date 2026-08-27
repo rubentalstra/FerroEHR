@@ -1026,32 +1026,7 @@ pub(crate) fn field_type(
 ) -> String {
     match &p.kind {
         BmmPropKind::Single(t) => {
-            let overridden = type_override(&class.name, &p.name);
-            let mut inner = match overridden {
-                Some(rust) => rust.to_string(),
-                None => model.render_type(t, generics, subst, local, external),
-            };
-            // Box a field that would make the struct infinitely sized: direct
-            // self-recursion, mutual recursion (RESOURCE_DESCRIPTION ↔
-            // AUTHORED_RESOURCE), and F-bounded recursion through an auto-filled
-            // generic arg (DV_QUANTITY → normal_range: DvInterval<DvOrdered>,
-            // and DvOrdered's variants include DV_QUANTITY). We check every spec
-            // name the rendered type embeds by value, not just its head.
-            // A type already behind an indirection (`Vec`, `BTreeMap`,
-            // `BTreeSet`) breaks the cycle on its own — boxing it is redundant.
-            let already_indirect =
-                inner.starts_with("Vec<") || inner.starts_with("std::collections::");
-            let cyclic = overridden.is_none() && !already_indirect && {
-                let mut roots = BTreeSet::new();
-                model.effective_roots(t, &mut roots);
-                roots.iter().any(|r| {
-                    !Model::is_mapped(r)
-                        && (r == &class.name || model.reaches(r, &class.name, &mut BTreeSet::new()))
-                })
-            };
-            if cyclic {
-                inner = format!("Box<{inner}>");
-            }
+            let inner = single_field_type(model, class, p, t, generics, subst, local, external);
             if p.is_mandatory {
                 inner
             } else {
@@ -1060,44 +1035,123 @@ pub(crate) fn field_type(
         }
         BmmPropKind::Container {
             item, cardinality, ..
-        } => {
-            // A byte buffer (`Array<Octet>` / `List<Octet>`, e.g.
-            // `DV_MULTIMEDIA.data`) is inline base64 *text* on the canonical
-            // wire, not a JSON array — carry the base64 verbatim as a `String`
-            // (decoding is a behaviour-layer concern), like other broader-than-a-
-            // crate openEHR types. Optionality follows the property.
-            if item.root_name() == "Octet" {
-                return if p.is_mandatory {
-                    "String".to_string()
-                } else {
-                    "Option<String>".to_string()
-                };
-            }
-            // NOTE: a container property's Rust shape follows its BMM existence
-            // and cardinality — the emission table in this crate's `CLAUDE.md`
-            // §Container shapes carries the adjudication and its citations.
-            let item_ty = model.render_type(item, generics, subst, local, external);
-            let lower_bound_one = cardinality.as_ref().is_some_and(|c| c.lower >= 1)
-                && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
-            let nonempty_when_present = crate::analyze::nonempty_optional_lists_cached(model)
-                .iter()
-                .any(|(decl, attr)| {
-                    attr == &p.name && (decl == &class.name || model.inherits(&class.name, decl))
-                });
-            match (p.is_mandatory, lower_bound_one, nonempty_when_present) {
-                (true, true, _) => {
-                    format!("{}::NonEmptyVec<{item_ty}>", external.containers_path())
-                }
-                (true, false, _) => format!("Vec<{item_ty}>"),
-                (false, _, true) => {
-                    format!(
-                        "Option<{}::NonEmptyVec<{item_ty}>>",
-                        external.containers_path()
-                    )
-                }
-                (false, _, false) => format!("Option<Vec<{item_ty}>>"),
-            }
+        } => container_field_type(
+            model,
+            class,
+            p,
+            ContainerShape { item, cardinality },
+            generics,
+            subst,
+            local,
+            external,
+        ),
+    }
+}
+
+/// The item type and declared cardinality of a container property.
+#[derive(Clone, Copy)]
+struct ContainerShape<'a> {
+    item: &'a BmmType,
+    cardinality: &'a Option<crate::load::bmm::BmmCardinality>,
+}
+
+/// The inner Rust type of a single-valued property, boxed where leaving it by
+/// value would make the struct infinitely sized.
+///
+/// The cycle may be direct self-recursion, mutual recursion
+/// (`RESOURCE_DESCRIPTION` ↔ `AUTHORED_RESOURCE`), or F-bounded recursion through
+/// an auto-filled generic arg (`DV_QUANTITY` → `normal_range:
+/// DvInterval<DvOrdered>`, and `DvOrdered`'s variants include `DV_QUANTITY`), so
+/// every spec name the rendered type embeds by value is checked, not just its
+/// head. A type already behind an indirection (`Vec`, `BTreeMap`, `BTreeSet`)
+/// breaks the cycle on its own, and boxing it would be redundant.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the field-shape decision threads the same resolution tables `field_type` takes; bundling them would hide which each renderer reads"
+)]
+fn single_field_type(
+    model: &Model,
+    class: &BmmClass,
+    p: &crate::load::bmm::BmmProperty,
+    t: &BmmType,
+    generics: &[String],
+    subst: &BTreeMap<String, String>,
+    local: &BTreeSet<String>,
+    external: &External,
+) -> String {
+    let overridden = type_override(&class.name, &p.name);
+    let inner = match overridden {
+        Some(rust) => rust.to_string(),
+        None => model.render_type(t, generics, subst, local, external),
+    };
+    let already_indirect = inner.starts_with("Vec<") || inner.starts_with("std::collections::");
+    let cyclic = overridden.is_none() && !already_indirect && {
+        let mut roots = BTreeSet::new();
+        model.effective_roots(t, &mut roots);
+        roots.iter().any(|r| {
+            !Model::is_mapped(r)
+                && (r == &class.name || model.reaches(r, &class.name, &mut BTreeSet::new()))
+        })
+    };
+    if cyclic {
+        format!("Box<{inner}>")
+    } else {
+        inner
+    }
+}
+
+/// The Rust type of a container property.
+///
+/// A byte buffer (`Array<Octet>` / `List<Octet>`, e.g. `DV_MULTIMEDIA.data`) is
+/// inline base64 *text* on the canonical wire, not a JSON array, so it carries
+/// the base64 verbatim as a `String` (decoding is a behaviour-layer concern),
+/// like other broader-than-a-crate openEHR types; its optionality follows the
+/// property.
+///
+/// NOTE: every other container's shape follows its BMM existence and
+/// cardinality — the emission table in this crate's `CLAUDE.md` §Container
+/// shapes carries the adjudication and its citations.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the field-shape decision threads the same resolution tables `field_type` takes; bundling them would hide which each renderer reads"
+)]
+fn container_field_type(
+    model: &Model,
+    class: &BmmClass,
+    p: &crate::load::bmm::BmmProperty,
+    shape: ContainerShape<'_>,
+    generics: &[String],
+    subst: &BTreeMap<String, String>,
+    local: &BTreeSet<String>,
+    external: &External,
+) -> String {
+    if shape.item.root_name() == "Octet" {
+        return if p.is_mandatory {
+            "String".to_string()
+        } else {
+            "Option<String>".to_string()
+        };
+    }
+    let item_ty = model.render_type(shape.item, generics, subst, local, external);
+    let lower_bound_one = shape.cardinality.as_ref().is_some_and(|c| c.lower >= 1)
+        && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
+    let nonempty_when_present = crate::analyze::nonempty_optional_lists_cached(model)
+        .iter()
+        .any(|(decl, attr)| {
+            attr == &p.name && (decl == &class.name || model.inherits(&class.name, decl))
+        });
+    match (p.is_mandatory, lower_bound_one, nonempty_when_present) {
+        (true, true, _) => {
+            format!("{}::NonEmptyVec<{item_ty}>", external.containers_path())
         }
+        (true, false, _) => format!("Vec<{item_ty}>"),
+        (false, _, true) => {
+            format!(
+                "Option<{}::NonEmptyVec<{item_ty}>>",
+                external.containers_path()
+            )
+        }
+        (false, _, false) => format!("Option<Vec<{item_ty}>>"),
     }
 }
 
