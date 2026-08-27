@@ -552,21 +552,21 @@ fn proper_str<T, F: Fn(&T) -> String>(
     p: &openehr_base::prelude::ProperIntervalData<T>,
     f: &F,
 ) -> String {
-    let two_sided = p.lower.is_some() && p.upper.is_some();
-    if two_sided {
-        let lo = p.lower.as_ref().map(f).unwrap_or_default();
-        let hi = p.upper.as_ref().map(f).unwrap_or_default();
-        let lp = if p.lower_included { "" } else { ">" };
-        let hp = if p.upper_included { "" } else { "<" };
-        format!("|{lp}{lo}..{hp}{hi}|")
-    } else if let Some(lo) = &p.lower {
-        let op = if p.lower_included { ">=" } else { ">" };
-        format!("|{op}{}|", f(lo))
-    } else if let Some(hi) = &p.upper {
-        let op = if p.upper_included { "<=" } else { "<" };
-        format!("|{op}{}|", f(hi))
-    } else {
-        String::new()
+    match (&p.lower, &p.upper) {
+        (Some(lo), Some(hi)) => {
+            let lp = if p.lower_included { "" } else { ">" };
+            let hp = if p.upper_included { "" } else { "<" };
+            format!("|{lp}{}..{hp}{}|", f(lo), f(hi))
+        }
+        (Some(lo), None) => {
+            let op = if p.lower_included { ">=" } else { ">" };
+            format!("|{op}{}|", f(lo))
+        }
+        (None, Some(hi)) => {
+            let op = if p.upper_included { "<=" } else { "<" };
+            format!("|{op}{}|", f(hi))
+        }
+        (None, None) => String::new(),
     }
 }
 

@@ -785,6 +785,26 @@ impl Parser<'_> {
         if self.eat(|t| matches!(t, Token::SymStar)) {
             return Ok(Vec::new()); // deprecated `matches {*}` == any.
         }
+        if let Some(objs) = self.parse_c_objects_whole_body()? {
+            return Ok(objs);
+        }
+        let mut objs = Vec::new();
+        while !matches!(self.peek(), Some(Token::RCurly) | None) {
+            match self.parse_adl14_sibling()? {
+                Some(alternatives) => objs.extend(alternatives),
+                None => objs.push(self.parse_c_regular_object_ordered()?),
+            }
+        }
+        Ok(objs)
+    }
+
+    /// The forms that constrain the WHOLE `matches {…}` body as one object.
+    ///
+    /// [`None`] means the body is a sibling list to be walked object by object.
+    ///
+    /// # Errors
+    /// Propagates the sub-parser's [`SyntaxError`](crate::error::SyntaxError).
+    fn parse_c_objects_whole_body(&mut self) -> PResult<Option<Vec<CObject>>> {
         // 1.4-only (converter front end; no openEHR spec — see `crate::adl14`):
         // a qualified/listed terminology constraint (`[local::at1]`,
         // `[local:: a, b ; c]`, `[openehr::524]`). A single `[local::code]` is
@@ -792,54 +812,49 @@ impl Parser<'_> {
         // must reach `parse_adl14_term_object` rather than the ADL2 inline
         // terminology-code path (which expects a bare `[at1]`/`[ac1]`).
         if self.dialect == Dialect::Adl14 && self.is_adl14_qualified_code_start() {
-            let obj = self.parse_adl14_term_object()?;
-            return Ok(vec![obj]);
+            return Ok(Some(vec![self.parse_adl14_term_object()?]));
         }
         // The 1.4 ordinal shorthand OPENS with a number, so it would otherwise
         // be swallowed by the inline-primitive path as an integer/real
         // constraint and then trip over the `|`. It keeps precedence here (as
-        // it always had) and is dispatched per-sibling inside the loop below.
+        // it always had) and is dispatched per-sibling by the caller's loop.
         let at_adl14_ordinal = self.dialect == Dialect::Adl14 && self.is_adl14_ordinal_start();
         if self.is_inline_primitive_start() && !at_adl14_ordinal {
-            let obj = self.parse_c_inline_primitive("Primitive_node_id".to_owned())?;
-            return Ok(vec![obj]);
+            return Ok(Some(vec![
+                self.parse_c_inline_primitive("Primitive_node_id".to_owned())?,
+            ]));
         }
-        let mut objs = Vec::new();
-        while !matches!(self.peek(), Some(Token::RCurly) | None) {
-            // 1.4-only: the pipe-ordinal shorthand `0|[local::at0005], 1|[…]`
-            // (`cadl14.g4` `c_ordinal`, one of the `c_non_primitive_object`
-            // alternatives — so it stands exactly where an object is expected).
-            // It is dispatched INSIDE the loop, not as a whole-body special
-            // case: an ordinal list is one alternative among the siblings of its
-            // block, so it may stand beside a regular complex object in either
-            // order. `ADL1.4/master05-cadl.adoc` §Mixed Structures is the
-            // reading: "at any given node, all three types can co-exist".
-            if self.dialect == Dialect::Adl14 && self.is_adl14_ordinal_start() {
-                objs.push(self.parse_adl14_ordinal()?);
-                continue;
-            }
-            // 1.4-only: an inline dADL domain block is intercepted here (not
-            // in `parse_c_regular_object`) because a block whose `list` rows
-            // constrain DIFFERENT member sets lowers to SEVERAL sibling
-            // alternatives (#1466) — the per-object path can only return one.
-            // A sibling-order marker before the block still routes through
-            // the single-object shim.
-            if self.dialect == Dialect::Adl14 {
-                match self.peek() {
-                    Some(Token::LParen) => {
-                        objs.extend(self.parse_adl14_domain_object(true)?);
-                        continue;
-                    }
-                    Some(Token::AlphaUcId(_)) if self.is_adl14_domain_block_start() => {
-                        objs.extend(self.parse_adl14_domain_object(false)?);
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
-            objs.push(self.parse_c_regular_object_ordered()?);
+        Ok(None)
+    }
+
+    /// One ADL 1.4-only sibling form, when the cursor stands on one.
+    ///
+    /// The pipe-ordinal shorthand `0|[local::at0005], 1|[…]` (`cadl14.g4`
+    /// `c_ordinal`) and an inline dADL domain block are dispatched PER SIBLING
+    /// rather than as whole-body special cases: each is one alternative among
+    /// the siblings of its block, so it may stand beside a regular complex
+    /// object in either order (`ADL1.4/master05-cadl.adoc` §Mixed Structures:
+    /// "at any given node, all three types can co-exist"). A domain block whose
+    /// `list` rows constrain DIFFERENT member sets lowers to SEVERAL
+    /// alternatives, which is why the return is a list; a sibling-order marker
+    /// before the block still routes through the single-object shim.
+    ///
+    /// # Errors
+    /// Propagates the sub-parser's [`SyntaxError`](crate::error::SyntaxError).
+    fn parse_adl14_sibling(&mut self) -> PResult<Option<Vec<CObject>>> {
+        if self.dialect != Dialect::Adl14 {
+            return Ok(None);
         }
-        Ok(objs)
+        if self.is_adl14_ordinal_start() {
+            return Ok(Some(vec![self.parse_adl14_ordinal()?]));
+        }
+        match self.peek() {
+            Some(Token::LParen) => Ok(Some(self.parse_adl14_domain_object(true)?)),
+            Some(Token::AlphaUcId(_)) if self.is_adl14_domain_block_start() => {
+                Ok(Some(self.parse_adl14_domain_object(false)?))
+            }
+            _ => Ok(None),
+        }
     }
 
     /// The single-object shim over [`Parser::parse_adl14_domain_object`] for

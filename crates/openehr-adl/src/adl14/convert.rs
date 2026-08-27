@@ -32,6 +32,7 @@ use openehr_am::v2_4::aom2::archetype::authored_archetype::{
 use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 use openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm;
 use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
@@ -837,36 +838,30 @@ fn convert_constraints_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>, own
         for row in tuple.tuples.iter_mut().flatten() {
             for m in &mut row.members {
                 if let CPrimitiveObject::CTerminologyCode(tc) = m {
-                    let (constraint, assumed) = cx.convert_constraint(&tc.constraint, &node_text);
-                    tc.constraint = constraint;
-                    if let Some(a) = assumed {
-                        tc.assumed_value = Some(openehr_base::prelude::TerminologyCode {
-                            terminology_id: "local".to_owned(),
-                            terminology_version: None,
-                            code_string: a,
-                            uri: None,
-                        });
-                    }
+                    convert_terminology_code(tc, cx, &node_text);
                 }
             }
         }
     }
 }
 
+/// Converts one `C_TERMINOLOGY_CODE`'s constraint and assumed value in place.
+fn convert_terminology_code(tc: &mut CTerminologyCode, cx: &mut Converter<'_>, owner_text: &str) {
+    let (constraint, assumed) = cx.convert_constraint(&tc.constraint, owner_text);
+    tc.constraint = constraint;
+    if let Some(a) = assumed {
+        tc.assumed_value = Some(openehr_base::prelude::TerminologyCode {
+            terminology_id: "local".to_owned(),
+            terminology_version: None,
+            code_string: a,
+            uri: None,
+        });
+    }
+}
+
 fn convert_constraints_obj(obj: &mut CObject, cx: &mut Converter<'_>, owner_text: &str) {
     match obj {
-        CObject::CTerminologyCode(tc) => {
-            let (constraint, assumed) = cx.convert_constraint(&tc.constraint, owner_text);
-            tc.constraint = constraint;
-            if let Some(a) = assumed {
-                tc.assumed_value = Some(openehr_base::prelude::TerminologyCode {
-                    terminology_id: "local".to_owned(),
-                    terminology_version: None,
-                    code_string: a,
-                    uri: None,
-                });
-            }
-        }
+        CObject::CTerminologyCode(tc) => convert_terminology_code(tc, cx, owner_text),
         CObject::CComplexObject(cco) => convert_constraints_cco(cco, cx, owner_text),
         _ => {}
     }
@@ -884,15 +879,8 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
             if let Some(end) = rest.find(']')
                 && let Some(code) = rest.get(..end)
             {
-                let mapped = if let Some(id) = cx.node_map.get(code) {
-                    id.clone()
-                } else if AdlCodeDefinitionsData::is_at_code(code) {
-                    shift_code(code, "id")
-                } else {
-                    code.to_owned()
-                };
                 out.push('[');
-                out.push_str(&mapped);
+                out.push_str(&converted_predicate_code(code, cx));
                 out.push(']');
                 for _ in 0..=end {
                     chars.next();
@@ -903,6 +891,20 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
         out.push(c);
     }
     out
+}
+
+/// The converted spelling of one path-predicate code.
+///
+/// A planned node code takes its planned id; any other at-code is shifted into
+/// the `id` space; anything else passes through.
+fn converted_predicate_code(code: &str, cx: &Converter<'_>) -> String {
+    if let Some(id) = cx.node_map.get(code) {
+        return id.clone();
+    }
+    if AdlCodeDefinitionsData::is_at_code(code) {
+        return shift_code(code, "id");
+    }
+    code.to_owned()
 }
 
 // ── code shifting ────────────────────────────────────────────────────────────

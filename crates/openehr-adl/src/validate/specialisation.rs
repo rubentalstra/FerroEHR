@@ -1237,14 +1237,13 @@ terminology
             && let AuthoredArchetype::AuthoredArchetype(data) = inner.as_mut()
             && let CComplexObject::CComplexObject(root) = &mut data.definition
         {
-            for a in root.attributes.iter_mut().flatten() {
-                if a.rm_attribute_name == "items" {
-                    for c in a.children.iter_mut().flatten() {
-                        if let CObject::CComplexObject(CComplexObject::CComplexObject(el)) = c {
-                            el.node_id.clear();
-                        }
-                    }
-                }
+            for a in root
+                .attributes
+                .iter_mut()
+                .flatten()
+                .filter(|a| a.rm_attribute_name == "items")
+            {
+                strip_child_node_ids(a);
             }
         }
         let issues = validate_against_flat_parent(
@@ -1255,6 +1254,15 @@ terminology
         );
         let raised: Vec<&str> = issues.iter().map(|i| i.code.mnemonic()).collect();
         assert!(raised.contains(&"VSONIF"), "raised {raised:?}");
+    }
+
+    /// Clears the node id of every complex-object child of `attr`.
+    fn strip_child_node_ids(attr: &mut CAttribute) {
+        for c in attr.children.iter_mut().flatten() {
+            if let CObject::CComplexObject(CComplexObject::CComplexObject(el)) = c {
+                el.node_id.clear();
+            }
+        }
     }
 
     #[test]

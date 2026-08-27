@@ -218,51 +218,70 @@ struct Partition {
 /// cannot model is met — the whole block refuses rather than dropping a
 /// constraint.
 fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLoweringError> {
-    /// One `list` row: its member (name, value) pairs in source order.
-    type Row = Vec<(String, OdinValue)>;
     let rows = domain_list_rows(list);
-    let mut groups: Vec<(Vec<String>, Vec<&Row>)> = Vec::new();
-    for row in &rows {
+    group_rows_by_member_set(&rows)
+        .into_iter()
+        .map(|(names, group)| partition_of_group(&names, &group))
+        .collect()
+}
+
+/// One `list` row: its member (name, value) pairs in source order.
+type DomainRow = Vec<(String, OdinValue)>;
+
+/// Groups list rows by their member-name SET, in first-seen order.
+fn group_rows_by_member_set(rows: &[DomainRow]) -> Vec<(Vec<String>, Vec<&DomainRow>)> {
+    let mut groups: Vec<(Vec<String>, Vec<&DomainRow>)> = Vec::new();
+    for row in rows {
         let mut names: Vec<String> = Vec::new();
         for (k, _) in row {
             if !names.iter().any(|n| n == k) {
                 names.push(k.clone());
             }
         }
-        let same_set = |a: &[String], b: &[String]| {
-            a.len() == b.len() && a.iter().all(|n| b.iter().any(|m| m == n))
-        };
-        if let Some((_, members)) = groups.iter_mut().find(|(g, _)| same_set(g, &names)) {
-            members.push(row);
-        } else {
-            groups.push((names, vec![row]));
+        match groups.iter_mut().find(|(g, _)| same_member_set(g, &names)) {
+            Some((_, members)) => members.push(row),
+            None => groups.push((names, vec![row])),
         }
     }
-    let mut partitions = Vec::new();
-    for (names, rows) in groups {
-        let mut attributes: Vec<CAttribute> = Vec::new();
-        let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
-        if names.len() >= 2 {
-            attribute_tuples.push(build_attribute_tuple(&names, &rows)?);
-        } else if let Some(name) = names.first() {
-            // Single attribute: merge the partition's values into one constraint.
-            let values: Vec<CPrimitiveObject> = rows
-                .iter()
-                .filter_map(|row| row.iter().find(|(k, _)| k == name))
-                .filter_map(|(_, v)| domain_value_to_primitive(name, v))
-                .collect();
-            if let Some(merged) = merge_primitives(values) {
-                attributes.push(cattr_single(name, primitive_to_cobject(merged)));
-            }
+    groups
+}
+
+/// Whether two member-name lists denote the same set.
+fn same_member_set(a: &[String], b: &[String]) -> bool {
+    a.len() == b.len() && a.iter().all(|n| b.iter().any(|m| m == n))
+}
+
+/// The alternative one co-varying row group contributes.
+///
+/// Two or more member names co-vary and become a `C_ATTRIBUTE_TUPLE`; a single
+/// name merges the group's values into one constraint; an all-empty row set
+/// (no names) contributes an alternative carrying only the shared prefix —
+/// "any value of the type".
+///
+/// # Errors
+/// Propagates [`build_attribute_tuple`]'s refusal for a tuple group.
+fn partition_of_group(
+    names: &[String],
+    rows: &[&DomainRow],
+) -> Result<Partition, DomainLoweringError> {
+    let mut attributes: Vec<CAttribute> = Vec::new();
+    let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
+    if names.len() >= 2 {
+        attribute_tuples.push(build_attribute_tuple(names, rows)?);
+    } else if let Some(name) = names.first() {
+        let values: Vec<CPrimitiveObject> = rows
+            .iter()
+            .filter_map(|row| row.iter().find(|(k, _)| k == name))
+            .filter_map(|(_, v)| domain_value_to_primitive(name, v))
+            .collect();
+        if let Some(merged) = merge_primitives(values) {
+            attributes.push(cattr_single(name, primitive_to_cobject(merged)));
         }
-        // An all-empty row set (names empty) contributes an alternative
-        // carrying only the shared prefix — "any value of the type".
-        partitions.push(Partition {
-            attributes,
-            attribute_tuples,
-        });
     }
-    Ok(partitions)
+    Ok(Partition {
+        attributes,
+        attribute_tuples,
+    })
 }
 
 /// The `C_ATTRIBUTE_TUPLE` of one co-varying partition: one
