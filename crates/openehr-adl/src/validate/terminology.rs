@@ -425,27 +425,7 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
         usage.node_codes.insert(nid.to_owned());
     }
     match obj {
-        CObject::CComplexObject(cco) => {
-            for attr in complex_attributes(cco) {
-                let apath = format!("{path}/{}", attr.rm_attribute_name);
-                for child in attr.children.iter().flatten() {
-                    let cpath = child_path(&apath, object_node_id(child));
-                    collect_usage_at(child, &cpath, usage);
-                }
-            }
-            // Second-order tuples (e.g. ordinals) carry primitive constraints
-            // outside the normal attribute tree (master04.4); collect their
-            // terminology-code values too.
-            for tuple in complex_attribute_tuples(cco) {
-                for prim_tuple in tuple.tuples.iter().flatten() {
-                    for member in &prim_tuple.members {
-                        if let CPrimitiveObject::CTerminologyCode(tc) = member {
-                            usage.value_codes.extend(constraint_codes(&tc.constraint));
-                        }
-                    }
-                }
-            }
-        }
+        CObject::CComplexObject(cco) => collect_complex_usage(cco, path, usage),
         CObject::CTerminologyCode(tc) => {
             let codes = constraint_codes(&tc.constraint);
             if let Some(a) = tc.assumed_value.as_ref()
@@ -460,6 +440,34 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
             usage.value_codes.extend(codes);
         }
         _ => {}
+    }
+}
+
+/// Walks a complex object's attribute children and its second-order tuples.
+///
+/// The tuples (e.g. ordinals) carry primitive constraints outside the normal
+/// attribute tree (master04.4), so their terminology-code values are collected
+/// too.
+fn collect_complex_usage(
+    cco: &openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject,
+    path: &str,
+    usage: &mut CodeUsage,
+) {
+    for attr in complex_attributes(cco) {
+        let apath = format!("{path}/{}", attr.rm_attribute_name);
+        for child in attr.children.iter().flatten() {
+            let cpath = child_path(&apath, object_node_id(child));
+            collect_usage_at(child, &cpath, usage);
+        }
+    }
+    for tuple in complex_attribute_tuples(cco) {
+        for prim_tuple in tuple.tuples.iter().flatten() {
+            for member in &prim_tuple.members {
+                if let CPrimitiveObject::CTerminologyCode(tc) = member {
+                    usage.value_codes.extend(constraint_codes(&tc.constraint));
+                }
+            }
+        }
     }
 }
 
