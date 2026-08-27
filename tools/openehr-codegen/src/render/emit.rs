@@ -752,13 +752,7 @@ fn render_struct_def(
         // `*_impl.rs`. This is the only sanctioned way to break a mandatory
         // construction cycle — a forward composition is never relaxed.
         if let Some(citation) = back_reference(&rp.owner, &p.name) {
-            b.push_str(&format!(
-                "    // NOTE: `{}` (BMM-mandatory back-reference) omitted — {}. \
-                 A back-reference is not forward-owned data and never appears on \
-                 the canonical wire; emitting it as an owning field would make \
-                 this type non-constructible.\n",
-                p.name, citation
-            ));
+            push_back_reference_note(&mut b, &p.name, citation);
             continue;
         }
         if rp.owner != class.name && prev_owner != Some(rp.owner.as_str()) {
@@ -788,14 +782,8 @@ fn render_struct_def(
         // NOTE is conditional on the degrade actually happening, so a
         // composition where the type IS resolvable (the AM24 re-emission of
         // `EL_CASE`, where `C_OBJECT` is local) emits the typed field with no note.
-        if rust_ty.contains("serde_json::Value")
-            && let Some(adj) =
-                untyped_field(&rp.owner, &p.name).or_else(|| untyped_field(&class.name, &p.name))
-        {
-            b.push_str(&format!(
-                "    // NOTE: free-form JSON is adjudicated here, not accidental — {}. {}\n",
-                adj.citation, adj.reason
-            ));
+        if rust_ty.contains("serde_json::Value") {
+            push_untyped_field_note(&mut b, &rp.owner, &class.name, &p.name);
         }
         b.push_str(&format!("    {field_vis} {ident}: {rust_ty},\n"));
         emitted.push((ident, rust_ty));
@@ -811,6 +799,39 @@ fn render_struct_def(
         ));
     }
     b
+}
+
+/// The NOTE emitted in place of an omitted back-reference field.
+///
+/// A designated owner/parent back-reference is a non-data navigational
+/// association, never forward-owned data and never on the canonical wire;
+/// emitting it as an owning field makes the type a non-constructible infinite
+/// value. This is the only sanctioned way to break a mandatory construction
+/// cycle — a forward composition is never relaxed.
+fn push_back_reference_note(b: &mut String, prop: &str, citation: &str) {
+    b.push_str(&format!(
+        "    // NOTE: `{prop}` (BMM-mandatory back-reference) omitted — {citation}. \
+         A back-reference is not forward-owned data and never appears on \
+         the canonical wire; emitting it as an owning field would make \
+         this type non-constructible.\n"
+    ));
+}
+
+/// The NOTE emitted beside a field that degraded to free-form JSON *and*
+/// carries an adjudication.
+///
+/// Silence over an untyped slot in a generated spec crate is
+/// indistinguishable from an oversight. The note is conditional on the degrade
+/// actually happening, so a composition where the type IS resolvable (the AM24
+/// re-emission of `EL_CASE`, where `C_OBJECT` is local) emits the typed field
+/// with no note.
+fn push_untyped_field_note(b: &mut String, owner: &str, class: &str, prop: &str) {
+    if let Some(adj) = untyped_field(owner, prop).or_else(|| untyped_field(class, prop)) {
+        b.push_str(&format!(
+            "    // NOTE: free-form JSON is adjudicated here, not accidental — {}. {}\n",
+            adj.citation, adj.reason
+        ));
+    }
 }
 
 /// The read accessors + door NOTE for a class whose fields are `pub(crate)`
