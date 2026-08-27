@@ -160,6 +160,25 @@ jobs:
           echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
           sudo install -m 0755 /tmp/yq /usr/local/bin/yq
           yq --version
+      # validate.sh FAILS in CI when helm-docs is absent (#2806) — the README
+      # drift check is load-bearing here, since this lane packages what it
+      # validated. The v4.0.6 chart leg failed on exactly this: #2806 gave the
+      # tool to ci.yml's helm-golden job and missed this second caller.
+      - name: Install the pinned helm-docs
+        env:
+          VERSION_FILE: deploy/helm/.tool-versions
+          HELM_DOCS_SHA256: a8cf72ada34fad93285ba2a452b38bdc5bd52cc9a571236244ec31022928d6cc
+        run: |
+          set -euo pipefail
+          source scripts/gh/retry-net.sh
+          version="$(awk '$1 == "helm-docs" { print $2 }' "$VERSION_FILE")"
+          [ -n "$version" ] || { echo "::error::no helm-docs line in $VERSION_FILE"; exit 1; }
+          retry_read "https://github.com/norwoodj/helm-docs/releases/download/v${version}/helm-docs_${version}_Linux_x86_64.tar.gz" \
+            -o /tmp/helm-docs.tar.gz
+          echo "${HELM_DOCS_SHA256}  /tmp/helm-docs.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/helm-docs.tar.gz -C /tmp helm-docs
+          sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
+          helm-docs --version
       - name: Chart validation + golden renders
         run: bash deploy/helm/validate.sh
 
