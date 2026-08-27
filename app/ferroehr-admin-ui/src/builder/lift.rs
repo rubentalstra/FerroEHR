@@ -659,6 +659,32 @@ fn lift_count_range(
     (leaf(base, CriterionKind::CountRange { min, max }), consumed)
 }
 
+/// The value list as code strings, or `None` when it is empty or carries a
+/// non-string member.
+fn code_list(items: &[ValueListItem]) -> Option<Vec<String>> {
+    let mut codes = Vec::with_capacity(items.len());
+    for item in items {
+        let ValueListItem::Primitive(Primitive::String(code)) = item else {
+            return None;
+        };
+        codes.push(code.clone());
+    }
+    (!codes.is_empty()).then_some(codes)
+}
+
+/// The value list as ordinals, or `None` when it is empty or carries a
+/// non-integer member.
+fn ordinal_list(items: &[ValueListItem]) -> Option<Vec<i64>> {
+    let mut values = Vec::with_capacity(items.len());
+    for item in items {
+        let ValueListItem::Primitive(Primitive::Integer(ordinal)) = item else {
+            return None;
+        };
+        values.push(*ordinal);
+    }
+    (!values.is_empty()).then_some(values)
+}
+
 /// Reduce one `WHERE` leaf to an [`Atom`], or refuse it.
 fn classify(expr: &WhereExpr) -> Result<Atom, LiftError> {
     let WhereExpr::Identified(condition) = expr else {
@@ -689,32 +715,14 @@ fn classify(expr: &WhereExpr) -> Result<Atom, LiftError> {
         } => {
             let (base, slot) = split_slot(path).ok_or_else(refuse)?;
             match slot {
-                Slot::CodeString => {
-                    let mut codes = Vec::with_capacity(items.len());
-                    for item in items {
-                        let ValueListItem::Primitive(Primitive::String(code)) = item else {
-                            return Err(refuse());
-                        };
-                        codes.push(code.clone());
-                    }
-                    if codes.is_empty() {
-                        return Err(refuse());
-                    }
-                    Ok(Atom::Codes { base, codes })
-                }
-                Slot::Value => {
-                    let mut values = Vec::with_capacity(items.len());
-                    for item in items {
-                        let ValueListItem::Primitive(Primitive::Integer(ordinal)) = item else {
-                            return Err(refuse());
-                        };
-                        values.push(*ordinal);
-                    }
-                    if values.is_empty() {
-                        return Err(refuse());
-                    }
-                    Ok(Atom::Ordinals { base, values })
-                }
+                Slot::CodeString => Ok(Atom::Codes {
+                    base,
+                    codes: code_list(items).ok_or_else(refuse)?,
+                }),
+                Slot::Value => Ok(Atom::Ordinals {
+                    base,
+                    values: ordinal_list(items).ok_or_else(refuse)?,
+                }),
                 _ => Err(refuse()),
             }
         }

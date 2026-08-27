@@ -693,23 +693,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         "Save failed",
         directory_toast_detail,
     );
-    Effect::new(move |_| match delete.value().get() {
-        Some(Ok(())) => crate::components::toast::toast_success(
-            toaster,
-            "Directory deleted",
-            "The directory was deleted.",
-        ),
-        Some(Err(error)) if is_conflict(&error) => conflict_toast(toaster),
-        Some(Err(error)) => {
-            crate::feedback::toast_write_failure(
-                toaster,
-                "Delete failed",
-                DIRECTORY_OBJECT,
-                &error,
-            );
-        }
-        None => {}
-    });
+    delete_toast(toaster, delete);
 
     // A version bump on any SUCCESSFUL write is the shared refetch trigger.
     // `Action::version` increments on failures too; refetching on a failed
@@ -718,46 +702,11 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     // Each stamp Memo therefore sticks to its previous value on a failed
     // completion (the Memo's `prev` parameter), so only completed writes
     // reload (rules §6).
-    let create_ok = Memo::new(move |prev: Option<&usize>| {
-        let version = create.version().get();
-        if create.value().with(|v| matches!(v, Some(Ok(_)))) {
-            version
-        } else {
-            prev.copied().unwrap_or(0)
-        }
-    });
-    let update_ok = Memo::new(move |prev: Option<&usize>| {
-        let version = update.version().get();
-        if update.value().with(|v| matches!(v, Some(Ok(_)))) {
-            version
-        } else {
-            prev.copied().unwrap_or(0)
-        }
-    });
-    let delete_ok = Memo::new(move |prev: Option<&usize>| {
-        let version = delete.version().get();
-        if delete.value().with(|v| matches!(v, Some(Ok(())))) {
-            version
-        } else {
-            prev.copied().unwrap_or(0)
-        }
-    });
-    let restore_ok = Memo::new(move |prev: Option<&usize>| {
-        let version = restore.version().get();
-        if restore.value().with(|v| matches!(v, Some(Ok(_)))) {
-            version
-        } else {
-            prev.copied().unwrap_or(0)
-        }
-    });
-    let force_ok = Memo::new(move |prev: Option<&usize>| {
-        let version = force_save.version().get();
-        if force_save.value().with(|v| matches!(v, Some(Ok(_)))) {
-            version
-        } else {
-            prev.copied().unwrap_or(0)
-        }
-    });
+    let create_ok = completed_version(create);
+    let update_ok = completed_version(update);
+    let delete_ok = completed_version(delete);
+    let restore_ok = completed_version(restore);
+    let force_ok = completed_version(force_save);
     let write_version = Memo::new(move |_| {
         (
             create_ok.get(),
@@ -909,6 +858,54 @@ const DIRECTORY_OBJECT: &str = "the EHR's directory";
 /// `412` conflict with the distinct reload/save-anyway toast, and every other
 /// failure with the shared actionable copy under `failure_title`. The inline
 /// feedback pane keeps the verbatim diagnostic as well.
+/// Toasts the directory deletion's outcome — the one write whose success
+/// carries no version uid, so it does not fit [`write_toast`].
+fn delete_toast<I: Send + Sync + 'static>(
+    toaster: thaw::ToasterInjection,
+    delete: Action<I, Result<(), AdminUiError>>,
+) {
+    Effect::new(move |_| match delete.value().get() {
+        Some(Ok(())) => crate::components::toast::toast_success(
+            toaster,
+            "Directory deleted",
+            "The directory was deleted.",
+        ),
+        Some(Err(error)) if is_conflict(&error) => conflict_toast(toaster),
+        Some(Err(error)) => {
+            crate::feedback::toast_write_failure(
+                toaster,
+                "Delete failed",
+                DIRECTORY_OBJECT,
+                &error,
+            );
+        }
+        None => {}
+    });
+}
+
+/// One write action's version stamp, frozen at its previous value unless the
+/// last completion SUCCEEDED — the refetch trigger for the reads it affects.
+///
+/// `Action::version` increments on failures too; refetching on a failed save
+/// (a `412` conflict, a validation reject) would re-seed the working tree from
+/// the server and silently discard the user's unsaved edits. The stamp
+/// therefore sticks to its previous value on a failed completion (the Memo's
+/// `prev` parameter), so only completed writes reload (rules §6).
+fn completed_version<I, O>(action: Action<I, Result<O, AdminUiError>>) -> Memo<usize>
+where
+    I: Send + Sync + 'static,
+    O: Send + Sync + 'static,
+{
+    Memo::new(move |prev: Option<&usize>| {
+        let version = action.version().get();
+        if action.value().with(|v| matches!(v, Some(Ok(_)))) {
+            version
+        } else {
+            prev.copied().unwrap_or(0)
+        }
+    })
+}
+
 fn write_toast<I: Send + Sync + 'static>(
     toaster: thaw::ToasterInjection,
     action: Action<I, Result<String, AdminUiError>>,

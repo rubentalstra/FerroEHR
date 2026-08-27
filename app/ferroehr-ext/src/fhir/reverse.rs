@@ -105,31 +105,49 @@ fn reverse_entry(flat: &impl FlatLookup, entry: &MappingEntry, resource: &mut Va
                 set_at(resource, up, u.clone());
             }
         }
-        // NOTE: no openEHR spec governs FHIR conversion — our own design: a
-        // `translate` entry reverses to the stored (translated) coding, whose
-        // `|code`/`|terminology` pair is internally consistent.
         Transform::Coded {
             system_path,
             display_path,
             translate: _,
-        } => {
-            if let Some(code) = flat.lookup(&format!("{}|code", entry.openehr_path)) {
-                set_at(resource, fhir_path, code.clone());
-            }
-            if let Some(sp) = system_path
-                && let Some(term) = flat
-                    .lookup(&format!("{}|terminology", entry.openehr_path))
-                    .and_then(Value::as_str)
-                && let Some(system) = reverse_code_map(&entry.code_map, term)
-            {
-                set_at(resource, sp, Value::String(system));
-            }
-            if let Some(dp) = display_path
-                && let Some(display) = flat.lookup(&format!("{}|value", entry.openehr_path))
-            {
-                set_at(resource, dp, display.clone());
-            }
-        }
+        } => reverse_coded(
+            flat,
+            entry,
+            fhir_path,
+            system_path.as_deref(),
+            display_path.as_deref(),
+            resource,
+        ),
+    }
+}
+
+/// Reverses a coded leaf into its FHIR coding fields.
+///
+/// NOTE: no openEHR spec governs FHIR conversion — our own design: a
+/// `translate` entry reverses to the stored (translated) coding, whose
+/// `|code`/`|terminology` pair is internally consistent.
+fn reverse_coded(
+    flat: &impl FlatLookup,
+    entry: &MappingEntry,
+    fhir_path: &str,
+    system_path: Option<&str>,
+    display_path: Option<&str>,
+    resource: &mut Value,
+) {
+    if let Some(code) = flat.lookup(&format!("{}|code", entry.openehr_path)) {
+        set_at(resource, fhir_path, code.clone());
+    }
+    if let Some(sp) = system_path
+        && let Some(term) = flat
+            .lookup(&format!("{}|terminology", entry.openehr_path))
+            .and_then(Value::as_str)
+        && let Some(system) = reverse_code_map(&entry.code_map, term)
+    {
+        set_at(resource, sp, Value::String(system));
+    }
+    if let Some(dp) = display_path
+        && let Some(display) = flat.lookup(&format!("{}|value", entry.openehr_path))
+    {
+        set_at(resource, dp, display.clone());
     }
 }
 

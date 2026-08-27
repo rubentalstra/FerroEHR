@@ -258,32 +258,7 @@ fn section(value: &Value, label: Option<&str>, key: String) -> RenderedSection {
             code: None,
         }));
     }
-    let headers = header_attributes(&rm_type);
-    let containers = child_attributes(&rm_type);
-    if headers.is_empty() && containers.is_empty() {
-        // A type with no table (a CONTRIBUTION, a VERSION, a demographic
-        // PARTY, an extension payload): walk what the document actually
-        // carries, minus the folded meta.
-        if let Some(map) = value.as_object() {
-            for (attribute, child) in map {
-                if is_folded(attribute) {
-                    continue;
-                }
-                push_attribute(&mut children, attribute, child, &key);
-            }
-        }
-    } else {
-        for attribute in headers {
-            if let Some(child) = value.get(*attribute) {
-                push_attribute(&mut children, attribute, child, &key);
-            }
-        }
-        for attribute in containers {
-            if let Some(child) = value.get(*attribute) {
-                push_attribute(&mut children, attribute, child, &key);
-            }
-        }
-    }
+    push_section_children(&mut children, value, &rm_type, &key);
     RenderedSection {
         key,
         title,
@@ -293,6 +268,33 @@ fn section(value: &Value, label: Option<&str>, key: String) -> RenderedSection {
             .and_then(Value::as_str)
             .map(str::to_owned),
         children,
+    }
+}
+
+/// Walks the attributes one RM object contributes to its section.
+///
+/// A type the display tables cover walks its declared header and container
+/// attributes, in that order. A type with no table (a CONTRIBUTION, a VERSION,
+/// a demographic PARTY, an extension payload) walks what the document actually
+/// carries, minus the folded meta.
+fn push_section_children(out: &mut Vec<RenderedNode>, value: &Value, rm_type: &str, key: &str) {
+    let headers = header_attributes(rm_type);
+    let containers = child_attributes(rm_type);
+    if headers.is_empty() && containers.is_empty() {
+        let Some(map) = value.as_object() else {
+            return;
+        };
+        for (attribute, child) in map {
+            if !is_folded(attribute) {
+                push_attribute(out, attribute, child, key);
+            }
+        }
+        return;
+    }
+    for attribute in headers.iter().chain(containers) {
+        if let Some(child) = value.get(*attribute) {
+            push_attribute(out, attribute, child, key);
+        }
     }
 }
 

@@ -534,6 +534,74 @@ fn pane_view_from_url() -> PaneView {
         .unwrap_or_default()
 }
 
+/// Toasts the commit's outcome.
+///
+/// Both outcomes toast (an outside-world side-effect — rules §2; the console's
+/// mutation-feedback rule — crate CLAUDE.md); the resources refetch via
+/// `update.version()` in their own sources, and the CDR's diagnostic ALSO
+/// stays inline in the editor, next to the edited body.
+fn wire_commit_toast<I: Send + Sync + 'static>(
+    toaster: thaw::ToasterInjection,
+    update: Action<I, Result<String, crate::error::AdminUiError>>,
+) {
+    Effect::new(move |_| match update.value().get() {
+        Some(Ok(uid)) => {
+            let detail = if uid.is_empty() {
+                "A new version was committed.".to_owned()
+            } else {
+                format!("New version {uid}")
+            };
+            toast_success(toaster, "New version committed", &detail);
+        }
+        Some(Err(error)) => crate::feedback::toast_write_failure(
+            toaster,
+            "Commit failed",
+            "the new composition version",
+            &error,
+        ),
+        None => {}
+    });
+}
+
+/// Toasts the logical delete's outcome and leaves the screen on success.
+///
+/// A success returns to the EHR's compositions tab, whose list then reloads
+/// with the deleted composition gone. Navigation is an outside-world
+/// side-effect, so an Effect is its correct home (rules §2); it never runs on
+/// the server.
+fn wire_delete_outcome<I: Send + Sync + 'static>(
+    toaster: thaw::ToasterInjection,
+    delete: Action<I, Result<(), crate::error::AdminUiError>>,
+    ehr_id: Signal<String>,
+) {
+    let navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| match delete.value().get() {
+        Some(Ok(())) => {
+            toast_success(
+                toaster,
+                "Composition deleted",
+                "The composition was logically deleted — its version history stays readable.",
+            );
+            // The route param is percent-encoded through the shared href
+            // builder — never interpolated raw into a path (owner rule: all
+            // percent-coding goes through `urlencoding`).
+            navigate(
+                &format!(
+                    "{}?tab=compositions",
+                    crate::pages::ehrs::ehr_detail_href(&ehr_id.get_untracked())
+                ),
+                leptos_router::NavigateOptions::default(),
+            );
+        }
+        Some(Err(error)) => toast_error(
+            toaster,
+            "Delete failed",
+            &crate::feedback::logical_delete_failure_copy("this composition", &error),
+        ),
+        None => {}
+    });
+}
+
 /// The composition viewer screen.
 #[expect(
     clippy::must_use_candidate,
@@ -649,55 +717,8 @@ pub fn CompositionPage() -> impl IntoView {
     // refetch via `update.version()` in their sources above, and the CDR's
     // diagnostic ALSO stays inline in the editor, next to the edited body.
     let toaster = thaw::ToasterInjection::expect_context();
-    Effect::new(move |_| match update.value().get() {
-        Some(Ok(uid)) => {
-            let detail = if uid.is_empty() {
-                "A new version was committed.".to_owned()
-            } else {
-                format!("New version {uid}")
-            };
-            toast_success(toaster, "New version committed", &detail);
-        }
-        Some(Err(error)) => crate::feedback::toast_write_failure(
-            toaster,
-            "Commit failed",
-            "the new composition version",
-            &error,
-        ),
-        None => {}
-    });
-
-    // The logical delete's outcomes: both toast (the console's
-    // mutation-feedback rule — crate CLAUDE.md), and a success leaves this
-    // screen for the EHR's compositions tab, whose list then reloads with the
-    // deleted composition gone. Navigation is an outside-world side-effect, so
-    // an Effect is its correct home (rules §2); it never runs on the server.
-    let navigate = leptos_router::hooks::use_navigate();
-    Effect::new(move |_| match delete.value().get() {
-        Some(Ok(())) => {
-            toast_success(
-                toaster,
-                "Composition deleted",
-                "The composition was logically deleted — its version history stays readable.",
-            );
-            // The route param is percent-encoded through the shared href
-            // builder — never interpolated raw into a path (owner rule: all
-            // percent-coding goes through `urlencoding`).
-            navigate(
-                &format!(
-                    "{}?tab=compositions",
-                    crate::pages::ehrs::ehr_detail_href(&ehr_id.get_untracked())
-                ),
-                leptos_router::NavigateOptions::default(),
-            );
-        }
-        Some(Err(error)) => toast_error(
-            toaster,
-            "Delete failed",
-            &crate::feedback::logical_delete_failure_copy("this composition", &error),
-        ),
-        None => {}
-    });
+    wire_commit_toast(toaster, update);
+    wire_delete_outcome(toaster, delete, ehr_id);
 
     let toolbar = toolbar_section(
         format,
