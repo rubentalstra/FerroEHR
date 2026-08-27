@@ -15,6 +15,12 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The container images' distroless base (`gcr.io/distroless/cc-debian13:nonroot`)
+  moves to the current upstream digest, picking up Debian package updates for
+  the runtime layer of the server and admin-console images.
+
 ## [4.0.7] - 2026-08-27
 
 ### Added
