@@ -403,17 +403,8 @@ fn ontology_term_bindings_populate_node_and_coded_value_bindings() {
         .expect("build Across - Visual Acuity Report");
 
     // Node-level: a node bound to SNOMED-CT 422673001.
-    let mut node_binding: Option<
-        openehr_its::flat::webtemplate::model::WebTemplateBindingCodedValue,
-    > = None;
-    for_each_node(&wt.tree, &mut |n| {
-        if let Some(b) = n.term_bindings.get("SNOMED-CT")
-            && b.value == "422673001"
-        {
-            node_binding = Some(b.clone());
-        }
-    });
-    let node_binding = node_binding.expect("a node bound to SNOMED-CT 422673001");
+    let node_binding =
+        find_node_binding(&wt, "422673001").expect("a node bound to SNOMED-CT 422673001");
     assert_eq!(node_binding.terminology_id, "SNOMED-CT");
     // Better JSON shape/order: `value` then `terminologyId`.
     assert_eq!(
@@ -422,34 +413,73 @@ fn ontology_term_bindings_populate_node_and_coded_value_bindings() {
     );
 
     // Coded-value-level: a coded option bound to SNOMED-CT 362503005.
-    let mut cv_binding: Option<
-        openehr_its::flat::webtemplate::model::WebTemplateBindingCodedValue,
-    > = None;
+    let cv_binding = find_coded_value_binding(&wt, "362503005")
+        .expect("a coded value bound to SNOMED-CT 362503005");
+    assert_eq!(cv_binding.terminology_id, "SNOMED-CT");
+
+    assert_every_binding_well_formed(&wt);
+}
+
+/// The SNOMED-CT node-level binding carrying `value`, if the tree has one.
+fn find_node_binding(
+    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+    value: &str,
+) -> Option<openehr_its::flat::webtemplate::model::WebTemplateBindingCodedValue> {
+    let mut found = None;
+    for_each_node(&wt.tree, &mut |n| {
+        if let Some(b) = n.term_bindings.get("SNOMED-CT")
+            && b.value == value
+        {
+            found = Some(b.clone());
+        }
+    });
+    found
+}
+
+/// The SNOMED-CT coded-value binding carrying `value`, if the tree has one.
+fn find_coded_value_binding(
+    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+    value: &str,
+) -> Option<openehr_its::flat::webtemplate::model::WebTemplateBindingCodedValue> {
+    let mut found = None;
     for_each_node(&wt.tree, &mut |n| {
         for input in &n.inputs {
             for cv in &input.list {
                 if let Some(b) = cv.term_bindings.get("SNOMED-CT")
-                    && b.value == "362503005"
+                    && b.value == value
                 {
-                    cv_binding = Some(b.clone());
+                    found = Some(b.clone());
                 }
             }
         }
     });
-    let cv_binding = cv_binding.expect("a coded value bound to SNOMED-CT 362503005");
-    assert_eq!(cv_binding.terminology_id, "SNOMED-CT");
+    found
+}
 
-    // Every emitted binding — node- or coded-value-level — is well-formed.
+/// Every emitted binding — node- or coded-value-level — is well-formed.
+fn assert_every_binding_well_formed(wt: &openehr_its::flat::webtemplate::model::WebTemplate) {
     for_each_node(&wt.tree, &mut |n| {
         for (term, b) in &n.term_bindings {
             assert!(!term.is_empty(), "empty terminology key at {}", n.aql_path);
-            assert!(!b.value.is_empty() && !b.terminology_id.is_empty());
+            assert!(
+                !b.value.is_empty() && !b.terminology_id.is_empty(),
+                "incomplete node binding at {}",
+                n.aql_path
+            );
         }
         for input in &n.inputs {
             for cv in &input.list {
                 for (term, b) in &cv.term_bindings {
-                    assert!(!term.is_empty());
-                    assert!(!b.value.is_empty() && !b.terminology_id.is_empty());
+                    assert!(
+                        !term.is_empty(),
+                        "empty terminology key on a coded value at {}",
+                        n.aql_path
+                    );
+                    assert!(
+                        !b.value.is_empty() && !b.terminology_id.is_empty(),
+                        "incomplete coded-value binding at {}",
+                        n.aql_path
+                    );
                 }
             }
         }
