@@ -483,27 +483,29 @@ impl<'a> Converter<'a> {
         });
 
         if at_codes.len() == 1 {
-            (at_codes.into_iter().next().unwrap_or_default(), assumed)
-        } else {
-            // A list → a synthesised ac-code value set.
-            let signature = at_codes.join(",");
-            let ac = if let Some(existing) = self.log.value_set(&signature) {
-                existing.to_owned()
-            } else {
-                let ac = self.alloc_ac();
-                self.log.record_value_set(&signature, &ac);
-                let (text, description) = synth_value_set_rubric(owner_text);
-                self.synth.push(Synth {
-                    code: ac.clone(),
-                    text,
-                    description,
-                    binding: None,
-                    value_set_members: Some(at_codes.clone()),
-                });
-                ac
-            };
-            (ac, assumed)
+            return (at_codes.into_iter().next().unwrap_or_default(), assumed);
         }
+        (self.value_set_ac(&at_codes, owner_text), assumed)
+    }
+
+    /// The synthesised ac-code value set for a code LIST, minted on first sight
+    /// and reused for an identical member signature (idempotent via the log).
+    fn value_set_ac(&mut self, at_codes: &[String], owner_text: &str) -> String {
+        let signature = at_codes.join(",");
+        if let Some(existing) = self.log.value_set(&signature) {
+            return existing.to_owned();
+        }
+        let ac = self.alloc_ac();
+        self.log.record_value_set(&signature, &ac);
+        let (text, description) = synth_value_set_rubric(owner_text);
+        self.synth.push(Synth {
+            code: ac.clone(),
+            text,
+            description,
+            binding: None,
+            value_set_members: Some(at_codes.to_vec()),
+        });
+        ac
     }
 
     /// The synthesised at-code for an external `terminology::code`, minting +
@@ -905,10 +907,6 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
 
 // ── code shifting ────────────────────────────────────────────────────────────
 
-/// Shift a 1.4 code to an ADL2 code with the given `prefix` (`"id"`/`"at"`).
-/// The first segment's number is incremented by one (`at0000`→`id1`,
-/// `at0003.1`→`id4.1`), except the specialisation new-code prefix `at0`
-/// (`at0.89`→`id0.89` — number kept). No openEHR spec governs this — fixture-pinned.
 /// The highest ac-number the source already uses, across its terminology
 /// entries and its bare constraint refs.
 ///
@@ -938,6 +936,10 @@ fn highest_ac_number(data: &AuthoredArchetypeData) -> i64 {
     highest
 }
 
+/// Shift a 1.4 code to an ADL2 code with the given `prefix` (`"id"`/`"at"`).
+/// The first segment's number is incremented by one (`at0000`→`id1`,
+/// `at0003.1`→`id4.1`), except the specialisation new-code prefix `at0`
+/// (`at0.89`→`id0.89` — number kept). No openEHR spec governs this — fixture-pinned.
 fn shift_code(code: &str, prefix: &str) -> String {
     let bare = code
         .trim_start_matches("at")

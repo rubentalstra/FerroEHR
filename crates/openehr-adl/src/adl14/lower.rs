@@ -122,46 +122,7 @@ impl Parser<'_> {
                 SyntaxErrorCode::Stccp,
                 "expecting '::' in a qualified code",
             )?;
-            let mut codes: Vec<String> = Vec::new();
-            let mut assumed: Option<String> = None;
-            // An EMPTY code list — `[local::]`, `[openEHR::]` — names the
-            // terminology and constrains the code to nothing further. Real CKM
-            // content relies on it (`media_type matches {[openEHR::]}`), and
-            // the verbatim form (`terminology::`) is preserved for the
-            // converter exactly as the non-empty spelling is.
-            //
-            // NOTE: the compact empty spelling is docs-text SILENT; the
-            // normative `cadl14_primitives.g4` `c_qualified_term_code` makes
-            // the code-list group optional (`ADL1.4/master09` §Custom Syntax).
-            while !matches!(self.peek(), Some(Token::RBracket)) {
-                match self.peek().cloned() {
-                    // External codes may be bare integers (`[openehr:: 253, …]`)
-                    // as well as at/ac/id codes (`[local:: at0136, …]`).
-                    Some(
-                        Token::AtCode(c) | Token::AcCode(c) | Token::IdCode(c) | Token::Integer(c),
-                    ) => {
-                        self.pos += 1;
-                        codes.push(c);
-                    }
-                    _ => return self.err(SyntaxErrorCode::Stccp, "expecting an at/ac code"),
-                }
-                if self.eat(|t| matches!(t, Token::SymComma)) {
-                    continue;
-                }
-                if self.eat(|t| matches!(t, Token::SymSemiColon)) {
-                    match self.peek().cloned() {
-                        Some(Token::AtCode(a)) => {
-                            self.pos += 1;
-                            assumed = Some(a);
-                        }
-                        _ => {
-                            return self
-                                .err(SyntaxErrorCode::Stccp, "assumed value must be an at-code");
-                        }
-                    }
-                }
-                break;
-            }
+            let (codes, assumed) = self.parse_adl14_code_list()?;
             let list_span = start..self.cur_span().end;
             self.expect(
                 |t| matches!(t, Token::RBracket),
@@ -171,6 +132,57 @@ impl Parser<'_> {
             self.adl14_term_constraint(&terminology, &codes, assumed.as_deref(), list_span)?
         };
         Ok(adl14_terminology_code(constraint))
+    }
+
+    /// The code list of a 1.4 qualified term constraint, with its optional
+    /// `;assumed` value.
+    ///
+    /// An EMPTY code list — `[local::]`, `[openEHR::]` — names the terminology
+    /// and constrains the code to nothing further. Real CKM content relies on
+    /// it (`media_type matches {[openEHR::]}`), and the verbatim form
+    /// (`terminology::`) is preserved for the converter exactly as the
+    /// non-empty spelling is. External codes may be bare integers
+    /// (`[openehr:: 253, …]`) as well as at/ac/id codes
+    /// (`[local:: at0136, …]`).
+    ///
+    /// NOTE: the compact empty spelling is docs-text SILENT; the normative
+    /// `cadl14_primitives.g4` `c_qualified_term_code` makes the code-list group
+    /// optional (`ADL1.4/master09` §Custom Syntax).
+    ///
+    /// # Errors
+    /// [`SyntaxErrorCode::Stccp`] for a non-code list member or an assumed
+    /// value that is not an at-code.
+    fn parse_adl14_code_list(&mut self) -> PResult<(Vec<String>, Option<String>)> {
+        let mut codes: Vec<String> = Vec::new();
+        let mut assumed: Option<String> = None;
+        while !matches!(self.peek(), Some(Token::RBracket)) {
+            match self.peek().cloned() {
+                Some(
+                    Token::AtCode(c) | Token::AcCode(c) | Token::IdCode(c) | Token::Integer(c),
+                ) => {
+                    self.pos += 1;
+                    codes.push(c);
+                }
+                _ => return self.err(SyntaxErrorCode::Stccp, "expecting an at/ac code"),
+            }
+            if self.eat(|t| matches!(t, Token::SymComma)) {
+                continue;
+            }
+            if self.eat(|t| matches!(t, Token::SymSemiColon)) {
+                match self.peek().cloned() {
+                    Some(Token::AtCode(a)) => {
+                        self.pos += 1;
+                        assumed = Some(a);
+                    }
+                    _ => {
+                        return self
+                            .err(SyntaxErrorCode::Stccp, "assumed value must be an at-code");
+                    }
+                }
+            }
+            break;
+        }
+        Ok((codes, assumed))
     }
 
     /// Build the verbatim `terminology::code[,code]*[;assumed]` constraint string
