@@ -186,11 +186,17 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     fresh ephemeral builder (`docker buildx create --name probe` → build →
     `buildx rm probe`), one per side of the comparison.
 
-13. **A failed release-pipeline leg is never fixed by rerun** (hit at the
-    v4.0.6 cut: the chart leg): `gh run rerun --failed` re-executes the TAG
-    commit's workflow snapshot, so the broken code runs again identically.
-    Fix forward on develop, then use the leg's documented dispatch recovery
-    lane (chart: refresh the committed appVersion default first so the plain
-    dispatch packages the release's facts — the empty-Unreleased changelog
-    fallback then injects the right section). The failed run stays red as the
-    honest record.
+13. **A failed release-pipeline leg: rerun for TRANSIENT, fix-forward for
+    BROKEN — read the log before choosing** (both halves hit live at the two
+    2026-08-27 cuts). When the leg's CODE is defective (v4.0.6's chart leg:
+    the missing helm-docs), `gh run rerun --failed` re-executes the tag
+    snapshot and fails identically — fix forward on develop, then the leg's
+    dispatch recovery lane (chart: refresh the committed appVersion default
+    first; the empty-Unreleased changelog fallback injects the right
+    section), and the red run stays as the honest record. When the failure
+    is INFRASTRUCTURE (v4.0.7's arm64 leg: softprops/action-gh-release died
+    on `Headers Timeout Error` AFTER every asset uploaded ✅),
+    `rerun --failed` is correct and safe: the release is still a DRAFT
+    (freeze-last design), the action replaces same-named assets
+    idempotently, and the rerun un-skips the dependent publish/crates legs.
+    The discriminator is the failed step's log, never the leg's name.

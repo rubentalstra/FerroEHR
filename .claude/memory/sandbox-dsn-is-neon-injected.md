@@ -24,3 +24,23 @@ Before ever claiming an env var / integration is unused, grep the config
 alias + loader layer (`config/alias.rs`, `config/loader.rs`) — the FERROEHR__
 grammar is not the only spelling the server reads. Related:
 [[session-workflow-gotchas]].
+
+**The branching incident's ops facts** (2026-08-27, resolved by the owner
+disabling the toggle; a post-toggle fresh deploy came up Ready):
+
+- The toggle lives under **Vercel → Storage → the Neon database → the
+  connected project → Deployments Configuration** — NOT Settings →
+  Integrations (the native/marketplace integration configures through the
+  Storage tab; sending the owner to Integrations cost a search loop).
+  Docs: neon.com/docs/guides/vercel-managed-integration.
+- The diagnostic that settled it: Vercel's deploy list as a natural
+  experiment — fresh builds (which run "Provisioning Integrations") all
+  Error, redeploys (which SKIP provisioning) all Ready. Compounding
+  mechanism: every deploy created a Neon branch nobody deleted, so creation
+  slowed toward Vercel's provisioning timeout; release days (most deploys)
+  tipped first.
+- The sandbox's DB provider is VERSION-LOCKED to hosts serving Postgres 18
+  (uuidv7 + WITHOUT OVERLAPS in the baseline migrations): Neon serves 18;
+  Supabase tops out at 17 (verified against supabase.com/changelog +
+  upgrade docs, 2026-08-27) — a Supabase switch is a version wall, not a
+  preference.
