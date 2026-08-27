@@ -6,7 +6,8 @@
 # where a PUBLIC endpoint demands it: the admin API and the management
 # introspection stay OFF (defaults), so the public demo credentials can read
 # and write clinical data and nothing else. The database DSN comes from the
-# environment (FERROEHR__DB__URL), never from this file.
+# environment, never from this file — the Neon integration's injected
+# DATABASE_URL(_UNPOOLED), mapped to db.url by the config aliases (#2716).
 
 [server]
 # Vercel's default container port; the PORT environment convention lands on
