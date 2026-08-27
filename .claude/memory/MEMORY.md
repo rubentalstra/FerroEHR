@@ -36,3 +36,4 @@
 - [No AI tells in prose](no-ai-tells-in-prose.md) — em dashes, not-X-but-Y, triads, buzzwords banned in all drafted prose
 - [Gate parity + caller sweeps](gate-parity-and-caller-sweeps.md) — local gate lines must mirror CI flags verbatim (the rustdoc --document-private-items escape); tightening a shared check obligates sweeping ALL its workflow callers (the #2806 chart-leg break)
 - [Veredictum: other session](veredictum-other-session.md) — owner 2026-08-27: never touch the Veredictum checkout/tracker/dispatches from here; read prior art from the remote; FerroEHR-side pin/integration stays fair game
+- [Sandbox DSN is Neon-injected](sandbox-dsn-is-neon-injected.md) — no hand-set FERROEHR__DB__URL exists; the Neon integration's DATABASE_URL(_UNPOOLED) is the DSN via config/alias.rs; never disconnect it without hand-setting the DSN first; grep the alias layer before calling an env var unused
