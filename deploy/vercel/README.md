@@ -36,6 +36,22 @@ Sandbox failures live in the two sandbox-named workflows (Sandbox deploy,
 Sandbox reseed) and nowhere else. CI, Containers, the chart and release
 lanes carry no sandbox steps, so a sandbox outage can never redden them.
 
+The deploy job verifies in three layers (#2846, after the v4.0.7 cut spent
+20 blind minutes on a Vercel-side build failure):
+
+1. **Precondition** (release calls): `:latest`'s digest must equal the
+   release tag's image digest on GHCR before any ping — the needs-edge's
+   guarantee, re-asserted where it is consumed.
+2. **Linked watch** (token-gated): the hook response's job id is captured,
+   and with `SANDBOX_VERCEL_TOKEN` + `SANDBOX_VERCEL_PROJECT_ID` set the job
+   polls the triggered deployment's own state — a Vercel build `ERROR`
+   fails the run within one interval naming the deployment, instead of
+   hiding behind the version poll. Owner setup: a read-scope token from the
+   Vercel dashboard + the project id, `gh secret set` both.
+3. **The served-version poll** stays the final acceptance either way; its
+   timeout message states what was already proven (the image side) so the
+   remaining suspect (Vercel's build/promotion) is named, not guessed.
+
 ## Two build-log warnings that are understood, not unnoticed (#2773)
 
 Every Vercel build of `Dockerfile.vercel` prints two warnings. Both were
