@@ -28,9 +28,20 @@ env:
   SITE_ORIGIN: "https://ferroehr.eu"
   SITE_BASE: ""
 
+# Cancel only PR runs (#2845). Push and dispatch runs QUEUE instead: at every
+# release cut the merge push starts a Docs run and the pipeline's docs-freeze
+# leg dispatches a second one ~90s later — with blanket cancellation the push
+# run died as a scary-looking "Cancelled" row on every healthy cut (three in a
+# row before this was adjudicated). Queuing costs one ~3-minute redundant
+# build per cut; the deploy job's own `pages` group already serializes the
+# actual deploys, and the dispatch run lands last with the frozen version.
+# Residual: GitHub still displaces a QUEUED run when a third arrives for the
+# same group (pending-displacement ignores this setting), so a rapid burst of
+# 3+ develop pushes can still show one Cancelled row — rare, and equally
+# benign.
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions: {}
 
