@@ -97,7 +97,7 @@ RUN --mount=type=cache,target=/app/target,sharing=locked \
 # Both final targets inherit this stage's EXPOSE/HEALTHCHECK/ENTRYPOINT/LABELs,
 # so they are byte-for-byte identical except the one binary-provenance layer
 # (D5 — zero drift).
-FROM gcr.io/distroless/cc-debian13:nonroot@sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775 AS runtime-base
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:a77defd6fedbb3392b175ba8ea3d1c22be963c1597c248c3ba987ddd80bfb512 AS runtime-base
 # The `:nonroot` tag already runs as uid 65532, but a scanner reading the
 # Dockerfile cannot see a base image.s user — and neither can a reader. Stating
 # it makes the posture a property of this file rather than of a tag someone
@@ -137,7 +137,7 @@ LABEL org.opencontainers.image.title="FerroEHR" \
       org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.base.name="gcr.io/distroless/cc-debian13:nonroot" \
-      org.opencontainers.image.base.digest="sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775" \
+      org.opencontainers.image.base.digest="sha256:a77defd6fedbb3392b175ba8ea3d1c22be963c1597c248c3ba987ddd80bfb512" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
