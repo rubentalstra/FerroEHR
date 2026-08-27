@@ -54,6 +54,7 @@ used as test corpora. Each family keeps its upstream license:
 | Three ISO 13606 / rejected-extract BMM reference models inside the archie corpus | offered by their authors under MPL 1.1 / GPL 2.0 / LGPL 2.1 | taken under [MPL 1.1](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/MPL-1.1.txt) — see the election below |
 | One terminology schema file, `PropertyUnitData.xsd` | ADL Designer / ADL2-tools, via the openEHR TERM assets | [AGPL-3.0-only](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/AGPL-3.0-only.txt) — see the contradiction below |
 | The self-hosted KaTeX stylesheet and fonts this documentation site renders maths with | KaTeX contributors | MIT |
+| The Citation File Format 1.2.0 JSON Schema (validates `CITATION.cff` in CI) | `citation-file-format/citation-file-format` | [CC-BY 4.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/CC-BY-4.0.txt) |
 
 Every vendored tree in the repository carries a provenance note naming its exact
 upstream source and pinned revision, with the upstream `LICENSE` file vendored
@@ -105,7 +106,7 @@ So licensing is **also** published in the machine-readable form the
 - **[`LICENSES/`](https://github.com/rubentalstra/FerroEHR/tree/develop/LICENSES)**
   holds the full text of every license any file in the tree is offered under,
   named by SPDX identifier: `MIT`, `Apache-2.0`, `CC-BY-SA-3.0`,
-  `CC-BY-SA-4.0`, `MPL-1.1`, `AGPL-3.0-only`.
+  `CC-BY-SA-4.0`, `CC-BY-4.0`, `MPL-1.1`, `AGPL-3.0-only`.
 - **[`REUSE.toml`](https://github.com/rubentalstra/FerroEHR/blob/develop/REUSE.toml)**
   declares, by glob, which files are offered under which, including the two
   positions above, represented rather than flattened.
