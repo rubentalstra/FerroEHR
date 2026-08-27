@@ -784,35 +784,67 @@ fn emit_struct(
          {deny_attr}pub struct {ty_name}{generics} {{\n"
     );
     for (pname, pschema) in props {
-        let ident = field_id(pname);
-        let mut ty = if generic_field == Some(pname.as_str()) {
-            "T".to_string()
-        } else {
-            ctx.rust_type(pschema)
-        };
-        if !required.contains(pname.as_str()) {
-            ty = format!("Option<{ty}>");
-        }
-        // A struct field is a public item `missing_docs` checks; the OAS
-        // property name is the honest, deterministic summary.
-        let _ = writeln!(b, "    /// The `{pname}` property of `{name}`.");
-        // A docs-text-wins correction carries its citation into the
-        // generated code (the OAS lists the field as required; the
-        // ITS-REST docs text wins).
-        if let Some(ov) = crate::plan::overrides::rest_optional_override(ty_name, pname) {
-            let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
-            let _ = writeln!(b, "    /// ({})", ov.reason);
-        }
-        if let Some(rename) = naming::serde_rename(pname, &ident) {
-            let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
-        }
-        if !required.contains(pname.as_str()) {
-            b.push_str(SKIP_NONE_ATTR);
-        }
-        let _ = writeln!(b, "    pub {ident}: {ty},");
+        emit_struct_field(
+            b,
+            StructField {
+                owner: name,
+                ty_name,
+                pname,
+                pschema,
+                is_generic: generic_field == Some(pname.as_str()),
+                is_required: required.contains(pname.as_str()),
+            },
+            ctx,
+        );
     }
     emit_additional_properties(b, name, schema, ctx);
     b.push_str("}\n\n");
+}
+
+/// One DTO field's emission inputs.
+#[derive(Clone, Copy)]
+struct StructField<'a> {
+    /// The OAS component schema name the field belongs to.
+    owner: &'a str,
+    /// The Rust type name of the emitted DTO.
+    ty_name: &'a str,
+    /// The OAS property name.
+    pname: &'a str,
+    /// The OAS property schema.
+    pschema: &'a Value,
+    /// Whether the field carries the DTO's generic parameter.
+    is_generic: bool,
+    /// Whether the field is required after the docs-text-wins corrections.
+    is_required: bool,
+}
+
+/// Emits one DTO field: its doc line, serde attributes and typed declaration.
+fn emit_struct_field(b: &mut String, f: StructField<'_>, ctx: &Ctx) {
+    let ident = field_id(f.pname);
+    let mut ty = if f.is_generic {
+        "T".to_string()
+    } else {
+        ctx.rust_type(f.pschema)
+    };
+    if !f.is_required {
+        ty = format!("Option<{ty}>");
+    }
+    // A struct field is a public item `missing_docs` checks; the OAS property
+    // name is the honest, deterministic summary.
+    let _ = writeln!(b, "    /// The `{}` property of `{}`.", f.pname, f.owner);
+    // A docs-text-wins correction carries its citation into the generated code
+    // (the OAS lists the field as required; the ITS-REST docs text wins).
+    if let Some(ov) = crate::plan::overrides::rest_optional_override(f.ty_name, f.pname) {
+        let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
+        let _ = writeln!(b, "    /// ({})", ov.reason);
+    }
+    if let Some(rename) = naming::serde_rename(f.pname, &ident) {
+        let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
+    }
+    if !f.is_required {
+        b.push_str(SKIP_NONE_ATTR);
+    }
+    let _ = writeln!(b, "    pub {ident}: {ty},");
 }
 
 /// Emit an OAS `discriminator.mapping` schema as a `_type`-dispatched enum.

@@ -437,32 +437,7 @@ fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
     // `<name id="key">value</name>` wire shape; only the map container differs,
     // and both iterate as `(k, v)` here.
     if f.target == "Hash" || f.target == "OrderedDict" {
-        let rust = accessor(&f.rust_name);
-        let (name, rust) = (&f.wire_name, &rust);
-        if f.map_value.as_deref() == Some("String") {
-            // `Hash<String, String>` → repeated `<name id="key">value</name>`
-            // (the openEHR `StringDictionaryItem` shape).
-            if f.optional {
-                let _ = writeln!(
-                    b,
-                    "if let Some(m) = &self.{rust} {{ for (k, v) in m {{ w.write_kv_element(\"{name}\", k, v)?; }} }}"
-                );
-            } else {
-                let _ = writeln!(
-                    b,
-                    "for (k, v) in &self.{rust} {{ w.write_kv_element(\"{name}\", k, v)?; }}"
-                );
-            }
-        } else {
-            // `Hash<String, ComplexType>` (translations, RESOURCE_ANNOTATIONS):
-            // archetype-resource metadata serialized via ADL/AOM, off the RM
-            // canonical-XML wire; its RM-XML shape is not spec-defined here.
-            let _ = writeln!(
-                b,
-                "// NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
-                f.map_value.as_deref().unwrap_or("?")
-            );
-        }
+        emit_write_map_field(b, f, &accessor(&f.rust_name));
         return;
     }
     let rust = accessor(&f.rust_name);
@@ -492,6 +467,35 @@ fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
         let _ = writeln!(
             b,
             "self.{rust}.write_xml(w, \"{name}\", Some(\"{target}\"))?;"
+        );
+    }
+}
+
+/// Emits the write half of a map-typed field.
+///
+/// `Hash<String, String>` writes repeated `<name id="key">value</name>` (the
+/// openEHR `StringDictionaryItem` shape). A complex map value (translations,
+/// `RESOURCE_ANNOTATIONS`) is archetype-resource metadata serialized via
+/// ADL/AOM, off the RM canonical-XML wire, so it is not serialized at all.
+fn emit_write_map_field(b: &mut String, f: &XmlField, rust: &str) {
+    let name = &f.wire_name;
+    if f.map_value.as_deref() != Some("String") {
+        let _ = writeln!(
+            b,
+            "// NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
+            f.map_value.as_deref().unwrap_or("?")
+        );
+        return;
+    }
+    if f.optional {
+        let _ = writeln!(
+            b,
+            "if let Some(m) = &self.{rust} {{ for (k, v) in m {{ w.write_kv_element(\"{name}\", k, v)?; }} }}"
+        );
+    } else {
+        let _ = writeln!(
+            b,
+            "for (k, v) in &self.{rust} {{ w.write_kv_element(\"{name}\", k, v)?; }}"
         );
     }
 }

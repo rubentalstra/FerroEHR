@@ -1001,33 +1001,37 @@ fn decode_entities(s: &str) -> String {
     let mut out = String::new();
     let mut chars = s.chars().peekable();
     while let Some(c) = chars.next() {
-        if c == '&' && chars.peek() == Some(&'#') {
-            chars.next();
-            let mut num = String::new();
-            while let Some(&d) = chars.peek() {
-                if d == ';' {
-                    chars.next();
-                    break;
-                }
-                if d.is_ascii_digit() {
-                    num.push(d);
-                    chars.next();
-                } else {
-                    break;
-                }
-            }
-            if let Some(ch) = num.parse::<u32>().ok().and_then(char::from_u32) {
-                out.push(ch);
-            } else {
-                out.push('&');
-                out.push('#');
-                out.push_str(&num);
-            }
-        } else {
+        if c != '&' || chars.peek() != Some(&'#') {
             out.push(c);
+            continue;
+        }
+        chars.next();
+        let num = read_reference_digits(&mut chars);
+        if let Some(ch) = num.parse::<u32>().ok().and_then(char::from_u32) {
+            out.push(ch);
+        } else {
+            out.push_str("&#");
+            out.push_str(&num);
         }
     }
     out
+}
+
+/// Reads a numeric character reference's digits, consuming a closing `;`.
+fn read_reference_digits(chars: &mut std::iter::Peekable<std::str::Chars<'_>>) -> String {
+    let mut num = String::new();
+    while let Some(&d) = chars.peek() {
+        if d == ';' {
+            chars.next();
+            break;
+        }
+        if !d.is_ascii_digit() {
+            break;
+        }
+        num.push(d);
+        chars.next();
+    }
+    num
 }
 
 /// Decode a single-character BMM literal body: numeric references first, then an
@@ -1492,14 +1496,38 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
         &synth_class_summary(spec),
     );
     push_spec_alias(&mut b, spec, &ty, "");
-    let derive = if is_int {
+    emit_enum_declaration(&mut b, &ty, spec, payload, is_int, &lits);
+
+    emit_enum_conversions(&mut b, &ty, is_int, &lits);
+    emit_enum_try_from(&mut b, &ty, spec, &err_ty, is_int, &lits);
+
+    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
+    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
+    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
+    // through the total `from_wire`/`from_value`, byte-identical to the primitive
+    // it replaces. No serde impl is emitted here.
+
+    emit_enum_error_type(&mut b, &ty, spec, &err_ty, err_inner, is_int);
+    b
+}
+
+/// The enum declaration: its derive, one variant per constant, and the
+/// tolerant `Other` payload variant.
+fn emit_enum_declaration(
+    b: &mut String,
+    ty: &str,
+    spec: &str,
+    payload: &str,
+    is_int: bool,
+    lits: &[EnumLit],
+) {
+    b.push_str(if is_int {
         "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n"
     } else {
         "#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n"
-    };
-    b.push_str(derive);
+    });
     b.push_str(&format!("pub enum {ty} {{\n"));
-    for lit in &lits {
+    for lit in lits {
         match &lit.wire {
             EnumLitWire::Str(s) => b.push_str(&format!("    /// `{s}`\n")),
             EnumLitWire::Int(v) => b.push_str(&format!("    /// `{}` = {v}\n", lit.name)),
@@ -1514,18 +1542,6 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
          /// the bare `{payload}` it replaces.\n    \
          Other({payload}),\n}}\n\n"
     ));
-
-    emit_enum_conversions(&mut b, &ty, is_int, &lits);
-    emit_enum_try_from(&mut b, &ty, spec, &err_ty, is_int, &lits);
-
-    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
-    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
-    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
-    // through the total `from_wire`/`from_value`, byte-identical to the primitive
-    // it replaces. No serde impl is emitted here.
-
-    emit_enum_error_type(&mut b, &ty, spec, &err_ty, err_inner, is_int);
-    b
 }
 
 /// The enum's inherent wire conversions: the total `as_str`/`value` writer and
@@ -1805,75 +1821,11 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
 
 fn doc_block_summarized(b: &mut String, doc: Option<&str>, indent: &str, summary_hint: &str) {
     let Some(doc) = doc else { return };
-    // Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS`
-    // date formats) that rustdoc would compile as Rust doctests and choke on.
-    // Neutralize both forms it recognizes so the docs render as text, never run:
-    //   - a bare ``` fence → tag the opening as ```text (closing stays bare);
-    //   - a run of 4-space-indented lines → wrap it in a ```text fence.
-    // Prose OUTSIDE those blocks additionally goes through `sanitize_doc_prose`
-    // (bare URLs, stray brackets/angle brackets — the rustdoc deny-lints).
-    let mut out: Vec<String> = Vec::new();
-    // Pending prose lines, sanitized as one segment so a code span may span
-    // lines (the BMM has such spans, e.g. `BMM_SCHEMA_DESCRIPTOR.schema_id`).
-    let mut prose: Vec<&str> = Vec::new();
-    let flush = |prose: &mut Vec<&str>, out: &mut Vec<String>| {
-        if prose.is_empty() {
-            return;
-        }
-        let sanitized = sanitize_doc_prose(&prose.join("\n"));
-        out.extend(sanitized.split('\n').map(str::to_string));
-        prose.clear();
-    };
-
-    let mut in_fence = false; // inside an explicit ``` fence
-    let mut in_indent = false; // inside an auto-wrapped indented block
+    let mut block = DocBlock::default();
     for line in doc.lines() {
-        let line = line.trim_end();
-        let stripped = line.trim_start();
-        let lead = line.len() - stripped.len();
-
-        if stripped.starts_with("```") && !in_indent {
-            flush(&mut prose, &mut out);
-            if in_fence {
-                in_fence = false;
-                out.push(line.to_string());
-            } else {
-                in_fence = true;
-                out.push(if stripped == "```" {
-                    line.replacen("```", "```text", 1)
-                } else {
-                    line.to_string()
-                });
-            }
-            continue;
-        }
-        if in_fence {
-            out.push(line.to_string());
-            continue;
-        }
-
-        let is_indent_line = lead >= 4 && !stripped.is_empty();
-        if is_indent_line && !in_indent {
-            flush(&mut prose, &mut out);
-            out.push("```text".to_string());
-            in_indent = true;
-        } else if in_indent && !is_indent_line && !stripped.is_empty() {
-            out.push("```".to_string());
-            in_indent = false;
-        }
-        if in_indent {
-            out.push(line.to_string());
-        } else {
-            prose.push(line);
-        }
+        block.push_line(line.trim_end());
     }
-    flush(&mut prose, &mut out);
-    if in_indent {
-        out.push("```".to_string());
-    }
-    if in_fence {
-        out.push("```".to_string());
-    }
+    let mut out = block.finish();
     split_long_first_paragraph(&mut out, summary_hint);
 
     for line in &out {
@@ -1882,6 +1834,100 @@ fn doc_block_summarized(b: &mut String, doc: Option<&str>, indent: &str, summary
         } else {
             b.push_str(&format!("{indent}/// {line}\n"));
         }
+    }
+}
+
+/// The line-by-line rewriter behind [`doc_block_summarized`].
+///
+/// Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS` date
+/// formats) that rustdoc would compile as Rust doctests and choke on. Both forms
+/// it recognizes are neutralized so the docs render as text, never run: a bare
+/// triple-backtick fence has its opening tagged `text` (the closing stays bare),
+/// and a run of 4-space-indented lines is wrapped in a `text` fence. Prose
+/// OUTSIDE those blocks additionally goes through [`sanitize_doc_prose`] (bare
+/// URLs, stray brackets/angle brackets — the rustdoc deny-lints).
+#[derive(Default)]
+struct DocBlock<'a> {
+    /// The rewritten lines, in order.
+    out: Vec<String>,
+    /// Pending prose lines, sanitized as one segment so a code span may span
+    /// lines (the BMM has such spans, e.g. `BMM_SCHEMA_DESCRIPTOR.schema_id`).
+    prose: Vec<&'a str>,
+    /// Inside an explicit triple-backtick fence.
+    in_fence: bool,
+    /// Inside an auto-wrapped indented block.
+    in_indent: bool,
+}
+
+impl<'a> DocBlock<'a> {
+    /// Sanitizes and emits the pending prose segment, if any.
+    fn flush_prose(&mut self) {
+        if self.prose.is_empty() {
+            return;
+        }
+        let sanitized = sanitize_doc_prose(&self.prose.join("\n"));
+        self.out.extend(sanitized.split('\n').map(str::to_string));
+        self.prose.clear();
+    }
+
+    /// Takes one already-right-trimmed source line.
+    fn push_line(&mut self, line: &'a str) {
+        let stripped = line.trim_start();
+        if stripped.starts_with("```") && !self.in_indent {
+            self.toggle_fence(line, stripped);
+            return;
+        }
+        if self.in_fence {
+            self.out.push(line.to_string());
+            return;
+        }
+        let lead = line.len() - stripped.len();
+        self.track_indent_block(lead >= 4 && !stripped.is_empty(), stripped.is_empty());
+        if self.in_indent {
+            self.out.push(line.to_string());
+        } else {
+            self.prose.push(line);
+        }
+    }
+
+    /// Opens or closes an explicit fence, tagging a bare opening as `text`.
+    fn toggle_fence(&mut self, line: &str, stripped: &str) {
+        self.flush_prose();
+        if self.in_fence {
+            self.in_fence = false;
+            self.out.push(line.to_string());
+            return;
+        }
+        self.in_fence = true;
+        self.out.push(if stripped == "```" {
+            line.replacen("```", "```text", 1)
+        } else {
+            line.to_string()
+        });
+    }
+
+    /// Opens or closes the auto-wrapped fence around an indented run.
+    fn track_indent_block(&mut self, is_indent_line: bool, is_blank: bool) {
+        if is_indent_line && !self.in_indent {
+            self.flush_prose();
+            self.out.push("```text".to_string());
+            self.in_indent = true;
+        } else if self.in_indent && !is_indent_line && !is_blank {
+            self.out.push("```".to_string());
+            self.in_indent = false;
+        }
+    }
+
+    /// Flushes the tail state and yields the rewritten lines.
+    fn finish(mut self) -> Vec<String> {
+        self.flush_prose();
+        if self.in_indent {
+            self.out.push("```".to_string());
+        }
+        if self.in_fence {
+            self.out.push("```".to_string());
+        }
+        self.out
     }
 }
 
@@ -1988,35 +2034,9 @@ fn sanitize_doc_prose(text: &str) -> String {
     let mut rest = text;
     while let Some(c) = rest.chars().next() {
         match c {
-            '`' => {
-                let open = backtick_run(rest);
-                // A matched pair delimits a code span: copy it verbatim, closing
-                // run included. An unmatched run is escaped instead.
-                if let Some(offset) = find_backtick_run(after(rest, open), open) {
-                    let end = open + offset + open;
-                    out.push_str(upto(rest, end));
-                    rest = after(rest, end);
-                } else {
-                    for _ in 0..open {
-                        out.push_str("\\`");
-                    }
-                    rest = after(rest, open);
-                }
-            }
+            '`' => rest = copy_code_span(rest, &mut out),
             'h' if rest.starts_with("http://") || rest.starts_with("https://") => {
-                let url = read_url(rest);
-                let tail = after(rest, url.len());
-                // asciidoc link form `https://host/path[label]`. A parenthesis in
-                // the URL would end the Markdown destination early, so such a
-                // link stays an autolink with escaped brackets.
-                let plain_dest = !url.contains(['(', ')']);
-                if let Some((consumed, label)) = read_link_label(tail).filter(|_| plain_dest) {
-                    out.push_str(&format!("[{label}]({url})"));
-                    rest = after(tail, consumed);
-                } else {
-                    out.push_str(&format!("<{url}>"));
-                    rest = tail;
-                }
+                rest = copy_url(rest, &mut out);
             }
             '[' | ']' | '<' | '>' => {
                 out.push('\\');
@@ -2030,6 +2050,40 @@ fn sanitize_doc_prose(text: &str) -> String {
         }
     }
     out
+}
+
+/// Copies a backtick run to `out`, returning the unconsumed remainder.
+///
+/// A matched pair delimits a code span: it is copied verbatim, closing run
+/// included. An unmatched run is escaped instead.
+fn copy_code_span<'a>(rest: &'a str, out: &mut String) -> &'a str {
+    let open = backtick_run(rest);
+    if let Some(offset) = find_backtick_run(after(rest, open), open) {
+        let end = open + offset + open;
+        out.push_str(upto(rest, end));
+        return after(rest, end);
+    }
+    for _ in 0..open {
+        out.push_str("\\`");
+    }
+    after(rest, open)
+}
+
+/// Copies a URL to `out` as Markdown, returning the unconsumed remainder.
+///
+/// The asciidoc link form `https://host/path[label]` becomes a Markdown link. A
+/// parenthesis in the URL would end the Markdown destination early, so such a
+/// link stays an autolink with escaped brackets.
+fn copy_url<'a>(rest: &'a str, out: &mut String) -> &'a str {
+    let url = read_url(rest);
+    let tail = after(rest, url.len());
+    let plain_dest = !url.contains(['(', ')']);
+    if let Some((consumed, label)) = read_link_label(tail).filter(|_| plain_dest) {
+        out.push_str(&format!("[{label}]({url})"));
+        return after(tail, consumed);
+    }
+    out.push_str(&format!("<{url}>"));
+    tail
 }
 
 /// `s` after its first `n` bytes — total (empty when `n` is out of range or not
