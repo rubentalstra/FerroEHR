@@ -15,7 +15,9 @@
 //! (UML `c_quantity`/`c_ordinal`/`c_coded_text`; ADL1.4 master09).
 
 use openehr_base::prelude::CodePhrase;
-use openehr_its::opt14::types::{CDvOrdinal, CDvQuantity, CPrimitive};
+use openehr_its::opt14::types::{
+    CBoolean, CDvOrdinal, CDvQuantity, CInteger, CPrimitive, CReal, CString,
+};
 
 use super::RuleViolation;
 use super::interval::{int_in_range, real_in_range};
@@ -26,80 +28,10 @@ use super::interval::{int_in_range, real_in_range};
 /// syntax.
 pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), RuleViolation> {
     match p {
-        CPrimitive::CBoolean(b) => {
-            // C_BOOLEAN (AOM1.4 c_boolean class file, Description): true_valid
-            // and false_valid cannot both be False — the constraint would be
-            // unsatisfiable.
-            if !b.true_valid && !b.false_valid {
-                return Err(RuleViolation::new(
-                    "C_BOOLEAN_validity",
-                    format!(
-                        "node '{node_id}': true_valid and false_valid are both false — the \
-                         boolean constraint is unsatisfiable"
-                    ),
-                ));
-            }
-            if let Some(assumed) = b.assumed_value {
-                let ok = if assumed { b.true_valid } else { b.false_valid };
-                if !ok {
-                    return Err(RuleViolation::new(
-                        "Assumed_value_valid",
-                        format!(
-                            "node '{node_id}': the assumed boolean value {assumed} is not \
-                             permitted by the true_valid/false_valid flags"
-                        ),
-                    ));
-                }
-            }
-        }
-        CPrimitive::CString(s) => {
-            // Assumed_value_valid against a closed value list (C_STRING,
-            // AOM1.4 c_string class file; cADL: string constraints are
-            // case-sensitive).
-            if let Some(assumed) = &s.assumed_value
-                && !s.list.is_empty()
-                && s.list_open != Some(true)
-                && !s.list.contains(assumed)
-            {
-                return Err(RuleViolation::new(
-                    "Assumed_value_valid",
-                    format!(
-                        "node '{node_id}': the assumed string '{assumed}' is not in the closed \
-                         value list"
-                    ),
-                ));
-            }
-        }
-        CPrimitive::CInteger(c) => {
-            if let Some(assumed) = c.assumed_value {
-                let list_ok = c.list.is_empty() || c.list.contains(&assumed);
-                let range_ok = c.range.as_ref().is_none_or(|r| int_in_range(assumed, r));
-                if !list_ok || !range_ok {
-                    return Err(RuleViolation::new(
-                        "Assumed_value_valid",
-                        format!(
-                            "node '{node_id}': the assumed integer {assumed} is outside the \
-                             constrained list/range"
-                        ),
-                    ));
-                }
-            }
-        }
-        CPrimitive::CReal(c) => {
-            if let Some(assumed) = c.assumed_value {
-                let list_ok = c.list.is_empty() || c.list.contains(&assumed);
-                let range_ok = c.range.as_ref().is_none_or(|r| real_in_range(assumed, r));
-                if !list_ok || !range_ok {
-                    return Err(RuleViolation::new(
-                        "Assumed_value_valid",
-                        format!(
-                            "node '{node_id}': the assumed real {assumed} is outside the \
-                             constrained list/range"
-                        ),
-                    ));
-                }
-            }
-        }
+        CPrimitive::CBoolean(c) => check_boolean(c, node_id),
+        CPrimitive::CString(c) => check_string(c, node_id),
+        CPrimitive::CInteger(c) => check_integer(c, node_id),
+        CPrimitive::CReal(c) => check_real(c, node_id),
         // C_DATE/C_DATE_TIME/C_TIME invariant Pattern_validity:
         // `pattern /= Void implies valid_iso8601_*_constraint_pattern(pattern)`
         // (AOM1.4 c_date/c_date_time/c_time class files); the legal patterns
@@ -107,39 +39,129 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), RuleV
         // field-ordering are cADL §Constraints on Dates/Times (ADL1.4 master05
         // lines 858–892).
         CPrimitive::CDate(c) => {
-            if let Some(pattern) = &c.pattern
-                && !valid_date_pattern(pattern)
-            {
-                return Err(pattern_violation(node_id, pattern, "date"));
-            }
+            check_pattern(c.pattern.as_deref(), node_id, "date", valid_date_pattern)
         }
         CPrimitive::CTime(c) => {
-            if let Some(pattern) = &c.pattern
-                && !valid_time_pattern(pattern)
-            {
-                return Err(pattern_violation(node_id, pattern, "time"));
-            }
+            check_pattern(c.pattern.as_deref(), node_id, "time", valid_time_pattern)
         }
-        CPrimitive::CDateTime(c) => {
-            if let Some(pattern) = &c.pattern
-                && !valid_date_time_pattern(pattern)
-            {
-                return Err(pattern_violation(node_id, pattern, "date-time"));
-            }
-        }
+        CPrimitive::CDateTime(c) => check_pattern(
+            c.pattern.as_deref(),
+            node_id,
+            "date-time",
+            valid_date_time_pattern,
+        ),
         // C_DURATION: the pattern must be `P[Y][M][W][D][T[H][M][S]]` — openEHR
         // deviates from strict ISO 8601 by allowing `W` to be mixed with the
         // other designators (cADL §Duration Constraints, ADL1.4 master05 lines
         // 934–980).
-        CPrimitive::CDuration(c) => {
-            if let Some(pattern) = &c.pattern
-                && !valid_duration_pattern(pattern)
-            {
-                return Err(pattern_violation(node_id, pattern, "duration"));
-            }
-        }
+        CPrimitive::CDuration(c) => check_pattern(
+            c.pattern.as_deref(),
+            node_id,
+            "duration",
+            valid_duration_pattern,
+        ),
+    }
+}
+
+/// `C_BOOLEAN` satisfiability and `Assumed_value_valid`.
+///
+/// `true_valid` and `false_valid` cannot both be False — the constraint would
+/// be unsatisfiable (AOM1.4 `c_boolean` class file, Description).
+fn check_boolean(c: &CBoolean, node_id: &str) -> Result<(), RuleViolation> {
+    if !c.true_valid && !c.false_valid {
+        return Err(RuleViolation::new(
+            "C_BOOLEAN_validity",
+            format!(
+                "node '{node_id}': true_valid and false_valid are both false — the \
+                 boolean constraint is unsatisfiable"
+            ),
+        ));
+    }
+    let Some(assumed) = c.assumed_value else {
+        return Ok(());
+    };
+    let permitted = if assumed { c.true_valid } else { c.false_valid };
+    if permitted {
+        return Ok(());
+    }
+    Err(RuleViolation::new(
+        "Assumed_value_valid",
+        format!(
+            "node '{node_id}': the assumed boolean value {assumed} is not \
+             permitted by the true_valid/false_valid flags"
+        ),
+    ))
+}
+
+/// `C_STRING` `Assumed_value_valid` against a closed value list (AOM1.4
+/// `c_string` class file; cADL string constraints are case-sensitive).
+fn check_string(c: &CString, node_id: &str) -> Result<(), RuleViolation> {
+    if let Some(assumed) = &c.assumed_value
+        && !c.list.is_empty()
+        && c.list_open != Some(true)
+        && !c.list.contains(assumed)
+    {
+        return Err(RuleViolation::new(
+            "Assumed_value_valid",
+            format!(
+                "node '{node_id}': the assumed string '{assumed}' is not in the closed \
+                 value list"
+            ),
+        ));
     }
     Ok(())
+}
+
+/// `C_INTEGER` `Assumed_value_valid` against the constrained list and range.
+fn check_integer(c: &CInteger, node_id: &str) -> Result<(), RuleViolation> {
+    let Some(assumed) = c.assumed_value else {
+        return Ok(());
+    };
+    let list_ok = c.list.is_empty() || c.list.contains(&assumed);
+    let range_ok = c.range.as_ref().is_none_or(|r| int_in_range(assumed, r));
+    if list_ok && range_ok {
+        return Ok(());
+    }
+    Err(RuleViolation::new(
+        "Assumed_value_valid",
+        format!(
+            "node '{node_id}': the assumed integer {assumed} is outside the \
+             constrained list/range"
+        ),
+    ))
+}
+
+/// `C_REAL` `Assumed_value_valid` against the constrained list and range.
+fn check_real(c: &CReal, node_id: &str) -> Result<(), RuleViolation> {
+    let Some(assumed) = c.assumed_value else {
+        return Ok(());
+    };
+    let list_ok = c.list.is_empty() || c.list.contains(&assumed);
+    let range_ok = c.range.as_ref().is_none_or(|r| real_in_range(assumed, r));
+    if list_ok && range_ok {
+        return Ok(());
+    }
+    Err(RuleViolation::new(
+        "Assumed_value_valid",
+        format!(
+            "node '{node_id}': the assumed real {assumed} is outside the \
+             constrained list/range"
+        ),
+    ))
+}
+
+/// The `Pattern_validity` invariant of one temporal or duration leaf: a
+/// present pattern must satisfy its class's constraint-pattern grammar.
+fn check_pattern(
+    pattern: Option<&str>,
+    node_id: &str,
+    kind: &str,
+    valid: fn(&str) -> bool,
+) -> Result<(), RuleViolation> {
+    match pattern {
+        Some(pattern) if !valid(pattern) => Err(pattern_violation(node_id, pattern, kind)),
+        _ => Ok(()),
+    }
 }
 
 fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> RuleViolation {

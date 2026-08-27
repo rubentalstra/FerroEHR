@@ -328,11 +328,6 @@ fn reject_duplicate_singleton_containers(containers: &[ImportContainer]) -> Resu
 /// item's `X_VERSIONED_*` wrapper contributes its `ORIGINAL_VERSION`s to one
 /// [`ImportContainer`]; branch / multi-system version trees are first-class
 /// (master06 §Distributed Versioning).
-#[expect(
-    clippy::too_many_lines,
-    reason = "the X_VERSIONED_* chapter walk in one pass, mirroring the \
-              container order of the extract"
-)]
 fn parse_import_containers(
     extract: &Extract,
 ) -> Result<(Vec<ImportContainer>, Vec<ImportContainer>), SmError> {
@@ -351,41 +346,9 @@ fn parse_import_containers(
             .and_then(Value::as_array)
             .unwrap_or(&empty)
         {
-            match item.get("_type").and_then(Value::as_str) {
-                Some("OPENEHR_CONTENT_ITEM") => {}
-                // NOTE: ISO 13606 / CDA generic content
-                // (`master06-generic_extract_package.adoc`
-                // `GENERIC_CONTENT_ITEM`) is outside this CDR's import scope.
-                Some("GENERIC_CONTENT_ITEM") => {
-                    return Err(SmError::precondition(
-                        "generic (ISO 13606 / CDA) content import is not supported",
-                    ));
-                }
-                // A folder structure entry carries no versioned content.
-                _ => continue,
-            }
-            // EXTRACT_CONTENT_ITEM.Item_validity: `is_masked xor item /= Void`
-            // (extract_content_item.adoc) — a masked wrapper carries no item, an
-            // unmasked one must.
-            let is_masked = item
-                .get("is_masked")
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            let Some(xver) = item.get("item") else {
-                if is_masked {
-                    continue; // masked-out content — nothing to import
-                }
-                return Err(SmError::precondition(
-                    "EXTRACT_CONTENT_ITEM carries no item and is not masked \
-                     (Item_validity: is_masked xor item present)",
-                ));
+            let Some(xver) = content_item_payload(item)? else {
+                continue;
             };
-            if is_masked {
-                return Err(SmError::precondition(
-                    "EXTRACT_CONTENT_ITEM is masked but carries an item \
-                     (Item_validity: is_masked xor item present)",
-                ));
-            }
             let xtype = xver
                 .get("_type")
                 .and_then(Value::as_str)
@@ -394,37 +357,7 @@ fn parse_import_containers(
             // (master09-semantics.adoc §Creation Semantics demographics
             // chapter); each version's PARTY subtype fixes the container kind.
             if xtype == "X_VERSIONED_PARTY" {
-                for ov in xver
-                    .get("versions")
-                    .and_then(Value::as_array)
-                    .unwrap_or(&empty)
-                {
-                    let party_type = ov
-                        .pointer("/data/_type")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default();
-                    let Some(kind) = Kind::from_type(party_type).filter(|k| k.is_demographic())
-                    else {
-                        return Err(SmError::precondition(format!(
-                            "X_VERSIONED_PARTY version data must be a PARTY subtype, \
-                             got {party_type:?}"
-                        )));
-                    };
-                    let (vo_id, version) = parse_imported_version(ov)?;
-                    match parties.get_mut(&vo_id) {
-                        Some(existing) => existing.versions.push(version),
-                        None => {
-                            parties.insert(
-                                vo_id,
-                                ImportContainer {
-                                    vo_id,
-                                    kind,
-                                    versions: vec![version],
-                                },
-                            );
-                        }
-                    }
-                }
+                collect_party_versions(xver, &mut parties)?;
                 continue;
             }
             let kind = kind_from_x_versioned(xtype).ok_or_else(|| {
@@ -433,45 +366,147 @@ fn parse_import_containers(
                      EHR_STATUS / EHR_ACCESS / FOLDER / demographics-chapter PARTYs)"
                 ))
             })?;
-
-            for ov in xver
-                .get("versions")
-                .and_then(Value::as_array)
-                .unwrap_or(&empty)
-            {
-                // creating_system_id is per VERSION (a copied tree legitimately
-                // mixes source-trunk versions with branch modifications made by
-                // other systems — master06 §Distributed Versioning).
-                let (vo_id, version) = parse_imported_version(ov)?;
-                match by_container.get_mut(&vo_id) {
-                    Some(existing) => {
-                        if existing.kind != kind {
-                            return Err(SmError::precondition(format!(
-                                "versioned object {vo_id} appears as both {} and {}",
-                                existing.kind.as_str(),
-                                kind.as_str()
-                            )));
-                        }
-                        existing.versions.push(version);
-                    }
-                    None => {
-                        by_container.insert(
-                            vo_id,
-                            ImportContainer {
-                                vo_id,
-                                kind,
-                                versions: vec![version],
-                            },
-                        );
-                    }
-                }
-            }
+            collect_content_versions(xver, kind, &mut by_container)?;
         }
     }
     Ok((
         by_container.into_values().collect(),
         parties.into_values().collect(),
     ))
+}
+
+/// The `X_VERSIONED_*` wrapper one `EXTRACT_CONTENT_ITEM` carries, or `None`
+/// for an entry with no versioned content (a masked item, a folder structure
+/// entry).
+///
+/// `EXTRACT_CONTENT_ITEM.Item_validity` is `is_masked xor item /= Void`
+/// (`extract_content_item.adoc`): a masked wrapper carries no item, an
+/// unmasked one must.
+///
+/// # Errors
+/// [`SmError::Precondition`] for generic (ISO 13606 / CDA) content — NOTE:
+/// `master06-generic_extract_package.adoc` `GENERIC_CONTENT_ITEM` is outside
+/// this CDR's import scope — or for either half of an `Item_validity`
+/// violation.
+fn content_item_payload(item: &Value) -> Result<Option<&Value>, SmError> {
+    match item.get("_type").and_then(Value::as_str) {
+        Some("OPENEHR_CONTENT_ITEM") => {}
+        Some("GENERIC_CONTENT_ITEM") => {
+            return Err(SmError::precondition(
+                "generic (ISO 13606 / CDA) content import is not supported",
+            ));
+        }
+        // A folder structure entry carries no versioned content.
+        _ => return Ok(None),
+    }
+    let is_masked = item
+        .get("is_masked")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    match (item.get("item"), is_masked) {
+        // Masked-out content — nothing to import.
+        (None, true) => Ok(None),
+        (None, false) => Err(SmError::precondition(
+            "EXTRACT_CONTENT_ITEM carries no item and is not masked \
+             (Item_validity: is_masked xor item present)",
+        )),
+        (Some(_), true) => Err(SmError::precondition(
+            "EXTRACT_CONTENT_ITEM is masked but carries an item \
+             (Item_validity: is_masked xor item present)",
+        )),
+        (Some(xver), false) => Ok(Some(xver)),
+    }
+}
+
+/// Collects the versions of one `X_VERSIONED_PARTY` wrapper into the
+/// demographic containers, keyed by cloned `vo_id`.
+///
+/// # Errors
+/// [`SmError::Precondition`] when a version's data is not a PARTY subtype, and
+/// the [`parse_imported_version`] rejections.
+fn collect_party_versions(
+    xver: &Value,
+    parties: &mut BTreeMap<VoId, ImportContainer>,
+) -> Result<(), SmError> {
+    let empty: Vec<Value> = Vec::new();
+    for ov in xver
+        .get("versions")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty)
+    {
+        let party_type = ov
+            .pointer("/data/_type")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let Some(kind) = Kind::from_type(party_type).filter(|k| k.is_demographic()) else {
+            return Err(SmError::precondition(format!(
+                "X_VERSIONED_PARTY version data must be a PARTY subtype, \
+                 got {party_type:?}"
+            )));
+        };
+        let (vo_id, version) = parse_imported_version(ov)?;
+        push_version(parties, vo_id, kind, version);
+    }
+    Ok(())
+}
+
+/// Collects the versions of one EHR-owned `X_VERSIONED_*` wrapper into the
+/// content containers, keyed by cloned `vo_id`.
+///
+/// `creating_system_id` is per VERSION: a copied tree legitimately mixes
+/// source-trunk versions with branch modifications made by other systems
+/// (master06 §Distributed Versioning).
+///
+/// # Errors
+/// [`SmError::Precondition`] when one `vo_id` arrives under two kinds, and the
+/// [`parse_imported_version`] rejections.
+fn collect_content_versions(
+    xver: &Value,
+    kind: Kind,
+    by_container: &mut BTreeMap<VoId, ImportContainer>,
+) -> Result<(), SmError> {
+    let empty: Vec<Value> = Vec::new();
+    for ov in xver
+        .get("versions")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty)
+    {
+        let (vo_id, version) = parse_imported_version(ov)?;
+        if let Some(existing) = by_container.get(&vo_id)
+            && existing.kind != kind
+        {
+            return Err(SmError::precondition(format!(
+                "versioned object {vo_id} appears as both {} and {}",
+                existing.kind.as_str(),
+                kind.as_str()
+            )));
+        }
+        push_version(by_container, vo_id, kind, version);
+    }
+    Ok(())
+}
+
+/// Appends one version to its container, creating the container on first
+/// receipt.
+fn push_version(
+    containers: &mut BTreeMap<VoId, ImportContainer>,
+    vo_id: VoId,
+    kind: Kind,
+    version: ImportVersion,
+) {
+    match containers.get_mut(&vo_id) {
+        Some(existing) => existing.versions.push(version),
+        None => {
+            containers.insert(
+                vo_id,
+                ImportContainer {
+                    vo_id,
+                    kind,
+                    versions: vec![version],
+                },
+            );
+        }
+    }
 }
 
 /// The wrapped original's `VERSION.commit_audit` (1..1), validated and returned
