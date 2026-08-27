@@ -238,13 +238,7 @@ fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
     let at = |suffix: &str| format!("{}/{suffix}", criterion.aql_path.trim_matches('/'));
     match &criterion.kind {
         CriterionKind::QuantityRange { min, max, units } => {
-            let mut parts = Vec::new();
-            if let Some(min) = min {
-                parts.push(compare_real(&at("magnitude"), CompOp::Ge, *min)?);
-            }
-            if let Some(max) = max {
-                parts.push(compare_real(&at("magnitude"), CompOp::Le, *max)?);
-            }
+            let mut parts = real_bounds(&at("magnitude"), *min, *max)?;
             if !units.is_empty() {
                 parts.push(compare_str(&at("units"), CompOp::Eq, units)?);
             }
@@ -258,60 +252,86 @@ fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
             path: parse_path(COMP_VAR, &at("value"))?,
             operand: openehr_query::ast::LikeOperand::String(pattern.clone()),
         })),
-        CriterionKind::DateTimeRange { from, to } => {
-            let mut parts = Vec::new();
-            if !from.is_empty() {
-                parts.push(compare_str(&at("value"), CompOp::Ge, from)?);
-            }
-            if !to.is_empty() {
-                parts.push(compare_str(&at("value"), CompOp::Le, to)?);
-            }
-            all_of(parts)
-        }
-        CriterionKind::CountRange { min, max } => {
-            let mut parts = Vec::new();
-            if let Some(min) = min {
-                parts.push(compare_int(&at("magnitude"), CompOp::Ge, *min)?);
-            }
-            if let Some(max) = max {
-                parts.push(compare_int(&at("magnitude"), CompOp::Le, *max)?);
-            }
-            all_of(parts)
-        }
-        CriterionKind::OrdinalIn { values } => {
-            if values.is_empty() {
-                return Err(BuilderError::EmptyOrdinalList);
-            }
-            Ok(WhereExpr::Identified(IdentifiedExpr::Matches {
-                path: parse_path(COMP_VAR, &at("value"))?,
-                operand: MatchesOperand::ValueList(
-                    values
-                        .iter()
-                        .map(|v| ValueListItem::Primitive(Primitive::Integer(*v)))
-                        .collect(),
-                ),
-            }))
-        }
+        CriterionKind::DateTimeRange { from, to } => all_of(text_bounds(&at("value"), from, to)?),
+        CriterionKind::CountRange { min, max } => all_of(int_bounds(&at("magnitude"), *min, *max)?),
+        CriterionKind::OrdinalIn { values } => ordinal_in(&at("value"), values),
         CriterionKind::BooleanIs { value } => Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
             lhs: CompareOperand::Path(parse_path(COMP_VAR, &at("value"))?),
             op: CompOp::Eq,
             rhs: Terminal::Primitive(Primitive::Boolean(*value)),
         })),
         CriterionKind::ProportionNumeratorRange { min, max } => {
-            let mut parts = Vec::new();
-            if let Some(min) = min {
-                parts.push(compare_real(&at("numerator"), CompOp::Ge, *min)?);
-            }
-            if let Some(max) = max {
-                parts.push(compare_real(&at("numerator"), CompOp::Le, *max)?);
-            }
-            all_of(parts)
+            all_of(real_bounds(&at("numerator"), *min, *max)?)
         }
         CriterionKind::Exists => Ok(WhereExpr::Identified(IdentifiedExpr::Exists(parse_path(
             COMP_VAR,
             &criterion.aql_path,
         )?))),
     }
+}
+
+/// The present bounds of a real-valued range, as comparisons on `path`.
+fn real_bounds(
+    path: &str,
+    min: Option<f64>,
+    max: Option<f64>,
+) -> Result<Vec<WhereExpr>, BuilderError> {
+    let mut parts = Vec::new();
+    if let Some(min) = min {
+        parts.push(compare_real(path, CompOp::Ge, min)?);
+    }
+    if let Some(max) = max {
+        parts.push(compare_real(path, CompOp::Le, max)?);
+    }
+    Ok(parts)
+}
+
+/// The present bounds of an integer-valued range, as comparisons on `path`.
+fn int_bounds(
+    path: &str,
+    min: Option<i64>,
+    max: Option<i64>,
+) -> Result<Vec<WhereExpr>, BuilderError> {
+    let mut parts = Vec::new();
+    if let Some(min) = min {
+        parts.push(compare_int(path, CompOp::Ge, min)?);
+    }
+    if let Some(max) = max {
+        parts.push(compare_int(path, CompOp::Le, max)?);
+    }
+    Ok(parts)
+}
+
+/// The present bounds of a lexical (ISO-8601 date/time) range, as comparisons
+/// on `path`. An empty string is an absent bound.
+fn text_bounds(path: &str, from: &str, to: &str) -> Result<Vec<WhereExpr>, BuilderError> {
+    let mut parts = Vec::new();
+    if !from.is_empty() {
+        parts.push(compare_str(path, CompOp::Ge, from)?);
+    }
+    if !to.is_empty() {
+        parts.push(compare_str(path, CompOp::Le, to)?);
+    }
+    Ok(parts)
+}
+
+/// `<path> MATCHES {values}` over an ordinal criterion's selected values.
+///
+/// # Errors
+/// [`BuilderError::EmptyOrdinalList`] when the criterion selects nothing.
+fn ordinal_in(path: &str, values: &[i64]) -> Result<WhereExpr, BuilderError> {
+    if values.is_empty() {
+        return Err(BuilderError::EmptyOrdinalList);
+    }
+    Ok(WhereExpr::Identified(IdentifiedExpr::Matches {
+        path: parse_path(COMP_VAR, path)?,
+        operand: MatchesOperand::ValueList(
+            values
+                .iter()
+                .map(|v| ValueListItem::Primitive(Primitive::Integer(*v)))
+                .collect(),
+        ),
+    }))
 }
 
 /// `<defining_code>/code_string MATCHES {codes}` plus an optional

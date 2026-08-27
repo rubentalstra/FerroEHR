@@ -54,44 +54,55 @@ pub(super) fn check_bindings(
     };
     for terms in bindings.values() {
         for key in terms.keys() {
-            if AdlCodeDefinitionsData::is_value_set_code(key) {
-                // VTCBK: a constraint (ac) binding key must be a defined ac-code.
-                if !defined.contains(key.as_str()) {
-                    issues.push(ValidationIssue::new(
-                        ValidationCode::Vtcbk,
-                        format!("constraint binding key {key:?} is not a defined ac-code"),
-                    ));
-                }
-            } else if AdlCodeDefinitionsData::is_at_code(key)
-                || AdlCodeDefinitionsData::is_id_code(key)
-            {
-                // VTTBK: a term binding key must be a defined at-code.
-                if !defined.contains(key.as_str()) {
-                    issues.push(ValidationIssue::new(
-                        ValidationCode::Vttbk,
-                        format!("term binding key {key:?} is not a defined at-code"),
-                    ));
-                }
-            } else if !key.starts_with('/') {
-                // VTTBK: a non-code key that is not even a path (a bare word) is
-                // never a valid binding target (master07 §Validity Rules).
-                issues.push(ValidationIssue::new(
-                    ValidationCode::Vttbk,
-                    format!("term binding key {key:?} is neither an at-code nor a path"),
-                ));
-            } else if has_node_id_predicate(key) {
-                // VTTBK: a node-id-predicated path must resolve within the
-                // archetype (master07 §Validity Rules). A pure-RM path (no
-                // predicate) is a reference-model concern (`super::rm`).
-                if resolve(v.definition, key) != Resolution::Found {
-                    issues.push(ValidationIssue::new(
-                        ValidationCode::Vttbk,
-                        format!("term binding key path {key:?} is not valid in the archetype"),
-                    ));
-                }
+            if let Some(issue) = binding_key_issue(v, defined, key) {
+                issues.push(issue);
             }
         }
     }
+}
+
+/// The VTTBK/VTCBK violation one binding key raises, or `None` when it is
+/// valid.
+///
+/// A constraint (ac) key must be a defined ac-code (VTCBK); a term key must be
+/// a defined at-code (VTTBK); a non-code key that is not even a path (a bare
+/// word) is never a valid binding target; and a node-id-predicated path must
+/// resolve within the archetype. A pure-RM path (no predicate) is a
+/// reference-model concern ([`super::rm`]).
+fn binding_key_issue(
+    v: &ArchetypeView<'_>,
+    defined: &BTreeSet<&str>,
+    key: &str,
+) -> Option<ValidationIssue> {
+    if AdlCodeDefinitionsData::is_value_set_code(key) {
+        return (!defined.contains(key)).then(|| {
+            ValidationIssue::new(
+                ValidationCode::Vtcbk,
+                format!("constraint binding key {key:?} is not a defined ac-code"),
+            )
+        });
+    }
+    if AdlCodeDefinitionsData::is_at_code(key) || AdlCodeDefinitionsData::is_id_code(key) {
+        return (!defined.contains(key)).then(|| {
+            ValidationIssue::new(
+                ValidationCode::Vttbk,
+                format!("term binding key {key:?} is not a defined at-code"),
+            )
+        });
+    }
+    if !key.starts_with('/') {
+        return Some(ValidationIssue::new(
+            ValidationCode::Vttbk,
+            format!("term binding key {key:?} is neither an at-code nor a path"),
+        ));
+    }
+    if has_node_id_predicate(key) && resolve(v.definition, key) != Resolution::Found {
+        return Some(ValidationIssue::new(
+            ValidationCode::Vttbk,
+            format!("term binding key path {key:?} is not valid in the archetype"),
+        ));
+    }
+    None
 }
 
 // ── the external terminology-service seam (VETDF) ──────────────────────────

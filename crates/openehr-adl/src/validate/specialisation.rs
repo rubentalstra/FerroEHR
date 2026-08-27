@@ -240,42 +240,7 @@ impl<'a> ParentScan<'a> {
             return;
         };
 
-        // VSANCE: existence conformance to the flat parent (`master04.5`
-        // §`C_ATTRIBUTE`, VSANCE L142-143).
-        if !attr.existence_conforms_to(parent_attr) {
-            push_issue(
-                &mut self.issues,
-                ValidationCode::Vsance,
-                "redefined existence does not conform to the flat parent",
-                &attr_path,
-            );
-        }
-        // VSANCC: cardinality conformance to the flat parent (`master04.5`
-        // §`C_ATTRIBUTE`, VSANCC L171-172).
-        if !attr.cardinality_conforms_to(parent_attr) {
-            push_issue(
-                &mut self.issues,
-                ValidationCode::Vsancc,
-                "redefined cardinality does not conform to the flat parent",
-                &attr_path,
-            );
-        }
-
-        // VSAM: the multiplicity (single- vs multiply-valued) of a redefined
-        // attribute must conform to the parent (`master04.5` §`C_ATTRIBUTE`, VSAM
-        // L145-146). A restated cardinality makes the attribute a container; if
-        // the reference-model attribute is single-valued that is a mismatch.
-        if attr.cardinality.is_some()
-            && let Some(rm_attr) = self.rm.attribute(&owner_rm, &attr.rm_attribute_name)
-            && !rm_attr.is_multiple
-        {
-            push_issue(
-                &mut self.issues,
-                ValidationCode::Vsam,
-                "a redefined single-valued attribute cannot be given a cardinality (multiplicity mismatch)",
-                &attr_path,
-            );
-        }
+        self.check_attribute_multiplicity(attr, parent_attr, &owner_rm, &attr_path);
 
         // VSSM: sibling order node id must be in the same flat-parent container
         // (`master04.5` §`C_OBJECT`, VSSM L391).
@@ -323,6 +288,74 @@ impl<'a> ParentScan<'a> {
         }
     }
 
+    /// The existence, cardinality and multiplicity conformance of a redefined
+    /// attribute to its flat parent (`master04.5` §`C_ATTRIBUTE`: VSANCE
+    /// L142-143, VSANCC L171-172, VSAM L145-146).
+    ///
+    /// A restated cardinality makes the attribute a container, so a
+    /// single-valued reference-model attribute given one is a multiplicity
+    /// mismatch.
+    fn check_attribute_multiplicity(
+        &mut self,
+        attr: &CAttribute,
+        parent_attr: &CAttribute,
+        owner_rm: &str,
+        attr_path: &str,
+    ) {
+        if !attr.existence_conforms_to(parent_attr) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vsance,
+                "redefined existence does not conform to the flat parent",
+                attr_path,
+            );
+        }
+        if !attr.cardinality_conforms_to(parent_attr) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vsancc,
+                "redefined cardinality does not conform to the flat parent",
+                attr_path,
+            );
+        }
+        if attr.cardinality.is_some()
+            && let Some(rm_attr) = self.rm.attribute(owner_rm, &attr.rm_attribute_name)
+            && !rm_attr.is_multiple
+        {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vsam,
+                "a redefined single-valued attribute cannot be given a cardinality (multiplicity mismatch)",
+                attr_path,
+            );
+        }
+    }
+
+    /// The prohibition (`occurrences {0}`) rules — `master04.5` §`C_OBJECT`
+    /// VSONPT L382 / VSONPI L385.
+    ///
+    /// VSONPT: a prohibition is only valid where the matching parent node is
+    /// the same AOM type. VSONPI: a prohibited redefinition must carry exactly
+    /// the parent node id.
+    fn check_prohibited_redefinition(&mut self, child: &CObject, parent: &CObject, path: &str) {
+        if aom_type(child) != aom_type(parent) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vsonpt,
+                "prohibited (occurrences {0}) redefinition must match the parent AOM type",
+                path,
+            );
+        }
+        if object_node_id(child) != object_node_id(parent) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vsonpi,
+                "prohibited redefinition must have the same node id as the parent node",
+                path,
+            );
+        }
+    }
+
     /// Object-level conformance of a redefined child node to its congruent flat
     /// parent node.
     fn check_object_pair(
@@ -333,29 +366,8 @@ impl<'a> ParentScan<'a> {
         owner_rm: &str,
         path: &str,
     ) {
-        // Prohibition (`occurrences {0}`) rules — `master04.5` §`C_OBJECT` VSONPT
-        // L382 / VSONPI L385.
         if is_prohibited(child_occurrences(child)) {
-            // VSONPT: prohibition only if the matching parent node is the same
-            // AOM type.
-            if aom_type(child) != aom_type(parent) {
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Vsonpt,
-                    "prohibited (occurrences {0}) redefinition must match the parent AOM type",
-                    path,
-                );
-            }
-            // VSONPI: a prohibited redefinition must carry exactly the parent
-            // node id.
-            if object_node_id(child) != object_node_id(parent) {
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Vsonpi,
-                    "prohibited redefinition must have the same node id as the parent node",
-                    path,
-                );
-            }
+            self.check_prohibited_redefinition(child, parent, path);
         }
 
         // Slot handling: a redefinition of an `ARCHETYPE_SLOT` in the parent.
@@ -423,36 +435,41 @@ impl<'a> ParentScan<'a> {
         // Reference-model type conformance of the redefined object.
         self.check_rm_type_conformance(child, parent, owning_attr, owner_rm, path);
 
-        // Leaf value redefinition (VPOV / VUNK) for primitive nodes.
         if aom_type(child).is_primitive() && aom_type(parent).is_primitive() {
-            // A terminology-code leaf pair is compared with value-set expansion
-            // against the flattened terminologies (`master04.5`
-            // §`C_TERMINOLOGY_NODE` L663-699), which `c_value_conforms_to` cannot
-            // see; other primitive leaves use the terminology-agnostic conformance.
-            if let (CObject::CTerminologyCode(c), CObject::CTerminologyCode(p)) = (child, parent) {
-                self.check_terminology_leaf(c, p, path);
-            } else {
-                match conformance::c_value_conforms_to(child, parent) {
-                    ValueConformance::Conforms => {}
-                    ValueConformance::Violates => push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vpov,
-                        "redefined leaf value constraint is not within the parent value constraint",
-                        path,
-                    ),
-                    ValueConformance::Unknown => push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vunk,
-                        "redefined leaf value constraint cannot be verified against the parent",
-                        path,
-                    ),
-                }
-            }
+            self.check_leaf_value_redefinition(child, parent, path);
         }
 
         // Recurse into complex children (VSONT already passed).
         if let (CObject::CComplexObject(cco), CObject::CComplexObject(pco)) = (child, parent) {
             self.walk_attributes(cco, pco, complex_rm_type(pco), path);
+        }
+    }
+
+    /// Leaf value redefinition (VPOV / VUNK) for a primitive node pair.
+    ///
+    /// A terminology-code leaf pair is compared with value-set expansion
+    /// against the flattened terminologies (`master04.5` §`C_TERMINOLOGY_NODE`
+    /// L663-699), which `c_value_conforms_to` cannot see; every other
+    /// primitive leaf uses the terminology-agnostic conformance.
+    fn check_leaf_value_redefinition(&mut self, child: &CObject, parent: &CObject, path: &str) {
+        if let (CObject::CTerminologyCode(c), CObject::CTerminologyCode(p)) = (child, parent) {
+            self.check_terminology_leaf(c, p, path);
+            return;
+        }
+        match conformance::c_value_conforms_to(child, parent) {
+            ValueConformance::Conforms => {}
+            ValueConformance::Violates => push_issue(
+                &mut self.issues,
+                ValidationCode::Vpov,
+                "redefined leaf value constraint is not within the parent value constraint",
+                path,
+            ),
+            ValueConformance::Unknown => push_issue(
+                &mut self.issues,
+                ValidationCode::Vunk,
+                "redefined leaf value constraint cannot be verified against the parent",
+                path,
+            ),
         }
     }
 
@@ -1220,14 +1237,13 @@ terminology
             && let AuthoredArchetype::AuthoredArchetype(data) = inner.as_mut()
             && let CComplexObject::CComplexObject(root) = &mut data.definition
         {
-            for a in root.attributes.iter_mut().flatten() {
-                if a.rm_attribute_name == "items" {
-                    for c in a.children.iter_mut().flatten() {
-                        if let CObject::CComplexObject(CComplexObject::CComplexObject(el)) = c {
-                            el.node_id.clear();
-                        }
-                    }
-                }
+            for a in root
+                .attributes
+                .iter_mut()
+                .flatten()
+                .filter(|a| a.rm_attribute_name == "items")
+            {
+                strip_child_node_ids(a);
             }
         }
         let issues = validate_against_flat_parent(
@@ -1238,6 +1254,15 @@ terminology
         );
         let raised: Vec<&str> = issues.iter().map(|i| i.code.mnemonic()).collect();
         assert!(raised.contains(&"VSONIF"), "raised {raised:?}");
+    }
+
+    /// Clears the node id of every complex-object child of `attr`.
+    fn strip_child_node_ids(attr: &mut CAttribute) {
+        for c in attr.children.iter_mut().flatten() {
+            if let CObject::CComplexObject(CComplexObject::CComplexObject(el)) = c {
+                el.node_id.clear();
+            }
+        }
     }
 
     #[test]

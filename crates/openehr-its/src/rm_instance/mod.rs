@@ -298,31 +298,15 @@ pub(crate) fn rm_invariant_pass(
     bounds: LowerBounds,
 ) {
     let Some(obj) = v.as_object() else { return };
-    // One projection pass over the node's entries collects every field the
-    // per-node checks below read, so none of them pays a hashed map lookup
-    // (this runs for every node of every commit; the only remaining per-node
-    // gets are gated behind a matching `_type`).
-    let mut ty: Option<&str> = None;
-    let mut node_id: Option<&str> = None;
-    let mut has_archetype_details = false;
-    let mut details_archetype_id: Option<&str> = None;
-    for (k, val) in obj {
-        match k.as_str() {
-            "_type" => ty = val.as_str(),
-            "archetype_node_id" => node_id = val.as_str(),
-            "archetype_details" => {
-                has_archetype_details = !val.is_null();
-                details_archetype_id = val
-                    .get("archetype_id")
-                    .and_then(|a| a.get("value"))
-                    .and_then(Value::as_str);
-            }
-            _ => {}
-        }
-    }
+    let fields = NodeFields::of(obj);
+    let (node_id, has_archetype_details, details_archetype_id) = (
+        fields.node_id,
+        fields.has_archetype_details,
+        fields.details_archetype_id,
+    );
     // The node's effective RM type: the wire tag, else the parent's
     // concretely-declared attribute type (untagged nodes are legal there).
-    let ty = ty.or(declared);
+    let ty = fields.ty.or(declared);
     let mut inv = Vec::new();
     if let Some(effective) = ty {
         // The core (fast/typed) RM invariants only — the terminology-backed
@@ -369,56 +353,111 @@ pub(crate) fn rm_invariant_pass(
         push(out, p, iv.message, ValidationKind::Invariant);
     }
     for (k, val) in obj {
-        if k.starts_with('_') {
-            continue;
+        if !k.starts_with('_') {
+            descend_attribute(out, k, val, path, ty, bounds);
         }
-        let child_declared = ty.and_then(|t| declared_concrete_type(t, k));
-        // The declared-slot-type conformance rule (the WRONGNESS half of slot
-        // typing, never relaxed — RM common master06 §Incomplete Content):
-        // a TAGGED child must claim the slot's declared type or a subtype.
-        // One model-driven rule for single slots and list members alike; the
-        // shallow-pruned typed dispatch cannot see it (each pruned member
-        // re-dispatches on its own `_type`), so the walk owns it.
-        let slot_check = |item: &Value, out: &mut Vec<ValidationMessage>, path: &str| {
-            if let (Some(parent), Some(wire)) = (ty, item.get("_type").and_then(Value::as_str))
-                && let Some(iv) =
-                    openehr_rm::v1_2::validate::check_declared_slot_type(parent, k, wire)
-            {
-                push(out, norm_path(path), iv.message, ValidationKind::Invariant);
-            }
+    }
+}
+
+/// The node fields every per-node check reads, collected in ONE projection
+/// pass so none of them pays a hashed map lookup.
+///
+/// This runs for every node of every commit; the only remaining per-node gets
+/// are gated behind a matching `_type`.
+struct NodeFields<'a> {
+    ty: Option<&'a str>,
+    node_id: Option<&'a str>,
+    has_archetype_details: bool,
+    details_archetype_id: Option<&'a str>,
+}
+
+impl<'a> NodeFields<'a> {
+    fn of(obj: &'a serde_json::Map<String, Value>) -> Self {
+        let mut fields = NodeFields {
+            ty: None,
+            node_id: None,
+            has_archetype_details: false,
+            details_archetype_id: None,
         };
-        match val {
-            Value::Array(a) => {
-                for (i, item) in a.iter().enumerate() {
-                    if item.is_object() {
-                        let base = path.len();
-                        let _ = write!(path, "/{k}[{i}]");
-                        slot_check(item, out, path);
-                        rm_invariant_pass(out, item, path, child_declared, bounds);
-                        path.truncate(base);
-                    } else if let Some(iv) = ty.and_then(|parent| {
-                        openehr_rm::v1_2::validate::check_slot_member_is_object(parent, k)
-                    }) {
-                        // A scalar member of a class-typed list slot is the
-                        // same positive contradiction a foreign `_type` is —
-                        // its declared type is an RM class, which no JSON
-                        // scalar can be.
-                        let base = path.len();
-                        let _ = write!(path, "/{k}[{i}]");
-                        push(out, norm_path(path), iv.message, ValidationKind::Invariant);
-                        path.truncate(base);
-                    }
+        for (k, val) in obj {
+            match k.as_str() {
+                "_type" => fields.ty = val.as_str(),
+                "archetype_node_id" => fields.node_id = val.as_str(),
+                "archetype_details" => {
+                    fields.has_archetype_details = !val.is_null();
+                    fields.details_archetype_id = val
+                        .get("archetype_id")
+                        .and_then(|a| a.get("value"))
+                        .and_then(Value::as_str);
                 }
+                _ => {}
             }
-            Value::Object(_) => {
+        }
+        fields
+    }
+}
+
+/// Descends into one attribute of a node, checking each member's declared slot
+/// type on the way down.
+fn descend_attribute(
+    out: &mut Vec<ValidationMessage>,
+    k: &str,
+    val: &Value,
+    path: &mut String,
+    ty: Option<&str>,
+    bounds: LowerBounds,
+) {
+    let child_declared = ty.and_then(|t| declared_concrete_type(t, k));
+    match val {
+        Value::Array(a) => {
+            for (i, item) in a.iter().enumerate() {
                 let base = path.len();
-                let _ = write!(path, "/{k}");
-                slot_check(val, out, path);
-                rm_invariant_pass(out, val, path, child_declared, bounds);
+                let _ = write!(path, "/{k}[{i}]");
+                if item.is_object() {
+                    check_slot_type(out, ty, k, item, path);
+                    rm_invariant_pass(out, item, path, child_declared, bounds);
+                } else if let Some(iv) = ty.and_then(|parent| {
+                    openehr_rm::v1_2::validate::check_slot_member_is_object(parent, k)
+                }) {
+                    // A scalar member of a class-typed list slot is the same
+                    // positive contradiction a foreign `_type` is — its
+                    // declared type is an RM class, which no JSON scalar can
+                    // be.
+                    push(out, norm_path(path), iv.message, ValidationKind::Invariant);
+                }
                 path.truncate(base);
             }
-            _ => {}
         }
+        Value::Object(_) => {
+            let base = path.len();
+            let _ = write!(path, "/{k}");
+            check_slot_type(out, ty, k, val, path);
+            rm_invariant_pass(out, val, path, child_declared, bounds);
+            path.truncate(base);
+        }
+        _ => {}
+    }
+}
+
+/// The declared-slot-type conformance rule (the WRONGNESS half of slot typing,
+/// never relaxed — RM common master06 §Incomplete Content): a TAGGED child
+/// must claim the slot's declared type or a subtype.
+///
+/// One model-driven rule for single slots and list members alike; the
+/// shallow-pruned typed dispatch cannot see it (each pruned member
+/// re-dispatches on its own `_type`), so the walk owns it.
+fn check_slot_type(
+    out: &mut Vec<ValidationMessage>,
+    parent_ty: Option<&str>,
+    attribute: &str,
+    item: &Value,
+    path: &str,
+) {
+    if let (Some(parent), Some(wire)) = (parent_ty, item.get("_type").and_then(Value::as_str))
+        && let Some(iv) =
+            openehr_rm::v1_2::validate::check_declared_slot_type(parent, attribute, wire)
+    {
+        push(out, norm_path(path), iv.message, ValidationKind::Invariant);
     }
 }
 

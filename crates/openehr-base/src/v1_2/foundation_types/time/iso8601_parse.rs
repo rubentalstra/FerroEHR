@@ -672,6 +672,44 @@ fn apply_duration_component(
     }
 }
 
+/// One duration component's number: its integer part, its fractional part,
+/// and whether a fraction was written at all.
+///
+/// A decimal sign with no digits after it is refused (`P1.D`).
+fn read_duration_number(
+    it: &mut std::iter::Peekable<std::str::Chars<'_>>,
+) -> Option<(u64, f64, bool)> {
+    let mut num = String::new();
+    while let Some(c) = it.peek() {
+        if !c.is_ascii_digit() {
+            break;
+        }
+        num.push(*c);
+        it.next();
+    }
+    let has_frac = matches!(it.peek(), Some('.' | ','));
+    let mut frac = String::new();
+    if has_frac {
+        it.next();
+        while let Some(c) = it.peek() {
+            if !c.is_ascii_digit() {
+                break;
+            }
+            frac.push(*c);
+            it.next();
+        }
+    }
+    let intval = num.parse::<u64>().ok()?;
+    if !has_frac {
+        return Some((intval, 0.0, false));
+    }
+    if frac.is_empty() {
+        return None;
+    }
+    let fracval = format!("0.{frac}").parse::<f64>().ok()?;
+    Some((intval, fracval, true))
+}
+
 pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
     let mut it = s.chars().peekable();
     let negative = match it.peek() {
@@ -715,38 +753,8 @@ pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
                 it.next();
             }
             Some(c) if c.is_ascii_digit() => {
-                let mut num = String::new();
-                while let Some(c) = it.peek() {
-                    if c.is_ascii_digit() {
-                        num.push(*c);
-                        it.next();
-                    } else {
-                        break;
-                    }
-                }
-                let mut frac = String::new();
-                let has_frac = matches!(it.peek(), Some('.' | ','));
-                if has_frac {
-                    it.next();
-                    while let Some(c) = it.peek() {
-                        if c.is_ascii_digit() {
-                            frac.push(*c);
-                            it.next();
-                        } else {
-                            break;
-                        }
-                    }
-                }
+                let (intval, fracval, has_frac) = read_duration_number(&mut it)?;
                 let designator = it.next()?;
-                let intval = num.parse::<u64>().ok()?;
-                let fracval = if has_frac {
-                    if frac.is_empty() {
-                        return None;
-                    }
-                    format!("0.{frac}").parse::<f64>().ok()?
-                } else {
-                    0.0
-                };
                 let slot = apply_duration_component(&mut d, in_time, designator, intval, fracval)?;
                 if slot <= last_slot {
                     return None;

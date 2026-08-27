@@ -154,26 +154,36 @@ impl Parser<'_> {
     /// AOM 1.4 node-id rule (anonymous where no sibling disambiguation is
     /// needed) is enforced by VCOID in the 1.4 validation pass, not here;
     /// `cadl2.g4` mandates the bracket in ADL 2.
+    /// The slot's `'[' ID_CODE ']'` node id, which ADL 1.4 may omit.
+    ///
+    /// The AOM 1.4 node-id rule (anonymous where no sibling disambiguation is
+    /// needed) is enforced by VCOID in the 1.4 validation pass, not here;
+    /// `cadl2.g4` mandates the bracket in ADL 2.
+    ///
+    /// # Errors
+    /// A missing bracket in ADL 2, or a malformed node id.
+    fn parse_slot_node_id(&mut self) -> PResult<String> {
+        if self.dialect == Dialect::Adl14 && !matches!(self.peek(), Some(Token::LBracket)) {
+            return Ok(String::new());
+        }
+        self.expect(
+            |t| matches!(t, Token::LBracket),
+            SyntaxErrorCode::Sccog,
+            "expecting '[' after 'allow_archetype'",
+        )?;
+        let node_id = self.parse_node_id()?;
+        self.expect(
+            |t| matches!(t, Token::RBracket),
+            SyntaxErrorCode::Sccog,
+            "expecting ']' after the node id",
+        )?;
+        Ok(node_id)
+    }
+
     pub(crate) fn parse_archetype_slot(&mut self) -> PResult<CObject> {
         self.pos += 1; // SYM_ALLOW_ARCHETYPE
         let rm_type = self.parse_rm_type_id()?;
-        let node_id =
-            if self.dialect == Dialect::Adl14 && !matches!(self.peek(), Some(Token::LBracket)) {
-                String::new()
-            } else {
-                self.expect(
-                    |t| matches!(t, Token::LBracket),
-                    SyntaxErrorCode::Sccog,
-                    "expecting '[' after 'allow_archetype'",
-                )?;
-                let n = self.parse_node_id()?;
-                self.expect(
-                    |t| matches!(t, Token::RBracket),
-                    SyntaxErrorCode::Sccog,
-                    "expecting ']' after the node id",
-                )?;
-                n
-            };
+        let node_id = self.parse_slot_node_id()?;
 
         let mut is_closed = false;
         let mut occurrences = None;

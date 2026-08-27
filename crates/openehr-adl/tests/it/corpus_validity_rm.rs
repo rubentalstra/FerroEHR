@@ -361,6 +361,94 @@ const RECLAIMED: &[&str] = &[
     "validity/consistency/openEHR-TEST_PKG-ENTRY.VATID_id_code_in_node_not_in_terminology.v1.0.0.adls",
 ];
 
+/// The reference-model verdict for one corpus fixture.
+///
+/// A `Violation` carries the message tail; the caller prefixes the file name.
+enum RmOutcome {
+    /// The tagged RM code was raised.
+    ExactCode,
+    /// A `VSAM`-tagged fixture raised the non-specialised VCAM instead.
+    NormalisedVcam,
+    /// A `PASS`/untagged fixture raised no error.
+    PassClean,
+    /// A non-RM tag, owned by another harness; only spurious RM errors matter.
+    Deferred,
+    /// The fixture's outcome contradicts its tag.
+    Violation(String),
+}
+
+/// Judges one `rm_checking` fixture against its authoritative `regression` tag.
+fn judge_rm_fixture(
+    src: &str,
+    tag: Option<&str>,
+    production: ProductionRmModel,
+    test_model: &BmmRmModel,
+) -> RmOutcome {
+    let Ok(archetype) = parse_artefact(src, Dialect::Adl2) else {
+        return RmOutcome::Violation("failed to parse".to_owned());
+    };
+    // Pick the governing reference model from the archetype HRID.
+    let rm: &dyn RmModel = if production_model_governs(&archetype) {
+        &production
+    } else {
+        test_model
+    };
+    // Full gated validation (phase 1 → phase 2 RM); if phase 1 is unclean the RM
+    // pass is gated off, so fall back to the ungated RM pass to keep the
+    // assertion about the RM code meaningful.
+    let Ok(issues) = validate_source(src, None, rm, &NoTerminologyResolver) else {
+        return RmOutcome::Violation("validate_source re-parse error".to_owned());
+    };
+    let gated = error_codes(&issues);
+    let rm_only = gated.is_empty()
+        || issues
+            .iter()
+            .all(|i| RM_FIRING.contains(&i.code.mnemonic()) || i.severity != Severity::Error);
+    let codes = if rm_only {
+        gated.clone()
+    } else {
+        error_codes(&validate_rm_conformance(&archetype, rm, Dialect::Adl2))
+    };
+    judge_rm_codes(tag, &gated, &codes)
+}
+
+/// The verdict for a fixture whose RM codes have been collected.
+///
+/// `gated` is the full gated pass's error set (what a `PASS` tag is judged
+/// against); `codes` is the RM-pass set the firing assertions read.
+fn judge_rm_codes(tag: Option<&str>, gated: &[String], codes: &[String]) -> RmOutcome {
+    match tag {
+        None | Some("PASS") => {
+            if gated.is_empty() {
+                RmOutcome::PassClean
+            } else {
+                RmOutcome::Violation(format!("PASS/untagged but raised {codes:?}"))
+            }
+        }
+        // A non-specialised RM-arity violation: master04.5 VSAM is the
+        // *specialised* form (vs the parent archetype); with no parent the
+        // applicable rule is VCAM (master04.5 §Validity Rules: C_ATTRIBUTE,
+        // VCAM). Assert VCAM is raised.
+        Some("VSAM") => {
+            if codes.iter().any(|c| c == "VCAM") {
+                RmOutcome::NormalisedVcam
+            } else {
+                RmOutcome::Violation(format!("VSAM tag expected VCAM but raised {codes:?}"))
+            }
+        }
+        Some(t) if RM_FIRING.contains(&t) => {
+            if codes.iter().any(|c| c == t) {
+                RmOutcome::ExactCode
+            } else {
+                RmOutcome::Violation(format!("expected {t} but raised {codes:?}"))
+            }
+        }
+        // A non-RM tag (e.g. VARDT is phase-1, owned by the phase-1 harness):
+        // assert only that the RM pass raises no spurious RM error.
+        Some(_) => RmOutcome::Deferred,
+    }
+}
+
 #[test]
 fn corpus_rm_outcomes() {
     let production = ProductionRmModel;
@@ -392,73 +480,12 @@ fn corpus_rm_outcomes() {
         };
         let tag = read_tag_raw(&src);
 
-        let Ok(archetype) = parse_artefact(&src, Dialect::Adl2) else {
-            violations.push(format!("{name}: failed to parse"));
-            continue;
-        };
-
-        // Pick the governing reference model from the archetype HRID.
-        let rm: &dyn RmModel = if production_model_governs(&archetype) {
-            &production
-        } else {
-            &test_model
-        };
-
-        // Full gated validation (phase 1 → phase 2 RM); if phase 1 is unclean
-        // the RM pass is gated off, so fall back to the ungated RM pass to keep
-        // the assertion about the RM code meaningful.
-        let Ok(issues) = validate_source(&src, None, rm, &NoTerminologyResolver) else {
-            violations.push(format!("{name}: validate_source re-parse error"));
-            continue;
-        };
-        let mut codes = error_codes(&issues);
-        if codes.is_empty() {
-            // no phase-1/phase-2 error; also compute the raw RM pass for the
-            // firing assertions (some tags name an RM code on an otherwise
-            // phase-1-clean archetype — the gated pass already ran it).
-        } else if issues
-            .iter()
-            .all(|i| RM_FIRING.contains(&i.code.mnemonic()) || i.severity != Severity::Error)
-        {
-            // errors are RM-firing codes — good.
-        } else {
-            // phase-1 error gated the RM pass; run the RM pass directly.
-            codes = error_codes(&validate_rm_conformance(&archetype, rm, Dialect::Adl2));
-        }
-
-        match tag.as_deref() {
-            None | Some("PASS") => {
-                if error_codes(&issues).is_empty() {
-                    counts.pass_clean += 1;
-                } else {
-                    violations.push(format!("{name}: PASS/untagged but raised {codes:?}"));
-                }
-            }
-            Some("VSAM") => {
-                // A non-specialised RM-arity violation: master04.5 VSAM is the
-                // *specialised* form (vs the parent archetype); with no parent
-                // the applicable rule is VCAM (master04.5 §Validity Rules:
-                // C_ATTRIBUTE, VCAM). Assert VCAM is raised.
-                if codes.iter().any(|c| c == "VCAM") {
-                    counts.normalised_vcam += 1;
-                } else {
-                    violations.push(format!(
-                        "{name}: VSAM tag expected VCAM but raised {codes:?}"
-                    ));
-                }
-            }
-            Some(t) if RM_FIRING.contains(&t) => {
-                if codes.iter().any(|c| c == t) {
-                    counts.exact_code += 1;
-                } else {
-                    violations.push(format!("{name}: expected {t} but raised {codes:?}"));
-                }
-            }
-            // A non-RM tag (e.g. VARDT is phase-1, owned by the phase-1 harness):
-            // assert only that the RM pass raises no spurious RM error.
-            Some(_) => {
-                counts.deferred += 1;
-            }
+        match judge_rm_fixture(&src, tag.as_deref(), production, &test_model) {
+            RmOutcome::ExactCode => counts.exact_code += 1,
+            RmOutcome::NormalisedVcam => counts.normalised_vcam += 1,
+            RmOutcome::PassClean => counts.pass_clean += 1,
+            RmOutcome::Deferred => counts.deferred += 1,
+            RmOutcome::Violation(message) => violations.push(format!("{name}: {message}")),
         }
     }
 

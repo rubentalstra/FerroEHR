@@ -295,27 +295,7 @@ fn build(
     slots: &[(Vec<PathSegment>, String)],
 ) -> Result<Option<Value>, FlatError> {
     if node.has_input() {
-        if is_null_flavoured(sim) {
-            return Ok(None);
-        }
-        let mut dv = map::build_leaf(sim, base_type(&node.rm_type), Some(node), path)?;
-        // Value-level `_` attributes (`_normal_range`, `_mapping`,
-        // `_accuracy`, `_language`, …) attach to the DV value itself;
-        // ELEMENT-level ones are routed onto the wrapping ELEMENT by
-        // `place` (master05 per-type tables vs §ELEMENT); the few the leaf
-        // builder itself consumed are skipped (`leaf_consumes_segment`).
-        if let Value::Object(m) = &mut dv {
-            let base = base_type(&node.rm_type);
-            for (seg, child) in &sim.children {
-                if seg.starts_with('_')
-                    && !is_element_level(seg)
-                    && !leaf_consumes_segment(base, seg)
-                {
-                    apply_rm_attr(m, seg, &child.occurrences, base, path)?;
-                }
-            }
-        }
-        return Ok(Some(dv));
+        return build_leaf(node, sim, path);
     }
 
     let mut obj = Map::new();
@@ -325,77 +305,8 @@ fn build(
     // HISTORY is materialised (see below).
     let mut history_origin: Option<String> = None;
 
-    for child in &node.children {
-        if !child_is_walked(node, child) {
-            continue;
-        }
-        let Some(sim_child) = sim.children.get(&child.id).or_else(|| {
-            child
-                .alt_json_id
-                .as_deref()
-                .and_then(|a| sim.children.get(a))
-        }) else {
-            continue;
-        };
-        let rel = rmpath::relative(&node.aql_path, &child.aql_path);
-        for (i, occ) in sim_child.occurrences.iter().enumerate() {
-            if occ.is_empty() {
-                continue; // a preserved index hole
-            }
-            let child_path = format!("{path}/{}:{i}", child.id);
-            let child_val = build(child, occ, &child_path, slots)?;
-            place(&mut obj, &rel, child_val, child, occ, &child_path, slots)?;
-        }
-    }
-
-    // Container-level `_` RM attribute families addressed to this node.
-    for (seg, child) in &sim.children {
-        if seg.starts_with('_') {
-            apply_rm_attr(
-                &mut obj,
-                seg,
-                &child.occurrences,
-                base_type(&node.rm_type),
-                path,
-            )?;
-            continue;
-        }
-        // Only a template child the walk above ACTUALLY processes counts as
-        // handled. A child the in-context routing skipped
-        // ([`child_is_walked`]) must fall through to the direct-RM-path
-        // fallback below, or its datum would be neither honoured nor
-        // rejected — the one outcome master04 §Validation forbids.
-        let known = node.children.iter().any(|c| {
-            (c.id == *seg || c.alt_json_id.as_deref() == Some(seg)) && child_is_walked(node, c)
-        });
-        let ctx_covered = node.rm_type == "COMPOSITION"
-            && matches!(
-                seg.as_str(),
-                "language" | "territory" | "composer" | "category"
-            );
-        if known || ctx_covered {
-            continue;
-        }
-        // A direct RM-attribute path the master05 per-type mapping tables
-        // declare addressable on this node even when the OPT leaves it
-        // unconstrained (so the compacted web-template carries no child for
-        // it) — e.g. `ACTION/time`, `ACTION/ism_transition` (master05
-        // §§ACTION, ISM_TRANSITION). Built here from the datum sub-tree.
-        if place_direct_rm_path(
-            &mut obj,
-            &node.rm_type,
-            seg,
-            &child.occurrences,
-            path,
-            &mut history_origin,
-        )? {
-            continue;
-        }
-        // Otherwise the identifier matches no template child and no
-        // spec-listed RM path (master04 §Validation: field identifiers match
-        // WT metadata structure).
-        return Err(FlatError::UnknownPath(format!("{path}/{seg}")));
-    }
+    walk_template_children(node, sim, path, slots, &mut obj)?;
+    apply_container_attrs(node, sim, path, &mut obj, &mut history_origin)?;
     // Datum parts on a container node are only legal via |raw
     // (master04 §Raw canonical JSON) or as one of the few datum suffixes the
     // master05 per-type tables place on a container; anything else is an
@@ -419,6 +330,127 @@ fn build(
         apply_interval_flags(m, &node.rm_type);
     }
     Ok(Some(value))
+}
+
+/// Builds the DATA_VALUE of an input-carrying (leaf) node.
+///
+/// `Ok(None)` is the value-less ELEMENT of [`is_null_flavoured`]. Value-level
+/// `_` attributes (`_normal_range`, `_mapping`, `_accuracy`, `_language`, …)
+/// attach to the DV value itself; ELEMENT-level ones are routed onto the
+/// wrapping ELEMENT by [`place`] (master05 per-type tables vs §ELEMENT), and
+/// the few the leaf builder itself consumed are skipped
+/// ([`leaf_consumes_segment`]).
+///
+/// # Errors
+/// [`FlatError`] from the leaf build or an unusable RM attribute.
+fn build_leaf(
+    node: &WebTemplateNode,
+    sim: &SimNode,
+    path: &str,
+) -> Result<Option<Value>, FlatError> {
+    if is_null_flavoured(sim) {
+        return Ok(None);
+    }
+    let base = base_type(&node.rm_type);
+    let mut dv = map::build_leaf(sim, base, Some(node), path)?;
+    if let Value::Object(m) = &mut dv {
+        for (seg, child) in &sim.children {
+            if seg.starts_with('_') && !is_element_level(seg) && !leaf_consumes_segment(base, seg) {
+                apply_rm_attr(m, seg, &child.occurrences, base, path)?;
+            }
+        }
+    }
+    Ok(Some(dv))
+}
+
+/// Builds every template child the walk covers into `obj`.
+///
+/// # Errors
+/// [`FlatError`] from a child's own build or its placement.
+fn walk_template_children(
+    node: &WebTemplateNode,
+    sim: &SimNode,
+    path: &str,
+    slots: &[(Vec<PathSegment>, String)],
+    obj: &mut Map<String, Value>,
+) -> Result<(), FlatError> {
+    for child in &node.children {
+        if !child_is_walked(node, child) {
+            continue;
+        }
+        let Some(sim_child) = sim.children.get(&child.id).or_else(|| {
+            child
+                .alt_json_id
+                .as_deref()
+                .and_then(|a| sim.children.get(a))
+        }) else {
+            continue;
+        };
+        let rel = rmpath::relative(&node.aql_path, &child.aql_path);
+        for (i, occ) in sim_child.occurrences.iter().enumerate() {
+            if occ.is_empty() {
+                continue; // a preserved index hole
+            }
+            let child_path = format!("{path}/{}:{i}", child.id);
+            let child_val = build(child, occ, &child_path, slots)?;
+            place(obj, &rel, child_val, child, occ, &child_path, slots)?;
+        }
+    }
+    Ok(())
+}
+
+/// Applies the datum segments addressed to a container node itself.
+///
+/// Only a template child the walk ACTUALLY processes counts as handled: a
+/// child the in-context routing skipped ([`child_is_walked`]) must fall
+/// through to the direct-RM-path fallback, or its datum would be neither
+/// honoured nor rejected — the one outcome master04 §Validation forbids. The
+/// fallback covers a direct RM-attribute path the master05 per-type mapping
+/// tables declare addressable on this node even when the OPT leaves it
+/// unconstrained (so the compacted web template carries no child for it) —
+/// e.g. `ACTION/time`, `ACTION/ism_transition` (master05 §§ACTION,
+/// ISM_TRANSITION).
+///
+/// # Errors
+/// [`FlatError::UnknownPath`] when an identifier matches no template child and
+/// no spec-listed RM path (master04 §Validation: field identifiers match WT
+/// metadata structure), plus the RM-attribute rejections.
+fn apply_container_attrs(
+    node: &WebTemplateNode,
+    sim: &SimNode,
+    path: &str,
+    obj: &mut Map<String, Value>,
+    history_origin: &mut Option<String>,
+) -> Result<(), FlatError> {
+    for (seg, child) in &sim.children {
+        if seg.starts_with('_') {
+            apply_rm_attr(obj, seg, &child.occurrences, base_type(&node.rm_type), path)?;
+            continue;
+        }
+        let known = node.children.iter().any(|c| {
+            (c.id == *seg || c.alt_json_id.as_deref() == Some(seg)) && child_is_walked(node, c)
+        });
+        let ctx_covered = node.rm_type == "COMPOSITION"
+            && matches!(
+                seg.as_str(),
+                "language" | "territory" | "composer" | "category"
+            );
+        if known || ctx_covered {
+            continue;
+        }
+        if place_direct_rm_path(
+            obj,
+            &node.rm_type,
+            seg,
+            &child.occurrences,
+            path,
+            history_origin,
+        )? {
+            continue;
+        }
+        return Err(FlatError::UnknownPath(format!("{path}/{seg}")));
+    }
+    Ok(())
 }
 
 /// Whether a leaf occurrence expresses a **value-less** ELEMENT: no datum part
@@ -699,24 +731,7 @@ fn place_direct_rm_path(
             if let Some(node) = occ
                 && !obj.contains_key(attr)
             {
-                // A bare `|code` binds to the row's openEHR terminology group,
-                // resolving its rubric exactly as the equivalent `ctx/`
-                // shortcut does (master06 §setting: "either value or code is
-                // accepted"). Once the client spells out `|value` or
-                // `|terminology`, the datum parts stand as given
-                // (master05 §DV_CODED_TEXT).
-                let bound = node
-                    .attrs
-                    .get("code")
-                    .and_then(Value::as_str)
-                    .filter(|_| {
-                        !node.attrs.contains_key("value") && !node.attrs.contains_key("terminology")
-                    })
-                    .map(|code| map::coded_from_group(group, code));
-                let value = match bound {
-                    Some(v) => v,
-                    None => map::build_leaf(node, "DV_CODED_TEXT", None, &sub_path)?,
-                };
+                let value = coded_group_value(node, group, &sub_path)?;
                 obj.insert(attr.to_owned(), value);
             }
         }
@@ -742,6 +757,29 @@ fn place_direct_rm_path(
         }
     }
     Ok(true)
+}
+
+/// The DV_CODED_TEXT of a direct RM path bound to an openEHR terminology
+/// group.
+///
+/// A bare `|code` binds to the row's group, resolving its rubric exactly as
+/// the equivalent `ctx/` shortcut does (master06 §setting: "either value or
+/// code is accepted"). Once the client spells out `|value` or `|terminology`,
+/// the datum parts stand as given (master05 §DV_CODED_TEXT).
+///
+/// # Errors
+/// [`FlatError`] from the leaf build.
+fn coded_group_value(node: &SimNode, group: &str, sub_path: &str) -> Result<Value, FlatError> {
+    let bound = node
+        .attrs
+        .get("code")
+        .and_then(Value::as_str)
+        .filter(|_| !node.attrs.contains_key("value") && !node.attrs.contains_key("terminology"))
+        .map(|code| map::coded_from_group(group, code));
+    match bound {
+        Some(v) => Ok(v),
+        None => map::build_leaf(node, "DV_CODED_TEXT", None, sub_path),
+    }
 }
 
 /// Build an `ACTION.ism_transition` (ISM_TRANSITION) from its simplified
@@ -833,126 +871,178 @@ fn place(
     if rel.is_empty() {
         return Ok(());
     }
-    let id_idx = rel.iter().rposition(|s| is_multiple(&s.attribute));
     // Per relative segment, the template-constrained concrete type of the
     // structural wrapper at that absolute path (empty ⇒ fall back to `infer_type`).
     let types = wrapper_types(&child.aql_path, rel.len(), slots);
-    place_rec(
-        parent,
+    let placement = Placement {
         rel,
-        0,
-        id_idx,
-        child_value,
+        id_idx: rel.iter().rposition(|s| is_multiple(&s.attribute)),
         child,
         occ,
         path,
-        &types,
+        types: &types,
         slots,
-    )
+    };
+    place_rec(parent, 0, child_value, &placement)
 }
 
-#[expect(
-    clippy::too_many_arguments,
-    clippy::too_many_lines,
-    reason = "a recursive placement cursor, not an API: the arguments thread the cursor state through the recursion, and the structural-case body runs just over the line limit"
-)]
+/// The invariant context of one placement walk: the relative path being
+/// materialised, the child it terminates at, that child's occurrence, and the
+/// template's wrapper types. Only the receiving map, the segment cursor and
+/// the value being placed move through the recursion.
+struct Placement<'a> {
+    rel: &'a [PathSegment],
+    /// The index of the child's OWN repeating array level, if it has one.
+    id_idx: Option<usize>,
+    child: &'a WebTemplateNode,
+    occ: &'a SimNode,
+    path: &'a str,
+    types: &'a [Option<String>],
+    slots: &'a [(Vec<PathSegment>, String)],
+}
+
+/// Materialise the wrapper chain of one relative segment, recursing into the
+/// next.
+///
+/// # Errors
+/// [`FlatError`] from a nested placement or an ELEMENT attribute family.
 #[expect(
     clippy::indexing_slicing,
     reason = "`i` is a cursor into `rel` that the recursion only advances while `i + 1 < rel.len()` (the `last` guard), so `rel[i]` and `rel[i + 1..]` are in bounds at every call"
 )]
 fn place_rec(
     cur: &mut Map<String, Value>,
-    rel: &[PathSegment],
     i: usize,
-    id_idx: Option<usize>,
     child_value: Option<Value>,
-    child: &WebTemplateNode,
-    occ: &SimNode,
-    path: &str,
-    types: &[Option<String>],
-    slots: &[(Vec<PathSegment>, String)],
+    p: &Placement<'_>,
 ) -> Result<(), FlatError> {
-    let seg = &rel[i];
-    let node_id = seg.predicate.archetype_node_id.as_deref();
-    let last = i + 1 == rel.len();
-
-    if Some(i) == id_idx {
-        // The child's own (repeating) array level.
-        let arr = cur
-            .entry(seg.attribute.clone())
-            .or_insert_with(|| json!([]))
-            .as_array_mut();
-        let Some(arr) = arr else { return Ok(()) };
-        if last {
-            // The child value is itself the array element (a container child).
-            let Some(mut el) = child_value else {
-                return Ok(());
-            };
-            set_node_id(&mut el, node_id);
-            arr.push(el);
-        } else {
-            // Wrap: the remaining path (e.g. `/value`) lives inside a new
-            // ELEMENT (or deeper structural) node.
-            let mut el = new_struct(
-                seg,
-                rel.get(i + 1),
-                child.name.as_deref(),
-                child.name_coded.as_ref(),
-                types.get(i).and_then(Option::as_deref),
-            );
-            if let Value::Object(m) = &mut el {
-                place(m, &rel[i + 1..], child_value, child, occ, path, slots)?;
-                // The ELEMENT wrapper's own `_` attribute family
-                // (master05 §ELEMENT).
-                apply_element_attrs(m, occ, path)?;
-            }
-            arr.push(el);
-        }
-        return Ok(());
+    if Some(i) == p.id_idx {
+        return place_own_level(cur, i, child_value, p);
     }
+    if is_multiple(&p.rel[i].attribute) {
+        return place_structural_level(cur, i, child_value, p);
+    }
+    place_single_attribute(cur, i, child_value, p)
+}
 
-    if is_multiple(&seg.attribute) {
-        // A structural (single-occurrence) array level: find-or-create by
-        // node id.
-        let arr = cur
-            .entry(seg.attribute.clone())
-            .or_insert_with(|| json!([]))
-            .as_array_mut();
-        let Some(arr) = arr else { return Ok(()) };
-        let pos = arr
-            .iter()
-            .position(|e| e.get("archetype_node_id").and_then(Value::as_str) == node_id);
-        let idx = if let Some(p) = pos {
-            p
-        } else {
-            arr.push(new_struct(
-                seg,
-                rel.get(i + 1),
-                None,
-                None,
-                types.get(i).and_then(Option::as_deref),
-            ));
-            arr.len() - 1
+/// The child's own (repeating) array level: the value is either the array
+/// element itself (a container child) or is wrapped in a fresh ELEMENT — or
+/// deeper structural — node carrying the rest of the path.
+///
+/// # Errors
+/// [`FlatError`] from the nested placement or the ELEMENT attribute family.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`i` indexes `rel` under the same cursor invariant as `place_rec`"
+)]
+fn place_own_level(
+    cur: &mut Map<String, Value>,
+    i: usize,
+    child_value: Option<Value>,
+    p: &Placement<'_>,
+) -> Result<(), FlatError> {
+    let seg = &p.rel[i];
+    let Some(arr) = cur
+        .entry(seg.attribute.clone())
+        .or_insert_with(|| json!([]))
+        .as_array_mut()
+    else {
+        return Ok(());
+    };
+    if i + 1 == p.rel.len() {
+        let Some(mut el) = child_value else {
+            return Ok(());
         };
-        if let Some(Value::Object(m)) = arr.get_mut(idx) {
-            place_rec(
-                m,
-                rel,
-                i + 1,
-                id_idx,
-                child_value,
-                child,
-                occ,
-                path,
-                types,
-                slots,
-            )?;
-        }
+        set_node_id(&mut el, seg.predicate.archetype_node_id.as_deref());
+        arr.push(el);
         return Ok(());
     }
+    let mut el = new_struct(
+        seg,
+        p.rel.get(i + 1),
+        p.child.name.as_deref(),
+        p.child.name_coded.as_ref(),
+        p.types.get(i).and_then(Option::as_deref),
+    );
+    if let Value::Object(m) = &mut el {
+        place(
+            m,
+            &p.rel[i + 1..],
+            child_value,
+            p.child,
+            p.occ,
+            p.path,
+            p.slots,
+        )?;
+        // The ELEMENT wrapper's own `_` attribute family (master05 §ELEMENT).
+        apply_element_attrs(m, p.occ, p.path)?;
+    }
+    arr.push(el);
+    Ok(())
+}
 
-    // A single-valued (object) attribute.
-    if last {
+/// A structural (single-occurrence) array level: find-or-create the element
+/// carrying this node id, then recurse into it.
+///
+/// # Errors
+/// [`FlatError`] from the nested placement.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`i` indexes `rel` under the same cursor invariant as `place_rec`"
+)]
+fn place_structural_level(
+    cur: &mut Map<String, Value>,
+    i: usize,
+    child_value: Option<Value>,
+    p: &Placement<'_>,
+) -> Result<(), FlatError> {
+    let seg = &p.rel[i];
+    let node_id = seg.predicate.archetype_node_id.as_deref();
+    let Some(arr) = cur
+        .entry(seg.attribute.clone())
+        .or_insert_with(|| json!([]))
+        .as_array_mut()
+    else {
+        return Ok(());
+    };
+    let existing = arr
+        .iter()
+        .position(|e| e.get("archetype_node_id").and_then(Value::as_str) == node_id);
+    let idx = if let Some(pos) = existing {
+        pos
+    } else {
+        arr.push(new_struct(
+            seg,
+            p.rel.get(i + 1),
+            None,
+            None,
+            p.types.get(i).and_then(Option::as_deref),
+        ));
+        arr.len() - 1
+    };
+    if let Some(Value::Object(m)) = arr.get_mut(idx) {
+        place_rec(m, i + 1, child_value, p)?;
+    }
+    Ok(())
+}
+
+/// A single-valued (object) attribute: the value lands here, or a fresh
+/// structural node carries the rest of the path.
+///
+/// # Errors
+/// [`FlatError`] from the nested placement or the ELEMENT attribute family.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`i` indexes `rel` under the same cursor invariant as `place_rec`"
+)]
+fn place_single_attribute(
+    cur: &mut Map<String, Value>,
+    i: usize,
+    child_value: Option<Value>,
+    p: &Placement<'_>,
+) -> Result<(), FlatError> {
+    let seg = &p.rel[i];
+    if i + 1 == p.rel.len() {
         let wraps_element = seg.attribute == "value";
         if let Some(child_value) = child_value {
             cur.insert(seg.attribute.clone(), child_value);
@@ -960,7 +1050,7 @@ fn place_rec(
         if wraps_element {
             // The map receiving `value` is the compacted-away ELEMENT
             // wrapper; apply its `_` attribute family (master05 §ELEMENT).
-            apply_element_attrs(cur, occ, path)?;
+            apply_element_attrs(cur, p.occ, p.path)?;
         }
         return Ok(());
     }
@@ -969,26 +1059,15 @@ fn place_rec(
             seg.attribute.clone(),
             new_struct(
                 seg,
-                rel.get(i + 1),
+                p.rel.get(i + 1),
                 None,
                 None,
-                types.get(i).and_then(Option::as_deref),
+                p.types.get(i).and_then(Option::as_deref),
             ),
         );
     }
     if let Some(Value::Object(m)) = cur.get_mut(&seg.attribute) {
-        place_rec(
-            m,
-            rel,
-            i + 1,
-            id_idx,
-            child_value,
-            child,
-            occ,
-            path,
-            types,
-            slots,
-        )?;
+        place_rec(m, i + 1, child_value, p)?;
     }
     Ok(())
 }
@@ -1225,11 +1304,25 @@ fn finish_identity(
     template_id: &str,
 ) {
     let rm_type = concrete_type(&node.rm_type);
+    if fill_non_locatable(obj, rm_type) {
+        return;
+    }
+    stamp_locatable_identity(obj, node, rm_type);
+    fill_time_anchor(obj, rm_type);
+    stamp_archetype_details(obj, node, is_root, template_id);
+    fill_mandatory_entry_attributes(obj, node, rm_type);
+}
+
+/// Completes a node whose RM class is not `LOCATABLE`, reporting whether it did.
+///
+/// A `true` return means the node needs none of the locatable identity,
+/// archetype-details or ENTRY-attribute filling that follows it.
+fn fill_non_locatable(obj: &mut Map<String, Value>, rm_type: &str) -> bool {
     if rm_type.starts_with("DV_") || rm_type == "CODE_PHRASE" {
-        return; // leaves already complete
+        return true; // leaves already complete
     }
     if rm_type == "EVENT_CONTEXT" {
-        return; // PATHABLE, not LOCATABLE; fields come from ctx/
+        return true; // PATHABLE, not LOCATABLE; fields come from ctx/
     }
     // PARTICIPATION is not LOCATABLE (RM common
     // `UML/classes/org.openehr.rm.common.participation.adoc` declares exactly
@@ -1239,7 +1332,7 @@ fn finish_identity(
     if rm_type == "PARTICIPATION" {
         obj.entry("performer".to_owned())
             .or_insert_with(|| json!({"_type": "PARTY_SELF"}));
-        return;
+        return true;
     }
     // PARTY_PROXY subtypes are not LOCATABLE either, and `PARTY_IDENTIFIED.name`
     // is a plain String, never a `DV_TEXT` (RM common
@@ -1254,9 +1347,13 @@ fn finish_identity(
         {
             obj.insert("name".to_owned(), json!("Example party"));
         }
-        return;
+        return true;
     }
-    stamp_locatable_identity(obj, node, rm_type);
+    false
+}
+
+/// Fills the mandatory time anchor of the two RM classes that carry one.
+fn fill_time_anchor(obj: &mut Map<String, Value>, rm_type: &str) {
     match rm_type {
         "POINT_EVENT" | "INTERVAL_EVENT" => {
             obj.entry("time".to_owned())
@@ -1268,29 +1365,55 @@ fn finish_identity(
         }
         _ => {}
     }
+}
+
+/// Stamps `archetype_details` on an archetype-root node.
+fn stamp_archetype_details(
+    obj: &mut Map<String, Value>,
+    node: &WebTemplateNode,
+    is_root: bool,
+    template_id: &str,
+) {
     let is_root_arch = node
         .node_id
         .as_deref()
         .is_some_and(openehr_rm::v1_2::paths::is_archetype_root_node_id);
-    if is_root_arch {
-        obj.entry("archetype_details".to_owned())
-            .or_insert_with(|| {
-                let mut a = Map::new();
-                a.insert("_type".into(), json!("ARCHETYPED"));
-                a.insert(
-                    "archetype_id".into(),
-                    json!({"_type": "ARCHETYPE_ID", "value": node.node_id}),
-                );
-                if is_root && !template_id.is_empty() {
-                    a.insert(
-                        "template_id".into(),
-                        json!({"_type": "TEMPLATE_ID", "value": template_id}),
-                    );
-                }
-                a.insert("rm_version".into(), json!(RM_VERSION));
-                Value::Object(a)
-            });
+    if !is_root_arch {
+        return;
     }
+    obj.entry("archetype_details".to_owned())
+        .or_insert_with(|| {
+            let mut a = Map::new();
+            a.insert("_type".into(), json!("ARCHETYPED"));
+            a.insert(
+                "archetype_id".into(),
+                json!({"_type": "ARCHETYPE_ID", "value": node.node_id}),
+            );
+            if is_root && !template_id.is_empty() {
+                a.insert(
+                    "template_id".into(),
+                    json!({"_type": "TEMPLATE_ID", "value": template_id}),
+                );
+            }
+            a.insert("rm_version".into(), json!(RM_VERSION));
+            Value::Object(a)
+        });
+}
+
+/// Fills the RM-mandatory ENTRY attributes the simplified form carried no
+/// content under.
+///
+/// When the template constrains the attribute to a node-identified structural
+/// child, the recorded structural stub's identity is stamped — a value the
+/// closed-archetype walk admits (AOM 1.4
+/// `master04-constraint_model_package.adoc` §Valid_value). Unconstrained
+/// attributes get the spec-legal `at0001` "Any" placeholder (ADL 1.4
+/// `master05-cadl.adoc` §"Any" Constraints).
+fn fill_mandatory_entry_attributes(
+    obj: &mut Map<String, Value>,
+    node: &WebTemplateNode,
+    rm_type: &str,
+) {
     if matches!(
         rm_type,
         "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" | "GENERIC_ENTRY"
@@ -1298,13 +1421,6 @@ fn finish_identity(
         obj.entry("subject".to_owned())
             .or_insert_with(|| json!({"_type": "PARTY_SELF"}));
     }
-    // RM-mandatory structural attributes the simplified form carried no
-    // content under. When the template constrains the attribute to a
-    // node-identified structural child, the recorded structural stub's
-    // identity is stamped — a value the closed-archetype walk admits
-    // (AOM 1.4 `master04-constraint_model_package.adoc` §Valid_value).
-    // Unconstrained attributes get the spec-legal `at0001` "Any"
-    // placeholder (ADL 1.4 `master05-cadl.adoc` §"Any" Constraints).
     match rm_type {
         "OBSERVATION" => {
             obj.entry("data".to_owned())
@@ -1479,10 +1595,6 @@ fn apply_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
     walk_entry_defaults(value, defaults);
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "one recursive walk over the ENTRY-default families; the length is the size of that family set"
-)]
 fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
     match value {
         Value::Array(items) => {
@@ -1496,85 +1608,10 @@ fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_owned();
-            if matches!(
-                rm_type.as_str(),
-                "OBSERVATION"
-                    | "EVALUATION"
-                    | "INSTRUCTION"
-                    | "ACTION"
-                    | "ADMIN_ENTRY"
-                    | "GENERIC_ENTRY"
-            ) {
-                if let Some(language) = defaults.language_code_phrase() {
-                    obj.entry("language".to_owned()).or_insert(language);
-                }
-                obj.entry("encoding".to_owned())
-                    .or_insert_with(|| code_phrase("IANA_character-sets", "UTF-8"));
-                if let Some(provider) = &defaults.provider {
-                    obj.entry("provider".to_owned())
-                        .or_insert_with(|| provider.clone());
-                }
-                if let Some(wf) = &defaults.work_flow_id {
-                    obj.entry("workflow_id".to_owned())
-                        .or_insert_with(|| wf.clone());
-                }
-                // NOTE: master06 §Participation also names
-                // `ENTRY.other_participations`, but master05's explicit
-                // `_other_participation:i` path form wins, so ctx lands here only.
-            }
+            apply_common_entry_defaults(obj, &rm_type, defaults);
             match rm_type.as_str() {
-                "OBSERVATION" => {
-                    let origin = defaults
-                        .history_origin
-                        .clone()
-                        .unwrap_or_else(|| defaults.time.clone());
-                    if let Some(Value::Object(history)) = obj.get_mut("data") {
-                        let origin_value = history
-                            .entry("origin".to_owned())
-                            .or_insert_with(|| dv_date_time(&origin));
-                        if origin_value.get("value").and_then(Value::as_str) == Some(DEFAULT_TIME) {
-                            *origin_value = dv_date_time(&origin);
-                        }
-                        let origin_now = origin_value.clone();
-                        // EVENT.time defaults to the history origin
-                        // (master06 §time).
-                        if let Some(Value::Array(events)) = history.get_mut("events") {
-                            for event in events {
-                                if let Value::Object(ev) = event {
-                                    let time = ev
-                                        .entry("time".to_owned())
-                                        .or_insert_with(|| origin_now.clone());
-                                    if time.get("value").and_then(Value::as_str)
-                                        == Some(DEFAULT_TIME)
-                                    {
-                                        *time = origin_now.clone();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                "ACTION" => {
-                    let time = defaults
-                        .action_time
-                        .clone()
-                        .unwrap_or_else(|| defaults.time.clone());
-                    let entry = obj
-                        .entry("time".to_owned())
-                        .or_insert_with(|| dv_date_time(&time));
-                    if entry.get("value").and_then(Value::as_str) == Some(DEFAULT_TIME) {
-                        *entry = dv_date_time(&time);
-                    }
-                    if let Some(state) = &defaults.action_ism_current_state {
-                        let ism = obj
-                            .entry("ism_transition".to_owned())
-                            .or_insert_with(|| json!({"_type": "ISM_TRANSITION"}));
-                        if let Value::Object(ism) = ism {
-                            ism.entry("current_state".to_owned())
-                                .or_insert_with(|| state.clone());
-                        }
-                    }
-                }
+                "OBSERVATION" => apply_observation_defaults(obj, defaults),
+                "ACTION" => apply_action_defaults(obj, defaults),
                 "INSTRUCTION" => {
                     if let Some(narrative) = &defaults.instruction_narrative {
                         obj.entry("narrative".to_owned())
@@ -1595,6 +1632,95 @@ fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
             }
         }
         _ => {}
+    }
+}
+
+/// The defaults every ENTRY subtype takes: language, encoding, provider and
+/// workflow id.
+///
+/// NOTE: master06 §Participation also names `ENTRY.other_participations`, but
+/// master05's explicit `_other_participation:i` path form wins, so ctx lands
+/// here only.
+fn apply_common_entry_defaults(
+    obj: &mut Map<String, Value>,
+    rm_type: &str,
+    defaults: &ctx::CtxDefaults,
+) {
+    if !matches!(
+        rm_type,
+        "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" | "GENERIC_ENTRY"
+    ) {
+        return;
+    }
+    if let Some(language) = defaults.language_code_phrase() {
+        obj.entry("language".to_owned()).or_insert(language);
+    }
+    obj.entry("encoding".to_owned())
+        .or_insert_with(|| code_phrase("IANA_character-sets", "UTF-8"));
+    if let Some(provider) = &defaults.provider {
+        obj.entry("provider".to_owned())
+            .or_insert_with(|| provider.clone());
+    }
+    if let Some(wf) = &defaults.work_flow_id {
+        obj.entry("workflow_id".to_owned())
+            .or_insert_with(|| wf.clone());
+    }
+}
+
+/// The OBSERVATION defaults: the HISTORY origin, and each EVENT's time, which
+/// defaults to that origin (master06 §time).
+fn apply_observation_defaults(obj: &mut Map<String, Value>, defaults: &ctx::CtxDefaults) {
+    let origin = defaults
+        .history_origin
+        .clone()
+        .unwrap_or_else(|| defaults.time.clone());
+    let Some(Value::Object(history)) = obj.get_mut("data") else {
+        return;
+    };
+    let origin_value = history
+        .entry("origin".to_owned())
+        .or_insert_with(|| dv_date_time(&origin));
+    if origin_value.get("value").and_then(Value::as_str) == Some(DEFAULT_TIME) {
+        *origin_value = dv_date_time(&origin);
+    }
+    let origin_now = origin_value.clone();
+    let Some(Value::Array(events)) = history.get_mut("events") else {
+        return;
+    };
+    for event in events {
+        if let Value::Object(ev) = event {
+            let time = ev
+                .entry("time".to_owned())
+                .or_insert_with(|| origin_now.clone());
+            if time.get("value").and_then(Value::as_str) == Some(DEFAULT_TIME) {
+                *time = origin_now.clone();
+            }
+        }
+    }
+}
+
+/// The ACTION defaults: the action time and the ISM transition's current
+/// state.
+fn apply_action_defaults(obj: &mut Map<String, Value>, defaults: &ctx::CtxDefaults) {
+    let time = defaults
+        .action_time
+        .clone()
+        .unwrap_or_else(|| defaults.time.clone());
+    let entry = obj
+        .entry("time".to_owned())
+        .or_insert_with(|| dv_date_time(&time));
+    if entry.get("value").and_then(Value::as_str) == Some(DEFAULT_TIME) {
+        *entry = dv_date_time(&time);
+    }
+    let Some(state) = &defaults.action_ism_current_state else {
+        return;
+    };
+    let ism = obj
+        .entry("ism_transition".to_owned())
+        .or_insert_with(|| json!({"_type": "ISM_TRANSITION"}));
+    if let Value::Object(ism) = ism {
+        ism.entry("current_state".to_owned())
+            .or_insert_with(|| state.clone());
     }
 }
 

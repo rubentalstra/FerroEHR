@@ -16,6 +16,7 @@
 )]
 
 use serde_json::Value;
+use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
@@ -95,18 +96,53 @@ pub async fn execute(
         })
         .collect();
 
-    // Assemble the cells. Scalar cells read their JSON straight off the result
-    // row; whole-object cells contribute a subtree anchor that is batch-loaded in
-    // ONE round trip after the scan — never one follow-up SELECT per candidate
-    // row (fixes the AQL result-assembly N+1).
+    let Scan {
+        mut out_rows,
+        anchors,
+        pending,
+    } = scan_rows(&rows, &prepared.columns)?;
+
+    if !anchors.is_empty() {
+        crate::versioning::profile::gate_result_bodies(pool, profile, &anchors)
+            .await
+            .map_err(ExecError::Profile)?;
+        let subtrees = crate::storage::node_repo::read_subtrees_canonical(pool, &anchors)
+            .await
+            .map_err(ExecError::from)?;
+        fill_whole_object_cells(&mut out_rows, pending, subtrees);
+    }
+
+    Ok(QueryResult {
+        columns,
+        rows: out_rows,
+    })
+}
+
+/// The result of scanning the SQL rows: the assembled cells, the subtree
+/// anchors to batch-load, and the whole-object cells awaiting them.
+struct Scan {
+    out_rows: Vec<Vec<Value>>,
+    anchors: Vec<SubtreeAnchor>,
+    /// The whole-object cells to fill once the batch load resolves, by
+    /// `(row, column)` position.
+    pending: Vec<(usize, usize, SubtreeAnchor)>,
+}
+
+/// Assembles every cell of the result page.
+///
+/// Scalar cells read their JSON straight off the result row; whole-object
+/// cells contribute a subtree anchor that is batch-loaded in ONE round trip
+/// after the scan — never one follow-up SELECT per candidate row.
+///
+/// # Errors
+/// [`AqlError::Exec`] if a projected column is missing from the result row.
+fn scan_rows(rows: &[PgRow], columns: &[ColumnSpec]) -> Result<Scan, AqlError> {
     let mut out_rows: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
     let mut anchors: Vec<SubtreeAnchor> = Vec::new();
-    // The whole-object cells to fill once the batch load resolves, by position.
     let mut pending: Vec<(usize, usize, SubtreeAnchor)> = Vec::new();
-
     for (ri, row) in rows.iter().enumerate() {
-        let mut cells = Vec::with_capacity(prepared.columns.len());
-        for (ci, spec) in prepared.columns.iter().enumerate() {
+        let mut cells = Vec::with_capacity(columns.len());
+        for (ci, spec) in columns.iter().enumerate() {
             match spec.kind {
                 CellKind::Scalar => {
                     let v: Option<Value> =
@@ -128,47 +164,47 @@ pub async fn execute(
         }
         out_rows.push(cells);
     }
+    Ok(Scan {
+        out_rows,
+        anchors,
+        pending,
+    })
+}
 
-    if !anchors.is_empty() {
-        crate::versioning::profile::gate_result_bodies(pool, profile, &anchors)
-            .await
-            .map_err(ExecError::Profile)?;
-        let mut subtrees = crate::storage::node_repo::read_subtrees_canonical(pool, &anchors)
-            .await
-            .map_err(ExecError::from)?;
-        // Each reassembled document MOVES into its last pending cell; only a
-        // repeated anchor (the same version projected more than once on the
-        // page) pays a clone for the earlier cells.
-        let mut remaining: std::collections::HashMap<SubtreeAnchor, usize> =
-            std::collections::HashMap::new();
-        for (_, _, anchor) in &pending {
-            *remaining.entry(*anchor).or_insert(0) += 1;
-        }
-        for (ri, ci, anchor) in pending {
-            let last_use = remaining.get_mut(&anchor).is_none_or(|n| {
-                *n -= 1;
-                *n == 0
-            });
-            let value = if last_use {
-                subtrees.remove(&anchor)
-            } else {
-                subtrees.get(&anchor).cloned()
-            };
-            // `(ri, ci)` was recorded while building `out_rows`, so the cell
-            // exists; fetched rather than indexed so a future refactor cannot
-            // turn a bookkeeping slip into a panic on a request path.
-            if let (Some(value), Some(cell)) =
-                (value, out_rows.get_mut(ri).and_then(|row| row.get_mut(ci)))
-            {
-                *cell = value;
-            }
+/// Moves each reassembled document into the cell that projected it.
+///
+/// A document MOVES into its last pending cell; only a repeated anchor (the
+/// same version projected more than once on the page) pays a clone for the
+/// earlier cells.
+fn fill_whole_object_cells(
+    out_rows: &mut [Vec<Value>],
+    pending: Vec<(usize, usize, SubtreeAnchor)>,
+    mut subtrees: std::collections::HashMap<SubtreeAnchor, Value>,
+) {
+    let mut remaining: std::collections::HashMap<SubtreeAnchor, usize> =
+        std::collections::HashMap::new();
+    for (_, _, anchor) in &pending {
+        *remaining.entry(*anchor).or_insert(0) += 1;
+    }
+    for (ri, ci, anchor) in pending {
+        let last_use = remaining.get_mut(&anchor).is_none_or(|n| {
+            *n -= 1;
+            *n == 0
+        });
+        let value = if last_use {
+            subtrees.remove(&anchor)
+        } else {
+            subtrees.get(&anchor).cloned()
+        };
+        // `(ri, ci)` was recorded while building `out_rows`, so the cell
+        // exists; fetched rather than indexed so a future refactor cannot turn
+        // a bookkeeping slip into a panic on a request path.
+        if let (Some(value), Some(cell)) =
+            (value, out_rows.get_mut(ri).and_then(|row| row.get_mut(ci)))
+        {
+            *cell = value;
         }
     }
-
-    Ok(QueryResult {
-        columns,
-        rows: out_rows,
-    })
 }
 
 /// The distinct EHR ids and template ids an AQL query touches.
@@ -244,10 +280,7 @@ fn sql_col(spec: &ColumnSpec, index: usize) -> Result<&str, AqlError> {
 /// four locator columns (`vo_id`, `sys_version`, `num`, `num_cap`). Returns
 /// `None` when the `vo_id` locator is SQL NULL (an outer-joined absent object) —
 /// the cell is then a JSON `null` with no subtree to load.
-fn whole_object_anchor(
-    row: &sqlx::postgres::PgRow,
-    spec: &ColumnSpec,
-) -> Result<Option<SubtreeAnchor>, AqlError> {
+fn whole_object_anchor(row: &PgRow, spec: &ColumnSpec) -> Result<Option<SubtreeAnchor>, AqlError> {
     let vo_id: Option<VoId> = row.try_get(sql_col(spec, 0)?).map_err(ExecError::from)?;
     let Some(vo_id) = vo_id else {
         return Ok(None);

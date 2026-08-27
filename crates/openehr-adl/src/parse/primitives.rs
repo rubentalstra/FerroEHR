@@ -841,6 +841,31 @@ mod tests {
         }
     }
 
+    /// The `C_INTEGER` constraint list of the `index`-th attribute's first
+    /// child.
+    fn integer_constraints(d: &CComplexObjectData, index: usize) -> &[Interval<i32>] {
+        match &d.attributes.as_deref().unwrap_or_default()[index]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => ci.constraint.as_deref().unwrap_or_default(),
+            _ => panic!("expected CInteger"),
+        }
+    }
+
+    /// The first constraint of the `index`-th attribute, as a proper interval.
+    fn integer_proper(
+        d: &CComplexObjectData,
+        index: usize,
+    ) -> &openehr_base::v1_3::foundation_types::interval::proper_interval::ProperIntervalData<i32>
+    {
+        match &integer_constraints(d, index)[0] {
+            Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => pi,
+            _ => panic!("expected proper interval"),
+        }
+    }
+
     #[test]
     fn integer_forms() {
         let cco = parse(
@@ -855,87 +880,29 @@ mod tests {
         );
         let d = data(&cco);
         // a: point 55
-        match &d.attributes.as_deref().unwrap_or_default()[0]
-            .children
-            .as_deref()
-            .unwrap_or_default()[0]
-        {
-            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
-                Interval::PointInterval(p) => assert_eq!(p.lower, Some(55)),
-                Interval::ProperInterval(_) => panic!("expected point"),
-            },
-            _ => panic!("expected CInteger"),
+        match &integer_constraints(d, 0)[0] {
+            Interval::PointInterval(p) => assert_eq!(p.lower, Some(55)),
+            Interval::ProperInterval(_) => panic!("expected point"),
         }
         // b: three points
-        match &d.attributes.as_deref().unwrap_or_default()[1]
-            .children
-            .as_deref()
-            .unwrap_or_default()[0]
-        {
-            CObject::CInteger(ci) => assert_eq!(ci.constraint.as_ref().map_or(0, Vec::len), 3),
-            _ => panic!("expected CInteger"),
-        }
+        assert_eq!(integer_constraints(d, 1).len(), 3);
         // c: |0..100|
-        match &d.attributes.as_deref().unwrap_or_default()[2]
-            .children
-            .as_deref()
-            .unwrap_or_default()[0]
-        {
-            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
-                Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
-                    assert_eq!(pi.lower, Some(0));
-                    assert_eq!(pi.upper, Some(100));
-                    assert!(pi.lower_included && pi.upper_included);
-                }
-                _ => panic!("expected proper interval"),
-            },
-            _ => panic!("expected CInteger"),
-        }
+        let c = integer_proper(d, 2);
+        assert_eq!(c.lower, Some(0));
+        assert_eq!(c.upper, Some(100));
+        assert!(c.lower_included && c.upper_included);
         // d: |>0..<100| exclusive both
-        match &d.attributes.as_deref().unwrap_or_default()[3]
-            .children
-            .as_deref()
-            .unwrap_or_default()[0]
-        {
-            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
-                Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
-                    assert!(!pi.lower_included && !pi.upper_included);
-                }
-                _ => panic!("expected proper interval"),
-            },
-            _ => panic!("expected CInteger"),
-        }
+        let dd = integer_proper(d, 3);
+        assert!(!dd.lower_included && !dd.upper_included);
         // e: |>=10| lower bounded, upper unbounded
-        match &d.attributes.as_deref().unwrap_or_default()[4]
-            .children
-            .as_deref()
-            .unwrap_or_default()[0]
-        {
-            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
-                Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
-                    assert_eq!(pi.lower, Some(10));
-                    assert!(pi.lower_included);
-                    assert!(pi.upper_unbounded);
-                }
-                _ => panic!("expected proper interval"),
-            },
-            _ => panic!("expected CInteger"),
-        }
+        let e = integer_proper(d, 4);
+        assert_eq!(e.lower, Some(10));
+        assert!(e.lower_included);
+        assert!(e.upper_unbounded);
         // f: |-10..-5| negative endpoints
-        match &d.attributes.as_deref().unwrap_or_default()[5]
-            .children
-            .as_deref()
-            .unwrap_or_default()[0]
-        {
-            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
-                Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
-                    assert_eq!(pi.lower, Some(-10));
-                    assert_eq!(pi.upper, Some(-5));
-                }
-                _ => panic!("expected proper interval"),
-            },
-            _ => panic!("expected CInteger"),
-        }
+        let f = integer_proper(d, 5);
+        assert_eq!(f.lower, Some(-10));
+        assert_eq!(f.upper, Some(-5));
     }
 
     #[test]

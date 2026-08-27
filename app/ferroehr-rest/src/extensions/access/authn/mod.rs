@@ -676,64 +676,13 @@ pub(crate) async fn middleware(
 
     match auth.authenticate(req.headers()).await {
         Ok(Authenticated { principal, fresh }) => {
-            // RBAC gate: resolve the matched operation's class and gate it
-            // against the caller's roles. `None` authz handle = auth-only.
-            if let Some(rbac) = layer.authz.as_deref().and_then(AuthzHandle::rbac) {
-                let matched = req
-                    .extensions()
-                    .get::<MatchedPath>()
-                    .map(|m| m.as_str().to_owned());
-                let class = rbac.class_for(req.method(), matched.as_deref());
-                // The coarse class gate, then the read-only restriction: a
-                // principal carrying the configured read-only role is refused on
-                // every write operation, overriding any grant. Both denials share
-                // the one 403 path below (no openEHR spec governs role semantics
-                // — our own design/extension).
-                let decision = match rbac.decide(class, &principal.roles) {
-                    RbacDecision::Deny(reason) => RbacDecision::Deny(reason),
-                    RbacDecision::Allow => {
-                        let is_write = rbac.is_write_for(req.method(), matched.as_deref());
-                        rbac.decide_readonly(is_write, &principal.roles)
-                    }
-                };
-                if let RbacDecision::Deny(reason) = decision {
-                    count_auth_failure(mechanism_label(principal.method), "403");
-                    // Attribute the 403 to the authenticated caller so the outer
-                    // ATNA audit layer records the denied access.
-                    let mut resp = RestError(ApiError::Forbidden(reason)).into_response();
-                    resp.extensions_mut().insert(principal);
-                    return resp;
-                }
+            if let Some(refusal) = rbac_refusal(&layer, &req, &principal) {
+                return refusal;
             }
             req.extensions_mut().insert(principal.clone());
             // Publish the principal for the service layer (committer attribution).
             let for_audit = principal.clone();
-            // Also publish the platform committer identity: a default-committer
-            // audit (a write whose request carried no committal headers) is
-            // attributed to the authenticated principal instead of the system
-            // identity (`AUDIT_DETAILS.committer` 1..1 — RM common master04
-            // §Audit Details).
-            let committer = ferroehr::service::committer::CommitterIdentity {
-                subject: for_audit.subject.clone(),
-                id_type: match for_audit.method {
-                    AuthMethod::Basic => "basic",
-                    AuthMethod::Bearer => "oauth2",
-                },
-                // A Bearer principal's subject was minted by the identity
-                // provider, so the issuing authority the audit records is the
-                // validated token issuer (`iss`, checked against the configured
-                // issuer in `jwt.rs` before the claim set is retained), never
-                // this server. Basic credentials are held locally and carry no
-                // external issuer, so the platform stamps its own product name.
-                issuer: match for_audit.method {
-                    AuthMethod::Basic => None,
-                    AuthMethod::Bearer => for_audit
-                        .claims
-                        .get("iss")
-                        .and_then(serde_json::Value::as_str)
-                        .map(str::to_owned),
-                },
-            };
+            let committer = committer_identity(&for_audit);
             let mut resp = REQUEST_PRINCIPAL
                 .scope(
                     Some(principal),
@@ -750,50 +699,105 @@ pub(crate) async fn middleware(
             }
             resp
         }
-        Err(e) => {
-            let api = e.to_api_error();
-            let status = api.status();
-            let mechanism = scheme_label(req.headers());
-            ferroehr::telemetry::metrics::metrics().auth_failures.add(
-                1,
-                &[
-                    opentelemetry::KeyValue::new("mechanism", mechanism),
-                    opentelemetry::KeyValue::new(
-                        "status",
-                        if status == StatusCode::FORBIDDEN {
-                            "403"
-                        } else {
-                            "401"
-                        },
-                    ),
-                ],
-            );
-            // A refusal that presented no credential is routine (an
-            // unauthenticated probe); a presented-and-rejected one is the
-            // operator's signal. Neither record carries the token or a claim
-            // value.
-            let reason = e.label();
-            if matches!(e, AuthError::MissingCredentials) {
-                tracing::debug!(mechanism, reason, "authentication refused");
-            } else {
-                tracing::warn!(mechanism, reason, detail = %e, "authentication refused");
-            }
-            // ITS-REST §Authentication and authorization: a `401` MUST carry a
-            // `WWW-Authenticate` challenge. RFC 6750 §3 additionally carries one
-            // on a bearer `403` — the `insufficient_scope` case — because there
-            // the challenge tells the client WHAT it lacks rather than that it is
-            // unauthenticated.
-            let needs_challenge =
-                matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN);
-            let challenge = auth.challenge(Some(&e));
-            let mut resp = RestError(api).into_response();
-            if needs_challenge {
-                resp.headers_mut()
-                    .insert(header::WWW_AUTHENTICATE, challenge);
-            }
-            resp
-        }
+        Err(e) => refusal_response(auth, req.headers(), &e),
     }
+}
+
+/// The RBAC gate over an authenticated caller: the matched operation's class
+/// against the caller's roles, then the read-only restriction.
+///
+/// A principal carrying the configured read-only role is refused on every
+/// write operation, overriding any grant. Both denials produce the same `403`,
+/// attributed to the authenticated caller so the outer ATNA audit layer
+/// records the denied access. A `None` authz handle is auth-only, and no
+/// openEHR spec governs role semantics — our own design/extension.
+fn rbac_refusal(layer: &AuthLayer, req: &Request, principal: &Principal) -> Option<Response> {
+    let rbac = layer.authz.as_deref().and_then(AuthzHandle::rbac)?;
+    let matched = req
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|m| m.as_str().to_owned());
+    let class = rbac.class_for(req.method(), matched.as_deref());
+    let decision = match rbac.decide(class, &principal.roles) {
+        RbacDecision::Deny(reason) => RbacDecision::Deny(reason),
+        RbacDecision::Allow => {
+            let is_write = rbac.is_write_for(req.method(), matched.as_deref());
+            rbac.decide_readonly(is_write, &principal.roles)
+        }
+    };
+    let RbacDecision::Deny(reason) = decision else {
+        return None;
+    };
+    count_auth_failure(mechanism_label(principal.method), "403");
+    let mut resp = RestError(ApiError::Forbidden(reason)).into_response();
+    resp.extensions_mut().insert(principal.clone());
+    Some(resp)
+}
+
+/// The platform committer identity published for the service layer.
+///
+/// A default-committer audit (a write whose request carried no committal
+/// headers) is attributed to the authenticated principal instead of the system
+/// identity (`AUDIT_DETAILS.committer` 1..1 — RM common master04 §Audit
+/// Details). A Bearer principal's subject was minted by the identity provider,
+/// so the issuing authority the audit records is the validated token issuer
+/// (`iss`, checked against the configured issuer in `jwt.rs` before the claim
+/// set is retained), never this server; Basic credentials are held locally and
+/// carry no external issuer.
+fn committer_identity(principal: &Principal) -> ferroehr::service::committer::CommitterIdentity {
+    ferroehr::service::committer::CommitterIdentity {
+        subject: principal.subject.clone(),
+        id_type: match principal.method {
+            AuthMethod::Basic => "basic",
+            AuthMethod::Bearer => "oauth2",
+        },
+        issuer: match principal.method {
+            AuthMethod::Basic => None,
+            AuthMethod::Bearer => principal
+                .claims
+                .get("iss")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned),
+        },
+    }
+}
+
+/// The response for a refused authentication, metered and logged.
+///
+/// A refusal that presented no credential is routine (an unauthenticated
+/// probe); a presented-and-rejected one is the operator's signal. Neither
+/// record carries the token or a claim value.
+///
+/// ITS-REST §Authentication and authorization: a `401` MUST carry a
+/// `WWW-Authenticate` challenge. RFC 6750 §3 additionally carries one on a
+/// bearer `403` — the `insufficient_scope` case — because there the challenge
+/// tells the client WHAT it lacks rather than that it is unauthenticated.
+fn refusal_response(auth: &Authenticator, headers: &header::HeaderMap, e: &AuthError) -> Response {
+    let api = e.to_api_error();
+    let status = api.status();
+    let mechanism = scheme_label(headers);
+    count_auth_failure(
+        mechanism,
+        if status == StatusCode::FORBIDDEN {
+            "403"
+        } else {
+            "401"
+        },
+    );
+    let reason = e.label();
+    if matches!(e, AuthError::MissingCredentials) {
+        tracing::debug!(mechanism, reason, "authentication refused");
+    } else {
+        tracing::warn!(mechanism, reason, detail = %e, "authentication refused");
+    }
+    let needs_challenge = matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN);
+    let challenge = auth.challenge(Some(e));
+    let mut resp = RestError(api).into_response();
+    if needs_challenge {
+        resp.headers_mut()
+            .insert(header::WWW_AUTHENTICATE, challenge);
+    }
+    resp
 }
 
 /// The RFC 6750 §2.1 grammar and the challenge shapes, asserted per clause.

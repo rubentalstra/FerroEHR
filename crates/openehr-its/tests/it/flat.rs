@@ -137,6 +137,51 @@ fn sorted(m: &serde_json::Map<String, Value>) -> BTreeMap<String, Value> {
     m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 
+/// One pair's FLAT round-trip: `to_flat` → `from_flat` → `to_flat` again.
+///
+/// Returns the rebuilt RM value plus the instability diagnostic (`None` when the
+/// two FLAT renderings agree), or the conversion failure to record.
+fn flat_round_trip(
+    name: &str,
+    tid: &str,
+    comp: &Value,
+    wt: &WebTemplate,
+) -> Result<(Value, Option<String>), String> {
+    let flat0 = composition_to_flat(comp, wt).map_err(|e| format!("{name}: to_flat: {e}"))?;
+    let rm1 =
+        composition_from_flat(&flat0, wt, NOW).map_err(|e| format!("{name}: from_flat: {e}"))?;
+    let flat1 = composition_to_flat(&rm1, wt)
+        .map_err(|e| format!("{name}: composition_to_flat(rm1): {e}"))?;
+    let m0 = sorted(&flat0);
+    let m1 = sorted(&flat1);
+    if m0 == m1 {
+        return Ok((rm1, None));
+    }
+    Ok((rm1, Some(instability_diagnostic(name, tid, &m0, &m1))))
+}
+
+/// A short, deterministic account of how two FLAT renderings differ.
+fn instability_diagnostic(
+    name: &str,
+    tid: &str,
+    m0: &BTreeMap<String, Value>,
+    m1: &BTreeMap<String, Value>,
+) -> String {
+    let only0: Vec<_> = m0.keys().filter(|k| !m1.contains_key(*k)).take(4).collect();
+    let only1: Vec<_> = m1.keys().filter(|k| !m0.contains_key(*k)).take(4).collect();
+    let changed: Vec<_> = m0
+        .iter()
+        .filter(|(k, v)| m1.get(*k).is_some_and(|v1| v1 != *v))
+        .map(|(k, _)| k)
+        .take(4)
+        .collect();
+    format!(
+        "{name} ({tid}): {} keys → {} keys | only-in-flat0={only0:?} only-in-flat1={only1:?} changed={changed:?}",
+        m0.len(),
+        m1.len()
+    )
+}
+
 // ── round-trip gate ────────────────────────────────────────────────────────────
 
 #[test]
@@ -156,46 +201,16 @@ fn flat_roundtrip_stable() {
         let Some(wt) = wts.get(tid) else { continue };
         paired += 1;
 
-        let flat0 = match composition_to_flat(comp, wt) {
-            Ok(f) => f,
-            Err(e) => {
-                failures.push(format!("{name}: to_flat: {e}"));
+        let (rm1, instability) = match flat_round_trip(name, tid, comp, wt) {
+            Ok(pair) => pair,
+            Err(message) => {
+                failures.push(message);
                 continue;
             }
         };
-        let rm1 = match composition_from_flat(&flat0, wt, NOW) {
-            Ok(v) => v,
-            Err(e) => {
-                failures.push(format!("{name}: from_flat: {e}"));
-                continue;
-            }
-        };
-        let flat1 = match composition_to_flat(&rm1, wt) {
-            Ok(f) => f,
-            Err(e) => {
-                failures.push(format!("{name}: composition_to_flat(rm1): {e}"));
-                continue;
-            }
-        };
-
-        if sorted(&flat0) == sorted(&flat1) {
-            stable += 1;
-        } else {
-            let m0 = sorted(&flat0);
-            let m1 = sorted(&flat1);
-            let only0: Vec<_> = m0.keys().filter(|k| !m1.contains_key(*k)).take(4).collect();
-            let only1: Vec<_> = m1.keys().filter(|k| !m0.contains_key(*k)).take(4).collect();
-            let changed: Vec<_> = m0
-                .iter()
-                .filter(|(k, v)| m1.get(*k).is_some_and(|v1| v1 != *v))
-                .map(|(k, _)| k)
-                .take(4)
-                .collect();
-            failures.push(format!(
-                "{name} ({tid}): {} keys → {} keys | only-in-flat0={only0:?} only-in-flat1={only1:?} changed={changed:?}",
-                m0.len(),
-                m1.len()
-            ));
+        match instability {
+            Some(diagnostic) => failures.push(diagnostic),
+            None => stable += 1,
         }
 
         // The reverse output should be valid canonical RM.

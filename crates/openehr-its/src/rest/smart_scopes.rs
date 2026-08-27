@@ -246,31 +246,35 @@ impl fmt::Display for Pattern {
 fn glob_match(pat: &[u8], text: &[u8]) -> bool {
     match pat.split_first() {
         None => text.is_empty(),
-        Some((&b'*', after_star)) => {
-            if let Some(rest) = after_star.strip_prefix(b"*") {
-                // `**` — consume 0..=len bytes of anything.
+        Some((&b'*', after_star)) => match after_star.strip_prefix(b"*") {
+            // `**` — consume 0..=len bytes of anything.
+            Some(rest) => {
                 (0..=text.len()).any(|i| text.get(i..).is_some_and(|tail| glob_match(rest, tail)))
-            } else {
-                // `*` — consume bytes, stopping before any `:`.
-                let mut i = 0;
-                loop {
-                    let Some(tail) = text.get(i..) else {
-                        return false;
-                    };
-                    if glob_match(after_star, tail) {
-                        return true;
-                    }
-                    if tail.first().is_none_or(|&b| b == b':') {
-                        return false;
-                    }
-                    i += 1;
-                }
             }
-        }
+            None => match_single_star(after_star, text),
+        },
         Some((&c, pat_rest)) => match text.split_first() {
             Some((&t, text_rest)) if t == c => glob_match(pat_rest, text_rest),
             _ => false,
         },
+    }
+}
+
+/// The single-`*` case of [`glob_match`]: consume bytes, stopping before any
+/// `:` so the star never crosses the `::` namespace delimiter.
+fn match_single_star(after_star: &[u8], text: &[u8]) -> bool {
+    let mut i = 0;
+    loop {
+        let Some(tail) = text.get(i..) else {
+            return false;
+        };
+        if glob_match(after_star, tail) {
+            return true;
+        }
+        if tail.first().is_none_or(|&b| b == b':') {
+            return false;
+        }
+        i += 1;
     }
 }
 

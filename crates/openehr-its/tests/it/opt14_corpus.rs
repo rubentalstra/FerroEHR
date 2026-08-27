@@ -199,6 +199,57 @@ fn every_opt_template_round_trips() {
     }
 }
 
+/// The child objects of one OPT constraint attribute.
+fn opt_attribute_children(
+    a: &openehr_its::opt14::types::CAttribute,
+) -> &[openehr_its::opt14::types::CObject] {
+    match a {
+        openehr_its::opt14::types::CAttribute::CSingleAttribute(s) => &s.children,
+        openehr_its::opt14::types::CAttribute::CMultipleAttribute(m) => &m.children,
+    }
+}
+
+/// Collects every inline `C_ARCHETYPE_ROOT` term definition in the tree.
+fn collect_opt_terms<'a>(
+    obj: &'a openehr_its::opt14::types::CObject,
+    out: &mut Vec<&'a openehr_its::opt14::types::ArchetypeTerm>,
+) {
+    use openehr_its::opt14::types::{CAttribute, CObject};
+    let attrs: &[CAttribute] = match obj {
+        CObject::CArchetypeRoot(r) => {
+            out.extend(&r.term_definitions);
+            &r.attributes
+        }
+        CObject::CComplexObject(c) => &c.attributes,
+        CObject::TComplexObject(t) => &t.attributes,
+        _ => return,
+    };
+    for a in attrs {
+        for c in opt_attribute_children(a) {
+            collect_opt_terms(c, out);
+        }
+    }
+}
+
+/// Every term whose items are in the document order `text` then `description`,
+/// paired with that key order.
+fn text_first_orders(
+    opt: &openehr_its::opt14::types::OperationalTemplate,
+) -> Vec<(String, Vec<String>)> {
+    let mut terms: Vec<&openehr_its::opt14::types::ArchetypeTerm> =
+        opt.definition.term_definitions.iter().collect();
+    for a in &opt.definition.attributes {
+        for c in opt_attribute_children(a) {
+            collect_opt_terms(c, &mut terms);
+        }
+    }
+    terms
+        .iter()
+        .filter(|t| t.items.keys().collect::<Vec<_>>() == ["text", "description"])
+        .map(|t| (t.code.clone(), t.items.keys().cloned().collect()))
+        .collect()
+}
+
 /// `StringDictionaryItem` groups are XSD ordered sequences; the model must
 /// preserve document order (`IndexMap`). `IndexMap`'s `PartialEq` is
 /// order-insensitive, so the round-trip gate above cannot see reordering —
@@ -207,50 +258,6 @@ fn every_opt_template_round_trips() {
 /// `description`), which an alphabetically-sorted container would invert.
 #[test]
 fn string_dictionary_order_preserved() {
-    use openehr_its::opt14::types::{ArchetypeTerm, CAttribute, CObject};
-
-    /// Collect every inline `C_ARCHETYPE_ROOT` term definition in the tree.
-    fn collect_terms<'a>(obj: &'a CObject, out: &mut Vec<&'a ArchetypeTerm>) {
-        let attrs: &[CAttribute] = match obj {
-            CObject::CArchetypeRoot(r) => {
-                out.extend(&r.term_definitions);
-                &r.attributes
-            }
-            CObject::CComplexObject(c) => &c.attributes,
-            CObject::TComplexObject(t) => &t.attributes,
-            _ => return,
-        };
-        for a in attrs {
-            let children = match a {
-                CAttribute::CSingleAttribute(s) => &s.children,
-                CAttribute::CMultipleAttribute(m) => &m.children,
-            };
-            for c in children {
-                collect_terms(c, out);
-            }
-        }
-    }
-
-    fn text_first_orders(
-        opt: &openehr_its::opt14::types::OperationalTemplate,
-    ) -> Vec<(String, Vec<String>)> {
-        let mut terms: Vec<&ArchetypeTerm> = opt.definition.term_definitions.iter().collect();
-        for a in &opt.definition.attributes {
-            let children = match a {
-                CAttribute::CSingleAttribute(s) => &s.children,
-                CAttribute::CMultipleAttribute(m) => &m.children,
-            };
-            for c in children {
-                collect_terms(c, &mut terms);
-            }
-        }
-        terms
-            .iter()
-            .filter(|t| t.items.keys().collect::<Vec<_>>() == ["text", "description"])
-            .map(|t| (t.code.clone(), t.items.keys().cloned().collect()))
-            .collect()
-    }
-
     let dir = corpus_dir();
     let path = dir.join("knowledge/operational_templates/Generic Laboratory Test Report.v0.opt");
     let xml = std::fs::read_to_string(&path).expect("read opt");

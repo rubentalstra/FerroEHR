@@ -1365,52 +1365,9 @@ impl FerroEhrService {
             let bytes = archive.read(segment)?;
             let records: Vec<EhrRecord> = serde_json::from_slice(&bytes)
                 .map_err(|e| unreadable_archive_entry(dir, segment, &e))?;
-            for mut record in records {
-                let ehr_id = record.ehr.id;
-                if self.ehr_row_exists(ehr_id).await? {
-                    // "import EHRs with duplicate EHR ids will fail" — reported,
-                    // not fatal; the rest of the archive still loads.
-                    reports.push(DumpLoadFailReport {
-                        entity_type: "EHR".to_owned(),
-                        entity_id: ehr_id.to_string(),
-                        dump_status: false,
-                        error: Some("an EHR with this id already exists".to_owned()),
-                    });
-                    continue;
-                }
-                // `openehr_canonical_xml`: pull each version's payload out of
-                // its `versions/*.xml` entry BEFORE the record's transaction
-                // opens, so an unreadable document costs that one record a
-                // report and commits nothing (the same per-entity shape the SM
-                // gives a duplicate id), instead of aborting the whole load.
-                if format == ExportFormat::OpenehrCanonicalXml
-                    && let Err(message) = resolve_version_documents(&mut archive, &mut record)
-                {
-                    reports.push(DumpLoadFailReport {
-                        entity_type: "EHR".to_owned(),
-                        entity_id: ehr_id.to_string(),
-                        dump_status: false,
-                        error: Some(format!(
-                            "the archive's canonical-XML version payload is unreadable: {message}"
-                        )),
-                    });
-                    continue;
-                }
-                match self.load_one_ehr(record).await {
-                    Ok(()) => {}
-                    // A per-EHR conflict — currently a subject this repository
-                    // already holds under another EHR (one EHR per subject, RM
-                    // ehr master04 §EHR Status), reachable only on a PARTIAL
-                    // load into a non-empty repository. Reported and skipped
-                    // (its transaction rolled back) exactly like a duplicate
-                    // EHR id, so the rest of the archive still loads.
-                    Err(ServiceError::Conflict(e)) => reports.push(DumpLoadFailReport {
-                        entity_type: "EHR".to_owned(),
-                        entity_id: ehr_id.to_string(),
-                        dump_status: false,
-                        error: Some(e.message),
-                    }),
-                    Err(e) => return Err(e.into()),
+            for record in records {
+                if let Some(report) = self.load_ehr_record(&mut archive, record, format).await? {
+                    reports.push(report);
                 }
             }
         }
@@ -1429,35 +1386,105 @@ impl FerroEhrService {
             let bytes = archive.read(segment)?;
             let records: Vec<DemographicRecord> = serde_json::from_slice(&bytes)
                 .map_err(|e| unreadable_archive_entry(dir, segment, &e))?;
-            for mut record in records {
-                if self.demographic_container_exists(record.vo_id).await? {
-                    reports.push(DumpLoadFailReport {
-                        entity_type: record.kind.clone(),
-                        entity_id: record.vo_id.to_string(),
-                        dump_status: false,
-                        error: Some(
-                            "a demographic container with this id already exists".to_owned(),
-                        ),
-                    });
-                    continue;
-                }
-                if format == ExportFormat::OpenehrCanonicalXml
-                    && let Err(message) = resolve_demographic_documents(&mut archive, &mut record)
+            for record in records {
+                if let Some(report) = self
+                    .load_demographic_record(&mut archive, record, format)
+                    .await?
                 {
-                    reports.push(DumpLoadFailReport {
-                        entity_type: record.kind.clone(),
-                        entity_id: record.vo_id.to_string(),
-                        dump_status: false,
-                        error: Some(format!(
-                            "the archive's canonical-XML version payload is unreadable: {message}"
-                        )),
-                    });
-                    continue;
+                    reports.push(report);
                 }
-                self.load_one_demographic(record).await?;
             }
         }
         Ok(reports)
+    }
+
+    /// Loads one archived EHR record, returning the per-entity failure report
+    /// where the record is skipped rather than loaded.
+    ///
+    /// A record is skipped — reported, never fatal, so the rest of the archive
+    /// still loads — when its EHR id is already taken ("import EHRs with
+    /// duplicate EHR ids will fail"), when its canonical-XML payload is
+    /// unreadable, or when it conflicts with a subject this repository already
+    /// holds under another EHR (one EHR per subject, RM ehr master04 §EHR
+    /// Status; reachable only on a PARTIAL load into a non-empty repository,
+    /// and its transaction is rolled back).
+    ///
+    /// # Errors
+    /// The storage errors of the existence check and the load itself.
+    async fn load_ehr_record(
+        &self,
+        archive: &mut ArchiveReader,
+        mut record: EhrRecord,
+        format: ExportFormat,
+    ) -> Result<Option<DumpLoadFailReport>, SmError> {
+        let ehr_id = record.ehr.id;
+        let report = |error: String| {
+            Ok(Some(DumpLoadFailReport {
+                entity_type: "EHR".to_owned(),
+                entity_id: ehr_id.to_string(),
+                dump_status: false,
+                error: Some(error),
+            }))
+        };
+        if self.ehr_row_exists(ehr_id).await? {
+            return report("an EHR with this id already exists".to_owned());
+        }
+        // `openehr_canonical_xml`: pull each version's payload out of its
+        // `versions/*.xml` entry BEFORE the record's transaction opens, so an
+        // unreadable document costs that one record a report and commits
+        // nothing (the same per-entity shape the SM gives a duplicate id),
+        // instead of aborting the whole load.
+        if format == ExportFormat::OpenehrCanonicalXml
+            && let Err(message) = resolve_version_documents(archive, &mut record)
+        {
+            return report(format!(
+                "the archive's canonical-XML version payload is unreadable: {message}"
+            ));
+        }
+        match self.load_one_ehr(record).await {
+            Ok(()) => Ok(None),
+            Err(ServiceError::Conflict(e)) => report(e.message),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    /// Loads one archived demographic record, returning the per-entity failure
+    /// report where the record is skipped rather than loaded.
+    ///
+    /// A duplicate container id and an unreadable canonical-XML payload are
+    /// per-entity reports, never fatal — the same shape the SM gives duplicate
+    /// EHR ids.
+    ///
+    /// # Errors
+    /// The storage errors of the existence check and the load itself.
+    async fn load_demographic_record(
+        &self,
+        archive: &mut ArchiveReader,
+        mut record: DemographicRecord,
+        format: ExportFormat,
+    ) -> Result<Option<DumpLoadFailReport>, SmError> {
+        if self.demographic_container_exists(record.vo_id).await? {
+            return Ok(Some(DumpLoadFailReport {
+                entity_type: record.kind.clone(),
+                entity_id: record.vo_id.to_string(),
+                dump_status: false,
+                error: Some("a demographic container with this id already exists".to_owned()),
+            }));
+        }
+        if format == ExportFormat::OpenehrCanonicalXml
+            && let Err(message) = resolve_demographic_documents(archive, &mut record)
+        {
+            return Ok(Some(DumpLoadFailReport {
+                entity_type: record.kind.clone(),
+                entity_id: record.vo_id.to_string(),
+                dump_status: false,
+                error: Some(format!(
+                    "the archive's canonical-XML version payload is unreadable: {message}"
+                )),
+            }));
+        }
+        self.load_one_demographic(record).await?;
+        Ok(None)
     }
 
     /// Fetch every externalized `DV_MULTIMEDIA` blob referenced by the exported

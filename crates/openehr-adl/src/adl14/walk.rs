@@ -80,27 +80,38 @@ pub(super) fn collect_local_value_codes(def: &CComplexObject, f: &mut impl FnMut
 /// Visit every `C_TERMINOLOGY_CODE.constraint` (with its enclosing element
 /// rubric context — unused here, passed empty).
 pub(super) fn walk_constraints(def: &CComplexObject, f: &mut impl FnMut(&str, &str)) {
-    if let CComplexObject::CComplexObject(d) = def {
-        for attr in d.attributes.iter().flatten() {
-            for child in attr.children.iter().flatten() {
-                walk_constraints_obj(child, f);
-            }
+    let CComplexObject::CComplexObject(d) = def else {
+        return;
+    };
+    for attr in d.attributes.iter().flatten() {
+        for child in attr.children.iter().flatten() {
+            walk_constraints_obj(child, f);
         }
-        for tuple in d.attribute_tuples.iter().flatten() {
-            for member in tuple.members.iter().flatten() {
-                for child in member.children.iter().flatten() {
-                    walk_constraints_obj(child, f);
-                }
-            }
-            // Tuple ROWS carry the actual primitive constraints (e.g. ordinal
-            // `[value, symbol]` symbol codes) — visit their terminology codes
-            // so value at-codes are planned and converted like attribute ones.
-            for row in tuple.tuples.iter().flatten() {
-                for m in &row.members {
-                    if let CPrimitiveObject::CTerminologyCode(tc) = m {
-                        f(&tc.constraint, "");
-                    }
-                }
+    }
+    for tuple in d.attribute_tuples.iter().flatten() {
+        walk_tuple_constraints(tuple, f);
+    }
+}
+
+/// Visits the terminology codes of one attribute tuple: its members' children,
+/// and its ROWS.
+///
+/// Tuple rows carry the actual primitive constraints (e.g. ordinal
+/// `[value, symbol]` symbol codes), so their terminology codes are visited too
+/// and value at-codes get planned and converted like attribute ones.
+fn walk_tuple_constraints(
+    tuple: &openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple,
+    f: &mut impl FnMut(&str, &str),
+) {
+    for member in tuple.members.iter().flatten() {
+        for child in member.children.iter().flatten() {
+            walk_constraints_obj(child, f);
+        }
+    }
+    for row in tuple.tuples.iter().flatten() {
+        for m in &row.members {
+            if let CPrimitiveObject::CTerminologyCode(tc) = m {
+                f(&tc.constraint, "");
             }
         }
     }

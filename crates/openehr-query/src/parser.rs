@@ -189,43 +189,8 @@ fn unescape(inner: &str) -> String {
             'r' => push_escaped(&mut out, &mut chars, '\r'),
             't' => push_escaped(&mut out, &mut chars, '\t'),
             'v' => push_escaped(&mut out, &mut chars, '\u{0B}'),
-            'u' => {
-                chars.next(); // consume 'u'
-                // Look ahead (without consuming) at the next four chars.
-                let hex: String = chars.clone().take(4).collect();
-                if hex.len() == 4
-                    && let Ok(cp) = u32::from_str_radix(&hex, 16)
-                    && let Some(ch) = char::from_u32(cp)
-                {
-                    for _ in 0..4 {
-                        chars.next();
-                    }
-                    out.push(ch);
-                } else {
-                    out.push('\\');
-                    out.push('u');
-                }
-            }
-            '0'..='7' => {
-                chars.next(); // consume first octal digit
-                let mut digits = String::new();
-                digits.push(next);
-                while digits.len() < 3
-                    && let Some(&d) = chars.peek()
-                    && ('0'..='7').contains(&d)
-                {
-                    digits.push(d);
-                    chars.next();
-                }
-                if let Ok(cp) = u32::from_str_radix(&digits, 8)
-                    && let Some(ch) = char::from_u32(cp)
-                {
-                    out.push(ch);
-                } else {
-                    out.push('\\');
-                    out.push_str(&digits);
-                }
-            }
+            'u' => push_utf8_escape(&mut out, &mut chars),
+            '0'..='7' => push_octal_escape(&mut out, &mut chars, next),
             _ => out.push('\\'),
         }
     }
@@ -236,6 +201,58 @@ fn unescape(inner: &str) -> String {
 fn push_escaped(out: &mut String, chars: &mut std::iter::Peekable<std::str::Chars<'_>>, ch: char) {
     chars.next();
     out.push(ch);
+}
+
+/// Decode a `UTF8CHAR` escape (`\uHHHH`), consuming its four hex digits.
+///
+/// An escape that is not four hex digits naming a scalar value is passed
+/// through verbatim (`\u` retained), keeping [`unescape`] total.
+fn push_utf8_escape(out: &mut String, chars: &mut std::iter::Peekable<std::str::Chars<'_>>) {
+    chars.next(); // consume 'u'
+    // Look ahead (without consuming) at the next four chars.
+    let hex: String = chars.clone().take(4).collect();
+    if hex.len() == 4
+        && let Ok(cp) = u32::from_str_radix(&hex, 16)
+        && let Some(ch) = char::from_u32(cp)
+    {
+        for _ in 0..4 {
+            chars.next();
+        }
+        out.push(ch);
+        return;
+    }
+    out.push('\\');
+    out.push('u');
+}
+
+/// Decode an `OCTAL_ESC` escape (`\` plus one to three octal digits), whose
+/// `first` digit has already been peeked.
+///
+/// A sequence naming no scalar value is passed through verbatim, keeping
+/// [`unescape`] total.
+fn push_octal_escape(
+    out: &mut String,
+    chars: &mut std::iter::Peekable<std::str::Chars<'_>>,
+    first: char,
+) {
+    chars.next(); // consume the first octal digit
+    let mut digits = String::new();
+    digits.push(first);
+    while digits.len() < 3
+        && let Some(&d) = chars.peek()
+        && ('0'..='7').contains(&d)
+    {
+        digits.push(d);
+        chars.next();
+    }
+    if let Ok(cp) = u32::from_str_radix(&digits, 8)
+        && let Some(ch) = char::from_u32(cp)
+    {
+        out.push(ch);
+        return;
+    }
+    out.push('\\');
+    out.push_str(&digits);
 }
 
 /// A lexed numeric literal, tagged by the grammar token it came from.

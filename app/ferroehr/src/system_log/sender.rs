@@ -246,6 +246,14 @@ struct Sinks {
     feed_notify: Option<Arc<Notify>>,
 }
 
+/// One drained event with its resolved subject id and rendered FHIR
+/// `AuditEvent` document, the unit every sink consumes.
+type DrainRecord = (AuditEvent, Option<String>, Option<serde_json::Value>);
+
+/// The drain's `ehr_id` → subject-id memo (an EHR's subject is immutable for
+/// audit purposes, so one lookup serves every later record).
+type SubjectCache = moka::future::Cache<String, Option<String>>;
+
 /// The ITI-20 ATX:FHIR Feed HTTP client.
 #[derive(Clone)]
 struct FeedClient {
@@ -395,11 +403,6 @@ pub async fn start(
     Ok((sender, AuditHandle { join, workers }))
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "one linear fan-out — batch → store → syslog → feed — whose order \
-              is the behaviour"
-)]
 async fn drain(
     mut rx: mpsc::Receiver<AuditEvent>,
     mut sinks: Sinks,
@@ -416,8 +419,7 @@ async fn drain(
     // The subject lookup memo: an EHR's subject id is immutable for audit
     // purposes at write-path rates, and one awaited per-event lookup was the
     // remaining drain bottleneck (a saturated queue at seeding-grade load).
-    // Distinct uncached ids of a batch resolve CONCURRENTLY, then memoize.
-    let subject_cache: moka::future::Cache<String, Option<String>> = moka::future::Cache::builder()
+    let subject_cache: SubjectCache = moka::future::Cache::builder()
         .max_capacity(100_000)
         .time_to_live(Duration::from_hours(1))
         .build();
@@ -427,193 +429,258 @@ async fn drain(
             break; // channel closed and drained
         }
 
-        // Optional subject enrichment — background only, never on the
-        // request path: dedupe the batch's EHR ids, resolve the uncached
-        // ones concurrently, memoize.
         if resolve_subject && let Some(resolve) = &resolver {
-            let mut pending: Vec<String> = batch
-                .iter()
-                .filter_map(|event| event.ehr_id.clone())
-                .filter(|ehr_id| !subject_cache.contains_key(ehr_id))
-                .collect();
-            pending.sort_unstable();
-            pending.dedup();
-            let mut lookups = tokio::task::JoinSet::new();
-            for ehr_id in pending {
-                let lookup = resolve(ehr_id.clone());
-                lookups.spawn(async move { (ehr_id, lookup.await) });
-            }
-            while let Some(joined) = lookups.join_next().await {
-                if let Ok((ehr_id, subject)) = joined {
-                    subject_cache.insert(ehr_id, subject).await;
-                }
-            }
+            memoize_subjects(&batch, resolve, &subject_cache).await;
         }
+        let records = render_batch(&mut batch, &ctx, &subject_cache, resolve_subject, &sinks).await;
 
-        // Render once per event; both the store and the FHIR feed consume
-        // the rendered document. No FHIR consumer means no rendering.
-        let render_fhir = sinks.store.is_some() || sinks.direct_feed.is_some();
-        let mut records: Vec<(AuditEvent, Option<String>, Option<serde_json::Value>)> =
-            Vec::with_capacity(batch.len());
-        for event in batch.drain(..) {
-            let subject = match (resolve_subject, &event.ehr_id) {
-                (true, Some(ehr_id)) => subject_cache.get(ehr_id).await.flatten(),
-                _ => None,
-            };
-            let rendered = render_fhir
-                .then(|| render_audit_event(&event, &ctx, subject.as_deref()))
-                .flatten();
-            records.push((event, subject, rendered));
-        }
-
-        // 1) The store — the durability anchor, written first. Without the
-        //    syslog sink no per-row delivery stamp is needed, so the whole
-        //    batch lands in ONE multi-row INSERT; with syslog on, the
-        //    per-event path keeps the row id for `delivered_syslog_at`.
-        let mut row_ids: Vec<Option<uuid::Uuid>> = vec![None; records.len()];
-        if let Some(store) = &sinks.store {
-            if sinks.syslog.is_none() {
-                let insert = || async { store.insert_batch(&records).await };
-                match insert
-                    .retry(
-                        ExponentialBuilder::default()
-                            .with_jitter()
-                            .with_max_times(2),
-                    )
-                    .await
-                {
-                    Ok(()) => {
-                        store_healthy.store(true, Ordering::Relaxed);
-                        #[expect(
-                            clippy::as_conversions,
-                            reason = "the batch record count widens exactly: usize is at \
-                                      most 64 bits on every supported target"
-                        )]
-                        crate::telemetry::metrics::metrics().atna_audit_sent.add(
-                            records.len() as u64,
-                            &[opentelemetry::KeyValue::new("sink", "store")],
-                        );
-                        if let Some(notify) = &sinks.feed_notify {
-                            notify.notify_one();
-                        }
-                    }
-                    Err(e) => {
-                        store_healthy.store(false, Ordering::Relaxed);
-                        #[expect(
-                            clippy::as_conversions,
-                            reason = "the batch record count widens exactly: usize is at \
-                                      most 64 bits on every supported target"
-                        )]
-                        crate::telemetry::metrics::metrics()
-                            .atna_audit_send_failed
-                            .add(
-                                records.len() as u64,
-                                &[opentelemetry::KeyValue::new("sink", "store")],
-                            );
-                        tracing::warn!("ATNA audit store batch write failed: {e}");
-                    }
-                }
-            } else {
-                for (index, (event, subject, rendered)) in records.iter().enumerate() {
-                    let Some(rendered) = rendered else {
-                        continue;
-                    };
-                    let insert =
-                        || async { store.insert(event, subject.as_deref(), rendered).await };
-                    match insert
-                        .retry(
-                            ExponentialBuilder::default()
-                                .with_jitter()
-                                .with_max_times(2),
-                        )
-                        .await
-                    {
-                        Ok(id) => {
-                            if let Some(slot) = row_ids.get_mut(index) {
-                                *slot = Some(id);
-                            }
-                            store_healthy.store(true, Ordering::Relaxed);
-                            crate::telemetry::metrics::metrics()
-                                .atna_audit_sent
-                                .add(1, &[opentelemetry::KeyValue::new("sink", "store")]);
-                            if let Some(notify) = &sinks.feed_notify {
-                                notify.notify_one();
-                            }
-                        }
-                        Err(e) => {
-                            store_healthy.store(false, Ordering::Relaxed);
-                            crate::telemetry::metrics::metrics()
-                                .atna_audit_send_failed
-                                .add(1, &[opentelemetry::KeyValue::new("sink", "store")]);
-                            tracing::warn!("ATNA audit store write failed: {e}");
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2) The classic syslog feed (DICOM PS3.15 §A.5 XML per ITI-20) —
-        //    inherently sequential (one datagram/frame per record).
+        // The sink order is the behaviour: the store is the durability
+        // anchor and is written first, so a syslog send can stamp the row it
+        // already persisted.
+        let row_ids = write_to_store(&sinks, &records, &store_healthy).await;
         if let Some(transport) = &mut sinks.syslog {
-            for (index, (event, subject, _)) in records.iter().enumerate() {
-                let message = AuditMessage::build(event, &ctx, subject.as_deref());
-                match message.to_xml() {
-                    Ok(xml) => {
-                        let syslog =
-                            assemble_syslog(&ctx.server_ip, &ctx.source_id, &event.timestamp, &xml);
-                        match transport.send(&syslog).await {
-                            Ok(()) => {
-                                crate::telemetry::metrics::metrics()
-                                    .atna_audit_sent
-                                    .add(1, &[opentelemetry::KeyValue::new("sink", "syslog")]);
-                                if let (Some(store), Some(Some(id))) =
-                                    (&sinks.store, row_ids.get(index))
-                                {
-                                    store.mark_syslog_delivered(*id).await;
-                                }
-                            }
-                            Err(e) => {
-                                crate::telemetry::metrics::metrics()
-                                    .atna_audit_send_failed
-                                    .add(1, &[opentelemetry::KeyValue::new("sink", "syslog")]);
-                                tracing::warn!("ATNA audit syslog send failed: {e}");
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        crate::telemetry::metrics::metrics()
-                            .atna_audit_serialize_failed
-                            .add(1, &[]);
-                        tracing::warn!("ATNA audit message serialization failed: {e}");
-                    }
-                }
-            }
+            send_to_syslog(transport, &records, &row_ids, sinks.store.as_ref(), &ctx).await;
         }
-
-        // 3) The FHIR feed, in-drain only when the store is off (otherwise the
-        //    outbox worker owns delivery).
         if let Some(feed) = &sinks.direct_feed {
-            for (_, _, rendered) in &records {
-                let Some(body) = rendered else {
-                    continue;
-                };
-                match feed.post(body).await {
-                    Ok(()) => {
-                        crate::telemetry::metrics::metrics()
-                            .atna_audit_sent
-                            .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
-                    }
-                    Err(e) => {
-                        crate::telemetry::metrics::metrics()
-                            .atna_audit_send_failed
-                            .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
-                        tracing::warn!("ATNA audit FHIR feed send failed: {e}");
-                    }
-                }
-            }
+            send_to_direct_feed(feed, &records).await;
         }
     }
     tracing::debug!("ATNA audit drain: channel closed, task exiting");
+}
+
+/// Resolves the subject id of every EHR the batch references that the memo
+/// does not already hold, concurrently, and memoizes each answer.
+async fn memoize_subjects(batch: &[AuditEvent], resolve: &SubjectResolver, cache: &SubjectCache) {
+    let mut pending: Vec<String> = batch
+        .iter()
+        .filter_map(|event| event.ehr_id.clone())
+        .filter(|ehr_id| !cache.contains_key(ehr_id))
+        .collect();
+    pending.sort_unstable();
+    pending.dedup();
+    let mut lookups = tokio::task::JoinSet::new();
+    for ehr_id in pending {
+        let lookup = resolve(ehr_id.clone());
+        lookups.spawn(async move { (ehr_id, lookup.await) });
+    }
+    while let Some(joined) = lookups.join_next().await {
+        if let Ok((ehr_id, subject)) = joined {
+            cache.insert(ehr_id, subject).await;
+        }
+    }
+}
+
+/// Drains the batch into records, attaching each event's memoized subject and,
+/// when any FHIR consumer is enabled, its rendered `AuditEvent` document.
+///
+/// The document is rendered once here because both the store and the FHIR feed
+/// consume it; with neither sink enabled nothing is rendered at all.
+async fn render_batch(
+    batch: &mut Vec<AuditEvent>,
+    ctx: &AuditContext,
+    subject_cache: &SubjectCache,
+    resolve_subject: bool,
+    sinks: &Sinks,
+) -> Vec<DrainRecord> {
+    let render_fhir = sinks.store.is_some() || sinks.direct_feed.is_some();
+    let mut records: Vec<DrainRecord> = Vec::with_capacity(batch.len());
+    for event in batch.drain(..) {
+        let subject = match (resolve_subject, &event.ehr_id) {
+            (true, Some(ehr_id)) => subject_cache.get(ehr_id).await.flatten(),
+            _ => None,
+        };
+        let rendered = render_fhir
+            .then(|| render_audit_event(&event, ctx, subject.as_deref()))
+            .flatten();
+        records.push((event, subject, rendered));
+    }
+    records
+}
+
+/// Writes the batch to the local Audit Record Repository, returning the stored
+/// row id of each record (`None` where nothing was stored).
+///
+/// Without the syslog sink no per-row delivery stamp is ever needed, so the
+/// whole batch lands in ONE multi-row INSERT; with syslog on, the per-record
+/// path keeps each row id for `delivered_syslog_at`.
+async fn write_to_store(
+    sinks: &Sinks,
+    records: &[DrainRecord],
+    store_healthy: &AtomicBool,
+) -> Vec<Option<uuid::Uuid>> {
+    let Some(store) = &sinks.store else {
+        return vec![None; records.len()];
+    };
+    if sinks.syslog.is_none() {
+        store_whole_batch(store, records, store_healthy, sinks.feed_notify.as_ref()).await;
+        return vec![None; records.len()];
+    }
+    store_each_record(store, records, store_healthy, sinks.feed_notify.as_ref()).await
+}
+
+/// Persists the batch in one multi-row INSERT with bounded jittered retries,
+/// updating the store health flag the fail-closed mode reads.
+async fn store_whole_batch(
+    store: &AuditStore,
+    records: &[DrainRecord],
+    store_healthy: &AtomicBool,
+    feed_notify: Option<&Arc<Notify>>,
+) {
+    let insert = || async { store.insert_batch(records).await };
+    #[expect(
+        clippy::as_conversions,
+        reason = "the batch record count widens exactly: usize is at most 64 bits on \
+                  every supported target"
+    )]
+    let count = records.len() as u64;
+    match insert
+        .retry(
+            ExponentialBuilder::default()
+                .with_jitter()
+                .with_max_times(2),
+        )
+        .await
+    {
+        Ok(()) => {
+            store_healthy.store(true, Ordering::Relaxed);
+            crate::telemetry::metrics::metrics()
+                .atna_audit_sent
+                .add(count, &[opentelemetry::KeyValue::new("sink", "store")]);
+            if let Some(notify) = feed_notify {
+                notify.notify_one();
+            }
+        }
+        Err(e) => {
+            store_healthy.store(false, Ordering::Relaxed);
+            crate::telemetry::metrics::metrics()
+                .atna_audit_send_failed
+                .add(count, &[opentelemetry::KeyValue::new("sink", "store")]);
+            tracing::warn!("ATNA audit store batch write failed: {e}");
+        }
+    }
+}
+
+/// Persists the batch one record at a time, returning the row id of each
+/// record a syslog send may later stamp as delivered.
+async fn store_each_record(
+    store: &AuditStore,
+    records: &[DrainRecord],
+    store_healthy: &AtomicBool,
+    feed_notify: Option<&Arc<Notify>>,
+) -> Vec<Option<uuid::Uuid>> {
+    let mut row_ids: Vec<Option<uuid::Uuid>> = vec![None; records.len()];
+    for (index, (event, subject, rendered)) in records.iter().enumerate() {
+        let Some(rendered) = rendered else {
+            continue;
+        };
+        let insert = || async { store.insert(event, subject.as_deref(), rendered).await };
+        match insert
+            .retry(
+                ExponentialBuilder::default()
+                    .with_jitter()
+                    .with_max_times(2),
+            )
+            .await
+        {
+            Ok(id) => {
+                if let Some(slot) = row_ids.get_mut(index) {
+                    *slot = Some(id);
+                }
+                store_healthy.store(true, Ordering::Relaxed);
+                crate::telemetry::metrics::metrics()
+                    .atna_audit_sent
+                    .add(1, &[opentelemetry::KeyValue::new("sink", "store")]);
+                if let Some(notify) = feed_notify {
+                    notify.notify_one();
+                }
+            }
+            Err(e) => {
+                store_healthy.store(false, Ordering::Relaxed);
+                crate::telemetry::metrics::metrics()
+                    .atna_audit_send_failed
+                    .add(1, &[opentelemetry::KeyValue::new("sink", "store")]);
+                tracing::warn!("ATNA audit store write failed: {e}");
+            }
+        }
+    }
+    row_ids
+}
+
+/// Feeds every record to the classic ITI-20 syslog sink, which is inherently
+/// sequential: one datagram or frame per record.
+async fn send_to_syslog(
+    transport: &mut Transport,
+    records: &[DrainRecord],
+    row_ids: &[Option<uuid::Uuid>],
+    store: Option<&AuditStore>,
+    ctx: &AuditContext,
+) {
+    for (index, (event, subject, _)) in records.iter().enumerate() {
+        let row_id = row_ids.get(index).copied().flatten();
+        send_one_to_syslog(transport, event, subject.as_deref(), row_id, store, ctx).await;
+    }
+}
+
+/// Sends one record as DICOM PS3.15 §A.5 XML and, on success, stamps
+/// `delivered_syslog_at` on the row the store already holds for it.
+async fn send_one_to_syslog(
+    transport: &mut Transport,
+    event: &AuditEvent,
+    subject: Option<&str>,
+    row_id: Option<uuid::Uuid>,
+    store: Option<&AuditStore>,
+    ctx: &AuditContext,
+) {
+    let xml = match AuditMessage::build(event, ctx, subject).to_xml() {
+        Ok(xml) => xml,
+        Err(e) => {
+            crate::telemetry::metrics::metrics()
+                .atna_audit_serialize_failed
+                .add(1, &[]);
+            tracing::warn!("ATNA audit message serialization failed: {e}");
+            return;
+        }
+    };
+    let syslog = assemble_syslog(&ctx.server_ip, &ctx.source_id, &event.timestamp, &xml);
+    match transport.send(&syslog).await {
+        Ok(()) => {
+            crate::telemetry::metrics::metrics()
+                .atna_audit_sent
+                .add(1, &[opentelemetry::KeyValue::new("sink", "syslog")]);
+            if let (Some(store), Some(id)) = (store, row_id) {
+                store.mark_syslog_delivered(id).await;
+            }
+        }
+        Err(e) => {
+            crate::telemetry::metrics::metrics()
+                .atna_audit_send_failed
+                .add(1, &[opentelemetry::KeyValue::new("sink", "syslog")]);
+            tracing::warn!("ATNA audit syslog send failed: {e}");
+        }
+    }
+}
+
+/// Ships every rendered document to the ITI-20 ATX:FHIR Feed in-drain, the
+/// store-off path (with the store on, the outbox worker owns delivery).
+async fn send_to_direct_feed(feed: &FeedClient, records: &[DrainRecord]) {
+    for (_, _, rendered) in records {
+        let Some(body) = rendered else {
+            continue;
+        };
+        match feed.post(body).await {
+            Ok(()) => {
+                crate::telemetry::metrics::metrics()
+                    .atna_audit_sent
+                    .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
+            }
+            Err(e) => {
+                crate::telemetry::metrics::metrics()
+                    .atna_audit_send_failed
+                    .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
+                tracing::warn!("ATNA audit FHIR feed send failed: {e}");
+            }
+        }
+    }
 }
 
 /// The FHIR R4 `AuditEvent` document for one resolved record, or `None` when

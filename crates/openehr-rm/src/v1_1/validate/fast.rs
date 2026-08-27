@@ -82,7 +82,7 @@
 
 use serde_json::{Map, Value};
 
-use crate::v1_1::model::{Container, RmClass};
+use crate::v1_1::model::{Container, RmAttribute, RmClass};
 use crate::v1_1::validate::generated;
 use crate::v1_1::validate::{
     valid_iso8601_date, valid_iso8601_date_time, valid_iso8601_duration, valid_iso8601_time,
@@ -231,69 +231,13 @@ fn node_conforms(obj: &Map<String, Value>, class: &'static RmClass, shallow: boo
         let Some(attr) = class.attributes.iter().find(|a| a.name == key) else {
             continue;
         };
-        match attr.container {
-            Container::None => {
-                if v.is_null() {
-                    // The derive's shadow reads every field as `Option`, so a
-                    // JSON `null` is "absent": fine for an optional attribute,
-                    // `missing field` for a mandatory one.
-                    if attr.is_mandatory {
-                        return false;
-                    }
-                    continue;
-                }
-                if attr.is_mandatory {
-                    mandatory_seen += 1;
-                }
-                if generic_any_slot(class.name, attr.name) {
-                    continue;
-                }
-                if !value_conforms(v, attr.declared_type, shallow) {
-                    return false;
-                }
-            }
-            Container::List | Container::Set => match v {
-                Value::Array(items) => {
-                    let lower_bound_one =
-                        attr.cardinality.is_some_and(|c| c.lower >= 1) || attr.nonempty;
-                    if attr.is_mandatory {
-                        mandatory_seen += 1;
-                    }
-                    // A `1..*` container emits as `NonEmptyVec<T>`, whose
-                    // constructor refuses an empty list — so an empty array does
-                    // NOT deserialize and this checker must not vouch.
-                    if lower_bound_one && items.is_empty() {
-                        return false;
-                    }
-                    if shallow {
-                        // Mirror `prune_child_nodes`: the prune keeps the FIRST
-                        // member of any object array as the structural witness,
-                        // which the typed decode inspects — so this checker
-                        // inspects it too. An empty array on a non-NonEmptyVec
-                        // field trivially deserializes; a non-empty all-scalar
-                        // array is kept verbatim and typed-checked — don't
-                        // vouch for it.
-                        if let Some(first) = items.first() {
-                            if !items.iter().any(Value::is_object) {
-                                return false;
-                            }
-                            if !value_conforms(first, attr.declared_type, true) {
-                                return false;
-                            }
-                        }
-                    } else {
-                        for item in items {
-                            if !value_conforms(item, attr.declared_type, false) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-                // `Vec` never deserializes from a non-array (incl. `null`).
-                _ => return false,
-            },
-            // No `Hash` attribute is modelled here.
-            Container::Hash => return false,
+        match attribute_conforms(v, attr, class, shallow) {
+            AttrCheck::Refused => return false,
+            // A mandatory attribute the wire leaves absent is `missing field`
+            // to the typed reader.
+            AttrCheck::Absent if attr.is_mandatory => return false,
+            AttrCheck::Conforms if attr.is_mandatory => mandatory_seen += 1,
+            AttrCheck::Absent | AttrCheck::Conforms => {}
         }
     }
     // Absent attributes: an OPTIONAL container defaults to `None` and an
@@ -302,6 +246,93 @@ fn node_conforms(obj: &Map<String, Value>, class: &'static RmClass, shallow: boo
     // (a mandatory container is a plain `Vec`/`NonEmptyVec` field the reader
     // requires). Every mandatory attribute must therefore have been seen.
     mandatory_seen == class.attributes.iter().filter(|a| a.is_mandatory).count()
+}
+
+/// What the typed reader would make of one attribute's wire value.
+enum AttrCheck {
+    /// JSON `null`, which the reader's `Option` shadow treats as absent.
+    Absent,
+    /// The value verifiably deserializes as the attribute's declared shape.
+    Conforms,
+    /// The typed reader would refuse the value, so this checker cannot vouch.
+    Refused,
+}
+
+/// Checks one attribute's wire value against its declared container shape.
+fn attribute_conforms(
+    v: &Value,
+    attr: &'static RmAttribute,
+    class: &'static RmClass,
+    shallow: bool,
+) -> AttrCheck {
+    match attr.container {
+        Container::None => single_conforms(v, attr, class, shallow),
+        Container::List | Container::Set => list_conforms(v, attr, shallow),
+        // No `Hash` attribute is modelled here.
+        Container::Hash => AttrCheck::Refused,
+    }
+}
+
+/// Checks a single-valued attribute's wire value.
+fn single_conforms(
+    v: &Value,
+    attr: &'static RmAttribute,
+    class: &'static RmClass,
+    shallow: bool,
+) -> AttrCheck {
+    if v.is_null() {
+        return AttrCheck::Absent;
+    }
+    if generic_any_slot(class.name, attr.name) {
+        return AttrCheck::Conforms;
+    }
+    if value_conforms(v, attr.declared_type, shallow) {
+        AttrCheck::Conforms
+    } else {
+        AttrCheck::Refused
+    }
+}
+
+/// Checks a container attribute's wire value.
+///
+/// A `1..*` container emits as `NonEmptyVec<T>`, whose constructor refuses an
+/// empty list — so an empty array does NOT deserialize and this checker must
+/// not vouch for it.
+fn list_conforms(v: &Value, attr: &'static RmAttribute, shallow: bool) -> AttrCheck {
+    // `Vec` never deserializes from a non-array (incl. `null`).
+    let Value::Array(items) = v else {
+        return AttrCheck::Refused;
+    };
+    let lower_bound_one = attr.cardinality.is_some_and(|c| c.lower >= 1) || attr.nonempty;
+    if lower_bound_one && items.is_empty() {
+        return AttrCheck::Refused;
+    }
+    let members_conform = if shallow {
+        shallow_members_conform(items, attr)
+    } else {
+        items
+            .iter()
+            .all(|item| value_conforms(item, attr.declared_type, false))
+    };
+    if members_conform {
+        AttrCheck::Conforms
+    } else {
+        AttrCheck::Refused
+    }
+}
+
+/// Checks the structural witness of a pruned array.
+///
+/// This mirrors `prune_child_nodes`: the prune keeps the FIRST member of any
+/// object array as the witness, which the typed decode inspects — so this
+/// checker inspects it too. An empty array on a non-`NonEmptyVec` field
+/// trivially deserializes; a non-empty all-scalar array is kept verbatim and
+/// typed-checked, so it is not vouched for here.
+fn shallow_members_conform(items: &[Value], attr: &'static RmAttribute) -> bool {
+    let Some(first) = items.first() else {
+        return true;
+    };
+    items.iter().any(Value::is_object) && value_conforms(first, attr.declared_type, true)
 }
 
 /// Whether a single value verifiably deserializes as the declared spec type.

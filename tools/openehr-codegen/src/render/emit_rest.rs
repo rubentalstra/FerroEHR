@@ -158,47 +158,57 @@ const GENERIC_OVER: &[(&str, &str)] = &[("UpdateVersion", "data")];
 
 /// The `$ref` names a schema reaches, skipping a genericized field's subtree.
 fn ref_names_of(name: &str, schema: &Value, out: &mut BTreeSet<String>) {
-    fn walk(v: &Value, skip_field: Option<&str>, out: &mut BTreeSet<String>) {
-        match v {
-            Value::Object(m) => {
-                if let Some(r) = m.get("$ref").and_then(Value::as_str)
-                    && let Some(n) = r.rsplit('/').next()
-                {
-                    out.insert(n.to_string());
-                }
-                for (k, val) in m {
-                    if skip_field == Some(k.as_str()) {
-                        continue;
-                    }
-                    // Only skip the generic field at the `properties` level;
-                    // pass the skip marker just one level below `properties`.
-                    if k == "properties"
-                        && let Value::Object(props) = val
-                    {
-                        for (pk, pv) in props {
-                            if skip_field == Some(pk.as_str()) {
-                                continue;
-                            }
-                            walk(pv, None, out);
-                        }
-                        continue;
-                    }
-                    walk(val, None, out);
-                }
-            }
-            Value::Array(a) => {
-                for item in a {
-                    walk(item, skip_field, out);
-                }
-            }
-            _ => {}
-        }
-    }
     let skip = GENERIC_OVER
         .iter()
         .find(|(n, _)| *n == name)
         .map(|(_, f)| *f);
-    walk(schema, skip, out);
+    walk_refs(schema, skip, out);
+}
+
+/// Walks a schema value collecting every `$ref` target name.
+///
+/// `skip_field` is dropped only at the `properties` level, so the marker is
+/// passed exactly one level below `properties` and nowhere else.
+fn walk_refs(v: &Value, skip_field: Option<&str>, out: &mut BTreeSet<String>) {
+    match v {
+        Value::Object(m) => {
+            if let Some(r) = m.get("$ref").and_then(Value::as_str)
+                && let Some(n) = r.rsplit('/').next()
+            {
+                out.insert(n.to_string());
+            }
+            for (k, val) in m {
+                if skip_field == Some(k.as_str()) {
+                    continue;
+                }
+                match val {
+                    Value::Object(props) if k == "properties" => {
+                        walk_property_refs(props, skip_field, out);
+                    }
+                    _ => walk_refs(val, None, out),
+                }
+            }
+        }
+        Value::Array(a) => {
+            for item in a {
+                walk_refs(item, skip_field, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Walks a `properties` map, skipping the genericized field's subtree.
+fn walk_property_refs(
+    props: &serde_json::Map<String, Value>,
+    skip_field: Option<&str>,
+    out: &mut BTreeSet<String>,
+) {
+    for (pk, pv) in props {
+        if skip_field != Some(pk.as_str()) {
+            walk_refs(pv, None, out);
+        }
+    }
 }
 
 /// A canonical (key-sorted) representation for schema-identity comparison.
@@ -450,47 +460,51 @@ struct Ctx<'a> {
 }
 
 impl Ctx<'_> {
+    /// Map a `$ref` schema to its Rust type.
+    ///
+    /// A schema whose KEY does not match its class — the released bundles
+    /// rename `CLUSTER` to `Clstr` and give every generic INSTANTIATION its own
+    /// flat key — is resolved through the monomorphization map read from each
+    /// schema's own `title` (see `plan::overrides::OAS_MONOMORPHIZATIONS`);
+    /// without it these emit as `allOf`-truncated DTOs that drop their
+    /// inherited members and the spec type's strict reader.
+    ///
+    /// RM/BASE spec types resolve to the TYPED spec structs: since the
+    /// foundation rewrite (#1702) every spec type carries emitted manual
+    /// `serde::Serialize`/`Deserialize` impls (its crate's `json_serde.rs`),
+    /// and those impls ARE the strict canonical-JSON reader — so a typed field
+    /// is strict by construction where an untyped `Value` silently accepted
+    /// anything (#1712). A GENERIC-over hoisted schema has a group-local alias
+    /// (bare name); every other hoisted schema lives in `super::common`. A ref
+    /// to something emitted nowhere is resolved and mapped structurally.
+    fn ref_type(&self, name: &str, schema: &Value) -> String {
+        if let Some(spec) = oas_monomorphization(name) {
+            return spec.to_string();
+        }
+        if let Some(path) = self.names.rm.get(name) {
+            return path.clone();
+        }
+        if let Some(path) = self.names.base.get(name) {
+            return path.clone();
+        }
+        if self.hoisted.contains(name) && !self.in_common {
+            if GENERIC_OVER.iter().any(|(n, _)| *n == name) {
+                return dto_type(name);
+            }
+            return format!("super::common::{}", dto_type(name));
+        }
+        if self.dtos.contains(name) {
+            return dto_type(name);
+        }
+        self.rust_type(self.oas.resolve(schema))
+    }
+
     /// Map an OAS schema to a Rust type. RM `$ref`s resolve to the spec crate
     /// preludes; local DTO refs to the bare name; unknown/complex shapes degrade
     /// to `serde_json::Value` (the same honest fallback the BMM emitter uses).
     fn rust_type(&self, schema: &Value) -> String {
-        // A `$ref` (possibly to a name we resolve without following it).
         if let Some(name) = Oas::ref_name(schema) {
-            // A schema whose KEY does not match its class — the released
-            // bundles rename `CLUSTER` to `Clstr` and give every generic
-            // INSTANTIATION its own flat key. The mapping is read from each
-            // schema's own `title` (see `plan::overrides::OAS_MONOMORPHIZATIONS`);
-            // without it these emit as `allOf`-truncated DTOs that drop their
-            // inherited members and the spec type's strict reader.
-            if let Some(spec) = oas_monomorphization(&name) {
-                return spec.to_string();
-            }
-            // RM/BASE spec types resolve to the TYPED spec structs: since the
-            // foundation rewrite (#1702) every spec type carries emitted manual
-            // `serde::Serialize`/`Deserialize` impls (its crate's
-            // `json_serde.rs`), and those impls ARE the strict canonical-JSON
-            // reader — so a typed field is strict by construction where an
-            // untyped `Value` silently accepted anything (issue #1712; the
-            // former "no serde derive" rationale this branch carried is gone).
-            if let Some(path) = self.names.rm.get(&name) {
-                return path.clone();
-            }
-            if let Some(path) = self.names.base.get(&name) {
-                return path.clone();
-            }
-            if self.hoisted.contains(&name) && !self.in_common {
-                // A GENERIC-over schema has a group-local alias (bare name);
-                // every other hoisted schema lives in `super::common`.
-                if GENERIC_OVER.iter().any(|(n, _)| *n == name) {
-                    return dto_type(&name);
-                }
-                return format!("super::common::{}", dto_type(&name));
-            }
-            if self.dtos.contains(&name) {
-                return dto_type(&name);
-            }
-            // A ref to something not emitted anywhere → resolve + map structurally.
-            return self.rust_type(self.oas.resolve(schema));
+            return self.ref_type(&name, schema);
         }
         // `allOf` COMPOSITION. A schema whose only structural content is a
         // single-`$ref` `allOf` is a pure alias for its referent — OAS 3.0
@@ -770,35 +784,67 @@ fn emit_struct(
          {deny_attr}pub struct {ty_name}{generics} {{\n"
     );
     for (pname, pschema) in props {
-        let ident = field_id(pname);
-        let mut ty = if generic_field == Some(pname.as_str()) {
-            "T".to_string()
-        } else {
-            ctx.rust_type(pschema)
-        };
-        if !required.contains(pname.as_str()) {
-            ty = format!("Option<{ty}>");
-        }
-        // A struct field is a public item `missing_docs` checks; the OAS
-        // property name is the honest, deterministic summary.
-        let _ = writeln!(b, "    /// The `{pname}` property of `{name}`.");
-        // A docs-text-wins correction carries its citation into the
-        // generated code (the OAS lists the field as required; the
-        // ITS-REST docs text wins).
-        if let Some(ov) = crate::plan::overrides::rest_optional_override(ty_name, pname) {
-            let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
-            let _ = writeln!(b, "    /// ({})", ov.reason);
-        }
-        if let Some(rename) = naming::serde_rename(pname, &ident) {
-            let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
-        }
-        if !required.contains(pname.as_str()) {
-            b.push_str(SKIP_NONE_ATTR);
-        }
-        let _ = writeln!(b, "    pub {ident}: {ty},");
+        emit_struct_field(
+            b,
+            StructField {
+                owner: name,
+                ty_name,
+                pname,
+                pschema,
+                is_generic: generic_field == Some(pname.as_str()),
+                is_required: required.contains(pname.as_str()),
+            },
+            ctx,
+        );
     }
     emit_additional_properties(b, name, schema, ctx);
     b.push_str("}\n\n");
+}
+
+/// One DTO field's emission inputs.
+#[derive(Clone, Copy)]
+struct StructField<'a> {
+    /// The OAS component schema name the field belongs to.
+    owner: &'a str,
+    /// The Rust type name of the emitted DTO.
+    ty_name: &'a str,
+    /// The OAS property name.
+    pname: &'a str,
+    /// The OAS property schema.
+    pschema: &'a Value,
+    /// Whether the field carries the DTO's generic parameter.
+    is_generic: bool,
+    /// Whether the field is required after the docs-text-wins corrections.
+    is_required: bool,
+}
+
+/// Emits one DTO field: its doc line, serde attributes and typed declaration.
+fn emit_struct_field(b: &mut String, f: StructField<'_>, ctx: &Ctx) {
+    let ident = field_id(f.pname);
+    let mut ty = if f.is_generic {
+        "T".to_string()
+    } else {
+        ctx.rust_type(f.pschema)
+    };
+    if !f.is_required {
+        ty = format!("Option<{ty}>");
+    }
+    // A struct field is a public item `missing_docs` checks; the OAS property
+    // name is the honest, deterministic summary.
+    let _ = writeln!(b, "    /// The `{}` property of `{}`.", f.pname, f.owner);
+    // A docs-text-wins correction carries its citation into the generated code
+    // (the OAS lists the field as required; the ITS-REST docs text wins).
+    if let Some(ov) = crate::plan::overrides::rest_optional_override(f.ty_name, f.pname) {
+        let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
+        let _ = writeln!(b, "    /// ({})", ov.reason);
+    }
+    if let Some(rename) = naming::serde_rename(f.pname, &ident) {
+        let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
+    }
+    if !f.is_required {
+        b.push_str(SKIP_NONE_ATTR);
+    }
+    let _ = writeln!(b, "    pub {ident}: {ty},");
 }
 
 /// Emit an OAS `discriminator.mapping` schema as a `_type`-dispatched enum.

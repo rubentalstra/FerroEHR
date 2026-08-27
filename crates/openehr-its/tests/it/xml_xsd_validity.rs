@@ -240,71 +240,79 @@ fn strip_prefix(qname: &str) -> String {
 
 /// Parse a bundle's `xs:complexType` inventory (name -> base + own members).
 fn read_types(bundle: &Bundle) -> BTreeMap<String, XsdType> {
-    use quick_xml::events::Event;
     let root = schemas_root();
     let mut types: BTreeMap<String, XsdType> = BTreeMap::new();
     for f in bundle.files {
         let path = root.join(f);
         let xml = std::fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-        let mut reader = quick_xml::Reader::from_str(&xml);
-        let mut current: Option<String> = None;
-        let mut depth = 0usize;
-        loop {
-            let ev = reader.read_event().expect("well-formed vendored XSD");
-            let (element, empty) = match &ev {
-                Event::Start(e) => (e, false),
-                Event::Empty(e) => (e, true),
-                Event::End(e) => {
-                    if local_name(e.name().as_ref()) == b"complexType" {
-                        depth = depth.saturating_sub(1);
-                        if depth == 0 {
-                            current = None;
-                        }
-                    }
-                    continue;
-                }
-                Event::Eof => break,
-                _ => continue,
-            };
-            let local = local_name(element.name().as_ref()).to_vec();
-            let attr = |k: &str| {
-                element
-                    .attributes()
-                    .flatten()
-                    .find(|a| local_name(a.key.as_ref()) == k.as_bytes())
-                    .map(|a| String::from_utf8_lossy(a.value.as_ref()).into_owned())
-            };
-            match local.as_slice() {
-                b"complexType" => {
-                    if !empty {
-                        depth += 1;
-                    }
-                    if depth == 1 {
-                        current = attr("name");
-                        if let Some(n) = &current {
-                            types.entry(n.clone()).or_default();
-                        }
-                    }
-                }
-                b"extension" | b"restriction" => {
-                    if let (Some(n), Some(b)) = (current.as_ref(), attr("base")) {
-                        let entry = types.entry(n.clone()).or_default();
-                        if entry.base.is_none() {
-                            entry.base = Some(strip_prefix(&b));
-                        }
-                    }
-                }
-                b"element" | b"attribute" => {
-                    if let (Some(n), Some(m)) = (current.as_ref(), attr("name")) {
-                        types.entry(n.clone()).or_default().members.insert(m);
-                    }
-                }
-                _ => {}
-            }
-        }
+        read_types_from(&xml, &mut types);
     }
     types
+}
+
+/// Read one XSD document's `xs:complexType` inventory into `types`.
+///
+/// Only a TOP-LEVEL `complexType` (depth 1) names a type; nested anonymous
+/// ones contribute their members to the enclosing named type.
+fn read_types_from(xml: &str, types: &mut BTreeMap<String, XsdType>) {
+    use quick_xml::events::Event;
+    let mut reader = quick_xml::Reader::from_str(xml);
+    let mut current: Option<String> = None;
+    let mut depth = 0usize;
+    loop {
+        let ev = reader.read_event().expect("well-formed vendored XSD");
+        let (element, empty) = match &ev {
+            Event::Start(e) => (e, false),
+            Event::Empty(e) => (e, true),
+            Event::End(e) => {
+                if local_name(e.name().as_ref()) == b"complexType" {
+                    depth = depth.saturating_sub(1);
+                    if depth == 0 {
+                        current = None;
+                    }
+                }
+                continue;
+            }
+            Event::Eof => return,
+            _ => continue,
+        };
+        let local = local_name(element.name().as_ref()).to_vec();
+        let attr = |k: &str| {
+            element
+                .attributes()
+                .flatten()
+                .find(|a| local_name(a.key.as_ref()) == k.as_bytes())
+                .map(|a| String::from_utf8_lossy(a.value.as_ref()).into_owned())
+        };
+        match local.as_slice() {
+            b"complexType" => {
+                if !empty {
+                    depth += 1;
+                }
+                if depth == 1 {
+                    current = attr("name");
+                    if let Some(n) = &current {
+                        types.entry(n.clone()).or_default();
+                    }
+                }
+            }
+            b"extension" | b"restriction" => {
+                if let (Some(n), Some(b)) = (current.as_ref(), attr("base")) {
+                    let entry = types.entry(n.clone()).or_default();
+                    if entry.base.is_none() {
+                        entry.base = Some(strip_prefix(&b));
+                    }
+                }
+            }
+            b"element" | b"attribute" => {
+                if let (Some(n), Some(m)) = (current.as_ref(), attr("name")) {
+                    types.entry(n.clone()).or_default().members.insert(m);
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 /// Flattened (own + inherited) member names of `name`.

@@ -45,7 +45,7 @@
 
 use serde_json::Value;
 
-use crate::v1_1::model::{Container, class};
+use crate::v1_1::model::{Container, RmAttribute, class};
 
 /// The `POINT_EVENT`/`INTERVAL_EVENT` `data` slot, whose generic parameter the
 /// validation dispatcher erases to `serde_json::Value` — so any non-absent
@@ -96,53 +96,52 @@ pub fn mandatory_data_present(ty: &str, value: &Value) -> bool {
         if attr.declared_type == "Octet" {
             continue;
         }
-        let member = value.get(attr.name).filter(|v| !v.is_null());
-        match attr.container {
+        // No `Hash` attribute is judged here (none is modelled by the
+        // structural checkers either).
+        if attr.container == Container::Hash {
+            continue;
+        }
+        let Some(member) = value.get(attr.name).filter(|v| !v.is_null()) else {
+            if attr.is_mandatory {
+                return false;
+            }
+            continue;
+        };
+        let present = match attr.container {
             Container::None => {
-                let Some(member) = member else {
-                    if attr.is_mandatory {
-                        return false;
-                    }
-                    continue;
-                };
-                if generic_any_slot(ty, attr.name) {
-                    continue;
-                }
-                if member.is_object()
-                    && let Some(child) = effective_type(member, attr.declared_type)
-                    && !mandatory_data_present(child, member)
-                {
-                    return false;
-                }
+                generic_any_slot(ty, attr.name) || single_member_present(member, attr)
             }
-            Container::List | Container::Set => {
-                let Some(member) = member else {
-                    if attr.is_mandatory {
-                        return false;
-                    }
-                    continue;
-                };
-                let Some(items) = member.as_array() else {
-                    continue;
-                };
-                if items.is_empty() && attr.cardinality.is_some_and(|c| c.lower >= 1) {
-                    return false;
-                }
-                for item in items {
-                    if item.is_object()
-                        && let Some(child) = effective_type(item, attr.declared_type)
-                        && !mandatory_data_present(child, item)
-                    {
-                        return false;
-                    }
-                }
-            }
-            // No `Hash` attribute is judged here (none is modelled by the
-            // structural checkers either).
-            Container::Hash => {}
+            _ => list_members_present(member, attr),
+        };
+        if !present {
+            return false;
         }
     }
     true
+}
+
+/// Whether a single-valued member carries the mandatory data of its own
+/// declared type.
+fn single_member_present(member: &Value, attr: &RmAttribute) -> bool {
+    if !member.is_object() {
+        return true;
+    }
+    let Some(child) = effective_type(member, attr.declared_type) else {
+        return true;
+    };
+    mandatory_data_present(child, member)
+}
+
+/// Whether a container member satisfies its declared lower bound and each of
+/// its object members carries their own mandatory data.
+fn list_members_present(member: &Value, attr: &RmAttribute) -> bool {
+    let Some(items) = member.as_array() else {
+        return true;
+    };
+    if items.is_empty() && attr.cardinality.is_some_and(|c| c.lower >= 1) {
+        return false;
+    }
+    items.iter().all(|item| single_member_present(item, attr))
 }
 
 /// Whether `value` positively CONTRADICTS its declared RM type `ty`.

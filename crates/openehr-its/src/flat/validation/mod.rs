@@ -801,10 +801,6 @@ impl Validator {
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
     /// and lands only behind the ECC zero-drift gate.
-    #[expect(
-        clippy::indexing_slicing,
-        reason = "`slot_counts` is sized `ca.slots.len()` and every index into it is a `position`/`enumerate` index over those same slots, so all are in bounds by construction"
-    )]
     fn check_closure(&mut self, instance: &Value, wt: &WebTemplateNode, plan: &NodeWalk) {
         for (ca, segs) in wt.closed_attributes.iter().zip(&plan.closed) {
             let Some(segments) = segs else {
@@ -814,68 +810,97 @@ impl Validator {
                 continue;
             };
             for container in &rmpath::navigate(&[instance], intermediate) {
-                let mut slot_counts = vec![0usize; ca.slots.len()];
-                for child in children_under_attr(container, &last.attribute) {
-                    let Some(nid) = child
-                        .get("archetype_node_id")
-                        .and_then(Value::as_str)
-                        .filter(|s| !s.is_empty())
-                    else {
-                        // Not a LOCATABLE (RM metadata / PATHABLE value): not
-                        // subject to sibling closure.
-                        continue;
-                    };
-                    if ca.allowed_ids.iter().any(|a| a == nid) {
-                        continue; // Matches a fixed sibling alternative.
-                    }
-                    // NOTE: an unmatched archetype-rooted child is admitted where
-                    // the attribute declares no ARCHETYPE_SLOT, OPT 1.4 flattening
-                    // not enumerating the slot-fill universe; slots still gate.
-                    if ca.slots.is_empty()
-                        && openehr_rm::v1_2::paths::is_archetype_root_node_id(nid)
-                    {
-                        continue;
-                    }
-                    let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
-                    match ca.slots.iter().position(|s| slot_admits(s, ct, nid)) {
-                        Some(i) => slot_counts[i] += 1,
-                        None => self.push(
-                            &ca.path,
-                            format!(
-                                "unexpected node '{nid}' under '{}': no matching archetype \
-                                 constraint or slot",
-                                last.attribute
-                            ),
-                            ValidationKind::Unexpected,
+                let slot_counts = self.match_closed_children(container, ca, &last.attribute);
+                self.check_slot_occurrences(ca, &last.attribute, &slot_counts);
+            }
+        }
+    }
+
+    /// Matches every child under one closed attribute against its fixed
+    /// sibling alternatives and its slots, recording an "unexpected node" for
+    /// each child neither admits, and returns the per-slot filler counts.
+    ///
+    /// A child with no `archetype_node_id` is not a LOCATABLE (RM metadata /
+    /// PATHABLE value) and is not subject to sibling closure.
+    ///
+    /// NOTE: an unmatched archetype-rooted child is admitted where the
+    /// attribute declares no ARCHETYPE_SLOT, OPT 1.4 flattening not
+    /// enumerating the slot-fill universe; slots still gate.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`counts` is sized `ca.slots.len()` and the index is a `position` over those same slots, so it is in bounds by construction"
+    )]
+    fn match_closed_children(
+        &mut self,
+        container: &Value,
+        ca: &crate::flat::webtemplate::model::WebTemplateClosedAttribute,
+        attribute: &str,
+    ) -> Vec<usize> {
+        let mut counts = vec![0usize; ca.slots.len()];
+        for child in children_under_attr(container, attribute) {
+            let Some(nid) = child
+                .get("archetype_node_id")
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+            else {
+                continue;
+            };
+            if ca.allowed_ids.iter().any(|a| a == nid) {
+                continue; // Matches a fixed sibling alternative.
+            }
+            if ca.slots.is_empty() && openehr_rm::v1_2::paths::is_archetype_root_node_id(nid) {
+                continue;
+            }
+            let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
+            match ca.slots.iter().position(|s| slot_admits(s, ct, nid)) {
+                Some(i) => counts[i] += 1,
+                None => self.push(
+                    &ca.path,
+                    format!(
+                        "unexpected node '{nid}' under '{attribute}': no matching archetype \
+                         constraint or slot"
+                    ),
+                    ValidationKind::Unexpected,
+                ),
+            }
+        }
+        counts
+    }
+
+    /// Checks each slot's occurrences against the fillers matched to it.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`counts` is sized `ca.slots.len()` and the index is the `enumerate` index over those same slots, so it is in bounds by construction"
+    )]
+    fn check_slot_occurrences(
+        &mut self,
+        ca: &crate::flat::webtemplate::model::WebTemplateClosedAttribute,
+        attribute: &str,
+        counts: &[usize],
+    ) {
+        for (i, slot) in ca.slots.iter().enumerate() {
+            let count = i32::try_from(counts[i]).unwrap_or(i32::MAX);
+            if counts[i] == 0 {
+                if slot.min >= 1 {
+                    self.push(
+                        &ca.path,
+                        format!(
+                            "mandatory archetype slot (occurrences {}..) under '{attribute}' \
+                             has no filler",
+                            slot.min
                         ),
-                    }
+                        ValidationKind::Required,
+                    );
                 }
-                // Slot occurrences on the matched fillers.
-                for (i, slot) in ca.slots.iter().enumerate() {
-                    let count = i32::try_from(slot_counts[i]).unwrap_or(i32::MAX);
-                    if slot_counts[i] == 0 {
-                        if slot.min >= 1 {
-                            self.push(
-                                &ca.path,
-                                format!(
-                                    "mandatory archetype slot (occurrences {}..) under '{}' \
-                                     has no filler",
-                                    slot.min, last.attribute
-                                ),
-                                ValidationKind::Required,
-                            );
-                        }
-                    } else if slot.max != -1 && count > slot.max {
-                        self.push(
-                            &ca.path,
-                            format!(
-                                "too many slot fillers under '{}': found {}, expected at most {}",
-                                last.attribute, slot_counts[i], slot.max
-                            ),
-                            ValidationKind::Occurrences,
-                        );
-                    }
-                }
+            } else if slot.max != -1 && count > slot.max {
+                self.push(
+                    &ca.path,
+                    format!(
+                        "too many slot fillers under '{attribute}': found {}, expected at most {}",
+                        counts[i], slot.max
+                    ),
+                    ValidationKind::Occurrences,
+                );
             }
         }
     }
@@ -992,33 +1017,15 @@ impl Validator {
             .map(|&i| &wt_parent.children[i])
             .collect();
         let first = members[0];
-        // The identity segment is the last one carrying a predicate; if none
-        // carries one, the last segment (a plain single-valued attribute).
-        let identity_idx = segments
-            .iter()
-            .rposition(|s| !s.predicate.is_empty())
-            .unwrap_or(segments.len() - 1);
-        // A node whose RM type does NOT inherit `LOCATABLE` carries no
-        // `archetype_node_id` in canonical JSON (only `LOCATABLE` adds it — RM
-        // common `UML/classes/org.openehr.rm.common.locatable.adoc`; `EVENT_CONTEXT`
-        // inherits `PATHABLE` directly — RM
-        // `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit), so
-        // it is matched STRUCTURALLY by attribute position, predicate stripped. Only
-        // the TERMINAL-identity case reads `first.rm_type`: with a trailing plain
-        // attribute the identity node is the archetyped `LOCATABLE` intermediate.
+        let identity_idx = identity_index(segments);
+        // Only the TERMINAL-identity case reads `first.rm_type`: with a trailing
+        // plain attribute the identity node is the archetyped `LOCATABLE`
+        // intermediate.
         let raw_id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
         let identity_is_locatable = !trailing.is_empty() || is_locatable(&first.rm_type);
-        let structural_match = !identity_is_locatable && !raw_id_seg.predicate.is_empty();
-        let structural_id_seg;
-        let id_seg: &PathSegment = if structural_match {
-            let mut stripped = raw_id_seg.clone();
-            stripped.predicate = openehr_rm::v1_2::paths::Predicate::default();
-            structural_id_seg = stripped;
-            &structural_id_seg
-        } else {
-            raw_id_seg
-        };
+        let structural_id_seg = structural_identity(raw_id_seg, identity_is_locatable);
+        let id_seg: &PathSegment = structural_id_seg.as_ref().unwrap_or(raw_id_seg);
 
         // Navigate the intermediate segments to the container node(s).
         let containers = rmpath::navigate(&[parent], &segments[..identity_idx]);
@@ -1033,17 +1040,7 @@ impl Validator {
         let occ_applies = identity_is_locatable
             && id_seg.predicate.archetype_node_id.is_some()
             && !members.iter().any(|c| c.in_context == Some(true));
-        let group_min = members
-            .iter()
-            .filter_map(|c| c.min)
-            .min()
-            .unwrap_or(0)
-            .max(0);
-        let group_max = if members.iter().any(|c| c.max == -1) {
-            -1
-        } else {
-            members.iter().map(|c| c.max).max().unwrap_or(-1)
-        };
+        let (group_min, group_max) = group_occurrences(&members);
 
         for container in &containers {
             let matched = select_group_children(container, id_seg, names);
@@ -1051,13 +1048,25 @@ impl Validator {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
             for node in matched {
-                for target in rmpath::navigate(&[node], trailing) {
-                    if members.len() == 1 {
-                        self.walk(target, first);
-                    } else {
-                        self.visit_choice(target, &members);
-                    }
-                }
+                self.walk_group_targets(node, trailing, &members);
+            }
+        }
+    }
+
+    /// Walks every target the trailing segments reach under one matched node.
+    ///
+    /// A single-member group walks its one template node; a choice group is
+    /// dispatched to [`Self::visit_choice`].
+    fn walk_group_targets(
+        &mut self,
+        node: &Value,
+        trailing: &[PathSegment],
+        members: &[&WebTemplateNode],
+    ) {
+        for target in rmpath::navigate(&[node], trailing) {
+            match members {
+                [only] => self.walk(target, only),
+                _ => self.visit_choice(target, members),
             }
         }
     }
@@ -1231,6 +1240,54 @@ fn select_group_children<'a>(
         }
         (_, None) => rmpath::select_children_matched(container, id_seg, true),
     }
+}
+
+/// The index of the group's identity segment.
+///
+/// That is the last segment carrying a predicate; if none carries one, the last
+/// segment (a plain single-valued attribute).
+fn identity_index(segments: &[PathSegment]) -> usize {
+    segments
+        .iter()
+        .rposition(|s| !s.predicate.is_empty())
+        .unwrap_or(segments.len() - 1)
+}
+
+/// The predicate-stripped identity segment for a structurally-matched node.
+///
+/// A node whose RM type does NOT inherit `LOCATABLE` carries no
+/// `archetype_node_id` in canonical JSON (only `LOCATABLE` adds it — RM common
+/// `UML/classes/org.openehr.rm.common.locatable.adoc`; `EVENT_CONTEXT` inherits
+/// `PATHABLE` directly — RM
+/// `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit), so it
+/// is matched by attribute position instead. [`None`] means the raw segment
+/// applies unchanged.
+fn structural_identity(
+    raw_id_seg: &PathSegment,
+    identity_is_locatable: bool,
+) -> Option<PathSegment> {
+    if identity_is_locatable || raw_id_seg.predicate.is_empty() {
+        return None;
+    }
+    let mut stripped = raw_id_seg.clone();
+    stripped.predicate = openehr_rm::v1_2::paths::Predicate::default();
+    Some(stripped)
+}
+
+/// The group's combined occurrence bounds: the loosest of its members'.
+fn group_occurrences(members: &[&WebTemplateNode]) -> (i32, i32) {
+    let min = members
+        .iter()
+        .filter_map(|c| c.min)
+        .min()
+        .unwrap_or(0)
+        .max(0);
+    let max = if members.iter().any(|c| c.max == -1) {
+        -1
+    } else {
+        members.iter().map(|c| c.max).max().unwrap_or(-1)
+    };
+    (min, max)
 }
 
 /// Whether an RM type inherits `LOCATABLE` and therefore carries an

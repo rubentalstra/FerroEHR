@@ -92,43 +92,61 @@ fn semantic_eq(
 ) -> Result<(), String> {
     use serde_json::Value;
     match (input, output) {
-        (Value::Object(im), Value::Object(om)) => {
-            for (k, iv) in im {
-                match om.get(k) {
-                    Some(ov) => semantic_eq(iv, ov, &format!("{path}.{k}"))?,
-                    None if is_omittable(iv) => {}
-                    None => {
-                        return Err(format!(
-                            "{path}.{k}: present in input, dropped from output ({})",
-                            preview(iv)
-                        ));
-                    }
-                }
-            }
-            for (k, ov) in om {
-                if !im.contains_key(k) && !is_default_materialization(k, ov) {
-                    return Err(format!(
-                        "{path}.{k}: emitted in output but absent from input ({})",
-                        preview(ov)
-                    ));
-                }
-            }
-            Ok(())
-        }
-        (Value::Array(ia), Value::Array(oa)) => {
-            if ia.len() != oa.len() {
-                return Err(format!("{path}: array length {} vs {}", ia.len(), oa.len()));
-            }
-            for (i, (a, b)) in ia.iter().zip(oa).enumerate() {
-                semantic_eq(a, b, &format!("{path}[{i}]"))?;
-            }
-            Ok(())
-        }
+        (Value::Object(im), Value::Object(om)) => objects_semantic_eq(im, om, path),
+        (Value::Array(ia), Value::Array(oa)) => arrays_semantic_eq(ia, oa, path),
         // `5` (Integer) and `5.0` (Real) are the same magnitude on the wire.
         (Value::Number(a), Value::Number(b)) if a.as_f64() == b.as_f64() => Ok(()),
         _ if input == output => Ok(()),
         _ => Err(format!("{path}: {} vs {}", preview(input), preview(output))),
     }
+}
+
+/// Compares two objects member by member, in both directions.
+fn objects_semantic_eq(
+    input: &serde_json::Map<String, serde_json::Value>,
+    output: &serde_json::Map<String, serde_json::Value>,
+    path: &str,
+) -> Result<(), String> {
+    for (k, iv) in input {
+        match output.get(k) {
+            Some(ov) => semantic_eq(iv, ov, &format!("{path}.{k}"))?,
+            None if is_omittable(iv) => {}
+            None => {
+                return Err(format!(
+                    "{path}.{k}: present in input, dropped from output ({})",
+                    preview(iv)
+                ));
+            }
+        }
+    }
+    for (k, ov) in output {
+        if !input.contains_key(k) && !is_default_materialization(k, ov) {
+            return Err(format!(
+                "{path}.{k}: emitted in output but absent from input ({})",
+                preview(ov)
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Compares two arrays element by element, lengths first.
+fn arrays_semantic_eq(
+    input: &[serde_json::Value],
+    output: &[serde_json::Value],
+    path: &str,
+) -> Result<(), String> {
+    if input.len() != output.len() {
+        return Err(format!(
+            "{path}: array length {} vs {}",
+            input.len(),
+            output.len()
+        ));
+    }
+    for (i, (a, b)) in input.iter().zip(output).enumerate() {
+        semantic_eq(a, b, &format!("{path}[{i}]"))?;
+    }
+    Ok(())
 }
 
 /// An input field we may legitimately drop: `OpenEhrType` omits `None` (`null`)

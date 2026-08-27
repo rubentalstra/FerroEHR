@@ -175,23 +175,7 @@ fn prune_children(
 ) -> Result<(), StorageError> {
     let mut structure_attributes: Vec<String> = Vec::new();
     for (attribute, child) in map.iter() {
-        let prune = match child {
-            Value::Object(_) => is_structure(child),
-            Value::Array(items) if !items.is_empty() => {
-                let structure_count = items.iter().filter(|c| is_structure(c)).count();
-                if structure_count == 0 {
-                    false
-                } else if structure_count == items.len() {
-                    true
-                } else {
-                    return Err(StorageError::MixedArray {
-                        attribute: attribute.clone(),
-                    });
-                }
-            }
-            _ => false,
-        };
-        if prune {
+        if carries_structure(attribute, child)? {
             structure_attributes.push(attribute.clone());
         }
     }
@@ -209,6 +193,28 @@ fn prune_children(
         }
     }
     Ok(())
+}
+
+/// Whether one attribute's value carries structure children that become their
+/// own node rows.
+///
+/// # Errors
+/// [`StorageError::MixedArray`] when an array mixes structure and
+/// non-structure members — a shape the node model cannot represent.
+fn carries_structure(attribute: &str, child: &Value) -> Result<bool, StorageError> {
+    let Value::Array(items) = child else {
+        return Ok(is_structure(child));
+    };
+    let structure_count = items.iter().filter(|c| is_structure(c)).count();
+    if structure_count == 0 {
+        return Ok(false);
+    }
+    if structure_count == items.len() {
+        return Ok(true);
+    }
+    Err(StorageError::MixedArray {
+        attribute: attribute.to_owned(),
+    })
 }
 
 fn is_structure(v: &Value) -> bool {

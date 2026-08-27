@@ -216,18 +216,7 @@ pub fn evaluate(
     // PEP binds the patient context only when *nothing broader* permitted.
     let mut broadest: Option<Compartment> = None;
     for scope in &family_scopes {
-        if !scope.permissions.contains(permission) {
-            continue;
-        }
-        let id_ok = if let Some(id) = resource_id {
-            scope.resource.pattern().matches(id)
-        } else {
-            // No resolved id: only a broad `*`/`**` pattern can permit; a
-            // specific pattern is fail-closed against an unknown id.
-            let p = scope.resource.pattern().as_str();
-            p == "*" || p == "**"
-        };
-        if id_ok {
+        if scope.permissions.contains(permission) && scope_matches_id(scope, resource_id) {
             broadest = Some(broaden(broadest, scope.compartment));
         }
     }
@@ -273,6 +262,21 @@ fn claim_str(claims: &serde_json::Map<String, serde_json::Value>, key: &str) -> 
         .get(key)
         .and_then(serde_json::Value::as_str)
         .map(str::to_owned)
+}
+
+/// Whether one held scope's resource pattern covers the addressed resource.
+///
+/// With no resolved id, only a broad `*`/`**` pattern can permit — a specific
+/// pattern is fail-closed against an unknown id.
+fn scope_matches_id(
+    scope: &openehr_its::rest::smart_scopes::ResourceScope,
+    resource_id: Option<&str>,
+) -> bool {
+    let Some(id) = resource_id else {
+        let p = scope.resource.pattern().as_str();
+        return p == "*" || p == "**";
+    };
+    scope.resource.pattern().matches(id)
 }
 
 /// The broader of two compartments (breadth: System > User > Patient). Used so

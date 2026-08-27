@@ -621,48 +621,8 @@ impl Decomposer<'_> {
             }
         }
 
-        // The flattened ontology (per-language) for this archetype: the top
-        // root's is the OPT `ontology`; an embedded root matches a
-        // `component_ontologies` entry by archetype id. The 1.4
-        // `constraint_definitions`/`constraint_bindings` sections merge into
-        // `term_definitions`/`term_bindings` — the ADL2 folding
-        // (`ADL2/master07.13-adl_terminology.adoc` §Terminology section).
         if let Some(ont) = self.ontology_for(archetype_id, is_top) {
-            for set in ont
-                .term_definitions
-                .iter()
-                .chain(&ont.constraint_definitions)
-            {
-                let bucket = term_definitions.entry(set.language.clone()).or_default();
-                for t in &set.items {
-                    bucket.insert(t.code.clone(), map_term(t));
-                }
-            }
-            // AOM2 binding targets are URIs (`term_bindings: Hash<String,
-            // Hash<String, Uri>>`); a 1.4 binding target that is a bare code
-            // (`20081-6`) is wrapped in the converter core's fabricated URN
-            // form so the ODIN target stays parseable.
-            for set in &ont.term_bindings {
-                let bucket = term_bindings.entry(set.terminology.clone()).or_default();
-                for item in &set.items {
-                    bucket.insert(
-                        item.code.clone(),
-                        binding_uri(&set.terminology, &item.value.code_string),
-                    );
-                }
-            }
-            // 1.4 constraint bindings carry their target as a plain string (a
-            // URI or terminology query) — merged under the same terminology
-            // key, ac-code → target (VTCBK keys).
-            for set in &ont.constraint_bindings {
-                let bucket = term_bindings.entry(set.terminology.clone()).or_default();
-                for item in &set.items {
-                    bucket.insert(
-                        item.code.clone(),
-                        binding_uri(&set.terminology, &item.value),
-                    );
-                }
-            }
+            merge_ontology(ont, &mut term_definitions, &mut term_bindings);
         }
 
         // Entries minted during the definition walk (reference-set ac codes).
@@ -679,34 +639,7 @@ impl Decomposer<'_> {
                 .insert(code.clone(), uri.clone());
         }
 
-        // A binding whose key is not a code DEFINED in this root's slice is
-        // unexpressible after decomposition (1.4 OPTs may bind path keys or
-        // codes scoped to another embedded root) and would raise VTTBK
-        // (`master03` §Validity Rules — binding keys must be defined codes).
-        // Drop it, reported in `conversion_details`: the binding's home is the
-        // root that defines the code, which carries it in its own slice.
-        let defined: std::collections::BTreeSet<String> = term_definitions
-            .values()
-            .flat_map(|by_code| by_code.keys().cloned())
-            .collect();
-        for (terminology, by_key) in &mut term_bindings {
-            let terminology = terminology.clone();
-            by_key.retain(|key, _| {
-                let keep = defined.contains(key.as_str());
-                if !keep {
-                    cx.notes.insert(
-                        format!("dropped_term_binding.{terminology}.{key}"),
-                        format!(
-                            "term binding [{terminology}::{key}] is outside this root's code \
-                             scope; dropped at OPT decomposition (its home is the root that \
-                             defines the code)"
-                        ),
-                    );
-                }
-                keep
-            });
-        }
-        term_bindings.retain(|_, by_key| !by_key.is_empty());
+        drop_out_of_scope_bindings(&term_definitions, &mut term_bindings, cx);
 
         ArchetypeTerminology {
             is_differential: false,
@@ -718,6 +651,89 @@ impl Decomposer<'_> {
             terminology_extracts: None,
         }
     }
+}
+
+/// Merges one flattened 1.4 ontology into the terminology being assembled.
+///
+/// The 1.4 `constraint_definitions`/`constraint_bindings` sections merge into
+/// `term_definitions`/`term_bindings` — the ADL2 folding
+/// (`ADL2/master07.13-adl_terminology.adoc` §Terminology section). AOM2
+/// binding targets are URIs (`term_bindings: Hash<String, Hash<String,
+/// Uri>>`), so a 1.4 target that is a bare code (`20081-6`) is wrapped in the
+/// converter core's fabricated URN form and stays parseable as ODIN; a
+/// constraint binding carries its target as a plain string (a URI or a
+/// terminology query) and merges under the same terminology key, ac-code →
+/// target (VTCBK keys).
+fn merge_ontology(
+    ont: &opt14::types::FlatArchetypeOntology,
+    term_definitions: &mut BTreeMap<String, BTreeMap<String, ArchetypeTerm>>,
+    term_bindings: &mut BTreeMap<String, BTreeMap<String, String>>,
+) {
+    for set in ont
+        .term_definitions
+        .iter()
+        .chain(&ont.constraint_definitions)
+    {
+        let bucket = term_definitions.entry(set.language.clone()).or_default();
+        for t in &set.items {
+            bucket.insert(t.code.clone(), map_term(t));
+        }
+    }
+    for set in &ont.term_bindings {
+        let bucket = term_bindings.entry(set.terminology.clone()).or_default();
+        for item in &set.items {
+            bucket.insert(
+                item.code.clone(),
+                binding_uri(&set.terminology, &item.value.code_string),
+            );
+        }
+    }
+    for set in &ont.constraint_bindings {
+        let bucket = term_bindings.entry(set.terminology.clone()).or_default();
+        for item in &set.items {
+            bucket.insert(
+                item.code.clone(),
+                binding_uri(&set.terminology, &item.value),
+            );
+        }
+    }
+}
+
+/// Drops every binding whose key is not a code DEFINED in this root's slice,
+/// recording each drop in `conversion_details`.
+///
+/// Such a binding is unexpressible after decomposition (1.4 OPTs may bind path
+/// keys or codes scoped to another embedded root) and would raise VTTBK
+/// (`master03` §Validity Rules — binding keys must be defined codes). The
+/// binding's home is the root that defines the code, which carries it in its
+/// own slice.
+fn drop_out_of_scope_bindings(
+    term_definitions: &BTreeMap<String, BTreeMap<String, ArchetypeTerm>>,
+    term_bindings: &mut BTreeMap<String, BTreeMap<String, String>>,
+    cx: &mut RootCx,
+) {
+    let defined: std::collections::BTreeSet<String> = term_definitions
+        .values()
+        .flat_map(|by_code| by_code.keys().cloned())
+        .collect();
+    for (terminology, by_key) in &mut *term_bindings {
+        let terminology = terminology.clone();
+        by_key.retain(|key, _| {
+            let keep = defined.contains(key.as_str());
+            if !keep {
+                cx.notes.insert(
+                    format!("dropped_term_binding.{terminology}.{key}"),
+                    format!(
+                        "term binding [{terminology}::{key}] is outside this root's code \
+                         scope; dropped at OPT decomposition (its home is the root that \
+                         defines the code)"
+                    ),
+                );
+            }
+            keep
+        });
+    }
+    term_bindings.retain(|_, by_key| !by_key.is_empty());
 }
 
 /// The maximum at-code number among a root's own node ids (not descending into

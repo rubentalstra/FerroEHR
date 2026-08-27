@@ -81,8 +81,27 @@ impl Oas {
         bundles: &[(&str, Oas)],
         keep: &std::collections::BTreeSet<String>,
     ) -> Oas {
+        let wanted = Self::base_closure(bundles, keep);
+        let mut schemas = serde_json::Map::new();
+        for (_, o) in bundles {
+            for (name, schema) in o.schemas() {
+                if wanted.contains(&name) && !schemas.contains_key(&name) {
+                    schemas.insert(name, schema.clone());
+                }
+            }
+        }
+        Oas {
+            root: serde_json::json!({ "components": { "schemas": schemas } }),
+        }
+    }
+
+    /// The transitive `allOf`-base closure of `keep`, as a least fixpoint: a
+    /// base may compose a base of its own.
+    fn base_closure(
+        bundles: &[(&str, Oas)],
+        keep: &std::collections::BTreeSet<String>,
+    ) -> std::collections::BTreeSet<String> {
         let mut wanted = keep.clone();
-        // Fixpoint over the `allOf` bases of everything already wanted.
         loop {
             let mut added = false;
             for (_, o) in bundles {
@@ -96,19 +115,8 @@ impl Oas {
                 }
             }
             if !added {
-                break;
+                return wanted;
             }
-        }
-        let mut schemas = serde_json::Map::new();
-        for (_, o) in bundles {
-            for (name, schema) in o.schemas() {
-                if wanted.contains(&name) && !schemas.contains_key(&name) {
-                    schemas.insert(name, schema.clone());
-                }
-            }
-        }
-        Oas {
-            root: serde_json::json!({ "components": { "schemas": schemas } }),
         }
     }
 

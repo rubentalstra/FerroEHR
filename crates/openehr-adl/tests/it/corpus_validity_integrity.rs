@@ -25,7 +25,7 @@ use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::Severity;
-use openehr_adl::validate::validate_source_integrity;
+use openehr_adl::validate::{ValidationIssue, validate_source_integrity};
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
 
@@ -164,6 +164,73 @@ struct Counts {
     syntax_or_fail: usize,
 }
 
+/// What one corpus file's `regression` tag turned out to mean.
+///
+/// A `Violation` carries the message tail; the caller prefixes the file name.
+enum TagOutcome {
+    ExactCode,
+    PassClean,
+    Deferred(String),
+    SyntaxOrFail,
+    Violation(String),
+}
+
+/// A `PASS`/untagged file: clean iff phase 1 raised no error (warnings allowed).
+fn judge_clean(error_codes: &[String]) -> TagOutcome {
+    if error_codes.is_empty() {
+        TagOutcome::PassClean
+    } else {
+        TagOutcome::Violation(format!("PASS/untagged but raised {error_codes:?}"))
+    }
+}
+
+/// A `FAIL`-tagged file that nonetheless parses: expect at least one typed error.
+fn judge_fail(error_codes: &[String]) -> TagOutcome {
+    if error_codes.is_empty() {
+        TagOutcome::Violation("FAIL-tagged but no phase-1 error raised".to_owned())
+    } else {
+        TagOutcome::SyntaxOrFail
+    }
+}
+
+/// A tag naming a code the validator actively raises: it must be raised exactly.
+fn judge_firing_code(tag: &str, error_codes: &[String], issues: &[ValidationIssue]) -> TagOutcome {
+    if error_codes.iter().any(|c| c == tag) || issues.iter().any(|i| i.code.mnemonic() == tag) {
+        TagOutcome::ExactCode
+    } else {
+        TagOutcome::Violation(format!("expected {tag} but raised {error_codes:?}"))
+    }
+}
+
+/// A phase-2/3/RM code, or a not-yet-run phase-1 code: assert no false positive.
+fn judge_deferred_code(tag: &str, error_codes: &[String]) -> TagOutcome {
+    if error_codes.is_empty() {
+        TagOutcome::Deferred(tag.to_owned())
+    } else {
+        TagOutcome::Violation(format!(
+            "deferred tag {tag} but phase-1 raised {error_codes:?}"
+        ))
+    }
+}
+
+/// Classifies one parsed corpus file against its authoritative `regression` tag.
+fn judge_tagged_outcome(
+    tag: Option<&str>,
+    error_codes: &[String],
+    issues: &[ValidationIssue],
+) -> TagOutcome {
+    match tag {
+        None | Some("PASS") => judge_clean(error_codes),
+        Some("FAIL") => judge_fail(error_codes),
+        // A syntax-tagged file that nonetheless parsed — the syntax defect is
+        // milder than a hard parse error; accept any typed error or none
+        // (owned by the parse gates).
+        Some(t) if is_syntax_tag(t) => TagOutcome::SyntaxOrFail,
+        Some(t) if INTEGRITY_FIRING.contains(&t) => judge_firing_code(t, error_codes, issues),
+        Some(t) => judge_deferred_code(t, error_codes),
+    }
+}
+
 #[test]
 fn corpus_integrity_outcomes() {
     let repo = build_repository();
@@ -218,51 +285,15 @@ fn corpus_integrity_outcomes() {
                 .map(|i| i.code.mnemonic().to_owned())
                 .collect();
 
-            match tag.as_deref() {
-                // PASS or absent ⇒ clean (no phase-1 errors; warnings allowed).
-                None | Some("PASS") => {
-                    if error_codes.is_empty() {
-                        counts.pass_clean += 1;
-                    } else {
-                        violations
-                            .push(format!("{name}: PASS/untagged but raised {error_codes:?}"));
-                    }
+            match judge_tagged_outcome(tag.as_deref(), &error_codes, &issues) {
+                TagOutcome::ExactCode => counts.exact_code += 1,
+                TagOutcome::PassClean => counts.pass_clean += 1,
+                TagOutcome::SyntaxOrFail => counts.syntax_or_fail += 1,
+                TagOutcome::Deferred(code) => {
+                    counts.deferred += 1;
+                    *deferred_by_code.entry(code).or_default() += 1;
                 }
-                Some("FAIL") => {
-                    // FAIL parses here; expect at least one typed error.
-                    if error_codes.is_empty() {
-                        violations.push(format!("{name}: FAIL-tagged but no phase-1 error raised"));
-                    } else {
-                        counts.syntax_or_fail += 1;
-                    }
-                }
-                Some(t) if is_syntax_tag(t) => {
-                    // A syntax-tagged file that nonetheless parsed — the syntax
-                    // defect is milder than a hard parse error; accept any
-                    // typed error or none (owned by the parse gates).
-                    counts.syntax_or_fail += 1;
-                }
-                Some(t) if INTEGRITY_FIRING.contains(&t) => {
-                    if error_codes.iter().any(|c| c == t)
-                        || issues.iter().any(|i| i.code.mnemonic() == t)
-                    {
-                        counts.exact_code += 1;
-                    } else {
-                        violations.push(format!("{name}: expected {t} but raised {error_codes:?}"));
-                    }
-                }
-                // A phase-2/3/RM code, or a not-yet-run phase-1 code: assert no
-                // phase-1 error false positive.
-                Some(t) => {
-                    if error_codes.is_empty() {
-                        counts.deferred += 1;
-                        *deferred_by_code.entry(t.to_owned()).or_default() += 1;
-                    } else {
-                        violations.push(format!(
-                            "{name}: deferred tag {t} but phase-1 raised {error_codes:?}"
-                        ));
-                    }
-                }
+                TagOutcome::Violation(message) => violations.push(format!("{name}: {message}")),
             }
         }
     }
