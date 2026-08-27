@@ -481,21 +481,32 @@ impl<'a> OptModel<'a> {
             });
         }
         for e in &elems {
-            let res = self.resolve(&e.type_name);
-            let rust_name = naming::field_ident(&e.name);
-            let (base, target) = Self::base_decl(&res, &e.type_name);
-            let is_hash = matches!(res, Resolved::Hash);
-            let is_gen_enum = matches!(res, Resolved::Gen(_, true));
-            let is_bool = matches!(res, Resolved::Primitive("bool"));
+            out.push(self.element_field(e));
+        }
+        out
+    }
 
-            let (decl_type, xml_field);
-            if is_hash {
-                decl_type = if e.optional {
-                    format!("Option<{base}>")
-                } else {
-                    base
-                };
-                xml_field = XmlField {
+    /// One element's generated field: its declared Rust type and its XML view.
+    ///
+    /// A single-valued reference to a generated enum is boxed — those slots
+    /// (`EXPR_ITEM`, `C_PRIMITIVE`, `STATE`) are recursive. A mandatory scalar
+    /// bool absent on the wire (openEHR `Interval` boundedness flags default
+    /// false) falls back to `false`, and some XSD-mandatory fields are omitted
+    /// by real-world OPT exports (Ocean/tool laxity), so they are defaulted
+    /// leniently — a wire adapter must ingest imperfect real OPTs.
+    fn element_field(&self, e: &crate::load::xsd::XsdElem) -> OptField {
+        let res = self.resolve(&e.type_name);
+        let rust_name = naming::field_ident(&e.name);
+        let (base, target) = Self::base_decl(&res, &e.type_name);
+
+        if matches!(res, Resolved::Hash) {
+            let decl_type = if e.optional {
+                format!("Option<{base}>")
+            } else {
+                base
+            };
+            return OptField {
+                xml: XmlField {
                     wire_name: e.name.clone(),
                     rust_name,
                     optional: e.optional,
@@ -504,51 +515,44 @@ impl<'a> OptModel<'a> {
                     map_value: Some("String".to_string()),
                     default: None,
                     nonempty: false,
-                };
-            } else {
-                // Box a single-valued reference to a generated enum: those slots
-                // (`EXPR_ITEM`, `C_PRIMITIVE`, `STATE`) are recursive.
-                let inner = if !e.multiple && is_gen_enum {
-                    format!("Box<{base}>")
-                } else {
-                    base
-                };
-                decl_type = if e.multiple {
-                    format!("Vec<{inner}>")
-                } else if e.optional {
-                    format!("Option<{inner}>")
-                } else {
-                    inner
-                };
-                // A mandatory scalar bool absent on the wire (openEHR `Interval`
-                // boundedness flags default false) → fall back to `false`. Some
-                // XSD-mandatory fields are omitted by real-world OPT exports
-                // (Ocean/tool laxity) — default them leniently so those templates
-                // still parse (a wire adapter must ingest imperfect real OPTs).
-                let default = if is_bool && !e.optional && !e.multiple {
-                    Some("false".to_string())
-                } else if !e.optional && !e.multiple {
-                    lenient_default(&e.name, &e.type_name, self.target.prelude)
-                } else {
-                    None
-                };
-                xml_field = XmlField {
-                    wire_name: e.name.clone(),
-                    rust_name,
-                    optional: e.optional && !e.multiple,
-                    multiple: e.multiple,
-                    target,
-                    map_value: None,
-                    default,
-                    nonempty: false,
-                };
-            }
-            out.push(OptField {
-                xml: xml_field,
+                },
                 decl_type,
-            });
+            };
         }
-        out
+
+        let inner = if !e.multiple && matches!(res, Resolved::Gen(_, true)) {
+            format!("Box<{base}>")
+        } else {
+            base
+        };
+        let decl_type = if e.multiple {
+            format!("Vec<{inner}>")
+        } else if e.optional {
+            format!("Option<{inner}>")
+        } else {
+            inner
+        };
+        let scalar = !e.optional && !e.multiple;
+        let default = if scalar && matches!(res, Resolved::Primitive("bool")) {
+            Some("false".to_string())
+        } else if scalar {
+            lenient_default(&e.name, &e.type_name, self.target.prelude)
+        } else {
+            None
+        };
+        OptField {
+            xml: XmlField {
+                wire_name: e.name.clone(),
+                rust_name,
+                optional: e.optional && !e.multiple,
+                multiple: e.multiple,
+                target,
+                map_value: None,
+                default,
+                nonempty: false,
+            },
+            decl_type,
+        }
     }
 
     /// The closure's `xs:enumeration`-faceted simple types, name-ordered.
