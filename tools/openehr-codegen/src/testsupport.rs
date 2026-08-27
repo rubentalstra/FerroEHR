@@ -22,7 +22,7 @@ use crate::cli;
 use crate::load::bmm::BmmSchema;
 use crate::load::impls::SiblingImpls;
 use crate::load::oas;
-use crate::plan::composition::{self, compose};
+use crate::plan::composition::{self, ComposedUnit, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
 use crate::render::emit::{CrateGeneration, RenderUnit, emit_composed};
@@ -235,29 +235,54 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
     let mut checked = 0_usize;
     for g in &c.generations {
         for u in &g.units {
-            let used = u.model.used_as_type();
-            for (name, class) in &u.schema.classes {
-                let carriers = attribute_carriers(name, class, &u.model, &used);
-                for p in &class.properties {
-                    if overrides::back_reference(name, &p.name).is_some() {
-                        continue;
-                    }
-                    for carrier in &carriers {
-                        checked += 1;
-                        if !emitted_field_names(&u.model, carrier).contains(&p.name) {
-                            gaps.push(AttributeGap {
-                                file: u.spec.file.to_string(),
-                                class: name.clone(),
-                                attribute: p.name.clone(),
-                                detail: format!("missing from the emitted `{carrier}` fields"),
-                            });
-                        }
-                    }
-                }
-            }
+            checked += unit_attribute_gaps(u, &mut gaps);
         }
     }
     Ok((gaps, checked))
+}
+
+/// Collects one specification unit's attribute gaps into `gaps`, returning how
+/// many `(class, attribute, carrier)` triples were checked.
+fn unit_attribute_gaps(u: &ComposedUnit, gaps: &mut Vec<AttributeGap>) -> usize {
+    let used = u.model.used_as_type();
+    let mut checked = 0_usize;
+    for (name, class) in &u.schema.classes {
+        checked += class_attribute_gaps(u, name, class, &used, gaps);
+    }
+    checked
+}
+
+/// Collects one class's attribute gaps into `gaps`, returning how many
+/// `(attribute, carrier)` pairs were checked.
+///
+/// A back-referenced attribute is deliberately absent from every emitted field
+/// set (`overrides::back_reference`), so it is not a gap.
+fn class_attribute_gaps(
+    u: &ComposedUnit,
+    name: &str,
+    class: &crate::load::bmm::BmmClass,
+    used: &BTreeSet<String>,
+    gaps: &mut Vec<AttributeGap>,
+) -> usize {
+    let carriers = attribute_carriers(name, class, &u.model, used);
+    let mut checked = 0_usize;
+    for p in &class.properties {
+        if overrides::back_reference(name, &p.name).is_some() {
+            continue;
+        }
+        for carrier in &carriers {
+            checked += 1;
+            if !emitted_field_names(&u.model, carrier).contains(&p.name) {
+                gaps.push(AttributeGap {
+                    file: u.spec.file.to_string(),
+                    class: name.to_owned(),
+                    attribute: p.name.clone(),
+                    detail: format!("missing from the emitted `{carrier}` fields"),
+                });
+            }
+        }
+    }
+    checked
 }
 
 /// The emitted types that must carry a class's declared attributes.
@@ -1692,9 +1717,6 @@ fn hand_written_files(dir: &std::path::Path) -> Result<BTreeMap<String, String>,
 /// Returns an error if the composition fails to load or a crate tree cannot be
 /// read.
 pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
-    /// Per class: the functions the generation DECLARES, and those it realizes.
-    type ClassFunctions = BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)>;
-
     let comp = compose(key)?;
     let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../crates")
@@ -1702,42 +1724,74 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
         .join("src");
     let mut realized: Vec<(&str, ClassFunctions)> = Vec::new();
     for generation in &comp.generations {
-        let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;
-        let mut per_class: ClassFunctions = BTreeMap::new();
-        for unit in &generation.units {
-            for (name, class) in &unit.schema.classes {
-                if let Some(entry) = class_function_status(name, class, &bodies) {
-                    per_class.insert(name.clone(), entry);
-                }
-            }
-        }
-        realized.push((generation.spec.module, per_class));
+        realized.push((
+            generation.spec.module,
+            generation_class_functions(generation, &src)?,
+        ));
     }
     let mut divergent = Vec::new();
     for (i, (module, classes)) in realized.iter().enumerate() {
         for (other_module, other_classes) in realized.iter().skip(i + 1) {
-            for (class, (_, functions)) in classes {
-                let Some((other_declared, other_found)) = other_classes.get(class) else {
-                    continue;
-                };
-                // Only a function BOTH generations declare can diverge. A
-                // generation pair like AM's `v1_4`/`v2_4` is two different
-                // specifications sharing class names, so a function one of
-                // them never declares is not a gap in the other — comparing
-                // against the realized set alone reported nine of those.
-                for f in functions.intersection(other_declared) {
-                    if !other_found.contains(f) {
-                        divergent.push(format!(
-                            "{class}.{f}: realized in {module}, missing in {other_module}"
-                        ));
-                    }
-                }
-            }
+            push_pair_divergences(module, classes, other_module, other_classes, &mut divergent);
         }
     }
     divergent.sort();
     divergent.dedup();
     Ok(divergent)
+}
+
+/// Per class: the functions a generation DECLARES, and those it realizes.
+type ClassFunctions = BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)>;
+
+/// The declared/realized function tables of one generation's classes.
+///
+/// A class with no `*_impl.rs` sibling is absent from the table entirely
+/// (`class_function_status`), so it can never look like a divergence.
+///
+/// # Errors
+/// Returns an error if the generation's module tree cannot be read.
+fn generation_class_functions(
+    generation: &composition::ComposedGeneration,
+    src: &std::path::Path,
+) -> Result<ClassFunctions, Error> {
+    let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;
+    let mut per_class: ClassFunctions = BTreeMap::new();
+    for unit in &generation.units {
+        for (name, class) in &unit.schema.classes {
+            if let Some(entry) = class_function_status(name, class, &bodies) {
+                per_class.insert(name.clone(), entry);
+            }
+        }
+    }
+    Ok(per_class)
+}
+
+/// Appends every function one generation of the pair realizes and the other
+/// does not.
+///
+/// Only a function BOTH generations declare can diverge. A generation pair like
+/// AM's `v1_4`/`v2_4` is two different specifications sharing class names, so a
+/// function one of them never declares is not a gap in the other — comparing
+/// against the realized set alone reported nine of those.
+fn push_pair_divergences(
+    module: &str,
+    classes: &ClassFunctions,
+    other_module: &str,
+    other_classes: &ClassFunctions,
+    out: &mut Vec<String>,
+) {
+    for (class, (_, functions)) in classes {
+        let Some((other_declared, other_found)) = other_classes.get(class) else {
+            continue;
+        };
+        for f in functions.intersection(other_declared) {
+            if !other_found.contains(f) {
+                out.push(format!(
+                    "{class}.{f}: realized in {module}, missing in {other_module}"
+                ));
+            }
+        }
+    }
 }
 
 /// The functions one class DECLARES and those its hand-written sibling
@@ -1843,30 +1897,48 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
         let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;
         for unit in &generation.units {
             for (name, class) in &unit.schema.classes {
-                if class.functions.is_empty() {
-                    continue;
-                }
-                // A class the emitter never gives a Rust type has nowhere to
-                // carry an inherent method, so its BMM functions are realized
-                // by the language rather than by us: `Integer.add` is `i32`'s
-                // `+`, and `impl i32` is not a thing anyone can write. The
-                // authority is the emitter's OWN decision maps, not a name
-                // heuristic — if a class starts emitting, it starts being
-                // measured, with no second list to keep in step.
-                if overrides::primitive(name).is_some() || overrides::is_mapped_class(name) {
-                    continue;
-                }
-                for function in &class.functions {
-                    if !function_is_realized(name, function, bodies_of(name, &bodies), &bodies) {
-                        missing.push(format!("{}/{name}.{function}", generation.spec.module));
-                    }
-                }
+                push_unrealized_functions(
+                    name,
+                    class,
+                    generation.spec.module,
+                    &bodies,
+                    &mut missing,
+                );
             }
         }
     }
     missing.sort();
     missing.dedup();
     Ok(missing)
+}
+
+/// Appends every BMM function of one class that no Rust method in `generation`
+/// realizes, as `<generation>/<CLASS>.<function>`.
+///
+/// A class the emitter never gives a Rust type has nowhere to carry an inherent
+/// method, so its BMM functions are realized by the language rather than by us:
+/// `Integer.add` is `i32`'s `+`, and `impl i32` is not a thing anyone can
+/// write. The authority is the emitter's OWN decision maps, not a name
+/// heuristic — if a class starts emitting, it starts being measured, with no
+/// second list to keep in step.
+fn push_unrealized_functions(
+    name: &str,
+    class: &crate::load::bmm::BmmClass,
+    generation: &str,
+    bodies: &BTreeMap<String, String>,
+    out: &mut Vec<String>,
+) {
+    if class.functions.is_empty()
+        || overrides::primitive(name).is_some()
+        || overrides::is_mapped_class(name)
+    {
+        return;
+    }
+    for function in &class.functions {
+        if !function_is_realized(name, function, bodies_of(name, bodies), bodies) {
+            out.push(format!("{generation}/{name}.{function}"));
+        }
+    }
 }
 
 /// The class's own two candidate bodies: its generated type file and its

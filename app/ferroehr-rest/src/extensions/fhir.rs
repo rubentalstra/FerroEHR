@@ -406,54 +406,77 @@ async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response
 /// No openEHR spec governs this — our own design/extension (the FHIR
 /// connector's configuration surface).
 async fn mapping_crud(state: &AppState, op: &'static str, parts: &RequestParts) -> Response {
-    let h = &parts.headers;
     match op {
-        "fhir_mapping_list" => match state.backend().fhir_mapping_list().await {
-            Ok(items) => negotiate::respond(h, StatusCode::OK, &items),
-            Err(e) => sm_error_outcome(e),
-        },
-        "fhir_mapping_create" => {
-            let body = match negotiate::json_value(h, &parts.body) {
-                Ok(b) => b,
-                Err(e) => return api_error_outcome(&e),
-            };
-            match state.backend().fhir_mapping_create(body).await {
-                Ok(created) => negotiate::respond(h, StatusCode::CREATED, &created),
-                Err(e) => sm_error_outcome(e),
-            }
-        }
-        "fhir_mapping_get" => match mapping_id(parts) {
-            Ok(id) => match state.backend().fhir_mapping_get(id).await {
-                Ok(item) => negotiate::respond(h, StatusCode::OK, &item),
-                Err(e) => sm_error_outcome(e),
-            },
-            Err(e) => api_error_outcome(&e.0),
-        },
-        "fhir_mapping_update" => match mapping_id(parts) {
-            Ok(id) => {
-                let body = match negotiate::json_value(h, &parts.body) {
-                    Ok(b) => b,
-                    Err(e) => return api_error_outcome(&e),
-                };
-                match state.backend().fhir_mapping_update(id, body).await {
-                    Ok(updated) => negotiate::respond(h, StatusCode::OK, &updated),
-                    Err(e) => sm_error_outcome(e),
-                }
-            }
-            Err(e) => api_error_outcome(&e.0),
-        },
-        "fhir_mapping_delete" => match mapping_id(parts) {
-            Ok(id) => match state.backend().fhir_mapping_delete(id).await {
-                Ok(()) => negotiate::empty(StatusCode::NO_CONTENT),
-                Err(e) => sm_error_outcome(e),
-            },
-            Err(e) => api_error_outcome(&e.0),
-        },
+        "fhir_mapping_list" => mapping_list(state, parts).await,
+        "fhir_mapping_create" => mapping_create(state, parts).await,
+        "fhir_mapping_get" => mapping_get(state, parts).await,
+        "fhir_mapping_update" => mapping_update(state, parts).await,
+        "fhir_mapping_delete" => mapping_delete(state, parts).await,
         other => operation_outcome(
             StatusCode::INTERNAL_SERVER_ERROR,
             "exception",
             &format!("unrouted FHIR connector operation: {other}"),
         ),
+    }
+}
+
+/// `GET /admin/fhir_mapping` — every stored template→resource mapping.
+async fn mapping_list(state: &AppState, parts: &RequestParts) -> Response {
+    match state.backend().fhir_mapping_list().await {
+        Ok(items) => negotiate::respond(&parts.headers, StatusCode::OK, &items),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// `POST /admin/fhir_mapping` — register one template→resource mapping.
+async fn mapping_create(state: &AppState, parts: &RequestParts) -> Response {
+    let body = match negotiate::json_value(&parts.headers, &parts.body) {
+        Ok(b) => b,
+        Err(e) => return api_error_outcome(&e),
+    };
+    match state.backend().fhir_mapping_create(body).await {
+        Ok(created) => negotiate::respond(&parts.headers, StatusCode::CREATED, &created),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// `GET /admin/fhir_mapping/{mapping_id}` — read one stored mapping.
+async fn mapping_get(state: &AppState, parts: &RequestParts) -> Response {
+    let id = match mapping_id(parts) {
+        Ok(id) => id,
+        Err(e) => return api_error_outcome(&e.0),
+    };
+    match state.backend().fhir_mapping_get(id).await {
+        Ok(item) => negotiate::respond(&parts.headers, StatusCode::OK, &item),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// `PUT /admin/fhir_mapping/{mapping_id}` — replace one stored mapping.
+async fn mapping_update(state: &AppState, parts: &RequestParts) -> Response {
+    let id = match mapping_id(parts) {
+        Ok(id) => id,
+        Err(e) => return api_error_outcome(&e.0),
+    };
+    let body = match negotiate::json_value(&parts.headers, &parts.body) {
+        Ok(b) => b,
+        Err(e) => return api_error_outcome(&e),
+    };
+    match state.backend().fhir_mapping_update(id, body).await {
+        Ok(updated) => negotiate::respond(&parts.headers, StatusCode::OK, &updated),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// `DELETE /admin/fhir_mapping/{mapping_id}` — drop one stored mapping.
+async fn mapping_delete(state: &AppState, parts: &RequestParts) -> Response {
+    let id = match mapping_id(parts) {
+        Ok(id) => id,
+        Err(e) => return api_error_outcome(&e.0),
+    };
+    match state.backend().fhir_mapping_delete(id).await {
+        Ok(()) => negotiate::empty(StatusCode::NO_CONTENT),
+        Err(e) => sm_error_outcome(e),
     }
 }
 

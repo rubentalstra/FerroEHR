@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The `openehr-*` spec crates step to `0.0.43`. The change is internal
+  structure only: over-complex functions in the ADL engine, the Simplified
+  Formats web-template builder and the ISO 8601 duration parser were split
+  into named, documented helpers. The wire behaviour, the generated output and
+  every gate are unchanged, and nothing an API consumer calls moved.
+
 ## [4.0.8] - 2026-08-27
 
 ### Changed

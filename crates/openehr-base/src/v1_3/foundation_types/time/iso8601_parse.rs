@@ -736,48 +736,81 @@ pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
         seconds: 0,
         fractional_seconds: 0.0,
     };
-    let mut in_time = false;
-    let mut seen_any = false;
-    // The slot of the last designator consumed, in the order the production
-    // fixes; `-1` because `Y` is slot 0.
-    let mut last_slot: i8 = -1;
-    let mut seen_time_component = false;
+    let mut scan = DurationScan::default();
     loop {
         match it.peek() {
             None => break,
             Some('T') => {
-                if in_time {
+                if scan.in_time {
                     return None;
                 }
-                in_time = true;
+                scan.in_time = true;
                 it.next();
             }
             Some(c) if c.is_ascii_digit() => {
-                let (intval, fracval, has_frac) = read_duration_number(&mut it)?;
-                let designator = it.next()?;
-                let slot = apply_duration_component(&mut d, in_time, designator, intval, fracval)?;
-                if slot <= last_slot {
-                    return None;
-                }
-                last_slot = slot;
-                if in_time {
-                    seen_time_component = true;
-                }
-                if has_frac && !(in_time && designator == 'S') {
-                    return None; // only the seconds field carries a fraction
-                }
-                seen_any = true;
+                read_duration_component(&mut it, &mut d, &mut scan)?;
             }
             _ => return None,
         }
     }
-    if !seen_any {
+    if !scan.seen_any {
         return None; // `P`/`PT` with no components is not a duration
     }
-    if in_time && !seen_time_component {
+    if scan.in_time && !scan.seen_time_component {
         return None; // `P1YT` — the production has no bare trailing `T`
     }
     Some(d)
+}
+
+/// The scan state threaded through a duration's component loop.
+struct DurationScan {
+    /// Whether the `T` designator separating date from time was consumed.
+    in_time: bool,
+    /// Whether any component at all was read.
+    seen_any: bool,
+    /// Whether a component followed the `T` separator.
+    seen_time_component: bool,
+    /// The slot of the last designator consumed, in the order the production
+    /// fixes; `-1` because `Y` is slot 0.
+    last_slot: i8,
+}
+
+impl Default for DurationScan {
+    fn default() -> Self {
+        Self {
+            in_time: false,
+            seen_any: false,
+            seen_time_component: false,
+            last_slot: -1,
+        }
+    }
+}
+
+/// Reads one `<number><designator>` duration component and folds it into `d`.
+///
+/// `None` on any violation of the production: a designator out of the fixed
+/// slot order (which also rejects a repeated one), or a fraction on any field
+/// but the seconds.
+fn read_duration_component(
+    it: &mut std::iter::Peekable<std::str::Chars<'_>>,
+    d: &mut ParsedDuration,
+    scan: &mut DurationScan,
+) -> Option<()> {
+    let (intval, fracval, has_frac) = read_duration_number(it)?;
+    let designator = it.next()?;
+    let slot = apply_duration_component(d, scan.in_time, designator, intval, fracval)?;
+    if slot <= scan.last_slot {
+        return None;
+    }
+    scan.last_slot = slot;
+    if scan.in_time {
+        scan.seen_time_component = true;
+    }
+    if has_frac && !(scan.in_time && designator == 'S') {
+        return None; // only the seconds field carries a fraction
+    }
+    scan.seen_any = true;
+    Some(())
 }
 
 impl ParsedDuration {

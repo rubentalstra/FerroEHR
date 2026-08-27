@@ -59,6 +59,7 @@ use openehr_its::xml::runtime::Namespace;
 use openehr_its::xml::to_canonical_xml_ns;
 use openehr_rm::prelude::{Composition, Folder};
 use openehr_rm::v1_2::model;
+use quick_xml::events::{BytesEnd, BytesStart, Event};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -256,62 +257,107 @@ fn read_types(bundle: &Bundle) -> BTreeMap<String, XsdType> {
 /// Only a TOP-LEVEL `complexType` (depth 1) names a type; nested anonymous
 /// ones contribute their members to the enclosing named type.
 fn read_types_from(xml: &str, types: &mut BTreeMap<String, XsdType>) {
-    use quick_xml::events::Event;
     let mut reader = quick_xml::Reader::from_str(xml);
     let mut current: Option<String> = None;
     let mut depth = 0usize;
     loop {
         let ev = reader.read_event().expect("well-formed vendored XSD");
-        let (element, empty) = match &ev {
-            Event::Start(e) => (e, false),
-            Event::Empty(e) => (e, true),
-            Event::End(e) => {
-                if local_name(e.name().as_ref()) == b"complexType" {
-                    depth = depth.saturating_sub(1);
-                    if depth == 0 {
-                        current = None;
-                    }
-                }
-                continue;
-            }
+        match &ev {
+            Event::Start(e) => record_element(e, false, &mut current, &mut depth, types),
+            Event::Empty(e) => record_element(e, true, &mut current, &mut depth, types),
+            Event::End(e) => close_element(e, &mut current, &mut depth),
             Event::Eof => return,
-            _ => continue,
-        };
-        let local = local_name(element.name().as_ref()).to_vec();
-        let attr = |k: &str| {
-            element
-                .attributes()
-                .flatten()
-                .find(|a| local_name(a.key.as_ref()) == k.as_bytes())
-                .map(|a| String::from_utf8_lossy(a.value.as_ref()).into_owned())
-        };
-        match local.as_slice() {
-            b"complexType" => {
-                if !empty {
-                    depth += 1;
-                }
-                if depth == 1 {
-                    current = attr("name");
-                    if let Some(n) = &current {
-                        types.entry(n.clone()).or_default();
-                    }
-                }
-            }
-            b"extension" | b"restriction" => {
-                if let (Some(n), Some(b)) = (current.as_ref(), attr("base")) {
-                    let entry = types.entry(n.clone()).or_default();
-                    if entry.base.is_none() {
-                        entry.base = Some(strip_prefix(&b));
-                    }
-                }
-            }
-            b"element" | b"attribute" => {
-                if let (Some(n), Some(m)) = (current.as_ref(), attr("name")) {
-                    types.entry(n.clone()).or_default().members.insert(m);
-                }
-            }
             _ => {}
         }
+    }
+}
+
+/// Reads one attribute of `element` by local name, prefix-insensitively.
+fn xsd_attr(element: &BytesStart<'_>, key: &str) -> Option<String> {
+    element
+        .attributes()
+        .flatten()
+        .find(|a| local_name(a.key.as_ref()) == key.as_bytes())
+        .map(|a| String::from_utf8_lossy(a.value.as_ref()).into_owned())
+}
+
+/// Leaves the `complexType` the reader is closing, clearing the current type
+/// name once the outermost one ends.
+fn close_element(element: &BytesEnd<'_>, current: &mut Option<String>, depth: &mut usize) {
+    if local_name(element.name().as_ref()) != b"complexType" {
+        return;
+    }
+    *depth = depth.saturating_sub(1);
+    if *depth == 0 {
+        *current = None;
+    }
+}
+
+/// Folds one opening (or self-closing) XSD element into `types`.
+///
+/// `empty` distinguishes `<xs:complexType/>` from `<xs:complexType>`, which is
+/// what keeps the nesting depth honest.
+fn record_element(
+    element: &BytesStart<'_>,
+    empty: bool,
+    current: &mut Option<String>,
+    depth: &mut usize,
+    types: &mut BTreeMap<String, XsdType>,
+) {
+    let local = local_name(element.name().as_ref()).to_vec();
+    match local.as_slice() {
+        b"complexType" => open_complex_type(element, empty, current, depth, types),
+        b"extension" | b"restriction" => record_base(element, current.as_deref(), types),
+        b"element" | b"attribute" => record_member(element, current.as_deref(), types),
+        _ => {}
+    }
+}
+
+/// Enters an `xs:complexType`, naming it only at depth 1 — a nested anonymous
+/// one contributes its members to the enclosing named type instead.
+fn open_complex_type(
+    element: &BytesStart<'_>,
+    empty: bool,
+    current: &mut Option<String>,
+    depth: &mut usize,
+    types: &mut BTreeMap<String, XsdType>,
+) {
+    if !empty {
+        *depth += 1;
+    }
+    if *depth != 1 {
+        return;
+    }
+    *current = xsd_attr(element, "name");
+    if let Some(n) = current {
+        types.entry(n.clone()).or_default();
+    }
+}
+
+/// Records the current type's `xs:extension`/`xs:restriction` `@base`. The
+/// first one wins: an inner derivation never overwrites the outer type's base.
+fn record_base(
+    element: &BytesStart<'_>,
+    current: Option<&str>,
+    types: &mut BTreeMap<String, XsdType>,
+) {
+    let (Some(n), Some(b)) = (current, xsd_attr(element, "base")) else {
+        return;
+    };
+    let entry = types.entry(n.to_owned()).or_default();
+    if entry.base.is_none() {
+        entry.base = Some(strip_prefix(&b));
+    }
+}
+
+/// Records one `xs:element`/`xs:attribute` name as a member of the current type.
+fn record_member(
+    element: &BytesStart<'_>,
+    current: Option<&str>,
+    types: &mut BTreeMap<String, XsdType>,
+) {
+    if let (Some(n), Some(m)) = (current, xsd_attr(element, "name")) {
+        types.entry(n.to_owned()).or_default().members.insert(m);
     }
 }
 

@@ -15,10 +15,25 @@ use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_am::v2_4::beom::core::assertion::Assertion;
+use openehr_base::prelude::MultiplicityInterval;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::parse::{Dialect, PResult, Parser};
 use openehr_lang::v1_1::lexer::Token;
+
+/// The variable part of an `ARCHETYPE_SLOT`: everything the source may state
+/// after the reference-model type and the node id.
+#[derive(Default)]
+struct SlotBody {
+    /// The ADL2-only `closed` marker (`ARCHETYPE_SLOT.is_closed`).
+    is_closed: bool,
+    /// A restated `occurrences` interval.
+    occurrences: Option<MultiplicityInterval>,
+    /// The `include` assertions of the `matches` block.
+    includes: Vec<Assertion>,
+    /// The `exclude` assertions of the `matches` block.
+    excludes: Vec<Assertion>,
+}
 
 // ── slots, archetype roots, internal references ───────────────────────────
 impl Parser<'_> {
@@ -185,62 +200,73 @@ impl Parser<'_> {
         let rm_type = self.parse_rm_type_id()?;
         let node_id = self.parse_slot_node_id()?;
 
-        let mut is_closed = false;
-        let mut occurrences = None;
-        let mut includes = Vec::new();
-        let mut excludes = Vec::new();
-
-        if matches!(self.peek(), Some(Token::SymClosed)) {
-            // ADL2-only: the `closed` slot marker (`ADL2/master04.3` §Archetype
-            // Slots; `ARCHETYPE_SLOT.is_closed`, redefinition rule VDSSC). The 1.4
-            // cADL keyword set (master05 §Keywords L51-52) has `allow_archetype`
-            // with `include`/`exclude` only.
-            if self.dialect == Dialect::Adl14 {
-                return self
-                    .adl2_only(SyntaxErrorCode::Sccog, "the archetype-slot 'closed' marker");
-            }
-            self.pos += 1;
-            is_closed = true;
+        let body = if matches!(self.peek(), Some(Token::SymClosed)) {
+            self.parse_closed_slot_marker()?
         } else {
-            if matches!(self.peek(), Some(Token::SymOccurrences)) {
-                occurrences = Some(self.parse_occurrences()?);
-            }
-            if self.at_negated_matches() {
-                return self.negated_matches_reject(SyntaxErrorCode::Sccog);
-            }
-            if self.eat(|t| matches!(t, Token::SymMatches)) {
-                self.expect(
-                    |t| matches!(t, Token::LCurly),
-                    SyntaxErrorCode::Sccog,
-                    "expecting '{' after 'matches' in a slot",
-                )?;
-                if self.eat(|t| matches!(t, Token::SymInclude)) {
-                    includes.extend(self.parse_slot_assertions()?);
-                }
-                if self.eat(|t| matches!(t, Token::SymExclude)) {
-                    excludes.extend(self.parse_slot_assertions()?);
-                }
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Sccog,
-                    "expecting '}' closing the slot body",
-                )?;
-            }
-        }
+            self.parse_open_slot_body()?
+        };
 
         Ok(CObject::ArchetypeSlot(ArchetypeSlot {
             parent: None,
             soc_parent: None,
             rm_type_name: rm_type,
-            occurrences,
+            occurrences: body.occurrences,
             node_id,
             alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
-            includes: openehr_base::containers::present(includes),
-            excludes: openehr_base::containers::present(excludes),
-            is_closed,
+            includes: openehr_base::containers::present(body.includes),
+            excludes: openehr_base::containers::present(body.excludes),
+            is_closed: body.is_closed,
         }))
+    }
+
+    /// Consumes the ADL2-only `closed` slot marker.
+    ///
+    /// `ADL2/master04.3` §Archetype Slots (`ARCHETYPE_SLOT.is_closed`,
+    /// redefinition rule VDSSC). The 1.4 cADL keyword set (master05 §Keywords
+    /// L51-52) has `allow_archetype` with `include`/`exclude` only, so the
+    /// marker is refused in that dialect.
+    fn parse_closed_slot_marker(&mut self) -> PResult<SlotBody> {
+        if self.dialect == Dialect::Adl14 {
+            return self.adl2_only(SyntaxErrorCode::Sccog, "the archetype-slot 'closed' marker");
+        }
+        self.pos += 1;
+        Ok(SlotBody {
+            is_closed: true,
+            ..Default::default()
+        })
+    }
+
+    /// Parses an open slot's optional occurrences and its
+    /// `matches { include … exclude … }` assertion block.
+    fn parse_open_slot_body(&mut self) -> PResult<SlotBody> {
+        let mut body = SlotBody::default();
+        if matches!(self.peek(), Some(Token::SymOccurrences)) {
+            body.occurrences = Some(self.parse_occurrences()?);
+        }
+        if self.at_negated_matches() {
+            return self.negated_matches_reject(SyntaxErrorCode::Sccog);
+        }
+        if self.eat(|t| matches!(t, Token::SymMatches)) {
+            self.expect(
+                |t| matches!(t, Token::LCurly),
+                SyntaxErrorCode::Sccog,
+                "expecting '{' after 'matches' in a slot",
+            )?;
+            if self.eat(|t| matches!(t, Token::SymInclude)) {
+                body.includes.extend(self.parse_slot_assertions()?);
+            }
+            if self.eat(|t| matches!(t, Token::SymExclude)) {
+                body.excludes.extend(self.parse_slot_assertions()?);
+            }
+            self.expect(
+                |t| matches!(t, Token::RCurly),
+                SyntaxErrorCode::Sccog,
+                "expecting '}' closing the slot body",
+            )?;
+        }
+        Ok(body)
     }
 
     /// Parse the assertion block after a slot `include`/`exclude` keyword

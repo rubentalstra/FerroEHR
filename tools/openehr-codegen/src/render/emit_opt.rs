@@ -489,56 +489,23 @@ impl<'a> OptModel<'a> {
     /// One element's generated field: its declared Rust type and its XML view.
     ///
     /// A single-valued reference to a generated enum is boxed — those slots
-    /// (`EXPR_ITEM`, `C_PRIMITIVE`, `STATE`) are recursive. A mandatory scalar
-    /// bool absent on the wire (openEHR `Interval` boundedness flags default
-    /// false) falls back to `false`, and some XSD-mandatory fields are omitted
-    /// by real-world OPT exports (Ocean/tool laxity), so they are defaulted
-    /// leniently — a wire adapter must ingest imperfect real OPTs.
+    /// (`EXPR_ITEM`, `C_PRIMITIVE`, `STATE`) are recursive. The container
+    /// wrapping is [`Self::declared_type`]'s and the wire fallback is
+    /// [`Self::scalar_default`]'s; an `xs:anyType` hash takes the separate
+    /// [`Self::hash_field`] shape.
     fn element_field(&self, e: &crate::load::xsd::XsdElem) -> OptField {
         let res = self.resolve(&e.type_name);
         let rust_name = naming::field_ident(&e.name);
         let (base, target) = Self::base_decl(&res, &e.type_name);
 
         if matches!(res, Resolved::Hash) {
-            let decl_type = if e.optional {
-                format!("Option<{base}>")
-            } else {
-                base
-            };
-            return OptField {
-                xml: XmlField {
-                    wire_name: e.name.clone(),
-                    rust_name,
-                    optional: e.optional,
-                    multiple: false,
-                    target: "OrderedDict".to_string(),
-                    map_value: Some("String".to_string()),
-                    default: None,
-                    nonempty: false,
-                },
-                decl_type,
-            };
+            return Self::hash_field(e, rust_name, base);
         }
 
         let inner = if !e.multiple && matches!(res, Resolved::Gen(_, true)) {
             format!("Box<{base}>")
         } else {
             base
-        };
-        let decl_type = if e.multiple {
-            format!("Vec<{inner}>")
-        } else if e.optional {
-            format!("Option<{inner}>")
-        } else {
-            inner
-        };
-        let scalar = !e.optional && !e.multiple;
-        let default = if scalar && matches!(res, Resolved::Primitive("bool")) {
-            Some("false".to_string())
-        } else if scalar {
-            lenient_default(&e.name, &e.type_name, self.target.prelude)
-        } else {
-            None
         };
         OptField {
             xml: XmlField {
@@ -548,11 +515,63 @@ impl<'a> OptModel<'a> {
                 multiple: e.multiple,
                 target,
                 map_value: None,
-                default,
+                default: self.scalar_default(e, &res),
+                nonempty: false,
+            },
+            decl_type: Self::declared_type(e, inner),
+        }
+    }
+
+    /// The generated field for an `xs:anyType` hash element: a string map,
+    /// never boxed and never defaulted.
+    fn hash_field(e: &crate::load::xsd::XsdElem, rust_name: String, base: String) -> OptField {
+        let decl_type = if e.optional {
+            format!("Option<{base}>")
+        } else {
+            base
+        };
+        OptField {
+            xml: XmlField {
+                wire_name: e.name.clone(),
+                rust_name,
+                optional: e.optional,
+                multiple: false,
+                target: "OrderedDict".to_string(),
+                map_value: Some("String".to_string()),
+                default: None,
                 nonempty: false,
             },
             decl_type,
         }
+    }
+
+    /// Wraps an element's inner type in the container its XSD multiplicity and
+    /// optionality call for.
+    fn declared_type(e: &crate::load::xsd::XsdElem, inner: String) -> String {
+        if e.multiple {
+            format!("Vec<{inner}>")
+        } else if e.optional {
+            format!("Option<{inner}>")
+        } else {
+            inner
+        }
+    }
+
+    /// The wire default for a mandatory scalar element, if it has one.
+    ///
+    /// An absent mandatory bool falls back to `false` (openEHR `Interval`
+    /// boundedness flags), and some XSD-mandatory fields are omitted by
+    /// real-world OPT exports (Ocean/tool laxity), so those are defaulted
+    /// leniently — a wire adapter must ingest imperfect real OPTs. A
+    /// multi-valued or optional element never defaults.
+    fn scalar_default(&self, e: &crate::load::xsd::XsdElem, res: &Resolved) -> Option<String> {
+        if e.optional || e.multiple {
+            return None;
+        }
+        if matches!(res, Resolved::Primitive("bool")) {
+            return Some("false".to_string());
+        }
+        lenient_default(&e.name, &e.type_name, self.target.prelude)
     }
 
     /// The closure's `xs:enumeration`-faceted simple types, name-ordered.

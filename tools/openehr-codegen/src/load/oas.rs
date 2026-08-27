@@ -102,22 +102,30 @@ impl Oas {
         keep: &std::collections::BTreeSet<String>,
     ) -> std::collections::BTreeSet<String> {
         let mut wanted = keep.clone();
-        loop {
-            let mut added = false;
-            for (_, o) in bundles {
-                for (name, schema) in o.schemas() {
-                    if !wanted.contains(&name) {
-                        continue;
-                    }
-                    for base in Self::allof_bases(schema) {
-                        added |= wanted.insert(base);
-                    }
+        while Self::add_allof_bases(bundles, &mut wanted) {}
+        wanted
+    }
+
+    /// Adds every `allOf` base of the currently-wanted schemas across all
+    /// bundles — one round of [`Self::base_closure`]'s fixpoint.
+    ///
+    /// Returns whether `wanted` grew; `false` is the fixpoint.
+    fn add_allof_bases(
+        bundles: &[(&str, Oas)],
+        wanted: &mut std::collections::BTreeSet<String>,
+    ) -> bool {
+        let mut added = false;
+        for (_, o) in bundles {
+            for (name, schema) in o.schemas() {
+                if !wanted.contains(&name) {
+                    continue;
+                }
+                for base in Self::allof_bases(schema) {
+                    added |= wanted.insert(base);
                 }
             }
-            if !added {
-                return wanted;
-            }
         }
+        added
     }
 
     /// The component-schema names a schema's `allOf` members `$ref`.

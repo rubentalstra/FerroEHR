@@ -24,6 +24,7 @@ use std::time::Duration;
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
 use ferroehr::config::management::EndpointLevels;
+use ferroehr::config::management::ManagementConfig;
 use ferroehr::system_log::config::AuditConfig;
 use ferroehr::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
 use ferroehr::telemetry::build_info::BuildInfo;
@@ -285,6 +286,131 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
 /// ingress sits in front", which is the ordinary deployment, so authentication
 /// over plaintext on a routable bind warns loudly and proceeds — the operator
 /// owns the edge.
+/// Assembles the platform service from the resolved config tree.
+///
+/// Every optional collaborator the service carries is attached here: the audit
+/// sender, the local Audit Record Repository read side (the ITI-81 retrieval,
+/// wired only when auditing AND the store are on), terminology, the subject
+/// proxy, and the multimedia store.
+///
+/// # Errors
+/// Any collaborator whose configuration is enabled but unbuildable — a slim
+/// build missing its cargo feature, or an unusable external dependency.
+fn assemble_service(
+    config: &ferroehr::config::FerroEhrConfig,
+    pool: &PgPool,
+    audit_sender: Option<AuditSender>,
+    outbox_enabled: bool,
+    signer: Arc<Signer>,
+) -> anyhow::Result<FerroEhrService> {
+    let audit_enabled = audit_sender.is_some();
+    let mut service = FerroEhrService::new(pool.clone())
+        .with_spec_profile(config.spec_profile)
+        .with_system_id(config.server.system_id.clone())
+        .with_signer(signer)
+        .with_outbox_enabled(outbox_enabled)
+        .with_query_config(&config.query);
+    if let Some(sender) = audit_sender {
+        service = service.with_audit(sender);
+    }
+    if audit_enabled && config.audit.store.enabled {
+        service =
+            service.with_audit_store(ferroehr::system_log::store::AuditStore::new(pool.clone()));
+    }
+
+    service = attach_terminology(service, config)?;
+    service = attach_subject_proxy(service, config)?;
+    attach_multimedia(service, config)
+}
+
+/// Wires authorization, which is active only when authentication is enabled:
+/// the RBAC gate plus the ABAC engine over the DB-backed attribute resolvers.
+///
+/// `None` when authentication is off, or when neither authorization layer is
+/// configured.
+///
+/// # Errors
+/// A misconfigured ABAC block (enabled but unbuildable) aborts BOOT —
+/// configuration that promises fine-grained authorization must never degrade
+/// to authz-off.
+fn wire_authz(
+    config: &ferroehr::config::FerroEhrConfig,
+    pool: &PgPool,
+    service: &Arc<FerroEhrService>,
+) -> anyhow::Result<Option<Arc<AuthzHandle>>> {
+    if !config.auth.enabled {
+        return Ok(None);
+    }
+    let authz = build_authz(
+        &config.authz,
+        &config.server.base_path,
+        authz_resolvers(pool.clone(), Arc::clone(service)),
+    )?;
+    if let Some(handle) = &authz {
+        tracing::info!(
+            rbac = handle.rbac_active(),
+            abac = handle.abac_active(),
+            "authorization enabled"
+        );
+    }
+    Ok(authz)
+}
+
+/// Logs the resolved runtime posture, one line per subsystem, immediately
+/// before the listener starts.
+///
+/// Each line carries that subsystem's own facts, so the listener line stays
+/// about the listener: authorization already logged its own line when it was
+/// built, and auditing and the management surface get theirs here.
+fn log_resolved_posture(
+    app_config: &AppConfig,
+    audit_enabled: bool,
+    audit: &AuditConfig,
+    management: &ManagementConfig,
+) {
+    tracing::info!(
+        mechanisms = %app_config.auth.advertised_mechanisms(),
+        enabled = app_config.auth.enabled,
+        "authentication configured"
+    );
+    if audit_enabled {
+        tracing::info!(
+            local_repository = audit.store.enabled,
+            syslog = audit.syslog.enabled,
+            fhir_feed = audit.fhir_feed.enabled,
+            queue_capacity = audit.queue_capacity,
+            fail_mode = ?audit.fail_mode,
+            resolve_subject = audit.resolve_subject,
+            "IHE ATNA audit enabled"
+        );
+    } else {
+        tracing::info!("IHE ATNA audit disabled");
+    }
+    if management.enabled {
+        tracing::info!(
+            base_path = %management.base_path,
+            listener = match management.port {
+                Some(port) => format!("own port {port}"),
+                None => "shared with the API".to_owned(),
+            },
+            mounted = %mounted_management_endpoints(management.endpoints),
+            "management surface enabled"
+        );
+    }
+    tracing::info!(
+        enabled = app_config.server.rate_limit.enabled,
+        principal_per_second = app_config.server.rate_limit.principal_per_second,
+        address_per_second = app_config.server.rate_limit.address_per_second,
+        "request-rate limiting configured"
+    );
+    tracing::info!(
+        bind = %app_config.server.bind,
+        base_path = %app_config.server.base_path,
+        tls = app_config.server.tls.enabled,
+        "starting ferroehr"
+    );
+}
+
 fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
     if config.db.is_dev_default() {
         tracing::warn!(
@@ -450,7 +576,9 @@ fn attach_multimedia(
 /// Boot the server: config, telemetry, pool, migrations, audit, health, serve.
 #[expect(
     clippy::too_many_lines,
-    reason = "linear boot sequence; splitting it would obscure order"
+    reason = "the remaining body is one linear boot sequence of subsystem \
+              startups, each closed over by the next; splitting it further \
+              would obscure the order that makes it correct"
 )]
 async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> anyhow::Result<()> {
     // One load + one aggregated validate (all errors at once), then distribute.
@@ -534,26 +662,13 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     tracing::info!(system_id = %config.server.system_id, "openEHR system identifier");
 
     let audit_enabled = audit_sender.is_some();
-    let mut service = FerroEhrService::new(pool.clone())
-        .with_spec_profile(config.spec_profile)
-        .with_system_id(config.server.system_id.clone())
-        .with_signer(signer)
-        .with_outbox_enabled(outbox_enabled)
-        .with_query_config(&config.query);
-    if let Some(sender) = audit_sender {
-        service = service.with_audit(sender);
-    }
-    // The local Audit Record Repository read side (the ITI-81 retrieval):
-    // wired whenever auditing + the store are on.
-    if audit_enabled && config.audit.store.enabled {
-        service =
-            service.with_audit_store(ferroehr::system_log::store::AuditStore::new(pool.clone()));
-    }
-
-    service = attach_terminology(service, &config)?;
-    service = attach_subject_proxy(service, &config)?;
-    service = attach_multimedia(service, &config)?;
-    let service = Arc::new(service);
+    let service = Arc::new(assemble_service(
+        &config,
+        &pool,
+        audit_sender,
+        outbox_enabled,
+        signer,
+    )?);
 
     // FHIR outbound emitter (off by default; carries PHI). Gated on `fhir`:
     // the outbound module exists only under ferroehr's `fhir` feature (which
@@ -596,26 +711,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         env_snapshot,
     };
 
-    // Authorization — only wired when authentication is enabled: the RBAC gate
-    // plus the ABAC engine + DB-backed attribute resolvers. A misconfigured
-    // ABAC block (enabled but unbuildable) aborts BOOT — configuration that
-    // promises fine-grained authorization must never degrade to authz-off.
-    let authz = if config.auth.enabled {
-        build_authz(
-            &config.authz,
-            &config.server.base_path,
-            authz_resolvers(pool.clone(), Arc::clone(&service)),
-        )?
-    } else {
-        None
-    };
-    if let Some(handle) = &authz {
-        tracing::info!(
-            rbac = handle.rbac_active(),
-            abac = handle.abac_active(),
-            "authorization enabled"
-        );
-    }
+    let authz = wire_authz(&config, &pool, &service)?;
 
     // Assemble the REST adapter's runtime config view from the tree.
     let app_config = AppConfig {
@@ -636,50 +732,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         .auth
         .require_mechanism()
         .map_err(|e| anyhow::anyhow!("{e}"))?;
-    // One line per subsystem, each carrying that subsystem's own facts. The
-    // listener line stays about the listener: `rbac` already has its own line
-    // above, and auditing and the management surface have theirs below, so
-    // repeating a bare `true` for each of them said less than nothing.
-    tracing::info!(
-        mechanisms = %app_config.auth.advertised_mechanisms(),
-        enabled = app_config.auth.enabled,
-        "authentication configured"
-    );
-    if audit_enabled {
-        tracing::info!(
-            local_repository = config.audit.store.enabled,
-            syslog = config.audit.syslog.enabled,
-            fhir_feed = config.audit.fhir_feed.enabled,
-            queue_capacity = config.audit.queue_capacity,
-            fail_mode = ?config.audit.fail_mode,
-            resolve_subject = config.audit.resolve_subject,
-            "IHE ATNA audit enabled"
-        );
-    } else {
-        tracing::info!("IHE ATNA audit disabled");
-    }
-    if observability.management.enabled {
-        tracing::info!(
-            base_path = %observability.management.base_path,
-            listener = match observability.management.port {
-                Some(port) => format!("own port {port}"),
-                None => "shared with the API".to_owned(),
-            },
-            mounted = %mounted_management_endpoints(observability.management.endpoints),
-            "management surface enabled"
-        );
-    }
-    tracing::info!(
-        enabled = app_config.server.rate_limit.enabled,
-        principal_per_second = app_config.server.rate_limit.principal_per_second,
-        address_per_second = app_config.server.rate_limit.address_per_second,
-        "request-rate limiting configured"
-    );
-    tracing::info!(
-        bind = %app_config.server.bind,
-        base_path = %app_config.server.base_path,
-        tls = app_config.server.tls.enabled,
-        "starting ferroehr"
+    log_resolved_posture(
+        &app_config,
+        audit_enabled,
+        &config.audit,
+        &observability.management,
     );
     ferroehr_rest::serve_full(app_config, service, authz, observability)
         .await

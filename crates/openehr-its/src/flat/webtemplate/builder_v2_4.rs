@@ -632,38 +632,50 @@ fn push_tuple_units(
             continue;
         }
         for row in tuple.tuples.iter().flatten() {
-            let mut unit_value = None;
-            let mut validation = WebTemplateValidation::default();
-            for (i, name) in names.iter().enumerate() {
-                match (*name, row.members.get(i)) {
-                    ("units", Some(CPrimitiveObject::CString(cs))) => {
-                        unit_value = cs
-                            .constraint
-                            .iter()
-                            .flatten()
-                            .find(|s| delimited_regex(s).is_none());
-                    }
-                    ("magnitude", Some(CPrimitiveObject::CReal(cr))) => {
-                        validation.range =
-                            cr.constraint.iter().flatten().next().and_then(real_range);
-                    }
-                    ("precision", Some(CPrimitiveObject::CInteger(ci))) => {
-                        validation.precision =
-                            ci.constraint.iter().flatten().next().and_then(int_range);
-                    }
-                    _ => {}
-                }
+            let Some((unit, validation)) = tuple_row_unit(row, &names) else {
+                continue;
+            };
+            let mut cv = WebTemplateCodedValue::new(unit, Some(unit.clone()));
+            cv.localized_labels = ctx.localized(term, unit);
+            if !validation.is_empty() {
+                cv.validation = Some(validation);
             }
-            if let Some(unit) = unit_value {
-                let mut cv = WebTemplateCodedValue::new(unit, Some(unit.clone()));
-                cv.localized_labels = ctx.localized(term, unit);
-                if !validation.is_empty() {
-                    cv.validation = Some(validation.clone());
-                }
-                units.list.push(cv);
-            }
+            units.list.push(cv);
         }
     }
+}
+
+/// Reads one `C_ATTRIBUTE_TUPLE` row as a unit plus the validation its
+/// co-varying members carry.
+///
+/// `names` positions the row's members by RM attribute name. `None` when the
+/// row's `units` member constrains no plain string (a delimited regex is a
+/// pattern, not a unit).
+fn tuple_row_unit<'a>(
+    row: &'a CPrimitiveTuple,
+    names: &[&str],
+) -> Option<(&'a String, WebTemplateValidation)> {
+    let mut unit_value = None;
+    let mut validation = WebTemplateValidation::default();
+    for (i, name) in names.iter().enumerate() {
+        match (*name, row.members.get(i)) {
+            ("units", Some(CPrimitiveObject::CString(cs))) => {
+                unit_value = cs
+                    .constraint
+                    .iter()
+                    .flatten()
+                    .find(|s| delimited_regex(s).is_none());
+            }
+            ("magnitude", Some(CPrimitiveObject::CReal(cr))) => {
+                validation.range = cr.constraint.iter().flatten().next().and_then(real_range);
+            }
+            ("precision", Some(CPrimitiveObject::CInteger(ci))) => {
+                validation.precision = ci.constraint.iter().flatten().next().and_then(int_range);
+            }
+            _ => {}
+        }
+    }
+    unit_value.map(|unit| (unit, validation))
 }
 
 fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<WebTemplateInput> {
