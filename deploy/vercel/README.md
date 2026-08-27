@@ -4,6 +4,18 @@ The sandbox is Vercel (container runtime) + Neon (PostgreSQL 18). It runs
 the latest published release image with a demo posture baked on top, and it
 resets to known demo data every night.
 
+The Neon↔Vercel integration is LOAD-BEARING for exactly one thing: its
+injected `DATABASE_URL`/`DATABASE_URL_UNPOOLED` is the server's DSN (the
+config aliases map it to `db.url`, unpooled preferred — #2716). No hand-set
+`FERROEHR__DB__URL` exists on the project, so the integration must stay
+connected — established the hard way on 2026-08-27, when disconnecting it
+was almost the "fix" for its OTHER half: the per-deployment branch
+provisioning, which is pure overhead here (nothing reads the per-deploy
+branch) and has a measured record of timing out and killing release-day
+deploys (#2846). If that step misbehaves again, disable deployment
+branching in the integration's settings — never disconnect the integration
+without first hand-setting the DSN.
+
 ## The delivery pipeline — one owner, explicit ordering
 
 Vercel never builds on its own: git-triggered deployments are OFF
