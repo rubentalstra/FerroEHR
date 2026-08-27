@@ -136,7 +136,7 @@ jobs:
       # hadolint over each Dockerfile. Configuration lives in `.hadolint.yaml`,
       # where any rule we deliberately violate is named with its reason — never
       # a blanket disable (OWASP Docker Security Cheat Sheet rule 9).
-      - uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
+      - uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
         with:
           dockerfile: ${{ matrix.dockerfile }}
           config: .hadolint.yaml
@@ -368,7 +368,7 @@ jobs:
         if: matrix.platform == 'amd64'
         run: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
 
-      - uses: taiki-e/install-action@288e746965032cfcc232e09af2daf5f23c14d780 # v2.86.1
+      - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         if: matrix.platform == 'amd64'
         with:
           tool: cargo-leptos@0.3.7,wasm-bindgen@0.2.126
