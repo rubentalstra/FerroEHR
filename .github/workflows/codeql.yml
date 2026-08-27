@@ -17,12 +17,12 @@
 # Docs: https://docs.github.com/en/code-security/code-scanning
 name: CodeQL
 
-# Push/PR runs are path-filtered to what the two analyzers can actually read.
-# `.github/workflows/**` widens the old `codeql.yml`-only entry now that the
-# workflows are themselves analysed; the cost is that a workflow-only change
-# also re-runs the rust analyzer, which build-mode "none" keeps cheap. The
-# weekly scheduled run has no filter, so full-tree coverage is never lost.
-# (CodeQL is not a required status check, so a skipped run cannot block a merge.)
+# Push/PR runs are path-filtered to what the two analyzers can actually read,
+# and each matrix leg is then scoped by the in-workflow `changes` gate (#2798,
+# the estate's standard pattern): the rust leg runs when Rust inputs changed,
+# the actions leg when workflow/action files changed, and the weekly scheduled
+# run analyses both unconditionally, so full-tree coverage is never lost.
+# (CodeQL is not a required status check, so a skipped leg cannot block a merge.)
 on:
   push:
     branches: [develop]
@@ -52,8 +52,59 @@ concurrency:
 permissions: {}
 
 jobs:
+  # The per-leg scope (#2798): the workflow-level paths filter decides whether
+  # CodeQL runs AT ALL; this job decides WHICH leg has anything to read. On
+  # schedule (no diff to inspect) and on an unresolvable base it answers
+  # true/true — a gate that cannot decide runs everything, never nothing.
+  changes:
+    name: change detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      languages: ${{ steps.filter.outputs.languages }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE"; head="$PR_HEAD"
+          else
+            base="$PUSH_BEFORE"; head="$PUSH_SHA"
+          fi
+          if [ "$EVENT_NAME" = "schedule" ] \
+            || ! git rev-parse --verify --quiet "$base" >/dev/null; then
+            echo "No diff to scope (schedule, or base unavailable) — both legs run."
+            echo 'languages=["rust","actions"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$base" "$head")"
+          langs=()
+          grep -qE '(\.rs$|(^|/)Cargo\.(toml|lock)$)' <<<"$changed" && langs+=('"rust"')
+          grep -qE '^\.github/(workflows|actions)/' <<<"$changed" && langs+=('"actions"')
+          joined=$(IFS=,; printf '%s' "${langs[*]-}")
+          echo "languages=[${joined}]" >> "$GITHUB_OUTPUT"
+          echo "languages=[${joined}]"
+
   analyze:
     name: Analyze (${{ matrix.language }})
+    needs: changes
+    # The workflow-level paths filter already required SOME relevant change, so
+    # an empty language list happens only in corner diffs (e.g. a delete-only
+    # rename the filters no longer match) — skipping is correct there.
+    if: needs.changes.outputs.languages != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -64,7 +115,7 @@ jobs:
       # One language must not hide the other's results.
       fail-fast: false
       matrix:
-        language: [rust, actions]
+        language: ${{ fromJSON(needs.changes.outputs.languages) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
