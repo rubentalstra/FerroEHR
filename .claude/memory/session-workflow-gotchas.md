@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
-  modified: 2026-08-26T12:03:26.100Z
+  modified: 2026-08-27T08:51:58.196Z
 ---
 
 Recurring session-workflow traps (all hit 2026-07-13/14):
@@ -163,3 +163,34 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
    `ghcr.io/...:X.Y.Z` (no `v` prefix), so a `vX\.Y\.Z`-shaped grep misses
    them. At every cut: `grep -rn '<old-version>' website/book/src/` (bare
    number), then `docs-claims.sh --all` before merging the release PR.
+
+10. **A subagent that detaches a nohup run and ends its turn has NOTHING
+    waking it** (hit 2026-08-27, #2752: the worker's retried conformance run
+    had no waiter — it would have slept forever). When a worker reports
+    "running X, will report when it lands" and goes idle, `pgrep` the run's
+    PID and check for a waiter process on it; if none, arm an orchestrator
+    Monitor on the PID and `SendMessage` the worker on completion. Corollary:
+    a worker killed by the session limit loses nothing when it commits as it
+    goes — resume with `SendMessage` naming the branch state and its last
+    line; never respawn fresh.
+
+11. **zsh pipeline exits mask mutation proofs** (bit three times 2026-08-27):
+    `guard.sh 2>&1 | head -3; echo $?` prints HEAD's status — a failing guard
+    reads as exit 0. Every mutation proof asserts the exit UNPIPED
+    (`guard.sh >/dev/null 2>&1; echo $?`), with the piped run only for the
+    message text.
+
+12. **BuildKit's "transferring context" line is incremental** (hit at #2813):
+    a warm builder transfers only changed files, so a context-size measurement
+    read from it is fiction (3.9 MB shown vs the real 944 MB). Measure with a
+    fresh ephemeral builder (`docker buildx create --name probe` → build →
+    `buildx rm probe`), one per side of the comparison.
+
+13. **A failed release-pipeline leg is never fixed by rerun** (hit at the
+    v4.0.6 cut: the chart leg): `gh run rerun --failed` re-executes the TAG
+    commit's workflow snapshot, so the broken code runs again identically.
+    Fix forward on develop, then use the leg's documented dispatch recovery
+    lane (chart: refresh the committed appVersion default first so the plain
+    dispatch packages the release's facts — the empty-Unreleased changelog
+    fallback then injects the right section). The failed run stays red as the
+    honest record.
