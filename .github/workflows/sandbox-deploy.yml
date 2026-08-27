@@ -140,47 +140,10 @@ jobs:
           echo "job-id=${job_id}" >> "$GITHUB_OUTPUT"
           echo "sandbox deploy triggered (hook job ${job_id:-<no id in response>})"
 
-      # The deployment's OWN state, when a read-scoped token exists (#2846):
-      # a failed Vercel build fails THIS run within one poll interval, naming
-      # the deployment — instead of hiding behind the blind version poll below
-      # for its full timeout. Without the token the step self-skips and the
-      # version poll's timeout message carries the diagnosis split.
-      - name: Watch the triggered deployment (linked, token-gated)
-        env:
-          VERCEL_TOKEN: ${{ secrets.SANDBOX_VERCEL_TOKEN }}
-          PROJECT_ID: ${{ secrets.SANDBOX_VERCEL_PROJECT_ID }}
-          PINGED_AT: ${{ steps.ping.outputs.pinged-at }}
-        run: |
-          set -euo pipefail
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$PROJECT_ID" ]; then
-            echo "SANDBOX_VERCEL_TOKEN/SANDBOX_VERCEL_PROJECT_ID not set — deployment-state watch skipped (#2846); the version poll below is the only verification."
-            exit 0
-          fi
-          since_ms=$(( PINGED_AT * 1000 ))
-          deadline=$(( $(date +%s) + 1200 ))
-          dep_id=""
-          while :; do
-            page=$(curl -fsS -m 30 -H "Authorization: Bearer ${VERCEL_TOKEN}" \
-              "https://api.vercel.com/v6/deployments?projectId=${PROJECT_ID}&target=production&limit=5&since=${since_ms}" || true)
-            if [ -z "$dep_id" ]; then
-              dep_id=$(printf '%s' "$page" | jq -r '.deployments | sort_by(-.created) | .[0].uid // empty')
-              [ -n "$dep_id" ] && echo "watching deployment ${dep_id}"
-            fi
-            state=$(printf '%s' "$page" | jq -r --arg id "$dep_id" '.deployments[] | select(.uid == $id) | .readyState // .state // empty')
-            case "$state" in
-              READY) echo "deployment ${dep_id} is READY"; break ;;
-              ERROR | CANCELED)
-                echo "::error::deployment ${dep_id} ended ${state} — the Vercel build failed; read its build log on the Vercel dashboard. The image side was proven correct before the ping." >&2
-                exit 1 ;;
-              *) echo "deployment ${dep_id:-<not created yet>}: ${state:-pending}" ;;
-            esac
-            if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::no READY deployment 20 minutes after the ping (last state: ${state:-none created}) — check the Vercel dashboard." >&2
-              exit 1
-            fi
-            sleep 20
-          done
-
+      # NOTE: no deployment-state watch exists, deliberately (#2846): Vercel
+      # offers no read-only tokens, so watching the triggered deployment would
+      # cost a stored full-access credential — refused; the version poll below
+      # is the verification, and its timeout message carries the diagnosis.
       - name: Wait for the sandbox to serve again
         env:
           HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
@@ -213,7 +176,7 @@ jobs:
               break
             fi
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::the sandbox serves '${served:-nothing}' (expected '${expected:-any}') 20 minutes after the deploy ping. The image side was proven correct before the ping (:latest == the release image), so the failing half is Vercel's own build or promotion — read the build log on the Vercel dashboard (hook job ${JOB_ID:-unknown}); with SANDBOX_VERCEL_TOKEN set, the linked watch above would have named the failed deployment directly (#2846)." >&2
+              echo "::error::the sandbox serves '${served:-nothing}' (expected '${expected:-any}') 20 minutes after the deploy ping. The image side was proven correct before the ping (:latest == the release image), so the failing half is Vercel's own build or promotion — read the build log on the Vercel dashboard (hook job ${JOB_ID:-unknown}). Known flaky suspect: a Neon integration step ahead of the container build (#2846)." >&2
               exit 1
             fi
             echo "sandbox serves '${served:-nothing}'; waiting for '${expected:-any}'"
