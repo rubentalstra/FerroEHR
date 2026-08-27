@@ -18,10 +18,10 @@ metadata:
     kubernetes.io/description: >-
       Ingress for the admin console: only its HTTP port, but from EVERY source — this policy narrows ports, NOT sources (adminUi.networkPolicy.ingressAllowAll=true). Set adminUi.networkPolicy.ingressFrom for a PHI workload. Egress admits the CDR Service and DNS only.
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -90,10 +90,10 @@ metadata:
     kubernetes.io/description: >-
       Ingress for the CDR: only the API port (and the management port when enabled), but from EVERY source — this policy narrows ports, NOT sources (networkPolicy.ingressAllowAll=true). Set networkPolicy.ingressFrom for a PHI workload.
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -118,10 +118,10 @@ metadata:
     kubernetes.io/description: >-
       Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -139,10 +139,10 @@ kind: ServiceAccount
 metadata:
   name: ferroehr-admin-ui
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -154,10 +154,10 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
@@ -184,10 +184,10 @@ kind: Secret
 metadata:
   name: ferroehr-env
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -201,10 +201,10 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 data:
@@ -332,10 +332,10 @@ metadata:
     kubernetes.io/description: >-
       In-cluster address for the FerroEHR admin console. The console is a REST client of the CDR and holds no data of its own; it is the human-facing surface, so this is the Service an Ingress normally publishes.
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -355,10 +355,10 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
   annotations:
@@ -385,10 +385,10 @@ metadata:
     kubernetes.io/description: >-
       The FerroEHR admin console: a Leptos SSR web UI that consumes the CDR strictly over ITS-REST. It never reaches the database, which the console NetworkPolicy enforces rather than assumes.
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr-admin-ui
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: admin-ui
@@ -424,7 +424,7 @@ spec:
         supplementalGroupsPolicy: Strict
       containers:
         - name: admin-ui
-          image: "ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.6"
+          image: "ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.7"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -492,10 +492,10 @@ metadata:
     kubernetes.io/description: >-
       The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
-    helm.sh/chart: ferroehr-6.0.23
+    helm.sh/chart: ferroehr-6.0.24
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.6"
+    app.kubernetes.io/version: "4.0.7"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -543,7 +543,7 @@ spec:
         supplementalGroupsPolicy: Strict
       containers:
         - name: ferroehr
-          image: "ghcr.io/rubentalstra/ferroehr:4.0.6"
+          image: "ghcr.io/rubentalstra/ferroehr:4.0.7"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
