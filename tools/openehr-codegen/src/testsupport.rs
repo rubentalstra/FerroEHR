@@ -2021,34 +2021,45 @@ pub fn untyped_enumeration_facets() -> Result<Vec<UntypedFacet>, Error> {
                 });
             }
         }
-
-        let declared = model.declared_field_types();
-        for (spec, fields) in &declared {
-            let by_wire: BTreeMap<&str, &str> = fields
-                .iter()
-                .map(|(w, d)| (w.as_str(), d.as_str()))
-                .collect();
-            for elem in xsd.flattened(spec).1 {
-                let Some(rust) = faceted.get(elem.type_name.as_str()) else {
-                    continue;
-                };
-                if !by_wire
-                    .get(elem.name.as_str())
-                    .is_some_and(|d| d.contains(rust.as_str()))
-                {
-                    out.push(UntypedFacet {
-                        closure: name.to_owned(),
-                        simple_type: elem.type_name.clone(),
-                        problem: "an element slot of a faceted simple type is not typed to its enum",
-                        detail: format!("{spec}.{}", elem.name),
-                    });
-                }
-            }
+        for (spec, fields) in &model.declared_field_types() {
+            push_untyped_facet_slots(name, spec, fields, &faceted, &xsd, &mut out);
         }
     }
     out.sort();
     out.dedup();
     Ok(out)
+}
+
+/// Reports every element slot of one emitted type whose faceted simple type
+/// did not reach the field's declared Rust type.
+fn push_untyped_facet_slots(
+    closure: &str,
+    spec: &str,
+    fields: &[(String, String)],
+    faceted: &BTreeMap<&str, String>,
+    xsd: &crate::load::xsd::XsdModel,
+    out: &mut Vec<UntypedFacet>,
+) {
+    let by_wire: BTreeMap<&str, &str> = fields
+        .iter()
+        .map(|(w, d)| (w.as_str(), d.as_str()))
+        .collect();
+    for elem in xsd.flattened(spec).1 {
+        let Some(rust) = faceted.get(elem.type_name.as_str()) else {
+            continue;
+        };
+        if !by_wire
+            .get(elem.name.as_str())
+            .is_some_and(|d| d.contains(rust.as_str()))
+        {
+            out.push(UntypedFacet {
+                closure: closure.to_owned(),
+                simple_type: elem.type_name.clone(),
+                problem: "an element slot of a faceted simple type is not typed to its enum",
+                detail: format!("{spec}.{}", elem.name),
+            });
+        }
+    }
 }
 
 /// A place where the concrete-only `xsi:type` reading would LOSE a document
@@ -2102,30 +2113,15 @@ pub fn lost_dispatch_variants() -> Result<Vec<LostVariant>, Error> {
         for declared in &slot_types {
             let variants: BTreeSet<String> = model.descendants(declared).into_iter().collect();
             for abstract_ty in model.types.values().filter(|t| t.is_abstract) {
-                if !model.is_a(&abstract_ty.name, declared) {
-                    continue;
-                }
-                // The abstract type itself is correctly absent; every concrete
-                // type BELOW it is a shape a document can present at this slot.
-                for concrete in model.descendants(&abstract_ty.name) {
-                    if !variants.contains(&concrete) {
-                        out.push(LostVariant {
-                            closure: name.to_owned(),
-                            declared: declared.clone(),
-                            via_abstract: abstract_ty.name.clone(),
-                            lost: concrete,
-                            problem: "a concrete descendant is missing from the variant set",
-                        });
-                    }
-                }
-                if variants.contains(&abstract_ty.name) {
-                    out.push(LostVariant {
-                        closure: name.to_owned(),
-                        declared: declared.clone(),
-                        via_abstract: abstract_ty.name.clone(),
-                        lost: abstract_ty.name.clone(),
-                        problem: "an abstract type appears as an xsi:type variant",
-                    });
+                if model.is_a(&abstract_ty.name, declared) {
+                    push_lost_variants(
+                        name,
+                        declared,
+                        &abstract_ty.name,
+                        &variants,
+                        &model,
+                        &mut out,
+                    );
                 }
             }
         }
@@ -2133,4 +2129,40 @@ pub fn lost_dispatch_variants() -> Result<Vec<LostVariant>, Error> {
     out.sort();
     out.dedup();
     Ok(out)
+}
+
+/// Reports the shapes one abstract intermediate loses at one slot.
+///
+/// The abstract type itself is correctly absent from the variant set; every
+/// concrete type BELOW it is a shape a document can present at this slot, so a
+/// missing one is a loss — and the abstract type appearing AS a variant is the
+/// mirror defect.
+fn push_lost_variants(
+    closure: &str,
+    declared: &str,
+    abstract_ty: &str,
+    variants: &BTreeSet<String>,
+    model: &crate::load::xsd::XsdModel,
+    out: &mut Vec<LostVariant>,
+) {
+    for concrete in model.descendants(abstract_ty) {
+        if !variants.contains(&concrete) {
+            out.push(LostVariant {
+                closure: closure.to_owned(),
+                declared: declared.to_owned(),
+                via_abstract: abstract_ty.to_owned(),
+                lost: concrete,
+                problem: "a concrete descendant is missing from the variant set",
+            });
+        }
+    }
+    if variants.contains(abstract_ty) {
+        out.push(LostVariant {
+            closure: closure.to_owned(),
+            declared: declared.to_owned(),
+            via_abstract: abstract_ty.to_owned(),
+            lost: abstract_ty.to_owned(),
+            problem: "an abstract type appears as an xsi:type variant",
+        });
+    }
 }
