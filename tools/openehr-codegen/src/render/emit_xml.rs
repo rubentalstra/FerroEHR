@@ -279,78 +279,8 @@ pub(crate) fn emit_to_xml(
             generics,
             fields,
         } => {
-            let (hdr, args) = generic_header(generics, "crate::xml::runtime::ToXml");
-            let by_wire: BTreeMap<&str, &XmlField> =
-                fields.iter().map(|f| (f.wire_name.as_str(), f)).collect();
-            let _ = write!(
-                b,
-                "impl{hdr} crate::xml::runtime::ToXml for {path}::{rust}{args} {{\n\
-                 fn xml_type_name(&self) -> &'static str {{ \"{spec}\" }}\n\
-                 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
-                 let mut __attrs: Vec<(&str, String)> = Vec::new();\n\
-                 if let Some(d) = declared {{ if d != \"{spec}\" {{ __attrs.push((\"xsi:type\", \"{spec}\".to_string())); }} }}\n"
-            );
-            // Wire order + attr/element split from the XSD; else BMM order, no attrs.
-            let (attrs, mut elems): (Vec<String>, Vec<String>) = if xsd.types.contains_key(spec) {
-                let (a, e) = xsd.flattened(spec);
-                (
-                    a.iter().map(|x| x.name.clone()).collect(),
-                    e.iter().map(|x| x.name.clone()).collect(),
-                )
-            } else {
-                (
-                    Vec::new(),
-                    fields.iter().map(|f| f.wire_name.clone()).collect(),
-                )
-            };
-            // append any allowlisted BMM-only field (no XSD slot) as a
-            // deterministic trailing element in BMM order, so it is not dropped.
-            // (Non-allowlisted BMM-only fields already failed the guard above.)
-            for f in bmm_only_fields(spec, fields, xsd) {
-                elems.push(f.wire_name.clone());
-            }
-            // A validated class's fields are `pub(crate)` (the construction-door
-            // scheme), so this codec — a different crate — reads them through the
-            // emitted accessor.
-            let validated = construction::is_validated(spec);
-            let read = |f: &XmlField| {
-                if validated {
-                    format!("{}()", f.rust_name)
-                } else {
-                    f.rust_name.clone()
-                }
-            };
-            for aname in &attrs {
-                if let Some(f) = by_wire.get(aname.as_str()) {
-                    if f.optional {
-                        let _ = writeln!(
-                            b,
-                            "if let Some(v) = &self.{} {{ __attrs.push((\"{}\", v.to_string())); }}",
-                            read(f),
-                            f.wire_name
-                        );
-                    } else {
-                        let _ = writeln!(
-                            b,
-                            "__attrs.push((\"{}\", self.{}.to_string()));",
-                            f.wire_name,
-                            read(f)
-                        );
-                    }
-                } else {
-                    unmatched.push((spec.clone(), aname.clone()));
-                }
-            }
-            b.push_str("let mut __e = quick_xml::events::BytesStart::new(tag);\n");
-            b.push_str("for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }\n");
-            b.push_str("w.write_start(__e)?;\n");
-            for ename in &elems {
-                match by_wire.get(ename.as_str()) {
-                    Some(f) => emit_write_field(b, f, validated),
-                    None => unmatched.push((spec.clone(), ename.clone())),
-                }
-            }
-            b.push_str("w.write_end(tag)?;\nOk(())\n}\n}\n\n");
+            let target = XmlTarget { spec, rust, path };
+            emit_struct_to_xml(b, &target, generics, fields, xsd, unmatched);
         }
         XmlType::Enum {
             rust,
@@ -406,6 +336,89 @@ pub(crate) fn emit_to_xml(
                  {text}\n}}\n}}\n\n"
             );
         }
+    }
+}
+
+/// Emits `impl ToXml` for a struct: the `xsi:type` attribute, the XSD-ordered
+/// attributes, and the elements.
+///
+/// Wire order and the attribute/element split come from the XSD; a type the
+/// XSD does not cover falls back to BMM order with no attributes. Any
+/// allowlisted BMM-only field (no XSD slot) is appended as a deterministic
+/// trailing element in BMM order so it is never dropped — a non-allowlisted
+/// one has already failed the emitter guard.
+fn emit_struct_to_xml(
+    b: &mut String,
+    target: &XmlTarget<'_>,
+    generics: &[String],
+    fields: &[XmlField],
+    xsd: &XsdModel,
+    unmatched: &mut Vec<(String, String)>,
+) {
+    let (hdr, args) = generic_header(generics, "crate::xml::runtime::ToXml");
+    let (spec, rust, path) = (target.spec, target.rust, target.path);
+    let by_wire: BTreeMap<&str, &XmlField> =
+        fields.iter().map(|f| (f.wire_name.as_str(), f)).collect();
+    let _ = write!(
+        b,
+        "impl{hdr} crate::xml::runtime::ToXml for {path}::{rust}{args} {{\n\
+         fn xml_type_name(&self) -> &'static str {{ \"{spec}\" }}\n\
+         fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
+         let mut __attrs: Vec<(&str, String)> = Vec::new();\n\
+         if let Some(d) = declared {{ if d != \"{spec}\" {{ __attrs.push((\"xsi:type\", \"{spec}\".to_string())); }} }}\n"
+    );
+    let (attrs, mut elems): (Vec<String>, Vec<String>) = if xsd.types.contains_key(spec) {
+        let (a, e) = xsd.flattened(spec);
+        (
+            a.iter().map(|x| x.name.clone()).collect(),
+            e.iter().map(|x| x.name.clone()).collect(),
+        )
+    } else {
+        (
+            Vec::new(),
+            fields.iter().map(|f| f.wire_name.clone()).collect(),
+        )
+    };
+    for f in bmm_only_fields(spec, fields, xsd) {
+        elems.push(f.wire_name.clone());
+    }
+    // A validated class's fields are `pub(crate)` (the construction-door
+    // scheme), so this codec — a different crate — reads them through the
+    // emitted accessor.
+    let validated = construction::is_validated(spec);
+    for aname in &attrs {
+        match by_wire.get(aname.as_str()) {
+            Some(f) => emit_write_attr(b, f, validated),
+            None => unmatched.push((spec.to_owned(), aname.clone())),
+        }
+    }
+    b.push_str("let mut __e = quick_xml::events::BytesStart::new(tag);\n");
+    b.push_str("for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }\n");
+    b.push_str("w.write_start(__e)?;\n");
+    for ename in &elems {
+        match by_wire.get(ename.as_str()) {
+            Some(f) => emit_write_field(b, f, validated),
+            None => unmatched.push((spec.to_owned(), ename.clone())),
+        }
+    }
+    b.push_str("w.write_end(tag)?;\nOk(())\n}\n}\n\n");
+}
+
+/// Pushes one XSD attribute onto the start tag's attribute list.
+fn emit_write_attr(b: &mut String, f: &XmlField, validated: bool) {
+    let read = if validated {
+        format!("{}()", f.rust_name)
+    } else {
+        f.rust_name.clone()
+    };
+    let wire = &f.wire_name;
+    if f.optional {
+        let _ = writeln!(
+            b,
+            "if let Some(v) = &self.{read} {{ __attrs.push((\"{wire}\", v.to_string())); }}"
+        );
+    } else {
+        let _ = writeln!(b, "__attrs.push((\"{wire}\", self.{read}.to_string()));");
     }
 }
 
