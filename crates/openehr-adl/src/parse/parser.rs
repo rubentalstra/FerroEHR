@@ -170,47 +170,115 @@ impl Parser<'_> {
     /// A type-headed object: `c_complex_object` or `c_regular_primitive_object`
     /// (`cadl2.g4`). Distinguished by whether the `matches { … }` body (or the
     /// bare, body-less form) holds attribute defs or a single inline primitive.
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one linear parse of a type-headed object — node bracket, optional OPT ref, body; the steps are sequential, not extractable units"
-    )]
+    /// The `'[' ID_CODE [',' archetype_ref] ']'` node bracket, if present.
+    ///
+    /// The two-part form is the OPT-inlined `C_ARCHETYPE_ROOT`: a flattened
+    /// slot-filler or external reference carrying the full archetype id inside
+    /// the bracket and an inline body (OPT2 master03 §Artefact Structure +
+    /// §Flattening; the same shape as `cadl14.g4` `c_archetype_root`).
+    ///
+    /// NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id is
+    /// a semantic defect (VCOID, `AOM2/master08`), not a syntax error, so an
+    /// absent `[…]` yields an empty node id that validation flags.
+    ///
+    /// # Errors
+    /// A malformed bracket — a missing archetype id after `,`, or a missing
+    /// closing `]`.
+    fn parse_node_bracket(&mut self) -> PResult<(String, Option<String>)> {
+        if !self.eat(|t| matches!(t, Token::LBracket)) {
+            return Ok((String::new(), None));
+        }
+        let node_id = self.parse_node_id()?;
+        let mut archetype_ref: Option<String> = None;
+        if self.eat(|t| matches!(t, Token::SymComma)) {
+            match self.peek().cloned() {
+                Some(Token::ArchetypeId(a)) => {
+                    self.pos += 1;
+                    archetype_ref = Some(a);
+                }
+                _ => {
+                    return self.err(
+                        SyntaxErrorCode::Suaid,
+                        "expecting an archetype id after ',' in a node reference",
+                    );
+                }
+            }
+        }
+        self.expect(
+            |t| matches!(t, Token::RBracket),
+            SyntaxErrorCode::Sccog,
+            "expecting ']' after the node id",
+        )?;
+        Ok((node_id, archetype_ref))
+    }
+
+    /// The `matches { … }` body of a type-headed object: the deprecated
+    /// `matches {*}` any-form (`master04.2`), a single inline primitive
+    /// constraint, or an attribute-definition body.
+    ///
+    /// # Errors
+    /// An empty body, an unterminated body, or the nested constraint's own
+    /// syntax errors.
+    fn parse_matches_body(&mut self, rm_type: &str, node_id: &str) -> PResult<CObject> {
+        self.pos += 1; // SYM_MATCHES
+        self.expect(
+            |t| matches!(t, Token::LCurly),
+            SyntaxErrorCode::Scoat,
+            "expecting '{' after 'matches'",
+        )?;
+        if matches!(self.peek(), Some(Token::RCurly)) {
+            let span = self.cur_span();
+            self.push(
+                SyntaxErrorCode::Scoat,
+                "expecting attribute definition(s)",
+                span,
+            );
+            return Err(());
+        }
+        if self.eat(|t| matches!(t, Token::SymStar)) {
+            self.expect(
+                |t| matches!(t, Token::RCurly),
+                SyntaxErrorCode::Scoat,
+                "expecting '}' after '*'",
+            )?;
+            return Ok(complex_object(
+                rm_type.to_owned(),
+                node_id.to_owned(),
+                Vec::new(),
+                Vec::new(),
+                None,
+            ));
+        }
+        if self.body_is_inline_primitive() {
+            let mut prim = self.parse_c_inline_primitive(node_id.to_owned())?;
+            self.expect(
+                |t| matches!(t, Token::RCurly),
+                SyntaxErrorCode::Scas,
+                "expecting '}' after the primitive constraint",
+            )?;
+            // A regular primitive object carries the declared RM type name.
+            rm_type.clone_into(common_mut(&mut prim).0);
+            return Ok(prim);
+        }
+        let (attrs, tuples, default) = self.parse_object_body()?;
+        self.expect(
+            |t| matches!(t, Token::RCurly),
+            SyntaxErrorCode::Scoat,
+            "expecting '}' closing the object body",
+        )?;
+        Ok(complex_object(
+            rm_type.to_owned(),
+            node_id.to_owned(),
+            attrs,
+            tuples,
+            default,
+        ))
+    }
+
     fn parse_type_object(&mut self) -> PResult<CObject> {
         let type_span = self.cur_span();
         let rm_type = self.parse_rm_type_id()?;
-        // OPT-inlined `C_ARCHETYPE_ROOT` form `TYPE[id, archetype_ref] …`: a
-        // flattened slot-filler / external reference carries the full archetype
-        // id inside the node bracket and an inline body (OPT2 master03
-        // §Artefact Structure + §Flattening; the same `'[' ID_CODE ','
-        // archetype_ref ']'` shape as `cadl14.g4` `c_archetype_root`).
-        // NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id
-        // is a semantic defect (VCOID, `AOM2/master08`), not a syntax error, so
-        // an absent `[…]` yields an empty node id that validation flags.
-        let mut archetype_ref: Option<String> = None;
-        let node_id = if self.eat(|t| matches!(t, Token::LBracket)) {
-            let n = self.parse_node_id()?;
-            if self.eat(|t| matches!(t, Token::SymComma)) {
-                match self.peek().cloned() {
-                    Some(Token::ArchetypeId(a)) => {
-                        self.pos += 1;
-                        archetype_ref = Some(a);
-                    }
-                    _ => {
-                        return self.err(
-                            SyntaxErrorCode::Suaid,
-                            "expecting an archetype id after ',' in a node reference",
-                        );
-                    }
-                }
-            }
-            self.expect(
-                |t| matches!(t, Token::RBracket),
-                SyntaxErrorCode::Sccog,
-                "expecting ']' after the node id",
-            )?;
-            n
-        } else {
-            String::new()
-        };
+        let (node_id, archetype_ref) = self.parse_node_bracket()?;
         let occurrences = if matches!(self.peek(), Some(Token::SymOccurrences)) {
             Some(self.parse_occurrences()?)
         } else {
@@ -221,56 +289,7 @@ impl Parser<'_> {
             return self.negated_matches_reject(SyntaxErrorCode::Sccog);
         }
         let mut obj = if matches!(self.peek(), Some(Token::SymMatches)) {
-            self.pos += 1; // SYM_MATCHES
-            self.expect(
-                |t| matches!(t, Token::LCurly),
-                SyntaxErrorCode::Scoat,
-                "expecting '{' after 'matches'",
-            )?;
-            if matches!(self.peek(), Some(Token::RCurly)) {
-                // Empty object body — `expecting attribute definition(s)`.
-                let span = self.cur_span();
-                self.push(
-                    SyntaxErrorCode::Scoat,
-                    "expecting attribute definition(s)",
-                    span,
-                );
-                return Err(());
-            }
-            if self.eat(|t| matches!(t, Token::SymStar)) {
-                // Deprecated `matches {*}` == any (`master04.2`).
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Scoat,
-                    "expecting '}' after '*'",
-                )?;
-                complex_object(
-                    rm_type.clone(),
-                    node_id.clone(),
-                    Vec::new(),
-                    Vec::new(),
-                    None,
-                )
-            } else if self.body_is_inline_primitive() {
-                let prim = self.parse_c_inline_primitive(node_id.clone())?;
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Scas,
-                    "expecting '}' after the primitive constraint",
-                )?;
-                // A regular primitive object carries the declared RM type name.
-                let mut prim = prim;
-                common_mut(&mut prim).0.clone_from(&rm_type);
-                prim
-            } else {
-                let (attrs, tuples, default) = self.parse_object_body()?;
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Scoat,
-                    "expecting '}' closing the object body",
-                )?;
-                complex_object(rm_type.clone(), node_id.clone(), attrs, tuples, default)
-            }
+            self.parse_matches_body(&rm_type, &node_id)?
         } else if let Some(prim) = Self::primitive_any(&rm_type, &node_id) {
             // Body-less primitive type (e.g. `String[id2]`): an unconstrained
             // primitive object (`master04.5` regular primitive form).
