@@ -200,3 +200,11 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     (freeze-last design), the action replaces same-named assets
     idempotently, and the rerun un-skips the dependent publish/crates legs.
     The discriminator is the failed step's log, never the leg's name.
+
+14. **The SNOMED/Snowstorm probe never runs on this machine** (owner ruling
+    2026-08-27, #2236 parked on-hold): the full Snowstorm + Elasticsearch
+    import exceeds the development box's compute — do not launch
+    `PROBE_ONLY=terminology` locally, ever; the issue holds until a bigger
+    environment exists. Corollary: an hours-long opt-in run is launched only
+    after confirming with the owner that THIS machine is the intended place
+    to run it.
