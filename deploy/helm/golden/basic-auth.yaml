@@ -26,7 +26,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -54,7 +54,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -75,7 +75,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
@@ -105,7 +105,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -122,7 +122,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 data:
@@ -250,7 +250,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
   annotations:
@@ -280,7 +280,7 @@ metadata:
     helm.sh/chart: ferroehr-6.0.22
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.5"
+    app.kubernetes.io/version: "4.0.6"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -328,7 +328,7 @@ spec:
         supplementalGroupsPolicy: Strict
       containers:
         - name: ferroehr
-          image: "ghcr.io/rubentalstra/ferroehr:4.0.5"
+          image: "ghcr.io/rubentalstra/ferroehr:4.0.6"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
