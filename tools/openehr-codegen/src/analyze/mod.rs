@@ -456,31 +456,42 @@ impl Model {
     /// from the struct entirely, so it never blocks either.
     fn constructible_classes(&self) -> BTreeSet<String> {
         let mut ok: BTreeSet<String> = BTreeSet::new();
-        loop {
-            let mut changed = false;
-            for (name, class) in &self.classes {
-                if ok.contains(name) || Self::is_mapped(name) {
-                    continue;
-                }
-                let constructible = if class.is_abstract {
-                    self.enum_variants(name)
-                        .iter()
-                        .any(|v| ok.contains(v) || Self::is_mapped(v))
-                } else {
-                    self.flattened_props(class)
-                        .iter()
-                        .all(|rp| self.prop_allows_construction(rp, &ok))
-                };
-                if constructible {
-                    ok.insert(name.clone());
-                    changed = true;
-                }
+        while self.mark_constructible_round(&mut ok) {}
+        ok
+    }
+
+    /// Runs one round of the constructibility fixpoint, marking every class the
+    /// already-known set now permits construction of.
+    ///
+    /// Returns whether `ok` grew — `false` is the fixpoint.
+    fn mark_constructible_round(&self, ok: &mut BTreeSet<String>) -> bool {
+        let mut changed = false;
+        for (name, class) in &self.classes {
+            if ok.contains(name) || Self::is_mapped(name) {
+                continue;
             }
-            if !changed {
-                break;
+            if self.class_is_constructible(name, class, ok) {
+                ok.insert(name.clone());
+                changed = true;
             }
         }
-        ok
+        changed
+    }
+
+    /// Whether one class is constructible given the classes already known to be.
+    ///
+    /// An abstract (untagged-enum) class is constructible if any variant is; a
+    /// concrete one iff every mandatory single-valued field's type is.
+    fn class_is_constructible(&self, name: &str, class: &BmmClass, ok: &BTreeSet<String>) -> bool {
+        if class.is_abstract {
+            return self
+                .enum_variants(name)
+                .iter()
+                .any(|v| ok.contains(v) || Self::is_mapped(v));
+        }
+        self.flattened_props(class)
+            .iter()
+            .all(|rp| self.prop_allows_construction(rp, ok))
     }
 
     /// Whether one property leaves its owner constructible, given the classes

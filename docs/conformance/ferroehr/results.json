@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "4.0.6-rc2"
+    "version": "4.0.8"
   },
   "runner": {
     "name": "veredictum",
-    "version": "0.1.0-alpha.2",
+    "version": "0.1.0-alpha.6",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",

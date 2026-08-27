@@ -47,7 +47,7 @@
 use crate::analyze::{
     External, Model, augment_with_reemit, class_paths, cross_schema_reemit, emittable_specs,
 };
-use crate::load::bmm::{BmmCardinality, BmmPropKind, BmmProperty, BmmSchema, BmmType};
+use crate::load::bmm::{BmmCardinality, BmmClass, BmmPropKind, BmmProperty, BmmSchema, BmmType};
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides::{back_reference, class_binding};
 use crate::plan::{Emission, decide};
@@ -339,22 +339,7 @@ fn collect_generation(
         let skipped = matches!(emission, Emission::Skip);
         let generics = struct_generics(model, class);
         let subst = class_binding(name);
-        // Declared view: the class's own properties. Flattened view: every
-        // property the class CARRIES, resolved through the same
-        // `Model::flattened_props` the struct renderer walks — so the emission
-        // column is computed for the class that actually emits the field.
-        let declared: Vec<(String, &BmmProperty)> =
-            class.properties.iter().map(|p| (name.clone(), p)).collect();
-        let inherited: Vec<(String, &BmmProperty)> = if flattened {
-            model
-                .flattened_props(class)
-                .into_iter()
-                .map(|rp| (rp.owner, rp.prop))
-                .collect()
-        } else {
-            Vec::new()
-        };
-        let props = if flattened { inherited } else { declared };
+        let props = view_props(model, class, name, flattened);
         let package = packages
             .get(name)
             .cloned()
@@ -379,13 +364,45 @@ fn collect_generation(
                 declared_on: owner,
                 attribute: prop.name.clone(),
                 bmm_type: bmm_type_text(prop),
-                existence: if prop.is_mandatory { "1..1" } else { "0..1" },
+                existence: existence_text(prop),
                 container,
                 cardinality,
                 emission: shape,
             });
         }
     }
+}
+
+/// The properties one class contributes to the report, paired with the class
+/// each is declared on.
+///
+/// The DECLARED view is the class's own properties. The FLATTENED view is every
+/// property the class CARRIES, resolved through the same
+/// [`Model::flattened_props`] the struct renderer walks — so the emission column
+/// is computed for the class that actually emits the field.
+fn view_props<'a>(
+    model: &'a Model,
+    class: &'a BmmClass,
+    name: &str,
+    flattened: bool,
+) -> Vec<(String, &'a BmmProperty)> {
+    if flattened {
+        return model
+            .flattened_props(class)
+            .into_iter()
+            .map(|rp| (rp.owner, rp.prop))
+            .collect();
+    }
+    class
+        .properties
+        .iter()
+        .map(|p| (name.to_owned(), p))
+        .collect()
+}
+
+/// The `existence` column: one property's BMM existence range as spec text.
+fn existence_text(prop: &BmmProperty) -> &'static str {
+    if prop.is_mandatory { "1..1" } else { "0..1" }
 }
 
 /// The planned shape of a class, as the label the report prints.

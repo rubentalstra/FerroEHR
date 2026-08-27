@@ -255,59 +255,12 @@ fn undispatchable(ty: &JsonType) -> Option<(String, &'static str)> {
 /// caller passes them in dispatch priority. Every shadowed twin is listed in
 /// the emitted header, never dropped silently.
 pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
-    let mut arms: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
-    // `spec class -> its sorted declared wire keys`, the SAME closure the
-    // reader's undeclared-key refusal is emitted from — so the validation
-    // dispatcher can answer "is this key declared?" without a decode, and can
-    // never disagree with the reader.
-    let mut declared: std::collections::BTreeMap<String, Vec<String>> =
-        std::collections::BTreeMap::new();
-    let mut shadowed: Vec<(String, String, String)> = Vec::new();
-    let mut skipped: Vec<(String, &'static str)> = Vec::new();
-    for s in schemas {
-        for ty in s.model.json_types(s.schema) {
-            // A newtype / literal-enum shape writes its BARE payload (no `_type`
-            // member — see `emit_serialize`), and an untagged enum carries no
-            // `_type` of its own either (the active variant's payload supplies
-            // it, and every such payload is itself an emitted struct with its
-            // own arm). Neither is reachable as a `_type` dispatch key, so
-            // neither can have one — each is recorded, never silently dropped.
-            let (spec, rust, generics) = match &ty {
-                JsonType::Struct {
-                    spec,
-                    rust,
-                    generics,
-                    fields,
-                } => {
-                    let mut keys: Vec<String> =
-                        fields.iter().map(|f| f.wire_name.clone()).collect();
-                    keys.sort();
-                    declared.entry(spec.clone()).or_insert(keys);
-                    (spec, rust, generics)
-                }
-                other => {
-                    skipped.extend(undispatchable(other));
-                    continue;
-                }
-            };
-            let path = s.path_of(spec);
-            let fill = if generics.is_empty() {
-                String::new()
-            } else {
-                let args = vec![GENERIC_FILL; generics.len()].join(", ");
-                format!("<{args}>")
-            };
-            let expr = format!("{path}::{rust}{fill}");
-            match arms.entry(spec.clone()) {
-                std::collections::btree_map::Entry::Vacant(slot) => {
-                    slot.insert(expr);
-                }
-                std::collections::btree_map::Entry::Occupied(held) => {
-                    shadowed.push((spec.clone(), held.get().clone(), expr));
-                }
-            }
-        }
-    }
+    let StructuralInventory {
+        arms,
+        declared,
+        shadowed,
+        skipped,
+    } = structural_inventory(schemas);
 
     let mut b = String::new();
     b.push_str(
@@ -412,6 +365,85 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
     }
     b.push_str("_ => ::core::option::Option::None,\n}\n}\n");
     b
+}
+
+/// The `_type` dispatch inventory the structural-check file is emitted from.
+struct StructuralInventory {
+    /// `spec class` → the expression that decodes a node as it.
+    arms: std::collections::BTreeMap<String, String>,
+    /// `spec class` → its sorted declared wire keys, the SAME closure the
+    /// reader's undeclared-key refusal is emitted from — so the validation
+    /// dispatcher can answer "is this key declared?" without a decode, and can
+    /// never disagree with the reader.
+    declared: std::collections::BTreeMap<String, Vec<String>>,
+    /// `(spec class, the arm that won, the arm it shadowed)`.
+    shadowed: Vec<(String, String, String)>,
+    /// `(Rust shape, why it is unreachable as a `_type` dispatch key)`.
+    skipped: Vec<(String, &'static str)>,
+}
+
+/// Collects the dispatch inventory across every schema, in dispatch priority.
+///
+/// The FIRST schema declaring a spec class name wins; the loser is recorded as
+/// a shadowed twin, never dropped silently.
+fn structural_inventory(schemas: &[JsonSchema<'_>]) -> StructuralInventory {
+    let mut arms: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    let mut declared: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    let mut shadowed: Vec<(String, String, String)> = Vec::new();
+    let mut skipped: Vec<(String, &'static str)> = Vec::new();
+    for s in schemas {
+        for ty in s.model.json_types(s.schema) {
+            // A newtype / literal-enum shape writes its BARE payload (no `_type`
+            // member — see `emit_serialize`), and an untagged enum carries no
+            // `_type` of its own either (the active variant's payload supplies
+            // it, and every such payload is itself an emitted struct with its
+            // own arm). Neither is reachable as a `_type` dispatch key, so
+            // neither can have one — each is recorded, never silently dropped.
+            let JsonType::Struct {
+                spec,
+                rust,
+                generics,
+                fields,
+            } = &ty
+            else {
+                skipped.extend(undispatchable(&ty));
+                continue;
+            };
+            let mut keys: Vec<String> = fields.iter().map(|f| f.wire_name.clone()).collect();
+            keys.sort();
+            declared.entry(spec.clone()).or_insert(keys);
+
+            let expr = format!("{}::{rust}{}", s.path_of(spec), generic_fill(generics));
+            match arms.entry(spec.clone()) {
+                std::collections::btree_map::Entry::Vacant(slot) => {
+                    slot.insert(expr);
+                }
+                std::collections::btree_map::Entry::Occupied(held) => {
+                    shadowed.push((spec.clone(), held.get().clone(), expr));
+                }
+            }
+        }
+    }
+    StructuralInventory {
+        arms,
+        declared,
+        shadowed,
+        skipped,
+    }
+}
+
+/// The `<…>` bound-fill for a generic class's dispatch expression, empty for a
+/// non-generic one.
+///
+/// Generic classes are monomorphized with an opaque element type, so the
+/// container's own shape is checked and its elements are accepted verbatim.
+fn generic_fill(generics: &[String]) -> String {
+    if generics.is_empty() {
+        return String::new();
+    }
+    let args = vec![GENERIC_FILL; generics.len()].join(", ");
+    format!("<{args}>")
 }
 
 /// The spec class a [`JsonType`] realizes — the key its Rust path is resolved by
