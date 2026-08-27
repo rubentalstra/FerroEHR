@@ -15,6 +15,13 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.6] - 2026-08-27
+
+The first stable cut of the 4.0.6 line. The bulk of the line's changes landed
+in the two release candidates below: the CI/release-pipeline redesign
+(4.0.6-rc2) and the conformance-instrument split to the standalone Veredictum
+project (4.0.6-rc3).
+
 ### Changed
 
 - The `openehr-*` spec crates step to `0.0.42`. The change is internal
@@ -7638,7 +7645,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc3...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6...HEAD
+[4.0.6]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc3...v4.0.6
 [4.0.6-rc3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc2...v4.0.6-rc3
 [4.0.6-rc2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...v4.0.6-rc2
 [4.0.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.4...v4.0.5
