@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.8] - 2026-08-27
+
 ### Changed
 
 - The container images' distroless base (`gcr.io/distroless/cc-debian13:nonroot`)
@@ -7669,7 +7671,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.7...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.8...HEAD
+[4.0.8]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.7...v4.0.8
 [4.0.7]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6...v4.0.7
 [4.0.6]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc3...v4.0.6
 [4.0.6-rc3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc2...v4.0.6-rc3
