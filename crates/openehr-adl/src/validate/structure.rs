@@ -216,7 +216,7 @@ impl StructureScan<'_> {
 
     /// VCOSU (AOM 1.4 sibling scope): in the 1.4 dialect node ids are only
     /// *sibling*-unique — children under the same container attribute must have
-    /// distinct node ids (AOM1.4 master04 §Node_id and Paths — "guarantees
+    /// distinct node ids (AOM1.4 master04 §`Node_id` and Paths — "guarantees
     /// sibling node unique identification").
     ///
     /// ADL2 uses the stronger archetype-wide uniqueness (`walk_object` / the
