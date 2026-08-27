@@ -906,61 +906,51 @@ fn example_temporal(node: &WebTemplateNode, rm: &str) -> String {
         Some(p) => (p, ""),
         None => ("", ""),
     };
-    // Date segments: year always; month/day kept unless the pattern prohibits
-    // them (an omitted month forces the day off — ISO 8601 partial precision
-    // truncates right-to-left).
-    let date_full = ["2022", "02", "03"];
-    let date = |pat: &str| -> String {
-        let segs: Vec<&str> = if pat.is_empty() {
-            Vec::new()
-        } else {
-            pat.splitn(3, '-').collect()
-        };
-        let mut out = String::from(date_full[0]);
-        for (i, part) in date_full.iter().enumerate().skip(1) {
-            if segs.get(i).is_some_and(|s| *s == "XX") {
-                break;
-            }
-            out.push('-');
-            out.push_str(part);
-        }
-        out
-    };
-    let time_full = ["04", "05", "06"];
-    let time = |pat: &str| -> String {
-        let segs: Vec<&str> = if pat.is_empty() {
-            Vec::new()
-        } else {
-            pat.splitn(3, ':').collect()
-        };
-        let mut out = String::from(time_full[0]);
-        for (i, part) in time_full.iter().enumerate().skip(1) {
-            if segs.get(i).is_some_and(|s| *s == "XX") {
-                break;
-            }
-            out.push(':');
-            out.push_str(part);
-        }
-        out
-    };
     let tz = if node.tz_validity == Some(1003) {
         ""
     } else {
         "Z"
     };
+    let date = temporal_segments(pat_date, DATE_SEGMENTS, '-');
     match rm {
-        "DV_DATE" => date(pat_date),
-        "DV_TIME" => format!("{}{tz}", time(pat_time)),
+        "DV_DATE" => date,
+        "DV_TIME" => format!("{}{tz}", temporal_segments(pat_time, TIME_SEGMENTS, ':')),
         // DV_DATE_TIME: a time part prohibited outright (pattern `…TXX:…`)
         // truncates to the date.
-        _ => {
-            if pat_time.starts_with("XX") {
-                date(pat_date)
-            } else {
-                format!("{}T{}{tz}", date(pat_date), time(pat_time))
-            }
-        }
+        _ if pat_time.starts_with("XX") => date,
+        _ => format!(
+            "{date}T{}{tz}",
+            temporal_segments(pat_time, TIME_SEGMENTS, ':')
+        ),
     }
+}
+
+/// The example date's segments, coarsest first.
+const DATE_SEGMENTS: [&str; 3] = ["2022", "02", "03"];
+
+/// The example time's segments, coarsest first.
+const TIME_SEGMENTS: [&str; 3] = ["04", "05", "06"];
+
+/// Renders one temporal half, dropping every segment the pattern prohibits.
+///
+/// The leading segment is always present; the rest are kept until the pattern
+/// marks one `XX`, since ISO 8601 partial precision truncates right-to-left —
+/// an omitted month forces the day off with it.
+fn temporal_segments(pattern: &str, full: [&str; 3], separator: char) -> String {
+    let segments: Vec<&str> = if pattern.is_empty() {
+        Vec::new()
+    } else {
+        pattern.splitn(3, separator).collect()
+    };
+    let mut out = String::from(full[0]);
+    for (i, part) in full.iter().enumerate().skip(1) {
+        if segments.get(i).is_some_and(|s| *s == "XX") {
+            break;
+        }
+        out.push(separator);
+        out.push_str(part);
+    }
+    out
 }
 
 /// A deterministic duration example honouring the `C_DURATION` allowed-fields
@@ -1061,32 +1051,40 @@ fn iso_seconds(value: &str) -> f64 {
         return 0.0;
     };
     let (date_part, time_part) = rest.split_once('T').unwrap_or((rest, ""));
+    iso_part_seconds(date_part, false) + iso_part_seconds(time_part, true)
+}
+
+/// Total seconds of one half of an ISO-8601 duration string.
+///
+/// `in_time` selects the time-half reading of the ambiguous `M` designator
+/// (minutes rather than months).
+fn iso_part_seconds(part: &str, in_time: bool) -> f64 {
     let mut total = 0.0;
-    let mut accumulate = |part: &str, in_time: bool| {
-        let mut num = String::new();
-        for ch in part.chars() {
-            if ch.is_ascii_digit() || ch == '.' || ch == ',' {
-                num.push(if ch == ',' { '.' } else { ch });
-            } else {
-                let n: f64 = num.parse().unwrap_or(0.0);
-                num.clear();
-                let secs = match (ch, in_time) {
-                    ('Y', false) => 31_557_600.0,
-                    ('M', false) => 2_629_800.0,
-                    ('W', false) => 604_800.0,
-                    ('D', false) => 86_400.0,
-                    ('H', true) => 3_600.0,
-                    ('M', true) => 60.0,
-                    ('S', true) => 1.0,
-                    _ => 0.0,
-                };
-                total += n * secs;
-            }
+    let mut num = String::new();
+    for ch in part.chars() {
+        if ch.is_ascii_digit() || ch == '.' || ch == ',' {
+            num.push(if ch == ',' { '.' } else { ch });
+            continue;
         }
-    };
-    accumulate(date_part, false);
-    accumulate(time_part, true);
+        let n: f64 = num.parse().unwrap_or(0.0);
+        num.clear();
+        total += n * iso_designator_seconds(ch, in_time);
+    }
     total
+}
+
+/// The RM's nominal length in seconds of one ISO-8601 duration designator.
+fn iso_designator_seconds(designator: char, in_time: bool) -> f64 {
+    match (designator, in_time) {
+        ('Y', false) => 31_557_600.0,
+        ('M', false) => 2_629_800.0,
+        ('W', false) => 604_800.0,
+        ('D', false) => 86_400.0,
+        ('H', true) => 3_600.0,
+        ('M', true) => 60.0,
+        ('S', true) => 1.0,
+        _ => 0.0,
+    }
 }
 
 /// A deterministic boolean example: `false` when the archetype allows only

@@ -1304,11 +1304,25 @@ fn finish_identity(
     template_id: &str,
 ) {
     let rm_type = concrete_type(&node.rm_type);
+    if fill_non_locatable(obj, rm_type) {
+        return;
+    }
+    stamp_locatable_identity(obj, node, rm_type);
+    fill_time_anchor(obj, rm_type);
+    stamp_archetype_details(obj, node, is_root, template_id);
+    fill_mandatory_entry_attributes(obj, node, rm_type);
+}
+
+/// Completes a node whose RM class is not `LOCATABLE`, reporting whether it did.
+///
+/// A `true` return means the node needs none of the locatable identity,
+/// archetype-details or ENTRY-attribute filling that follows it.
+fn fill_non_locatable(obj: &mut Map<String, Value>, rm_type: &str) -> bool {
     if rm_type.starts_with("DV_") || rm_type == "CODE_PHRASE" {
-        return; // leaves already complete
+        return true; // leaves already complete
     }
     if rm_type == "EVENT_CONTEXT" {
-        return; // PATHABLE, not LOCATABLE; fields come from ctx/
+        return true; // PATHABLE, not LOCATABLE; fields come from ctx/
     }
     // PARTICIPATION is not LOCATABLE (RM common
     // `UML/classes/org.openehr.rm.common.participation.adoc` declares exactly
@@ -1318,7 +1332,7 @@ fn finish_identity(
     if rm_type == "PARTICIPATION" {
         obj.entry("performer".to_owned())
             .or_insert_with(|| json!({"_type": "PARTY_SELF"}));
-        return;
+        return true;
     }
     // PARTY_PROXY subtypes are not LOCATABLE either, and `PARTY_IDENTIFIED.name`
     // is a plain String, never a `DV_TEXT` (RM common
@@ -1333,9 +1347,13 @@ fn finish_identity(
         {
             obj.insert("name".to_owned(), json!("Example party"));
         }
-        return;
+        return true;
     }
-    stamp_locatable_identity(obj, node, rm_type);
+    false
+}
+
+/// Fills the mandatory time anchor of the two RM classes that carry one.
+fn fill_time_anchor(obj: &mut Map<String, Value>, rm_type: &str) {
     match rm_type {
         "POINT_EVENT" | "INTERVAL_EVENT" => {
             obj.entry("time".to_owned())
@@ -1347,29 +1365,55 @@ fn finish_identity(
         }
         _ => {}
     }
+}
+
+/// Stamps `archetype_details` on an archetype-root node.
+fn stamp_archetype_details(
+    obj: &mut Map<String, Value>,
+    node: &WebTemplateNode,
+    is_root: bool,
+    template_id: &str,
+) {
     let is_root_arch = node
         .node_id
         .as_deref()
         .is_some_and(openehr_rm::v1_2::paths::is_archetype_root_node_id);
-    if is_root_arch {
-        obj.entry("archetype_details".to_owned())
-            .or_insert_with(|| {
-                let mut a = Map::new();
-                a.insert("_type".into(), json!("ARCHETYPED"));
-                a.insert(
-                    "archetype_id".into(),
-                    json!({"_type": "ARCHETYPE_ID", "value": node.node_id}),
-                );
-                if is_root && !template_id.is_empty() {
-                    a.insert(
-                        "template_id".into(),
-                        json!({"_type": "TEMPLATE_ID", "value": template_id}),
-                    );
-                }
-                a.insert("rm_version".into(), json!(RM_VERSION));
-                Value::Object(a)
-            });
+    if !is_root_arch {
+        return;
     }
+    obj.entry("archetype_details".to_owned())
+        .or_insert_with(|| {
+            let mut a = Map::new();
+            a.insert("_type".into(), json!("ARCHETYPED"));
+            a.insert(
+                "archetype_id".into(),
+                json!({"_type": "ARCHETYPE_ID", "value": node.node_id}),
+            );
+            if is_root && !template_id.is_empty() {
+                a.insert(
+                    "template_id".into(),
+                    json!({"_type": "TEMPLATE_ID", "value": template_id}),
+                );
+            }
+            a.insert("rm_version".into(), json!(RM_VERSION));
+            Value::Object(a)
+        });
+}
+
+/// Fills the RM-mandatory ENTRY attributes the simplified form carried no
+/// content under.
+///
+/// When the template constrains the attribute to a node-identified structural
+/// child, the recorded structural stub's identity is stamped — a value the
+/// closed-archetype walk admits (AOM 1.4
+/// `master04-constraint_model_package.adoc` §Valid_value). Unconstrained
+/// attributes get the spec-legal `at0001` "Any" placeholder (ADL 1.4
+/// `master05-cadl.adoc` §"Any" Constraints).
+fn fill_mandatory_entry_attributes(
+    obj: &mut Map<String, Value>,
+    node: &WebTemplateNode,
+    rm_type: &str,
+) {
     if matches!(
         rm_type,
         "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" | "GENERIC_ENTRY"
@@ -1377,13 +1421,6 @@ fn finish_identity(
         obj.entry("subject".to_owned())
             .or_insert_with(|| json!({"_type": "PARTY_SELF"}));
     }
-    // RM-mandatory structural attributes the simplified form carried no
-    // content under. When the template constrains the attribute to a
-    // node-identified structural child, the recorded structural stub's
-    // identity is stamped — a value the closed-archetype walk admits
-    // (AOM 1.4 `master04-constraint_model_package.adoc` §Valid_value).
-    // Unconstrained attributes get the spec-legal `at0001` "Any"
-    // placeholder (ADL 1.4 `master05-cadl.adoc` §"Any" Constraints).
     match rm_type {
         "OBSERVATION" => {
             obj.entry("data".to_owned())

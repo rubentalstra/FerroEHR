@@ -185,19 +185,9 @@ fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     if input.list.is_empty() || input.list_open == Some(true) {
         return;
     }
-    // DV_ORDINAL/DV_SCALE encode their coded symbol under `symbol/defining_code`.
-    let defining_code = instance.get("symbol").and_then(|s| s.get("defining_code"));
-    let code = defining_code
-        .and_then(|c| c.get("code_string"))
-        .and_then(Value::as_str);
-    let terminology = defining_code
-        .and_then(|c| c.get("terminology_id"))
-        .and_then(|t| t.get("value"))
-        .and_then(Value::as_str);
-    if !terminology_matches(input.terminology.as_deref(), terminology) {
+    let Some(code) = checkable_symbol_code(instance, input) else {
         return;
-    }
-    let Some(code) = code else { return };
+    };
 
     // Entries whose symbol matches the instance code.
     let same_symbol: Vec<&WebTemplateCodedValue> =
@@ -229,19 +219,9 @@ fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     let Some(inst_value) = instance.get("value") else {
         return; // value absent — the RM-invariant pass owns structural presence.
     };
-    let pair_ok = same_symbol.iter().any(|cv| {
-        if is_scale {
-            match (cv.scale, inst_value.as_f64()) {
-                (Some(s), Some(iv)) => (s - iv).abs() < 1e-9,
-                _ => false,
-            }
-        } else {
-            match (cv.ordinal, inst_value.as_i64()) {
-                (Some(o), Some(iv)) => i64::from(o) == iv,
-                _ => false,
-            }
-        }
-    });
+    let pair_ok = same_symbol
+        .iter()
+        .any(|cv| paired_value_matches(cv, is_scale, inst_value));
     if !pair_ok {
         v.push(
             &wt.aql_path,
@@ -252,6 +232,39 @@ fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
             ValidationKind::CodedValue,
         );
     }
+}
+
+/// The instance's ordinal symbol code, when the constraint is checkable at all.
+///
+/// DV_ORDINAL/DV_SCALE encode their coded symbol under `symbol/defining_code`;
+/// a code whose terminology differs from the constraint's is not checkable here
+/// and yields [`None`].
+fn checkable_symbol_code<'a>(instance: &'a Value, input: &WebTemplateInput) -> Option<&'a str> {
+    let defining_code = instance.get("symbol").and_then(|s| s.get("defining_code"));
+    let terminology = defining_code
+        .and_then(|c| c.get("terminology_id"))
+        .and_then(|t| t.get("value"))
+        .and_then(Value::as_str);
+    if !terminology_matches(input.terminology.as_deref(), terminology) {
+        return None;
+    }
+    defining_code
+        .and_then(|c| c.get("code_string"))
+        .and_then(Value::as_str)
+}
+
+/// Whether one constrained entry's paired numeric equals the instance value.
+fn paired_value_matches(entry: &WebTemplateCodedValue, is_scale: bool, inst_value: &Value) -> bool {
+    if is_scale {
+        return matches!(
+            (entry.scale, inst_value.as_f64()),
+            (Some(s), Some(iv)) if (s - iv).abs() < 1e-9
+        );
+    }
+    matches!(
+        (entry.ordinal, inst_value.as_i64()),
+        (Some(o), Some(iv)) if i64::from(o) == iv
+    )
 }
 
 /// Report a coded value that is not among the constrained options. Checked for
@@ -586,63 +599,81 @@ fn check_duration(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     let Some(fields) = duration_fields(value) else {
         return; // Malformed ISO duration — the RM-invariant pass owns that.
     };
-    // Allowed-fields check only when the builder filtered the inputs (a full
-    // 7-field set means the pattern allowed everything / there was no pattern).
+    check_duration_fields_allowed(v, value, &fields, wt);
+    check_duration_range(v, value, &fields, wt);
+}
+
+/// Reports every duration field the `C_DURATION` pattern does not allow.
+///
+/// The check runs only when the builder filtered the inputs: a full 7-field set
+/// means the pattern allowed everything, or there was no pattern.
+fn check_duration_fields_allowed(
+    v: &mut Validator,
+    value: &str,
+    fields: &[(&'static str, f64)],
+    wt: &WebTemplateNode,
+) {
     let allowed: Vec<&str> = wt
         .inputs
         .iter()
         .filter_map(|i| i.suffix.as_deref())
         .collect();
-    if !allowed.is_empty() && allowed.len() < 7 {
-        for (name, _) in fields.iter().filter(|(_, n)| *n != 0.0) {
-            if !allowed.contains(name) {
-                v.push(
-                    &wt.aql_path,
-                    format!(
-                        "duration '{value}' uses the '{name}' field the C_DURATION pattern \
-                         does not allow"
-                    ),
-                    ValidationKind::PatternError,
-                );
-            }
-        }
+    if allowed.is_empty() || allowed.len() >= 7 {
+        return;
     }
-    if let Some(range) = &wt.duration_range {
-        let secs = duration_seconds(&fields);
-        // Bound inclusivity follows the AOM interval flags carried in the
-        // range ops (BASE foundation_types Interval — an exclusive `> PT0S`
-        // rejects PT0S).
-        let min_ok = range
-            .min
-            .as_ref()
-            .and_then(Value::as_str)
-            .and_then(|b| duration_fields(b).map(|f| duration_seconds(&f)))
-            .is_none_or(|b| {
-                if range.min_op.as_deref() == Some(">") {
-                    secs > b
-                } else {
-                    secs >= b
-                }
-            });
-        let max_ok = range
-            .max
-            .as_ref()
-            .and_then(Value::as_str)
-            .and_then(|b| duration_fields(b).map(|f| duration_seconds(&f)))
-            .is_none_or(|b| {
-                if range.max_op.as_deref() == Some("<") {
-                    secs < b
-                } else {
-                    secs <= b
-                }
-            });
-        if !min_ok || !max_ok {
+    for (name, _) in fields.iter().filter(|(_, n)| *n != 0.0) {
+        if !allowed.contains(name) {
             v.push(
                 &wt.aql_path,
-                format!("duration '{value}' is outside the constrained range"),
-                ValidationKind::RangeError,
+                format!(
+                    "duration '{value}' uses the '{name}' field the C_DURATION pattern \
+                     does not allow"
+                ),
+                ValidationKind::PatternError,
             );
         }
+    }
+}
+
+/// Reports a duration outside the node's constrained range.
+///
+/// Bound inclusivity follows the AOM interval flags carried in the range ops
+/// (BASE `foundation_types` Interval — an exclusive `> PT0S` rejects `PT0S`).
+fn check_duration_range(
+    v: &mut Validator,
+    value: &str,
+    fields: &[(&'static str, f64)],
+    wt: &WebTemplateNode,
+) {
+    let Some(range) = &wt.duration_range else {
+        return;
+    };
+    let secs = duration_seconds(fields);
+    let bound = |b: &Option<Value>| -> Option<f64> {
+        b.as_ref()
+            .and_then(Value::as_str)
+            .and_then(|s| duration_fields(s).map(|f| duration_seconds(&f)))
+    };
+    let min_ok = bound(&range.min).is_none_or(|b| {
+        if range.min_op.as_deref() == Some(">") {
+            secs > b
+        } else {
+            secs >= b
+        }
+    });
+    let max_ok = bound(&range.max).is_none_or(|b| {
+        if range.max_op.as_deref() == Some("<") {
+            secs < b
+        } else {
+            secs <= b
+        }
+    });
+    if !min_ok || !max_ok {
+        v.push(
+            &wt.aql_path,
+            format!("duration '{value}' is outside the constrained range"),
+            ValidationKind::RangeError,
+        );
     }
 }
 
@@ -656,32 +687,41 @@ fn duration_fields(value: &str) -> Option<Vec<(&'static str, f64)>> {
         None => (rest, ""),
     };
     let mut out = Vec::new();
-    let mut parse = |part: &str, in_time: bool| -> Option<()> {
-        let mut num = String::new();
-        for ch in part.chars() {
-            if ch.is_ascii_digit() || ch == '.' || ch == ',' {
-                num.push(if ch == ',' { '.' } else { ch });
-            } else {
-                let n: f64 = num.parse().ok()?;
-                num.clear();
-                let name = match (ch, in_time) {
-                    ('Y', false) => "year",
-                    ('M', false) => "month",
-                    ('W', false) => "week",
-                    ('D', false) => "day",
-                    ('H', true) => "hour",
-                    ('M', true) => "minute",
-                    ('S', true) => "second",
-                    _ => return None,
-                };
-                out.push((name, n));
-            }
-        }
-        if num.is_empty() { Some(()) } else { None }
-    };
-    parse(date_part, false)?;
-    parse(time_part, true)?;
+    push_duration_part(date_part, false, &mut out)?;
+    push_duration_part(time_part, true, &mut out)?;
     Some(out)
+}
+
+/// Appends one half of an ISO-8601 duration to `out`.
+///
+/// `in_time` selects the time-half reading of the ambiguous `M` designator
+/// (minutes rather than months). Returns [`None`] on an unparseable half.
+fn push_duration_part(part: &str, in_time: bool, out: &mut Vec<(&'static str, f64)>) -> Option<()> {
+    let mut num = String::new();
+    for ch in part.chars() {
+        if ch.is_ascii_digit() || ch == '.' || ch == ',' {
+            num.push(if ch == ',' { '.' } else { ch });
+            continue;
+        }
+        let n: f64 = num.parse().ok()?;
+        num.clear();
+        out.push((duration_field_name(ch, in_time)?, n));
+    }
+    if num.is_empty() { Some(()) } else { None }
+}
+
+/// The `DV_DURATION` field one ISO-8601 designator names, if it names one.
+fn duration_field_name(designator: char, in_time: bool) -> Option<&'static str> {
+    match (designator, in_time) {
+        ('Y', false) => Some("year"),
+        ('M', false) => Some("month"),
+        ('W', false) => Some("week"),
+        ('D', false) => Some("day"),
+        ('H', true) => Some("hour"),
+        ('M', true) => Some("minute"),
+        ('S', true) => Some("second"),
+        _ => None,
+    }
 }
 
 /// Total seconds of a parsed duration, using the RM's nominal field lengths

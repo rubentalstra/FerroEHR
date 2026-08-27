@@ -392,32 +392,14 @@ fn create_node(
     let coded_name = archetyped
         .then(|| coded_name_constraint(co, ctx, arch_id, name_constraint.as_deref()))
         .flatten();
-    if let Some((value, coded)) = coded_name {
-        node.name = Some(value.clone());
-        node.localized_name = Some(value);
-        node.name_coded = Some(coded);
-    } else if let Some(nc) = &name_constraint {
-        node.name = Some(nc.clone());
-        node.localized_name = Some(nc.clone());
-    } else if !name_code.is_empty() {
-        node.name = ctx.text(arch_id, name_code, &ctx.default_language);
-        node.localized_name.clone_from(&node.name);
-        for lang in &ctx.languages {
-            if let Some(r) = ctx.rubric(arch_id, lang, name_code) {
-                if let Some(t) = &r.text {
-                    node.localized_names.insert(lang.clone(), t.clone());
-                }
-                if let Some(d) = &r.description {
-                    node.localized_descriptions.insert(lang.clone(), d.clone());
-                }
-            }
-        }
-    }
-    node.name_code = if name_code.is_empty() {
-        None
-    } else {
-        Some(name_code.to_owned())
-    };
+    apply_node_naming(
+        &mut node,
+        ctx,
+        arch_id,
+        name_code,
+        name_constraint.as_deref(),
+        coded_name,
+    );
     // Node-level external term bindings: the archetype root's `term_bindings`
     // whose item code matches this node's constraint node id (master04
     // §"Web Template Metadata": the node-level `termBindings` map).
@@ -429,6 +411,52 @@ fn create_node(
     // Value-sets to Archetypes").
     node.constraint_bindings = constraint_bindings_of(ctx, co, arch_id);
     node
+}
+
+/// Fills a node's name, localized names/descriptions and name code.
+///
+/// A coded name constraint wins over an explicit plain `name/value`, which wins
+/// over the node rubric; only the rubric route carries per-language text.
+fn apply_node_naming(
+    node: &mut WebTemplateNode,
+    ctx: &Ctx,
+    arch_id: &str,
+    name_code: &str,
+    name_constraint: Option<&str>,
+    coded_name: Option<(String, CodedName)>,
+) {
+    if let Some((value, coded)) = coded_name {
+        node.name = Some(value.clone());
+        node.localized_name = Some(value);
+        node.name_coded = Some(coded);
+    } else if let Some(nc) = name_constraint {
+        node.name = Some(nc.to_owned());
+        node.localized_name = Some(nc.to_owned());
+    } else if !name_code.is_empty() {
+        node.name = ctx.text(arch_id, name_code, &ctx.default_language);
+        node.localized_name.clone_from(&node.name);
+        apply_localized_rubrics(node, ctx, arch_id, name_code);
+    }
+    node.name_code = if name_code.is_empty() {
+        None
+    } else {
+        Some(name_code.to_owned())
+    };
+}
+
+/// Records the node rubric's per-language text and description.
+fn apply_localized_rubrics(node: &mut WebTemplateNode, ctx: &Ctx, arch_id: &str, name_code: &str) {
+    for lang in &ctx.languages {
+        let Some(r) = ctx.rubric(arch_id, lang, name_code) else {
+            continue;
+        };
+        if let Some(t) = &r.text {
+            node.localized_names.insert(lang.clone(), t.clone());
+        }
+        if let Some(d) = &r.description {
+            node.localized_descriptions.insert(lang.clone(), d.clone());
+        }
+    }
 }
 
 /// Builds the child nodes of one constraint attribute into `children`.
@@ -929,45 +957,64 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
 /// rule 2): `name`/`value`/`category`/`context` etc. hold non-LOCATABLE values
 /// that carry no `archetype_node_id` and so are never subject to sibling closure.
 fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttribute> {
-    let mut out = Vec::new();
-    for attr in inputs::attributes(co) {
-        let attr_name = inputs::attribute_name(attr);
-        if attr_name == "name" {
-            continue; // The name is matched by predicate, not closure (master04 §"Field Identifiers").
-        }
-        // An unresolved internal-ref / constraint-ref makes the admissible set
-        // uncertain (target resolution is a documented builder scope gap); leave
-        // such an attribute OPEN rather than risk over-rejecting.
-        if inputs::attribute_children(attr).iter().any(|c| {
-            matches!(
-                c,
-                CObject::ArchetypeInternalRef(_) | CObject::ConstraintRef(_)
-            )
-        }) {
+    inputs::attributes(co)
+        .iter()
+        .filter_map(|attr| closed_attribute(attr, node_path))
+        .collect()
+}
+
+/// The closure record for one constraint attribute, or [`None`] when the
+/// attribute stays open.
+///
+/// An attribute stays open when it is the predicate-matched `name` (master04
+/// §"Field Identifiers"), when an unresolved internal-ref / constraint-ref makes
+/// the admissible set uncertain (target resolution is a documented builder scope
+/// gap — leave it open rather than risk over-rejecting), or when it constrains
+/// no node-id alternative and no slot.
+fn closed_attribute(
+    attr: &crate::opt14::types::CAttribute,
+    node_path: &str,
+) -> Option<WebTemplateClosedAttribute> {
+    let attr_name = inputs::attribute_name(attr);
+    if attr_name == "name" {
+        return None;
+    }
+    if inputs::attribute_children(attr).iter().any(|c| {
+        matches!(
+            c,
+            CObject::ArchetypeInternalRef(_) | CObject::ConstraintRef(_)
+        )
+    }) {
+        return None;
+    }
+    let (allowed_ids, slots) = admissible_children(attr);
+    if allowed_ids.is_empty() && slots.is_empty() {
+        return None;
+    }
+    Some(WebTemplateClosedAttribute {
+        path: format!("{node_path}/{attr_name}"),
+        allowed_ids,
+        slots,
+    })
+}
+
+/// The archetype node ids and slots one attribute admits as children.
+fn admissible_children(
+    attr: &crate::opt14::types::CAttribute,
+) -> (Vec<String>, Vec<WebTemplateArchetypeSlot>) {
+    let mut allowed_ids: Vec<String> = Vec::new();
+    let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
+    for child in inputs::attribute_children(attr) {
+        if let CObject::ArchetypeSlot(s) = child {
+            slots.push(archetype_slot(s));
             continue;
         }
-        let mut allowed_ids: Vec<String> = Vec::new();
-        let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
-        for child in inputs::attribute_children(attr) {
-            if let CObject::ArchetypeSlot(s) = child {
-                slots.push(archetype_slot(s));
-                continue;
-            }
-            let id = object_archetype_node_id(child);
-            if !id.is_empty() {
-                allowed_ids.push(id);
-            }
+        let id = object_archetype_node_id(child);
+        if !id.is_empty() {
+            allowed_ids.push(id);
         }
-        if allowed_ids.is_empty() && slots.is_empty() {
-            continue; // Open attribute (no node-id alternatives, no slot).
-        }
-        out.push(WebTemplateClosedAttribute {
-            path: format!("{node_path}/{attr_name}"),
-            allowed_ids,
-            slots,
-        });
     }
-    out
+    (allowed_ids, slots)
 }
 
 // ── structural stubs (constrained-but-content-less ENTRY structural attrs) ────

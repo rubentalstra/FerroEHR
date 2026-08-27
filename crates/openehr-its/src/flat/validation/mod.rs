@@ -1017,33 +1017,15 @@ impl Validator {
             .map(|&i| &wt_parent.children[i])
             .collect();
         let first = members[0];
-        // The identity segment is the last one carrying a predicate; if none
-        // carries one, the last segment (a plain single-valued attribute).
-        let identity_idx = segments
-            .iter()
-            .rposition(|s| !s.predicate.is_empty())
-            .unwrap_or(segments.len() - 1);
-        // A node whose RM type does NOT inherit `LOCATABLE` carries no
-        // `archetype_node_id` in canonical JSON (only `LOCATABLE` adds it — RM
-        // common `UML/classes/org.openehr.rm.common.locatable.adoc`; `EVENT_CONTEXT`
-        // inherits `PATHABLE` directly — RM
-        // `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit), so
-        // it is matched STRUCTURALLY by attribute position, predicate stripped. Only
-        // the TERMINAL-identity case reads `first.rm_type`: with a trailing plain
-        // attribute the identity node is the archetyped `LOCATABLE` intermediate.
+        let identity_idx = identity_index(segments);
+        // Only the TERMINAL-identity case reads `first.rm_type`: with a trailing
+        // plain attribute the identity node is the archetyped `LOCATABLE`
+        // intermediate.
         let raw_id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
         let identity_is_locatable = !trailing.is_empty() || is_locatable(&first.rm_type);
-        let structural_match = !identity_is_locatable && !raw_id_seg.predicate.is_empty();
-        let structural_id_seg;
-        let id_seg: &PathSegment = if structural_match {
-            let mut stripped = raw_id_seg.clone();
-            stripped.predicate = openehr_rm::v1_2::paths::Predicate::default();
-            structural_id_seg = stripped;
-            &structural_id_seg
-        } else {
-            raw_id_seg
-        };
+        let structural_id_seg = structural_identity(raw_id_seg, identity_is_locatable);
+        let id_seg: &PathSegment = structural_id_seg.as_ref().unwrap_or(raw_id_seg);
 
         // Navigate the intermediate segments to the container node(s).
         let containers = rmpath::navigate(&[parent], &segments[..identity_idx]);
@@ -1058,17 +1040,7 @@ impl Validator {
         let occ_applies = identity_is_locatable
             && id_seg.predicate.archetype_node_id.is_some()
             && !members.iter().any(|c| c.in_context == Some(true));
-        let group_min = members
-            .iter()
-            .filter_map(|c| c.min)
-            .min()
-            .unwrap_or(0)
-            .max(0);
-        let group_max = if members.iter().any(|c| c.max == -1) {
-            -1
-        } else {
-            members.iter().map(|c| c.max).max().unwrap_or(-1)
-        };
+        let (group_min, group_max) = group_occurrences(&members);
 
         for container in &containers {
             let matched = select_group_children(container, id_seg, names);
@@ -1076,13 +1048,25 @@ impl Validator {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
             for node in matched {
-                for target in rmpath::navigate(&[node], trailing) {
-                    if members.len() == 1 {
-                        self.walk(target, first);
-                    } else {
-                        self.visit_choice(target, &members);
-                    }
-                }
+                self.walk_group_targets(node, trailing, &members);
+            }
+        }
+    }
+
+    /// Walks every target the trailing segments reach under one matched node.
+    ///
+    /// A single-member group walks its one template node; a choice group is
+    /// dispatched to [`Self::visit_choice`].
+    fn walk_group_targets(
+        &mut self,
+        node: &Value,
+        trailing: &[PathSegment],
+        members: &[&WebTemplateNode],
+    ) {
+        for target in rmpath::navigate(&[node], trailing) {
+            match members {
+                [only] => self.walk(target, only),
+                _ => self.visit_choice(target, members),
             }
         }
     }
@@ -1256,6 +1240,54 @@ fn select_group_children<'a>(
         }
         (_, None) => rmpath::select_children_matched(container, id_seg, true),
     }
+}
+
+/// The index of the group's identity segment.
+///
+/// That is the last segment carrying a predicate; if none carries one, the last
+/// segment (a plain single-valued attribute).
+fn identity_index(segments: &[PathSegment]) -> usize {
+    segments
+        .iter()
+        .rposition(|s| !s.predicate.is_empty())
+        .unwrap_or(segments.len() - 1)
+}
+
+/// The predicate-stripped identity segment for a structurally-matched node.
+///
+/// A node whose RM type does NOT inherit `LOCATABLE` carries no
+/// `archetype_node_id` in canonical JSON (only `LOCATABLE` adds it — RM common
+/// `UML/classes/org.openehr.rm.common.locatable.adoc`; `EVENT_CONTEXT` inherits
+/// `PATHABLE` directly — RM
+/// `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit), so it
+/// is matched by attribute position instead. [`None`] means the raw segment
+/// applies unchanged.
+fn structural_identity(
+    raw_id_seg: &PathSegment,
+    identity_is_locatable: bool,
+) -> Option<PathSegment> {
+    if identity_is_locatable || raw_id_seg.predicate.is_empty() {
+        return None;
+    }
+    let mut stripped = raw_id_seg.clone();
+    stripped.predicate = openehr_rm::v1_2::paths::Predicate::default();
+    Some(stripped)
+}
+
+/// The group's combined occurrence bounds: the loosest of its members'.
+fn group_occurrences(members: &[&WebTemplateNode]) -> (i32, i32) {
+    let min = members
+        .iter()
+        .filter_map(|c| c.min)
+        .min()
+        .unwrap_or(0)
+        .max(0);
+    let max = if members.iter().any(|c| c.max == -1) {
+        -1
+    } else {
+        members.iter().map(|c| c.max).max().unwrap_or(-1)
+    };
+    (min, max)
 }
 
 /// Whether an RM type inherits `LOCATABLE` and therefore carries an
