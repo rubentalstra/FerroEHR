@@ -137,7 +137,7 @@ LABEL org.opencontainers.image.title="FerroEHR" \
       org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.base.name="gcr.io/distroless/cc-debian13:nonroot" \
-      org.opencontainers.image.base.digest="sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775" \
+      org.opencontainers.image.base.digest="sha256:a77defd6fedbb3392b175ba8ea3d1c22be963c1597c248c3ba987ddd80bfb512" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
