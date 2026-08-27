@@ -1,5 +1,5 @@
 {
-  "latest": "v4.0.5",
+  "latest": "v4.0.6",
   "versions": [
     {
       "id": "dev",
@@ -10,10 +10,16 @@
     },
     {
       "id": "latest",
-      "label": "latest (v4.0.5)",
+      "label": "latest (v4.0.6)",
       "path": "/docs/latest/",
-      "released": "2026-08-26",
-      "aliasOf": "v4.0.5"
+      "released": "2026-08-27",
+      "aliasOf": "v4.0.6"
+    },
+    {
+      "id": "v4.0.6",
+      "label": "v4.0.6",
+      "path": "/docs/v4.0.6/",
+      "released": "2026-08-27"
     },
     {
       "id": "v4.0.5",
