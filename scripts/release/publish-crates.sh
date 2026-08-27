@@ -87,7 +87,7 @@ do_publish() {
       ;;
     esac
   done
-  [ -z "$failed" ] || {
+  [[ -z "$failed" ]] || {
     echo "::error::failed to publish:$failed"
     return 1
   }
@@ -118,13 +118,13 @@ do_verify() {
           jq -r --arg v "$want" '.versions[]? | select(.num == $v) | .num' |
           head -1)" || got=""
       fi
-      [ -n "$got" ] && break
+      [[ -n "$got" ]] && break
       sleep 10
     done
     printf '%-16s %s\n' "$crate" "${got:-MISSING}"
-    [ -n "$got" ] || bad="$bad $crate"
+    [[ -n "$got" ]] || bad="$bad $crate"
   done
-  [ -z "$bad" ] || {
+  [[ -z "$bad" ]] || {
     echo "::error::the published set is SPLIT — these are not at $want:$bad"
     return 1
   }
