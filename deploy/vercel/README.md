@@ -36,6 +36,35 @@ Sandbox failures live in the two sandbox-named workflows (Sandbox deploy,
 Sandbox reseed) and nowhere else. CI, Containers, the chart and release
 lanes carry no sandbox steps, so a sandbox outage can never redden them.
 
+## Two build-log warnings that are understood, not unnoticed (#2773)
+
+Every Vercel build of `Dockerfile.vercel` prints two warnings. Both were
+adjudicated first-hand against Vercel's own documentation (read 2026-08-27)
+and neither has a configuration that removes it, so they will keep printing —
+this section is what makes them read as understood.
+
+1. `HEALTHCHECK is not supported for OCI image format and will be ignored.`
+   The published app image bakes a `HEALTHCHECK` (`docker/Dockerfile`) for
+   compose/podman consumers; Vercel's buildah builds the sandbox derivative
+   in OCI format, which has no healthcheck field, so the instruction is
+   dropped from the sandbox image only. The drop is provably inert here:
+   the service configuration reference
+   (<https://vercel.com/docs/services/config-reference>) offers no
+   healthCheck or probe key, and the container-images model expects exactly
+   one thing of the image — an HTTP server on `PORT`
+   (<https://vercel.com/docs/functions/container-images>). Nothing on the
+   platform ever reads a container healthcheck; readiness on this pipeline
+   is our own post-deploy poll of `/ferroehr/rest/status`. Removing the
+   instruction from the base image would silence the warning by taking the
+   healthcheck away from every compose user — the wrong trade.
+2. `Build output contains no "functions" or "static" directory` — the
+   framework-output check firing on a container-only project. The service
+   config reference has no key that declares container-only output
+   (`outputDirectory` configures where a framework build writes, not what
+   kind of output exists), so the warning is a known false alarm of the
+   container preset: the deploy is real (the `services`/`rewrites` config
+   routes it) and the workflow's version poll proves it serves.
+
 ## What is deliberately NOT here
 
 - No hand-maintained image pin: `:latest` is moved by the image lane on
