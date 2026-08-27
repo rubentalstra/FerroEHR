@@ -490,24 +490,30 @@ impl Predicate {
         }
         if let Some(uid) = &self.uid {
             if wrote {
-                write!(f, " and uid='{uid}'")?;
-            } else {
-                write!(f, "uid='{uid}'")?;
+                f.write_str(" and ")?;
             }
+            write!(f, "uid='{uid}'")?;
             wrote = true;
         }
         for cmp in &self.comparisons {
             if wrote {
                 f.write_str(" and ")?;
             }
-            write!(f, "{}", cmp.path.join("/"))?;
-            match &cmp.value {
-                CmpLiteral::Str(s) => write!(f, " {} '{s}'", cmp.op.token())?,
-                CmpLiteral::Num(n) => write!(f, " {} {n}", cmp.op.token())?,
-            }
+            cmp.render(f)?;
             wrote = true;
         }
         f.write_str("]")
+    }
+}
+
+impl Comparison {
+    /// Render one comparison term of a predicate (`path op literal`).
+    fn render(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.path.join("/"))?;
+        match &self.value {
+            CmpLiteral::Str(s) => write!(f, " {} '{s}'", self.op.token()),
+            CmpLiteral::Num(n) => write!(f, " {} {n}", self.op.token()),
+        }
     }
 }
 
@@ -879,29 +885,32 @@ pub fn parent_of<'a>(root: &'a Value, item: &Value) -> Option<&'a Value> {
 /// parent; array elements report the object holding the array.
 fn walk_for_parent<'a>(node: &'a Value, item: &Value) -> Option<&'a Value> {
     match node {
-        Value::Object(map) => {
-            for child in map.values() {
-                if std::ptr::eq(child, item) {
-                    return Some(node);
-                }
-                if let Value::Array(items) = child {
-                    if items.iter().any(|v| std::ptr::eq(v, item)) {
-                        return Some(node);
-                    }
-                    for v in items {
-                        if let Some(found) = walk_for_parent(v, item) {
-                            return Some(found);
-                        }
-                    }
-                } else if let Some(found) = walk_for_parent(child, item) {
-                    return Some(found);
-                }
-            }
-            None
-        }
+        Value::Object(map) => map
+            .values()
+            .find_map(|child| parent_through_member(node, child, item)),
         Value::Array(items) => items.iter().find_map(|v| walk_for_parent(v, item)),
         _ => None,
     }
+}
+
+/// The RM parent reached through one member of `owner`: `owner` itself when
+/// the member IS the item (or holds it directly in an array), else whatever
+/// the member's own subtree reports.
+fn parent_through_member<'a>(
+    owner: &'a Value,
+    child: &'a Value,
+    item: &Value,
+) -> Option<&'a Value> {
+    if std::ptr::eq(child, item) {
+        return Some(owner);
+    }
+    let Value::Array(items) = child else {
+        return walk_for_parent(child, item);
+    };
+    if items.iter().any(|v| std::ptr::eq(v, item)) {
+        return Some(owner);
+    }
+    items.iter().find_map(|v| walk_for_parent(v, item))
 }
 
 /// Depth-first search for `item` (pointer identity), accumulating the
