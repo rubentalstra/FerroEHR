@@ -355,6 +355,10 @@ fn collect_generation(
             Vec::new()
         };
         let props = if flattened { inherited } else { declared };
+        let package = packages
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| ABSENT.to_string());
         for (decl, (owner, prop)) in props.into_iter().enumerate() {
             let shape = if skipped {
                 NOT_EMITTED.to_string()
@@ -367,10 +371,7 @@ fn collect_generation(
             out.rows.push(Row {
                 component,
                 bmm: bmm.clone(),
-                package: packages
-                    .get(name)
-                    .cloned()
-                    .unwrap_or_else(|| ABSENT.to_string()),
+                package: package.clone(),
                 class: name.clone(),
                 class_abstract: class.is_abstract,
                 class_emission,
