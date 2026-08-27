@@ -947,32 +947,46 @@ fn const_literal(c: &BmmConstant, siblings: &BTreeSet<&str>) -> (String, String)
         serde_json::Value::Number(n) => ("i64".to_string(), format!("{}", n.as_i64().unwrap_or(0))),
         serde_json::Value::Bool(b) => ("bool".to_string(), format!("{b}")),
         serde_json::Value::String(s) => {
-            let t = s.trim();
-            if let Some(inner) = strip_delims(t, '"') {
-                ("&str".to_string(), format!("{:?}", decode_entities(inner)))
-            } else if let Some(inner) = strip_delims(t, '\'') {
-                ("char".to_string(), format!("{:?}", decode_char(inner)))
-            } else if siblings.contains(t) {
-                let rust_ty = if is_real { "f64" } else { "i64" };
-                (
-                    rust_ty.to_string(),
-                    format!("Self::{}", naming::const_ident(t)),
-                )
-            } else if c.type_name == "Boolean" {
-                (
-                    "bool".to_string(),
-                    format!("{}", t.eq_ignore_ascii_case("true")),
-                )
-            } else {
-                // A bareword that is neither a sibling nor a boolean: emit as a
-                // string literal (verbatim), the safest total decoding.
-                ("&str".to_string(), format!("{t:?}"))
-            }
+            string_const_literal(s.trim(), &c.type_name, is_real, siblings)
         }
         serde_json::Value::Null | serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
             ("&str".to_string(), "\"\"".to_string())
         }
     }
+}
+
+/// Decode a STRING-valued BMM constant to a Rust `(type, literal)` pair.
+///
+/// A quoted `"…"` is a `&str`, a quoted `'…'` a `char`, a bareword naming a
+/// sibling constant a `Self::OTHER` cross-reference, and a bareword under a
+/// `Boolean` type a bool. Anything else is emitted verbatim as a string
+/// literal — the safest total decoding.
+fn string_const_literal(
+    t: &str,
+    type_name: &str,
+    is_real: bool,
+    siblings: &BTreeSet<&str>,
+) -> (String, String) {
+    if let Some(inner) = strip_delims(t, '"') {
+        return ("&str".to_string(), format!("{:?}", decode_entities(inner)));
+    }
+    if let Some(inner) = strip_delims(t, '\'') {
+        return ("char".to_string(), format!("{:?}", decode_char(inner)));
+    }
+    if siblings.contains(t) {
+        let rust_ty = if is_real { "f64" } else { "i64" };
+        return (
+            rust_ty.to_string(),
+            format!("Self::{}", naming::const_ident(t)),
+        );
+    }
+    if type_name == "Boolean" {
+        return (
+            "bool".to_string(),
+            format!("{}", t.eq_ignore_ascii_case("true")),
+        );
+    }
+    ("&str".to_string(), format!("{t:?}"))
 }
 
 /// Strip a matching pair of delimiter characters (`"…"` or `'…'`) from `s`,
