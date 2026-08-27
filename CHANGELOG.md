@@ -15,6 +15,24 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.7] - 2026-08-27
+
+### Added
+
+- The release pipeline publishes the `openehr-*` spec crates itself, as an
+  approval-gated leg: the run pauses at the `crates-io` environment for an
+  explicit human approval, then publishes any unpublished crate versions in
+  dependency order with registry read-back (a release with no crate changes
+  passes the leg as a no-op). A cut can no longer forget the crates; the
+  dispatch lane remains as the dry-run/recovery path.
+
+### Fixed
+
+- The chart packaging lane installs the pinned `helm-docs`, so the chart
+  README drift check runs where the chart is actually packaged. The v4.0.6
+  chart publish initially failed on exactly this and was recovered by
+  dispatch; from this release the leg carries the tool.
+
 ## [4.0.6] - 2026-08-27
 
 The first stable cut of the 4.0.6 line. The bulk of the line's changes landed
@@ -7645,7 +7663,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.7...HEAD
+[4.0.7]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6...v4.0.7
 [4.0.6]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc3...v4.0.6
 [4.0.6-rc3]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc2...v4.0.6-rc3
 [4.0.6-rc2]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.5...v4.0.6-rc2
