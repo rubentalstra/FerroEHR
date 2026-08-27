@@ -431,6 +431,62 @@ fn create_node(
     node
 }
 
+/// Builds the child nodes of one constraint attribute into `children`.
+///
+/// The careflow-state alternatives of `ism_transition` collapse into the one
+/// transition node master05 §ISM_TRANSITION maps, so they are built without
+/// their at-code identity (see [`shape::MERGED_ATTRIBUTE`]) and the merged
+/// node takes the ATTRIBUTE's occurrences — one required transition per ACTION
+/// instance, not one per careflow state. An unfilled slot or a constraint ref
+/// yields no node.
+fn build_attribute_children(
+    ctx: &Ctx,
+    attr: &crate::opt14::types::CAttribute,
+    node: &WebTemplateNode,
+    arch_id: &str,
+    children: &mut Vec<WebTemplateNode>,
+) {
+    let attr_name = inputs::attribute_name(attr);
+    // The openEHR terminology group a child's coded value binds to, fixed by
+    // (this node's RM type, the attribute) — used to resolve rubrics from the
+    // correct group (SPECPR-51 code collisions; see `inputs::openehr_group`).
+    let child_group = inputs::openehr_group(&node.rm_type, attr_name);
+    let merged = attr_name == shape::MERGED_ATTRIBUTE;
+    let identity = if merged {
+        shape::Identity::AttributeOnly
+    } else {
+        shape::Identity::Archetyped
+    };
+    let mut built = Vec::new();
+    for child_co in inputs::attribute_children(attr) {
+        if matches!(
+            child_co,
+            CObject::ArchetypeSlot(_) | CObject::ConstraintRef(_)
+        ) {
+            continue;
+        }
+        built.push(build_node(
+            ctx,
+            Some(attr),
+            child_co,
+            &node.aql_path,
+            arch_id,
+            child_group,
+            identity,
+        ));
+    }
+    if !merged {
+        children.extend(built);
+        return;
+    }
+    if let Some(mut transition) = shape::merge_alternatives(built) {
+        let (min, max) = occurrences(attribute_existence(attr));
+        transition.min = min;
+        transition.max = max;
+        children.push(transition);
+    }
+}
+
 fn build_children(
     ctx: &Ctx,
     co: &CObject,
@@ -444,57 +500,10 @@ fn build_children(
     let mut children = Vec::new();
     if recurse_attrs {
         for attr in inputs::attributes(co) {
-            let attr_name = inputs::attribute_name(attr);
-            if attr_name == "name" {
-                // The `name` attribute is never a child node — it names the node
-                // (master04 §"Field Identifiers": names generate the node id).
-                continue;
-            }
-            // The openEHR terminology group a child's coded value binds to, fixed
-            // by (this node's RM type, the attribute) — used to resolve rubrics
-            // from the correct group (SPECPR-51 code collisions; see
-            // `inputs::openehr_group`).
-            let child_group = inputs::openehr_group(&node.rm_type, attr_name);
-            // The careflow-state alternatives of `ism_transition` collapse into
-            // the one transition node master05 §ISM_TRANSITION maps, so they are
-            // built without their at-code identity (see
-            // [`shape::MERGED_ATTRIBUTE`]).
-            let merged = attr_name == shape::MERGED_ATTRIBUTE;
-            let identity = if merged {
-                shape::Identity::AttributeOnly
-            } else {
-                shape::Identity::Archetyped
-            };
-            let mut built = Vec::new();
-            for child_co in inputs::attribute_children(attr) {
-                if matches!(
-                    child_co,
-                    CObject::ArchetypeSlot(_) | CObject::ConstraintRef(_)
-                ) {
-                    continue; // Unfilled slot / constraint ref: no node.
-                }
-                built.push(build_node(
-                    ctx,
-                    Some(attr),
-                    child_co,
-                    &node.aql_path,
-                    arch_id,
-                    child_group,
-                    identity,
-                ));
-            }
-            if merged {
-                if let Some(mut transition) = shape::merge_alternatives(built) {
-                    // The merged node's occurrences are the ATTRIBUTE's — one
-                    // required transition per ACTION instance, not one per
-                    // careflow state.
-                    let (min, max) = occurrences(attribute_existence(attr));
-                    transition.min = min;
-                    transition.max = max;
-                    children.push(transition);
-                }
-            } else {
-                children.extend(built);
+            // The `name` attribute is never a child node — it names the node
+            // (master04 §"Field Identifiers": names generate the node id).
+            if inputs::attribute_name(attr) != "name" {
+                build_attribute_children(ctx, attr, node, arch_id, &mut children);
             }
         }
     }
@@ -632,37 +641,7 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     }
     capture_size_range(co, node);
     capture_leaf_existence(co, node);
-    if let Some(CPrimitive::CDuration(d)) = inputs::primitive_under(co, "value")
-        && let Some(range) = &d.range
-    {
-        let min = if range.lower_unbounded {
-            None
-        } else {
-            range.lower.clone()
-        };
-        let max = if range.upper_unbounded {
-            None
-        } else {
-            range.upper.clone()
-        };
-        if min.is_some() || max.is_some() {
-            // Inclusivity comes from the AOM interval flags (BASE
-            // foundation_types Interval: lower_included/upper_included) —
-            // an exclusive bound (`> PT0S`) must not degrade to `>=`.
-            let min_strict = range.lower_included == Some(false);
-            let max_strict = range.upper_included == Some(false);
-            node.duration_range = Some(super::model::WebTemplateRange {
-                min_op: min
-                    .as_ref()
-                    .map(|_| if min_strict { ">" } else { ">=" }.to_owned()),
-                min: min.map(serde_json::Value::String),
-                max_op: max
-                    .as_ref()
-                    .map(|_| if max_strict { "<" } else { "<=" }.to_owned()),
-                max: max.map(serde_json::Value::String),
-            });
-        }
-    }
+    capture_duration_range(co, node);
     // C_TIME/C_DATE_TIME timezone_validity (VALIDITY_KIND: OPT 1.4 XSD 1001 =
     // mandatory, 1002 = optional, 1003 = disallowed). C_DATE has no timezone.
     node.tz_validity = match inputs::primitive_under(co, "value") {
@@ -670,13 +649,58 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
         Some(CPrimitive::CDateTime(c)) => c.timezone_validity.map(validity_code),
         _ => None,
     };
-    // C_QUANTITY.property (openEHR `property`-group code): captured so the
-    // instance's `units` can be checked against the property's unit set
-    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY:
-    // `property` = "Name of physical property for Quantities being
-    // constrained"). Only the openEHR-terminology property code is meaningful,
-    // and the placeholder "0" (Ocean Template Designer's unconstrained property)
-    // is treated as no constraint (matching the OPT-side C_DV_QUANTITY check).
+    capture_quantity_property(co, node);
+    capture_code_lists(co, node);
+}
+
+/// `C_DURATION.range` on `value` → [`WebTemplateNode::duration_range`] (AOM 1.4
+/// §`C_DURATION`).
+///
+/// Inclusivity comes from the AOM interval flags (BASE `foundation_types`
+/// Interval: `lower_included`/`upper_included`) — an exclusive bound
+/// (`> PT0S`) must not degrade to `>=`.
+fn capture_duration_range(co: &CObject, node: &mut WebTemplateNode) {
+    let Some(CPrimitive::CDuration(d)) = inputs::primitive_under(co, "value") else {
+        return;
+    };
+    let Some(range) = &d.range else { return };
+    let min = if range.lower_unbounded {
+        None
+    } else {
+        range.lower.clone()
+    };
+    let max = if range.upper_unbounded {
+        None
+    } else {
+        range.upper.clone()
+    };
+    if min.is_none() && max.is_none() {
+        return;
+    }
+    let min_strict = range.lower_included == Some(false);
+    let max_strict = range.upper_included == Some(false);
+    node.duration_range = Some(super::model::WebTemplateRange {
+        min_op: min
+            .as_ref()
+            .map(|_| if min_strict { ">" } else { ">=" }.to_owned()),
+        min: min.map(serde_json::Value::String),
+        max_op: max
+            .as_ref()
+            .map(|_| if max_strict { "<" } else { "<=" }.to_owned()),
+        max: max.map(serde_json::Value::String),
+    });
+}
+
+/// `C_QUANTITY.property` (an openEHR `property`-group code), captured so the
+/// instance's `units` can be checked against the property's unit set
+/// (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY:
+/// `property` = "Name of physical property for Quantities being
+/// constrained").
+///
+/// Only the openEHR-terminology property code is meaningful, and the
+/// placeholder "0" (Ocean Template Designer's unconstrained property) is
+/// treated as no constraint, matching the OPT-side `C_DV_QUANTITY` check.
+fn capture_quantity_property(co: &CObject, node: &mut WebTemplateNode) {
     if let CObject::CDvQuantity(q) = co
         && let Some(property) = &q.property
         && property
@@ -688,13 +712,25 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     {
         node.quantity_property = Some(property.code_string.clone());
     }
-    // An explicitly `local`-scoped closed code list admits ONLY local codes, so
-    // a foreign-terminology instance code violates it
-    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
-    // §C_CODED_TEXT: `code_list` is "a list of codes FROM the terminology").
-    // The `wt+json` `inputs` mapping strips the implicit `local`, so the
-    // explicit scoping is recorded on the node instead (validation-only); a
-    // `C_CODE_PHRASE` naming no terminology is not flagged.
+}
+
+/// The `C_CODE_PHRASE` code lists the `inputs` mapping does not carry: the
+/// explicit `local` scoping of `defining_code`, and the lists on every other
+/// coded attribute (e.g. `DV_MULTIMEDIA.media_type`) → AOM 1.4
+/// §`C_CODE_PHRASE`.
+///
+/// An explicitly `local`-scoped closed code list admits ONLY local codes, so a
+/// foreign-terminology instance code violates it
+/// (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
+/// §C_CODED_TEXT: `code_list` is "a list of codes FROM the terminology"). The
+/// `wt+json` `inputs` mapping strips the implicit `local`, so the explicit
+/// scoping is recorded on the node instead (validation-only); a
+/// `C_CODE_PHRASE` naming no terminology is not flagged.
+///
+/// NOTE: `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
+/// Objects resolves a CONSTRAINT_REF through an external terminology query,
+/// not a local code list, so it is not captured as a leaf constraint.
+fn capture_code_lists(co: &CObject, node: &mut WebTemplateNode) {
     let defining_cp = match co {
         CObject::CCodePhrase(cp) => Some(cp),
         _ => inputs::attr_children(co, "defining_code").find_map(|c| match c {
@@ -711,9 +747,6 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     {
         node.coded_terminology_local = true;
     }
-    // NOTE: `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
-    // Objects resolves a CONSTRAINT_REF through an external terminology query,
-    // not a local code list, so it is not captured as a leaf constraint.
     for attr in inputs::attributes(co) {
         let attr_name = inputs::attribute_name(attr);
         if attr_name == "defining_code" {

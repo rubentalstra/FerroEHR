@@ -1135,7 +1135,6 @@ fn emit_enum(
         format!("<{}>", enum_generics.join(", "))
     };
     let mut b = String::new();
-    let no_subst = BTreeMap::new();
 
     // Compute payloads first (so imports can be derived from what they touch).
     // Each entry is `(variant ident, payload type, doc line)` — a variant is a
@@ -1143,45 +1142,7 @@ fn emit_enum(
     // a closed slot, so the line is synthesized from the subtype's spec name.
     let payloads: Vec<(String, String, String)> = variants
         .iter()
-        .map(|d| {
-            let variant = naming::type_name(d);
-            let d_generic = !model.used_generic_params(d).is_empty();
-            let payload = if d_generic && !enum_generics.is_empty() {
-                // Same subtype family: thread the enum's own params (`Event<T>`
-                // → `PointEvent(PointEvent<T>)`).
-                format!("{variant}<{}>", enum_generics.join(", "))
-            } else {
-                // Non-generic enum (e.g. `DataValue`) with a generic variant:
-                // bound-fill the variant (`DvInterval(DvInterval<DvOrdered>)`).
-                model.render_type(
-                    &BmmType::Simple(d.clone()),
-                    &enum_generics,
-                    &no_subst,
-                    local,
-                    external,
-                )
-            };
-            // Box a variant that would make the enum infinitely sized: either
-            // the payload embeds the enum type by value via a bound-filled arg
-            // (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`), or the variant's
-            // own fields reach back to the enum (`BMM_TYPE` ⊇ `BMM_CONTAINER_TYPE`
-            // whose `base_type` is a `BMM_TYPE`). A `Vec`/map payload already
-            // breaks the cycle.
-            let already_indirect =
-                payload.starts_with("Vec<") || payload.starts_with("std::collections::");
-            let cyclic = !already_indirect && {
-                let mut roots = BTreeSet::new();
-                model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
-                roots.contains(&class.name) || model.reaches(d, &class.name, &mut BTreeSet::new())
-            };
-            let payload = if cyclic {
-                format!("Box<{payload}>")
-            } else {
-                payload
-            };
-            let doc = format!("The `{d}` subtype of `{}`.", class.name);
-            (variant, payload, doc)
-        })
+        .map(|d| enum_variant_payload(model, class, d, &enum_generics, local, external))
         .collect();
 
     // A polymorphic *concrete* class also carries its own instances: append a
@@ -1359,6 +1320,56 @@ fn enum_literals(enumeration: &BmmEnumeration) -> Vec<EnumLit> {
         .collect()
 }
 
+/// One untagged-enum variant as `(ident, payload type, doc line)`.
+///
+/// A variant is a public item `missing_docs` checks, and the BMM has no
+/// per-subtype text for a closed slot, so the doc line is synthesized from the
+/// subtype's spec name.
+///
+/// The payload threads the enum's own generic params when the subtype belongs
+/// to the same generic family (`Event<T>` → `PointEvent(PointEvent<T>)`), and
+/// otherwise bound-fills the variant (`DvInterval(DvInterval<DvOrdered>)`). It
+/// is boxed when leaving it by value would make the enum infinitely sized:
+/// either the payload embeds the enum type through a bound-filled argument
+/// (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`), or the variant's own fields
+/// reach back to the enum (`BMM_TYPE` ⊇ `BMM_CONTAINER_TYPE` whose `base_type`
+/// is a `BMM_TYPE`). A `Vec`/map payload already breaks the cycle.
+fn enum_variant_payload(
+    model: &Model,
+    class: &BmmClass,
+    subtype: &str,
+    enum_generics: &[String],
+    local: &BTreeSet<String>,
+    external: &External,
+) -> (String, String, String) {
+    let variant = naming::type_name(subtype);
+    let subtype_generic = !model.used_generic_params(subtype).is_empty();
+    let payload = if subtype_generic && !enum_generics.is_empty() {
+        format!("{variant}<{}>", enum_generics.join(", "))
+    } else {
+        model.render_type(
+            &BmmType::Simple(subtype.to_owned()),
+            enum_generics,
+            &BTreeMap::new(),
+            local,
+            external,
+        )
+    };
+    let already_indirect = payload.starts_with("Vec<") || payload.starts_with("std::collections::");
+    let cyclic = !already_indirect && {
+        let mut roots = BTreeSet::new();
+        model.effective_roots(&BmmType::Simple(subtype.to_owned()), &mut roots);
+        roots.contains(&class.name) || model.reaches(subtype, &class.name, &mut BTreeSet::new())
+    };
+    let payload = if cyclic {
+        format!("Box<{payload}>")
+    } else {
+        payload
+    };
+    let doc = format!("The `{subtype}` subtype of `{}`.", class.name);
+    (variant, payload, doc)
+}
+
 /// Emit a BMM enumeration class as a real Rust enum: one variant per named
 /// constant, plus a tolerance-preserving `Other(String|i32)` catch-all.
 ///
@@ -1415,14 +1426,29 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
          Other({payload}),\n}}\n\n"
     ));
 
-    // Inherent conversions.
+    emit_enum_conversions(&mut b, &ty, is_int, &lits);
+    emit_enum_try_from(&mut b, &ty, spec, &err_ty, is_int, &lits);
+
+    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
+    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
+    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
+    // through the total `from_wire`/`from_value`, byte-identical to the primitive
+    // it replaces. No serde impl is emitted here.
+
+    emit_enum_error_type(&mut b, &ty, spec, &err_ty, err_inner, is_int);
+    b
+}
+
+/// The enum's inherent wire conversions: the total `as_str`/`value` writer and
+/// its tolerant `from_wire`/`from_value` reader.
+fn emit_enum_conversions(b: &mut String, ty: &str, is_int: bool, lits: &[EnumLit]) {
     b.push_str(&format!("impl {ty} {{\n"));
     if is_int {
         b.push_str(
             "    /// The `i32` wire value of this constant (the verbatim payload for\n    \
              /// [`Self::Other`]).\n    #[must_use]\n    pub fn value(self) -> i32 {\n        match self {\n",
         );
-        for lit in &lits {
+        for lit in lits {
             if let EnumLitWire::Int(v) = &lit.wire {
                 b.push_str(&format!("            Self::{} => {v},\n", lit.ident));
             }
@@ -1433,37 +1459,46 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
              /// value as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
              pub fn from_value(__v: i32) -> Self {\n        match __v {\n",
         );
-        for lit in &lits {
+        for lit in lits {
             if let EnumLitWire::Int(v) = &lit.wire {
                 b.push_str(&format!("            {v} => Self::{},\n", lit.ident));
             }
         }
         b.push_str("            _ => Self::Other(__v),\n        }\n    }\n}\n\n");
-    } else {
-        b.push_str(
-            "    /// The wire string of this constant (the verbatim token for\n    \
-             /// [`Self::Other`]).\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        match self {\n",
-        );
-        for lit in &lits {
-            if let EnumLitWire::Str(s) = &lit.wire {
-                b.push_str(&format!("            Self::{} => {s:?},\n", lit.ident));
-            }
-        }
-        b.push_str("            Self::Other(__s) => __s.as_str(),\n        }\n    }\n\n");
-        b.push_str(
-            "    /// This constant for a wire string, tolerating an unknown token\n    \
-             /// as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
-             pub fn from_wire(__s: &str) -> Self {\n        match __s {\n",
-        );
-        for lit in &lits {
-            if let EnumLitWire::Str(s) = &lit.wire {
-                b.push_str(&format!("            {s:?} => Self::{},\n", lit.ident));
-            }
-        }
-        b.push_str("            _ => Self::Other(__s.to_owned()),\n        }\n    }\n}\n\n");
+        return;
     }
+    b.push_str(
+        "    /// The wire string of this constant (the verbatim token for\n    \
+         /// [`Self::Other`]).\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        match self {\n",
+    );
+    for lit in lits {
+        if let EnumLitWire::Str(s) = &lit.wire {
+            b.push_str(&format!("            Self::{} => {s:?},\n", lit.ident));
+        }
+    }
+    b.push_str("            Self::Other(__s) => __s.as_str(),\n        }\n    }\n\n");
+    b.push_str(
+        "    /// This constant for a wire string, tolerating an unknown token\n    \
+         /// as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
+         pub fn from_wire(__s: &str) -> Self {\n        match __s {\n",
+    );
+    for lit in lits {
+        if let EnumLitWire::Str(s) = &lit.wire {
+            b.push_str(&format!("            {s:?} => Self::{},\n", lit.ident));
+        }
+    }
+    b.push_str("            _ => Self::Other(__s.to_owned()),\n        }\n    }\n}\n\n");
+}
 
-    // Strict `TryFrom` seam (never yields `Other`).
+/// The strict `TryFrom` seam, which never yields `Other`.
+fn emit_enum_try_from(
+    b: &mut String,
+    ty: &str,
+    spec: &str,
+    err_ty: &str,
+    is_int: bool,
+    lits: &[EnumLit],
+) {
     if is_int {
         b.push_str(&format!(
             "impl ::core::convert::TryFrom<i64> for {ty} {{\n    type Error = {err_ty};\n\n    \
@@ -1471,7 +1506,7 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
              /// (unlike [`Self::from_value`], which is total).\n    \
              fn try_from(__v: i64) -> ::core::result::Result<Self, Self::Error> {{\n        match __v {{\n"
         ));
-        for lit in &lits {
+        for lit in lits {
             if let EnumLitWire::Int(v) = &lit.wire {
                 b.push_str(&format!(
                     "            {v} => ::core::result::Result::Ok(Self::{}),\n",
@@ -1482,33 +1517,37 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
         b.push_str(&format!(
             "            _ => ::core::result::Result::Err({err_ty}(__v)),\n        }}\n    }}\n}}\n\n"
         ));
-    } else {
-        b.push_str(&format!(
-            "impl ::core::convert::TryFrom<&str> for {ty} {{\n    type Error = {err_ty};\n\n    \
-             /// # Errors\n    /// Returns [`{err_ty}`] when `__s` is not a `{spec}` value\n    \
-             /// (unlike [`Self::from_wire`], which is total).\n    \
-             fn try_from(__s: &str) -> ::core::result::Result<Self, Self::Error> {{\n        match __s {{\n"
-        ));
-        for lit in &lits {
-            if let EnumLitWire::Str(s) = &lit.wire {
-                b.push_str(&format!(
-                    "            {s:?} => ::core::result::Result::Ok(Self::{}),\n",
-                    lit.ident
-                ));
-            }
-        }
-        b.push_str(&format!(
-            "            _ => ::core::result::Result::Err({err_ty}(__s.to_owned())),\n        }}\n    }}\n}}\n\n"
-        ));
+        return;
     }
+    b.push_str(&format!(
+        "impl ::core::convert::TryFrom<&str> for {ty} {{\n    type Error = {err_ty};\n\n    \
+         /// # Errors\n    /// Returns [`{err_ty}`] when `__s` is not a `{spec}` value\n    \
+         /// (unlike [`Self::from_wire`], which is total).\n    \
+         fn try_from(__s: &str) -> ::core::result::Result<Self, Self::Error> {{\n        match __s {{\n"
+    ));
+    for lit in lits {
+        if let EnumLitWire::Str(s) = &lit.wire {
+            b.push_str(&format!(
+                "            {s:?} => ::core::result::Result::Ok(Self::{}),\n",
+                lit.ident
+            ));
+        }
+    }
+    b.push_str(&format!(
+        "            _ => ::core::result::Result::Err({err_ty}(__s.to_owned())),\n        }}\n    }}\n}}\n\n"
+    ));
+}
 
-    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
-    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
-    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
-    // through the total `from_wire`/`from_value`, byte-identical to the primitive
-    // it replaces. No serde impl is emitted here.
-
-    // The strict-seam error type (hand-rolled Display + Error, no `thiserror`).
+/// The strict seam's error type (hand-rolled `Display` + `Error`, no
+/// `thiserror` in the generated crates).
+fn emit_enum_error_type(
+    b: &mut String,
+    ty: &str,
+    spec: &str,
+    err_ty: &str,
+    err_inner: &str,
+    is_int: bool,
+) {
     b.push_str(&format!(
         "/// The error returned by [`{ty}::try_from`] for a value outside the `{spec}`\n\
          /// constant set.\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct {err_ty}(pub {err_inner});\n\n"
@@ -1524,7 +1563,6 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
          ::core::write!(f, {fmt:?}, self.0)\n    }}\n}}\n\n"
     ));
     b.push_str(&format!("impl ::std::error::Error for {err_ty} {{}}\n"));
-    b
 }
 
 // ── import + header helpers ──────────────────────────────────────────────────

@@ -29,10 +29,6 @@ use crate::flat::sim::SimNode;
 // ── RM → sim ──────────────────────────────────────────────────────────────────
 
 /// Emit the `_`-prefixed families present on `rm` (see [`super::emit_rm_attrs`]).
-#[expect(
-    clippy::too_many_lines,
-    reason = "one dispatch over the `_`-attribute families; the length is the size of that family set, not logic"
-)]
 pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
     let ty = rm
         .get("_type")
@@ -40,87 +36,12 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
         .unwrap_or_else(|| super::base_type(rm_type));
 
     if is_locatable(ty) {
-        if let Some(uid) = rm.pointer("/uid/value") {
-            out.occurrence_mut("_uid", None)
-                .attrs
-                .insert(String::new(), uid.clone());
-        }
-        if let Some(links) = rm.get("links").and_then(Value::as_array) {
-            for (i, link) in links.iter().enumerate() {
-                emit_link(
-                    link,
-                    out.occurrence_mut("_link", Some(u32::try_from(i).unwrap_or(u32::MAX))),
-                );
-            }
-        }
-        if let Some(fa) = rm.get("feeder_audit").filter(|v| !v.is_null()) {
-            emit_feeder_audit(fa, out.occurrence_mut("_feeder_audit", None));
-        }
+        emit_locatable_attrs(rm, out);
     }
-
     match ty {
-        "ELEMENT" => {
-            if let Some(nf) = rm.get("null_flavour").filter(|v| !v.is_null()) {
-                data_values::emit_leaf(
-                    nf,
-                    "DV_CODED_TEXT",
-                    None,
-                    out.occurrence_mut("_null_flavour", None),
-                );
-            }
-            if let Some(nr) = rm.get("null_reason").filter(|v| !v.is_null()) {
-                data_values::emit_leaf(
-                    nr,
-                    "DV_TEXT",
-                    None,
-                    out.occurrence_mut("_null_reason", None),
-                );
-            }
-        }
+        "ELEMENT" => emit_element_attrs(rm, out),
         "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" => {
-            if let Some(o) = rm.get("guideline_id").filter(|v| !v.is_null()) {
-                parties::emit_object_ref(o, out.occurrence_mut("_guideline_id", None));
-            }
-            if let Some(o) = rm.get("workflow_id").filter(|v| !v.is_null()) {
-                parties::emit_object_ref(o, out.occurrence_mut("_work_flow_id", None));
-            }
-            if let Some(p) = rm.get("provider").filter(|v| !v.is_null()) {
-                parties::emit_party(p, out.occurrence_mut("_provider", None));
-            }
-            if let Some(parts) = rm.get("other_participations").and_then(Value::as_array) {
-                for (i, p) in parts.iter().enumerate() {
-                    parties::emit_participation(
-                        p,
-                        out.occurrence_mut(
-                            "_other_participation",
-                            Some(u32::try_from(i).unwrap_or(u32::MAX)),
-                        ),
-                    );
-                }
-            }
-            if ty == "INSTRUCTION" {
-                if let Some(et) = rm.get("expiry_time").filter(|v| !v.is_null()) {
-                    data_values::emit_leaf(
-                        et,
-                        "DV_DATE_TIME",
-                        None,
-                        out.occurrence_mut("_expiry_time", None),
-                    );
-                }
-                if let Some(wf) = rm.get("wf_definition").filter(|v| !v.is_null()) {
-                    data_values::emit_leaf(
-                        wf,
-                        "DV_PARSABLE",
-                        None,
-                        out.occurrence_mut("_wf_definition", None),
-                    );
-                }
-            }
-            if ty == "ACTION"
-                && let Some(det) = rm.get("instruction_details").filter(|v| !v.is_null())
-            {
-                emit_instruction_details(det, out.occurrence_mut("_instruction_details", None));
-            }
+            emit_entry_attrs(rm, ty, out);
         }
         // A PARTY arm here would emit the family a second time onto the same
         // node: idempotent, invisible on the wire, and a trap for the next
@@ -129,47 +50,142 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
         // NOTE: no PARTY arm — the party `_identifier:i` family (master05
         // §§PARTY_IDENTIFIED, PARTY_RELATED) is emitted by
         // [`parties::emit_party`], which every route to a party node uses.
-        "ISM_TRANSITION" => {
-            if let Some(reasons) = rm.get("reason").and_then(Value::as_array) {
-                for (i, r) in reasons.iter().enumerate() {
-                    data_values::emit_leaf(
-                        r,
-                        "DV_TEXT",
-                        None,
-                        out.occurrence_mut("_reason", Some(u32::try_from(i).unwrap_or(u32::MAX))),
-                    );
-                }
-            }
-        }
-        // EVENT_CONTEXT `_`-families (master05 §EVENT_CONTEXT). A composition's
-        // context is normally surfaced through the `ctx/` vocabulary (see
-        // `crate::flat::ctx`); these emit only when a walker renders an EVENT_CONTEXT
-        // node through the tree instead.
-        "EVENT_CONTEXT" => {
-            // end_time/location surface as the lossless ctx/ scalars
-            // (master06 §§end_time, location) — not re-emitted here; the
-            // `_end_time`/`_location` path forms stay accepted on input.
-            if let Some(hcf) = rm.get("health_care_facility").filter(|v| !v.is_null()) {
-                parties::emit_party(hcf, out.occurrence_mut("_health_care_facility", None));
-            }
-            if let Some(parts) = rm.get("participations").and_then(Value::as_array) {
-                for (i, p) in parts.iter().enumerate() {
-                    parties::emit_participation(
-                        p,
-                        out.occurrence_mut(
-                            "_participation",
-                            Some(u32::try_from(i).unwrap_or(u32::MAX)),
-                        ),
-                    );
-                }
-            }
-        }
+        "ISM_TRANSITION" => emit_ism_transition_attrs(rm, out),
+        "EVENT_CONTEXT" => emit_event_context_attrs(rm, out),
         _ => {}
     }
 
     // The value-internal families of a `DV_*` leaf (ranges / accuracy / text
     // meta / multimedia thumbnail+charset+language).
     data_values::emit_value_internal(rm, ty, out);
+}
+
+/// The LOCATABLE families: `_uid`, the `_link:i` list and `_feeder_audit`
+/// (master05 §LOCATABLE).
+fn emit_locatable_attrs(rm: &Value, out: &mut SimNode) {
+    if let Some(uid) = rm.pointer("/uid/value") {
+        out.occurrence_mut("_uid", None)
+            .attrs
+            .insert(String::new(), uid.clone());
+    }
+    if let Some(links) = rm.get("links").and_then(Value::as_array) {
+        for (i, link) in links.iter().enumerate() {
+            emit_link(
+                link,
+                out.occurrence_mut("_link", Some(u32::try_from(i).unwrap_or(u32::MAX))),
+            );
+        }
+    }
+    if let Some(fa) = rm.get("feeder_audit").filter(|v| !v.is_null()) {
+        emit_feeder_audit(fa, out.occurrence_mut("_feeder_audit", None));
+    }
+}
+
+/// The ELEMENT families: `_null_flavour` and `_null_reason` (master05
+/// §ELEMENT).
+fn emit_element_attrs(rm: &Value, out: &mut SimNode) {
+    if let Some(nf) = rm.get("null_flavour").filter(|v| !v.is_null()) {
+        data_values::emit_leaf(
+            nf,
+            "DV_CODED_TEXT",
+            None,
+            out.occurrence_mut("_null_flavour", None),
+        );
+    }
+    if let Some(nr) = rm.get("null_reason").filter(|v| !v.is_null()) {
+        data_values::emit_leaf(
+            nr,
+            "DV_TEXT",
+            None,
+            out.occurrence_mut("_null_reason", None),
+        );
+    }
+}
+
+/// The ENTRY families, plus the INSTRUCTION and ACTION additions (master05
+/// §§ENTRY, INSTRUCTION, ACTION).
+fn emit_entry_attrs(rm: &Value, ty: &str, out: &mut SimNode) {
+    if let Some(o) = rm.get("guideline_id").filter(|v| !v.is_null()) {
+        parties::emit_object_ref(o, out.occurrence_mut("_guideline_id", None));
+    }
+    if let Some(o) = rm.get("workflow_id").filter(|v| !v.is_null()) {
+        parties::emit_object_ref(o, out.occurrence_mut("_work_flow_id", None));
+    }
+    if let Some(p) = rm.get("provider").filter(|v| !v.is_null()) {
+        parties::emit_party(p, out.occurrence_mut("_provider", None));
+    }
+    if let Some(parts) = rm.get("other_participations").and_then(Value::as_array) {
+        for (i, p) in parts.iter().enumerate() {
+            parties::emit_participation(
+                p,
+                out.occurrence_mut(
+                    "_other_participation",
+                    Some(u32::try_from(i).unwrap_or(u32::MAX)),
+                ),
+            );
+        }
+    }
+    if ty == "INSTRUCTION" {
+        if let Some(et) = rm.get("expiry_time").filter(|v| !v.is_null()) {
+            data_values::emit_leaf(
+                et,
+                "DV_DATE_TIME",
+                None,
+                out.occurrence_mut("_expiry_time", None),
+            );
+        }
+        if let Some(wf) = rm.get("wf_definition").filter(|v| !v.is_null()) {
+            data_values::emit_leaf(
+                wf,
+                "DV_PARSABLE",
+                None,
+                out.occurrence_mut("_wf_definition", None),
+            );
+        }
+    }
+    if ty == "ACTION"
+        && let Some(det) = rm.get("instruction_details").filter(|v| !v.is_null())
+    {
+        emit_instruction_details(det, out.occurrence_mut("_instruction_details", None));
+    }
+}
+
+/// The ISM_TRANSITION family: the `_reason:i` DV_TEXT list (master05
+/// §ISM_TRANSITION).
+fn emit_ism_transition_attrs(rm: &Value, out: &mut SimNode) {
+    let Some(reasons) = rm.get("reason").and_then(Value::as_array) else {
+        return;
+    };
+    for (i, r) in reasons.iter().enumerate() {
+        data_values::emit_leaf(
+            r,
+            "DV_TEXT",
+            None,
+            out.occurrence_mut("_reason", Some(u32::try_from(i).unwrap_or(u32::MAX))),
+        );
+    }
+}
+
+/// The EVENT_CONTEXT families (master05 §EVENT_CONTEXT).
+///
+/// A composition's context is normally surfaced through the `ctx/` vocabulary
+/// (see [`crate::flat::ctx`]); these emit only when a walker renders an
+/// EVENT_CONTEXT node through the tree instead. `end_time`/`location` surface
+/// as the lossless `ctx/` scalars (master06 §§end_time, location) and are not
+/// re-emitted here; their `_end_time`/`_location` path forms stay accepted on
+/// input.
+fn emit_event_context_attrs(rm: &Value, out: &mut SimNode) {
+    if let Some(hcf) = rm.get("health_care_facility").filter(|v| !v.is_null()) {
+        parties::emit_party(hcf, out.occurrence_mut("_health_care_facility", None));
+    }
+    if let Some(parts) = rm.get("participations").and_then(Value::as_array) {
+        for (i, p) in parts.iter().enumerate() {
+            parties::emit_participation(
+                p,
+                out.occurrence_mut("_participation", Some(u32::try_from(i).unwrap_or(u32::MAX))),
+            );
+        }
+    }
 }
 
 fn is_locatable(ty: &str) -> bool {
