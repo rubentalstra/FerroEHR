@@ -16,13 +16,20 @@
 #
 # The graph:
 #
-#   plan ─┬─ github-release ── build-binaries ─── finalize-release
+#   plan ─┬─ github-release ── build-binaries ─── finalize-release ── crates
 #         ├─ binary ─────────── app-image ──┐
 #         ├─ admin-ui-binary ── admin-ui-image ─┼─ scan-and-tag ─┬─ chart
 #         ├─ postgres-image ────────────────┘                    └─ sandbox
 #         ├─ docs-freeze
 #         └─ (smoke, admin-ui-smoke hang off their image)
 #   announce ── needs everything, if: always()
+#
+# `crates` is the one leg that PAUSES: it runs in the `crates-io` environment,
+# which carries a required reviewer, so the pipeline waits for an explicit
+# human approval before anything reaches crates.io (#2836 — the publish used to
+# be a dispatch someone had to remember, and v4.0.6 shipped with the eight
+# spec crates stepped and unpublished). Nothing needs it, so the pause blocks
+# no other leg.
 #
 # `plan` re-runs the ENTIRE release-fact guard tier against the tagged commit
 # before anything is built or published. That closes a structural hole rather
@@ -36,9 +43,12 @@
 # idempotent by construction: images push by digest and are re-tagged, the
 # GitHub release updates its draft until it is published, docs-freeze is a
 # green no-op on an already-cut version, the sandbox hook ping is naturally
-# repeatable. The ONE leg that is not is the chart: a published chart version
-# is immutable, so a failure after `helm push` means the fix ships as the next
-# chart version (that lane says so at the point of failure).
+# repeatable, and the crates leg treats an already-published version as done.
+# The ONE leg that is not is the chart: a published chart version is immutable,
+# so a failure after `helm push` means the fix ships as the next chart version
+# (that lane says so at the point of failure). A crates.io version is immutable
+# too, but it can be YANKED and superseded, so its recovery is a version bump
+# rather than a wedged pipeline.
 #
 # `workflow_dispatch` re-runs the pipeline for an existing tag, and must be
 # dispatched AT the tag (`gh workflow run Release --ref vX.Y.Z -f tag=vX.Y.Z`).
@@ -989,6 +999,95 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: gh workflow run docs.yml
 
+  # ── crates.io ───────────────────────────────────────────────────────────────
+  # LAST on purpose, and gated on a human. A crates.io version is immutable — it
+  # can be yanked, never replaced — so it is the one artifact this pipeline
+  # publishes that must not go out before the cut has proven itself: it `needs`
+  # finalize-release, which runs only once every expected asset is attached and
+  # the GitHub release is frozen. It deliberately does NOT need the image, chart
+  # or sandbox legs: they publish nothing the crates consume, so waiting on them
+  # would add no guarantee and would turn an unrelated image-scan failure into a
+  # skipped publish.
+  #
+  # The `crates-io` environment carries a required reviewer, so this leg PAUSES
+  # until someone approves it. Nothing needs the job, so that pause blocks no
+  # other leg — only `announce`, which is precisely the outstanding-approval
+  # reminder this leg exists to be (#2836: the publish was a dispatch someone
+  # had to remember, and v4.0.6 shipped with the eight crates stepped to 0.0.42
+  # and unpublished). Until the reviewer is configured the environment simply
+  # does not pause and the leg publishes straight through.
+  #
+  # Idempotent: the shared script treats "already exists on the crates.io index"
+  # as done, so a release whose cycle changed no packaged crate content approves
+  # through as a green no-op, and a re-run after a partial publish finishes the
+  # set instead of being refused.
+  #
+  # Real releases only. A prerelease is a rehearsal of a cut, and an immutable
+  # public artifact is not something a rehearsal should produce — an `-rc` tree
+  # that is then abandoned would leave crate versions published that no release
+  # ever carried. Rehearsing the publish itself is what the dispatch lane's dry
+  # run is for.
+  #
+  # The steps are INLINE rather than in a reusable workflow shared with
+  # publish-crates.yml, and that is not duplication by oversight: crates.io
+  # Trusted Publishing matches the OIDC `workflow_ref` claim, which for a job
+  # inside a reusable workflow names the CALLING workflow
+  # (https://docs.github.com/en/actions/concepts/security/openid-connect,
+  # https://crates.io/docs/trusted-publishing) — so a reusable workflow would
+  # present this file as the identity anyway, and the only thing moving the job
+  # there would achieve is hiding which workflow file each publisher entry has to
+  # name. The shared implementation is scripts/release/publish-crates.sh, which
+  # both lanes call.
+  #
+  # Consequence, stated where it bites: each of the eight crates needs a Trusted
+  # Publisher entry for THIS workflow file (repository `rubentalstra/FerroEHR`,
+  # workflow `release.yml`, environment `crates-io`) beside the one naming
+  # `publish-crates.yml`. Without it the token exchange below is refused, and
+  # `announce` names that as the cause.
+  crates:
+    name: crates.io
+    needs: [plan, finalize-release]
+    if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: crates-io
+    # Shared with publish-crates.yml's dispatch lane, and deliberately not
+    # ref-keyed: a tag-triggered release and a develop dispatch would otherwise
+    # sit in different groups and could interleave uploads of the same immutable
+    # versions. Queue, never cancel.
+    concurrency:
+      group: publish-crates
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # OIDC token exchange (rust-lang/crates-io-auth-action)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+      # No cache in the lane that uploads to crates.io: a published version is
+      # immutable, so it is built from this checkout and nothing else
+      # (setup-rust-toolchain caches by default).
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache: false
+      - id: auth
+        name: Exchange the OIDC identity for a temporary crates.io token
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+      - name: Publish the eight spec crates in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: bash scripts/release/publish-crates.sh publish
+      # The registry is the GROUND TRUTH, not the exit code above — hence
+      # `always()`. This step matters most exactly when the publish went red: a
+      # run that uploaded everything but misread its own output would otherwise
+      # end red with nothing to contradict it, and one that genuinely stranded a
+      # crate would end red without naming which.
+      - name: Verify all eight crates resolve at the same version
+        if: always()
+        run: bash scripts/release/publish-crates.sh verify
+
   # ── announce: the one summary a human reads ─────────────────────────────────
   # Asserts every leg landed — a skipped leg is accepted only where a skip is
   # the correct outcome — and on any failure names the exact recovery instead of
@@ -1012,6 +1111,7 @@ jobs:
       - chart
       - sandbox
       - docs-freeze
+      - crates
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -1020,31 +1120,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
-          fetch-tags: true
           ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
-
-      # `crates/*` publishes on its own SemVer line through a manual dispatch
-      # (publish-crates.yml), so a cycle that changed packaged crate content
-      # needs a second, human-initiated release. That was silent until now.
-      - id: crates
-        name: Did this cycle change packaged crate content
-        env:
-          TAG: ${{ needs.plan.outputs.tag }}
-        run: |
-          set -euo pipefail
-          previous="$(git describe --tags --abbrev=0 --match 'v*' "${TAG}^" 2>/dev/null || true)"
-          if [ -z "$previous" ]; then
-            echo "no previous tag reachable from ${TAG} — not comparing"
-            echo "changed=unknown" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if git diff --quiet "$previous" "$TAG" -- crates/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-          echo "previous=$previous" >> "$GITHUB_OUTPUT"
 
       - name: Assert every leg landed, and say what published where
         env:
@@ -1054,8 +1130,6 @@ jobs:
           APP_DIGEST: ${{ needs.app-image.outputs.digest }}
           ADMIN_UI_DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
           POSTGRES_DIGEST: ${{ needs.postgres-image.outputs.digest }}
-          CRATES_CHANGED: ${{ steps.crates.outputs.changed }}
-          CRATES_PREVIOUS: ${{ steps.crates.outputs.previous }}
           R_PLAN: ${{ needs.plan.result }}
           R_GITHUB_RELEASE: ${{ needs.github-release.result }}
           R_BUILD_BINARIES: ${{ needs.build-binaries.result }}
@@ -1071,13 +1145,18 @@ jobs:
           R_CHART: ${{ needs.chart.result }}
           R_SANDBOX: ${{ needs.sandbox.result }}
           R_DOCS_FREEZE: ${{ needs.docs-freeze.result }}
+          R_CRATES: ${{ needs.crates.result }}
         run: |
           set -uo pipefail
           fail=0
           rows=""
           # A leg is either successful, or skipped where the skip is correct: on
           # a prerelease the sandbox and the docs freeze do not run, because a
-          # prerelease moves neither `:latest` nor /docs/latest/.
+          # prerelease moves neither `:latest` nor /docs/latest/, and the crates
+          # leg does not publish an immutable artifact from a rehearsal. A
+          # DECLINED crates approval is not in that class: GitHub fails a
+          # rejected deployment ("If a job is rejected, the workflow will fail"),
+          # so a refusal to publish reports red on purpose.
           check() {
             local leg="$1" result="$2" skip_ok="${3:-no}"
             if [ "$result" = "success" ]; then
@@ -1106,8 +1185,10 @@ jobs:
           check "chart" "$R_CHART"
           check "sandbox" "$R_SANDBOX" prerelease
           check "docs freeze" "$R_DOCS_FREEZE" prerelease
+          check "crates.io" "$R_CRATES" prerelease
 
           chart_version="$(sed -nE 's/^version: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml | head -1)"
+          crates_version="$(bash scripts/release/publish-crates.sh version || echo unknown)"
           repo_url="https://github.com/${GITHUB_REPOSITORY}"
           {
             printf '## %s\n\n' "$TAG"
@@ -1127,17 +1208,16 @@ jobs:
               "$([ "$R_SANDBOX" = "success" ] && echo "serving ${VERSION}" || echo "$R_SANDBOX")"
             printf '| docs | %s |\n' \
               "$([ "$R_DOCS_FREEZE" = "success" ] && echo "/docs/${TAG}/ frozen, /docs/latest/ -> ${TAG}" || echo "$R_DOCS_FREEZE")"
+            # The eight spec crates publish on their own lockstep SemVer line,
+            # unrelated to $VERSION — an unchanged cycle re-approves the same
+            # version as a no-op.
+            printf '| crates.io | %s |\n' \
+              "$([ "$R_CRATES" = "success" ] && echo "8 \`openehr-*\` crates at \`${crates_version}\`" || echo "$R_CRATES")"
             printf '\n'
-            if [ "$CRATES_CHANGED" = "true" ]; then
-              printf '> [!IMPORTANT]\n'
-              printf '> `crates/*` packaged content changed since `%s`. The openehr-* crates publish\n' "$CRATES_PREVIOUS"
-              printf '> on their own SemVer line through a MANUAL dispatch: run publish-crates.yml\n'
-              printf '> (dry run first, then `publish: true`). This pipeline does not do it.\n\n'
-            fi
             if [ "$fail" != 0 ]; then
               printf '### Recovery\n\n'
               printf 'Re-run this pipeline for `%s`. Every leg is idempotent, so a re-run\n' "$TAG"
-              printf 'finishes what the failed run started, with two exceptions:\n\n'
+              printf 'finishes what the failed run started — except where named below:\n\n'
               # `printf '%s\n' '<line>'` for every line that STARTS with `-`: as
               # a format string it would be read as an option and the step dies
               # with "printf: - : invalid option" (caught by running this step's
@@ -1149,6 +1229,17 @@ jobs:
                 '  Do NOT re-run the leg — bump `Chart.yaml` version and publish the next one' \
                 '  from publish-chart.yml (dispatch with `publish: true`). That lane says the' \
                 '  same thing at the point of failure.' \
+                '- **crates.io refused the token exchange**: each of the eight crates needs a' \
+                '  Trusted Publisher entry naming `release.yml` (repository, workflow file,' \
+                '  environment `crates-io`) beside the one naming `publish-crates.yml` —' \
+                '  Trusted Publishing matches the top-level workflow filename. Add the entries' \
+                '  on crates.io, then re-run this leg.' \
+                '- **crates.io was DECLINED at the approval gate**: nothing was published, and a' \
+                '  rejected deployment fails the run by design. Publish from publish-crates.yml' \
+                '  if the decision changes.' \
+                '- **crates.io published and the read-back failed**: the uploaded versions are' \
+                '  public and immutable. Re-run the leg first — a split set finishes, an index' \
+                '  lag resolves. Wrong CONTENT is never replaced: yank and bump.' \
                 ''
             fi
           } >> "$GITHUB_STEP_SUMMARY"

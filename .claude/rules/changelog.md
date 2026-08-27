@@ -138,14 +138,37 @@ optional:
   `docs/VERSIONS.md` §Product and crate versioning); they release in
   lockstep and never with the product version.
 
-- **Publishing the `openehr-*` crates (crates.io):** releases go through
-  `.github/workflows/publish-crates.yml` — a manual `workflow_dispatch` lane
-  (dry-run by default; a real publish needs the `publish` input set to
-  `true`) that authenticates via **crates.io Trusted Publishing** (OIDC,
+- **Publishing the `openehr-*` crates (crates.io):** the crates ride the
+  release cut. `release.yml` carries a `crates` leg (`needs` `plan` and the
+  published GitHub release, real releases only, a leaf so a crates failure
+  blocks nothing) that runs in the `crates-io` environment; that environment
+  carries a **required reviewer**, so the pipeline PAUSES there and nothing
+  reaches crates.io without an explicit approval. The leg is a green no-op on
+  a cycle that changed no packaged crate content. Owner ruling 2026-08-27,
+  issue #2836: the publish used to be a dispatch someone had to remember, and
+  v4.0.6 shipped with the eight crates stepped to `0.0.42` and unpublished.
+  `.github/workflows/publish-crates.yml` remains as the between-releases lane
+  — the dry run (its default) and the recovery path when a release's leg fails
+  — the same split `publish-chart.yml` has against `build-chart.yml`.
+  **Trusted Publishing matches the top-level workflow FILENAME**, so each of
+  the eight crates carries TWO publisher entries — one naming `release.yml`,
+  one naming `publish-crates.yml` — both under repository
+  `rubentalstra/FerroEHR` and environment `crates-io`; a missing entry is
+  refused at the token exchange, and the release run's summary names that as
+  the cause. Configuring the reviewer and the second entry set are owner
+  clicks (crates.io, and Settings → Environments); until the reviewer exists
+  the environment does not pause.
+
+  Both lanes authenticate via **crates.io Trusted Publishing** (OIDC,
   `rust-lang/crates-io-auth-action`, `id-token: write`, the `crates-io`
-  environment) and publishes the eight `crates/*` members **one at a time in
+  environment) and publish the eight `crates/*` members **one at a time in
   dependency order**, treating "already exists on crates.io index" as done —
-  no long-lived crates.io token exists anywhere. It is deliberately NOT
+  no long-lived crates.io token exists anywhere. The upload and its
+  registry read-back are ONE implementation,
+  `scripts/release/publish-crates.sh`, called from both; they cannot share a
+  reusable WORKFLOW, because the OIDC `workflow_ref` claim names the calling
+  workflow, so a shared one would hide which file each publisher entry must
+  name while changing nothing about the identity. It is deliberately NOT
   `cargo publish --workspace`: that command is all-or-nothing at the START
   (it refuses the entire run if any member version already exists) while
   being non-atomic at the END, so a partial publish cannot be finished by
@@ -164,6 +187,5 @@ optional:
   costs nothing and it checks every member together). The very first release
   of a crate cannot use OIDC (crates.io requires an existing crate to
   configure a Trusted Publisher) — it is pushed manually with a scoped API
-  token, after which each crate's Trusted Publisher is configured on
-  crates.io (repository `rubentalstra/FerroEHR`, workflow
-  `publish-crates.yml`, environment `crates-io`).
+  token, after which the crate's two Trusted Publisher entries are configured
+  on crates.io as described above.

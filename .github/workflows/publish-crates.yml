@@ -7,25 +7,33 @@
 # (issue #1886; procedure: .claude/rules/changelog.md §Publishing the
 # openehr-* crates).
 #
-#   - Manual `workflow_dispatch` only. The default run is a DRY RUN
-#     (`cargo publish --workspace --dry-run` — package + verify, no upload);
-#     a real publish requires the `publish` input set to `true`.
+# DISPATCH ONLY, and no longer the primary path (#2836). A release publishes the
+# crates as an approval-gated `needs`-ordered leg of release.yml, which owns the
+# `v*` tag end to end — that is what stops a cut from shipping with the spec
+# crates stepped and unpublished, which is what happened to v4.0.6 while this
+# lane was the only route. This file remains the BETWEEN-RELEASES lane: the
+# dry run that rehearses a publish against the current tree, and the recovery
+# path when a release's crates leg fails (re-running it here finishes the set,
+# because "already exists" counts as done).
+#
+#   - The default dispatch is a DRY RUN (`cargo publish --workspace --dry-run` —
+#     package + verify, no upload), mirroring publish-chart.yml; a real publish
+#     requires the `publish` input set to `true`.
 #   - Authentication is crates.io Trusted Publishing (OIDC): the
 #     `rust-lang/crates-io-auth-action` step exchanges this workflow's OIDC
 #     identity for a 30-minute publish token. No long-lived crates.io token
-#     exists in the repository. Each crate's Trusted Publisher on crates.io
-#     names this repository + this workflow file + the `crates-io`
-#     environment; the crate's FIRST-ever release cannot use OIDC and is
-#     pushed manually with a scoped token.
-#   - `cargo publish --workspace` resolves the inter-crate dependency order
-#     itself (Cargo ≥1.90) and skips the `publish = false` members (the
-#     app/tools crates), so the eight spec crates are exactly what ships.
-#     Publishing is non-atomic upstream AND all-or-nothing at the start:
-#     `cargo publish --workspace` refuses the entire run when ANY member
-#     version already exists, so a partial publish could not be finished by
-#     re-running it. This lane therefore publishes per crate in dependency
-#     order, treats "already exists" as done, and verifies the whole set
-#     against the registry before reporting success.
+#     exists in the repository. Trusted Publishing matches the TOP-LEVEL
+#     workflow filename, so each crate carries two publisher entries — one
+#     naming this file and one naming `release.yml` — both under this repository
+#     and the `crates-io` environment. A crate's FIRST-ever release cannot use
+#     OIDC and is pushed manually with a scoped token.
+#   - The real publish walks the crates one at a time in dependency order via
+#     scripts/release/publish-crates.sh, the one implementation this lane and
+#     the release leg share (a reusable workflow cannot be shared here: the OIDC
+#     identity would name the caller either way — the script's header carries
+#     the citations). `cargo publish --workspace` is kept for the DRY RUN alone,
+#     where its all-or-nothing behaviour costs nothing and every member is
+#     verified together.
 name: Publish crates
 
 on:
@@ -36,13 +44,6 @@ on:
         required: false
         default: false
         type: boolean
-
-# Two concurrent `cargo publish --workspace` runs over the same versions produce
-# one success and one confusing part-way failure across the eight crates, and a
-# published version is immutable. Queue, never cancel.
-concurrency:
-  group: publish-crates-${{ github.ref }}
-  cancel-in-progress: false
 
 permissions: {}
 
@@ -70,8 +71,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     # The protected environment is part of each crate's Trusted Publisher
-    # configuration on crates.io — a publish outside it is refused.
+    # configuration on crates.io — a publish outside it is refused. It also
+    # carries the required reviewer the release leg pauses on, so a dispatched
+    # publish waits for the same approval.
     environment: crates-io
+    # Shared with the release pipeline's crates leg — two runs uploading the
+    # same immutable versions must never interleave. Job-level and unkeyed on
+    # purpose: workflow-level would queue an innocent dry run behind a release's
+    # approval pause, and a ref-keyed group would put a tag-triggered release and
+    # a develop dispatch in different groups, which is no group at all. Queue,
+    # never cancel.
+    concurrency:
+      group: publish-crates
+      cancel-in-progress: false
     permissions:
       contents: read
       # OIDC token exchange (rust-lang/crates-io-auth-action).
@@ -88,88 +100,16 @@ jobs:
       - id: auth
         name: Exchange OIDC identity for a temporary crates.io token
         uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
-      - name: Publish the workspace's publishable crates in dependency order
+      - name: Publish the eight spec crates in dependency order
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        # `cargo publish --workspace` is all-or-nothing at the START: it refuses
-        # the whole run if ANY member version already exists
-        # (`error: crate openehr-am@0.0.15 already exists on crates.io index`),
-        # while being NON-atomic at the end — a late upload can fail after
-        # earlier ones landed. Those two together are what stranded
-        # openehr-its/openehr-adl at 0.0.10 while six siblings reached 0.0.15,
-        # and they make a re-run useless exactly when a re-run is what is needed.
-        #
-        # So publish per crate in dependency order, treating "already exists" as
-        # done rather than as failure. That makes the lane RESUMABLE: re-running
-        # after a partial publish finishes the set instead of refusing.
-        run: |
-          set -uo pipefail
-          failed=""
-          for crate in openehr-base openehr-lang openehr-term openehr-rm \
-                       openehr-am openehr-query openehr-its openehr-adl; do
-            echo "::group::$crate"
-            out="$(cargo publish -p "$crate" --locked 2>&1)" || true
-            printf '%s\n' "$out"
-            echo "::endgroup::"
-            # Match against ANSI-STRIPPED text. This job sets
-            # CARGO_TERM_COLOR: always, and cargo colours the status word
-            # alone — the bytes are `Uploaded<RESET> openehr-adl`, so a
-            # literal "Uploaded openehr-adl" never matches and a perfectly
-            # successful publish is reported as a failure.
-            plain="$(printf '%s' "$out" | sed -E 's/\x1b\[[0-9;]*m//g')"
-            case "$plain" in
-              *"already exists on crates.io index"*|*"already uploaded"*)
-                echo "$crate: already published at this version — nothing to do" ;;
-              *)
-                if ! printf '%s' "$plain" | grep -q "Uploaded $crate"; then
-                  failed="$failed $crate"
-                fi ;;
-            esac
-          done
-          [ -z "$failed" ] || { echo "::error::failed to publish:$failed"; exit 1; }
+        run: bash scripts/release/publish-crates.sh publish
 
-      # The lane must not report success on a SPLIT set: the eight crates are
-      # lockstep, and while the line is 0.0.x cargo treats every 0.0.x as its own
-      # compatibility set — so a straggler makes its siblings' internal
-      # requirements unresolvable for every consumer. Read the registry rather
-      # than trusting the exit code above.
+      # The registry is the GROUND TRUTH, not the exit code above — hence
+      # `always()`. Without it GitHub skips the verification on failure, so a run
+      # that actually published everything but misread its own output ends red
+      # with nothing to contradict it, and one that genuinely stranded a crate
+      # ends red with no record of WHICH one.
       - name: Verify all eight crates resolve at the same version
-        # `always()`, because this step is the GROUND TRUTH and a failed publish
-        # step is exactly when it is most needed. Without it GitHub skips the
-        # verification on failure, so a run that actually published everything
-        # but misread its own output ends red with nothing to contradict it —
-        # and a run that genuinely stranded a crate ends red with no record of
-        # WHICH one.
         if: always() && inputs.publish
-        run: |
-          set -euo pipefail
-          want="$(grep -m1 '^version = ' crates/openehr-base/Cargo.toml | cut -d'"' -f2)"
-          echo "expecting $want"
-          bad=""
-          for crate in openehr-base openehr-lang openehr-term openehr-rm \
-                       openehr-am openehr-query openehr-its openehr-adl; do
-            # The index is eventually consistent right after an upload, so a
-            # miss is retried rather than believed. A FAILED REQUEST is not a
-            # miss either: without --fail, curl hands an error BODY to jq, jq
-            # dies on the absent .versions, and `pipefail` ends the whole step —
-            # so one transient 429 would report a split set that does not exist.
-            # Guarding the pipeline in an `if` keeps a bad response as "not seen
-            # yet" and lets the remaining polls run.
-            got=""
-            for _ in 1 2 3 4 5 6; do
-              if body="$(curl -sSL --fail -H 'User-Agent: ferroehr-publish-verify' \
-                         "https://crates.io/api/v1/crates/$crate/versions" 2>/dev/null)"; then
-                got="$(printf '%s' "$body" \
-                       | jq -r --arg v "$want" '.versions[]? | select(.num == $v) | .num' \
-                       | head -1)" || got=""
-              fi
-              [ -n "$got" ] && break
-              sleep 10
-            done
-            printf '%-16s %s\n' "$crate" "${got:-MISSING}"
-            [ -n "$got" ] || bad="$bad $crate"
-          done
-          [ -z "$bad" ] || {
-            echo "::error::the published set is SPLIT — these are not at $want:$bad"
-            exit 1
-          }
+        run: bash scripts/release/publish-crates.sh verify
