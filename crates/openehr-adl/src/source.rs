@@ -322,14 +322,17 @@ impl Outer<'_> {
         classify_section(&self.keyword_at(idx)?)
     }
 
-    fn parse_artefact(&mut self, overlay: bool) -> Option<SourceArtefact> {
-        // Artefact kind keyword (accept an optional leading `flat`).
+    /// The artefact-kind keyword and its span, accepting an optional leading
+    /// `flat` (`ADL2/master07.04` §Artefact declaration).
+    ///
+    /// The span is the KEYWORD's, taken after any `flat` prefix, because the
+    /// caller reports missing-section defects against it.
+    fn parse_artefact_kind(&mut self) -> Option<(ArtefactKind, std::ops::Range<usize>)> {
         if self.keyword_at(self.pos).as_deref() == Some("flat") {
             self.pos += 1;
         }
         let kind_span = self.span_at(self.pos);
-        let kind = self.keyword_at(self.pos).as_deref().and_then(classify_kind);
-        let Some(kind) = kind else {
+        let Some(kind) = self.keyword_at(self.pos).as_deref().and_then(classify_kind) else {
             self.push(
                 SyntaxErrorCode::Sunk,
                 "expected an artefact keyword",
@@ -338,13 +341,12 @@ impl Outer<'_> {
             return None;
         };
         self.pos += 1;
+        Some((kind, kind_span))
+    }
 
-        let mut meta = ArtefactMeta::default();
-        if matches!(self.current(), Some(Token::LParen)) {
-            self.parse_meta(&mut meta);
-        }
-
-        // HRID.
+    /// The artefact's `ARCHETYPE_HRID`, which follows the kind keyword and its
+    /// optional meta-data clause.
+    fn parse_artefact_hrid(&mut self) -> Option<ArchetypeHrid> {
         let hrid_span = self.span_at(self.pos);
         let Some(Token::ArchetypeId(hrid_str)) = self.current().cloned() else {
             self.push(
@@ -355,13 +357,22 @@ impl Outer<'_> {
             return None;
         };
         self.pos += 1;
-        let hrid = match parse_hrid(&hrid_str) {
-            Ok(h) => h,
+        match parse_hrid(&hrid_str) {
+            Ok(h) => Some(h),
             Err(msg) => {
                 self.push(SyntaxErrorCode::Sarid, msg, hrid_span);
-                return None;
+                None
             }
-        };
+        }
+    }
+
+    fn parse_artefact(&mut self, overlay: bool) -> Option<SourceArtefact> {
+        let (kind, kind_span) = self.parse_artefact_kind()?;
+        let mut meta = ArtefactMeta::default();
+        if matches!(self.current(), Some(Token::LParen)) {
+            self.parse_meta(&mut meta);
+        }
+        let hrid = self.parse_artefact_hrid()?;
 
         let mut art = SourceArtefact {
             kind,
