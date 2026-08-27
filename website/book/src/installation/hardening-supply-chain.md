@@ -315,7 +315,7 @@ reader can check rather than trust:
 | SBOM | an SPDX SBOM written onto the image index by the builder; a CycloneDX dependency-graph SBOM attached **and Sigstore-attested** per released binary | `docker buildx imagetools inspect <image> --format '{{json .SBOM}}'` |
 | Adjudicated findings carry their argument | OpenVEX documents under `security/vex/`, applied by the scheduled scan | read the `impact_statement` in the document |
 | Secured CI/CD | every `uses:` digest-pinned, `permissions: {}` by default, no context interpolated into a shell, zizmor and CodeQL over the workflows themselves | the `zizmor` job |
-| No long-lived registry token | crates.io Trusted Publishing (OIDC); GHCR uses the ephemeral workflow token | `.github/workflows/publish-crates.yml` |
+| No long-lived registry token | crates.io Trusted Publishing (OIDC); GHCR uses the ephemeral workflow token | the `crates.io` leg of `.github/workflows/release.yml` |
 | Independent grade | OpenSSF Scorecard, computed by someone other than us | the Scorecard badge |
 
 **Two gaps remain, stated here rather than left out of a page that otherwise reads
