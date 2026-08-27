@@ -352,42 +352,53 @@ fn check_value_sets(
         return;
     };
     for set in vs.values() {
-        // VTVSID: the value-set id must be defined in the terminology of the
-        // current archetype (master07 — "current", runs for all).
-        if !defined.contains(set.id.as_str()) {
+        check_value_set(set, defined, flat_self, issues);
+    }
+}
+
+/// One value set's integrity rules (master07 §Validity Rules).
+///
+/// VTVSID: the id must be defined in the terminology of the current archetype
+/// ("current", runs for all). VTVSUQ: members must be unique within the set.
+/// VTVSMD: members must be defined in the terminology of the *flattened* form,
+/// which runs only when the archetype is its own flat form — the specialised
+/// flat-form half runs in [`super::flat`].
+fn check_value_set(
+    set: &openehr_am::v2_4::aom2::terminology::value_set::ValueSet,
+    defined: &BTreeSet<&str>,
+    flat_self: bool,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if !defined.contains(set.id.as_str()) {
+        issues.push(ValidationIssue::new(
+            ValidationCode::Vtvsid,
+            format!(
+                "value set id {:?} is not defined in the terminology",
+                set.id
+            ),
+        ));
+    }
+    let mut seen = BTreeSet::new();
+    for m in &set.members {
+        if !seen.insert(m.as_str()) {
             issues.push(ValidationIssue::new(
-                ValidationCode::Vtvsid,
+                ValidationCode::Vtvsuq,
+                format!("value set {:?} has a duplicate member {m:?}", set.id),
+            ));
+        }
+    }
+    if !flat_self {
+        return;
+    }
+    for m in &set.members {
+        if !defined.contains(m.as_str()) {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vtvsmd,
                 format!(
-                    "value set id {:?} is not defined in the terminology",
+                    "value set {:?} member {m:?} is not defined in the terminology",
                     set.id
                 ),
             ));
-        }
-        // VTVSUQ: members must be unique within the value set.
-        let mut seen = BTreeSet::new();
-        for m in &set.members {
-            if !seen.insert(m.as_str()) {
-                issues.push(ValidationIssue::new(
-                    ValidationCode::Vtvsuq,
-                    format!("value set {:?} has a duplicate member {m:?}", set.id),
-                ));
-            }
-        }
-        // VTVSMD: members must be defined in the terminology of the *flattened*
-        // form (master07). Runs only when the archetype is its own flat form; the
-        // specialised flat-form half runs in [`super::flat`].
-        if flat_self {
-            for m in &set.members {
-                if !defined.contains(m.as_str()) {
-                    issues.push(ValidationIssue::new(
-                        ValidationCode::Vtvsmd,
-                        format!(
-                            "value set {:?} member {m:?} is not defined in the terminology",
-                            set.id
-                        ),
-                    ));
-                }
-            }
         }
     }
 }

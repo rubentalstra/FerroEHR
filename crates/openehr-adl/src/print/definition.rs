@@ -48,26 +48,7 @@ impl Printer {
         }
         match obj {
             CObject::CComplexObject(CComplexObject::CComplexObject(d)) => {
-                let _ = write!(head, "{}{}", d.rm_type_name, node_bracket(&d.node_id));
-                head.push_str(&occ_suffix(d.occurrences.as_ref()));
-                let has_body = !d.attributes.as_ref().is_none_or(Vec::is_empty)
-                    || !d.attribute_tuples.as_ref().is_none_or(Vec::is_empty)
-                    || d.default_value.is_some();
-                if has_body {
-                    self.line(depth, &format!("{head} matches {{"));
-                    for a in d.attributes.iter().flatten() {
-                        self.attribute(a, depth + 1)?;
-                    }
-                    for t in d.attribute_tuples.iter().flatten() {
-                        self.attribute_tuple(t, depth + 1);
-                    }
-                    if let Some(dv) = &d.default_value {
-                        self.default_value(dv, depth + 1);
-                    }
-                    self.line(depth, "}");
-                } else {
-                    self.line(depth, &head);
-                }
+                self.complex_object(&mut head, d, depth)?;
             }
             CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
                 self.archetype_root(&head, r, depth)?;
@@ -75,30 +56,66 @@ impl Printer {
             CObject::CComplexObjectProxy(pr) => self.proxy(&head, pr, depth),
             CObject::ArchetypeSlot(s) => self.slot(&head, s, depth)?,
             // Primitives with a real node id are regular primitive objects.
-            other => {
-                if let Some(prim) = cobject_to_primitive(other) {
-                    let (ty, node_id) = prim_type_and_node(other);
-                    if node_id == "Primitive_node_id" {
-                        // Inline primitive (only reached inside an attribute body).
-                        self.line(depth, &format!("{head}{}", primitive_inline(&prim)));
-                    } else {
-                        let value = primitive_inline(&prim);
-                        if value.is_empty() {
-                            self.line(depth, &format!("{head}{ty}{}", node_bracket(&node_id)));
-                        } else {
-                            self.line(
-                                depth,
-                                &format!(
-                                    "{head}{ty}{} matches {{{value}}}",
-                                    node_bracket(&node_id)
-                                ),
-                            );
-                        }
-                    }
-                }
-            }
+            other => self.primitive_object(&head, other, depth),
         }
         Ok(())
+    }
+
+    /// Prints a plain `C_COMPLEX_OBJECT`: its head line, and a `matches` body
+    /// when it carries attributes, attribute tuples or a default value.
+    ///
+    /// # Errors
+    /// [`PrintError`] from a nested attribute.
+    fn complex_object(
+        &mut self,
+        head: &mut String,
+        d: &openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObjectData,
+        depth: usize,
+    ) -> Result<(), PrintError> {
+        let _ = write!(head, "{}{}", d.rm_type_name, node_bracket(&d.node_id));
+        head.push_str(&occ_suffix(d.occurrences.as_ref()));
+        let has_body = !d.attributes.as_ref().is_none_or(Vec::is_empty)
+            || !d.attribute_tuples.as_ref().is_none_or(Vec::is_empty)
+            || d.default_value.is_some();
+        if !has_body {
+            self.line(depth, head);
+            return Ok(());
+        }
+        self.line(depth, &format!("{head} matches {{"));
+        for a in d.attributes.iter().flatten() {
+            self.attribute(a, depth + 1)?;
+        }
+        for t in d.attribute_tuples.iter().flatten() {
+            self.attribute_tuple(t, depth + 1);
+        }
+        if let Some(dv) = &d.default_value {
+            self.default_value(dv, depth + 1);
+        }
+        self.line(depth, "}");
+        Ok(())
+    }
+
+    /// Prints a primitive object: inline where it carries the placeholder node
+    /// id (only reached inside an attribute body), else as a node-identified
+    /// object with its `matches` value.
+    fn primitive_object(&mut self, head: &str, obj: &CObject, depth: usize) {
+        let Some(prim) = cobject_to_primitive(obj) else {
+            return;
+        };
+        let (ty, node_id) = prim_type_and_node(obj);
+        if node_id == "Primitive_node_id" {
+            self.line(depth, &format!("{head}{}", primitive_inline(&prim)));
+            return;
+        }
+        let value = primitive_inline(&prim);
+        if value.is_empty() {
+            self.line(depth, &format!("{head}{ty}{}", node_bracket(&node_id)));
+        } else {
+            self.line(
+                depth,
+                &format!("{head}{ty}{} matches {{{value}}}", node_bracket(&node_id)),
+            );
+        }
     }
 
     fn attribute(&mut self, a: &CAttribute, depth: usize) -> Result<(), PrintError> {
