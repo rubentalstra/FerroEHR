@@ -205,25 +205,18 @@ impl Model {
         // through its variants (e.g. ARCHETYPE_CONSTRAINT ↔ ARCHETYPE_SLOT,
         // EXPR_ITEM ↔ EXPR_BINARY_OPERATOR). Traverse them too.
         if class.is_abstract {
-            for d in self.enum_variants(from) {
-                if d == target || self.reaches(&d, target, seen) {
-                    return true;
-                }
-            }
-            return false;
+            return self
+                .enum_variants(from)
+                .iter()
+                .any(|d| d == target || self.reaches(d, target, seen));
         }
-        for rp in self.flattened_props(class) {
-            if let BmmPropKind::Single(t) = &rp.prop.kind {
-                let root = t.root_name();
-                if Self::is_mapped(root) {
-                    continue;
-                }
-                if root == target || self.reaches(root, target, seen) {
-                    return true;
-                }
-            }
-        }
-        false
+        self.flattened_props(class).iter().any(|rp| {
+            let BmmPropKind::Single(t) = &rp.prop.kind else {
+                return false;
+            };
+            let root = t.root_name();
+            !Self::is_mapped(root) && (root == target || self.reaches(root, target, seen))
+        })
     }
 
     /// The *immediate* concrete, emittable subtypes of `name` — the variants of

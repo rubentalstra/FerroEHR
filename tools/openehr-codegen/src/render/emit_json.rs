@@ -217,6 +217,33 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>], krate: &str) -> String {
 /// monomorphization the hand-written typed dispatch uses for the same classes.
 const GENERIC_FILL: &str = "::serde_json::Value";
 
+/// Why a non-struct JSON type is unreachable as a `_type` dispatch key.
+///
+/// A newtype or literal-enum shape writes its BARE payload (no `_type` member
+/// — see `emit_serialize`), and an untagged enum carries no `_type` of its own
+/// either (the active variant's payload supplies it, and every such payload is
+/// itself an emitted struct with its own arm). Each is recorded in the emitted
+/// header, never silently dropped.
+///
+/// A struct yields `None`: it IS dispatchable, and the caller handles it.
+fn undispatchable(ty: &JsonType) -> Option<(String, &'static str)> {
+    match ty {
+        JsonType::Enum { rust, .. } => Some((
+            rust.clone(),
+            "untagged enum: the wire `_type` is the active variant's, which has its own arm",
+        )),
+        JsonType::Newtype { rust, .. } => Some((
+            rust.clone(),
+            "transparent newtype: serializes as its bare primitive payload, never `_type`-tagged",
+        )),
+        JsonType::EnumLiterals { rust, .. } => Some((
+            rust.clone(),
+            "BMM enumeration: a literal token/integer on the wire, never `_type`-tagged",
+        )),
+        JsonType::Struct { .. } => None,
+    }
+}
+
 /// Emit the generated `structural_check` dispatch file: `_type` → deserialize
 /// the node into that class's generated Rust type and discard the value, so the
 /// codec is the single structural-conformance authority for EVERY emitted class
@@ -258,25 +285,8 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
                     declared.entry(spec.clone()).or_insert(keys);
                     (spec, rust, generics)
                 }
-                JsonType::Enum { rust, .. } => {
-                    skipped.push((
-                        rust.clone(),
-                        "untagged enum: the wire `_type` is the active variant's, which has its own arm",
-                    ));
-                    continue;
-                }
-                JsonType::Newtype { rust, .. } => {
-                    skipped.push((
-                        rust.clone(),
-                        "transparent newtype: serializes as its bare primitive payload, never `_type`-tagged",
-                    ));
-                    continue;
-                }
-                JsonType::EnumLiterals { rust, .. } => {
-                    skipped.push((
-                        rust.clone(),
-                        "BMM enumeration: a literal token/integer on the wire, never `_type`-tagged",
-                    ));
+                other => {
+                    skipped.extend(undispatchable(other));
                     continue;
                 }
             };
