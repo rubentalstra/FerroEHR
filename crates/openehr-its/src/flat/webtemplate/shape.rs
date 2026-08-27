@@ -738,37 +738,23 @@ fn compact_multiple_coded_texts(children: &mut Vec<WebTemplateNode>) {
     // (keep, drop) pairs whose coded lists are unioned.
     let mut merges: Vec<(usize, usize)> = Vec::new();
     for idxs in groups.values() {
-        if idxs.len() != 2 {
-            continue; // Only an exact pair is compacted.
-        }
-        let (a, b) = (idxs[0], idxs[1]);
+        // Only an exact pair of coded-text siblings is compacted.
+        let [a, b] = idxs[..] else { continue };
         if !is_coded_text(&children[a]) || !is_coded_text(&children[b]) {
             continue;
         }
-        let constrained_a = is_input_constrained(&children[a]);
-        let constrained_b = is_input_constrained(&children[b]);
-        if constrained_a && !constrained_b {
-            to_remove.push(b);
-        } else if constrained_b && !constrained_a {
-            to_remove.push(a);
-        } else {
-            merges.push((a, b));
+        match (
+            is_input_constrained(&children[a]),
+            is_input_constrained(&children[b]),
+        ) {
+            (true, false) => to_remove.push(b),
+            (false, true) => to_remove.push(a),
+            _ => merges.push((a, b)),
         }
     }
 
     for (keep, drop) in merges {
-        let drop_list = children[drop]
-            .inputs
-            .first()
-            .map(|i| i.list.clone())
-            .unwrap_or_default();
-        if let Some(input) = children[keep].inputs.first_mut() {
-            for cv in drop_list {
-                if !input.list.iter().any(|existing| existing.value == cv.value) {
-                    input.list.push(cv);
-                }
-            }
-        }
+        union_coded_lists(children, keep, drop);
         to_remove.push(drop);
     }
 
@@ -776,6 +762,27 @@ fn compact_multiple_coded_texts(children: &mut Vec<WebTemplateNode>) {
     to_remove.dedup();
     for i in to_remove.into_iter().rev() {
         children.remove(i);
+    }
+}
+
+/// Unions the dropped sibling's coded list into the kept one, deduplicated by
+/// code with first-seen order preserved.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "both indices are `enumerate()` indices into `children` and nothing is removed before this runs, so they are in bounds by construction"
+)]
+fn union_coded_lists(children: &mut [WebTemplateNode], keep: usize, drop: usize) {
+    let drop_list = children[drop]
+        .inputs
+        .first()
+        .map(|i| i.list.clone())
+        .unwrap_or_default();
+    if let Some(input) = children[keep].inputs.first_mut() {
+        for cv in drop_list {
+            if !input.list.iter().any(|existing| existing.value == cv.value) {
+                input.list.push(cv);
+            }
+        }
     }
 }
 

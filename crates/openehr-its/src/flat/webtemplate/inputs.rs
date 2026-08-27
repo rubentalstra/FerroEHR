@@ -347,50 +347,56 @@ fn count_input(co: &CObject) -> WebTemplateInput {
 
 fn ordinal_input(co: &CObject, labels: &dyn Labels, scale: bool) -> WebTemplateInput {
     let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, None);
-    if let CObject::CDvOrdinal(ord) = co {
-        for entry in &ord.list {
-            let dc = &entry.symbol.defining_code;
-            let term = &dc.terminology_id.value;
-            let mut cv = coded_value(term, &dc.code_string, labels, None);
-            // The label should be the ordinal symbol rubric; prefer the symbol value.
-            if !entry.symbol.value.is_empty() {
-                cv.label = Some(entry.symbol.value.clone());
-            }
-            if scale {
-                cv.scale = Some(f64::from(entry.value));
-            } else {
-                cv.ordinal = Some(entry.value);
-            }
-            input.list.push(cv);
-        }
+    let CObject::CDvOrdinal(ord) = co else {
+        push_generic_ordinal_codes(co, labels, &mut input);
         return input;
-    }
-    // Generic C_COMPLEX_OBJECT form: AOM 1.4 has no `C_DV_SCALE` constrainer
-    // (AM `masterAppA-domain_extension.adoc` defines an integer-valued
-    // `C_ORDINAL` only), so a DV_SCALE constrains its coded `symbol` through
-    // `symbol.defining_code` as a `C_CODE_PHRASE` `code_list` (RM `data_types`
-    // §`DV_SCALE`). Surface that code set as the coded `list` so the walk
-    // enforces symbol membership; the numeric `value` set is captured
-    // separately. No paired `(symbol, value)` numeric is recorded — the generic
-    // form loses the pairing — so the coded values carry no `ordinal`/`scale`.
-    for symbol_child in attr_children(co, "symbol") {
-        for dc_child in attr_children(symbol_child, "defining_code") {
-            if let CObject::CCodePhrase(cp) = dc_child {
-                let term = cp.terminology_id.as_ref().map(|t| t.value.clone());
-                for code in &cp.code_list {
-                    let cv = coded_value(term.as_deref().unwrap_or("local"), code, labels, None);
-                    if let Some(t) = &term
-                        && !t.is_empty()
-                        && t != "local"
-                    {
-                        input.terminology = Some(t.clone());
-                    }
-                    input.list.push(cv);
-                }
-            }
+    };
+    for entry in &ord.list {
+        let dc = &entry.symbol.defining_code;
+        let mut cv = coded_value(&dc.terminology_id.value, &dc.code_string, labels, None);
+        // The label should be the ordinal symbol rubric; prefer the symbol value.
+        if !entry.symbol.value.is_empty() {
+            cv.label = Some(entry.symbol.value.clone());
         }
+        if scale {
+            cv.scale = Some(f64::from(entry.value));
+        } else {
+            cv.ordinal = Some(entry.value);
+        }
+        input.list.push(cv);
     }
     input
+}
+
+/// The coded values of the generic `C_COMPLEX_OBJECT` ordinal/scale form.
+///
+/// AOM 1.4 has no `C_DV_SCALE` constrainer (AM
+/// `masterAppA-domain_extension.adoc` defines an integer-valued `C_ORDINAL`
+/// only), so a DV_SCALE constrains its coded `symbol` through
+/// `symbol.defining_code` as a `C_CODE_PHRASE` `code_list` (RM `data_types`
+/// §`DV_SCALE`). That code set surfaces as the coded `list` so the walk
+/// enforces symbol membership; the numeric `value` set is captured separately.
+/// No paired `(symbol, value)` numeric is recorded — the generic form loses
+/// the pairing — so the coded values carry no `ordinal`/`scale`.
+fn push_generic_ordinal_codes(co: &CObject, labels: &dyn Labels, input: &mut WebTemplateInput) {
+    for symbol_child in attr_children(co, "symbol") {
+        for dc_child in attr_children(symbol_child, "defining_code") {
+            let CObject::CCodePhrase(cp) = dc_child else {
+                continue;
+            };
+            let term = cp.terminology_id.as_ref().map(|t| t.value.clone());
+            for code in &cp.code_list {
+                let cv = coded_value(term.as_deref().unwrap_or("local"), code, labels, None);
+                if let Some(t) = &term
+                    && !t.is_empty()
+                    && t != "local"
+                {
+                    input.terminology = Some(t.clone());
+                }
+                input.list.push(cv);
+            }
+        }
+    }
 }
 
 // ── DV_BOOLEAN ───────────────────────────────────────────────────────────────

@@ -146,49 +146,53 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     map::emit_rm_attrs(rm, base_type(&node.rm_type), out);
 
     for child in &node.children {
-        if covered_by_ctx(node, child) {
-            continue;
-        }
-        let rel = rmpath::relative(&node.aql_path, &child.aql_path);
-        // Polymorphic choice alternatives share one aqlPath; emit only under
-        // the alternative whose rm type matches this value's `_type`. The
-        // filter must apply to EVERY member of a choice group — the first
-        // alternative carries no `alt_json_id`, so sharing an aqlPath with a
-        // sibling is the group marker.
-        let in_choice = child.alt_json_id.is_some()
-            || node
-                .children
-                .iter()
-                .any(|c| c.id != child.id && c.aql_path == child.aql_path);
-        let occurrences = occurrences_of(child, rm, &rel, in_choice);
-        if occurrences.is_empty() {
-            continue;
-        }
-        let repeating = child.max == -1 || child.max > 1;
-        if repeating {
-            out.children.entry(child.id.clone()).or_default().indexed = true;
-        }
-        for (i, occurrence) in occurrences.iter().enumerate() {
-            if occurrence
-                .value
-                .is_some_and(|v| is_default_entry_context(child, v))
-            {
-                continue;
-            }
-            let slot = out.place_mut(&child.id, u32::try_from(i).unwrap_or(u32::MAX));
-            if let Some(value) = occurrence.value {
-                walk(child, value, slot);
-            }
-            // The leaf's wrapping ELEMENT carries its own `_` attribute
-            // family (`master05 §ELEMENT`: `_uid`, `_null_flavour`,
-            // `_null_reason`, `_link:i`, `_feeder_audit`); the leaf walk
-            // above saw only the DV value, so surface the wrapper's here.
-            if let Some(element) = occurrence.element {
-                map::emit_rm_attrs(element, "ELEMENT", slot);
-            }
+        if !covered_by_ctx(node, child) {
+            walk_child(node, child, rm, out);
         }
     }
     emit_direct_rm_paths(node, rm, out);
+}
+
+/// Emits every occurrence of one template child under its simplified slot.
+///
+/// Polymorphic choice alternatives share one `aqlPath`, so an occurrence is
+/// emitted only under the alternative whose RM type matches the value's
+/// `_type`. That filter must apply to EVERY member of a choice group — the
+/// first alternative carries no `alt_json_id`, so sharing an `aqlPath` with a
+/// sibling is the group marker.
+fn walk_child(node: &WebTemplateNode, child: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+    let rel = rmpath::relative(&node.aql_path, &child.aql_path);
+    let in_choice = child.alt_json_id.is_some()
+        || node
+            .children
+            .iter()
+            .any(|c| c.id != child.id && c.aql_path == child.aql_path);
+    let occurrences = occurrences_of(child, rm, &rel, in_choice);
+    if occurrences.is_empty() {
+        return;
+    }
+    if child.max == -1 || child.max > 1 {
+        out.children.entry(child.id.clone()).or_default().indexed = true;
+    }
+    for (i, occurrence) in occurrences.iter().enumerate() {
+        if occurrence
+            .value
+            .is_some_and(|v| is_default_entry_context(child, v))
+        {
+            continue;
+        }
+        let slot = out.place_mut(&child.id, u32::try_from(i).unwrap_or(u32::MAX));
+        if let Some(value) = occurrence.value {
+            walk(child, value, slot);
+        }
+        // The leaf's wrapping ELEMENT carries its own `_` attribute family
+        // (`master05 §ELEMENT`: `_uid`, `_null_flavour`, `_null_reason`,
+        // `_link:i`, `_feeder_audit`); the leaf walk above saw only the DV
+        // value, so surface the wrapper's here.
+        if let Some(element) = occurrence.element {
+            map::emit_rm_attrs(element, "ELEMENT", slot);
+        }
+    }
 }
 
 /// One emitted occurrence of a template child: the RM value its relative path
