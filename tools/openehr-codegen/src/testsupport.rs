@@ -1706,28 +1706,9 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
         let mut per_class: ClassFunctions = BTreeMap::new();
         for unit in &generation.units {
             for (name, class) in &unit.schema.classes {
-                let stem = name.to_lowercase();
-                let Some(sibling) = bodies.get(&format!("{stem}_impl")) else {
-                    continue;
-                };
-                let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
-                let declared: BTreeSet<String> = class.functions.iter().cloned().collect();
-                let found = class
-                    .functions
-                    .iter()
-                    .filter(|f| {
-                        // Both spellings: a BMM name that is a Rust keyword is
-                        // realized as a raw identifier (`fn r#type(`).
-                        let item = format!("fn {f}(");
-                        let raw = format!("fn r#{f}(");
-                        sibling.contains(&item)
-                            || own.contains(&item)
-                            || sibling.contains(&raw)
-                            || own.contains(&raw)
-                    })
-                    .cloned()
-                    .collect();
-                per_class.insert(name.clone(), (declared, found));
+                if let Some(entry) = class_function_status(name, class, &bodies) {
+                    per_class.insert(name.clone(), entry);
+                }
             }
         }
         realized.push((generation.spec.module, per_class));
@@ -1757,6 +1738,36 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
     divergent.sort();
     divergent.dedup();
     Ok(divergent)
+}
+
+/// The functions one class DECLARES and those its hand-written sibling
+/// realizes, or `None` when the class has no `*_impl.rs` sibling at all.
+///
+/// Both spellings are recognised: a BMM name that is a Rust keyword is
+/// realized as a raw identifier (`fn r#type(`).
+fn class_function_status(
+    name: &str,
+    class: &crate::load::bmm::BmmClass,
+    bodies: &BTreeMap<String, String>,
+) -> Option<(BTreeSet<String>, BTreeSet<String>)> {
+    let stem = name.to_lowercase();
+    let sibling = bodies.get(&format!("{stem}_impl"))?;
+    let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
+    let declared: BTreeSet<String> = class.functions.iter().cloned().collect();
+    let found = class
+        .functions
+        .iter()
+        .filter(|f| {
+            let item = format!("fn {f}(");
+            let raw = format!("fn r#{f}(");
+            sibling.contains(&item)
+                || own.contains(&item)
+                || sibling.contains(&raw)
+                || own.contains(&raw)
+        })
+        .cloned()
+        .collect();
+    Some((declared, found))
 }
 
 /// Whether `body` applies items to `rust_type` — an `impl` block on it, or the
@@ -1845,37 +1856,10 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                 if overrides::primitive(name).is_some() || overrides::is_mapped_class(name) {
                     continue;
                 }
-                let stem = name.to_lowercase();
-                let sibling = bodies
-                    .get(&format!("{stem}_impl"))
-                    .map(String::as_str)
-                    .unwrap_or_default();
-                let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
-                let rust_type = naming::type_name(name);
                 for function in &class.functions {
-                    // A BMM name that is a Rust keyword is realized as a RAW
-                    // identifier (`BMM_CLASS.type` → `pub fn r#type(`), so the
-                    // witness has to accept both spellings or it can never
-                    // credit those functions at all.
-                    let item = format!("fn {function}(");
-                    let raw_item = format!("fn r#{function}(");
-                    let realized = |body: &str| body.contains(&item) || body.contains(&raw_item);
-                    if realized(sibling) || realized(own) {
-                        continue;
+                    if !function_is_realized(name, function, bodies_of(name, &bodies), &bodies) {
+                        missing.push(format!("{}/{name}.{function}", generation.spec.module));
                     }
-                    // A method can be realized by a MACRO applied elsewhere in the
-                    // generation, so the witness searches the whole generation —
-                    // but it must name the type as an impl TARGET, not merely
-                    // mention it: a mention credited `VERSION.data` to
-                    // `imported_version_impl.rs`, a false NEGATIVE that silently
-                    // drops a real gap (#2247).
-                    if bodies
-                        .values()
-                        .any(|body| realized(body) && targets_type(body, &rust_type))
-                    {
-                        continue;
-                    }
-                    missing.push(format!("{}/{name}.{function}", generation.spec.module));
                 }
             }
         }
@@ -1883,6 +1867,46 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
     missing.sort();
     missing.dedup();
     Ok(missing)
+}
+
+/// The class's own two candidate bodies: its generated type file and its
+/// hand-written `*_impl.rs` sibling.
+fn bodies_of<'a>(name: &str, bodies: &'a BTreeMap<String, String>) -> [&'a str; 2] {
+    let stem = name.to_lowercase();
+    [
+        bodies
+            .get(&format!("{stem}_impl"))
+            .map(String::as_str)
+            .unwrap_or_default(),
+        bodies.get(&stem).map(String::as_str).unwrap_or_default(),
+    ]
+}
+
+/// Whether one BMM function is realized anywhere in its generation.
+///
+/// A BMM name that is a Rust keyword is realized as a RAW identifier
+/// (`BMM_CLASS.type` → `pub fn r#type(`), so both spellings count or those
+/// functions could never be credited at all. A method may also be realized by
+/// a MACRO applied elsewhere in the generation, so the witness searches every
+/// body — but such a body must name the type as an impl TARGET, not merely
+/// mention it: a mention credited `VERSION.data` to `imported_version_impl.rs`,
+/// a false NEGATIVE that silently drops a real gap (#2247).
+fn function_is_realized(
+    name: &str,
+    function: &str,
+    own: [&str; 2],
+    bodies: &BTreeMap<String, String>,
+) -> bool {
+    let item = format!("fn {function}(");
+    let raw_item = format!("fn r#{function}(");
+    let realized = |body: &str| body.contains(&item) || body.contains(&raw_item);
+    if own.iter().any(|body| realized(body)) {
+        return true;
+    }
+    let rust_type = naming::type_name(name);
+    bodies
+        .values()
+        .any(|body| realized(body) && targets_type(body, &rust_type))
 }
 
 /// Every `.rs` file under `dir` as file-stem → the CONCATENATED bodies of every
