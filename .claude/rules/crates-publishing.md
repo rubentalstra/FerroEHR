@@ -62,9 +62,14 @@ by the `crate-version-guard` CI job.
 
 ## The publish lane is per crate, resumable, and verified
 
-`publish-crates.yml` publishes the eight members **one at a time in
-dependency order**, treats "already exists on crates.io index" as done, and
-reads the registry back before reporting success.
+Both lanes publish the eight members **one at a time in dependency order**,
+treat "already exists on crates.io index" as done, and read the registry back
+before reporting success. That is one implementation,
+`scripts/release/publish-crates.sh` (`publish` / `verify` / `version`), called
+from an inline step in each lane — never a reusable workflow, because the OIDC
+`workflow_ref` claim names the CALLING workflow, so sharing the job would
+present the same identity while hiding which workflow file each Trusted
+Publisher entry has to name.
 
 It is deliberately not `cargo publish --workspace` for the real upload.
 That command is all-or-nothing at the START — it refuses the whole run if any
@@ -101,8 +106,21 @@ every member is verified together.
 
 ## Publishing
 
-- Releases go through `.github/workflows/publish-crates.yml`
-  (`workflow_dispatch`; dry-run by default; the real publish is OIDC
-  Trusted Publishing under the protected `crates-io` environment). The
-  full procedure, including the manual first-release exception, lives in
+- **The release cut publishes the crates.** `release.yml` carries a `crates`
+  leg after the GitHub release is published: real releases only, a leaf, and
+  gated on the `crates-io` environment's required reviewer, so the pipeline
+  pauses for an explicit approval before anything reaches crates.io (owner
+  ruling 2026-08-27, issue #2836 — the dispatch-only arrangement let v4.0.6
+  ship with the eight crates stepped and unpublished). A cycle that changed no
+  packaged crate content approves through as a no-op.
+- **`publish-crates.yml` is the between-releases lane**: the dry run (its
+  default) and the recovery path when a release's leg fails — re-running it
+  finishes a split set, because "already exists" counts as done.
+- **Trusted Publishing matches the top-level workflow FILENAME**, so each of
+  the eight crates carries two publisher entries on crates.io, one naming
+  `release.yml` and one naming `publish-crates.yml`, both under repository
+  `rubentalstra/FerroEHR` and environment `crates-io`. A missing entry is
+  refused at the token exchange. Adding the entries and the environment
+  reviewer are owner clicks.
+- The full procedure, including the manual first-release exception, lives in
   `.claude/rules/changelog.md` §Publishing the openehr-* crates.
