@@ -273,6 +273,180 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
     }
 }
 
+/// Announces the deployment postures that are legal but easy to leave on by
+/// accident, once logging is up.
+///
+/// The dev-default DSN is announced prominently rather than silently accepted
+/// (never a silent production trap). Permissive CORS is a deliberate
+/// weakening — every origin may read every response — and the kind of setting
+/// switched on for a demo and left on (OWASP REST Security Cheat Sheet). The
+/// HTTPS posture is stated rather than enforced: this server cannot tell
+/// "plaintext because misconfigured" from "plaintext because a TLS-terminating
+/// ingress sits in front", which is the ordinary deployment, so authentication
+/// over plaintext on a routable bind warns loudly and proceeds — the operator
+/// owns the edge.
+fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
+    if config.db.is_dev_default() {
+        tracing::warn!(
+            url = db::DEFAULT_URL,
+            "[db].url is the built-in DEVELOPMENT DEFAULT ({}); no file/env/CLI value was \
+             supplied. Set db.url (FERROEHR__DB__URL / DATABASE_URL) for any non-dev deployment — \
+             production MUST override it.",
+            db::DEFAULT_URL,
+        );
+    }
+    if config.server.cors_permissive {
+        tracing::warn!(
+            "[server].cors_permissive is ON: any origin may read API responses. This is a \
+             DEVELOPMENT setting — configure explicit origins for any deployment reachable by \
+             a browser."
+        );
+    }
+    if config.auth.enabled && !config.server.tls.enabled && !binds_loopback(&config.server.bind) {
+        tracing::warn!(
+            bind = %config.server.bind,
+            "authentication is enabled but this listener is PLAINTEXT on a routable address. \
+             Credentials and bearer tokens will cross the wire unencrypted unless a \
+             TLS-terminating proxy fronts this port. Enable [server.tls] or ensure the ingress \
+             terminates TLS."
+        );
+    }
+}
+
+/// Connects the pool the deployment's tenancy mode calls for and prepares the
+/// schema.
+///
+/// Multi-tenant mode swaps in the tenant-scoped pool: every checked-out
+/// connection is stamped with the request's `ferroehr.tenant_id` session GUC,
+/// which the RLS `tenant_isolation` policy reads (no openEHR spec governs
+/// multi-tenancy — our own deployment extension). Single-tenant deployments
+/// keep the plain pool and pay no per-acquire cost.
+///
+/// # Errors
+/// A connection or migration failure, contextualized for the operator.
+async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<PgPool> {
+    let pool = if config.tenancy.enabled {
+        db::connect_tenant_scoped(&config.db)
+            .await
+            .context("connecting to PostgreSQL (tenant-scoped)")?
+    } else {
+        db::connect(&config.db)
+            .await
+            .context("connecting to PostgreSQL")?
+    };
+    db::prepare(&config.db, &pool)
+        .await
+        .context("preparing the database schema")?;
+    Ok(pool)
+}
+
+/// Wires the opt-in external FHIR terminology servers — ALL configured
+/// providers, with the terminology→provider routing (a deployment binds
+/// several terminologies at once; BASE
+/// `architecture_overview/master12-terminology.adoc` §Overview).
+///
+/// # Errors
+/// A provider that cannot be built (a boot error: configuration promising a
+/// terminology binding must never degrade to no binding).
+fn attach_terminology(
+    service: FerroEhrService,
+    config: &ferroehr::config::FerroEhrConfig,
+) -> anyhow::Result<FerroEhrService> {
+    let Some(router) = ferroehr::service::terminology::router::TerminologyRouter::build(
+        &config.terminology.external,
+    )
+    .context("initialising the external terminology providers")?
+    else {
+        return Ok(service);
+    };
+    tracing::info!(
+        providers = %router.provider_names().collect::<Vec<_>>().join(", "),
+        fail_on_error = router.fail_on_error(),
+        "external FHIR terminology providers configured"
+    );
+    Ok(service.with_terminology_router(Arc::new(router)))
+}
+
+/// Wires the opt-in Subject Proxy FHIR-frame executor (fail-closed).
+///
+/// # Errors
+/// An executor that cannot be built.
+fn attach_subject_proxy(
+    service: FerroEhrService,
+    config: &ferroehr::config::FerroEhrConfig,
+) -> anyhow::Result<FerroEhrService> {
+    let Some(fhir) = config
+        .subject_proxy
+        .build()
+        .context("initialising the subject-proxy FHIR executor")?
+    else {
+        return Ok(service);
+    };
+    tracing::info!("subject-proxy FHIR-frame executor configured");
+    Ok(service.with_subject_proxy(Arc::new(fhir)))
+}
+
+/// Wires the opt-in `DV_MULTIMEDIA` externalization (the `multimedia` cargo
+/// feature; a slim build refuses an enabled config loudly).
+///
+/// A store that is only there to READ BACK already-offloaded blobs (the
+/// integration is off but an endpoint remains) must never stop the server
+/// starting: turning a feature off cannot be a way to break boot. So an
+/// unbuildable store is fatal only when the integration is enabled.
+///
+/// # Errors
+/// An unbuildable object store while the integration is enabled, or an enabled
+/// configuration in a build without the feature.
+fn attach_multimedia(
+    service: FerroEhrService,
+    config: &ferroehr::config::FerroEhrConfig,
+) -> anyhow::Result<FerroEhrService> {
+    #[cfg(feature = "multimedia")]
+    {
+        let engine = match ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
+        {
+            Ok(engine) => engine,
+            Err(e) if !config.multimedia.enabled => {
+                tracing::warn!(
+                    error = %e,
+                    "multimedia is disabled and its object store could not be built: \
+                     already-externalized content cannot be re-inlined, and a read that \
+                     asks for it will be refused rather than answered with the reference"
+                );
+                None
+            }
+            Err(e) => {
+                return Err(
+                    anyhow::Error::new(e).context("initialising the multimedia object store")
+                );
+            }
+        };
+        let Some(engine) = engine else {
+            return Ok(service);
+        };
+        if engine.offload_enabled() {
+            tracing::info!(
+                bucket = %config.multimedia.bucket,
+                threshold_bytes = config.multimedia.threshold_bytes,
+                "DV_MULTIMEDIA externalization enabled"
+            );
+        } else {
+            tracing::info!(
+                bucket = %config.multimedia.bucket,
+                "DV_MULTIMEDIA externalization disabled; the configured store stays \
+                 readable so already-externalized content can still be served"
+            );
+        }
+        Ok(service.with_multimedia(Arc::new(engine)))
+    }
+    #[cfg(not(feature = "multimedia"))]
+    {
+        ferroehr::extensions::multimedia::require_disabled(&config.multimedia)
+            .map_err(|e| anyhow::anyhow!(e))?;
+        Ok(service)
+    }
+}
+
 /// Boot the server: config, telemetry, pool, migrations, audit, health, serve.
 #[expect(
     clippy::too_many_lines,
@@ -299,62 +473,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     let mut telemetry =
         telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
 
-    // Review condition 1: announce the dev-default DSN prominently (never a
-    // silent production trap) — now that logging is up.
-    if config.db.is_dev_default() {
-        tracing::warn!(
-            url = db::DEFAULT_URL,
-            "[db].url is the built-in DEVELOPMENT DEFAULT ({}); no file/env/CLI value was \
-             supplied. Set db.url (FERROEHR__DB__URL / DATABASE_URL) for any non-dev deployment — \
-             production MUST override it.",
-            db::DEFAULT_URL,
-        );
-    }
-
-    // Permissive CORS is a deliberate weakening — every origin may read every
-    // response — and it is the kind of setting that gets switched on for a demo
-    // and left on. Announced, never silent (OWASP REST Security Cheat Sheet).
-    if config.server.cors_permissive {
-        tracing::warn!(
-            "[server].cors_permissive is ON: any origin may read API responses. This is a \
-             DEVELOPMENT setting — configure explicit origins for any deployment reachable by \
-             a browser."
-        );
-    }
-
-    // The HTTPS posture, stated rather than enforced. The cheat sheet asks for
-    // HTTPS-only endpoints; this server cannot tell "plaintext because
-    // misconfigured" from "plaintext because a TLS-terminating ingress sits in
-    // front", which is the ordinary deployment. Refusing to boot would break
-    // every such deployment, so authentication over plaintext on a non-loopback
-    // bind warns loudly and proceeds — the operator owns the edge.
-    if config.auth.enabled && !config.server.tls.enabled && !binds_loopback(&config.server.bind) {
-        tracing::warn!(
-            bind = %config.server.bind,
-            "authentication is enabled but this listener is PLAINTEXT on a routable address. \
-             Credentials and bearer tokens will cross the wire unencrypted unless a \
-             TLS-terminating proxy fronts this port. Enable [server.tls] or ensure the ingress \
-             terminates TLS."
-        );
-    }
-
-    // Multi-tenant mode swaps in the tenant-scoped pool: every checked-out
-    // connection is stamped with the request's `ferroehr.tenant_id` session
-    // GUC, which the RLS `tenant_isolation` policy reads (no openEHR spec
-    // governs multi-tenancy — our own deployment extension). Single-tenant
-    // deployments keep the plain pool and pay no per-acquire cost.
-    let pool = if config.tenancy.enabled {
-        db::connect_tenant_scoped(&config.db)
-            .await
-            .context("connecting to PostgreSQL (tenant-scoped)")?
-    } else {
-        db::connect(&config.db)
-            .await
-            .context("connecting to PostgreSQL")?
-    };
-    db::prepare(&config.db, &pool)
-        .await
-        .context("preparing the database schema")?;
+    warn_boot_postures(&config);
+    let pool = connect_pool(&config).await?;
 
     // ATNA audit (fail-open at boot). A slim build cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry, so an enabled
@@ -430,80 +550,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
             service.with_audit_store(ferroehr::system_log::store::AuditStore::new(pool.clone()));
     }
 
-    // Opt-in external FHIR terminology servers — ALL configured providers,
-    // with the terminology→provider routing (a deployment binds several
-    // terminologies at once; BASE `architecture_overview/
-    // master12-terminology.adoc` §Overview).
-    if let Some(router) = ferroehr::service::terminology::router::TerminologyRouter::build(
-        &config.terminology.external,
-    )
-    .context("initialising the external terminology providers")?
-    {
-        tracing::info!(
-            providers = %router.provider_names().collect::<Vec<_>>().join(", "),
-            fail_on_error = router.fail_on_error(),
-            "external FHIR terminology providers configured"
-        );
-        service = service.with_terminology_router(Arc::new(router));
-    }
-
-    // Opt-in Subject Proxy FHIR-frame executor (fail-closed).
-    if let Some(fhir) = config
-        .subject_proxy
-        .build()
-        .context("initialising the subject-proxy FHIR executor")?
-    {
-        tracing::info!("subject-proxy FHIR-frame executor configured");
-        service = service.with_subject_proxy(Arc::new(fhir));
-    }
-
-    // Opt-in DV_MULTIMEDIA externalization (the `multimedia` cargo feature; a
-    // slim build refuses an enabled config loudly).
-    // A store that is only there to READ BACK already-offloaded blobs (the
-    // integration is off but an endpoint remains) must never stop the server
-    // starting: turning a feature off cannot be a way to break boot. So the
-    // failure is fatal only when the integration is enabled.
-    #[cfg(feature = "multimedia")]
-    {
-        let engine = match ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
-        {
-            Ok(engine) => engine,
-            Err(e) if !config.multimedia.enabled => {
-                tracing::warn!(
-                    error = %e,
-                    "multimedia is disabled and its object store could not be built: \
-                     already-externalized content cannot be re-inlined, and a read that \
-                     asks for it will be refused rather than answered with the reference"
-                );
-                None
-            }
-            Err(e) => {
-                return Err(
-                    anyhow::Error::new(e).context("initialising the multimedia object store")
-                );
-            }
-        };
-        if let Some(engine) = engine {
-            if engine.offload_enabled() {
-                tracing::info!(
-                    bucket = %config.multimedia.bucket,
-                    threshold_bytes = config.multimedia.threshold_bytes,
-                    "DV_MULTIMEDIA externalization enabled"
-                );
-            } else {
-                tracing::info!(
-                    bucket = %config.multimedia.bucket,
-                    "DV_MULTIMEDIA externalization disabled; the configured store stays \
-                     readable so already-externalized content can still be served"
-                );
-            }
-            service = service.with_multimedia(Arc::new(engine));
-        }
-    }
-    #[cfg(not(feature = "multimedia"))]
-    ferroehr::extensions::multimedia::require_disabled(&config.multimedia)
-        .map_err(|e| anyhow::anyhow!(e))?;
-
+    service = attach_terminology(service, &config)?;
+    service = attach_subject_proxy(service, &config)?;
+    service = attach_multimedia(service, &config)?;
     let service = Arc::new(service);
 
     // FHIR outbound emitter (off by default; carries PHI). Gated on `fhir`:

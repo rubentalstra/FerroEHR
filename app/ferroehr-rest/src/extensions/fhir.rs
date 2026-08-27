@@ -392,11 +392,22 @@ async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response
         );
     }
 
-    let h = &parts.headers;
     match op {
         "fhir_ingest" => ingest(&state, &parts).await,
         "fhir_validate" => validate(&state, &parts).await,
         "fhir_search" => search(&state, &parts).await,
+        _ => mapping_crud(&state, op, &parts).await,
+    }
+}
+
+/// The `fhir_mapping_*` CRUD surface over the stored template→resource
+/// mappings.
+///
+/// No openEHR spec governs this — our own design/extension (the FHIR
+/// connector's configuration surface).
+async fn mapping_crud(state: &AppState, op: &'static str, parts: &RequestParts) -> Response {
+    let h = &parts.headers;
+    match op {
         "fhir_mapping_list" => match state.backend().fhir_mapping_list().await {
             Ok(items) => negotiate::respond(h, StatusCode::OK, &items),
             Err(e) => sm_error_outcome(e),
@@ -411,14 +422,14 @@ async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response
                 Err(e) => sm_error_outcome(e),
             }
         }
-        "fhir_mapping_get" => match mapping_id(&parts) {
+        "fhir_mapping_get" => match mapping_id(parts) {
             Ok(id) => match state.backend().fhir_mapping_get(id).await {
                 Ok(item) => negotiate::respond(h, StatusCode::OK, &item),
                 Err(e) => sm_error_outcome(e),
             },
             Err(e) => api_error_outcome(&e.0),
         },
-        "fhir_mapping_update" => match mapping_id(&parts) {
+        "fhir_mapping_update" => match mapping_id(parts) {
             Ok(id) => {
                 let body = match negotiate::json_value(h, &parts.body) {
                     Ok(b) => b,
@@ -431,7 +442,7 @@ async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response
             }
             Err(e) => api_error_outcome(&e.0),
         },
-        "fhir_mapping_delete" => match mapping_id(&parts) {
+        "fhir_mapping_delete" => match mapping_id(parts) {
             Ok(id) => match state.backend().fhir_mapping_delete(id).await {
                 Ok(()) => negotiate::empty(StatusCode::NO_CONTENT),
                 Err(e) => sm_error_outcome(e),

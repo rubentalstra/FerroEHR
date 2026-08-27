@@ -280,10 +280,7 @@ fn sql_col(spec: &ColumnSpec, index: usize) -> Result<&str, AqlError> {
 /// four locator columns (`vo_id`, `sys_version`, `num`, `num_cap`). Returns
 /// `None` when the `vo_id` locator is SQL NULL (an outer-joined absent object) —
 /// the cell is then a JSON `null` with no subtree to load.
-fn whole_object_anchor(
-    row: &PgRow,
-    spec: &ColumnSpec,
-) -> Result<Option<SubtreeAnchor>, AqlError> {
+fn whole_object_anchor(row: &PgRow, spec: &ColumnSpec) -> Result<Option<SubtreeAnchor>, AqlError> {
     let vo_id: Option<VoId> = row.try_get(sql_col(spec, 0)?).map_err(ExecError::from)?;
     let Some(vo_id) = vo_id else {
         return Ok(None);

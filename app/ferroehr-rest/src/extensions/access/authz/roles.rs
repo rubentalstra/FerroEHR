@@ -30,33 +30,34 @@ use ferroehr::config::authz::RbacConfig;
 #[must_use]
 pub fn extract_roles(claims: &Map<String, Value>, paths: &[String]) -> Vec<String> {
     let mut roles: Vec<String> = Vec::new();
-    let mut push = |raw: &str| {
-        let norm = raw.trim().to_ascii_uppercase();
-        if !norm.is_empty() && !roles.contains(&norm) {
-            roles.push(norm);
-        }
-    };
     for path in paths {
         let Some(value) = lookup(claims, path) else {
             continue;
         };
         match value {
             Value::Array(items) => {
-                for item in items {
-                    if let Some(s) = item.as_str() {
-                        push(s);
-                    }
+                for item in items.iter().filter_map(Value::as_str) {
+                    push_role(&mut roles, item);
                 }
             }
             Value::String(s) => {
                 for token in s.split_whitespace() {
-                    push(token);
+                    push_role(&mut roles, token);
                 }
             }
             _ => {}
         }
     }
     roles
+}
+
+/// Appends one normalized role — trimmed and upper-cased — unless it is empty
+/// or already present (first-seen order is preserved).
+fn push_role(roles: &mut Vec<String>, raw: &str) {
+    let norm = raw.trim().to_ascii_uppercase();
+    if !norm.is_empty() && !roles.contains(&norm) {
+        roles.push(norm);
+    }
 }
 
 /// Resolve a dotted claim path to a string value (the ABAC `organization` /
