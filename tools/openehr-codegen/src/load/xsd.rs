@@ -96,6 +96,70 @@ pub(crate) struct XsdElem {
     pub multiple: bool,
 }
 
+/// Collects one document's named `group` / `attributeGroup` definitions.
+///
+/// A group may be declared in one file of an `xs:include` chain and referenced
+/// from another, so the caller scans every file before resolving any
+/// complexType. First declaration wins (the caller curates a conflict-free
+/// set).
+fn collect_groups(doc: &roxmltree::Document<'_>, groups: &mut XsdGroups) {
+    for node in doc
+        .root_element()
+        .children()
+        .filter(roxmltree::Node::is_element)
+    {
+        let Some(name) = node.attribute("name") else {
+            continue;
+        };
+        match local(&node) {
+            "group" => {
+                let mut items = Vec::new();
+                collect_content_particles(node, &mut items, &mut Vec::new());
+                groups.elements.entry(name.to_owned()).or_insert(items);
+            }
+            "attributeGroup" => {
+                let mut items = Vec::new();
+                collect_content_particles(node, &mut Vec::new(), &mut items);
+                groups.attributes.entry(name.to_owned()).or_insert(items);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Collects one document's `complexType`s (with every group reference expanded
+/// in place) and its named `simpleType`s.
+///
+/// # Errors
+/// A complexType the parser cannot resolve.
+fn collect_types(
+    doc: &roxmltree::Document<'_>,
+    groups: &XsdGroups,
+    types: &mut BTreeMap<String, XsdType>,
+    simple_types: &mut BTreeMap<String, XsdSimpleType>,
+) -> Result<(), String> {
+    for node in doc
+        .root_element()
+        .children()
+        .filter(roxmltree::Node::is_element)
+    {
+        match local(&node) {
+            "complexType" => {
+                if let Some(t) = parse_complex_type(node, groups)? {
+                    types.entry(t.name.clone()).or_insert(t);
+                }
+            }
+            "simpleType" => {
+                if let Some(t) = parse_simple_type(node) {
+                    simple_types.entry(t.name.clone()).or_insert(t);
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
 impl XsdModel {
     /// Parse a curated set of XSD files into one merged model. Later files do
     /// not override types already seen (the caller curates a conflict-free set).
@@ -112,29 +176,7 @@ impl XsdModel {
                 .map_err(|e| format!("read {}: {e}", path.display()))?;
             let doc = roxmltree::Document::parse(&text)
                 .map_err(|e| format!("parse {}: {e}", path.display()))?;
-            for node in doc
-                .root_element()
-                .children()
-                .filter(roxmltree::Node::is_element)
-            {
-                match local(&node) {
-                    "group" => {
-                        if let Some(name) = node.attribute("name") {
-                            let mut items = Vec::new();
-                            collect_content_particles(node, &mut items, &mut Vec::new());
-                            groups.elements.entry(name.to_owned()).or_insert(items);
-                        }
-                    }
-                    "attributeGroup" => {
-                        if let Some(name) = node.attribute("name") {
-                            let mut items = Vec::new();
-                            collect_content_particles(node, &mut Vec::new(), &mut items);
-                            groups.attributes.entry(name.to_owned()).or_insert(items);
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            collect_groups(&doc, &mut groups);
         }
 
         // Pass 2: the complexTypes, with every group reference expanded in
@@ -153,23 +195,8 @@ impl XsdModel {
             {
                 namespace = ns.to_string();
             }
-            for node in root.children().filter(roxmltree::Node::is_element) {
-                match local(&node) {
-                    "complexType" => {
-                        if let Some(t) = parse_complex_type(node, &groups)
-                            .map_err(|e| format!("{}: {e}", path.display()))?
-                        {
-                            types.entry(t.name.clone()).or_insert(t);
-                        }
-                    }
-                    "simpleType" => {
-                        if let Some(t) = parse_simple_type(node) {
-                            simple_types.entry(t.name.clone()).or_insert(t);
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            collect_types(&doc, &groups, &mut types, &mut simple_types)
+                .map_err(|e| format!("{}: {e}", path.display()))?;
         }
         Ok(Self {
             namespace,
