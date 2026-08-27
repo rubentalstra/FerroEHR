@@ -384,7 +384,7 @@ fn parse_import_containers(
 /// unmasked one must.
 ///
 /// # Errors
-/// [`SmError::Precondition`] for generic (ISO 13606 / CDA) content — NOTE:
+/// [`SmError::precondition`] for generic (ISO 13606 / CDA) content — NOTE:
 /// `master06-generic_extract_package.adoc` `GENERIC_CONTENT_ITEM` is outside
 /// this CDR's import scope — or for either half of an `Item_validity`
 /// violation.
@@ -422,7 +422,7 @@ fn content_item_payload(item: &Value) -> Result<Option<&Value>, SmError> {
 /// demographic containers, keyed by cloned `vo_id`.
 ///
 /// # Errors
-/// [`SmError::Precondition`] when a version's data is not a PARTY subtype, and
+/// [`SmError::precondition`] when a version's data is not a PARTY subtype, and
 /// the [`parse_imported_version`] rejections.
 fn collect_party_versions(
     xver: &Value,
@@ -458,7 +458,7 @@ fn collect_party_versions(
 /// (master06 §Distributed Versioning).
 ///
 /// # Errors
-/// [`SmError::Precondition`] when one `vo_id` arrives under two kinds, and the
+/// [`SmError::precondition`] when one `vo_id` arrives under two kinds, and the
 /// [`parse_imported_version`] rejections.
 fn collect_content_versions(
     xver: &Value,

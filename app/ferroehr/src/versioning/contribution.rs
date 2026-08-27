@@ -769,7 +769,7 @@ fn parse_contribution_audit(
 /// # Errors
 /// [`ServiceError::Unprocessable`] for a member-borne version identity, an
 /// unclassifiable change type, an unparsable preceding target or an invalid
-/// audit; [`ServiceError::Precondition`] for a member carrying
+/// audit; [`ServiceError::precondition`] for a member carrying
 /// `other_input_version_uids` (not a member of `UPDATE_VERSION` on this wire —
 /// merge provenance is PRODUCE-only, so accepting it would let a client stamp
 /// arbitrary provenance onto a version this system never merged) or omitting
@@ -895,7 +895,7 @@ async fn read_target_kinds(
 /// content the committed CONTRIBUTION refers to.
 ///
 /// # Errors
-/// [`ServiceError::Precondition`] when the target does not exist.
+/// [`ServiceError::precondition`] when the target does not exist.
 fn require_kind(
     kinds: &std::collections::HashMap<VoId, Kind>,
     vo_id: VoId,
@@ -913,7 +913,7 @@ fn require_kind(
 /// instead of committing a new one (master06 §Contributions).
 ///
 /// # Errors
-/// [`ServiceError::Precondition`] for a missing target, [`ServiceError::Unprocessable`]
+/// [`ServiceError::precondition`] for a missing target, [`ServiceError::Unprocessable`]
 /// for a scope-mismatched kind, a missing `commit_audit` (the
 /// `UPDATE_ATTESTATION` payload), or an undecodable attestation.
 fn plan_attestation(
@@ -1043,7 +1043,7 @@ async fn create_change(
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] for missing `data` or failed validation;
-/// [`ServiceError::Precondition`] when the target does not exist.
+/// [`ServiceError::precondition`] when the target does not exist.
 async fn modify_change(
     cx: &impl CommitEnv,
     kinds: &std::collections::HashMap<VoId, Kind>,
@@ -1078,7 +1078,7 @@ async fn modify_change(
 /// Resolves a deletion member.
 ///
 /// # Errors
-/// [`ServiceError::Precondition`] when the target does not exist;
+/// [`ServiceError::precondition`] when the target does not exist;
 /// [`ServiceError::Unprocessable`] for a scope-mismatched kind;
 /// [`ServiceError::Conflict`] when the member targets the `EHR_STATUS`, which
 /// is mandatory (RM ehr, EHR class: `ehr_status` 1..1) — deleting the only one

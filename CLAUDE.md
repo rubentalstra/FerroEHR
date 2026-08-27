@@ -131,7 +131,7 @@ cargo clippy --workspace --exclude ferroehr-admin-ui --all-targets --all-feature
 cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
 cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 cargo fmt --all
-RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude ferroehr-admin-ui --all-features --no-deps   # the rustdoc gate (intra-doc links, doc lints)
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude ferroehr-admin-ui --all-features --no-deps --document-private-items   # the rustdoc gate — CI docs PRIVATE items too (a link in a private helper's docs gates the build)
 RUSTDOCFLAGS="-D warnings" cargo doc -p ferroehr-admin-ui --features ssr --no-deps                      # the console's own rustdoc gate (same CI job, second step)
 cargo deny check   # subsumes cargo-audit: same RustSec DB + yanked/licenses/bans/sources
 # conformance pipeline (the acceptance instrument) — the CNF 2.0 runner:
