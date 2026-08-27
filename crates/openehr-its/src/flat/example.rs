@@ -200,104 +200,13 @@ fn walk(
     }
 
     let groups = child_groups(node);
-    let mut emitted = false;
-    let mut included: Vec<&str> = Vec::new();
-    // Materialised instances per container cardinality (`max != -1`), so the
-    // populated levels never overrun a container's upper bound — an *optional*
-    // child is skipped once its cardinality is full (a mandatory one still
-    // materialises; a template whose mandatory children alone exceed the bound
-    // is contradictory and the validator's job to report).
-    let mut card_counts = vec![0usize; node.cardinalities.len()];
-    let card_idx = |child: &WebTemplateNode| {
-        node.cardinalities
-            .iter()
-            .position(|c| c.max != -1 && child.aql_path.starts_with(c.path.as_str()))
+    let cx = WalkCtx {
+        prefix,
+        opt_depth,
+        level,
     };
-
-    for child in &groups {
-        // A template may constrain an attribute the RM does not declare — the
-        // deployed OPT 1.4 corpus carries `ELEMENT.null_flavor` (the US
-        // archetype-tooling spelling of RM `null_flavour`,
-        // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`
-        // §Attributes) and other RM-1.0.x leftovers. Such a constraint is
-        // tolerated when VALIDATING a template, but materializing it here would
-        // author an example that is not a conformant RM instance, so the
-        // example generator skips it. The generated RM model is the oracle.
-        if !rm_declares(&child.aql_path) {
-            continue;
-        }
-        let child_opt = opt_depth + usize::from(is_optional(child));
-        let include = match level {
-            DetailLevel::Required => child_opt == 0,
-            DetailLevel::Medium | DetailLevel::Complete => true,
-        };
-        if include {
-            // An OPTIONAL node whose coded-name constraint is display/rubric-
-            // incoherent (see `CodedName::incoherent`) is omitted: no instance
-            // form of it is accepted by every conforming consumer, and an
-            // example exists to be committable everywhere. A MANDATORY one is
-            // still emitted in our spec-faithful form.
-            if is_optional(child)
-                && (child.name_coded.as_ref().is_some_and(|cn| cn.incoherent)
-                    || is_unsatisfiable_leaf(child))
-            {
-                continue;
-            }
-            let ci = card_idx(child);
-            let card_full = |counts: &[usize]| {
-                ci.is_some_and(|i| {
-                    let max = node
-                        .cardinalities
-                        .get(i)
-                        .map_or(usize::MAX, |c| usize::try_from(c.max).unwrap_or(usize::MAX));
-                    counts.get(i).is_some_and(|&n| n >= max)
-                })
-            };
-            if is_optional(child) && card_full(&card_counts) {
-                continue;
-            }
-            included.push(child.aql_path.as_str());
-            let child_prefix = format!("{prefix}/{}", seg_for(child));
-            // A mandatory child must materialise even when all of *its* children
-            // are optional (else the mandatory node would go missing).
-            let child_force = !is_optional(child);
-            let child_emitted = walk(child, &child_prefix, child_opt, level, child_force, out);
-            emitted |= child_emitted;
-            if child_emitted && let Some(slot) = ci.and_then(|i| card_counts.get_mut(i)) {
-                *slot += 1;
-            }
-            // `Complete` demonstrates repetition: a second occurrence of any
-            // repeating node that materialised (cardinality permitting).
-            if level == DetailLevel::Complete
-                && child_emitted
-                && is_repeating(child)
-                && !card_full(&card_counts)
-            {
-                let second_prefix = format!("{prefix}/{}:1", child.id);
-                let second_emitted = walk(child, &second_prefix, child_opt, level, false, out);
-                emitted |= second_emitted;
-                if second_emitted && let Some(slot) = ci.and_then(|i| card_counts.get_mut(i)) {
-                    *slot += 1;
-                }
-            }
-        }
-    }
-
-    // Cardinality satisfaction: for every container attribute constrained to
-    // `min >= 1`, ensure at least one child under it is materialised (committable
-    // skeleton), even if the level would otherwise skip it.
-    for card in &node.cardinalities {
-        if card.min.unwrap_or(0) < 1 {
-            continue;
-        }
-        let satisfied = included.iter().any(|p| p.starts_with(card.path.as_str()));
-        if !satisfied
-            && let Some(child) = groups.iter().find(|c| c.aql_path.starts_with(&card.path))
-        {
-            let child_prefix = format!("{prefix}/{}", seg_for(child));
-            emitted |= walk(child, &child_prefix, opt_depth, level, true, out);
-        }
-    }
+    let (mut emitted, included) = walk_children(node, &groups, &cx, out);
+    emitted |= satisfy_cardinalities(node, &groups, &included, &cx, out);
 
     // A forced (mandatory) container with nothing yet: drill its first child to a
     // leaf so the node is not emitted empty.
@@ -309,6 +218,151 @@ fn walk(
         emitted |= walk(child, &child_prefix, opt_depth, level, true, out);
     }
 
+    emitted
+}
+
+/// The invariant context of one walk level: the flat-path prefix, the optional
+/// depth reached, and the requested detail level.
+struct WalkCtx<'a> {
+    prefix: &'a str,
+    opt_depth: usize,
+    level: DetailLevel,
+}
+
+/// Walks every child group of a container, returning whether anything was
+/// emitted and which child paths were included.
+fn walk_children<'a>(
+    node: &'a WebTemplateNode,
+    groups: &[&'a WebTemplateNode],
+    cx: &WalkCtx<'_>,
+    out: &mut Map<String, Value>,
+) -> (bool, Vec<&'a str>) {
+    let mut emitted = false;
+    let mut included: Vec<&str> = Vec::new();
+    // Materialised instances per container cardinality (`max != -1`), so the
+    // populated levels never overrun a container's upper bound — an *optional*
+    // child is skipped once its cardinality is full (a mandatory one still
+    // materialises; a template whose mandatory children alone exceed the bound
+    // is contradictory and the validator's job to report).
+    let mut card_counts = vec![0usize; node.cardinalities.len()];
+    for child in groups {
+        // A template may constrain an attribute the RM does not declare — the
+        // deployed OPT 1.4 corpus carries `ELEMENT.null_flavor` (the US
+        // archetype-tooling spelling of RM `null_flavour`,
+        // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`
+        // §Attributes) and other RM-1.0.x leftovers. Such a constraint is
+        // tolerated when VALIDATING a template, but materializing it here would
+        // author an example that is not a conformant RM instance, so the
+        // example generator skips it. The generated RM model is the oracle.
+        if !rm_declares(&child.aql_path) {
+            continue;
+        }
+        let child_opt = cx.opt_depth + usize::from(is_optional(child));
+        let include = match cx.level {
+            DetailLevel::Required => child_opt == 0,
+            DetailLevel::Medium | DetailLevel::Complete => true,
+        };
+        if !include || skips_optional(child) {
+            continue;
+        }
+        let ci = cardinality_index(node, child);
+        if is_optional(child) && cardinality_full(node, ci, &card_counts) {
+            continue;
+        }
+        included.push(child.aql_path.as_str());
+        emitted |= walk_child(node, child, cx, &mut card_counts, out);
+    }
+    (emitted, included)
+}
+
+/// Whether an OPTIONAL child is omitted from the example.
+///
+/// A node whose coded-name constraint is display/rubric-incoherent (see
+/// `CodedName::incoherent`) or whose leaf is unsatisfiable has no instance
+/// form every conforming consumer accepts, and an example exists to be
+/// committable everywhere. A MANDATORY one is still emitted in our
+/// spec-faithful form.
+fn skips_optional(child: &WebTemplateNode) -> bool {
+    is_optional(child)
+        && (child.name_coded.as_ref().is_some_and(|cn| cn.incoherent)
+            || is_unsatisfiable_leaf(child))
+}
+
+/// The index of the bounded container cardinality a child sits under, if any.
+fn cardinality_index(node: &WebTemplateNode, child: &WebTemplateNode) -> Option<usize> {
+    node.cardinalities
+        .iter()
+        .position(|c| c.max != -1 && child.aql_path.starts_with(c.path.as_str()))
+}
+
+/// Whether the container cardinality at `index` has reached its upper bound.
+fn cardinality_full(node: &WebTemplateNode, index: Option<usize>, counts: &[usize]) -> bool {
+    index.is_some_and(|i| {
+        let max = node
+            .cardinalities
+            .get(i)
+            .map_or(usize::MAX, |c| usize::try_from(c.max).unwrap_or(usize::MAX));
+        counts.get(i).is_some_and(|&n| n >= max)
+    })
+}
+
+/// Walks one included child, materialising a second occurrence at the
+/// `Complete` level to demonstrate repetition (cardinality permitting).
+fn walk_child(
+    node: &WebTemplateNode,
+    child: &WebTemplateNode,
+    cx: &WalkCtx<'_>,
+    card_counts: &mut [usize],
+    out: &mut Map<String, Value>,
+) -> bool {
+    let ci = cardinality_index(node, child);
+    let child_opt = cx.opt_depth + usize::from(is_optional(child));
+    let child_prefix = format!("{}/{}", cx.prefix, seg_for(child));
+    // A mandatory child must materialise even when all of *its* children are
+    // optional (else the mandatory node would go missing).
+    let child_force = !is_optional(child);
+    let mut emitted = walk(child, &child_prefix, child_opt, cx.level, child_force, out);
+    if emitted && let Some(slot) = ci.and_then(|i| card_counts.get_mut(i)) {
+        *slot += 1;
+    }
+    if cx.level == DetailLevel::Complete
+        && emitted
+        && is_repeating(child)
+        && !cardinality_full(node, ci, card_counts)
+    {
+        let second_prefix = format!("{}/{}:1", cx.prefix, child.id);
+        let second_emitted = walk(child, &second_prefix, child_opt, cx.level, false, out);
+        emitted |= second_emitted;
+        if second_emitted && let Some(slot) = ci.and_then(|i| card_counts.get_mut(i)) {
+            *slot += 1;
+        }
+    }
+    emitted
+}
+
+/// Cardinality satisfaction: for every container attribute constrained to
+/// `min >= 1`, ensure at least one child under it is materialised (a
+/// committable skeleton), even where the level would otherwise skip it.
+fn satisfy_cardinalities(
+    node: &WebTemplateNode,
+    groups: &[&WebTemplateNode],
+    included: &[&str],
+    cx: &WalkCtx<'_>,
+    out: &mut Map<String, Value>,
+) -> bool {
+    let mut emitted = false;
+    for card in &node.cardinalities {
+        if card.min.unwrap_or(0) < 1 {
+            continue;
+        }
+        let satisfied = included.iter().any(|p| p.starts_with(card.path.as_str()));
+        if !satisfied
+            && let Some(child) = groups.iter().find(|c| c.aql_path.starts_with(&card.path))
+        {
+            let child_prefix = format!("{}/{}", cx.prefix, seg_for(child));
+            emitted |= walk(child, &child_prefix, cx.opt_depth, cx.level, true, out);
+        }
+    }
     emitted
 }
 

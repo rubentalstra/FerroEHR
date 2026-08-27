@@ -726,58 +726,39 @@ fn temporal_pattern_ok(pattern: &str, value: &str) -> bool {
     } else {
         (val_date, val_time)
     };
-    // Date part: year is always required; month/day per the pattern segment.
-    let pat_segs: Vec<&str> = if pat_date.is_empty() {
+    // Date part: year is always required, so its segment is skipped;
+    // month/day are judged per the pattern segment. Time part: hours, minutes
+    // and seconds are all judged.
+    segments_match(pat_date, val_date, '-', 1) && segments_match(pat_time, val_time, ':', 0)
+}
+
+/// Whether the field presence of one temporal half satisfies its pattern half.
+///
+/// The two are split on `sep` into at most three segments; `skip` drops the
+/// leading segments that carry no optionality (the year). A `??` segment
+/// accepts either presence, an `XX` segment requires absence, and any other
+/// segment requires presence (ADL 1.4 `master05-cadl.adoc` §"Date, Time and
+/// Date/Time" Patterns).
+fn segments_match(pattern: &str, value: &str, sep: char, skip: usize) -> bool {
+    let pat_segs: Vec<&str> = if pattern.is_empty() {
         Vec::new()
     } else {
-        pat_date.splitn(3, '-').collect()
+        pattern.splitn(3, sep).collect()
     };
-    let val_count = if val_date.is_empty() {
+    let val_count = if value.is_empty() {
         0
     } else {
-        val_date.splitn(3, '-').count()
+        value.splitn(3, sep).count()
     };
-    for (i, seg) in pat_segs.iter().enumerate().skip(1) {
+    for (i, seg) in pat_segs.iter().enumerate().skip(skip) {
         let present = val_count > i;
-        match *seg {
-            "??" => {}
-            "XX" => {
-                if present {
-                    return false;
-                }
-            }
-            _ => {
-                if !present {
-                    return false;
-                }
-            }
-        }
-    }
-    // Time part: hours/minutes/seconds per the pattern segment.
-    let pat_t: Vec<&str> = if pat_time.is_empty() {
-        Vec::new()
-    } else {
-        pat_time.splitn(3, ':').collect()
-    };
-    let val_t_count = if val_time.is_empty() {
-        0
-    } else {
-        val_time.splitn(3, ':').count()
-    };
-    for (i, seg) in pat_t.iter().enumerate() {
-        let present = val_t_count > i;
-        match *seg {
-            "??" => {}
-            "XX" => {
-                if present {
-                    return false;
-                }
-            }
-            _ => {
-                if !present {
-                    return false;
-                }
-            }
+        let ok = match *seg {
+            "??" => true,
+            "XX" => !present,
+            _ => present,
+        };
+        if !ok {
+            return false;
         }
     }
     true

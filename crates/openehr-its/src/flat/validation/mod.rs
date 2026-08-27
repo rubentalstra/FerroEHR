@@ -801,10 +801,6 @@ impl Validator {
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
     /// and lands only behind the ECC zero-drift gate.
-    #[expect(
-        clippy::indexing_slicing,
-        reason = "`slot_counts` is sized `ca.slots.len()` and every index into it is a `position`/`enumerate` index over those same slots, so all are in bounds by construction"
-    )]
     fn check_closure(&mut self, instance: &Value, wt: &WebTemplateNode, plan: &NodeWalk) {
         for (ca, segs) in wt.closed_attributes.iter().zip(&plan.closed) {
             let Some(segments) = segs else {
@@ -814,68 +810,97 @@ impl Validator {
                 continue;
             };
             for container in &rmpath::navigate(&[instance], intermediate) {
-                let mut slot_counts = vec![0usize; ca.slots.len()];
-                for child in children_under_attr(container, &last.attribute) {
-                    let Some(nid) = child
-                        .get("archetype_node_id")
-                        .and_then(Value::as_str)
-                        .filter(|s| !s.is_empty())
-                    else {
-                        // Not a LOCATABLE (RM metadata / PATHABLE value): not
-                        // subject to sibling closure.
-                        continue;
-                    };
-                    if ca.allowed_ids.iter().any(|a| a == nid) {
-                        continue; // Matches a fixed sibling alternative.
-                    }
-                    // NOTE: an unmatched archetype-rooted child is admitted where
-                    // the attribute declares no ARCHETYPE_SLOT, OPT 1.4 flattening
-                    // not enumerating the slot-fill universe; slots still gate.
-                    if ca.slots.is_empty()
-                        && openehr_rm::v1_2::paths::is_archetype_root_node_id(nid)
-                    {
-                        continue;
-                    }
-                    let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
-                    match ca.slots.iter().position(|s| slot_admits(s, ct, nid)) {
-                        Some(i) => slot_counts[i] += 1,
-                        None => self.push(
-                            &ca.path,
-                            format!(
-                                "unexpected node '{nid}' under '{}': no matching archetype \
-                                 constraint or slot",
-                                last.attribute
-                            ),
-                            ValidationKind::Unexpected,
+                let slot_counts = self.match_closed_children(container, ca, &last.attribute);
+                self.check_slot_occurrences(ca, &last.attribute, &slot_counts);
+            }
+        }
+    }
+
+    /// Matches every child under one closed attribute against its fixed
+    /// sibling alternatives and its slots, recording an "unexpected node" for
+    /// each child neither admits, and returns the per-slot filler counts.
+    ///
+    /// A child with no `archetype_node_id` is not a LOCATABLE (RM metadata /
+    /// PATHABLE value) and is not subject to sibling closure.
+    ///
+    /// NOTE: an unmatched archetype-rooted child is admitted where the
+    /// attribute declares no ARCHETYPE_SLOT, OPT 1.4 flattening not
+    /// enumerating the slot-fill universe; slots still gate.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`counts` is sized `ca.slots.len()` and the index is a `position` over those same slots, so it is in bounds by construction"
+    )]
+    fn match_closed_children(
+        &mut self,
+        container: &Value,
+        ca: &crate::flat::webtemplate::model::WebTemplateClosedAttribute,
+        attribute: &str,
+    ) -> Vec<usize> {
+        let mut counts = vec![0usize; ca.slots.len()];
+        for child in children_under_attr(container, attribute) {
+            let Some(nid) = child
+                .get("archetype_node_id")
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+            else {
+                continue;
+            };
+            if ca.allowed_ids.iter().any(|a| a == nid) {
+                continue; // Matches a fixed sibling alternative.
+            }
+            if ca.slots.is_empty() && openehr_rm::v1_2::paths::is_archetype_root_node_id(nid) {
+                continue;
+            }
+            let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
+            match ca.slots.iter().position(|s| slot_admits(s, ct, nid)) {
+                Some(i) => counts[i] += 1,
+                None => self.push(
+                    &ca.path,
+                    format!(
+                        "unexpected node '{nid}' under '{attribute}': no matching archetype \
+                         constraint or slot"
+                    ),
+                    ValidationKind::Unexpected,
+                ),
+            }
+        }
+        counts
+    }
+
+    /// Checks each slot's occurrences against the fillers matched to it.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`counts` is sized `ca.slots.len()` and the index is the `enumerate` index over those same slots, so it is in bounds by construction"
+    )]
+    fn check_slot_occurrences(
+        &mut self,
+        ca: &crate::flat::webtemplate::model::WebTemplateClosedAttribute,
+        attribute: &str,
+        counts: &[usize],
+    ) {
+        for (i, slot) in ca.slots.iter().enumerate() {
+            let count = i32::try_from(counts[i]).unwrap_or(i32::MAX);
+            if counts[i] == 0 {
+                if slot.min >= 1 {
+                    self.push(
+                        &ca.path,
+                        format!(
+                            "mandatory archetype slot (occurrences {}..) under '{attribute}' \
+                             has no filler",
+                            slot.min
                         ),
-                    }
+                        ValidationKind::Required,
+                    );
                 }
-                // Slot occurrences on the matched fillers.
-                for (i, slot) in ca.slots.iter().enumerate() {
-                    let count = i32::try_from(slot_counts[i]).unwrap_or(i32::MAX);
-                    if slot_counts[i] == 0 {
-                        if slot.min >= 1 {
-                            self.push(
-                                &ca.path,
-                                format!(
-                                    "mandatory archetype slot (occurrences {}..) under '{}' \
-                                     has no filler",
-                                    slot.min, last.attribute
-                                ),
-                                ValidationKind::Required,
-                            );
-                        }
-                    } else if slot.max != -1 && count > slot.max {
-                        self.push(
-                            &ca.path,
-                            format!(
-                                "too many slot fillers under '{}': found {}, expected at most {}",
-                                last.attribute, slot_counts[i], slot.max
-                            ),
-                            ValidationKind::Occurrences,
-                        );
-                    }
-                }
+            } else if slot.max != -1 && count > slot.max {
+                self.push(
+                    &ca.path,
+                    format!(
+                        "too many slot fillers under '{attribute}': found {}, expected at most {}",
+                        counts[i], slot.max
+                    ),
+                    ValidationKind::Occurrences,
+                );
             }
         }
     }

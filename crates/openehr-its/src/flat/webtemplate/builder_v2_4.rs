@@ -333,6 +333,54 @@ fn create_node(
     node
 }
 
+/// Builds the child nodes of one AOM2 constraint attribute into `children`.
+///
+/// The careflow-state alternatives of `ism_transition` collapse into the one
+/// transition node master05 §ISM_TRANSITION maps, so they are built without
+/// their at-code identity (see [`shape::MERGED_ATTRIBUTE`]) and the merged
+/// node takes the ATTRIBUTE's occurrences — one required transition per ACTION
+/// instance, not one per careflow state (AOM2 leaves `existence` unset unless
+/// it overrides the RM, where `ACTION.ism_transition` is 1..1). An unfilled
+/// slot or a residual proxy yields no node.
+fn build_attribute_children(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    attr: &CAttribute,
+    node: &WebTemplateNode,
+    children: &mut Vec<WebTemplateNode>,
+) {
+    let merged = attr.rm_attribute_name == shape::MERGED_ATTRIBUTE;
+    let identity = if merged {
+        shape::Identity::AttributeOnly
+    } else {
+        shape::Identity::Archetyped
+    };
+    let mut built = Vec::new();
+    for child_co in attr.children.iter().flatten() {
+        if is_leaf_ignored(child_co) {
+            continue;
+        }
+        built.push(build_node(
+            ctx,
+            term,
+            Some(attr),
+            child_co,
+            &node.aql_path,
+            identity,
+        ));
+    }
+    if !merged {
+        children.extend(built);
+        return;
+    }
+    if let Some(mut transition) = shape::merge_alternatives(built) {
+        let (min, max) = attr.existence.as_ref().map_or((Some(1), 1), occ);
+        transition.min = min;
+        transition.max = max;
+        children.push(transition);
+    }
+}
+
 fn build_children(
     ctx: &Ctx,
     term: &ArchetypeTerminology,
@@ -345,46 +393,9 @@ fn build_children(
     let mut children = Vec::new();
     if recurse_attrs {
         for attr in co_attributes(co) {
-            if attr.rm_attribute_name == "name" {
-                continue; // The name attribute names the node (master04 §"Field Identifiers").
-            }
-            // The careflow-state alternatives of `ism_transition` collapse into
-            // the one transition node master05 §ISM_TRANSITION maps, so they are
-            // built without their at-code identity (see
-            // [`shape::MERGED_ATTRIBUTE`]).
-            let merged = attr.rm_attribute_name == shape::MERGED_ATTRIBUTE;
-            let identity = if merged {
-                shape::Identity::AttributeOnly
-            } else {
-                shape::Identity::Archetyped
-            };
-            let mut built = Vec::new();
-            for child_co in attr.children.iter().flatten() {
-                if is_leaf_ignored(child_co) {
-                    continue; // Unfilled slot / proxy: no node.
-                }
-                built.push(build_node(
-                    ctx,
-                    term,
-                    Some(attr),
-                    child_co,
-                    &node.aql_path,
-                    identity,
-                ));
-            }
-            if merged {
-                if let Some(mut transition) = shape::merge_alternatives(built) {
-                    // The merged node's occurrences are the ATTRIBUTE's — one
-                    // required transition per ACTION instance, not one per
-                    // careflow state. AOM2 leaves `existence` unset unless it
-                    // overrides the RM, where `ACTION.ism_transition` is 1..1.
-                    let (min, max) = attr.existence.as_ref().map_or((Some(1), 1), occ);
-                    transition.min = min;
-                    transition.max = max;
-                    children.push(transition);
-                }
-            } else {
-                children.extend(built);
+            // The name attribute names the node (master04 §"Field Identifiers").
+            if attr.rm_attribute_name != "name" {
+                build_attribute_children(ctx, term, attr, node, &mut children);
             }
         }
     }
@@ -600,13 +611,15 @@ fn external_coded_inputs() -> Vec<WebTemplateInput> {
     ]
 }
 
-fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<WebTemplateInput> {
-    let mut magnitude = WebTemplateInput::new(WebTemplateInputType::Decimal, Some("magnitude"));
-    let mut units = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("unit"));
-
-    // The co-varying `[magnitude, units]` (and optional `precision`) tuple rows
-    // (AOM2 `C_ATTRIBUTE_TUPLE`); each row fixes one unit with its magnitude
-    // range/precision.
+/// Appends the units of the co-varying `[magnitude, units]` (and optional
+/// `precision`) tuple rows (AOM2 `C_ATTRIBUTE_TUPLE`); each row fixes one unit
+/// with its magnitude range and precision.
+fn push_tuple_units(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    co: &CObject,
+    units: &mut WebTemplateInput,
+) {
     for tuple in co_attribute_tuples(co) {
         let names: Vec<&str> = tuple
             .members
@@ -650,6 +663,13 @@ fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<
             }
         }
     }
+}
+
+fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<WebTemplateInput> {
+    let mut magnitude = WebTemplateInput::new(WebTemplateInputType::Decimal, Some("magnitude"));
+    let mut units = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("unit"));
+
+    push_tuple_units(ctx, term, co, &mut units);
 
     // The plain (non-tuple) `units`/`magnitude` attribute forms.
     for cs in cstrings_under(co, "units") {
@@ -1020,24 +1040,7 @@ fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttr
         {
             continue;
         }
-        let mut allowed_ids: Vec<String> = Vec::new();
-        let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
-        for child in attr.children.iter().flatten() {
-            match child {
-                CObject::ArchetypeSlot(s) => slots.push(archetype_slot(s)),
-                // A node-identified LOCATABLE alternative (an at/id-coded
-                // C_COMPLEX_OBJECT, or an inlined C_ARCHETYPE_ROOT carrying its
-                // interface archetype id). Primitive value constraints never
-                // participate in sibling closure.
-                CObject::CComplexObject(_) => {
-                    let id = object_archetype_node_id(child);
-                    if !id.is_empty() {
-                        allowed_ids.push(id);
-                    }
-                }
-                _ => {}
-            }
-        }
+        let (allowed_ids, slots) = admissible_children(attr);
         if allowed_ids.is_empty() && slots.is_empty() {
             continue; // Open attribute (no node-id alternatives, no slot).
         }
@@ -1048,6 +1051,30 @@ fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttr
         });
     }
     out
+}
+
+/// The admissible child identities of one attribute: its node-identified
+/// LOCATABLE alternatives and its archetype slots.
+///
+/// An alternative is an at/id-coded `C_COMPLEX_OBJECT`, or an inlined
+/// `C_ARCHETYPE_ROOT` carrying its interface archetype id; primitive value
+/// constraints never participate in sibling closure.
+fn admissible_children(attr: &CAttribute) -> (Vec<String>, Vec<WebTemplateArchetypeSlot>) {
+    let mut allowed_ids: Vec<String> = Vec::new();
+    let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
+    for child in attr.children.iter().flatten() {
+        match child {
+            CObject::ArchetypeSlot(s) => slots.push(archetype_slot(s)),
+            CObject::CComplexObject(_) => {
+                let id = object_archetype_node_id(child);
+                if !id.is_empty() {
+                    allowed_ids.push(id);
+                }
+            }
+            _ => {}
+        }
+    }
+    (allowed_ids, slots)
 }
 
 /// The validation-only slot record from an AOM2 `ARCHETYPE_SLOT`: its constrained
