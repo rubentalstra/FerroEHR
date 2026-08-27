@@ -1305,53 +1305,78 @@ fn declare_hand_written_modules(
         if !anchor.exists() || !anchor_generated {
             continue;
         }
-        let mut hand_written: Vec<String> = Vec::new();
-        for entry in std::fs::read_dir(&dir)? {
-            let p = entry?.path();
-            let Some(stem) = p.file_stem().and_then(std::ffi::OsStr::to_str) else {
-                continue;
-            };
-            if p.is_dir() {
-                // A hand-written module directory: it has a `mod.rs` that is not
-                // generated. A fully-generated subpackage's `mod.rs` is already
-                // declared by the parent's generated module tree, so skip it.
-                let child_mod = p.join("mod.rs");
-                if child_mod.exists() && !is_generated_file(&child_mod) {
-                    hand_written.push(stem.to_owned());
-                }
-            } else if p.extension().and_then(std::ffi::OsStr::to_str) == Some("rs")
-                && !matches!(stem, "mod" | "lib" | "prelude")
-                && (!is_generated_file(&p) || emit_templates::is_template_stamped(&p))
-            {
-                // Template-stamped copies are generated files, but the
-                // generated module tree does not know them — they are woven
-                // exactly like the hand-written siblings they replace.
-                hand_written.push(stem.to_owned());
-            }
-        }
+        let hand_written = hand_written_module_stems(&dir)?;
         if hand_written.is_empty() {
             continue;
         }
-        hand_written.sort();
-        let mut body = std::fs::read_to_string(&anchor)?;
-        let mut appended = false;
-        for m in hand_written {
-            let decl = format!("pub mod {m};");
-            if !body.contains(&decl) {
-                if !appended {
-                    body.push_str("\n// hand-written modules (spec behaviour), auto-declared:\n");
-                    appended = true;
-                }
-                body.push_str(&decl);
-                body.push('\n');
-            }
-        }
-        if appended {
-            std::fs::write(&anchor, &body)?;
+        if append_module_declarations(&anchor, &hand_written)? {
             written.push(anchor);
         }
     }
     Ok(())
+}
+
+/// The module stems in `dir` the generated module tree does not declare,
+/// sorted.
+///
+/// A hand-written module DIRECTORY is one whose own `mod.rs` is not generated;
+/// a fully-generated subpackage's `mod.rs` is already declared by the parent's
+/// generated module tree and is skipped. Template-stamped copies ARE generated
+/// files, but the generated module tree does not know them — they are woven
+/// exactly like the hand-written siblings they replace.
+///
+/// # Errors
+/// A directory that cannot be read.
+fn hand_written_module_stems(dir: &Path) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let mut stems: Vec<String> = Vec::new();
+    for entry in std::fs::read_dir(dir)? {
+        let p = entry?.path();
+        let Some(stem) = p.file_stem().and_then(std::ffi::OsStr::to_str) else {
+            continue;
+        };
+        if p.is_dir() {
+            let child_mod = p.join("mod.rs");
+            if child_mod.exists() && !is_generated_file(&child_mod) {
+                stems.push(stem.to_owned());
+            }
+        } else if p.extension().and_then(std::ffi::OsStr::to_str) == Some("rs")
+            && !matches!(stem, "mod" | "lib" | "prelude")
+            && (!is_generated_file(&p) || emit_templates::is_template_stamped(&p))
+        {
+            stems.push(stem.to_owned());
+        }
+    }
+    stems.sort();
+    Ok(stems)
+}
+
+/// Appends the missing `pub mod` declarations to a generated anchor,
+/// reporting whether it was modified.
+///
+/// # Errors
+/// A read or write failure on the anchor.
+fn append_module_declarations(
+    anchor: &Path,
+    stems: &[String],
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let mut body = std::fs::read_to_string(anchor)?;
+    let mut appended = false;
+    for m in stems {
+        let decl = format!("pub mod {m};");
+        if body.contains(&decl) {
+            continue;
+        }
+        if !appended {
+            body.push_str("\n// hand-written modules (spec behaviour), auto-declared:\n");
+            appended = true;
+        }
+        body.push_str(&decl);
+        body.push('\n');
+    }
+    if appended {
+        std::fs::write(anchor, &body)?;
+    }
+    Ok(appended)
 }
 
 /// Recursively collect subdirectories of `dir` into `out`.
