@@ -89,10 +89,9 @@ fn check_attrs(label: &str, node: &roxmltree::Node, required: &[&str], optional:
 /// elements each holding `concept` (1..*), with every codeset preceding
 /// every group (`xs:sequence`).
 #[expect(
-    clippy::too_many_lines,
     clippy::expect_used,
     clippy::panic,
-    reason = "one XSD document type = one walker mirroring the schema top to bottom (splitting would scatter the rule mirror); a failed lookup after its own presence assertion, and an undeclared element, ARE the test failure (Book ch11 assertion idiom)"
+    reason = "a failed lookup after its own presence assertion, and an undeclared element, ARE the test failure (Book ch11 assertion idiom)"
 )]
 fn check_terminology_doc(label: &str, xml: &str, groups_allowed: bool, external_id_required: bool) {
     let doc = roxmltree::Document::parse(xml).expect("well-formed XML");
@@ -132,50 +131,7 @@ fn check_terminology_doc(label: &str, xml: &str, groups_allowed: bool, external_
                     "{label}: <codeset> after <group> — the xs:sequence puts every codeset first"
                 );
                 seen_codeset = true;
-                let cs_label = format!(
-                    "{label}/codeset[{}]",
-                    child.attribute("openehr_id").unwrap_or("?")
-                );
-                let required: &[&str] = if external_id_required {
-                    // openehr_external_terminologies.xsd: external_id use="required".
-                    &["issuer", "openehr_id", "external_id"]
-                } else {
-                    &["issuer", "openehr_id"]
-                };
-                check_attrs(
-                    &cs_label,
-                    &child,
-                    required,
-                    &["external_id", "name", "status"],
-                );
-                for a in ["issuer", "openehr_id"] {
-                    let v = child.attribute(a).expect("checked required above");
-                    assert!(is_ncname(v), "{cs_label}: @{a}={v:?} is not an NCName");
-                }
-                if let Some(v) = child.attribute("external_id") {
-                    assert!(
-                        is_ncname(v),
-                        "{cs_label}: @external_id={v:?} is not an NCName"
-                    );
-                }
-                let mut codes = 0usize;
-                for code in child.children().filter(roxmltree::Node::is_element) {
-                    assert_eq!(
-                        code.tag_name().name(),
-                        "code",
-                        "{cs_label}: only <code> children are declared"
-                    );
-                    codes += 1;
-                    check_attrs(&cs_label, &code, &["value"], &["description", "status"]);
-                    assert!(
-                        !code.children().any(|n| n.is_element()),
-                        "{cs_label}: <code> is empty-content in the XSD"
-                    );
-                }
-                assert!(
-                    codes >= 1,
-                    "{cs_label}: <code> is maxOccurs=unbounded, min 1"
-                );
+                check_codeset(label, &child, external_id_required);
             }
             "group" => {
                 assert!(
@@ -183,41 +139,7 @@ fn check_terminology_doc(label: &str, xml: &str, groups_allowed: bool, external_
                     "{label}: <group> is not declared by this schema"
                 );
                 seen_group = true;
-                let g_label = format!(
-                    "{label}/group[{}]",
-                    child.attribute("openehr_id").unwrap_or("?")
-                );
-                check_attrs(&g_label, &child, &["name", "openehr_id"], &["status"]);
-                let id = child
-                    .attribute("openehr_id")
-                    .expect("checked required above");
-                assert!(
-                    is_ncname(id),
-                    "{g_label}: @openehr_id={id:?} is not an NCName"
-                );
-                let mut concepts = 0usize;
-                for concept in child.children().filter(roxmltree::Node::is_element) {
-                    assert_eq!(
-                        concept.tag_name().name(),
-                        "concept",
-                        "{g_label}: only <concept> children are declared"
-                    );
-                    concepts += 1;
-                    check_attrs(&g_label, &concept, &["id", "rubric"], &["status"]);
-                    let cid = concept.attribute("id").expect("checked required above");
-                    assert!(
-                        cid.parse::<i64>().is_ok(),
-                        "{g_label}: concept@id={cid:?} is not an xs:integer"
-                    );
-                    assert!(
-                        !concept.children().any(|n| n.is_element()),
-                        "{g_label}: <concept> is empty-content in the XSD"
-                    );
-                }
-                assert!(
-                    concepts >= 1,
-                    "{g_label}: <concept> is maxOccurs=unbounded, min 1"
-                );
+                check_group(label, &child);
             }
             other => panic!("{label}: element <{other}> is not declared by the schema"),
         }
@@ -232,6 +154,101 @@ fn check_terminology_doc(label: &str, xml: &str, groups_allowed: bool, external_
             "{label}: <group> is minOccurs>=1 in the sequence"
         );
     }
+}
+
+/// One `<codeset>` element and its `<code>` children against the XSD.
+#[expect(
+    clippy::expect_used,
+    reason = "a failed lookup after its own presence assertion IS the test failure (Book ch11 assertion idiom)"
+)]
+fn check_codeset(label: &str, child: &roxmltree::Node<'_, '_>, external_id_required: bool) {
+    let cs_label = format!(
+        "{label}/codeset[{}]",
+        child.attribute("openehr_id").unwrap_or("?")
+    );
+    let required: &[&str] = if external_id_required {
+        // openehr_external_terminologies.xsd: external_id use="required".
+        &["issuer", "openehr_id", "external_id"]
+    } else {
+        &["issuer", "openehr_id"]
+    };
+    check_attrs(
+        &cs_label,
+        child,
+        required,
+        &["external_id", "name", "status"],
+    );
+    for a in ["issuer", "openehr_id"] {
+        let v = child.attribute(a).expect("checked required above");
+        assert!(is_ncname(v), "{cs_label}: @{a}={v:?} is not an NCName");
+    }
+    if let Some(v) = child.attribute("external_id") {
+        assert!(
+            is_ncname(v),
+            "{cs_label}: @external_id={v:?} is not an NCName"
+        );
+    }
+    let mut codes = 0usize;
+    for code in child.children().filter(roxmltree::Node::is_element) {
+        assert_eq!(
+            code.tag_name().name(),
+            "code",
+            "{cs_label}: only <code> children are declared"
+        );
+        codes += 1;
+        check_attrs(&cs_label, &code, &["value"], &["description", "status"]);
+        assert!(
+            !code.children().any(|n| n.is_element()),
+            "{cs_label}: <code> is empty-content in the XSD"
+        );
+    }
+    assert!(
+        codes >= 1,
+        "{cs_label}: <code> is maxOccurs=unbounded, min 1"
+    );
+}
+
+/// One `<group>` element and its `<concept>` children against the XSD.
+#[expect(
+    clippy::expect_used,
+    reason = "a failed lookup after its own presence assertion IS the test failure (Book ch11 assertion idiom)"
+)]
+fn check_group(label: &str, child: &roxmltree::Node<'_, '_>) {
+    let g_label = format!(
+        "{label}/group[{}]",
+        child.attribute("openehr_id").unwrap_or("?")
+    );
+    check_attrs(&g_label, child, &["name", "openehr_id"], &["status"]);
+    let id = child
+        .attribute("openehr_id")
+        .expect("checked required above");
+    assert!(
+        is_ncname(id),
+        "{g_label}: @openehr_id={id:?} is not an NCName"
+    );
+    let mut concepts = 0usize;
+    for concept in child.children().filter(roxmltree::Node::is_element) {
+        assert_eq!(
+            concept.tag_name().name(),
+            "concept",
+            "{g_label}: only <concept> children are declared"
+        );
+        concepts += 1;
+        check_attrs(&g_label, &concept, &["id", "rubric"], &["status"]);
+        let cid = concept.attribute("id").expect("checked required above");
+        assert!(
+            cid.parse::<i64>().is_ok(),
+            "{g_label}: concept@id={cid:?} is not an xs:integer"
+        );
+        assert!(
+            !concept.children().any(|n| n.is_element()),
+            "{g_label}: <concept> is empty-content in the XSD"
+        );
+    }
+    assert!(
+        concepts >= 1,
+        "{g_label}: <concept> is maxOccurs=unbounded, min 1"
+    );
 }
 
 #[test]

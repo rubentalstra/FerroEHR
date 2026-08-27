@@ -83,41 +83,47 @@ fn classify(rel: &str, is_adl: bool) -> Option<Category> {
         return Some(Category::Adl14Cadl);
     }
     // adl2-reference fixtures.
-    let r = rel.strip_prefix("adl2-reference/")?;
-    if r.starts_with("validity/templates/") {
-        return Some(Category::ValidityTemplates);
-    }
-    if r.starts_with("validity/legacy_adl_1.4/") {
-        return Some(if is_adl {
-            Category::ValidityLegacy14Adl
-        } else {
-            Category::ValidityLegacy14Adls
-        });
-    }
-    if r.starts_with("validity/") {
-        return Some(Category::Validity);
-    }
-    if r.starts_with("robustness/") {
-        return Some(Category::Robustness);
-    }
-    if r.starts_with("upgrade/upgrade_from_14/") {
-        return Some(if is_adl {
-            Category::Upgrade14Source
-        } else {
-            Category::Upgrade14Target
-        });
-    }
-    if r.starts_with("upgrade/upgrade_from_15/") {
-        return Some(Category::Upgrade15);
-    }
-    if r.starts_with("features/") {
-        return Some(if is_adl {
-            Category::FeaturesAdl
-        } else {
-            Category::FeaturesAdls
-        });
-    }
-    None
+    classify_reference(rel.strip_prefix("adl2-reference/")?, is_adl)
+}
+
+/// The `adl2-reference` sub-tree prefixes and the category each claims.
+///
+/// Order is load-bearing: the first matching prefix wins, so a narrower tree
+/// (`validity/templates/`) precedes the tree that contains it (`validity/`). The
+/// two categories are the ADL 1.4-source and ADL 2-source spellings; a tree that
+/// does not distinguish them repeats one category.
+const REFERENCE_CATEGORIES: &[(&str, Category, Category)] = &[
+    (
+        "validity/templates/",
+        Category::ValidityTemplates,
+        Category::ValidityTemplates,
+    ),
+    (
+        "validity/legacy_adl_1.4/",
+        Category::ValidityLegacy14Adl,
+        Category::ValidityLegacy14Adls,
+    ),
+    ("validity/", Category::Validity, Category::Validity),
+    ("robustness/", Category::Robustness, Category::Robustness),
+    (
+        "upgrade/upgrade_from_14/",
+        Category::Upgrade14Source,
+        Category::Upgrade14Target,
+    ),
+    (
+        "upgrade/upgrade_from_15/",
+        Category::Upgrade15,
+        Category::Upgrade15,
+    ),
+    ("features/", Category::FeaturesAdl, Category::FeaturesAdls),
+];
+
+/// The category an `adl2-reference` path (prefix already stripped) is claimed by.
+fn classify_reference(r: &str, is_adl: bool) -> Option<Category> {
+    REFERENCE_CATEGORIES
+        .iter()
+        .find(|(prefix, _, _)| r.starts_with(prefix))
+        .map(|(_, adl, adls)| if is_adl { *adl } else { *adls })
 }
 
 /// Every ADL source file (`.adls` / `.adl`) under `dir`, keyed on full path.

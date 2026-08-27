@@ -610,54 +610,54 @@ async fn storage_spike() {
 /// Spike reassembly: parents come before children; re-attach each pruned
 /// child at its path (inverse of the decomposer).
 fn reassemble(nodes: &[SpikeNode]) -> Value {
-    fn attach(target: &mut Value, rel_path: &str, child: Value) {
-        // rel_path like "content0." or "data.events1." — attribute [+index] steps
-        let mut current = target;
-        let steps: Vec<&str> = rel_path.trim_end_matches('.').split('.').collect();
-        for (i, step) in steps.iter().enumerate() {
-            let is_leaf = i == steps.len() - 1;
-            let (attr, idx) = split_step(step);
-            let map = current.as_object_mut().expect("object on path");
-            match idx {
-                None => {
-                    if is_leaf {
-                        map.insert(attr.to_owned(), child);
-                        return;
-                    }
-                    current = map.get_mut(attr).expect("ancestor attr");
-                }
-                Some(idx) => {
-                    let arr = map
-                        .entry(attr.to_owned())
-                        .or_insert_with(|| Value::Array(vec![]))
-                        .as_array_mut()
-                        .expect("array on path");
-                    if is_leaf {
-                        if arr.len() <= idx {
-                            arr.resize(idx + 1, Value::Null);
-                        }
-                        arr[idx] = child;
-                        return;
-                    }
-                    current = arr.get_mut(idx).expect("ancestor idx");
-                }
-            }
-        }
-    }
-    fn split_step(step: &str) -> (&str, Option<usize>) {
-        let digits = step.chars().rev().take_while(char::is_ascii_digit).count();
-        if digits == 0 {
-            (step, None)
-        } else {
-            let (attr, num) = step.split_at(step.len() - digits);
-            (attr, num.parse().ok())
-        }
-    }
-
     let mut root = nodes[0].data.clone();
     for node in &nodes[1..] {
         // path is absolute from the root; parent paths are prefixes
         attach(&mut root, &node.path, node.data.clone());
     }
     root
+}
+
+/// Attaches `child` at `rel_path` — `content0.` or `data.events1.`, i.e.
+/// attribute-plus-optional-index steps — under `target`.
+fn attach(target: &mut Value, rel_path: &str, child: Value) {
+    let mut current = target;
+    let steps: Vec<&str> = rel_path.trim_end_matches('.').split('.').collect();
+    for (i, step) in steps.iter().enumerate() {
+        let is_leaf = i == steps.len() - 1;
+        let (attr, idx) = split_step(step);
+        let map = current.as_object_mut().expect("object on path");
+        match idx {
+            None if is_leaf => {
+                map.insert(attr.to_owned(), child);
+                return;
+            }
+            None => current = map.get_mut(attr).expect("ancestor attr"),
+            Some(idx) => {
+                let arr = map
+                    .entry(attr.to_owned())
+                    .or_insert_with(|| Value::Array(vec![]))
+                    .as_array_mut()
+                    .expect("array on path");
+                if is_leaf {
+                    if arr.len() <= idx {
+                        arr.resize(idx + 1, Value::Null);
+                    }
+                    arr[idx] = child;
+                    return;
+                }
+                current = arr.get_mut(idx).expect("ancestor idx");
+            }
+        }
+    }
+}
+
+/// Splits one path step into its attribute name and optional array index.
+fn split_step(step: &str) -> (&str, Option<usize>) {
+    let digits = step.chars().rev().take_while(char::is_ascii_digit).count();
+    if digits == 0 {
+        return (step, None);
+    }
+    let (attr, num) = step.split_at(step.len() - digits);
+    (attr, num.parse().ok())
 }
