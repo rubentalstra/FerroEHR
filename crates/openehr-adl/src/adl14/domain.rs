@@ -243,39 +243,7 @@ fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLowerin
         let mut attributes: Vec<CAttribute> = Vec::new();
         let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
         if names.len() >= 2 {
-            let members: Vec<CAttribute> = names.iter().map(|n| cattr_empty(n)).collect::<Vec<_>>();
-            let mut tuples: Vec<CPrimitiveTuple> = Vec::new();
-            for row in &rows {
-                let mut prim_members = Vec::new();
-                for n in &names {
-                    // Every name is constrained by every row of this partition
-                    // BY CONSTRUCTION; a row value the primitive lowering
-                    // cannot model still refuses the whole block.
-                    let Some(v) = row
-                        .iter()
-                        .find(|(k, _)| k == n)
-                        .and_then(|(_, v)| domain_value_to_primitive(n, v))
-                    else {
-                        return Err(DomainLoweringError::Empty);
-                    };
-                    prim_members.push(v);
-                }
-                let Ok(prim_members) = openehr_base::containers::NonEmptyVec::new(prim_members)
-                else {
-                    // `C_PRIMITIVE_TUPLE.members` is `1..*`
-                    // (`docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
-                    // §C_PRIMITIVE_TUPLE); a row that matched no member name is
-                    // not a tuple row.
-                    return Err(DomainLoweringError::Empty);
-                };
-                tuples.push(CPrimitiveTuple {
-                    members: prim_members,
-                });
-            }
-            attribute_tuples.push(CAttributeTuple {
-                members: openehr_base::containers::present(members),
-                tuples: openehr_base::containers::present(tuples),
-            });
+            attribute_tuples.push(build_attribute_tuple(&names, &rows)?);
         } else if let Some(name) = names.first() {
             // Single attribute: merge the partition's values into one constraint.
             let values: Vec<CPrimitiveObject> = rows
@@ -295,6 +263,48 @@ fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLowerin
         });
     }
     Ok(partitions)
+}
+
+/// The `C_ATTRIBUTE_TUPLE` of one co-varying partition: one
+/// `C_PRIMITIVE_TUPLE` row per source row, in member order.
+///
+/// # Errors
+/// [`DomainLoweringError::Empty`] when a row value the primitive lowering
+/// cannot model is met — every name is constrained by every row of the
+/// partition BY CONSTRUCTION, so the whole block refuses rather than dropping
+/// a constraint — or when a row matched no member name at all
+/// (`C_PRIMITIVE_TUPLE.members` is `1..*`,
+/// `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
+/// §`C_PRIMITIVE_TUPLE`).
+fn build_attribute_tuple(
+    names: &[String],
+    rows: &[&Vec<(String, OdinValue)>],
+) -> Result<CAttributeTuple, DomainLoweringError> {
+    let members: Vec<CAttribute> = names.iter().map(|n| cattr_empty(n)).collect();
+    let mut tuples: Vec<CPrimitiveTuple> = Vec::new();
+    for row in rows {
+        let mut prim_members = Vec::new();
+        for n in names {
+            let Some(v) = row
+                .iter()
+                .find(|(k, _)| k == n)
+                .and_then(|(_, v)| domain_value_to_primitive(n, v))
+            else {
+                return Err(DomainLoweringError::Empty);
+            };
+            prim_members.push(v);
+        }
+        let Ok(prim_members) = openehr_base::containers::NonEmptyVec::new(prim_members) else {
+            return Err(DomainLoweringError::Empty);
+        };
+        tuples.push(CPrimitiveTuple {
+            members: prim_members,
+        });
+    }
+    Ok(CAttributeTuple {
+        members: openehr_base::containers::present(members),
+        tuples: openehr_base::containers::present(tuples),
+    })
 }
 
 /// Lower a parsed 1.4 inline dADL domain block into one or more

@@ -147,33 +147,7 @@ impl StructureScan<'_> {
         // needs the supplier repository, so it runs in the specialisation
         // validator ([`super::slots`], `master08` §Phase 2), not here.
         if let CComplexObject::CArchetypeRoot(r) = cco {
-            if r.node_id.is_empty() {
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Varxnc,
-                    "C_ARCHETYPE_ROOT has no node id",
-                    path,
-                );
-            }
-            if r.rm_type_name.is_empty() {
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Varxtv,
-                    "C_ARCHETYPE_ROOT has no RM type",
-                    path,
-                );
-            }
-            if !r.archetype_ref.is_empty() && !is_archetype_id(&r.archetype_ref) {
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Varxav,
-                    format!(
-                        "C_ARCHETYPE_ROOT reference {:?} is not a valid archetype id",
-                        r.archetype_ref
-                    ),
-                    path,
-                );
-            }
+            self.check_archetype_root(path, r);
         }
 
         // VCATU: sibling attributes uniquely named (master04.5 §`C_COMPLEX_OBJECT`).
@@ -193,32 +167,77 @@ impl StructureScan<'_> {
         }
 
         for attr in complex_attributes(cco) {
-            // VCOSU (AOM 1.4 sibling scope): in the 1.4 dialect node ids are only
-            // *sibling*-unique — children under the same container attribute must
-            // have distinct node ids (AOM1.4 master04 §Node_id and Paths —
-            // "guarantees sibling node unique identification"). ADL2 uses the
-            // stronger archetype-wide uniqueness (walk_object above / the flat-form walk),
-            // so this sibling-scoped pass is 1.4-only.
             if self.dialect == Dialect::Adl14 {
-                let mut sibling_ids: BTreeSet<&str> = BTreeSet::new();
-                for child in attr.children.iter().flatten() {
-                    let cid = object_node_id(child);
-                    if !cid.is_empty()
-                        && (AdlCodeDefinitionsData::is_id_code(cid)
-                            || AdlCodeDefinitionsData::is_at_code(cid))
-                        && !sibling_ids.insert(cid)
-                    {
-                        let cpath = child_path(&format!("{path}/{}", attr.rm_attribute_name), cid);
-                        push_issue(
-                            &mut self.issues,
-                            ValidationCode::Vcosu,
-                            format!("node id {cid:?} is not unique among siblings"),
-                            &cpath,
-                        );
-                    }
-                }
+                self.check_sibling_node_ids(path, attr);
             }
             self.walk_attribute(path, attr);
+        }
+    }
+
+    /// VARXNC / VARXAV / VARXTV: `C_ARCHETYPE_ROOT` validity (master08 §Phase 1
+    /// §Various Structure Validation).
+    ///
+    /// NOTE: VARXR (external-reference *resolution*) is a phase-2 check that
+    /// needs the supplier repository, so it runs in the specialisation
+    /// validator ([`super::slots`], `master08` §Phase 2), not here.
+    fn check_archetype_root(
+        &mut self,
+        path: &str,
+        r: &openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot,
+    ) {
+        if r.node_id.is_empty() {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Varxnc,
+                "C_ARCHETYPE_ROOT has no node id",
+                path,
+            );
+        }
+        if r.rm_type_name.is_empty() {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Varxtv,
+                "C_ARCHETYPE_ROOT has no RM type",
+                path,
+            );
+        }
+        if !r.archetype_ref.is_empty() && !is_archetype_id(&r.archetype_ref) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Varxav,
+                format!(
+                    "C_ARCHETYPE_ROOT reference {:?} is not a valid archetype id",
+                    r.archetype_ref
+                ),
+                path,
+            );
+        }
+    }
+
+    /// VCOSU (AOM 1.4 sibling scope): in the 1.4 dialect node ids are only
+    /// *sibling*-unique — children under the same container attribute must have
+    /// distinct node ids (AOM1.4 master04 §Node_id and Paths — "guarantees
+    /// sibling node unique identification").
+    ///
+    /// ADL2 uses the stronger archetype-wide uniqueness (`walk_object` / the
+    /// flat-form walk), so this sibling-scoped pass is 1.4-only.
+    fn check_sibling_node_ids(&mut self, path: &str, attr: &CAttribute) {
+        let mut sibling_ids: BTreeSet<&str> = BTreeSet::new();
+        for child in attr.children.iter().flatten() {
+            let cid = object_node_id(child);
+            if !cid.is_empty()
+                && (AdlCodeDefinitionsData::is_id_code(cid)
+                    || AdlCodeDefinitionsData::is_at_code(cid))
+                && !sibling_ids.insert(cid)
+            {
+                let cpath = child_path(&format!("{path}/{}", attr.rm_attribute_name), cid);
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vcosu,
+                    format!("node id {cid:?} is not unique among siblings"),
+                    &cpath,
+                );
+            }
         }
     }
 
