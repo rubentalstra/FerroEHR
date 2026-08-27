@@ -90,36 +90,15 @@ pub(super) fn check_term_bindings(
     opt: &OperationalTemplate,
     defined_at: &HashSet<String>,
 ) -> Result<(), RuleViolation> {
-    let check = |code: &str| -> Result<(), RuleViolation> {
-        // (Observed in the vendored blood-pressure corpus OPTs — evidence that
-        // the shape occurs, never the authority for accepting it.)
-        // NOTE (flattened-OPT tolerance): a *specialised* code (`at0.23`, AOM2
-        // §specialisation depth) names a code DEFINED IN THE PARENT archetype,
-        // which the released AM text never requires to be repeated locally.
-        let specialised = code.contains('.');
-        if code.starts_with('/')
-            || !archetype_node_id_is_term_code(code)
-            || specialised
-            || defined_at.contains(code)
-        {
-            return Ok(());
-        }
-        Err(RuleViolation::new(
-            "VTTBK",
-            format!(
-                "term binding key '{code}' is neither a defined archetype term (at-code) nor a path"
-            ),
-        ))
-    };
     for set in &opt.definition.term_bindings {
         for item in &set.items {
-            check(&item.code)?;
+            check_term_binding_key(&item.code, defined_at)?;
         }
     }
     for onto in flat_ontologies(opt) {
         for set in &onto.term_bindings {
             for item in &set.items {
-                check(&item.code)?;
+                check_term_binding_key(&item.code, defined_at)?;
             }
         }
     }
@@ -127,11 +106,35 @@ pub(super) fn check_term_bindings(
     for root in nested_roots(opt) {
         for set in &root.term_bindings {
             for item in &set.items {
-                check(&item.code)?;
+                check_term_binding_key(&item.code, defined_at)?;
             }
         }
     }
     Ok(())
+}
+
+/// One VTTBK key: a path, or a defined archetype term.
+///
+/// NOTE (flattened-OPT tolerance): a *specialised* code (`at0.23`, AOM2
+/// §specialisation depth) names a code DEFINED IN THE PARENT archetype, which
+/// the released AM text never requires to be repeated locally. (The shape is
+/// observed in the vendored blood-pressure corpus OPTs — evidence that it
+/// occurs, never the authority for accepting it.)
+fn check_term_binding_key(code: &str, defined_at: &HashSet<String>) -> Result<(), RuleViolation> {
+    let specialised = code.contains('.');
+    if code.starts_with('/')
+        || !archetype_node_id_is_term_code(code)
+        || specialised
+        || defined_at.contains(code)
+    {
+        return Ok(());
+    }
+    Err(RuleViolation::new(
+        "VTTBK",
+        format!(
+            "term binding key '{code}' is neither a defined archetype term (at-code) nor a path"
+        ),
+    ))
 }
 
 /// VTCBK: "terminology constraint binding key valid. Every constraint binding

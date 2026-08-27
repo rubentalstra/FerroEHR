@@ -409,79 +409,117 @@ impl Builder<'_> {
                 self.walk(b, ehr, vo)?;
                 Ok(g)
             }
-            // OR-containment (QUERY master03 §Containment — "Logical
-            // operators AND and OR"). The enclosing object satisfies either
-            // branch's containment; each branch lowers to a correlated `EXISTS`
-            // over the shared anchor, combined with `OR`. A top-level `OR` with
-            // no enclosing object is rejected (there is no row scope to
-            // correlate to). Variables bound only inside an `OR` branch are
-            // containment-filter-only — see the module NOTE.
-            ContainsTree::Or(a, b) => {
-                let anchor = match (&vo, ehr) {
-                    (Some(g), _) => ExistsAnchor::Vo(g.node.clone()),
-                    (None, Some(e)) => ExistsAnchor::Ehr(e.to_owned()),
-                    (None, None) => {
-                        return Err(SqlError::Unsupported(
-                            "OR at the top of the FROM tree without a containing object".to_owned(),
-                        )
-                        .into());
-                    }
-                };
-                let left = self.contained_exists(&anchor, a)?;
-                let right = self.contained_exists(&anchor, b)?;
-                self.q.and_where(left.or(right));
-                Ok(None)
-            }
+            ContainsTree::Or(a, b) => self.walk_or(a, b, ehr, vo.as_ref()),
             ContainsTree::Operand { source, contained } => {
-                let sid = source.0;
-                match self.ir.sources.get(sid) {
-                    Some(Source::Version(_)) => {
-                        let child = match contained.as_deref() {
-                            Some(Contained {
-                                link: Link::Contains,
-                                tree,
-                            }) => self.walk(tree, ehr, vo)?,
-                            Some(_) => {
-                                return Err(SqlError::Unsupported(
-                                    "VERSION NOT CONTAINS".to_owned(),
-                                )
-                                .into());
-                            }
-                            None => None,
-                        };
-                        if let Some(g) = &child {
-                            self.version_vo.insert(sid, g.vo.clone());
-                        }
-                        Ok(child)
-                    }
-                    Some(Source::Ehr(e)) => {
-                        let alias = format!("e{sid}");
-                        self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
-                        self.ehr_alias.insert(sid, alias.clone());
-                        let preds = e.predicates.clone();
-                        for p in &preds {
-                            self.push_ehr_predicate(&alias, p)?;
-                        }
-                        if let Some(c) = contained {
-                            self.contained_edge(c, Some(&alias), None)?;
-                        }
-                        Ok(None)
-                    }
-                    Some(Source::Rm(r)) => {
-                        let r = r.clone();
-                        let group = self.emit_rm(sid, &r, ehr, vo.as_ref())?;
-                        if let Some(c) = contained {
-                            self.contained_edge(c, ehr, Some(group.clone()))?;
-                        }
-                        Ok(Some(group))
-                    }
-                    None => Err(SqlError::Unsupported(
-                        "containment operand names an unknown source".to_owned(),
-                    )
-                    .into()),
-                }
+                self.walk_operand(source.0, contained.as_deref(), ehr, vo)
             }
         }
+    }
+
+    /// Lowers OR-containment (QUERY master03 §Containment — "Logical operators
+    /// AND and OR").
+    ///
+    /// The enclosing object satisfies either branch's containment, so each
+    /// branch lowers to a correlated `EXISTS` over the shared anchor, combined
+    /// with `OR`. Variables bound only inside an `OR` branch are
+    /// containment-filter-only — see the module NOTE.
+    ///
+    /// # Errors
+    /// [`SqlError::Unsupported`] for a top-level `OR` with no enclosing object
+    /// (there is no row scope to correlate to), plus the branch lowerings.
+    fn walk_or(
+        &mut self,
+        a: &ContainsTree,
+        b: &ContainsTree,
+        ehr: Option<&str>,
+        vo: Option<&VoGroup>,
+    ) -> Result<Option<VoGroup>, AqlError> {
+        let anchor = match (vo, ehr) {
+            (Some(g), _) => ExistsAnchor::Vo(g.node.clone()),
+            (None, Some(e)) => ExistsAnchor::Ehr(e.to_owned()),
+            (None, None) => {
+                return Err(SqlError::Unsupported(
+                    "OR at the top of the FROM tree without a containing object".to_owned(),
+                )
+                .into());
+            }
+        };
+        let left = self.contained_exists(&anchor, a)?;
+        let right = self.contained_exists(&anchor, b)?;
+        self.q.and_where(left.or(right));
+        Ok(None)
+    }
+
+    /// Lowers one containment operand: the source it names plus the edge it
+    /// carries.
+    ///
+    /// # Errors
+    /// [`SqlError::Unsupported`] when the operand names an unknown source, or
+    /// from the per-source lowerings.
+    fn walk_operand(
+        &mut self,
+        sid: usize,
+        contained: Option<&Contained>,
+        ehr: Option<&str>,
+        vo: Option<VoGroup>,
+    ) -> Result<Option<VoGroup>, AqlError> {
+        match self.ir.sources.get(sid) {
+            Some(Source::Version(_)) => self.walk_version_source(sid, contained, ehr, vo),
+            Some(Source::Ehr(e)) => {
+                let alias = format!("e{sid}");
+                self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
+                self.ehr_alias.insert(sid, alias.clone());
+                let preds = e.predicates.clone();
+                for p in &preds {
+                    self.push_ehr_predicate(&alias, p)?;
+                }
+                if let Some(c) = contained {
+                    self.contained_edge(c, Some(&alias), None)?;
+                }
+                Ok(None)
+            }
+            Some(Source::Rm(r)) => {
+                let r = r.clone();
+                let group = self.emit_rm(sid, &r, ehr, vo.as_ref())?;
+                if let Some(c) = contained {
+                    self.contained_edge(c, ehr, Some(group.clone()))?;
+                }
+                Ok(Some(group))
+            }
+            None => Err(SqlError::Unsupported(
+                "containment operand names an unknown source".to_owned(),
+            )
+            .into()),
+        }
+    }
+
+    /// Lowers a VERSION operand: it opens no relation of its own and adopts
+    /// the version group of the object it contains.
+    ///
+    /// # Errors
+    /// [`SqlError::Unsupported`] for `VERSION NOT CONTAINS`, plus the child
+    /// lowering.
+    fn walk_version_source(
+        &mut self,
+        sid: usize,
+        contained: Option<&Contained>,
+        ehr: Option<&str>,
+        vo: Option<VoGroup>,
+    ) -> Result<Option<VoGroup>, AqlError> {
+        let child = match contained {
+            Some(Contained {
+                link: Link::Contains,
+                tree,
+            }) => self.walk(tree, ehr, vo)?,
+            Some(_) => {
+                return Err(SqlError::Unsupported("VERSION NOT CONTAINS".to_owned()).into());
+            }
+            None => None,
+        };
+        if let Some(g) = &child {
+            self.version_vo.insert(sid, g.vo.clone());
+        }
+        Ok(child)
     }
 
     fn contained_edge(

@@ -292,16 +292,7 @@ fn claimed_profiles(event: &AuditEvent, subject: Option<&str>) -> Vec<String> {
     let mut profiles = Vec::new();
     if event.outcome == EventOutcome::Success {
         let patient = event.object.is_patient_centric() && subject.is_some();
-        let name = match (event.object, event.action) {
-            (ObjectClass::Authentication | ObjectClass::Extract, _) => None,
-            (ObjectClass::Query, _) => Some(if patient { "PatientQuery" } else { "Query" }),
-            (_, EventActionCode::Create) => Some(if patient { "PatientCreate" } else { "Create" }),
-            (_, EventActionCode::Read) => Some(if patient { "PatientRead" } else { "Read" }),
-            (_, EventActionCode::Update) => Some(if patient { "PatientUpdate" } else { "Update" }),
-            (_, EventActionCode::Delete) => Some(if patient { "PatientDelete" } else { "Delete" }),
-            (_, EventActionCode::Execute) => None,
-        };
-        if let Some(name) = name {
+        if let Some(name) = balp_profile_name(event.object, event.action, patient) {
             profiles.push(format!("{BALP_PROFILE_BASE}/IHE.BasicAudit.{name}"));
         }
     }
@@ -311,6 +302,28 @@ fn claimed_profiles(event: &AuditEvent, subject: Option<&str>) -> Vec<String> {
         ));
     }
     profiles
+}
+
+/// The BALP basic-audit profile name one successful record claims, or `None`
+/// where the profile family defines none for that action.
+///
+/// `patient` selects the `Patient*` variant, which requires a resolved patient
+/// entity.
+const fn balp_profile_name(
+    object: ObjectClass,
+    action: EventActionCode,
+    patient: bool,
+) -> Option<&'static str> {
+    let (plain, patient_variant) = match (object, action) {
+        (ObjectClass::Authentication | ObjectClass::Extract, _) => return None,
+        (ObjectClass::Query, _) => ("Query", "PatientQuery"),
+        (_, EventActionCode::Create) => ("Create", "PatientCreate"),
+        (_, EventActionCode::Read) => ("Read", "PatientRead"),
+        (_, EventActionCode::Update) => ("Update", "PatientUpdate"),
+        (_, EventActionCode::Delete) => ("Delete", "PatientDelete"),
+        (_, EventActionCode::Execute) => return None,
+    };
+    Some(if patient { patient_variant } else { plain })
 }
 
 /// The FHIR action code for an audited action.

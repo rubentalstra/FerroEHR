@@ -194,34 +194,8 @@ impl FerroEhrService {
                         .await?,
                 );
             }
-            // link_depth (`EXTRACT_SPEC.link_depth`; `master09-semantics.adoc`
-            // §Creation Semantics: "for each instance of `DV_LINK` encountered
-            // … follow the links recursively … write the target Compositions in
-            // … set `is_primary` = False"). Only same-EHR targets exist in this
-            // repository; a link outside it cannot be included.
-            let mut depth = link_depth;
-            while depth > 0 {
-                let targets = link_target_uuids(&items);
-                let mut added = false;
-                for target in targets {
-                    if included.contains(&target) {
-                        continue;
-                    }
-                    let Some(kind) = self.ehr_vo_kind(ehr_id, target).await? else {
-                        continue;
-                    };
-                    items.push(
-                        self.build_openehr_content_item(ehr_id, target, &kind, sel, false)
-                            .await?,
-                    );
-                    included.push(target);
-                    added = true;
-                }
-                if !added {
-                    break;
-                }
-                depth -= 1;
-            }
+            self.follow_links(ehr_id, &mut items, &mut included, sel, link_depth)
+                .await?;
             let mut demographics = self.demographic_chapter_items(&items, sel).await?;
             rewrite_content_refs(&mut items);
             rewrite_content_refs(&mut demographics);
@@ -235,6 +209,50 @@ impl FerroEhrService {
             self.emit_extract_audit(ehr_id, EventActionCode::Read);
         }
         Ok(out)
+    }
+
+    /// Follows `link_depth` levels of `DV_LINK` targets, appending each
+    /// newly-reached versioned object as a non-primary content item.
+    ///
+    /// `EXTRACT_SPEC.link_depth`; `master09-semantics.adoc` §Creation
+    /// Semantics: "for each instance of `DV_LINK` encountered … follow the
+    /// links recursively … write the target Compositions in … set `is_primary`
+    /// = False". Only same-EHR targets exist in this repository; a link
+    /// outside it cannot be included.
+    ///
+    /// # Errors
+    /// The content-item build errors, and storage errors from the kind lookup.
+    async fn follow_links(
+        &self,
+        ehr_id: EhrId,
+        items: &mut Vec<Value>,
+        included: &mut Vec<VoId>,
+        sel: VersionSelection,
+        link_depth: i32,
+    ) -> Result<(), SmError> {
+        let mut depth = link_depth;
+        while depth > 0 {
+            let mut added = false;
+            for target in link_target_uuids(items) {
+                if included.contains(&target) {
+                    continue;
+                }
+                let Some(kind) = self.ehr_vo_kind(ehr_id, target).await? else {
+                    continue;
+                };
+                items.push(
+                    self.build_openehr_content_item(ehr_id, target, &kind, sel, false)
+                        .await?,
+                );
+                included.push(target);
+                added = true;
+            }
+            if !added {
+                break;
+            }
+            depth -= 1;
+        }
+        Ok(())
     }
 
     /// Whether an EHR with `ehr_id` exists (the `has_ehr` precondition of both
@@ -586,30 +604,6 @@ impl FerroEhrService {
         content_items: &[Value],
         sel: VersionSelection,
     ) -> Result<Vec<Value>, ServiceError> {
-        fn collect_party_ids(value: &Value, out: &mut Vec<VoId>) {
-            match value {
-                Value::Object(map) => {
-                    if map.get("_type").and_then(Value::as_str) == Some("PARTY_REF")
-                        && map.get("namespace").and_then(Value::as_str) == Some("demographic")
-                        && let Some(raw) = value.pointer("/id/value").and_then(Value::as_str)
-                        && let Ok(uuid) = raw.parse::<Uuid>()
-                        && !out.contains(&VoId(uuid))
-                    {
-                        // A demographic PARTY_REF id names a party versioned object.
-                        out.push(VoId(uuid));
-                    }
-                    for v in map.values() {
-                        collect_party_ids(v, out);
-                    }
-                }
-                Value::Array(list) => {
-                    for v in list {
-                        collect_party_ids(v, out);
-                    }
-                }
-                _ => {}
-            }
-        }
         let mut party_ids = Vec::new();
         for item in content_items {
             collect_party_ids(item, &mut party_ids);
@@ -904,40 +898,75 @@ fn strip_inline_multimedia(value: &mut Value) {
 /// content items — the candidate same-EHR link targets for `link_depth`
 /// following (`DV_EHR_URI` values carry the container/version uids).
 fn link_target_uuids(items: &[Value]) -> Vec<VoId> {
-    fn collect(value: &Value, out: &mut Vec<VoId>) {
-        match value {
-            Value::Object(map) => {
-                if let Some(links) = map.get("links").and_then(Value::as_array) {
-                    for link in links {
-                        if let Some(uri) = link.pointer("/target/value").and_then(Value::as_str) {
-                            for token in uri.split(|c: char| !c.is_ascii_hexdigit() && c != '-') {
-                                // A DV_LINK target uri names a versioned object.
-                                if let Ok(uuid) = token.parse::<Uuid>()
-                                    && !out.contains(&VoId(uuid))
-                                {
-                                    out.push(VoId(uuid));
-                                }
-                            }
-                        }
-                    }
-                }
-                for v in map.values() {
-                    collect(v, out);
-                }
-            }
-            Value::Array(list) => {
-                for v in list {
-                    collect(v, out);
-                }
-            }
-            _ => {}
-        }
-    }
     let mut out = Vec::new();
     for item in items {
-        collect(item, &mut out);
+        collect_link_targets(item, &mut out);
     }
     out
+}
+
+/// Walks one built content item, appending every distinct versioned-object
+/// UUID a `PARTY_REF` in the `demographic` namespace names.
+fn collect_party_ids(value: &Value, out: &mut Vec<VoId>) {
+    match value {
+        Value::Object(map) => {
+            if map.get("_type").and_then(Value::as_str) == Some("PARTY_REF")
+                && map.get("namespace").and_then(Value::as_str) == Some("demographic")
+                && let Some(raw) = value.pointer("/id/value").and_then(Value::as_str)
+                && let Ok(uuid) = raw.parse::<Uuid>()
+                && !out.contains(&VoId(uuid))
+            {
+                out.push(VoId(uuid));
+            }
+            for v in map.values() {
+                collect_party_ids(v, out);
+            }
+        }
+        Value::Array(list) => {
+            for v in list {
+                collect_party_ids(v, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Walks one built content item, appending every distinct versioned-object
+/// UUID its `LOCATABLE.links[].target` URIs mention.
+fn collect_link_targets(value: &Value, out: &mut Vec<VoId>) {
+    match value {
+        Value::Object(map) => {
+            if let Some(links) = map.get("links").and_then(Value::as_array) {
+                for link in links {
+                    push_link_target_uuids(link, out);
+                }
+            }
+            for v in map.values() {
+                collect_link_targets(v, out);
+            }
+        }
+        Value::Array(list) => {
+            for v in list {
+                collect_link_targets(v, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Appends the versioned-object UUIDs one `DV_LINK` target URI names.
+fn push_link_target_uuids(link: &Value, out: &mut Vec<VoId>) {
+    let Some(uri) = link.pointer("/target/value").and_then(Value::as_str) else {
+        return;
+    };
+    for token in uri.split(|c: char| !c.is_ascii_hexdigit() && c != '-') {
+        // A DV_LINK target uri names a versioned object.
+        if let Ok(uuid) = token.parse::<Uuid>()
+            && !out.contains(&VoId(uuid))
+        {
+            out.push(VoId(uuid));
+        }
+    }
 }
 
 /// The RM-named string tokens `EXTRACT_SPEC.extract_type` may carry, beside

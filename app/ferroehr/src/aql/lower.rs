@@ -143,59 +143,15 @@ impl Planner {
             } => {
                 let id = self.next_id();
                 if rm_type == "EHR" {
-                    let predicates = predicate
-                        .as_ref()
-                        .map(Self::lower_ehr_predicate)
-                        .transpose()?
-                        .into_iter()
-                        .flatten()
-                        .collect();
-                    self.sources.push(Source::Ehr(EhrSource {
+                    self.lower_ehr_operand(id, variable.as_deref(), predicate.as_ref())?;
+                } else {
+                    self.lower_rm_operand(
                         id,
-                        var: variable.clone(),
-                        predicates,
-                    }));
-                    if let Some(v) = variable {
-                        self.bind(v, id, BindingKind::Ehr)?;
-                    }
-                    return Ok((id, inherited.cloned()));
-                }
-
-                // An RM structure/VO class. It must be addressable in the node
-                // store: at least one concrete descendant is a structure root.
-                let class = model::class(rm_type)
-                    .ok_or_else(|| AnalysisError::UnknownClass(rm_type.clone()))?;
-                if !crate::aql::analyze::profile_defines_class(self.bindings.profile, rm_type) {
-                    return Err(AnalysisError::ClassNotInProfile {
-                        class: rm_type.clone(),
-                        profile: self.bindings.profile.as_str(),
-                        generation: self.bindings.profile.rm().spec_version(),
-                    }
-                    .into());
-                }
-                let concrete =
-                    TypeSet::new(class.descendants.iter().map(|s| (*s).to_owned()).collect());
-                if !concrete.names().iter().any(|t| model::is_structure_root(t)) {
-                    return Err(AqlFeatureError::UnsupportedSourceClass(rm_type.clone()).into());
-                }
-
-                let constraint = predicate
-                    .as_ref()
-                    .map(resolve_node_predicate)
-                    .transpose()?
-                    .unwrap_or_default();
-                let scope = inherited.cloned().unwrap_or(VersionScope::Latest);
-                self.sources.push(Source::Rm(RmSource {
-                    id,
-                    var: variable.clone(),
-                    rm_type: concrete.clone(),
-                    archetype: constraint.archetype,
-                    name: constraint.name,
-                    standard: constraint.standard,
-                    scope,
-                }));
-                if let Some(v) = variable {
-                    self.bind(v, id, BindingKind::Rm(concrete))?;
+                        rm_type,
+                        variable.as_deref(),
+                        predicate.as_ref(),
+                        inherited,
+                    )?;
                 }
                 Ok((id, inherited.cloned()))
             }
@@ -222,6 +178,89 @@ impl Planner {
                 Ok((id, Some(scope)))
             }
         }
+    }
+
+    /// Registers an `EHR` operand as an EHR source and binds its variable.
+    ///
+    /// # Errors
+    /// The EHR-predicate lowering rejections, and a duplicate variable
+    /// binding.
+    fn lower_ehr_operand(
+        &mut self,
+        id: SourceId,
+        variable: Option<&str>,
+        predicate: Option<&openehr_query::ast::PathPredicate>,
+    ) -> Result<(), AqlError> {
+        let predicates = predicate
+            .map(Self::lower_ehr_predicate)
+            .transpose()?
+            .into_iter()
+            .flatten()
+            .collect();
+        self.sources.push(Source::Ehr(EhrSource {
+            id,
+            var: variable.map(str::to_owned),
+            predicates,
+        }));
+        if let Some(v) = variable {
+            self.bind(v, id, BindingKind::Ehr)?;
+        }
+        Ok(())
+    }
+
+    /// Registers an RM structure/VO-class operand as an RM source and binds
+    /// its variable.
+    ///
+    /// The class must be addressable in the node store: at least one concrete
+    /// descendant is a structure root.
+    ///
+    /// # Errors
+    /// [`AnalysisError::UnknownClass`] for a class the RM model does not
+    /// declare, [`AnalysisError::ClassNotInProfile`] for one outside the
+    /// active `spec_profile`'s generation set,
+    /// [`AqlFeatureError::UnsupportedSourceClass`] for a class no concrete
+    /// descendant of which is a structure root, plus the node-predicate
+    /// rejections and a duplicate variable binding.
+    fn lower_rm_operand(
+        &mut self,
+        id: SourceId,
+        rm_type: &str,
+        variable: Option<&str>,
+        predicate: Option<&openehr_query::ast::PathPredicate>,
+        inherited: Option<&VersionScope>,
+    ) -> Result<(), AqlError> {
+        let class =
+            model::class(rm_type).ok_or_else(|| AnalysisError::UnknownClass(rm_type.to_owned()))?;
+        if !crate::aql::analyze::profile_defines_class(self.bindings.profile, rm_type) {
+            return Err(AnalysisError::ClassNotInProfile {
+                class: rm_type.to_owned(),
+                profile: self.bindings.profile.as_str(),
+                generation: self.bindings.profile.rm().spec_version(),
+            }
+            .into());
+        }
+        let concrete = TypeSet::new(class.descendants.iter().map(|s| (*s).to_owned()).collect());
+        if !concrete.names().iter().any(|t| model::is_structure_root(t)) {
+            return Err(AqlFeatureError::UnsupportedSourceClass(rm_type.to_owned()).into());
+        }
+        let constraint = predicate
+            .map(resolve_node_predicate)
+            .transpose()?
+            .unwrap_or_default();
+        let scope = inherited.cloned().unwrap_or(VersionScope::Latest);
+        self.sources.push(Source::Rm(RmSource {
+            id,
+            var: variable.map(str::to_owned),
+            rm_type: concrete.clone(),
+            archetype: constraint.archetype,
+            name: constraint.name,
+            standard: constraint.standard,
+            scope,
+        }));
+        if let Some(v) = variable {
+            self.bind(v, id, BindingKind::Rm(concrete))?;
+        }
+        Ok(())
     }
 
     /// Resolve an EHR class predicate into standard EHR-field predicates. EHR
