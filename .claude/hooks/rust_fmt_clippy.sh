@@ -25,8 +25,25 @@ else
   file_path="$(printf '%s' "$payload" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)"
 fi
 
+repo_root="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+
 case "${file_path:-}" in
 *.rs) ;;
+*.sh)
+  # Per-edit shell lint (#2825), the same one check the per-PR lane runs
+  # (scripts/checks/shellcheck-lane.sh in single-file mode), so a finding
+  # surfaces at the edit instead of at PR time. Skipped silently when the
+  # linter is absent; the PR lane still gates.
+  [ -f "$file_path" ] || exit 0
+  if command -v shellcheck >/dev/null 2>&1 \
+    && [ -x "$repo_root/scripts/checks/shellcheck-lane.sh" ]; then
+    findings="$("$repo_root/scripts/checks/shellcheck-lane.sh" "$file_path" 2>&1)" || {
+      printf '%s\n' "$findings" >&2
+      exit 2
+    }
+  fi
+  exit 0
+  ;;
 *) exit 0 ;;
 esac
 [ -f "$file_path" ] || exit 0
