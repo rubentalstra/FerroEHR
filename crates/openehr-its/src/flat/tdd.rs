@@ -562,10 +562,22 @@ fn build_node(
         }
     }
 
-    // Simple in-context RM attributes — read directly from the TDD (faithful).
-    let mut i = 0;
-    while let Some(child) = el.children.get(i) {
-        i += 1;
+    build_simple_attrs(el, rm_type, &mut obj)?;
+    build_content_children(el, wt, rm_type, path, &mut obj)?;
+    Ok(Value::Object(obj))
+}
+
+/// Reads the simple in-context RM attributes directly off the TDD element
+/// (faithful — no template mediation).
+///
+/// # Errors
+/// [`FlatError`] when a typed attribute's text does not parse.
+fn build_simple_attrs(
+    el: &El,
+    rm_type: &str,
+    obj: &mut Map<String, Value>,
+) -> Result<(), FlatError> {
+    for child in &el.children {
         let Some(hint) = simple_attr(rm_type, &child.name) else {
             continue;
         };
@@ -573,38 +585,52 @@ fn build_node(
             Simple::Text => {
                 obj.insert(child.name.clone(), json!(child.text));
             }
+            Simple::Typed(ty) if is_multi_simple(&child.name) => {
+                let arr = obj
+                    .entry(child.name.clone())
+                    .or_insert_with(|| json!([]))
+                    .as_array_mut();
+                if let Some(arr) = arr {
+                    arr.push(parse_typed(child, ty)?);
+                }
+            }
             Simple::Typed(ty) => {
-                if is_multi_simple(&child.name) {
-                    let arr = obj
-                        .entry(child.name.clone())
-                        .or_insert_with(|| json!([]))
-                        .as_array_mut();
-                    if let Some(arr) = arr {
-                        arr.push(parse_typed(child, ty)?);
-                    }
-                } else if !obj.contains_key(&child.name) {
+                if !obj.contains_key(&child.name) {
                     obj.insert(child.name.clone(), parse_typed(child, ty)?);
                 }
             }
         }
     }
+    Ok(())
+}
 
-    // Content children — driven by the web-template node tree. Each web-template
-    // child is located in the TDD by name (scoped) and placed at its relative
-    // aqlPath, re-materialising the wrapper chain the TDD/template compacted.
+/// Builds the content children, driven by the web-template node tree.
+///
+/// Each web-template child is located in the TDD by name (scoped) and placed
+/// at its relative `aqlPath`, re-materialising the wrapper chain the
+/// TDD/template compacted. A node the WebTemplate synthesizes for a *simple*
+/// RM in-context attribute (COMPOSITION context/language/territory/composer,
+/// ENTRY language/encoding/subject — `ITS-REST simplified_formats master04`
+/// §"Web Template Metadata", the `inContext` marker) is skipped: it is already
+/// built from the TDD element by [`build_simple_attrs`], and walking it again
+/// would rebuild it partially (e.g. an EVENT_CONTEXT without its mandatory
+/// `start_time`) and overwrite the faithful value. `category` and the per-EVENT
+/// `time` are real tree data and still build through the walk.
+///
+/// # Errors
+/// [`FlatError`] from a child's leaf parse or nested build.
+fn build_content_children(
+    el: &El,
+    wt: &WebTemplateNode,
+    rm_type: &str,
+    path: &str,
+    obj: &mut Map<String, Value>,
+) -> Result<(), FlatError> {
     for wc in &wt.children {
         let rel = rmpath::relative(path, &wc.aql_path);
         if rel.is_empty() {
             continue;
         }
-        // A node the WebTemplate synthesizes for a *simple* RM in-context
-        // attribute (COMPOSITION context/language/territory/composer, ENTRY
-        // language/encoding/subject — `ITS-REST simplified_formats master04`
-        // §"Web Template Metadata", the `inContext` marker) is already built
-        // above from the TDD element by `simple_attr`; walking it again would
-        // rebuild it partially (e.g. an EVENT_CONTEXT without its mandatory
-        // `start_time`) and overwrite the faithful value. `category` and the
-        // per-EVENT `time` are real tree data and still build through the walk.
         if (wc.in_context == Some(true) || wc.rm_type == "EVENT_CONTEXT")
             && rel
                 .last()
@@ -612,8 +638,7 @@ fn build_node(
         {
             continue;
         }
-        let matches = find_matches(el, node_display(wc));
-        for cel in matches {
+        for cel in find_matches(el, node_display(wc)) {
             let child_value = if wc.has_input() {
                 // A leaf: the ELEMENT wrapper is materialised by `place`; the
                 // datum is the leaf element's `<value>` fragment.
@@ -621,11 +646,10 @@ fn build_node(
             } else {
                 build_node(cel, wc, concrete_type(&wc.rm_type), &wc.aql_path, false)?
             };
-            place(&mut obj, &rel, child_value, wc);
+            place(obj, &rel, child_value, wc);
         }
     }
-
-    Ok(Value::Object(obj))
+    Ok(())
 }
 
 /// The `DATA_VALUE` of a leaf, parsed as the web-template-declared concrete type.
