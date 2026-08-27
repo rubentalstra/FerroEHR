@@ -542,7 +542,7 @@ fn pane_view_from_url() -> PaneView {
 /// stays inline in the editor, next to the edited body.
 fn wire_commit_toast<I: Send + Sync + 'static>(
     toaster: thaw::ToasterInjection,
-    update: Action<I, Result<String, crate::error::AdminUiError>>,
+    update: Action<I, Result<String, AdminUiError>>,
 ) {
     Effect::new(move |_| match update.value().get() {
         Some(Ok(uid)) => {
@@ -571,7 +571,7 @@ fn wire_commit_toast<I: Send + Sync + 'static>(
 /// the server.
 fn wire_delete_outcome<I: Send + Sync + 'static>(
     toaster: thaw::ToasterInjection,
-    delete: Action<I, Result<(), crate::error::AdminUiError>>,
+    delete: Action<I, Result<(), AdminUiError>>,
     ehr_id: Signal<String>,
 ) {
     let navigate = leptos_router::hooks::use_navigate();

@@ -309,13 +309,7 @@ async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
 /// namespaces, so the derived namespace grouping (and the dashboard's
 /// namespace tiles) have something real to show. Nothing is created through a
 /// group form: a query's group IS its namespace.
-async fn capture_stored_query_screens(
-    h: &Harness,
-    dir: &std::path::Path,
-    cdr: &str,
-    user: &str,
-    pass: &str,
-) {
+async fn capture_stored_query_screens(h: &Harness, dir: &Path, cdr: &str, user: &str, pass: &str) {
     let http = reqwest::Client::new();
     // The cleanup below hits the ADMIN extension, which the plain
     // `UI_E2E_BASIC_*` account has no ADMIN role for — so it carries the
