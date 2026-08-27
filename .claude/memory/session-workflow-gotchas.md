@@ -208,3 +208,19 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     environment exists. Corollary: an hours-long opt-in run is launched only
     after confirming with the owner that THIS machine is the intended place
     to run it.
+
+15. **Never close/reopen a dependabot PR** (hit 2026-08-27, #2802): closing
+    one makes dependabot DELETE its branch and treat that update as
+    dismissed — reopen fails ("Could not open the pull request") and the
+    bump must be hand-recreated from the closed PR's diff. To refresh a
+    dependabot PR's checks: `@dependabot rebase` when the base moved; when
+    the base is current but the runs are stale, a foreign empty commit to
+    the branch fires fresh runs (a PR run's MERGE SNAPSHOT is frozen at run
+    creation, so a run that sat queued past a base fix still tests the old
+    tree — check `started_at` vs the fix's merge time before believing a
+    red). A foreign commit also ends dependabot's ownership (`rebase` then
+    refuses; only `recreate` remains), so push one only when the PR is
+    being merged soon. Corollary: a base-image digest bump must sweep EVERY
+    base.digest declaration (both Dockerfiles + the label blocks in
+    containers.yml and release.yml) — image-labels.sh holds them equal and
+    dependabot bumps only the FROM lines.
